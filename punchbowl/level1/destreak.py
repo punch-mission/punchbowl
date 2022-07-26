@@ -1,8 +1,9 @@
 import numpy as np
 from typing import Optional
 from datetime import datetime
-from punchpipe.infrastructure.data import PUNCHData
+from punchbowl.data import PUNCHData
 from prefect import task, get_run_logger
+
 
 def streak_correction_matrix(n: int, diag: float, below: float, above: float) -> np.ndarray:
     """Computes a matrix used in correcting streaks in PUNCH images
@@ -38,6 +39,7 @@ def streak_correction_matrix(n: int, diag: float, below: float, above: float) ->
     M = L + U + D
     return np.linalg.inv(M)
 
+
 def correct_streaks(image: np.ndarray,
                     exposure_time: float,
                     readout_line_time: float,
@@ -69,6 +71,7 @@ def correct_streaks(image: np.ndarray,
                                                     readout_line_time,
                                                     reset_line_time)
     return correction_matrix @ image
+
 
 @task
 def destreak(data_object):

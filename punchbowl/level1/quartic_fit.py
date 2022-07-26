@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Optional
 from datetime import datetime
-from punchpipe.infrastructure.data import PUNCHData
+from punchbowl.data import PUNCHData
 from prefect import task, get_run_logger
 
 
@@ -50,8 +50,8 @@ def photometric_calibration(image: np.ndarray,
     assert len(image.shape) == 2, "function:photometric_calibration, data frame must be a 2-D image"
 
     # inspect dimensions of correction map and data_frame
-    assert quartic_coefficient_map.shape[0]==image.shape[0], "function:photometric_calibration, CF calibration x dim != data frame x dim"
-    assert quartic_coefficient_map.shape[1]==image.shape[1], "function:photometric_calibration, CF calibration y dim != data frame y dim"
+    assert quartic_coefficient_map.shape[0] == image.shape[0], "function:photometric_calibration, CF calibration x dim != data frame x dim"
+    assert quartic_coefficient_map.shape[1] == image.shape[1], "function:photometric_calibration, CF calibration y dim != data frame y dim"
 
     # find the number of quartic fit coefficients
     num_coeffs=quartic_coefficient_map.shape[2]

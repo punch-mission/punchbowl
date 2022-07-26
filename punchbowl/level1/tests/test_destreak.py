@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from punchpipe.level1.destreak import DestreakFunction
+from punchbowl.level1.destreak import correct_streaks, streak_correction_matrix
 
 
 @pytest.mark.parametrize("diag, above, below",
@@ -12,7 +12,7 @@ def test_matrix_creation(diag, above, below):
                  [below, below, diag, above],
                  [below, below, below, diag]])
     expected = np.linalg.inv(M)
-    actual = DestreakFunction.streak_correction_matrix(4, diag, below, above)
+    actual = streak_correction_matrix(4, diag, below, above)
     assert np.allclose(actual, expected)
     assert actual.shape == (4, 4)
 
@@ -24,6 +24,6 @@ def test_actual_destreaking():
     exposure_time = 100
     readout_line_time = 5
     reset_line_time = 5
-    output = DestreakFunction.correct_streaks(image, exposure_time, readout_line_time, reset_line_time)
+    output = correct_streaks(image, exposure_time, readout_line_time, reset_line_time)
     assert output.shape == (size, size)
 

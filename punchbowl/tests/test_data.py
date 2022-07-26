@@ -2,7 +2,7 @@ import os
 import astropy
 from pytest import fixture
 from datetime import datetime
-from punchpipe.infrastructure.data import PUNCHData, History, HistoryEntry
+from punchbowl.data import PUNCHData, History, HistoryEntry
 from ndcube import NDCube
 import numpy as np
 

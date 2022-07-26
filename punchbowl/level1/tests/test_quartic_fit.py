@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 from pytest import fixture
-from punchpipe.level1.quartic_fit import QuarticFitFunction
-
+from punchbowl.level1.quartic_fit import photometric_calibration
 
 
 @fixture
@@ -25,6 +24,6 @@ def quartic_coeffs():
 
 
 def test_sample_data_creation(quartic_coeffs):
-    assert quartic_coeffs.shape[0]==10
+    assert quartic_coeffs.shape[0] == 10
 
 

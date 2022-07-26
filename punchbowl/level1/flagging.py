@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from punchpipe.infrastructure.data import PUNCHData
+from punchbowl.data import PUNCHData
 from prefect import task, get_run_logger
 
 

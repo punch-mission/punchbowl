@@ -83,7 +83,18 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
 
 
 @task
-def perform_quartic_fit_task(data_object):
+def perform_quartic_fit_task(data_object: PUNCHData):
+    """Prefect task to perform the quartic fit calibration on the data
+
+    Parameters
+    ----------
+    data_object : PUNCHData
+        a data object that needs calibration
+
+    Returns
+    -------
+    None
+    """
     logger = get_run_logger()
     logger.info("perform_quartic_fit started")
     # TODO: perform calibration

@@ -1,6 +1,6 @@
 from punchbowl.data import PUNCHData
 from punchbowl.level1.alignment import align
-from punchbowl.level1.quartic_fit import perform_quartic_fit
+from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.despike import despike
 from punchbowl.level1.destreak import destreak
 from punchbowl.level1.vignette import correct_vignetting
@@ -41,7 +41,7 @@ def level1_core_flow(input_filename, output_directory):
 
     logger.info("beginning level 1 core flow")
     data = load_level0(input_filename)
-    data = perform_quartic_fit(data)
+    data = perform_quartic_fit_task(data)
     data = despike(data)
     data = destreak(data)
     data = correct_vignetting(data)

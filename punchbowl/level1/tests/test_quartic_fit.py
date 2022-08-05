@@ -1,29 +1,68 @@
 import numpy as np
 import pytest
 from pytest import fixture
-from punchbowl.level1.quartic_fit import photometric_calibration
+from punchbowl.level1.quartic_fit import photometric_calibration, create_coefficient_image
 
 
 @fixture
-def quartic_coeffs():
-    # A synthetic set of quartic coefficients
+def fake_one_image(shape=(10, 10)):
+    """
+    Parameters
+    ----------
+    shape : tuple
+        the shape of the image to create
 
-    correction_coeffs = np.array([-8.82148244e-15,
-                                  1.17884485e-09,
-                                  -5.12648376e-05,
-                                  1.87659792e+00,
-                                  -4.79237873e+03])
-    data_frame_dimensions = [10, 10]
-    a_array = np.ones((data_frame_dimensions[0], data_frame_dimensions[1])) * correction_coeffs[0]
-    b_array = np.ones((data_frame_dimensions[0], data_frame_dimensions[1])) * correction_coeffs[1]
-    c_array = np.ones((data_frame_dimensions[0], data_frame_dimensions[1])) * correction_coeffs[2]
-    d_array = np.ones((data_frame_dimensions[0], data_frame_dimensions[1])) * correction_coeffs[3]
-    e_array = np.ones((data_frame_dimensions[0], data_frame_dimensions[1])) * correction_coeffs[4]
-    CF_array = np.stack((a_array, b_array, c_array, d_array, e_array), axis=2)
-    return CF_array
+    Returns
+    -------
+    A fake image of the given shape with values of all 1
+
+    """
+    return np.ones(shape)
 
 
-def test_sample_data_creation(quartic_coeffs):
-    assert quartic_coeffs.shape[0] == 10
+@fixture
+def quartic_coefficients_image():
+    """
+    Returns
+    -------
+        Quartic coefficient image with flat_coefficients of [0, 1, 2, 3, 4]
+    """
+    flat_coeffs = np.array([0, 1, 2, 3, 4])
+    image_shape = (10, 10)
+    return create_coefficient_image(flat_coeffs, image_shape)
 
 
+def test_create_coeff_image_with_only_one_coeff():
+    coeffs_image = create_coefficient_image(np.array([5]), (10, 10))
+    assert coeffs_image.shape == (10, 10, 1), "Failed to make a coefficients image with only one coefficient"
+
+
+def test_create_coeff_image_with_two_coeff():
+    coeffs_image = create_coefficient_image(np.array([5, 6]), (10,10))
+    assert coeffs_image.shape == (10, 10, 2), "Failed to make a coefficients image with two coefficients"
+
+
+def test_create_coefficient_image(quartic_coefficients_image):
+    assert quartic_coefficients_image.shape == (10, 10, 5), "Quartic coefficient image shape is wrong."
+    for i in range(quartic_coefficients_image.shape[-1]):
+        assert np.all(quartic_coefficients_image[:, :, i] == i), \
+            "Quartic coefficient image coefficients were not constructed properly."
+
+
+@pytest.mark.parametrize("constant", [1, 2, 3])
+def test_calibration_with_single_constant_coeff(fake_one_image, constant, shape=(10, 10)):
+    coeffs_image = create_coefficient_image(np.array([constant]), shape)
+    calibrated = photometric_calibration(fake_one_image, coeffs_image)
+    assert np.all(calibrated == constant), "Photometric calibration with a single constant failed"
+
+
+def test_calibration_with_all_one_coefficients(fake_one_image, shape=(10, 10)):
+    coeffs_image = create_coefficient_image(np.array([1, 1, 1, 1, 1]), shape)
+    calibrated = photometric_calibration(fake_one_image, coeffs_image)
+    assert np.all(calibrated == 5), "Photometric calibration with all one coefficients failed"
+
+
+def test_calibration_with_range_coefficients(fake_one_image, shape=(10, 10)):
+    coeffs_image = create_coefficient_image(np.array([1, 2, 3, 4, 5]), shape)
+    calibrated = photometric_calibration(fake_one_image, coeffs_image)
+    assert np.all(calibrated == 15), "Photometric calibration with range coefficients failed"

@@ -23,7 +23,7 @@ setup(
         'ndcube',
         'matplotlib',
         'ccsdspy',
-        'prefect>=2.0b'
+        'prefect'
     ],
     extras_require={
         'test': ['pytest', 'coverage']

@@ -13,7 +13,7 @@ def create_coefficient_image(flat_coefficients: np.ndarray, image_shape: tuple) 
     ----------
     flat_coefficients : np.ndarray
         A one-dimensional list of coefficients that should apply to every pixel in the image.
-        Coefficients should be ordered from highest power to lowest as expected in `photometric_calibration`, e.g.
+        Coefficients should be ordered from the highest power to lowest as expected in `photometric_calibration`, e.g.
         f(i,j) = a+b*IMG[i,j]+c*IMG[i,j]^2 would have flat_coefficients of [c, b, a]
     image_shape : tuple
         A tuple of the shape of the image that will be calibrated using `photometric_calibration`

@@ -110,7 +110,7 @@ class PUNCHData:
 
     Examples
     --------
-    >>> from punchpipe.infrastructure.data import PUNCHData
+    >>> from punchbowl.data import PUNCHData
     >>> from ndcube import NDCube
 
     >>> ndcube_obj = NDCube(data, wcs=wcs, uncertainty=uncertainty, meta=meta, unit=unit)
@@ -137,7 +137,7 @@ class PUNCHData:
         if isinstance(data_obj, dict):
             self._cubes = data_obj
         elif isinstance(data_obj, NDCube):
-            self._cubes = ("default", data_obj)
+            self._cubes = {"default": data_obj}
         elif data_obj is None:
             self._cubes = dict()
         else:
@@ -298,21 +298,21 @@ class PUNCHData:
         else:
             raise Exception('Please specify a valid file extension (.fits, .png, .jpg, .jpeg)')
 
-        update_table = {'file_id': filename,
-                        'level': self.get_meta(key='LEVEL', kind=kind),
-                        'file_type': self.get_meta(key='TYPECODE', kind=kind),
-                        'observatory': self.get_meta(key='OBSRVTRY', kind=kind),
-                        'file_version': self.get_meta(key='VERSION', kind=kind),
-                        'software_version': self.get_meta(key='SOFTVERS', kind=kind),
-                        'date_acquired': self.get_meta(key='DATE-AQD', kind=kind),
-                        'date_obs': self.get_meta(key='DATE-OBS', kind=kind),
-                        'date_end': self.get_meta(key='DATE-END', kind=kind),
-                        'polarization': self.get_meta(key='POL', kind=kind),
-                        'state': self.get_meta(key='STATE', kind=kind),
-                        'processing_flow': self.get_meta(key='PROCFLOW', kind=kind)
-                        }
-
-        return update_table
+        # update_table = {'file_id': filename,
+        #                 'level': self.get_meta(key='LEVEL', kind=kind),
+        #                 'file_type': self.get_meta(key='TYPECODE', kind=kind),
+        #                 'observatory': self.get_meta(key='OBSRVTRY', kind=kind),
+        #                 'file_version': self.get_meta(key='VERSION', kind=kind),
+        #                 'software_version': self.get_meta(key='SOFTVERS', kind=kind),
+        #                 'date_acquired': self.get_meta(key='DATE-AQD', kind=kind),
+        #                 'date_obs': self.get_meta(key='DATE-OBS', kind=kind),
+        #                 'date_end': self.get_meta(key='DATE-END', kind=kind),
+        #                 'polarization': self.get_meta(key='POL', kind=kind),
+        #                 'state': self.get_meta(key='STATE', kind=kind),
+        #                 'processing_flow': self.get_meta(key='PROCFLOW', kind=kind)
+        #                 }
+        #
+        # return update_table
 
     def _write_fits(self, filename: str, kind: str = "default", overwrite=True) -> None:
         """

@@ -1,6 +1,6 @@
 from punchbowl.data import PUNCHData
 from punchbowl.level1.alignment import align
-from punchbowl.level1.quartic_fit import perform_quartic_fit
+from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.despike import despike
 from punchbowl.level1.destreak import destreak
 from punchbowl.level1.vignette import correct_vignetting
@@ -13,9 +13,11 @@ from punchbowl.level1.flagging import flag
 from prefect import flow, get_run_logger, task
 from datetime import datetime
 
+
 @task
 def load_level0(input_filename):
     return PUNCHData.from_fits(input_filename)
+
 
 @task
 def output_level1(data, output_directory):
@@ -35,13 +37,14 @@ def output_level1(data, output_directory):
 
     return data.write(output_directory + data.generate_id() + ".fits")
 
+
 @flow
 def level1_core_flow(input_filename, output_directory):
     logger = get_run_logger()
 
     logger.info("beginning level 1 core flow")
     data = load_level0(input_filename)
-    data = perform_quartic_fit(data)
+    data = perform_quartic_fit_task(data)
     data = despike(data)
     data = destreak(data)
     data = correct_vignetting(data)

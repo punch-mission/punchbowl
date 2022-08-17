@@ -13,9 +13,11 @@ from punchbowl.level1.flagging import flag
 from prefect import flow, get_run_logger, task
 from datetime import datetime
 
+
 @task
 def load_level0(input_filename):
     return PUNCHData.from_fits(input_filename)
+
 
 @task
 def output_level1(data, output_directory):
@@ -34,6 +36,7 @@ def output_level1(data, output_directory):
     data[kind].meta['PROCFLOW'] = '?'
 
     return data.write(output_directory + data.generate_id() + ".fits")
+
 
 @flow
 def level1_core_flow(input_filename, output_directory):

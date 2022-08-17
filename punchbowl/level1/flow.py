@@ -55,4 +55,3 @@ def level1_core_flow(input_filename, output_filename):
     data = flag(data)
     logger.info("ending level 1 core flow")
     output_level1(data, output_filename)
-

@@ -269,7 +269,7 @@ class PUNCHData:
 
         return filename
 
-    def write(self, filename: str, kind: str = "default", overwrite=True) -> Dict:
+    def write(self, filename: str, kind: str = "default", overwrite=True) -> None:
         """
         Write PUNCHData elements to file
 
@@ -293,26 +293,10 @@ class PUNCHData:
             self._write_fits(filename, kind, overwrite=overwrite)
         elif filename.endswith('.png'):
             self._write_ql(filename, kind)
-        elif (filename.endswith('.jpg')) or (filename.endswith('.jpeg')):
+        elif filename.endswith('.jpg') or filename.endswith('.jpeg'):
             self._write_ql(filename, kind)
         else:
             raise Exception('Please specify a valid file extension (.fits, .png, .jpg, .jpeg)')
-
-        # update_table = {'file_id': filename,
-        #                 'level': self.get_meta(key='LEVEL', kind=kind),
-        #                 'file_type': self.get_meta(key='TYPECODE', kind=kind),
-        #                 'observatory': self.get_meta(key='OBSRVTRY', kind=kind),
-        #                 'file_version': self.get_meta(key='VERSION', kind=kind),
-        #                 'software_version': self.get_meta(key='SOFTVERS', kind=kind),
-        #                 'date_acquired': self.get_meta(key='DATE-AQD', kind=kind),
-        #                 'date_obs': self.get_meta(key='DATE-OBS', kind=kind),
-        #                 'date_end': self.get_meta(key='DATE-END', kind=kind),
-        #                 'polarization': self.get_meta(key='POL', kind=kind),
-        #                 'state': self.get_meta(key='STATE', kind=kind),
-        #                 'processing_flow': self.get_meta(key='PROCFLOW', kind=kind)
-        #                 }
-        #
-        # return update_table
 
     def _write_fits(self, filename: str, kind: str = "default", overwrite=True) -> None:
         """

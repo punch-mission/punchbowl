@@ -20,9 +20,10 @@ def load_level0(input_filename):
 
 
 @task
-def output_level1(data, output_directory):
+def output_level1(data, output_filename):
     kind = list(data._cubes.keys())[0]
 
+    # TODO: remove this ugliness
     data[kind].meta['OBSRVTRY'] = 'Z'
     data[kind].meta['LEVEL'] = 1
     data[kind].meta['TYPECODE'] = 'ZZ'
@@ -35,11 +36,11 @@ def output_level1(data, output_directory):
     data[kind].meta['STATE'] = 'finished'
     data[kind].meta['PROCFLOW'] = '?'
 
-    return data.write(output_directory + data.generate_id() + ".fits")
+    return data.write(output_filename)
 
 
 @flow
-def level1_core_flow(input_filename, output_directory):
+def level1_core_flow(input_filename, output_filename):
     logger = get_run_logger()
 
     logger.info("beginning level 1 core flow")
@@ -54,5 +55,5 @@ def level1_core_flow(input_filename, output_directory):
     data = correct_psf(data)
     data = flag(data)
     logger.info("ending level 1 core flow")
-    output_level1(data, output_directory)
+    output_level1(data, output_filename)
 

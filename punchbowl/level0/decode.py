@@ -5,6 +5,7 @@ from ndcube import NDCube
 from prefect import task, get_run_logger
 from astropy.wcs import WCS
 import astropy.units as u
+from typing import Dict, Any
 
 
 @task
@@ -37,5 +38,5 @@ def create_level0_from_packets(packet_contents):
 
 
 @task
-def write_level0(level0: PUNCHData, path: str) -> None:
-    level0.write(path)
+def write_level0(level0: PUNCHData, path: str) -> Dict[str, Any]:
+    return level0.write(path)

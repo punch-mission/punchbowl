@@ -10,6 +10,7 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
+import pandas
 
 HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
 
@@ -98,6 +99,234 @@ class PUNCHCalibration:
     """
     pass
 
+class HeaderTemplate:
+    """PUNCH data object header template
+    Class to generate a PUNCH data object header template, along with associated methods.
+
+    - TODO - Method to take in a data object - populate missing keywords, reorder, validate, etc
+    (flag option for warnings for unpopulated keywords)
+    (more general flag to supress non critical warnings)
+    (custom warnings to supress particular types?)
+
+    """
+
+    def __init__(self, header_obj: Union[str, dict, None]):
+        """Initialize the PUNCHDataHeader object with either a template file path,
+        a dictionary object, or None.
+
+        Parameters
+        ----------
+        header_obj
+            input header object
+
+        Returns
+        ----------
+        None
+
+        """
+        if isinstance(header_obj, str):
+            self = self.load(header_obj)
+        elif isinstance(header_obj, dict):
+            self = fits.Header(header_obj)
+        elif header_obj is None:
+            #self = fits.Header({'SIMPLE': True})
+            self = fits.Header()
+        else:
+            raise Exception("Please specify a template file path, a header dictionary, or None")
+
+        self._history = History()
+
+    @classmethod
+    def load(cls, file:str) -> fits.Header:
+        """
+        Loads an input template file to generate a header object.
+
+        Parameters
+        ----------
+        file
+            input header template file
+
+        Returns
+        -------
+        hdr
+            astropy.io.fits.Header header object
+
+        """
+
+        if file.endswith('.txt'):
+            hdr = cls._load_text(file)
+        elif file.endswith('.tsv'):
+            hdr = cls._load_tsv(file)
+        elif file.endswith('.csv'):
+            hdr = cls._load_csv(file)
+        else:
+            raise Exception('Specify a valid header template file extension (.txt, .tsv, .csv)')
+
+        return hdr
+
+    @staticmethod
+    def _load_text(file: str) -> fits.Header:
+        """
+        Parses an input human-readable FITS header template and generates an astropy.io.fits.header
+        FITS compliant header object.
+
+        Parameters
+        ----------
+        file
+            input header template file
+
+        Returns
+        -------
+        hdr
+            astropy.io.fits.header header object
+
+        """
+
+        with open(file, 'r') as f:
+            lines = f.readlines()
+
+        for i, line in enumerate(lines):
+            if len(line) > 81:
+                raise Exception('Header contains more than FITS standard specified 80 characters per line: ' + line)
+            if len(line) < 81:
+                 lines[i] = "{:<80}".format(line)
+
+
+        reformatted_header = "".join([line[:-1] for line in lines])
+        new_size = np.ceil(len(reformatted_header) / 2880).astype(int) * 2880
+        num_spaces = new_size - len(reformatted_header)
+        reformatted_header = reformatted_header + " " * num_spaces
+
+        hdr = fits.header.Header.fromstring(reformatted_header)
+
+        return hdr
+
+    @staticmethod
+    def _load_tsv(file: str) -> fits.Header:
+        """
+        Parses an input template header tab separated value (TSV) file to generate an astropy header object.
+
+        Parameters
+        ----------
+        file
+            input filename
+
+        Returns
+        -------
+        hdr
+            astropy.io.fits.header header object
+
+        """
+
+        hdr = fits.Header()
+
+        with open(file, 'r') as csv_file:
+            lines = csv_file.readlines()
+
+        lines = [line[:-1] for line in lines]
+
+        for line in lines[1:]:
+            card = line.split('\t')
+
+            if card[0] == 'section':
+                if len(card[3]) > 72 : Warning("Section text exceeds 80 characters, EXTEND will be used.")
+                hdr.append(('COMMENT', ('----- ' + card[3] + ' ').ljust(72,'-')), end=True)
+
+            elif card[0] == 'comment':
+                hdr.append(('COMMENT', card[2]), end=True)
+
+            elif card[0] == 'keyword':
+                if len(card[2]) + len(card[3]) > 72:
+                    Warning("Section text exceeds 80 characters, EXTEND will be used.")
+
+                if card[4] == 'str':
+                    hdr.append((card[1], card[2], card[3]), end=True)
+                elif card[4] == 'int':
+                    hdr.append((card[1], int(card[2]), card[3]), end=True)
+                elif card[4] == 'float':
+                    hdr.append((card[1], np.float(card[2]), card[3]), end=True)
+
+        return hdr
+
+    @staticmethod
+    def _load_csv(file: str) -> fits.Header:
+        """
+        Parses an input template header comma separated value (CSV) file to generate an astropy header object.
+
+        Parameters
+        ----------
+        file
+            input filename
+
+        Returns
+        -------
+        hdr
+            astropy.io.fits.header header object
+
+
+        """
+
+        hdr = fits.Header()
+
+        template = pandas.read_csv(file, keep_default_na=False)
+
+        for li in np.arange(len(template)):
+            card = template.iloc[li]
+
+            if card['TYPE'] == 'section':
+                if len(card['COMMENT']) > 72 : Warning("Section text exceeds 80 characters, EXTEND will be used.")
+                hdr.append(('COMMENT', ('----- ' + card['COMMENT'] + ' ').ljust(72,'-')), end=True)
+
+            elif card['TYPE'] == 'comment':
+                hdr.append(('COMMENT', card['VALUE']), end=True)
+
+            elif card['TYPE'] == 'keyword':
+                if len(card['VALUE']) + len(card['COMMENT']) > 72:
+                    Warning("Section text exceeds 80 characters, EXTEND will be used.")
+
+                if card['DATATYPE'] == 'str':
+                    hdr.append((card['KEYWORD'], card['VALUE'], card['COMMENT']), end=True)
+                elif card['DATATYPE'] == 'int':
+                    hdr.append((card['KEYWORD'], int(card['VALUE']), card['COMMENT']), end=True)
+                elif card['DATATYPE'] == 'float':
+                    hdr.append((card['KEYWORD'], np.float(card['VALUE']), card['COMMENT']), end=True)
+
+        return hdr
+
+    def to_text(self, file: str) -> None:
+        self.totextfile('name.txt', endcard = True, overwrite = True)
+
+    def save(self):
+        pass
+
+    def check_empty(self) -> list:
+        """
+        Return a list of empty required header keywords.
+
+        Returns
+        -------
+        empty
+            List of empty unassigned keywords
+
+        """
+
+        empty = [key for key, value in self.items() if not value or value.isspace()]
+
+        return empty
+
+    @staticmethod
+    def verifycsv():
+        pass
+
+    @staticmethod
+    def gen_template():
+        pass
+
+    @classmethod
+    def verify(self):
+        # Can use .verify('fix')
+        # https://docs.astropy.org/en/stable/io/fits/usage/verification.html
+        pass
 
 class PUNCHData:
     """PUNCH data object
@@ -220,6 +449,11 @@ class PUNCHData:
         """
 
         return 1./self._cubes[kind].uncertainty.array
+
+    def generate_uncertainties(self, kind: str = "default") -> np.ndarray:
+        """
+        """
+        pass
 
     def __contains__(self, kind) -> bool:
         return kind in self._cubes

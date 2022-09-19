@@ -2,7 +2,7 @@ from punchbowl.data import PUNCHData
 from punchbowl.level1.alignment import align
 from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.despike import despike
-from punchbowl.level1.destreak import destreak
+from punchbowl.level1.destreak import destreak_task
 from punchbowl.level1.vignette import correct_vignetting
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels
 from punchbowl.level1.stray_light import remove_stray_light
@@ -46,7 +46,7 @@ def level1_core_flow(input_filename, output_filename):
     data = load_level0(input_filename)
     data = perform_quartic_fit_task(data)
     data = despike(data)
-    data = destreak(data)
+    data = destreak_task(data)
     data = correct_vignetting(data)
     data = remove_deficient_pixels(data)
     data = remove_stray_light(data)

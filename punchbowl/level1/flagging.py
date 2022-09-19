@@ -1,14 +1,15 @@
-from typing import Optional
 from datetime import datetime
-from punchbowl.data import PUNCHData
+
 from prefect import task, get_run_logger
+
+from punchbowl.data import PUNCHData
 
 
 @task
-def flag(data_object):
+def flag_task(data_object: PUNCHData) -> PUNCHData:
     logger = get_run_logger()
     logger.info("flagging started")
-    # do despiking in here
+    # TODO: do flagging in here
     logger.info("flagging finished")
     data_object.add_history(datetime.now(), "LEVEL1-flagging", "image flagged")
     return data_object

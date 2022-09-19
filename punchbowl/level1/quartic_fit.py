@@ -1,8 +1,9 @@
-import numpy as np
-from typing import Optional
 from datetime import datetime
-from punchbowl.data import PUNCHData
+
+import numpy as np
 from prefect import task, get_run_logger
+
+from punchbowl.data import PUNCHData
 
 
 def create_coefficient_image(flat_coefficients: np.ndarray, image_shape: tuple) -> np.ndarray:
@@ -83,7 +84,7 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
 
 
 @task
-def perform_quartic_fit_task(data_object: PUNCHData):
+def perform_quartic_fit_task(data_object: PUNCHData) -> PUNCHData:
     """Prefect task to perform the quartic fit calibration on the data
 
     Parameters

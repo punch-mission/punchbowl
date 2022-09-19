@@ -1,11 +1,15 @@
-import numpy as np
-from typing import Optional
 from datetime import datetime
-from punchbowl.data import PUNCHData
+
+import numpy as np
 from prefect import task, get_run_logger
 
+from punchbowl.data import PUNCHData
+from punchbowl.util import validate_image_is_square
 
-def streak_correction_matrix(n: int, diag: float, below: float, above: float) -> np.ndarray:
+
+def streak_correction_matrix(n: int, exposure_time: float,
+                             readout_line_time: float,
+                             reset_line_time: float) -> np.ndarray:
     """Computes a matrix used in correcting streaks in PUNCH images
 
     Computes the inverse of a matrix of size n where the major diagonal
@@ -17,27 +21,41 @@ def streak_correction_matrix(n: int, diag: float, below: float, above: float) ->
 
     Parameters
     ----------
-    n
+    n : int
         size of the matrix (n x n)
-    diag
-        value on the diagonal of the matrix, i.e. the exposure time
-    below
-        value in the lower triangle, i.e. the readout line time
-    above
-        value in the upper triangle, i.e. the reset line time
+    exposure_time : float
+        the exposure time, i.e. value on the diagonal of the matrix
+    readout_line_time : float
+        the readout line time, i.e. value in the lower triangle
+    reset_line_time : float
+        the reset line time, i.e. value in the upper triangle
 
     Returns
     -------
     np.ndarray
         value of specified streak correction array
 
-    # TODO : add example call
+    Raises
+    ------
+    np.linalg.LinAlgError: Singular matrix
+        Matrix isn't invertible
+
+    Notes
+    -----
+    As long as the units are consistent, this should work. For PUNCH, we use milliseconds.
+
+    Examples
+    --------
+    >>> streak_correction_matrix(3, 1, 2, 3)
+    array([[-0.38461538,  0.23076923,  0.46153846],
+           [ 0.30769231, -0.38461538,  0.23076923],
+           [ 0.15384615,  0.30769231, -0.38461538]])
     """
-    L = np.tril(np.ones((n, n)) * below, -1)
-    U = np.triu(np.ones((n, n)) * above, 1)
-    D = np.diagflat(np.ones(n) * diag)
-    M = L + U + D
-    return np.linalg.inv(M)
+    lower = np.tril(np.ones((n, n)) * readout_line_time, -1)
+    upper = np.triu(np.ones((n, n)) * reset_line_time, 1)
+    diagonal = np.diagflat(np.ones(n) * exposure_time)
+    full_matrix = lower + upper + diagonal
+    return np.linalg.inv(full_matrix)
 
 
 def correct_streaks(image: np.ndarray,
@@ -48,13 +66,13 @@ def correct_streaks(image: np.ndarray,
 
     Parameters
     ----------
-    image
+    image : np.ndarray (2D)
         image to be corrected
-    exposure_time
+    exposure_time : float
         exposure time in consistent units (e.g. milliseconds) with readout_line_time and reset_line time
-    readout_line_time
-        time to readout a line in consistent units (e.g. milliseconds) with exposure_time and reset_line time
-    reset_line_time
+    readout_line_time : float
+        time to read out a line in consistent units (e.g. milliseconds) with exposure_time and reset_line time
+    reset_line_time : float
         time to reset CCD in consistent units (e.g. milliseconds) with readout_line_time and exposure_time
 
     Returns
@@ -62,22 +80,36 @@ def correct_streaks(image: np.ndarray,
     np.ndarray
         a streak-corrected image
 
-    # TODO: add example call
+    Raises
+    ------
+    ValueError
+        If the image is not 2D or not square
+    TypeError
+        If the image is not a numpy array
+    np.linalg.LinAlgError: Singular matrix
+        Matrix isn't invertible
+
+    Examples
+    --------
+    >>> correct_streaks(np.arange(9).reshape(3,3), 1, 2, 3)
+    array([[ 3.46153846,  3.76923077,  4.07692308],
+       [ 0.23076923,  0.38461538,  0.53846154],
+       [-1.38461538, -1.30769231, -1.23076923]])
+
     """
-    assert len(image.shape) == 2, "must be a 2-D image"
-    assert np.equal(*image.shape), "must be a square image"
+    validate_image_is_square(image)
     correction_matrix = streak_correction_matrix(image.shape[0],
-                                                    exposure_time,
-                                                    readout_line_time,
-                                                    reset_line_time)
+                                                 exposure_time,
+                                                 readout_line_time,
+                                                 reset_line_time)
     return correction_matrix @ image
 
 
 @task
-def destreak(data_object):
+def destreak_task(data_object: PUNCHData) -> PUNCHData:
     logger = get_run_logger()
     logger.info("destreak started")
-    # do destreaking in here
+    # TODO: do destreaking in here
     logger.info("destreak finished")
     data_object.add_history(datetime.now(), "LEVEL1-destreak", "image destreaked")
     return data_object

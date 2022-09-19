@@ -103,10 +103,9 @@ class HeaderTemplate:
     """PUNCH data object header template
     Class to generate a PUNCH data object header template, along with associated methods.
 
-    - TODO - Method to take in a data object - populate missing keywords, reorder, validate, etc
-    (flag option for warnings for unpopulated keywords)
-    (more general flag to supress non critical warnings)
-    (custom warnings to supress particular types?)
+    - TODO - flag option for warnings for unpopulated keywords
+    - TODO - more general flag to supress non critical warnings
+    - TODO - custom warnings to supress particular types?
 
     """
 
@@ -129,7 +128,6 @@ class HeaderTemplate:
         elif isinstance(header_obj, dict):
             self = fits.Header(header_obj)
         elif header_obj is None:
-            #self = fits.Header({'SIMPLE': True})
             self = fits.Header()
         else:
             raise Exception("Please specify a template file path, a header dictionary, or None")
@@ -297,6 +295,7 @@ class HeaderTemplate:
         self.totextfile('name.txt', endcard = True, overwrite = True)
 
     def save(self):
+        # TODO - Finish this
         pass
 
     def check_empty(self) -> list:
@@ -316,16 +315,21 @@ class HeaderTemplate:
 
     @staticmethod
     def verifycsv():
+        # TODO - Finish this
         pass
 
     @staticmethod
     def gen_template():
+        # TODO - Finish this
         pass
 
     @classmethod
-    def verify(self):
-        # Can use .verify('fix')
-        # https://docs.astropy.org/en/stable/io/fits/usage/verification.html
+    def verify(self) -> None:
+        # TODO - Finish this
+        # See notes - https://docs.astropy.org/en/stable/io/fits/usage/verification.html
+
+        #self.verify('fix')
+        
         pass
 
 class PUNCHData:

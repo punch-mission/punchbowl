@@ -46,9 +46,14 @@ def test_generate_from_invalid_file():
         hdr = HeaderTemplate.load(SAMPLE_INVALID_HEADER_PATH)
     # assert not isinstance(hdr, fits.Header)
 
-# A generated PUNCH header object is validated against FITS standards.
-
 # Defining some TBD tests
+
+# A generated PUNCH header object is validated against FITS standards, and corrected.
+#def test_verify_header():
+#    hdr = HeaderTemplate.load(SAMPLE_TEXT_HEADER_PATH)
+#    hdr.verify()
+#    assert isinstance(hdr, fits.Header)
+
 # Test for...
 
 # No header template file

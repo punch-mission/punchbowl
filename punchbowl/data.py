@@ -1,6 +1,7 @@
 from __future__ import annotations
 from collections import namedtuple
 from datetime import datetime
+from email.header import Header
 import astropy.units as u
 import matplotlib
 from typing import Union, List, Dict, Any
@@ -329,7 +330,7 @@ class HeaderTemplate:
         # See notes - https://docs.astropy.org/en/stable/io/fits/usage/verification.html
 
         #self.verify('fix')
-        
+
         pass
 
 class PUNCHData:
@@ -562,9 +563,12 @@ class PUNCHData:
 
         hdu_data = fits.PrimaryHDU()
         hdu_data.data = data
-        # TODO: properly write meta to header
-        # for key, value in meta.items():
-        #     hdu_data.header[key] = value
+        # TODO - correct writing meta to header?
+
+        meta = self.validate_meta(kind, "hdr_test_template.txt")
+
+        for key, value in meta.items():
+            hdu_data.header[key] = value
 
         # TODO: remove protected usage by adding a new iterate method
         for entry in self._history._entries:
@@ -652,6 +656,30 @@ class PUNCHData:
 
         """
         self._cubes[kind].meta[key] = value
+
+    def validate_meta(self, kind: str = "default", header_file: str = "") -> fits.Header:
+        """
+        Validates / generates PUNCHData object metadata using data product header standards
+
+        Parameters
+        ----------
+        kind
+            specified element of the PUNCHData object to validate
+        header_file
+            specified header template file with which to validate
+
+        """
+
+        hdr_template = HeaderTemplate(header_file)
+        
+        hdr_data = self._cubes[kind].meta
+
+        #hdr_output = hdr_template.extend(hdr_data, unique=True)
+        hdr_output = hdr_template.extend(hdr_data, update=True)
+
+        return hdr_output
+
+        #self._cubes[kind].meta = hdr_output
 
     def date_obs(self, kind: str = "default") -> datetime:
         return parse_datetime(self._cubes[kind].meta["date-obs"])

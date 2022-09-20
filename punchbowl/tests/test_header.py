@@ -44,7 +44,6 @@ def test_generate_from_csv_filename():
 def test_generate_from_invalid_file():
     with raises(Exception):
         hdr = HeaderTemplate.load(SAMPLE_INVALID_HEADER_PATH)
-    # assert not isinstance(hdr, fits.Header)
 
 # Defining some TBD tests
 

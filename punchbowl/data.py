@@ -230,14 +230,23 @@ class PUNCHData(NDCube):
         Parameters
         ----------
         data
+            Primary observation data (2D or multidimensional ndarray)
         wcs
+            World coordinate system object describing observation data axes
         uncertainty
+            Measure of pixel uncertainty mapping from the primary data array
         mask
+            Boolean mapping of invalid pixels mapping from the primary data array (True = masked out invalid pixels)
         meta
+            Observation metadata, comprised of keywords and values as an astropy FITS header object
         unit
+            Units for the measurements in the primary data array
         copy
+            Create arguments as a copy (True), or as a reference where possible (False, default)
         history
+            Reference of the history of a given data object (modules passed through, etc)
         kwargs
+            Additional keyword arguments
 
         Notes
         -----

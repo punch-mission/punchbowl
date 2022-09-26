@@ -94,6 +94,17 @@ class History:
         """
         return "\n".join([f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries])
 
+    def __iter__(self):
+        self.current_index = 0
+        return self
+
+    def __next__(self):
+        if self.current_index >= len(self):
+            raise StopIteration
+        entry = self._entries[self.current_index]
+        self.current_index += 1
+        return entry
+
 
 class PUNCHCalibration:
     """
@@ -345,14 +356,11 @@ class PUNCHData(NDCube):
         """
         hdu_data = fits.PrimaryHDU()
         hdu_data.data = self.data
-        # TODO - correct writing meta to header?
 
         # TODO : make this select the correct header template for writing
-        hdr = self.create_header(str(Path(__file__).parent / "tests/hdr_test_template.csv"))
-        hdu_data.header = hdr
+        hdu_data.header = self.create_header(str(Path(__file__).parent / "tests/hdr_test_template.csv"))
 
-        # TODO: remove protected usage by adding a new iterate method
-        for entry in self._history._entries:
+        for entry in self._history:
             hdu_data.header['HISTORY'] = f"{entry.datetime}: {entry.source}, {entry.comment}"
 
         hdu_uncertainty = fits.ImageHDU()

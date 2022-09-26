@@ -81,6 +81,15 @@ def test_history_add_one(empty_history):
     assert len(empty_history) == 0
 
 
+def test_history_iterate(empty_history):
+    empty_history.add_entry(HistoryEntry(datetime.now(), "0", "0"))
+    empty_history.add_entry(HistoryEntry(datetime.now(), "1", "1"))
+    empty_history.add_entry(HistoryEntry(datetime.now(), "2", "2"))
+
+    for i, entry in enumerate(empty_history):
+        assert entry.comment == str(i), "history objects not read in order"
+
+
 @fixture
 def empty_header():
     return HeaderTemplate()

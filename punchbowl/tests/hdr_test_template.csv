@@ -18,25 +18,25 @@ comment,,"PUNCH Level-1 data, Calibrated instrumental units in camera coordinate
 comment,,Documentation is available on the PUNCH website: https://punch.spaceops.swri.org and via the DOI referenced above (TBD),,str,static
 section,,,File Type and Provenance,str,static
 keyword,FILENAME,PUNCH_L1_P11_20220204134800_0.fits,Name of file,str,dynamic
-keyword,LEVEL,1,Product level,int,dynamic
-keyword,OBSTYPE,unpolarized NFI image,Plain text observation,str,dynamic
-keyword,TYPECODE,P1,Observation product type code,str,dynamic
-keyword,L0PARENT,PUNCH_L0_P11_20220204134800_0.fits,name of parent file,str,dynamic
-keyword,PIPEVRSN,1.2.3,PUNCHPipe software version number,str,dynamic
-keyword,FILE_RAW,PUNCH_L0_P11_20220204134800_0.fits,Raw telemetry filename,str,dynamic
+keyword,LEVEL,,Product level,int,dynamic
+keyword,OBSTYPE,,Plain text observation,str,dynamic
+keyword,TYPECODE,,Observation product type code,str,dynamic
+keyword,L0PARENT,,name of parent file,str,dynamic
+keyword,PIPEVRSN,,PUNCHPipe software version number,str,dynamic
+keyword,FILE_RAW,,Raw telemetry filename,str,dynamic
 keyword,ORIGIN,SwRI,Institution responsible for creating the file,str,dynamic
 section,,,Temporal Information,str,static
 keyword,TIMESYS,UTC,Principle time system,str,static
-keyword,DATE-BEG,2022-02-03 0:00:37,UTC time observation,str,dynamic
-keyword,DATE-OBS,2022-02-03 0:00:37,UTC reference time at observatory,str,dynamic
-keyword,DATE-END,2022-02-03 0:00:37,UTC time of observation end at observatory,str,dynamic
-keyword,DATE,2022-02-03 0:09:11,UTC file generation date and time,str,dynamic
+keyword,DATE-BEG,,UTC time observation,str,dynamic
+keyword,DATE-OBS,,UTC reference time at observatory,str,dynamic
+keyword,DATE-END,,UTC time of observation end at observatory,str,dynamic
+keyword,DATE,,UTC file generation date and time,str,dynamic
 section,,,Instrument and Spacecraft State,str,
 keyword,WAVELNTH,530,[nm] Average peak response,int,dynamic
 keyword,WAVEUNIT,nanometer,Unit of observation measurement,str,dynamic
-keyword,FILTER,Clear,Name of filter for observations,str,dynamic
-keyword,OBS-MODE,Unpolarized,"Image Mode (Unpolarized, Polar_M, _Z, or _P)",str,dynamic
-keyword,POLAR,60,[deg] Polarizer angle or fill value for clear,int,dynamic
-keyword,INSTRUME,WFI,Instrument name,str,dynamic
-keyword,TELESCOP,PUNCH-1,Satellite name,str,dynamic
+keyword,FILTER,,Name of filter for observations,str,dynamic
+keyword,OBS-MODE,,"Image Mode (Unpolarized, Polar_M, _Z, or _P)",str,dynamic
+keyword,POLAR,,[deg] Polarizer angle or fill value for clear,int,dynamic
+keyword,INSTRUME,,Instrument name,str,dynamic
+keyword,TELESCOP,,Satellite name,str,dynamic
 keyword,OBJECT,Heliosphere white light,Object observed,str,dynamic

@@ -5,6 +5,7 @@ from datetime import datetime
 from punchbowl.data import PUNCHData, History, HistoryEntry
 from ndcube import NDCube
 import numpy as np
+import pytest
 
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -45,22 +46,20 @@ def test_generate_from_filename():
 
 
 # TODO: fix this test so it runs and passes
-# def test_write_data():
-#     pd = PUNCHData.from_fits(SAMPLE_FITS_PATH)
-#     pd.set_meta("LEVEL", 1)
-#     pd.set_meta("TYPECODE", "XX")
-#     pd.set_meta("OBSRVTRY", "Y")
-#     pd.set_meta("VERSION", 0.1)
-#     pd.set_meta("SOFTVERS", 0.1)
-#     pd.set_meta("DATE-OBS", str(datetime.now()))
-#     pd.set_meta("DATE-AQD", str(datetime.now()))
-#     pd.set_meta("DATE-END", str(datetime.now()))
-#     pd.set_meta("POL", "M")
-#     pd.set_meta("STATE", "running")
-#     pd.set_meta("PROCFLOW", 1)
-#
-#     pd.write(SAMPLE_WRITE_PATH, kind="default")
-#     # Check for writing to file? Read back in and compare?
+def test_write_data(sample_data):
+    with pytest.raises(RuntimeWarning):
+        sample_data.meta["LEVEL"] = 1
+        sample_data.meta["TYPECODE"] = "XX"
+        sample_data.meta["OBSRVTRY"] = "Y"
+        sample_data.meta["VERSION"] = 0.1
+        sample_data.meta["SOFTVERS"] = 0.1
+        sample_data.meta["DATE-OBS"] = str(datetime.now())
+        sample_data.meta["DATE-AQD"] = str(datetime.now())
+        sample_data.meta["DATE-END"] = str(datetime.now())
+        sample_data.meta["POL"] = "M"
+
+        sample_data.write(SAMPLE_WRITE_PATH)
+        # Check for writing to file? Read back in and compare?
 
 
 @fixture

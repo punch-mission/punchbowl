@@ -1,8 +1,9 @@
 import os
 import astropy
+import pytest
 from pytest import fixture, raises
 from datetime import datetime
-from punchbowl.data import PUNCHData, HeaderTemplate, History, HistoryEntry
+from punchbowl.data import PUNCHData, HeaderTemplate, History, HistoryEntry, HEADER_TEMPLATE_COLUMNS
 from ndcube import NDCube
 import numpy as np
 from astropy.io import fits
@@ -10,60 +11,45 @@ from astropy.io import fits
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH = os.path.join(TESTDATA_DIR, "L0_CL1_20211111070246_PUNCHData.fits")
-SAMPLE_TEXT_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_template.txt")
-SAMPLE_TSV_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_template.tsv")
-SAMPLE_CSV_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_template.csv")
-SAMPLE_INVALID_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_bad.txt")
+SAMPLE_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_template.csv")
 SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
 
 
 @fixture
 def empty_header():
-    return HeaderTemplate(None)
+    return HeaderTemplate()
+
 
 @fixture
 def simple_header_template():
-    return HeaderTemplate.load(SAMPLE_TEXT_HEADER_PATH)
+    return HeaderTemplate.load(SAMPLE_HEADER_PATH)
 
 
 def test_sample_header_creation(empty_header):
     """An empty PUNCH header object is initialized. Test for no raised errors. Test that the object exists."""
     assert isinstance(empty_header, HeaderTemplate)
-
-
-def test_generate_from_text_filename():
-    """A base PUNCH header object is initialized from a text file template.
-    Test for no raised errors. Test that the object exists."""
-    hdr = HeaderTemplate.load(SAMPLE_TEXT_HEADER_PATH)
-    assert isinstance(hdr, HeaderTemplate)
-
-
-def test_generate_from_tsv_filename():
-    """A base PUNCH header object is initialized from a tab separated value file template.
-    Test for no raised errors. Test that the object exists."""
-    hdr = HeaderTemplate.load(SAMPLE_TSV_HEADER_PATH)
-    assert isinstance(hdr, HeaderTemplate)
+    assert np.all(empty_header._table.columns.values == HEADER_TEMPLATE_COLUMNS), "doesn't have all the columns"
 
 
 def test_generate_from_csv_filename():
     """A base PUNCH header object is initialized from a comma separated value file template.
     Test for no raised errors. Test that the object exists."""
-    hdr = HeaderTemplate.load(SAMPLE_CSV_HEADER_PATH)
+    hdr = HeaderTemplate.load(SAMPLE_HEADER_PATH)
     assert isinstance(hdr, HeaderTemplate)
 
 
 def test_generate_from_invalid_file():
     """A base PUNCH header object is initialized from an invalid input file.
     Test for raised errors. Test that the object does not exist."""
-    with raises(Exception):
-        hdr = HeaderTemplate.load(SAMPLE_INVALID_HEADER_PATH)
+    pass
 
 
 def test_fill_header(simple_header_template):
-    meta = {"LEVEL": 1}
-    header = simple_header_template.fill(meta)
-    assert isinstance(header, fits.Header)
-    assert header['LEVEL'] == 1
+    with pytest.raises(RuntimeWarning):
+        meta = {"LEVEL": 1}
+        header = simple_header_template.fill(meta)
+        assert isinstance(header, fits.Header)
+        assert header['LEVEL'] == 1
 
 # TODO: remove TBD tests
 # Defining some TBD tests

@@ -12,7 +12,8 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
-import pandas
+import pandas as pd
+from pathlib import Path
 
 HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
 
@@ -102,6 +103,9 @@ class PUNCHCalibration:
     pass
 
 
+HEADER_TEMPLATE_COLUMNS = ("TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE")
+
+
 class HeaderTemplate:
     """PUNCH data object header template
     Class to generate a PUNCH data object header template, along with associated methods.
@@ -112,7 +116,10 @@ class HeaderTemplate:
 
     """
     def __init__(self, template=None):
-        self._template = template if template else fits.Header()
+        self._table = pd.DataFrame(columns=HEADER_TEMPLATE_COLUMNS) if template is None else template
+        if not np.all(self._table.columns.values == HEADER_TEMPLATE_COLUMNS):
+            raise ValueError(f"HeaderTemplate must have columns {HEADER_TEMPLATE_COLUMNS}"
+                             f"Found: {self._table.columns.values}")
 
     @classmethod
     def load(cls, path: str) -> HeaderTemplate:
@@ -121,107 +128,23 @@ class HeaderTemplate:
         Parameters
         ----------
         path
-            input header template file
+            path to input header template file
 
         Returns
         -------
-        hdr
-            astropy.io.fits.Header header object
-
+        HeaderTemplate
+            header template with data from a specified CSV
         """
 
-        if path.endswith('.txt'):
-            hdr = HeaderTemplate._load_text(path)
-        elif path.endswith('.tsv'):
-            hdr = HeaderTemplate._load_tsv(path)
-        elif path.endswith('.csv'):
-            hdr = HeaderTemplate._load_csv(path)
+        if path.endswith('.csv'):
+            template = HeaderTemplate(template=pd.read_csv(path, keep_default_na=False))
         else:
-            raise Exception('Header template must have a valid file extension. (.txt, .tsv, .csv)'
-                            f'Found: {os.path.splitext(path)[1]}')
+            raise Exception('Header template must be a CSV file.'
+                            f'Found {os.path.splitext(path)[1]} file')
 
-        template = HeaderTemplate()
-        template._template = hdr
         return template
 
-    @staticmethod
-    def _load_text(path: str) -> fits.Header:
-        """Parses an input human-readable FITS header template and generates an FITS compliant header object.
-
-        Parameters
-        ----------
-        path
-            input header template file
-
-        Returns
-        -------
-        astropy.io.fits.header
-            Header with empty fields
-        """
-        with open(path, 'r') as f:
-            lines = f.readlines()
-
-        for i, line in enumerate(lines):
-            if len(line) > 81:
-                raise Exception('Header contains more than FITS standard specified 80 characters per line: ' + line)
-            if len(line) < 81:
-                lines[i] = "{:<80}".format(line)
-
-        reformatted_header = "".join([line[:-1] for line in lines])
-        new_size = np.ceil(len(reformatted_header) / 2880).astype(int) * 2880
-        num_spaces = new_size - len(reformatted_header)
-        reformatted_header = reformatted_header + " " * num_spaces
-
-        hdr = fits.header.Header.fromstring(reformatted_header)
-        return hdr
-
-    @staticmethod
-    def _load_tsv(path: str) -> fits.Header:
-        """Parses an input template header tab separated value (TSV) file to generate an astropy header object.
-
-        Parameters
-        ----------
-        path
-            input filename
-
-        Returns
-        -------
-        astropy.io.fits.header
-             header with empty fields
-        """
-
-        hdr = fits.Header()
-
-        with open(path, 'r') as csv_file:
-            lines = csv_file.readlines()
-
-        lines = [line[:-1] for line in lines]
-
-        for line in lines[1:]:
-            card = line.split('\t')
-
-            if card[0] == 'section':
-                if len(card[3]) > 72 : Warning("Section text exceeds 80 characters, EXTEND will be used.")
-                hdr.append(('COMMENT', ('----- ' + card[3] + ' ').ljust(72,'-')), end=True)
-
-            elif card[0] == 'comment':
-                hdr.append(('COMMENT', card[2]), end=True)
-
-            elif card[0] == 'keyword':
-                if len(card[2]) + len(card[3]) > 72:
-                    Warning("Section text exceeds 80 characters, EXTEND will be used.")
-
-                if card[4] == 'str':
-                    hdr.append((card[1], card[2], card[3]), end=True)
-                elif card[4] == 'int':
-                    hdr.append((card[1], int(card[2]), card[3]), end=True)
-                elif card[4] == 'float':
-                    hdr.append((card[1], np.float(card[2]), card[3]), end=True)
-
-        return hdr
-
-    @staticmethod
-    def _load_csv(path: str) -> fits.Header:
+    def fill(self, meta_dict: Dict[str, Any]) -> fits.Header:
         """Parses an input template header comma separated value (CSV) file to generate an astropy header object.
 
         Parameters
@@ -232,32 +155,37 @@ class HeaderTemplate:
         Returns
         -------
         astropy.io.fits.header
-            Header with empty fields
+            Header with filled fields
         """
         hdr = fits.Header()
 
-        template = pandas.read_csv(path, keep_default_na=False)
+        type_converter = {'str': str, 'int': int, 'float': np.float}
 
-        for li in np.arange(len(template)):
-            card = template.iloc[li]
+        for row_i, entry in self._table.iterrows():
+            if entry['TYPE'] == 'section':
+                if len(entry['COMMENT']) > 72:
+                    raise RuntimeWarning("Section text exceeds 80 characters, EXTEND will be used.")
+                hdr.append(('COMMENT', ('----- ' + entry['COMMENT'] + ' ').ljust(72, '-')), end=True)
 
-            if card['TYPE'] == 'section':
-                if len(card['COMMENT']) > 72 : Warning("Section text exceeds 80 characters, EXTEND will be used.")
-                hdr.append(('COMMENT', ('----- ' + card['COMMENT'] + ' ').ljust(72,'-')), end=True)
+            elif entry['TYPE'] == 'comment':
+                hdr.append(('COMMENT', entry['VALUE']), end=True)
 
-            elif card['TYPE'] == 'comment':
-                hdr.append(('COMMENT', card['VALUE']), end=True)
+            elif entry['TYPE'] == 'keyword':
+                if len(entry['VALUE']) + len(entry['COMMENT']) > 72:
+                    raise RuntimeWarning("Section text exceeds 80 characters, EXTEND will be used.")
 
-            elif card['TYPE'] == 'keyword':
-                if len(card['VALUE']) + len(card['COMMENT']) > 72:
-                    Warning("Section text exceeds 80 characters, EXTEND will be used.")
+                hdr.append((entry['KEYWORD'],
+                            type_converter[entry['DATATYPE']](entry['VALUE']),
+                            entry['COMMENT']), end=True)
 
-                if card['DATATYPE'] == 'str':
-                    hdr.append((card['KEYWORD'], card['VALUE'], card['COMMENT']), end=True)
-                elif card['DATATYPE'] == 'int':
-                    hdr.append((card['KEYWORD'], int(card['VALUE']), card['COMMENT']), end=True)
-                elif card['DATATYPE'] == 'float':
-                    hdr.append((card['KEYWORD'], np.float(card['VALUE']), card['COMMENT']), end=True)
+        empty_keywords = set(self.find_empty())
+        for key, value in meta_dict.items():
+            if key in hdr and key in empty_keywords:
+                hdr[key] = value
+                empty_keywords.remove(key)
+
+        if empty_keywords:
+            raise RuntimeWarning(f"Some keywords left empty: {empty_keywords}")
 
         return hdr
 
@@ -269,44 +197,49 @@ class HeaderTemplate:
         List
             List of unassigned keywords
         """
-
-        empty = [key for key, value in self._template.items() if not value or value.isspace()]
-
-        return empty
-
-    def fill(self, meta_dict: Dict) -> fits.Header:
-        out = self._template.copy()
-        return out.extend(meta_dict, update=True)
+        empty_keywords = []
+        for row_i, row in self._table.iterrows():
+            if row['TYPE'] == 'keyword':
+                if not row['VALUE']:
+                    empty_keywords.append(row['KEYWORD'])
+        return empty_keywords
 
 
 class PUNCHData(NDCube):
     """PUNCH data object
-    Allows for the input of a dictionary of NDCubes for storage and custom methods.
-    Used to bundle multiple data sets together to pass through the PUNCH pipeline.
 
     See Also
     --------
     NDCube : Base container for the PUNCHData object
     """
 
+    # TODO: add type information and complete docstring
     def __init__(self, data, wcs=None, uncertainty=None, mask=None, meta=None, unit=None, copy=False,
                  history=None, **kwargs):
-        """Initialize the PUNCHData object with either an
-        empty NDCube object, or a provided NDCube / dictionary
-        of NDCube objects
+        """Initialize PUNCH Data
 
         Parameters
         ----------
-        # TODO: fill in
+        data
+        wcs
+        uncertainty
+        mask
+        meta
+        unit
+        copy
+        history
+        kwargs
 
-        Returns
-        ----------
-        None
+        Notes
+        -----
+        As the PUNCHData object is a subclass of NDCube, the constructor follows much of the same form.
+
+        PUNCHData objects also contain history information and have special functionality for manipulating PUNCH data.
         """
         super().__init__(data, wcs=wcs, uncertainty=uncertainty, mask=mask, meta=meta, unit=unit, copy=copy, **kwargs)
-        self._history = history if history else History()
+        self._history = history if history else History()  # TODO: make public
 
-    def add_history(self, time: datetime, source: str, comment: str):
+    def add_history(self, time: datetime, source: str, comment: str):  # TODO: remove in favor of public access
         self._history.add_entry(HistoryEntry(time, source, comment))
 
     @classmethod
@@ -414,10 +347,9 @@ class PUNCHData(NDCube):
         hdu_data.data = self.data
         # TODO - correct writing meta to header?
 
-        meta = self.create_header("hdr_test_template.txt")
-
-        for key, value in meta.items():
-            hdu_data.header[key] = value
+        # TODO : make this select the correct header template for writing
+        hdr = self.create_header(str(Path(__file__).parent / "tests/hdr_test_template.csv"))
+        hdu_data.header = hdr
 
         # TODO: remove protected usage by adding a new iterate method
         for entry in self._history._entries:
@@ -466,7 +398,7 @@ class PUNCHData(NDCube):
 
         """
         # TODO: what does this do when `header_file` is empty?
-        return HeaderTemplate(header_file).fill(self.meta)
+        return HeaderTemplate.load(header_file).fill(self.meta)
 
     @property
     def datetime(self) -> datetime:

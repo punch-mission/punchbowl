@@ -21,6 +21,10 @@ SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
 def empty_header():
     return HeaderTemplate(None)
 
+@fixture
+def simple_header_template():
+    return HeaderTemplate.load(SAMPLE_TEXT_HEADER_PATH)
+
 
 def test_sample_header_creation(empty_header):
     """An empty PUNCH header object is initialized. Test for no raised errors. Test that the object exists."""
@@ -54,6 +58,12 @@ def test_generate_from_invalid_file():
     with raises(Exception):
         hdr = HeaderTemplate.load(SAMPLE_INVALID_HEADER_PATH)
 
+
+def test_fill_header(simple_header_template):
+    meta = {"LEVEL": 1}
+    header = simple_header_template.fill(meta)
+    assert isinstance(header, fits.Header)
+    assert header['LEVEL'] == 1
 
 # TODO: remove TBD tests
 # Defining some TBD tests

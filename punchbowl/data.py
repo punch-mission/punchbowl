@@ -374,6 +374,7 @@ class PUNCHData(NDCube):
         for entry in self._history:
             hdu_data.header['HISTORY'] = f"{entry.datetime}: {entry.source}, {entry.comment}"
 
+        # TODO : Make an uncertainty header
         hdu_uncertainty = fits.ImageHDU()
         hdu_uncertainty.data = self.uncertainty.array
 

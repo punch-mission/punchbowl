@@ -127,3 +127,9 @@ def test_fill_header(simple_header_template):
         header = simple_header_template.fill(meta)
         assert isinstance(header, fits.Header)
         assert header['LEVEL'] == 1
+
+
+def test_unspecified_header_template():
+    with pytest.raises(ValueError):
+        h = HeaderTemplate.load("")
+        assert isinstance(h, HeaderTemplate)

@@ -122,10 +122,7 @@ class HeaderTemplate:
     """PUNCH data object header template
     Class to generate a PUNCH data object header template, along with associated methods.
 
-    - TODO - flag option for warnings for unpopulated keywords
-    - TODO - more general flag to supress non critical warnings
-    - TODO - custom warnings to supress particular types?
-
+    - TODO : make custom types of warnings more specific so that they can be filtered
     """
     def __init__(self, template=None):
         self._table = pd.DataFrame(columns=HEADER_TEMPLATE_COLUMNS) if template is None else template
@@ -151,8 +148,8 @@ class HeaderTemplate:
         if path.endswith('.csv'):
             template = HeaderTemplate(template=pd.read_csv(path, keep_default_na=False))
         else:
-            raise Exception('Header template must be a CSV file.'
-                            f'Found {os.path.splitext(path)[1]} file')
+            raise ValueError('Header template must be a CSV file.'
+                             f'Found {os.path.splitext(path)[1]} file')
 
         return template
 

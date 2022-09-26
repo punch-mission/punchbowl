@@ -248,16 +248,29 @@ class PUNCHData(NDCube):
         PUNCHData objects also contain history information and have special functionality for manipulating PUNCH data.
         """
         super().__init__(data, wcs=wcs, uncertainty=uncertainty, mask=mask, meta=meta, unit=unit, copy=copy, **kwargs)
-        self._history = history if history else History()  # TODO: make public
+        self._history = history if history else History()
 
-    def add_history(self, time: datetime, source: str, comment: str):  # TODO: remove in favor of public access
+    def add_history(self, time: datetime, source: str, comment: str) -> None:
+        """Log a new history entry
+
+        Parameters
+        ----------
+        time
+            time the history update occurred
+        source
+            module that the history update originates from
+        comment
+            explanation of what happened
+
+        Returns
+        -------
+        None
+        """
         self._history.add_entry(HistoryEntry(time, source, comment))
 
     @classmethod
     def from_fits(cls, path: str) -> PUNCHData:
-        """
-        Populates a PUNCHData object from specified FITS files.
-        Specify a filename string, a list of filename strings, or a dictionary of keys and filenames
+        """Populates a PUNCHData object from specified FITS file.
 
         Parameters
         ----------
@@ -266,7 +279,8 @@ class PUNCHData(NDCube):
 
         Returns
         -------
-        PUNCHData object
+        PUNCHData
+            loaded object
         """
 
         with fits.open(path) as hdul:
@@ -280,12 +294,11 @@ class PUNCHData(NDCube):
 
     @property
     def weight(self) -> np.ndarray:
-        """
-        Generate a corresponding weight map from the uncertainty array
+        """Generate a corresponding weight map from the uncertainty array
 
         Returns
         -------
-        weight
+        np.ndarray
             weight map computed from uncertainty array
         """
 
@@ -297,7 +310,7 @@ class PUNCHData(NDCube):
 
         Returns
         -------
-        id
+        str
             output identification string
         """
         observatory = self.meta['OBSRVTRY']
@@ -307,20 +320,18 @@ class PUNCHData(NDCube):
         return 'PUNCH_L' + file_level + '_' + type_code + observatory + '_' + date_string
 
     def write(self, filename: str, overwrite=True) -> None:
-        """
-        Write PUNCHData elements to file
+        """Write PUNCHData elements to file
 
         Parameters
         ----------
         filename
-            output filename (including path and file extension)
+            output filename (including path and file extension), extension must be .fits, .png, .jpg, or .jpeg
         overwrite
             True will overwrite an exiting file, False will create an exception if a file exists
 
         Returns
         -------
-        update_table
-            dictionary of pipeline metadata
+        None
 
         Raises
         -----
@@ -340,19 +351,18 @@ class PUNCHData(NDCube):
                              f'Found: {os.path.splitext(filename)[1]}')
 
     def _write_fits(self, filename: str, overwrite=True) -> None:
-        """
-        Write PUNCHData elements to FITS files
+        """Write PUNCHData elements to FITS files
 
         Parameters
         ----------
         filename
             output filename (including path and file extension)
         overwrite
-            True will overwrite an exsiting file, False will throw an exeception in that scenario
+            True will overwrite an exiting file, False will throw an exception in that scenario
 
         Returns
         -------
-
+        None
         """
         hdu_data = fits.PrimaryHDU()
         hdu_data.data = self.data
@@ -372,8 +382,7 @@ class PUNCHData(NDCube):
         hdul.writeto(filename, overwrite=overwrite)
 
     def _write_ql(self, filename: str) -> None:
-        """
-        Write an 8-bit scaled version of the specified data array to a PNG file
+        """Write an 8-bit scaled version of the specified data array to a PNG file
 
         Parameters
         ----------
@@ -383,11 +392,10 @@ class PUNCHData(NDCube):
         Returns
         -------
         None
-
         """
 
         if self.data.ndim != 2:
-            raise Exception("Specified output data should have two-dimensions.")
+            raise ValueError("Specified output data should have two-dimensions.")
 
         # Scale data array to 8-bit values
         output_data = np.int(np.fix(np.interp(self.data, (self.data.min(), self.data.max()), (0, 2**8 - 1))))
@@ -406,7 +414,8 @@ class PUNCHData(NDCube):
 
         """
         # TODO: what does this do when `header_file` is empty?
-        return HeaderTemplate.load(header_file).fill(self.meta)
+        template = HeaderTemplate.load(header_file)
+        return template.fill(self.meta)
 
     @property
     def datetime(self) -> datetime:

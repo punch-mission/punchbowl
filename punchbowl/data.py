@@ -3,14 +3,15 @@ from __future__ import annotations
 import os.path
 from collections import namedtuple
 from datetime import datetime
+from typing import Union, List, Dict, Any
+from dateutil.parser import parse as parse_datetime
+
 import astropy.units as u
 import matplotlib
-from typing import Union, List, Dict, Any
 import numpy as np
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 import pandas as pd
 from pathlib import Path

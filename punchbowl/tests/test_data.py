@@ -1,12 +1,14 @@
 import os
-import astropy
-from pytest import fixture
 from datetime import datetime
-from punchbowl.data import PUNCHData, History, HistoryEntry, HeaderTemplate, HEADER_TEMPLATE_COLUMNS
+
+import astropy
+from astropy.io import fits
 from ndcube import NDCube
 import numpy as np
 import pytest
-from astropy.io import fits
+from pytest import fixture
+
+from punchbowl.data import PUNCHData, History, HistoryEntry, HeaderTemplate, HEADER_TEMPLATE_COLUMNS
 
 
 TESTDATA_DIR = os.path.dirname(__file__)

@@ -21,30 +21,41 @@ SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
 def empty_header():
     return HeaderTemplate(None)
 
-# An empty PUNCH header object is initialized. Test for no raised errors. Test that the object exists.
+
 def test_sample_header_creation(empty_header):
+    """An empty PUNCH header object is initialized. Test for no raised errors. Test that the object exists."""
     assert isinstance(empty_header, HeaderTemplate)
 
-# A base PUNCH header object is initialized from a text file template. Test for no raised errors. Test that the object exists.
+
 def test_generate_from_text_filename():
+    """A base PUNCH header object is initialized from a text file template.
+    Test for no raised errors. Test that the object exists."""
     hdr = HeaderTemplate.load(SAMPLE_TEXT_HEADER_PATH)
-    assert isinstance(hdr, fits.Header)
+    assert isinstance(hdr, HeaderTemplate)
 
-# A base PUNCH header object is initialized from a tab separated value file template. Test for no raised errors. Test that the object exists.
+
 def test_generate_from_tsv_filename():
+    """A base PUNCH header object is initialized from a tab separated value file template.
+    Test for no raised errors. Test that the object exists."""
     hdr = HeaderTemplate.load(SAMPLE_TSV_HEADER_PATH)
-    assert isinstance(hdr, fits.Header)
+    assert isinstance(hdr, HeaderTemplate)
 
-# A base PUNCH header object is initialized from a comma separated value file template. Test for no raised errors. Test that the object exists.
+
 def test_generate_from_csv_filename():
+    """A base PUNCH header object is initialized from a comma separated value file template.
+    Test for no raised errors. Test that the object exists."""
     hdr = HeaderTemplate.load(SAMPLE_CSV_HEADER_PATH)
-    assert isinstance(hdr, fits.Header)
+    assert isinstance(hdr, HeaderTemplate)
 
-# A base PUNCH header object is initialized from an invalid input file. Test for raised errors. Test that the object does not exist.
+
 def test_generate_from_invalid_file():
+    """A base PUNCH header object is initialized from an invalid input file.
+    Test for raised errors. Test that the object does not exist."""
     with raises(Exception):
         hdr = HeaderTemplate.load(SAMPLE_INVALID_HEADER_PATH)
 
+
+# TODO: remove TBD tests
 # Defining some TBD tests
 
 # A generated PUNCH header object is validated against FITS standards, and corrected.

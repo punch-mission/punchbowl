@@ -1,7 +1,8 @@
 from __future__ import annotations
+
+import os.path
 from collections import namedtuple
 from datetime import datetime
-from email.header import Header
 import astropy.units as u
 import matplotlib
 from typing import Union, List, Dict, Any
@@ -100,6 +101,7 @@ class PUNCHCalibration:
     """
     pass
 
+
 class HeaderTemplate:
     """PUNCH data object header template
     Class to generate a PUNCH data object header template, along with associated methods.
@@ -109,40 +111,16 @@ class HeaderTemplate:
     - TODO - custom warnings to supress particular types?
 
     """
-
-    def __init__(self, header_obj: Union[str, dict, None]):
-        """Initialize the PUNCHDataHeader object with either a template file path,
-        a dictionary object, or None.
-
-        Parameters
-        ----------
-        header_obj
-            input header object
-
-        Returns
-        ----------
-        None
-
-        """
-        if isinstance(header_obj, str):
-            self = self.load(header_obj)
-        elif isinstance(header_obj, dict):
-            self = fits.Header(header_obj)
-        elif header_obj is None:
-            self = fits.Header()
-        else:
-            raise Exception("Please specify a template file path, a header dictionary, or None")
-
-        self._history = History()
+    def __init__(self, template=None):
+        self._template = template if template else fits.Header()
 
     @classmethod
-    def load(cls, file:str) -> fits.Header:
-        """
-        Loads an input template file to generate a header object.
+    def load(cls, path: str) -> HeaderTemplate:
+        """Loads an input template file to generate a header object.
 
         Parameters
         ----------
-        file
+        path
             input header template file
 
         Returns
@@ -152,44 +130,42 @@ class HeaderTemplate:
 
         """
 
-        if file.endswith('.txt'):
-            hdr = cls._load_text(file)
-        elif file.endswith('.tsv'):
-            hdr = cls._load_tsv(file)
-        elif file.endswith('.csv'):
-            hdr = cls._load_csv(file)
+        if path.endswith('.txt'):
+            hdr = HeaderTemplate._load_text(path)
+        elif path.endswith('.tsv'):
+            hdr = HeaderTemplate._load_tsv(path)
+        elif path.endswith('.csv'):
+            hdr = HeaderTemplate._load_csv(path)
         else:
-            raise Exception('Specify a valid header template file extension (.txt, .tsv, .csv)')
+            raise Exception('Header template must have a valid file extension. (.txt, .tsv, .csv)'
+                            f'Found: {os.path.splitext(path)[1]}')
 
-        return hdr
+        template = HeaderTemplate()
+        template._template = hdr
+        return template
 
     @staticmethod
-    def _load_text(file: str) -> fits.Header:
-        """
-        Parses an input human-readable FITS header template and generates an astropy.io.fits.header
-        FITS compliant header object.
+    def _load_text(path: str) -> fits.Header:
+        """Parses an input human-readable FITS header template and generates an FITS compliant header object.
 
         Parameters
         ----------
-        file
+        path
             input header template file
 
         Returns
         -------
-        hdr
-            astropy.io.fits.header header object
-
+        astropy.io.fits.header
+            Header with empty fields
         """
-
-        with open(file, 'r') as f:
+        with open(path, 'r') as f:
             lines = f.readlines()
 
         for i, line in enumerate(lines):
             if len(line) > 81:
                 raise Exception('Header contains more than FITS standard specified 80 characters per line: ' + line)
             if len(line) < 81:
-                 lines[i] = "{:<80}".format(line)
-
+                lines[i] = "{:<80}".format(line)
 
         reformatted_header = "".join([line[:-1] for line in lines])
         new_size = np.ceil(len(reformatted_header) / 2880).astype(int) * 2880
@@ -197,29 +173,26 @@ class HeaderTemplate:
         reformatted_header = reformatted_header + " " * num_spaces
 
         hdr = fits.header.Header.fromstring(reformatted_header)
-
         return hdr
 
     @staticmethod
-    def _load_tsv(file: str) -> fits.Header:
-        """
-        Parses an input template header tab separated value (TSV) file to generate an astropy header object.
+    def _load_tsv(path: str) -> fits.Header:
+        """Parses an input template header tab separated value (TSV) file to generate an astropy header object.
 
         Parameters
         ----------
-        file
+        path
             input filename
 
         Returns
         -------
-        hdr
-            astropy.io.fits.header header object
-
+        astropy.io.fits.header
+             header with empty fields
         """
 
         hdr = fits.Header()
 
-        with open(file, 'r') as csv_file:
+        with open(path, 'r') as csv_file:
             lines = csv_file.readlines()
 
         lines = [line[:-1] for line in lines]
@@ -248,26 +221,22 @@ class HeaderTemplate:
         return hdr
 
     @staticmethod
-    def _load_csv(file: str) -> fits.Header:
-        """
-        Parses an input template header comma separated value (CSV) file to generate an astropy header object.
+    def _load_csv(path: str) -> fits.Header:
+        """Parses an input template header comma separated value (CSV) file to generate an astropy header object.
 
         Parameters
         ----------
-        file
+        path
             input filename
 
         Returns
         -------
-        hdr
-            astropy.io.fits.header header object
-
-
+        astropy.io.fits.header
+            Header with empty fields
         """
-
         hdr = fits.Header()
 
-        template = pandas.read_csv(file, keep_default_na=False)
+        template = pandas.read_csv(path, keep_default_na=False)
 
         for li in np.arange(len(template)):
             card = template.iloc[li]
@@ -292,48 +261,25 @@ class HeaderTemplate:
 
         return hdr
 
-    def to_text(self, file: str) -> None:
-        self.totextfile('name.txt', endcard = True, overwrite = True)
-
-    def save(self):
-        # TODO - Finish this
-        pass
-
-    def check_empty(self) -> list:
-        """
-        Return a list of empty required header keywords.
+    def find_empty(self) -> list:
+        """Return a list of empty required header keywords.
 
         Returns
         -------
-        empty
-            List of empty unassigned keywords
-
+        List
+            List of unassigned keywords
         """
 
-        empty = [key for key, value in self.items() if not value or value.isspace()]
+        empty = [key for key, value in self._template.items() if not value or value.isspace()]
 
         return empty
 
-    @staticmethod
-    def verifycsv():
-        # TODO - Finish this
-        pass
+    def fill(self, meta_dict: Dict) -> fits.Header:
+        out = self._template.copy()
+        return out.extend(meta_dict, update=True)
 
-    @staticmethod
-    def gen_template():
-        # TODO - Finish this
-        pass
 
-    @classmethod
-    def verify(self) -> None:
-        # TODO - Finish this
-        # See notes - https://docs.astropy.org/en/stable/io/fits/usage/verification.html
-
-        #self.verify('fix')
-
-        pass
-
-class PUNCHData:
+class PUNCHData(NDCube):
     """PUNCH data object
     Allows for the input of a dictionary of NDCubes for storage and custom methods.
     Used to bundle multiple data sets together to pass through the PUNCH pipeline.
@@ -341,174 +287,82 @@ class PUNCHData:
     See Also
     --------
     NDCube : Base container for the PUNCHData object
-
-    Examples
-    --------
-    >>> from punchbowl.data import PUNCHData
-    >>> from ndcube import NDCube
-
-    >>> ndcube_obj = NDCube(data, wcs=wcs, uncertainty=uncertainty, meta=meta, unit=unit)
-    >>> data_obj = {'default': ndcube_obj}
-
-    >>> data = PUNCHData(data_obj)
     """
 
-    def __init__(self, data_obj: Union[dict, NDCube, None]):
+    def __init__(self, data, wcs=None, uncertainty=None, mask=None, meta=None, unit=None, copy=False,
+                 history=None, **kwargs):
         """Initialize the PUNCHData object with either an
         empty NDCube object, or a provided NDCube / dictionary
         of NDCube objects
 
         Parameters
         ----------
-        data_obj
-            input data object
+        # TODO: fill in
 
         Returns
         ----------
         None
-
         """
-        if isinstance(data_obj, dict):
-            self._cubes = data_obj
-        elif isinstance(data_obj, NDCube):
-            self._cubes = {"default": data_obj}
-        elif data_obj is None:
-            self._cubes = dict()
-        else:
-            raise Exception("Please specify either an NDCube object, or a dictionary of NDCube objects")
-
-        self._history = History()
+        super().__init__(data, wcs=wcs, uncertainty=uncertainty, mask=mask, meta=meta, unit=unit, copy=copy, **kwargs)
+        self._history = history if history else History()
 
     def add_history(self, time: datetime, source: str, comment: str):
         self._history.add_entry(HistoryEntry(time, source, comment))
 
     @classmethod
-    def from_fits(cls, inputs: Union[str, List[str], Dict[str, str]]) -> PUNCHData:
+    def from_fits(cls, path: str) -> PUNCHData:
         """
         Populates a PUNCHData object from specified FITS files.
         Specify a filename string, a list of filename strings, or a dictionary of keys and filenames
 
         Parameters
         ----------
-        inputs
-            input from which to generate a PUNCHData object
-            (filename string, a list of filename strings, or a dictionary of keys and filenames)
+        path
+            filename from which to generate a PUNCHData object
 
         Returns
         -------
         PUNCHData object
-
         """
 
-        if type(inputs) is str:
-            files = {"default": inputs}
+        with fits.open(path) as hdul:
+            data = hdul[0].data
+            meta = hdul[0].header
+            wcs = WCS(hdul[0].header)
+            uncertainty = StdDevUncertainty(hdul[1].data)
+            unit = u.ct  # counts
 
-        elif type(inputs) is list:
-            files = {}
-            for file in inputs:
-                if type(file) is str:
-                    files[file] = file
-                else:
-                    raise Exception("PUNCHData objects are generated with a list of filename strings.")
+        return cls(data, wcs=wcs, uncertainty=uncertainty, meta=meta, unit=unit)
 
-        elif type(inputs) is dict:
-            files = {}
-            for key in inputs:
-                if type(inputs[key]) is str:
-                    files[key] = inputs[key]
-                else:
-                    raise Exception("PUNCHData objects are generated with a dictionary of keys and string filenames.")
-
-        else:
-            raise Exception("PUNCHData objects are generated with a filename string, a list of filename strings, "
-                            "or a dictionary of keys and filenames")
-
-        data_obj = {}
-
-        for key in files:
-            with fits.open(files[key]) as hdul:
-                data = hdul[0].data
-                meta = hdul[0].header
-                wcs = WCS(hdul[0].header)
-                uncertainty = StdDevUncertainty(hdul[1].data)
-                unit = u.ct  # counts
-                ndcube_obj = NDCube(data, wcs=wcs, uncertainty=uncertainty, meta=meta, unit=unit)
-                data_obj[key] = ndcube_obj
-
-        return cls(data_obj)
-
-    def weight(self, kind: str = "default") -> np.ndarray:
+    @property
+    def weight(self) -> np.ndarray:
         """
         Generate a corresponding weight map from the uncertainty array
-
-        Parameters
-        ----------
-        kind
-            specified element of the PUNCHData object to generate weights
 
         Returns
         -------
         weight
             weight map computed from uncertainty array
-
         """
 
-        return 1./self._cubes[kind].uncertainty.array
+        return 1./self.uncertainty.array
 
-    def generate_uncertainties(self, kind: str = "default") -> np.ndarray:
-        """
-        """
-        pass
-
-    def __contains__(self, kind) -> bool:
-        return kind in self._cubes
-
-    def __getitem__(self, kind) -> NDCube:
-        return self._cubes[kind]
-
-    def __setitem__(self, kind, data) -> None:
-        if type(data) is NDCube:
-            self._cubes[kind] = data
-        else:
-            raise Exception("PUNCHData entries must contain NDCube objects.")
-
-    def __delitem__(self, kind) -> None:
-        del self._cubes[kind]
-
-    def clear(self) -> None:
-        """remove all NDCubes"""
-        self._cubes.clear()
-
-    def update(self, other: PUNCHData) -> None:
-        """merge two PUNCHData objects"""
-        self._cubes.update(other)
-
-    def generate_id(self, kind: str = "default") -> str:
-        """
-        Dynamically generate an identification string for the given data product,
-            using the format 'Ln_ttO_yyyymmddhhmmss'
-        Parameters
-        ----------
-        kind
-            specified element of the PUNCHData object to write to file
+    @property
+    def id(self) -> str:
+        """Dynamically generate an id string for the given data product, using the format 'Ln_ttO_yyyymmddhhmmss'
 
         Returns
         -------
         id
             output identification string
-
         """
-        observatory = self._cubes[kind].meta['OBSRVTRY']
-        file_level = self._cubes[kind].meta['LEVEL']
-        type_code = self._cubes[kind].meta['TYPECODE']
-        date_obs = self._cubes[kind].date_obs
-        date_string = date_obs.strftime("%Y%m%d%H%M%S")
+        observatory = self.meta['OBSRVTRY']
+        file_level = self.meta['LEVEL']
+        type_code = self.meta['TYPECODE']
+        date_string = self.datetime.strftime("%Y%m%d%H%M%S")
+        return 'PUNCH_L' + file_level + '_' + type_code + observatory + '_' + date_string
 
-        filename = 'PUNCH_L' + file_level + '_' + type_code + observatory + '_' + date_string
-
-        return filename
-
-    def write(self, filename: str, kind: str = "default", overwrite=True) -> None:
+    def write(self, filename: str, overwrite=True) -> None:
         """
         Write PUNCHData elements to file
 
@@ -516,28 +370,32 @@ class PUNCHData:
         ----------
         filename
             output filename (including path and file extension)
-        kind
-            specified element of the PUNCHData object to write to file
         overwrite
-            True will overwrite an exsiting file, False will create an execption if a file exists
+            True will overwrite an exiting file, False will create an exception if a file exists
 
         Returns
         -------
         update_table
             dictionary of pipeline metadata
 
+        Raises
+        -----
+        ValueError
+            If `filename` does not end in .fits, .png, .jpg, or .jpeg
+
         """
 
         if filename.endswith('.fits'):
-            self._write_fits(filename, kind, overwrite=overwrite)
+            self._write_fits(filename, overwrite=overwrite)
         elif filename.endswith('.png'):
-            self._write_ql(filename, kind)
+            self._write_ql(filename)
         elif filename.endswith('.jpg') or filename.endswith('.jpeg'):
-            self._write_ql(filename, kind)
+            self._write_ql(filename)
         else:
-            raise Exception('Please specify a valid file extension (.fits, .png, .jpg, .jpeg)')
+            raise ValueError('Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). '
+                             f'Found: {os.path.splitext(filename)[1]}')
 
-    def _write_fits(self, filename: str, kind: str = "default", overwrite=True) -> None:
+    def _write_fits(self, filename: str, overwrite=True) -> None:
         """
         Write PUNCHData elements to FITS files
 
@@ -545,8 +403,6 @@ class PUNCHData:
         ----------
         filename
             output filename (including path and file extension)
-        kind
-            specified element of the PUNCHData object to write to file
         overwrite
             True will overwrite an exsiting file, False will throw an exeception in that scenario
 
@@ -554,18 +410,11 @@ class PUNCHData:
         -------
 
         """
-
-        # Populate elements to write to file
-        data = self._cubes[kind].data
-        uncert = self._cubes[kind].uncertainty
-        meta = self._cubes[kind].meta
-        wcs = self._cubes[kind].wcs
-
         hdu_data = fits.PrimaryHDU()
-        hdu_data.data = data
+        hdu_data.data = self.data
         # TODO - correct writing meta to header?
 
-        meta = self.validate_meta(kind, "hdr_test_template.txt")
+        meta = self.create_header("hdr_test_template.txt")
 
         for key, value in meta.items():
             hdu_data.header[key] = value
@@ -574,15 +423,15 @@ class PUNCHData:
         for entry in self._history._entries:
             hdu_data.header['HISTORY'] = f"{entry.datetime}: {entry.source}, {entry.comment}"
 
-        hdu_uncert = fits.ImageHDU()
-        hdu_uncert.data = uncert.array
+        hdu_uncertainty = fits.ImageHDU()
+        hdu_uncertainty.data = self.uncertainty.array
 
-        hdul = fits.HDUList([hdu_data, hdu_uncert])
+        hdul = fits.HDUList([hdu_data, hdu_uncertainty])
 
         # Write to FITS
         hdul.writeto(filename, overwrite=overwrite)
 
-    def _write_ql(self, filename: str, kind: str = "default") -> None:
+    def _write_ql(self, filename: str) -> None:
         """
         Write an 8-bit scaled version of the specified data array to a PNG file
 
@@ -590,8 +439,6 @@ class PUNCHData:
         ----------
         filename
             output filename (including path and file extension)
-        kind
-            specified element of the PUNCHData object to write to file
 
         Returns
         -------
@@ -599,88 +446,28 @@ class PUNCHData:
 
         """
 
-        if self[kind].data.ndim != 2:
+        if self.data.ndim != 2:
             raise Exception("Specified output data should have two-dimensions.")
 
         # Scale data array to 8-bit values
-        output_data = np.int(np.fix(np.interp(self[kind].data, (self[kind].data.min(), self[kind].data.max()), (0, 2**8 - 1))))
+        output_data = np.int(np.fix(np.interp(self.data, (self.data.min(), self.data.max()), (0, 2**8 - 1))))
 
         # Write image to file
         matplotlib.image.saveim(filename, output_data)
 
-    def plot(self, kind: str = "default") -> None:
-        """
-         Generate relevant plots to display or file
-
-         Parameters
-         ----------
-         kind
-             specified element of the PUNCHData object to write to file
-
-         Returns
-         -------
-         None
-
-         """
-        self._cubes[kind].show()
-
-    def get_meta(self, key: str, kind: str = "default") -> Union[str, int, float]:
-        """
-        Retrieves meta data about a cube
-        Parameters
-        ----------
-        key
-        kind
-
-        Returns
-        -------
-
-        """
-        return self._cubes[kind].meta[key]
-
-    def set_meta(self, key: str, value: Any, kind: str = "default") -> None:
-        """
-        Retrieves metadata about a cube
-        Parameters
-        ----------
-        key
-            specified metadata key
-        value
-            Updated metadata information
-        kind
-            specified element of the PUNCHData object to write to file
-
-        Returns
-        -------
-        None
-
-        """
-        self._cubes[kind].meta[key] = value
-
-    def validate_meta(self, kind: str = "default", header_file: str = "") -> fits.Header:
+    def create_header(self, header_file: str = "") -> fits.Header:
         """
         Validates / generates PUNCHData object metadata using data product header standards
 
         Parameters
         ----------
-        kind
-            specified element of the PUNCHData object to validate
         header_file
             specified header template file with which to validate
 
         """
+        # TODO: what does this do when `header_file` is empty?
+        return HeaderTemplate(header_file).fill(self.meta)
 
-        hdr_template = HeaderTemplate(header_file)
-        
-        hdr_data = self._cubes[kind].meta
-
-        #hdr_output = hdr_template.extend(hdr_data, unique=True)
-        hdr_output = hdr_template.extend(hdr_data, update=True)
-
-        return hdr_output
-
-        #self._cubes[kind].meta = hdr_output
-
-    def date_obs(self, kind: str = "default") -> datetime:
-        return parse_datetime(self._cubes[kind].meta["date-obs"])
-
+    @property
+    def datetime(self) -> datetime:
+        return parse_datetime(self.meta["date-obs"])

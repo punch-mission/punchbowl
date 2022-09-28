@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Union, List, Dict, Any
 from dateutil.parser import parse as parse_datetime
 
+import astropy.wcs.wcsapi
 import astropy.units as u
 import matplotlib
 import numpy as np
@@ -63,7 +64,7 @@ class History:
         Returns
         -------
         HistoryEntry
-
+            history at specified `index`
         """
         return self._entries[index]
 
@@ -73,7 +74,8 @@ class History:
 
         Returns
         -------
-        HistoryEntry that is the youngest
+        HistoryEntry
+            HistoryEntry that is the youngest
         """
         return self._entries[-1]
 
@@ -81,7 +83,8 @@ class History:
         """
         Returns
         -------
-        int : the number of history entries
+        int
+            the number of history entries
         """
         return len(self._entries)
 
@@ -91,7 +94,8 @@ class History:
 
         Returns
         -------
-        str : a combined record of the history entries
+        str
+            a combined record of the history entries
         """
         return "\n".join([f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries])
 
@@ -222,9 +226,14 @@ class PUNCHData(NDCube):
     NDCube : Base container for the PUNCHData object
     """
 
-    # TODO: add type information and complete docstring
-    def __init__(self, data, wcs=None, uncertainty=None, mask=None, meta=None, unit=None, copy=False,
-                 history=None, **kwargs):
+    def __init__(self, data: np.ndarray,
+                 wcs: astropy.wcs.wcsapi.BaseLowLevelWCS | astropy.wcs.wcsapi.BaseHighLevelWCS | None = None,
+                 uncertainty: Any | None = None,
+                 mask: Any | None = None,
+                 meta: Dict | None = None,
+                 unit: astropy.units.Unit = None,
+                 copy: bool = False,
+                 history: History | None =None, **kwargs):
         """Initialize PUNCH Data
 
         Parameters

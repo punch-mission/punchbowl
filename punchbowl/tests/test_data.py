@@ -49,7 +49,6 @@ def test_generate_from_filename():
     assert isinstance(pd, PUNCHData)
 
 
-# TODO: fix this test so it runs and passes
 def test_write_data(sample_data):
     with pytest.raises(RuntimeWarning):
         sample_data.meta["LEVEL"] = 1

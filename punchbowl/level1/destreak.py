@@ -7,9 +7,9 @@ from punchbowl.data import PUNCHData
 from punchbowl.util import validate_image_is_square
 
 
-def streak_correction_matrix(n: int, exposure_time: float,
-                             readout_line_time: float,
-                             reset_line_time: float) -> np.ndarray:
+def streak_correction_matrix(
+    n: int, exposure_time: float, readout_line_time: float, reset_line_time: float
+) -> np.ndarray:
     """Computes a matrix used in correcting streaks in PUNCH images
 
     Computes the inverse of a matrix of size n where the major diagonal
@@ -58,10 +58,12 @@ def streak_correction_matrix(n: int, exposure_time: float,
     return np.linalg.inv(full_matrix)
 
 
-def correct_streaks(image: np.ndarray,
-                    exposure_time: float,
-                    readout_line_time: float,
-                    reset_line_time: float) -> np.ndarray:
+def correct_streaks(
+    image: np.ndarray,
+    exposure_time: float,
+    readout_line_time: float,
+    reset_line_time: float,
+) -> np.ndarray:
     """Corrects an image for streaks
 
     Parameters
@@ -98,10 +100,9 @@ def correct_streaks(image: np.ndarray,
 
     """
     validate_image_is_square(image)
-    correction_matrix = streak_correction_matrix(image.shape[0],
-                                                 exposure_time,
-                                                 readout_line_time,
-                                                 reset_line_time)
+    correction_matrix = streak_correction_matrix(
+        image.shape[0], exposure_time, readout_line_time, reset_line_time
+    )
     return correction_matrix @ image
 
 
@@ -113,4 +114,3 @@ def destreak_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("destreak finished")
     data_object.add_history(datetime.now(), "LEVEL1-destreak", "image destreaked")
     return data_object
-

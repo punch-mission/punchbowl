@@ -18,14 +18,13 @@ def create_fake_ndcube():
     uncertainty = np.zeros((2048, 2048))
     meta = {}
 
-
     wcs = WCS(naxis=2)
-    wcs.wcs.ctype = 'HPLT-TAN', 'HPLN-TAN'
-    wcs.wcs.cunit = 'deg', 'deg'
+    wcs.wcs.ctype = "HPLT-TAN", "HPLN-TAN"
+    wcs.wcs.cunit = "deg", "deg"
     wcs.wcs.cdelt = 0.5, 0.5
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 0
-    wcs.wcs.cname = 'HPC lat', 'HPC lon'
+    wcs.wcs.cname = "HPC lat", "HPC lon"
     nd_obj = NDCube(data=data, wcs=wcs, uncertainty=uncertainty, meta=meta, unit=u.ct)
     return nd_obj
 

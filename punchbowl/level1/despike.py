@@ -13,4 +13,3 @@ def despike_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("despike finished")
     data_object.add_history(datetime.now(), "LEVEL1-despike", "image despiked")
     return data_object
-

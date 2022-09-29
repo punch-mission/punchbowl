@@ -1,0 +1,11 @@
+format: jb-book
+root: intro
+chapters:
+- file: level0/level0
+- file: level1/level1
+  sections:
+    - file: level1/chapter1_section1
+    - file: level1/chapter1_section2
+- file: level2/level2
+  sections:
+    - file: level2/chapter2_section1

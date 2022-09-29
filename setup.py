@@ -26,6 +26,7 @@ setup(
         'prefect'
     ],
     extras_require={
-        'test': ['pytest', 'coverage']
+        'test': ['pytest', 'coverage'],
+        'docs': ['jupyter-book']
     }
 )

@@ -30,3 +30,14 @@ repository:
 html:
   use_issues_button: true
   use_repository_button: true
+  favicon: favicon.ico
+
+sphinx:
+  extra_extensions:
+  - 'sphinx.ext.autodoc'
+  - 'sphinx.ext.napoleon'
+  - 'sphinx.ext.viewcode'
+  - 'sphinx.ext.autosummary'
+  config:
+    add_module_names: False
+    autosummary_generate: True

@@ -21,8 +21,8 @@ HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
 
 
 class History:
-    """Representation of the history of edits done to a PUNCHData object
-    """
+    """Representation of the history of edits done to a PUNCHData object"""
+
     def __init__(self):
         self._entries: List[HistoryEntry] = []
 
@@ -97,7 +97,9 @@ class History:
         str
             a combined record of the history entries
         """
-        return "\n".join([f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries])
+        return "\n".join(
+            [f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries]
+        )
 
     def __iter__(self):
         self.current_index = 0
@@ -116,6 +118,7 @@ class PUNCHCalibration:
     This will be inherited and developed as the various calibration objects, e.g. the quartic fit coefficients, are
     developed. This will be an abstract base class for all of them.
     """
+
     pass
 
 
@@ -128,11 +131,18 @@ class HeaderTemplate:
 
     - TODO : make custom types of warnings more specific so that they can be filtered
     """
+
     def __init__(self, template=None):
-        self._table = pd.DataFrame(columns=HEADER_TEMPLATE_COLUMNS) if template is None else template
+        self._table = (
+            pd.DataFrame(columns=HEADER_TEMPLATE_COLUMNS)
+            if template is None
+            else template
+        )
         if not np.all(self._table.columns.values == HEADER_TEMPLATE_COLUMNS):
-            raise ValueError(f"HeaderTemplate must have columns {HEADER_TEMPLATE_COLUMNS}"
-                             f"Found: {self._table.columns.values}")
+            raise ValueError(
+                f"HeaderTemplate must have columns {HEADER_TEMPLATE_COLUMNS}"
+                f"Found: {self._table.columns.values}"
+            )
 
     @classmethod
     def load(cls, path: str) -> HeaderTemplate:
@@ -149,16 +159,19 @@ class HeaderTemplate:
             header template with data from a specified CSV
         """
 
-        if path.endswith('.csv'):
+        if path.endswith(".csv"):
             template = HeaderTemplate(template=pd.read_csv(path, keep_default_na=False))
         else:
-            raise ValueError('Header template must be a CSV file.'
-                             f'Found {os.path.splitext(path)[1]} file')
+            raise ValueError(
+                "Header template must be a CSV file."
+                f"Found {os.path.splitext(path)[1]} file"
+            )
 
         return template
 
     def fill(self, meta_dict: Dict[str, Any]) -> fits.Header:
         """Parses an input template header comma separated value (CSV) file to generate an astropy header object.
+        # TODO: update
 
         Parameters
         ----------
@@ -172,24 +185,36 @@ class HeaderTemplate:
         """
         hdr = fits.Header()
 
-        type_converter = {'str': str, 'int': int, 'float': np.float}
+        type_converter = {"str": str, "int": int, "float": np.float}
 
         for row_i, entry in self._table.iterrows():
-            if entry['TYPE'] == 'section':
-                if len(entry['COMMENT']) > 72:
-                    raise RuntimeWarning("Section text exceeds 80 characters, EXTEND will be used.")
-                hdr.append(('COMMENT', ('----- ' + entry['COMMENT'] + ' ').ljust(72, '-')), end=True)
+            if entry["TYPE"] == "section":
+                if len(entry["COMMENT"]) > 72:
+                    raise RuntimeWarning(
+                        "Section text exceeds 80 characters, EXTEND will be used."
+                    )
+                hdr.append(
+                    ("COMMENT", ("----- " + entry["COMMENT"] + " ").ljust(72, "-")),
+                    end=True,
+                )
 
-            elif entry['TYPE'] == 'comment':
-                hdr.append(('COMMENT', entry['VALUE']), end=True)
+            elif entry["TYPE"] == "comment":
+                hdr.append(("COMMENT", entry["VALUE"]), end=True)
 
-            elif entry['TYPE'] == 'keyword':
-                if len(entry['VALUE']) + len(entry['COMMENT']) > 72:
-                    raise RuntimeWarning("Section text exceeds 80 characters, EXTEND will be used.")
+            elif entry["TYPE"] == "keyword":
+                if len(entry["VALUE"]) + len(entry["COMMENT"]) > 72:
+                    raise RuntimeWarning(
+                        "Section text exceeds 80 characters, EXTEND will be used."
+                    )
 
-                hdr.append((entry['KEYWORD'],
-                            type_converter[entry['DATATYPE']](entry['VALUE']),
-                            entry['COMMENT']), end=True)
+                hdr.append(
+                    (
+                        entry["KEYWORD"],
+                        type_converter[entry["DATATYPE"]](entry["VALUE"]),
+                        entry["COMMENT"],
+                    ),
+                    end=True,
+                )
 
         empty_keywords = set(self.find_empty())
         for key, value in meta_dict.items():
@@ -212,9 +237,9 @@ class HeaderTemplate:
         """
         empty_keywords = []
         for row_i, row in self._table.iterrows():
-            if row['TYPE'] == 'keyword':
-                if not row['VALUE']:
-                    empty_keywords.append(row['KEYWORD'])
+            if row["TYPE"] == "keyword":
+                if not row["VALUE"]:
+                    empty_keywords.append(row["KEYWORD"])
         return empty_keywords
 
 
@@ -226,14 +251,20 @@ class PUNCHData(NDCube):
     NDCube : Base container for the PUNCHData object
     """
 
-    def __init__(self, data: np.ndarray,
-                 wcs: astropy.wcs.wcsapi.BaseLowLevelWCS | astropy.wcs.wcsapi.BaseHighLevelWCS | None = None,
-                 uncertainty: Any | None = None,
-                 mask: Any | None = None,
-                 meta: Dict | None = None,
-                 unit: astropy.units.Unit = None,
-                 copy: bool = False,
-                 history: History | None =None, **kwargs):
+    def __init__(
+        self,
+        data: np.ndarray,
+        wcs: astropy.wcs.wcsapi.BaseLowLevelWCS
+        | astropy.wcs.wcsapi.BaseHighLevelWCS
+        | None = None,
+        uncertainty: Any | None = None,
+        mask: Any | None = None,
+        meta: Dict | None = None,
+        unit: astropy.units.Unit = None,
+        copy: bool = False,
+        history: History | None = None,
+        **kwargs,
+    ):
         """Initialize PUNCH Data
 
         Parameters
@@ -263,7 +294,16 @@ class PUNCHData(NDCube):
 
         PUNCHData objects also contain history information and have special functionality for manipulating PUNCH data.
         """
-        super().__init__(data, wcs=wcs, uncertainty=uncertainty, mask=mask, meta=meta, unit=unit, copy=copy, **kwargs)
+        super().__init__(
+            data,
+            wcs=wcs,
+            uncertainty=uncertainty,
+            mask=mask,
+            meta=meta,
+            unit=unit,
+            copy=copy,
+            **kwargs,
+        )
         self._history = history if history else History()
 
     def add_history(self, time: datetime, source: str, comment: str) -> None:
@@ -318,7 +358,7 @@ class PUNCHData(NDCube):
             weight map computed from uncertainty array
         """
 
-        return 1./self.uncertainty.array
+        return 1.0 / self.uncertainty.array
 
     @property
     def id(self) -> str:
@@ -329,11 +369,13 @@ class PUNCHData(NDCube):
         str
             output identification string
         """
-        observatory = self.meta['OBSRVTRY']
-        file_level = self.meta['LEVEL']
-        type_code = self.meta['TYPECODE']
+        observatory = self.meta["OBSRVTRY"]
+        file_level = self.meta["LEVEL"]
+        type_code = self.meta["TYPECODE"]
         date_string = self.datetime.strftime("%Y%m%d%H%M%S")
-        return 'PUNCH_L' + file_level + '_' + type_code + observatory + '_' + date_string
+        return (
+            "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
+        )
 
     def write(self, filename: str, overwrite=True) -> None:
         """Write PUNCHData elements to file
@@ -356,15 +398,17 @@ class PUNCHData(NDCube):
 
         """
 
-        if filename.endswith('.fits'):
+        if filename.endswith(".fits"):
             self._write_fits(filename, overwrite=overwrite)
-        elif filename.endswith('.png'):
+        elif filename.endswith(".png"):
             self._write_ql(filename)
-        elif filename.endswith('.jpg') or filename.endswith('.jpeg'):
+        elif filename.endswith(".jpg") or filename.endswith(".jpeg"):
             self._write_ql(filename)
         else:
-            raise ValueError('Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). '
-                             f'Found: {os.path.splitext(filename)[1]}')
+            raise ValueError(
+                "Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). "
+                f"Found: {os.path.splitext(filename)[1]}"
+            )
 
     def _write_fits(self, filename: str, overwrite=True) -> None:
         """Write PUNCHData elements to FITS files
@@ -384,10 +428,14 @@ class PUNCHData(NDCube):
         hdu_data.data = self.data
 
         # TODO : make this select the correct header template for writing
-        hdu_data.header = self.create_header(str(Path(__file__).parent / "tests/hdr_test_template.csv"))
+        hdu_data.header = self.create_header(
+            str(Path(__file__).parent / "tests/hdr_test_template.csv")
+        )
 
         for entry in self._history:
-            hdu_data.header['HISTORY'] = f"{entry.datetime}: {entry.source}, {entry.comment}"
+            hdu_data.header[
+                "HISTORY"
+            ] = f"{entry.datetime}: {entry.source}, {entry.comment}"
 
         # TODO : Make an uncertainty header
         hdu_uncertainty = fits.ImageHDU()
@@ -415,7 +463,13 @@ class PUNCHData(NDCube):
             raise ValueError("Specified output data should have two-dimensions.")
 
         # Scale data array to 8-bit values
-        output_data = np.int(np.fix(np.interp(self.data, (self.data.min(), self.data.max()), (0, 2**8 - 1))))
+        output_data = np.int(
+            np.fix(
+                np.interp(
+                    self.data, (self.data.min(), self.data.max()), (0, 2**8 - 1)
+                )
+            )
+        )
 
         # Write image to file
         matplotlib.image.saveim(filename, output_data)

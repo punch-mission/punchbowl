@@ -24,6 +24,7 @@ setup(
         "matplotlib",
         "ccsdspy",
         "prefect",
+        "spectrum",
     ],
     extras_require={
         "test": ["pytest", "coverage"],

@@ -25,5 +25,9 @@ setup(
         "ccsdspy",
         "prefect",
     ],
-    extras_require={"test": ["pytest", "coverage"], "dev": ["pre-commit"]},
+    extras_require={
+        "test": ["pytest", "coverage"],
+        "dev": ["pre-commit"],
+        "docs": ["jupyter-book"],
+    },
 )

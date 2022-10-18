@@ -7,12 +7,14 @@ class Noise:
     """
 
     @staticmethod
-    def gen_noise(data: np.ndarray = np.zeros([2048, 2048]),
-                  bias_level: float = 100,
-                  dark_level: float = 55.81,
-                  gain: float = 4.3,
-                  readnoise_level: float = 17,
-                  bitrate_signal: int = 16) -> np.ndarray:
+    def gen_noise(
+        data: np.ndarray = np.zeros([2048, 2048]),
+        bias_level: float = 100,
+        dark_level: float = 55.81,
+        gain: float = 4.3,
+        readnoise_level: float = 17,
+        bitrate_signal: int = 16,
+    ) -> np.ndarray:
         """
         Generates noise based on an input data array, with specified noise parameters
 
@@ -43,11 +45,15 @@ class Noise:
 
         # Convert / scale data
         # Think of this as the raw signal input into the camera
-        data = np.interp(data_signal, (data_signal.min(), data_signal.max()), (0, 2 ** bitrate_signal - 1))
-        data = data.astype('long')
+        data = np.interp(
+            data_signal,
+            (data_signal.min(), data_signal.max()),
+            (0, 2**bitrate_signal - 1),
+        )
+        data = data.astype("long")
 
         # Add bias level and clip pixels to avoid overflow
-        data = np.clip(data + bias_level, 0, 2 ** bitrate_signal - 1)
+        data = np.clip(data + bias_level, 0, 2**bitrate_signal - 1)
 
         # Photon / shot noise generation
         data_photon = data_signal * gain  # DN to photoelectrons

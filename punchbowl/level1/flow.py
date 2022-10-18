@@ -24,17 +24,17 @@ def output_level1_task(data, output_filename):
     kind = list(data._cubes.keys())[0]
 
     # TODO: remove this ugliness
-    data[kind].meta['OBSRVTRY'] = 'Z'
-    data[kind].meta['LEVEL'] = 1
-    data[kind].meta['TYPECODE'] = 'ZZ'
-    data[kind].meta['VERSION'] = 1
-    data[kind].meta['SOFTVERS'] = 1
-    data[kind].meta['DATE-OBS'] = str(datetime.now())
-    data[kind].meta['DATE-AQD'] = str(datetime.now())
-    data[kind].meta['DATE-END'] = str(datetime.now())
-    data[kind].meta['POL'] = 'Z'
-    data[kind].meta['STATE'] = 'finished'
-    data[kind].meta['PROCFLOW'] = '?'
+    data[kind].meta["OBSRVTRY"] = "Z"
+    data[kind].meta["LEVEL"] = 1
+    data[kind].meta["TYPECODE"] = "ZZ"
+    data[kind].meta["VERSION"] = 1
+    data[kind].meta["SOFTVERS"] = 1
+    data[kind].meta["DATE-OBS"] = str(datetime.now())
+    data[kind].meta["DATE-AQD"] = str(datetime.now())
+    data[kind].meta["DATE-END"] = str(datetime.now())
+    data[kind].meta["POL"] = "Z"
+    data[kind].meta["STATE"] = "finished"
+    data[kind].meta["PROCFLOW"] = "?"
 
     return data.write(output_filename)
 

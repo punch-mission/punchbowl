@@ -9,24 +9,29 @@ from punchbowl.level1.destreak import correct_streaks, streak_correction_matrix
 TEST_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
-@pytest.mark.parametrize("diag, above, below",
-                         [(5, 4, 3),
-                          (5, 1, 1)])
+@pytest.mark.parametrize("diag, above, below", [(5, 4, 3), (5, 1, 1)])
 def test_matrix_creation(diag, above, below):
-    full_matrix = np.array([[diag, above, above, above],
-                            [below, diag, above, above],
-                            [below, below, diag, above],
-                            [below, below, below, diag]])
+    full_matrix = np.array(
+        [
+            [diag, above, above, above],
+            [below, diag, above, above],
+            [below, below, diag, above],
+            [below, below, below, diag],
+        ]
+    )
     expected = np.linalg.inv(full_matrix)
     actual = streak_correction_matrix(4, diag, below, above)
     assert np.allclose(actual, expected)
     assert actual.shape == (4, 4)
 
 
-@pytest.mark.parametrize("size, exposure_time, readout_line_time, reset_line_time",
-                         [(5, 1, 2, 3),
-                          (100, 1, 2, 5)])
-def test_blank_image_destreaking(size, exposure_time, readout_line_time, reset_line_time):
+@pytest.mark.parametrize(
+    "size, exposure_time, readout_line_time, reset_line_time",
+    [(5, 1, 2, 3), (100, 1, 2, 5)],
+)
+def test_blank_image_destreaking(
+    size, exposure_time, readout_line_time, reset_line_time
+):
     image = np.zeros((size, size))
     output = correct_streaks(image, exposure_time, readout_line_time, reset_line_time)
     assert output.shape == (size, size), "size should not change"
@@ -61,8 +66,8 @@ def test_singular_matrix_errors():
 @fixture
 def used_correction_parameters() -> tuple:
     exposure_time = 40
-    readout_line_time = 120/2148
-    reset_line_time = 120/2148
+    readout_line_time = 120 / 2148
+    reset_line_time = 120 / 2148
     return exposure_time, readout_line_time, reset_line_time
 
 
@@ -92,6 +97,12 @@ def expected_regression_test_output() -> np.ndarray:
 
 
 @pytest.mark.regression
-def test_regression(expected_regression_test_input, used_correction_parameters, expected_regression_test_output):
-    test_output = correct_streaks(expected_regression_test_input, *used_correction_parameters)
+def test_regression(
+    expected_regression_test_input,
+    used_correction_parameters,
+    expected_regression_test_output,
+):
+    test_output = correct_streaks(
+        expected_regression_test_input, *used_correction_parameters
+    )
     assert np.allclose(test_output, expected_regression_test_output)

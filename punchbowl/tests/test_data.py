@@ -8,7 +8,13 @@ import numpy as np
 import pytest
 from pytest import fixture
 
-from punchbowl.data import PUNCHData, History, HistoryEntry, HeaderTemplate, HEADER_TEMPLATE_COLUMNS
+from punchbowl.data import (
+    PUNCHData,
+    History,
+    HistoryEntry,
+    HeaderTemplate,
+    HEADER_TEMPLATE_COLUMNS,
+)
 
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -30,12 +36,12 @@ def simple_ndcube():
     data = np.random.rand(4, 4, 5)
     # Define WCS transformations in an astropy WCS object.
     wcs = astropy.wcs.WCS(naxis=3)
-    wcs.wcs.ctype = 'WAVE', 'HPLT-TAN', 'HPLN-TAN'
-    wcs.wcs.cunit = 'Angstrom', 'deg', 'deg'
+    wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
+    wcs.wcs.cunit = "Angstrom", "deg", "deg"
     wcs.wcs.cdelt = 0.2, 0.5, 0.4
     wcs.wcs.crpix = 0, 2, 2
     wcs.wcs.crval = 10, 0.5, 1
-    wcs.wcs.cname = 'wavelength', 'HPC lat', 'HPC lon'
+    wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
     nd_obj = NDCube(data=data, wcs=wcs)
     return nd_obj
 
@@ -104,7 +110,9 @@ def simple_header_template():
 def test_sample_header_creation(empty_header):
     """An empty PUNCH header object is initialized. Test for no raised errors. Test that the object exists."""
     assert isinstance(empty_header, HeaderTemplate)
-    assert np.all(empty_header._table.columns.values == HEADER_TEMPLATE_COLUMNS), "doesn't have all the columns"
+    assert np.all(
+        empty_header._table.columns.values == HEADER_TEMPLATE_COLUMNS
+    ), "doesn't have all the columns"
 
 
 def test_generate_from_csv_filename():
@@ -125,7 +133,7 @@ def test_fill_header(simple_header_template):
         meta = {"LEVEL": 1}
         header = simple_header_template.fill(meta)
         assert isinstance(header, fits.Header)
-        assert header['LEVEL'] == 1
+        assert header["LEVEL"] == 1
 
 
 def test_unspecified_header_template():

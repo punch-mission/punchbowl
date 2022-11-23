@@ -1,5 +1,5 @@
 # Core Python imports
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from datetime import datetime
 
 # Third party imports
@@ -18,8 +18,8 @@ import astropy.units as u
 from punchbowl.data import PUNCHData
 
 # core reprojection function
-def reproject_array(input_array: np.ndarray, 
-                    input_wcs: WCS, 
+def reproject_array(input_array: np.ndarray,
+                    input_wcs: WCS,
                     output_wcs: WCS,
                     output_shape: tuple) -> np.ndarray:
     """Core reprojection function
@@ -59,14 +59,11 @@ def reproject_array(input_array: np.ndarray,
     return output_array
 
 # trefoil mosaic generation function
-def mosaic(data_nfi1: np.ndarray,
-            data_wfi1: np.ndarray,
-            data_wfi2: np.ndarray,
-            data_wfi3: np.ndarray,
-            uncrt_nfi1: np.ndarray,
-            uncrt_wfi1: np.ndarray,
-            uncrt_wfi2: np.ndarray,
-            uncrt_wfi3: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def mosaic(data_input: List,
+            uncert_input: List,
+            wcs_input: List,
+            wcs_output: WCS,
+            shape_output: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
     """PUNCH trefoil mosaic generation
 
@@ -75,22 +72,17 @@ def mosaic(data_nfi1: np.ndarray,
 
     Parameters
     ----------
-    data_nfi1
-        reprojected data array from NFI 1
-    data_wfi1
-        reprojected data array from WFI 1
-    data_wfi2
-        reprojected data array from WFI 2
-    data_wfi3
-        reprojected data array from WFI 3
-    uncrt_nfi1
-        reprojected uncertainty array from NFI 1
-    uncrt_wfi1
-        reprojected uncertainty array from WFI 1
-    uncrt_wfi2
-        reprojected uncertainty array from WFI 2
-    uncrt_wfi3
-        reprojected uncertainty array from WFI 3
+    data_input
+        list of ndarray data objects to assemble into a mosaic
+    uncert_input
+        list of ndarray uncertainty objects to assemble into a mosaic
+    wcs_input
+        list of corresponding WCS objects utilized to assemble a mosaic
+    wcs_output
+        output wcs object for the trefoil mosaic
+    shape_output
+        specified output shape for reprojection
+    
 
     Returns
     -------
@@ -103,36 +95,65 @@ def mosaic(data_nfi1: np.ndarray,
     Example Call
     ------------
 
-    (trefoil_data, trefoil_uncertainty) = mosaic(data_nfi1, data_wfi1, data_wfi2, data_wfi3, uncrt_nfi1, uncrt_wfi1, uncrt_wfi2, uncrt_wfi3)
+    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, wcs_output, shape_output)
     """
     
-    temp_data = np.where(uncrt_wfi1 < uncrt_wfi2, data_wfi1, data_wfi2)
-    temp_uncertainty = np.fmin(uncrt_wfi1, uncrt_wfi2)
+    reprojected_data = np.zeros([shape_output[0], shape_output[1], len(data_input)])
+    reprojected_uncert = np.zeros([shape_output[0], shape_output[1], len(data_input)])
 
-    temp_data = np.where(temp_uncertainty < uncrt_wfi3, temp_data, data_wfi3)
-    temp_uncertainty = np.fmin(temp_uncertainty, uncrt_wfi3)
+    i = 0
+    for idata, iwcs in zip(data_input, wcs_input):
+        reprojected_data[:,:,i] = reproject_array(idata, iwcs, wcs_output, shape_output)
+        i = i+1
 
-    temp_data = np.where(temp_uncertainty < uncrt_nfi1, temp_data, data_nfi1)
-    temp_uncertainty = np.fmin(temp_uncertainty, uncrt_nfi1)
+    i = 0
+    for iuncert, iwcs in zip(uncert_input, wcs_input):
+        reprojected_uncert[:,:,i] = reproject_array(iuncert, iwcs, wcs_output, shape_output)
+        i = i+1
 
-    trefoil_data = temp_data
-    trefoil_uncertainty = temp_uncertainty
+    # Merge these data
+    # TODO - carefully check how this deals with NaNs
+    trefoil_data = ((reprojected_data * reprojected_uncert).sum(axis=2)) / (reprojected_uncert.sum(axis=2))
+    trefoil_uncert = np.amax(reprojected_uncert)
 
-    return (trefoil_data, trefoil_uncertainty)
+    return (trefoil_data, trefoil_uncert)
 
 
 # this is the core task associated with the module, it should end in "task" and
 # use the @task decorator for prefect tasks.
 # use the logger to track the prefect flow, and add history to the data object,
 # an example from destreak is included below
+
+# TODO - Think about flows...
+# TODO - Refine meshing procedure with NaNs
+# TODO - Rename variables to be consistant
+
 @task
-def module_task(data_object: PunchData) -> PunchData:
+def QuickPUNCH_merge(data: List) -> PUNCHData:
     logger = get_run_logger()
     logger.info("this module started")
-    # do module stuff here in here
-    data_array = data_object.data
-    uncertainty_array = data_object.uncertainty
-    data_wcs = data_object.wcs
+
+    # Define output WCS
+    # TODO - should this be read from a template file, or passed in as an input?
+    trefoil_shape = [4096,4096]
+
+    trefoil_wcs = WCS(naxis=2)
+    trefoil_wcs.wcs.crpix = trefoil_shape[1]/2, trefoil_shape[0]/2
+    trefoil_wcs.wcs.crval = 0, 0
+    trefoil_wcs.wcs.cdelt = 0.0225, 0.0225
+    trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+
+    # Unpack input data objects
+    data_input, uncert_input, wcs_input = []
+    for obj in data:
+        data_input.append(obj.data)
+        uncert_input.append(obj.uncertainty)
+        wcs_input.append(obj.wcs)
+
+    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, trefoil_wcs, trefoil_shape)
+
+    # Pack up an output data object
+    data_object = PUNCHData(trefoil_data, uncertainty=trefoil_uncertainty, wcs=trefoil_wcs)
     
     logger.info("this module finished")
     data_object.add_history(datetime.now(), "LEVEL1-module", "this module ran") 

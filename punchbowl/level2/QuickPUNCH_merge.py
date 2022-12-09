@@ -123,7 +123,7 @@ def mosaic(data_input: List,
 
 # core module task
 @task
-def QuickPUNCH_merge(data: List) -> PUNCHData:
+def QuickPUNCH_merge_task(data: List) -> PUNCHData:
     logger = get_run_logger()
     logger.info("QuickPUNCH_merge module started")
 

@@ -54,7 +54,8 @@ def reproject_array(input_array: np.ndarray,
     output_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
     """
 
-    output_array = reproject.reproject_adaptive((input_array, input_wcs), output_wcs, output_shape, roundtrip_coords=False, return_footprint=False)
+    output_array = reproject.reproject_adaptive((input_array, input_wcs), output_wcs, \
+        output_shape, roundtrip_coords=False, return_footprint=False)
     
     return output_array
 
@@ -95,7 +96,8 @@ def mosaic(data_input: List,
     Example Call
     ------------
 
-    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, wcs_output, shape_output)
+    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, \
+        wcs_output, shape_output)
     """
     
     reprojected_data = np.zeros([shape_output[0], shape_output[1], len(data_input)])
@@ -113,35 +115,21 @@ def mosaic(data_input: List,
 
     # Merge these data
     # TODO - carefully check how this deals with NaNs
-    trefoil_data = ((reprojected_data * reprojected_uncert).sum(axis=2)) / (reprojected_uncert.sum(axis=2))
+    trefoil_data = ((reprojected_data * reprojected_uncert).sum(axis=2)) / \
+        (reprojected_uncert.sum(axis=2))
     trefoil_uncert = np.amax(reprojected_uncert)
 
     return (trefoil_data, trefoil_uncert)
 
-
-# this is the core task associated with the module, it should end in "task" and
-# use the @task decorator for prefect tasks.
-# use the logger to track the prefect flow, and add history to the data object,
-# an example from destreak is included below
-
-# TODO - Think about flows...
-# TODO - Refine meshing procedure with NaNs
-# TODO - Rename variables to be consistant
-
+# core module task
 @task
 def QuickPUNCH_merge(data: List) -> PUNCHData:
     logger = get_run_logger()
-    logger.info("this module started")
+    logger.info("QuickPUNCH_merge module started")
 
-    # Define output WCS
-    # TODO - should this be read from a template file, or passed in as an input?
-    trefoil_shape = [4096,4096]
-
-    trefoil_wcs = WCS(naxis=2)
-    trefoil_wcs.wcs.crpix = trefoil_shape[1]/2, trefoil_shape[0]/2
-    trefoil_wcs.wcs.crval = 0, 0
-    trefoil_wcs.wcs.cdelt = 0.0225, 0.0225
-    trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    # Define output WCS from file
+    trefoil_wcs = WCS('data/trefoil_hdr.fits')
+    trefoil_shape = trefoil_wcs.array_shape()
 
     # Unpack input data objects
     data_input, uncert_input, wcs_input = []
@@ -150,7 +138,8 @@ def QuickPUNCH_merge(data: List) -> PUNCHData:
         uncert_input.append(obj.uncertainty)
         wcs_input.append(obj.wcs)
 
-    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, trefoil_wcs, trefoil_shape)
+    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, \
+        trefoil_wcs, trefoil_shape)
 
     # Pack up an output data object
     data_object = PUNCHData(trefoil_data, uncertainty=trefoil_uncertainty, wcs=trefoil_wcs)

@@ -21,20 +21,20 @@ def load_level0_task(input_filename):
 
 @task
 def output_level1_task(data, output_filename):
-    kind = list(data._cubes.keys())[0]
-
-    # TODO: remove this ugliness
-    data[kind].meta["OBSRVTRY"] = "Z"
-    data[kind].meta["LEVEL"] = 1
-    data[kind].meta["TYPECODE"] = "ZZ"
-    data[kind].meta["VERSION"] = 1
-    data[kind].meta["SOFTVERS"] = 1
-    data[kind].meta["DATE-OBS"] = str(datetime.now())
-    data[kind].meta["DATE-AQD"] = str(datetime.now())
-    data[kind].meta["DATE-END"] = str(datetime.now())
-    data[kind].meta["POL"] = "Z"
-    data[kind].meta["STATE"] = "finished"
-    data[kind].meta["PROCFLOW"] = "?"
+    # kind = list(data._cubes.keys())[0]
+    #
+    # # TODO: remove this ugliness
+    # data[kind].meta["OBSRVTRY"] = "Z"
+    # data[kind].meta["LEVEL"] = 1
+    # data[kind].meta["TYPECODE"] = "ZZ"
+    # data[kind].meta["VERSION"] = 1
+    # data[kind].meta["SOFTVERS"] = 1
+    # data[kind].meta["DATE-OBS"] = str(datetime.now())
+    # data[kind].meta["DATE-AQD"] = str(datetime.now())
+    # data[kind].meta["DATE-END"] = str(datetime.now())
+    # data[kind].meta["POL"] = "Z"
+    # data[kind].meta["STATE"] = "finished"
+    # data[kind].meta["PROCFLOW"] = "?"
 
     return data.write(output_filename)
 
@@ -52,7 +52,7 @@ def level1_core_flow(input_filename, output_filename):
     data = remove_deficient_pixels_task(data)
     data = remove_stray_light_task(data)
     data = align_task(data)
-    data = correct_psf_task(data)
+    # data = correct_psf_task(data)
     data = flag_task(data)
     logger.info("ending level 1 core flow")
     output_level1_task(data, output_filename)

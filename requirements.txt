@@ -1,0 +1,9 @@
+numpy==1.23.1
+astropy==5.1
+sunpy==4.0.3
+pandas==1.4.3
+ndcube==2.0.2
+matplotlib==3.5.2
+ccsdspy==0.0.10
+prefect==2.7.1
+regularizepsf==0.0.1

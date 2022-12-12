@@ -129,7 +129,7 @@ def test_generate_from_invalid_file():
 
 
 def test_fill_header(simple_header_template):
-    with pytest.raises(RuntimeWarning):
+    with pytest.warns(RuntimeWarning):
         meta = {"LEVEL": 1}
         header = simple_header_template.fill(meta)
         assert isinstance(header, fits.Header)

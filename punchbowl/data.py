@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 import os.path
 from collections import namedtuple
 from datetime import datetime
@@ -190,8 +191,9 @@ class HeaderTemplate:
         for row_i, entry in self._table.iterrows():
             if entry["TYPE"] == "section":
                 if len(entry["COMMENT"]) > 72:
-                    raise RuntimeWarning(
-                        "Section text exceeds 80 characters, EXTEND will be used."
+                    warnings.warn(
+                        "Section text exceeds 80 characters, EXTEND will be used.",
+                        RuntimeWarning,
                     )
                 hdr.append(
                     ("COMMENT", ("----- " + entry["COMMENT"] + " ").ljust(72, "-")),
@@ -203,14 +205,17 @@ class HeaderTemplate:
 
             elif entry["TYPE"] == "keyword":
                 if len(entry["VALUE"]) + len(entry["COMMENT"]) > 72:
-                    raise RuntimeWarning(
-                        "Section text exceeds 80 characters, EXTEND will be used."
+                    warnings.warn(
+                        "Section text exceeds 80 characters, EXTEND will be used.",
+                        RuntimeWarning,
                     )
 
                 hdr.append(
                     (
                         entry["KEYWORD"],
-                        type_converter[entry["DATATYPE"]](entry["VALUE"]),
+                        type_converter[entry["DATATYPE"]](entry["VALUE"])
+                        if entry["VALUE"]
+                        else "",
                         entry["COMMENT"],
                     ),
                     end=True,
@@ -223,7 +228,7 @@ class HeaderTemplate:
                 empty_keywords.remove(key)
 
         if empty_keywords:
-            raise RuntimeWarning(f"Some keywords left empty: {empty_keywords}")
+            warnings.warn(f"Some keywords left empty: {empty_keywords}", RuntimeWarning)
 
         return hdr
 

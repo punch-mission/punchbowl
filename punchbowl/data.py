@@ -429,18 +429,15 @@ class PUNCHData(NDCube):
         -------
         None
         """
-        hdu_data = fits.PrimaryHDU()
-        hdu_data.data = self.data
-
         # TODO : make this select the correct header template for writing
-        hdu_data.header = self.create_header(
+        header = self.create_header(
             str(Path(__file__).parent / "tests/hdr_test_template.csv")
         )
 
         for entry in self._history:
-            hdu_data.header[
-                "HISTORY"
-            ] = f"{entry.datetime}: {entry.source}, {entry.comment}"
+            header["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
+
+        hdu_data = fits.PrimaryHDU(data=self.data, header=header)
 
         # TODO : Make an uncertainty header
         hdu_uncertainty = fits.ImageHDU()

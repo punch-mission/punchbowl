@@ -52,7 +52,7 @@ def level1_core_flow(input_filename, output_filename):
     data = remove_deficient_pixels_task(data)
     data = remove_stray_light_task(data)
     data = align_task(data)
-    # data = correct_psf_task(data)
+    data = correct_psf_task(data)
     data = flag_task(data)
     logger.info("ending level 1 core flow")
     output_level1_task(data, output_filename)

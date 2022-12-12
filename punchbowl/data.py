@@ -351,7 +351,13 @@ class PUNCHData(NDCube):
             uncertainty = StdDevUncertainty(hdul[1].data)
             unit = u.ct  # counts
 
-        return cls(data, wcs=wcs, uncertainty=uncertainty, meta=meta, unit=unit)
+        return cls(
+            data.newbyteorder().byteswap(inplace=True),
+            wcs=wcs,
+            uncertainty=uncertainty,
+            meta=meta,
+            unit=unit,
+        )
 
     @property
     def weight(self) -> np.ndarray:

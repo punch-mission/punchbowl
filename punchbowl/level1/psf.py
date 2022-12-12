@@ -20,7 +20,14 @@ def correct_psf(
     new_data = corrector.correct_image(data.data, alpha=alpha, epsilon=epsilon)
 
     # TODO: needs to copy not just the data but all the meta
-    return PUNCHData(data=new_data)
+    return PUNCHData(
+        data=new_data,
+        wcs=data.wcs,
+        uncertainty=data.uncertainty,
+        meta=data.meta,
+        history=data._history,
+        unit=data.unit,
+    )
 
 
 @task

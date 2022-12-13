@@ -11,11 +11,12 @@ from astropy.io import fits
 import astropy.units as u
 from astropy.wcs import WCS
 
-from prefect import task, get_run_logger
+from prefect import task, flow, get_run_logger
 import astropy.units as u
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
+
 
 # core reprojection function
 def reproject_array(input_array: np.ndarray,
@@ -59,12 +60,13 @@ def reproject_array(input_array: np.ndarray,
     
     return output_array
 
+
 # trefoil mosaic generation function
 def mosaic(data_input: List,
             uncert_input: List,
             wcs_input: List,
             wcs_output: WCS,
-            shape_output: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+            shape_output: Tuple) -> Tuple[np.ndarray, np.ndarray]:
 
     """PUNCH trefoil mosaic generation
 
@@ -119,11 +121,12 @@ def mosaic(data_input: List,
         (reprojected_uncert.sum(axis=2))
     trefoil_uncert = np.amax(reprojected_uncert)
 
-    return (trefoil_data, trefoil_uncert)
+    return trefoil_data, trefoil_uncert
 
-# core module task
-@task
-def QuickPUNCH_merge_task(data: List) -> PUNCHData:
+
+# core module flow
+@flow
+def quickpunch_merge_flow(data: List) -> PUNCHData:
     logger = get_run_logger()
     logger.info("QuickPUNCH_merge module started")
 
@@ -144,6 +147,6 @@ def QuickPUNCH_merge_task(data: List) -> PUNCHData:
     # Pack up an output data object
     data_object = PUNCHData(trefoil_data, uncertainty=trefoil_uncertainty, wcs=trefoil_wcs)
     
-    logger.info("this module finished")
-    data_object.add_history(datetime.now(), "LEVEL1-module", "this module ran") 
+    logger.info("QuickPUNCH_merge flow finished")
+    data_object.add_history(datetime.now(), "LEVEL1-module", "QuickPUNCH_merge ran")
     return data_object

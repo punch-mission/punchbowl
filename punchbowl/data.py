@@ -499,3 +499,17 @@ class PUNCHData(NDCube):
     @property
     def datetime(self) -> datetime:
         return parse_datetime(self.meta["date-obs"])
+
+    def duplicate_with_updates(self, data: np.ndarray=None,
+                               wcs: astropy.wcs.WCS= None,
+                               uncertainty: np.ndarray=None,
+                               meta=None,
+                               history=None,
+                               unit=None) -> PUNCHData:
+        return PUNCHData(data=data if data else self.data,
+                         wcs=wcs if wcs else self.wcs,
+                         uncertainty=uncertainty if uncertainty else self.uncertainty,
+                         meta=meta if meta else self.meta,
+                         history=history if history else self._history,
+                         unit=unit if unit else self.unit
+                         )

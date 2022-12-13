@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from prefect import flow, get_run_logger, task
 
 from punchbowl.data import PUNCHData

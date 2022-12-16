@@ -10,6 +10,8 @@ from astropy.wcs import WCS
 
 from ndcube import NDCube
 
+from prefect.testing.utilities import prefect_test_harness
+
 # punchbowl imports
 from punchbowl.level2.QuickPUNCH_merge import reproject_array, mosaic, \
     quickpunch_merge_flow
@@ -98,8 +100,7 @@ def test_mosaic(sample_data, sample_wcs):
 
 
 #@pytest.mark.prefect_test
-#def test_quickpunch_merge_flow(sample_punchdata_list):
-#
-#    output_punchdata = quickpunch_merge_flow(sample_punchdata_list)
-
-#    assert isinstance(output_punchdata, PUNCHData)
+def test_quickpunch_merge_flow(sample_punchdata_list):
+    with prefect_test_harness():
+        output_punchdata = quickpunch_merge_flow(sample_punchdata_list)
+        assert isinstance(output_punchdata, PUNCHData)

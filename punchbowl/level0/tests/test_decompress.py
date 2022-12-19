@@ -30,7 +30,7 @@ def test_decoding():
 def test_encode_then_decode(from_bits, to_bits):
     arr_dim = 2048
     ccd_gain = 1.0 / 4.3  # DN/electron
-    ccd_bias = 100  # DN
+    ccd_offset = 100  # DN
     ccd_read_noise = 17  # DN
 
     original_arr = (np.random.random([arr_dim, arr_dim]) * (2**from_bits)).astype(int)
@@ -40,7 +40,7 @@ def test_encode_then_decode(from_bits, to_bits):
                          from_bits=from_bits,
                          to_bits=to_bits,
                          ccd_gain=ccd_gain,
-                         ccd_bias=ccd_bias,
+                         ccd_offset=ccd_offset,
                          ccd_read_noise=ccd_read_noise)
 
     # TODO: use a calculated value instead of 200

@@ -8,14 +8,15 @@ import astropy.units as u
 from typing import Dict, Any
 
 import numpy as np
+import os.path
+
+TABLE_PATH = os.path.dirname(__file__)
 
 # TODO : restore default ccd values to functions
 
-# TODO : restore table write to file
-
 # TODO : General cleanup before push
 
-def decode(data, from_bits, to_bits, ccd_gain, ccd_bias, ccd_read_noise):
+def decode(data, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise):
     """
     Square root decode between specified bitrate values
 
@@ -28,7 +29,7 @@ def decode(data, from_bits, to_bits, ccd_gain, ccd_bias, ccd_read_noise):
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        ccd gain [photons / DN] #TODO - check this
+        ccd gain [photons / DN]
     ccd_offset
         ccd bias level [DN]
     ccd_read_noise
@@ -41,7 +42,29 @@ def decode(data, from_bits, to_bits, ccd_gain, ccd_bias, ccd_read_noise):
 
     """
 
-    table = generate_decode_table(from_bits, to_bits, ccd_gain, ccd_bias, ccd_read_noise)
+    table_name = (
+        TABLE_PATH
+        + "/decoding_tables/"
+        + "tab_fb"
+        + str(from_bits)
+        + "_tb"
+        + str(to_bits)
+        + "_g"
+        + str(1/ccd_gain)
+        + "_b"
+        + str(ccd_offset)
+        + "_r"
+        + str(ccd_read_noise)
+        + ".npy"
+    )
+
+    # Check for an existing table, otherwise generate one
+    if os.path.isfile(table_name):
+        table = np.load(table_name)
+    else:
+        table = generate_decode_table(from_bits, to_bits, ccd_gain, \
+                                      ccd_offset, ccd_read_noise)
+        np.save(table_name, table)
 
     return decode_by_table(data, table)
 
@@ -108,7 +131,7 @@ def noise_pdf(data_value, ccd_gain, ccd_offset, ccd_read_noise, n_sigma=5, n_ste
     data_value
         Input data value
     ccd_gain
-        ccd gain [photons / DN] #TODO - check this
+        ccd gain [photons / DN]
     ccd_offset
         ccd bias level [DN]
     ccd_read_noise
@@ -161,7 +184,7 @@ def mean_b_offset(data_value, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        ccd gain [photons / DN] #TODO - check this
+        ccd gain [photons / DN]
     ccd_offset
         ccd bias level [DN]
     ccd_read_noise
@@ -212,7 +235,7 @@ def decode_corrected(data_value, from_bits, to_bits, ccd_gain, ccd_offset, ccd_r
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        ccd gain [photons / DN] #TODO - check this
+        ccd gain [photons / DN]
     ccd_offset
         ccd bias level [DN]
     ccd_read_noise
@@ -248,7 +271,7 @@ def generate_decode_table(from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noi
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        ccd gain [photons / DN] #TODO - check this
+        ccd gain [photons / DN]
     ccd_offset
         ccd bias level [DN]
     ccd_read_noise

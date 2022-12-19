@@ -11,13 +11,9 @@ import numpy as np
 
 # TODO : restore default ccd values to functions
 
-# TODO : move to be parameter for necessary functions instead of global
-
 # TODO : restore table write to file
 
 # TODO : General cleanup before push
-
-int_type = np.int32
 
 def decode(data, from_bits, to_bits, ccd_gain, ccd_bias, ccd_read_noise):
     """
@@ -70,11 +66,11 @@ def encode(data, from_bits, to_bits):
 
     """
 
-    data = np.round(data).astype(int_type).clip(0, None)
+    data = np.round(data).astype(np.int32).clip(0, None)
     factor = np.array(2 ** (2 * to_bits - from_bits))
-    data_scaled_by_factor = np.round(data * factor).astype(int_type)
+    data_scaled_by_factor = np.round(data * factor).astype(np.int32)
 
-    return np.floor(np.sqrt(data_scaled_by_factor)).astype(int_type)
+    return np.floor(np.sqrt(data_scaled_by_factor)).astype(np.int32)
 
 
 def decode_simple(data, from_bits, to_bits):
@@ -97,10 +93,10 @@ def decode_simple(data, from_bits, to_bits):
 
     """
 
-    data = np.round(data).astype(int_type).clip(0, None)
+    data = np.round(data).astype(np.int32).clip(0, None)
     factor = 2.0 ** (2 * to_bits - from_bits)
 
-    return np.round(np.square(data) / factor).astype(int_type)
+    return np.round(np.square(data) / factor).astype(np.int32)
 
 
 def noise_pdf(data_value, ccd_gain, ccd_offset, ccd_read_noise, n_sigma=5, n_steps=10000):
@@ -289,7 +285,7 @@ def decode_by_table(data, table):
 
     """
 
-    data = np.round(data).astype(int_type).clip(0, table.shape[0])
+    data = np.round(data).astype(np.int32).clip(0, table.shape[0])
 
     return table[data]
 

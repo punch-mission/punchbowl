@@ -5,40 +5,44 @@ from ndcube import NDCube
 from prefect import task, get_run_logger
 from astropy.wcs import WCS
 import astropy.units as u
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 import numpy as np
 import os.path
 
 TABLE_PATH = os.path.dirname(__file__)
 
-# TODO : restore default ccd values to functions
-
 # TODO : General cleanup before push
 
-def decode(data, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise):
+def decode(
+        data: np.ndarray,
+        from_bits: int = 16,
+        to_bits: int = 12,
+        ccd_gain: float = 1/4.3,
+        ccd_offset: float = 100,
+        ccd_read_noise: float = 17) -> np.ndarray:
     """
     Square root decode between specified bitrate values
 
     Parameters
     ----------
     data
-        input encoded data array
+        Input encoded data array
     from_bits
         Specified bitrate of encoded image to unpack
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        ccd gain [photons / DN]
+        CCD gain [photons / DN]
     ccd_offset
-        ccd bias level [DN]
+        CCD bias level [DN]
     ccd_read_noise
-        ccd read noise level [DN]
+        CCD read noise level [DN]
 
     Returns
     -------
     np.ndarray
-        square root decoded version of the input image
+        Square root decoded version of the input image
 
     """
 
@@ -69,7 +73,7 @@ def decode(data, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise):
     return decode_by_table(data, table)
 
 
-def encode(data, from_bits, to_bits):
+def encode(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
     """
     Square root encode between specified bitrate values
 
@@ -96,7 +100,7 @@ def encode(data, from_bits, to_bits):
     return np.floor(np.sqrt(data_scaled_by_factor)).astype(np.int32)
 
 
-def decode_simple(data, from_bits, to_bits):
+def decode_simple(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
     """
     Performs a simple decoding using the naive squaring strategy
 
@@ -122,7 +126,13 @@ def decode_simple(data, from_bits, to_bits):
     return np.round(np.square(data) / factor).astype(np.int32)
 
 
-def noise_pdf(data_value, ccd_gain, ccd_offset, ccd_read_noise, n_sigma=5, n_steps=10000):
+def noise_pdf(
+        data_value: float,
+        ccd_gain: float = 1/4.3,
+        ccd_offset: float = 100,
+        ccd_read_noise: float = 17,
+        n_sigma: int = 5,
+        n_steps: int = 10000) -> Tuple:
     """
     Generates a probability distribution function (pdf) from input an data value
 
@@ -131,11 +141,11 @@ def noise_pdf(data_value, ccd_gain, ccd_offset, ccd_read_noise, n_sigma=5, n_ste
     data_value
         Input data value
     ccd_gain
-        ccd gain [photons / DN]
+        CCD gain [DN / electron]
     ccd_offset
-        ccd bias level [DN]
+        CCD bias level [DN]
     ccd_read_noise
-        ccd read noise level [DN]
+        CCD read noise level [DN]
     n_sigma
         Number of sigma steps
     n_steps
@@ -147,7 +157,7 @@ def noise_pdf(data_value, ccd_gain, ccd_offset, ccd_read_noise, n_sigma=5, n_ste
     np.ndarray
         Data step distribution
     normal
-        Normal distribution
+        Data normal distribution
 
     """
 
@@ -171,28 +181,34 @@ def noise_pdf(data_value, ccd_gain, ccd_offset, ccd_read_noise, n_sigma=5, n_ste
     return data_value + dn_steps, normal
 
 
-def mean_b_offset(data_value, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise):
+def mean_b_offset(
+        data_value: float,
+        from_bits: int = 16,
+        to_bits: int = 12,
+        ccd_gain: float = 1/4.3,
+        ccd_offset: float = 100,
+        ccd_read_noise: float = 17) -> np.float:
     """
     Compute an offset from the naive and robust decoding processes
 
     Parameters
     ----------
     data_value
-        input data value [DN]
+        Input data value [DN]
     from_bits
         Specified bitrate of encoded image to unpack
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        ccd gain [photons / DN]
+        CCD gain [DN / electron]
     ccd_offset
-        ccd bias level [DN]
+        CCD bias level [DN]
     ccd_read_noise
-        ccd read noise level [DN]
+        CCD read noise level [DN]
 
     Returns
     -------
-    np.int
+    np.float
         Generated decoding value for use in constructing a decoding table
 
     """
@@ -222,28 +238,34 @@ def mean_b_offset(data_value, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read
     return expected_value - naive_decoded_value
 
 
-def decode_corrected(data_value, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise):
+def decode_corrected(
+        data_value: float,
+        from_bits: int = 16,
+        to_bits: int = 12,
+        ccd_gain: float = 1 / 4.3,
+        ccd_offset: float = 100,
+        ccd_read_noise: float = 17) -> np.float:
     """
     Compute an individual decoding value for an input data value
 
     Parameters
     ----------
     data_value
-        input data value [DN]
+        Input data value [DN]
     from_bits
         Specified bitrate of encoded image to unpack
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        ccd gain [photons / DN]
+        CCD gain [DN / electron]
     ccd_offset
-        ccd bias level [DN]
+        CCD bias level [DN]
     ccd_read_noise
-        ccd read noise level [DN]
+        CCD read noise level [DN]
 
     Returns
     -------
-    np.int
+    np.float
         Generated decoding value for use in constructing a decoding table
 
     """
@@ -260,7 +282,12 @@ def decode_corrected(data_value, from_bits, to_bits, ccd_gain, ccd_offset, ccd_r
     return decode_simple(data_value, from_bits, to_bits) - of
 
 
-def generate_decode_table(from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise):
+def generate_decode_table(
+        from_bits: int = 16,
+        to_bits: int = 12,
+        ccd_gain: float = 1/4.3,
+        ccd_offset: float = 100,
+        ccd_read_noise: float = 17) -> np.ndarray:
     """
     Generates a square root decode table between specified bitrate values and CCD parameters
 
@@ -271,11 +298,11 @@ def generate_decode_table(from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noi
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        ccd gain [photons / DN]
+        CCD gain [DN / electron]
     ccd_offset
-        ccd bias level [DN]
+        CCD bias level [DN]
     ccd_read_noise
-        ccd read noise level [DN]
+        CCD read noise level [DN]
 
     Returns
     -------
@@ -292,14 +319,16 @@ def generate_decode_table(from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noi
     return table
 
 
-def decode_by_table(data, table):
+def decode_by_table(data: np.ndarray, table: np.ndarray):
     """
     Generates a square root decode table between specified bitrate values and CCD parameters
 
     Parameters
     ----------
     data
-        input encoded data array
+        Input encoded data array
+    table
+        Square root decoding table
 
     Returns
     -------

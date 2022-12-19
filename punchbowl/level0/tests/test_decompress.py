@@ -1,6 +1,3 @@
-from punchbowl.level0.decode import create_fake_ndcube
-
-from ndcube import NDCube
 import pytest
 import numpy as np
 from punchbowl.level0.decompress import encode, decode_simple, decode
@@ -29,9 +26,9 @@ def test_decoding():
 @pytest.mark.parametrize('from_bits, to_bits', [(16, 10), (16, 11), (16, 12)])
 def test_encode_then_decode(from_bits, to_bits):
     arr_dim = 2048
-    ccd_gain = 1.0 / 4.3  # DN/electron
-    ccd_offset = 100  # DN
-    ccd_read_noise = 17  # DN
+    ccd_gain = 1.0 / 4.3    # DN/electron
+    ccd_offset = 100        # DN
+    ccd_read_noise = 17     # DN
 
     original_arr = (np.random.random([arr_dim, arr_dim]) * (2**from_bits)).astype(int)
 
@@ -43,5 +40,8 @@ def test_encode_then_decode(from_bits, to_bits):
                          ccd_offset=ccd_offset,
                          ccd_read_noise=ccd_read_noise)
 
-    # TODO: use a calculated value instead of 200
-    assert np.all(np.abs(original_arr - decoded_arr) <= 200)  # np.allclose(original_arr, decoded_arr)
+    noise_tolerance = np.sqrt(original_arr / ccd_gain) * ccd_gain
+
+    test_coords = np.where(original_arr > 150)
+
+    assert np.all(np.abs(original_arr[test_coords] - decoded_arr[test_coords]) <= noise_tolerance[test_coords])

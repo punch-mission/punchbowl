@@ -1,5 +1,6 @@
-import pytest
 import numpy as np
+import pytest
+
 from punchbowl.level0.decode_sqrt import encode_sqrt, decode_sqrt_simple, decode_sqrt
 
 

@@ -1,19 +1,16 @@
-from punchbowl.data import PUNCHData
-
-from prefect import task, get_run_logger
-from typing import Tuple
-
+import os.path
 from datetime import datetime
+from typing import Tuple, Union
 
 import numpy as np
-import os.path
+from prefect import task, get_run_logger
+
+from punchbowl.data import PUNCHData
 
 TABLE_PATH = os.path.dirname(__file__)
 
-# TODO : General cleanup before push
-
 def decode_sqrt(
-        data: np.ndarray,
+        data: Union[np.ndarray, float],
         from_bits: int = 16,
         to_bits: int = 12,
         ccd_gain: float = 1/4.3,
@@ -71,7 +68,7 @@ def decode_sqrt(
     return decode_sqrt_by_table(data, table)
 
 
-def encode_sqrt(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
+def encode_sqrt(data: Union[np.ndarray, float], from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
     """
     Square root encode between specified bitrate values
 
@@ -98,7 +95,7 @@ def encode_sqrt(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.
     return np.floor(np.sqrt(data_scaled_by_factor)).astype(np.int32)
 
 
-def decode_sqrt_simple(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
+def decode_sqrt_simple(data: Union[np.ndarray, float], from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
     """
     Performs a simple decoding using the naive squaring strategy
 
@@ -125,7 +122,7 @@ def decode_sqrt_simple(data: np.ndarray, from_bits: int = 16, to_bits: int = 12)
 
 
 def noise_pdf(
-        data_value: float,
+        data_value: Union[np.ndarray, float],
         ccd_gain: float = 1/4.3,
         ccd_offset: float = 100,
         ccd_read_noise: float = 17,
@@ -224,7 +221,7 @@ def mean_b_offset(
     weights = weights / np.sum(weights)
 
     # Encode the entire value distribution
-    data_values = encode(values, from_bits, to_bits)
+    data_values = encode_sqrt(values, from_bits, to_bits)
 
     # Decode the entire value distribution to find the net offset
     net_offset = decode_sqrt_simple(data_values, from_bits, to_bits)
@@ -317,7 +314,7 @@ def generate_decode_sqrt_table(
     return table
 
 
-def decode_sqrt_by_table(data: np.ndarray, table: np.ndarray):
+def decode_sqrt_by_table(data: Union[np.ndarray, float], table: np.ndarray):
     """
     Generates a square root decode table between specified bitrate values and CCD parameters
 

@@ -1,13 +1,13 @@
 import pytest
 import numpy as np
-from punchbowl.level0.decompress import encode, decode_simple, decode
+from punchbowl.level0.decode_sqrt import encode_sqrt, decode_sqrt_simple, decode_sqrt
 
 
 def test_encoding():
     arr_dim = 2048
     arr = np.random.random([arr_dim, arr_dim]) * (2**16)
 
-    encoded_arr = encode(arr, from_bits=16, to_bits=10)
+    encoded_arr = encode_sqrt(arr, from_bits=16, to_bits=10)
 
     assert encoded_arr.shape == arr.shape
     assert np.max(encoded_arr) <= 2**10
@@ -17,7 +17,7 @@ def test_decoding():
     arr_dim = 2048
     arr = np.random.random([arr_dim, arr_dim]) * (2**10)
 
-    decoded_arr = decode_simple(arr, from_bits=10, to_bits=16)
+    decoded_arr = decode_sqrt_simple(arr, from_bits=10, to_bits=16)
 
     assert decoded_arr.shape == arr.shape
     assert np.max(decoded_arr) <= 2**16
@@ -32,8 +32,8 @@ def test_encode_then_decode(from_bits, to_bits):
 
     original_arr = (np.random.random([arr_dim, arr_dim]) * (2**from_bits)).astype(int)
 
-    encoded_arr = encode(original_arr, from_bits, to_bits)
-    decoded_arr = decode(encoded_arr,
+    encoded_arr = encode_sqrt(original_arr, from_bits, to_bits)
+    decoded_arr = decode_sqrt(encoded_arr,
                          from_bits=from_bits,
                          to_bits=to_bits,
                          ccd_gain=ccd_gain,

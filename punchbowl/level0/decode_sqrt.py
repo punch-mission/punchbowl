@@ -1,11 +1,9 @@
 from punchbowl.data import PUNCHData
 
-import numpy as np
-from ndcube import NDCube
 from prefect import task, get_run_logger
-from astropy.wcs import WCS
-import astropy.units as u
-from typing import Dict, Any, Tuple
+from typing import Tuple
+
+from datetime import datetime
 
 import numpy as np
 import os.path
@@ -14,7 +12,7 @@ TABLE_PATH = os.path.dirname(__file__)
 
 # TODO : General cleanup before push
 
-def decode(
+def decode_sqrt(
         data: np.ndarray,
         from_bits: int = 16,
         to_bits: int = 12,
@@ -66,14 +64,14 @@ def decode(
     if os.path.isfile(table_name):
         table = np.load(table_name)
     else:
-        table = generate_decode_table(from_bits, to_bits, ccd_gain, \
+        table = generate_decode_sqrt_table(from_bits, to_bits, ccd_gain,
                                       ccd_offset, ccd_read_noise)
         np.save(table_name, table)
 
-    return decode_by_table(data, table)
+    return decode_sqrt_by_table(data, table)
 
 
-def encode(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
+def encode_sqrt(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
     """
     Square root encode between specified bitrate values
 
@@ -100,7 +98,7 @@ def encode(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.ndarr
     return np.floor(np.sqrt(data_scaled_by_factor)).astype(np.int32)
 
 
-def decode_simple(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
+def decode_sqrt_simple(data: np.ndarray, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
     """
     Performs a simple decoding using the naive squaring strategy
 
@@ -134,7 +132,7 @@ def noise_pdf(
         n_sigma: int = 5,
         n_steps: int = 10000) -> Tuple:
     """
-    Generates a probability distribution function (pdf) from input an data value
+    Generates a probability distribution function (pdf) from an input data value
 
     Parameters
     ----------
@@ -212,7 +210,7 @@ def mean_b_offset(
         Generated decoding value for use in constructing a decoding table
 
     """
-    naive_decoded_value = decode_simple(data_value, from_bits, to_bits)
+    naive_decoded_value = decode_sqrt_simple(data_value, from_bits, to_bits)
 
     # Generate distribution around naive value
     (values, weights) = noise_pdf(naive_decoded_value, ccd_gain, ccd_offset, ccd_read_noise)
@@ -229,7 +227,7 @@ def mean_b_offset(
     data_values = encode(values, from_bits, to_bits)
 
     # Decode the entire value distribution to find the net offset
-    net_offset = decode_simple(data_values, from_bits, to_bits)
+    net_offset = decode_sqrt_simple(data_values, from_bits, to_bits)
 
     # Expected value of the entire distribution
     expected_value = np.sum(net_offset * weights)
@@ -238,7 +236,7 @@ def mean_b_offset(
     return expected_value - naive_decoded_value
 
 
-def decode_corrected(
+def decode_sqrt_corrected(
         data_value: float,
         from_bits: int = 16,
         to_bits: int = 12,
@@ -270,8 +268,8 @@ def decode_corrected(
 
     """
 
-    s1p = decode_simple(data_value + 1, from_bits, to_bits)
-    s1n = decode_simple(data_value - 1, from_bits, to_bits)
+    s1p = decode_sqrt_simple(data_value + 1, from_bits, to_bits)
+    s1n = decode_sqrt_simple(data_value - 1, from_bits, to_bits)
 
     width = (s1p - s1n) / 4
 
@@ -279,10 +277,10 @@ def decode_corrected(
 
     of = mean_b_offset(data_value, from_bits, to_bits, ccd_gain, ccd_offset, fixed_sigma)
 
-    return decode_simple(data_value, from_bits, to_bits) - of
+    return decode_sqrt_simple(data_value, from_bits, to_bits) - of
 
 
-def generate_decode_table(
+def generate_decode_sqrt_table(
         from_bits: int = 16,
         to_bits: int = 12,
         ccd_gain: float = 1/4.3,
@@ -314,12 +312,12 @@ def generate_decode_table(
     table = np.zeros(2 ** to_bits)
 
     for i in range(0, 2 ** to_bits):
-        table[i] = decode_corrected(i, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise)
+        table[i] = decode_sqrt_corrected(i, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise)
 
     return table
 
 
-def decode_by_table(data: np.ndarray, table: np.ndarray):
+def decode_sqrt_by_table(data: np.ndarray, table: np.ndarray):
     """
     Generates a square root decode table between specified bitrate values and CCD parameters
 
@@ -343,13 +341,40 @@ def decode_by_table(data: np.ndarray, table: np.ndarray):
 
 
 @task
-def decompress_data(level0: PUNCHData, path: str) -> Dict[str, Any]:
+def decompress_data(data_object: PUNCHData) -> PUNCHData:
 
     logger = get_run_logger()
-    logger.info("decompress started")
+    logger.info("square root decoding started")
 
-    # TODO: do decompressing in here
+    data = data_object.data
+    uncertainty = data_object.uncertainty
 
-    logger.info("decompress finished")
-    data_object.add_history(datetime.now(), "LEVEL0-decompress", "image decompressed")
+    from_bits = data_object.meta['RAWBITS']
+    to_bits = data_object.meta['COMPBITS']
+
+    ccd_gain = data_object.meta['GAINCMD']
+    ccd_offset = data_object.meta['OFFSET']
+    ccd_read_noise = 17     # DN
+
+    decoded_data = decode_sqrt(data,
+                         from_bits=from_bits,
+                         to_bits=to_bits,
+                         ccd_gain=ccd_gain,
+                         ccd_offset=ccd_offset,
+                         ccd_read_noise=ccd_read_noise)
+
+    decoded_uncertainty = decode_sqrt(uncertainty,
+                          from_bits=from_bits,
+                          to_bits=to_bits,
+                          ccd_gain=ccd_gain,
+                          ccd_offset=ccd_offset,
+                          ccd_read_noise=ccd_read_noise)
+
+    data_object.data[:,:] = decoded_data[:,:]
+    data_object.uncertainty[:,:] = decoded_uncertainty[:,:]
+
+    logger.info("square root decoding finished")
+
+    data_object.add_history(datetime.now(), "LEVEL0-decode-sqrt", "image square root decoded")
+
     return data_object

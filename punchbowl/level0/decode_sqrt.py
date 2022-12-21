@@ -338,7 +338,7 @@ def decode_sqrt_by_table(data: Union[np.ndarray, float], table: np.ndarray):
 
 
 @task
-def decompress_data(data_object: PUNCHData) -> PUNCHData:
+def decode_sqrt_data(data_object: PUNCHData) -> PUNCHData:
 
     logger = get_run_logger()
     logger.info("square root decoding started")
@@ -359,7 +359,7 @@ def decompress_data(data_object: PUNCHData) -> PUNCHData:
                          ccd_offset = ccd_offset,
                          ccd_read_noise = ccd_read_noise)
 
-    data_object.duplicate_with_updates(data = decoded_data)
+    data_object = data_object.duplicate_with_updates(data = decoded_data)
 
     logger.info("square root decoding finished")
 

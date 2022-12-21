@@ -344,7 +344,6 @@ def decompress_data(data_object: PUNCHData) -> PUNCHData:
     logger.info("square root decoding started")
 
     data = data_object.data
-    uncertainty = data_object.uncertainty
 
     from_bits = data_object.meta['RAWBITS']
     to_bits = data_object.meta['COMPBITS']
@@ -360,15 +359,7 @@ def decompress_data(data_object: PUNCHData) -> PUNCHData:
                          ccd_offset=ccd_offset,
                          ccd_read_noise=ccd_read_noise)
 
-    decoded_uncertainty = decode_sqrt(uncertainty,
-                          from_bits=from_bits,
-                          to_bits=to_bits,
-                          ccd_gain=ccd_gain,
-                          ccd_offset=ccd_offset,
-                          ccd_read_noise=ccd_read_noise)
-
     data_object.data[:,:] = decoded_data[:,:]
-    data_object.uncertainty[:,:] = decoded_uncertainty[:,:]
 
     logger.info("square root decoding finished")
 

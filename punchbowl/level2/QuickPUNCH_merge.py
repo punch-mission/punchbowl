@@ -1,24 +1,19 @@
 # Core Python imports
-from typing import Optional, Tuple, List
 from datetime import datetime
+from typing import Tuple, List
 
 # Third party imports
 import numpy as np
-
 import reproject
-
-from astropy.io import fits
-import astropy.units as u
 from astropy.wcs import WCS
-
 from prefect import task, flow, get_run_logger
-import astropy.units as u
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
 
 
 # core reprojection function
+@task
 def reproject_array(input_array: np.ndarray,
                     input_wcs: WCS,
                     output_wcs: WCS,
@@ -55,13 +50,14 @@ def reproject_array(input_array: np.ndarray,
     output_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
     """
 
-    output_array = reproject.reproject_adaptive((input_array, input_wcs), output_wcs, \
-        output_shape, roundtrip_coords=False, return_footprint=False)
+    output_array = reproject.reproject_adaptive((input_array, input_wcs), output_wcs,
+                                                output_shape, roundtrip_coords=False, return_footprint=False)
     
     return output_array
 
 
 # trefoil mosaic generation function
+@task
 def mosaic(data_input: List,
             uncert_input: List,
             wcs_input: List,
@@ -135,14 +131,13 @@ def quickpunch_merge_flow(data: List) -> PUNCHData:
     trefoil_shape = trefoil_wcs.array_shape()
 
     # Unpack input data objects
-    data_input, uncert_input, wcs_input = []
+    data_input, uncert_input, wcs_input = [], [], []
     for obj in data:
         data_input.append(obj.data)
         uncert_input.append(obj.uncertainty)
         wcs_input.append(obj.wcs)
 
-    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, \
-        trefoil_wcs, trefoil_shape)
+    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, trefoil_wcs, trefoil_shape)
 
     # Pack up an output data object
     data_object = PUNCHData(trefoil_data, uncertainty=trefoil_uncertainty, wcs=trefoil_wcs)

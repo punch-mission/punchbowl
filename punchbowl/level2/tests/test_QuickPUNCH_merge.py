@@ -1,27 +1,19 @@
 # Core Python imports
-import pytest
-from pytest import fixture
-import pathlib
-
 # Third party imports
 import numpy as np
-
 from astropy.wcs import WCS
-
 from ndcube import NDCube
-
 from prefect.testing.utilities import prefect_test_harness
+from pytest import fixture
 
 # punchbowl imports
-from punchbowl.level2.QuickPUNCH_merge import reproject_array, mosaic, \
-    quickpunch_merge_flow
-
 from punchbowl.data import PUNCHData
+from punchbowl.level2.QuickPUNCH_merge import reproject_array, mosaic, quickpunch_merge_flow
 
 
 # Some test inputs
 @fixture
-def sample_wcs(naxis=2, crpix=(0,0), crval=(0,0), cdelt=(1, 1), \
+def sample_wcs(naxis=2, crpix=(0,0), crval=(0,0), cdelt=(1, 1),
                ctype=("HPLN-ARC", "HPLT-ARC")) -> WCS:
     """
     Generate a WCS for testing

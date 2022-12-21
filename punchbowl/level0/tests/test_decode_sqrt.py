@@ -35,11 +35,11 @@ def test_encode_then_decode(from_bits, to_bits):
 
     encoded_arr = encode_sqrt(original_arr, from_bits, to_bits)
     decoded_arr = decode_sqrt(encoded_arr,
-                         from_bits=from_bits,
-                         to_bits=to_bits,
-                         ccd_gain=ccd_gain,
-                         ccd_offset=ccd_offset,
-                         ccd_read_noise=ccd_read_noise)
+                         from_bits = from_bits,
+                         to_bits = to_bits,
+                         ccd_gain = ccd_gain,
+                         ccd_offset = ccd_offset,
+                         ccd_read_noise = ccd_read_noise)
 
     noise_tolerance = np.sqrt(original_arr / ccd_gain) * ccd_gain
 

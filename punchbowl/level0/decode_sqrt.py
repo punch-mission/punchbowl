@@ -353,13 +353,13 @@ def decompress_data(data_object: PUNCHData) -> PUNCHData:
     ccd_read_noise = 17     # DN
 
     decoded_data = decode_sqrt(data,
-                         from_bits=from_bits,
-                         to_bits=to_bits,
-                         ccd_gain=ccd_gain,
-                         ccd_offset=ccd_offset,
-                         ccd_read_noise=ccd_read_noise)
+                         from_bits = from_bits,
+                         to_bits = to_bits,
+                         ccd_gain = ccd_gain,
+                         ccd_offset = ccd_offset,
+                         ccd_read_noise = ccd_read_noise)
 
-    data_object.data[:,:] = decoded_data[:,:]
+    data_object.duplicate_with_updates(data = decoded_data)
 
     logger.info("square root decoding finished")
 

@@ -4,7 +4,7 @@ import numpy as np
 from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect.testing.utilities import prefect_test_harness
-from pytest import fixture
+from pytest import fixture, mark
 
 # punchbowl imports
 from punchbowl.data import PUNCHData
@@ -66,12 +66,20 @@ def sample_punchdata_list(sample_punchdata):
 #                         [(np.zeros([20,20]), sample_wcs, sample_wcs, (20,20))])
 # def test_reproject_array(input_array, input_wcs, output_wcs, output_shape):
 
+@pytest.mark.parameterize("crpix, crval, cdelt",
+                          [((0,0),(1,1)),((0,0),(1,1)),((1,1),(2,2))])
+def test_reproject_array(sample_data, crpix, crval, cdelt, output_shape=(20,20)):
+    sample_wcs = sample_wcs(crpix=crpix, crval=crval, cdelt=cdelt)
+    expected = sample_data
+    actual = reproject_array.fn(sample_data, sample_wcs, sample_wcs, output_shape)
+
+    assert actual.shape == expected.shape
+
 
 def test_reproject_array(sample_data, sample_wcs, output_shape=(20,20)):
     expected = sample_data
-    actual = reproject_array(sample_data, sample_wcs, sample_wcs, output_shape)
+    actual = reproject_array.fn(sample_data, sample_wcs, sample_wcs, output_shape)
 
-    # assert np.allclose(actual, expected)
     assert actual.shape == expected.shape
 
 
@@ -80,13 +88,13 @@ def test_mosaic(sample_data, sample_wcs):
     expected = sample_data
 
     data_input = [sample_data, sample_data]
-    uncert_input = [sample_data, sample_data]
+    uncertainty_input = [sample_data, sample_data]
     wcs_input = [sample_wcs, sample_wcs]
     wcs_output = sample_wcs
     shape_output = (20,20)
 
-    (actual_data, actual_uncert) = mosaic(data_input, uncert_input, wcs_input, \
-                                          wcs_output, shape_output)
+    (actual_data, actual_uncertainty) = mosaic(data_input, uncertainty_input, wcs_input,
+                                             wcs_output, shape_output)
 
     assert actual_data.shape == expected.shape
 

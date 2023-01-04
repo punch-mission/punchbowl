@@ -59,7 +59,7 @@ def reproject_array(input_array: np.ndarray,
 # trefoil mosaic generation function
 @task
 def mosaic(data_input: List,
-            uncert_input: List,
+            uncertainty_input: List,
             wcs_input: List,
             wcs_output: WCS,
             shape_output: Tuple) -> Tuple[np.ndarray, np.ndarray]:
@@ -73,7 +73,7 @@ def mosaic(data_input: List,
     ----------
     data_input
         list of ndarray data objects to assemble into a mosaic
-    uncert_input
+    uncertainty_input
         list of ndarray uncertainty objects to assemble into a mosaic
     wcs_input
         list of corresponding WCS objects utilized to assemble a mosaic
@@ -94,12 +94,12 @@ def mosaic(data_input: List,
     Example Call
     ------------
 
-    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input,
+    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncertainty_input, wcs_input,
                                                  wcs_output, shape_output)
     """
     
     reprojected_data = np.zeros([shape_output[0], shape_output[1], len(data_input)])
-    reprojected_uncert = np.zeros([shape_output[0], shape_output[1], len(data_input)])
+    reprojected_uncertainty = np.zeros([shape_output[0], shape_output[1], len(data_input)])
 
     i = 0
     for idata, iwcs in zip(data_input, wcs_input):
@@ -107,16 +107,16 @@ def mosaic(data_input: List,
         i = i+1
 
     i = 0
-    for iuncert, iwcs in zip(uncert_input, wcs_input):
-        reprojected_uncert[:,:,i] = reproject_array.fn(iuncert, iwcs, wcs_output, shape_output)
+    for iuncertainty, iwcs in zip(uncertainty_input, wcs_input):
+        reprojected_uncertainty[:, :, i] = reproject_array.fn(iuncertainty, iwcs, wcs_output, shape_output)
         i = i+1
 
     # Merge these data
     # Carefully deal with missing data (NaN) by only ignoring a pixel missing from all observations
-    trefoil_data = np.nansum(reprojected_data * reprojected_uncert, axis=2) / np.nansum(reprojected_uncert, axis=2)
-    trefoil_uncert = np.amax(reprojected_uncert)
+    trefoil_data = np.nansum(reprojected_data * reprojected_uncertainty, axis=2) / np.nansum(reprojected_uncertainty, axis=2)
+    trefoil_uncertainty = np.amax(reprojected_uncertainty)
 
-    return trefoil_data, trefoil_uncert
+    return trefoil_data, trefoil_uncertainty
 
 
 # core module flow
@@ -130,13 +130,13 @@ def quickpunch_merge_flow(data: List) -> PUNCHData:
     trefoil_shape = trefoil_wcs.array_shape()
 
     # Unpack input data objects
-    data_input, uncert_input, wcs_input = [], [], []
+    data_input, uncertainty_input, wcs_input = [], [], []
     for obj in data:
         data_input.append(obj.data)
-        uncert_input.append(obj.uncertainty)
+        uncertainty_input.append(obj.uncertainty)
         wcs_input.append(obj.wcs)
 
-    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, trefoil_wcs, trefoil_shape)
+    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncertainty_input, wcs_input, trefoil_wcs, trefoil_shape)
 
     # Pack up an output data object
     data_object = PUNCHData(trefoil_data, uncertainty=trefoil_uncertainty, wcs=trefoil_wcs)

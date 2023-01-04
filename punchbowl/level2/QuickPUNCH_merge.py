@@ -94,8 +94,8 @@ def mosaic(data_input: List,
     Example Call
     ------------
 
-    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input, \
-        wcs_output, shape_output)
+    (trefoil_data, trefoil_uncertainty) = mosaic(data_input, uncert_input, wcs_input,
+                                                 wcs_output, shape_output)
     """
     
     reprojected_data = np.zeros([shape_output[0], shape_output[1], len(data_input)])
@@ -103,18 +103,17 @@ def mosaic(data_input: List,
 
     i = 0
     for idata, iwcs in zip(data_input, wcs_input):
-        reprojected_data[:,:,i] = reproject_array(idata, iwcs, wcs_output, shape_output)
+        reprojected_data[:,:,i] = reproject_array.fn(idata, iwcs, wcs_output, shape_output)
         i = i+1
 
     i = 0
     for iuncert, iwcs in zip(uncert_input, wcs_input):
-        reprojected_uncert[:,:,i] = reproject_array(iuncert, iwcs, wcs_output, shape_output)
+        reprojected_uncert[:,:,i] = reproject_array.fn(iuncert, iwcs, wcs_output, shape_output)
         i = i+1
 
     # Merge these data
-    # TODO - carefully check how this deals with NaNs
-    trefoil_data = ((reprojected_data * reprojected_uncert).sum(axis=2)) / \
-        (reprojected_uncert.sum(axis=2))
+    # Carefully deal with missing data (NaN) by only ignoring a pixel missing from all observations
+    trefoil_data = np.nansum(reprojected_data * reprojected_uncert, axis=2) / np.nansum(reprojected_uncert, axis=2)
     trefoil_uncert = np.amax(reprojected_uncert)
 
     return trefoil_data, trefoil_uncert

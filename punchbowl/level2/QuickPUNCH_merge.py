@@ -108,7 +108,7 @@ def mosaic(data_input: List,
 
     i = 0
     for iuncertainty, iwcs in zip(uncertainty_input, wcs_input):
-        reprojected_uncertainty[:, :, i] = reproject_array.fn(iuncertainty, iwcs, wcs_output, shape_output)
+        reprojected_uncertainty[:, :, i] = reproject_array.fn(iuncertainty.array, iwcs, wcs_output, shape_output)
         i = i+1
 
     # Merge these data
@@ -126,8 +126,10 @@ def quickpunch_merge_flow(data: List) -> PUNCHData:
     logger.info("QuickPUNCH_merge module started")
 
     # Define output WCS from file
-    trefoil_wcs = WCS('data/trefoil_hdr.fits')
-    trefoil_shape = trefoil_wcs.array_shape()
+    trefoil_wcs = WCS('level2/data/trefoil_hdr.fits')
+    trefoil_shape = (4096,4096)
+    trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    #trefoil_shape = trefoil_wcs.array_shape
 
     # Unpack input data objects
     data_input, uncertainty_input, wcs_input = [], [], []

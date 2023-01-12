@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 import os.path
 from collections import namedtuple
 from datetime import datetime
@@ -190,8 +191,9 @@ class HeaderTemplate:
         for row_i, entry in self._table.iterrows():
             if entry["TYPE"] == "section":
                 if len(entry["COMMENT"]) > 72:
-                    raise RuntimeWarning(
-                        "Section text exceeds 80 characters, EXTEND will be used."
+                    warnings.warn(
+                        "Section text exceeds 80 characters, EXTEND will be used.",
+                        RuntimeWarning,
                     )
                 hdr.append(
                     ("COMMENT", ("----- " + entry["COMMENT"] + " ").ljust(72, "-")),
@@ -203,14 +205,17 @@ class HeaderTemplate:
 
             elif entry["TYPE"] == "keyword":
                 if len(entry["VALUE"]) + len(entry["COMMENT"]) > 72:
-                    raise RuntimeWarning(
-                        "Section text exceeds 80 characters, EXTEND will be used."
+                    warnings.warn(
+                        "Section text exceeds 80 characters, EXTEND will be used.",
+                        RuntimeWarning,
                     )
 
                 hdr.append(
                     (
                         entry["KEYWORD"],
-                        type_converter[entry["DATATYPE"]](entry["VALUE"]),
+                        type_converter[entry["DATATYPE"]](entry["VALUE"])
+                        if entry["VALUE"]
+                        else "",
                         entry["COMMENT"],
                     ),
                     end=True,
@@ -223,7 +228,7 @@ class HeaderTemplate:
                 empty_keywords.remove(key)
 
         if empty_keywords:
-            raise RuntimeWarning(f"Some keywords left empty: {empty_keywords}")
+            warnings.warn(f"Some keywords left empty: {empty_keywords}", RuntimeWarning)
 
         return hdr
 
@@ -346,7 +351,13 @@ class PUNCHData(NDCube):
             uncertainty = StdDevUncertainty(hdul[1].data)
             unit = u.ct  # counts
 
-        return cls(data, wcs=wcs, uncertainty=uncertainty, meta=meta, unit=unit)
+        return cls(
+            data.newbyteorder().byteswap(inplace=True),
+            wcs=wcs,
+            uncertainty=uncertainty,
+            meta=meta,
+            unit=unit,
+        )
 
     @property
     def weight(self) -> np.ndarray:
@@ -424,18 +435,15 @@ class PUNCHData(NDCube):
         -------
         None
         """
-        hdu_data = fits.PrimaryHDU()
-        hdu_data.data = self.data
-
         # TODO : make this select the correct header template for writing
-        hdu_data.header = self.create_header(
+        header = self.create_header(
             str(Path(__file__).parent / "tests/hdr_test_template.csv")
         )
 
         for entry in self._history:
-            hdu_data.header[
-                "HISTORY"
-            ] = f"{entry.datetime}: {entry.source}, {entry.comment}"
+            header["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
+
+        hdu_data = fits.PrimaryHDU(data=self.data, header=header)
 
         # TODO : Make an uncertainty header
         hdu_uncertainty = fits.ImageHDU()
@@ -491,3 +499,17 @@ class PUNCHData(NDCube):
     @property
     def datetime(self) -> datetime:
         return parse_datetime(self.meta["date-obs"])
+
+    def duplicate_with_updates(self, data: np.ndarray=None,
+                               wcs: astropy.wcs.WCS= None,
+                               uncertainty: np.ndarray=None,
+                               meta=None,
+                               history=None,
+                               unit=None) -> PUNCHData:
+        return PUNCHData(data=data if data else self.data,
+                         wcs=wcs if wcs else self.wcs,
+                         uncertainty=uncertainty if uncertainty else self.uncertainty,
+                         meta=meta if meta else self.meta,
+                         history=history if history else self._history,
+                         unit=unit if unit else self.unit
+                         )

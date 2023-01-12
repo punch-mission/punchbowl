@@ -1,9 +1,7 @@
-from typing import Dict, Tuple
 from datetime import datetime
 import pathlib
 
 from prefect import task, get_run_logger
-import numpy as np
 from regularizepsf.corrector import ArrayCorrector
 
 from punchbowl.data import PUNCHData
@@ -19,8 +17,7 @@ def correct_psf(
 ) -> PUNCHData:
     new_data = corrector.correct_image(data.data, alpha=alpha, epsilon=epsilon)
 
-    # TODO: needs to copy not just the data but all the meta
-    return PUNCHData(data=new_data)
+    return data.duplicate_with_updates(data=new_data)
 
 
 @task

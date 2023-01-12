@@ -56,7 +56,7 @@ def test_generate_from_filename():
 
 
 def test_write_data(sample_data):
-    with pytest.raises(RuntimeWarning):
+    with pytest.warns(RuntimeWarning):
         sample_data.meta["LEVEL"] = 1
         sample_data.meta["TYPECODE"] = "XX"
         sample_data.meta["OBSRVTRY"] = "Y"
@@ -68,7 +68,7 @@ def test_write_data(sample_data):
         sample_data.meta["POL"] = "M"
 
         sample_data.write(SAMPLE_WRITE_PATH)
-        # Check for writing to file? Read back in and compare?
+        # TODO: Check for writing to file? Read back in and compare?
 
 
 @fixture
@@ -129,7 +129,7 @@ def test_generate_from_invalid_file():
 
 
 def test_fill_header(simple_header_template):
-    with pytest.raises(RuntimeWarning):
+    with pytest.warns(RuntimeWarning):
         meta = {"LEVEL": 1}
         header = simple_header_template.fill(meta)
         assert isinstance(header, fits.Header)

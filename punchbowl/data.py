@@ -506,10 +506,10 @@ class PUNCHData(NDCube):
                                meta=None,
                                history=None,
                                unit=None) -> PUNCHData:
-        return PUNCHData(data=data if data else self.data,
-                         wcs=wcs if wcs else self.wcs,
-                         uncertainty=uncertainty if uncertainty else self.uncertainty,
-                         meta=meta if meta else self.meta,
-                         history=history if history else self._history,
-                         unit=unit if unit else self.unit
+        return PUNCHData(data=data if data is not None else self.data,
+                         wcs=wcs if wcs is not None else self.wcs,
+                         uncertainty=uncertainty if uncertainty is not None else self.uncertainty,
+                         meta=meta if meta is not None else self.meta,
+                         history=history if history is not None else self._history,
+                         unit=unit if unit is not None else self.unit
                          )

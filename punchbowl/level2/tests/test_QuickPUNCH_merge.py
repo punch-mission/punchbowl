@@ -15,19 +15,22 @@ from punchbowl.level2.QuickPUNCH_merge import reproject_array, mosaic, quickpunc
 
 # Some test inputs
 @fixture
-def sample_wcs(naxis=2, crpix=(0,0), crval=(0,0), cdelt=(1, 1),
-               ctype=("HPLN-ARC", "HPLT-ARC")) -> WCS:
+def sample_wcs() -> WCS:
     """
-    Generate a WCS for testing
+    Generate a sample WCS for testing
     """
-    generated_wcs = WCS(naxis=naxis)
+    def _sample_wcs(naxis=2, crpix=(0,0), crval=(0,0), cdelt=(1, 1),
+                    ctype=("HPLN-ARC", "HPLT-ARC")):
 
-    generated_wcs.wcs.crpix = crpix
-    generated_wcs.wcs.crval = crval
-    generated_wcs.wcs.cdelt = cdelt
-    generated_wcs.wcs.ctype = ctype
+        generated_wcs = WCS(naxis=naxis)
 
-    return generated_wcs
+        generated_wcs.wcs.crpix = crpix
+        generated_wcs.wcs.crval = crval
+        generated_wcs.wcs.cdelt = cdelt
+        generated_wcs.wcs.ctype = ctype
+
+        return generated_wcs
+    return _sample_wcs
 
 @fixture
 def sample_data(shape: tuple = (20,20)) -> np.ndarray:
@@ -39,6 +42,10 @@ def sample_data(shape: tuple = (20,20)) -> np.ndarray:
 
 @fixture
 def sample_ndcube(sample_data):
+    """
+    Generate a sample ndcube object for testing
+    """
+
     data = sample_data
     uncertainty = StdDevUncertainty(np.sqrt(np.abs(sample_data)))
     wcs = WCS(naxis=2)
@@ -54,12 +61,20 @@ def sample_ndcube(sample_data):
 
 @fixture
 def sample_punchdata(sample_ndcube):
+    """
+    Generate a sample PUNCHData object for testing
+    """
+
     sample_ndc = sample_ndcube
     return PUNCHData(sample_ndc)
 
 
 @fixture
 def sample_punchdata_list(sample_punchdata):
+    """
+    Generate a list of sample PUNCHData objects for testing
+    """
+
     sample_pd1 = sample_punchdata
     sample_pd2 = sample_punchdata
     return list([sample_pd1, sample_pd2])
@@ -68,25 +83,35 @@ def sample_punchdata_list(sample_punchdata):
 # core unit tests
 
 @pytest.mark.parametrize("crpix, crval, cdelt",
-                          [((0,0),(1,1),(1,1)),
+                          [((0,0),(0,0),(1,1)),
                            ((0,0),(1,1),(1,1)),
                            ((1,1),(2,2),(1,1))])
 def test_reproject_array(sample_data, sample_wcs, crpix, crval, cdelt, output_shape=(20,20)):
-    sample_wcs = sample_wcs(crpix=crpix, crval=crval, cdelt=cdelt)
+    """
+    Test reproject_array usage
+    """
+
+    test_wcs = sample_wcs(crpix=crpix, crval=crval, cdelt=cdelt)
     expected = sample_data
-    actual = reproject_array.fn(sample_data, sample_wcs, sample_wcs, output_shape)
+    actual = reproject_array.fn(sample_data, test_wcs, test_wcs, output_shape)
 
     assert actual.shape == expected.shape
 
 
 def test_mosaic(sample_data, sample_wcs):
+    """
+    Test mosaic usage
+    """
 
     expected = sample_data
 
+    test_wcs = sample_wcs()
+
     data_input = [sample_data, sample_data]
-    uncertainty_input = [sample_data, sample_data]
-    wcs_input = [sample_wcs, sample_wcs]
-    wcs_output = sample_wcs
+    uncertainty_input = [StdDevUncertainty(np.sqrt(sample_data)), StdDevUncertainty(np.sqrt(sample_data))]
+    wcs_input = [test_wcs, test_wcs]
+
+    wcs_output = sample_wcs()
     shape_output = (20,20)
 
     (actual_data, actual_uncertainty) = mosaic.fn(data_input, uncertainty_input, wcs_input,
@@ -95,8 +120,12 @@ def test_mosaic(sample_data, sample_wcs):
     assert actual_data.shape == expected.shape
 
 
-#@pytest.mark.prefect_test
+@pytest.mark.prefect_test
 def test_quickpunch_merge_flow(sample_punchdata_list):
+    """
+    Test the quickpunch_merge prefect flow using a test harness
+    """
+
     pd_list = sample_punchdata_list
     with prefect_test_harness():
         output_punchdata = quickpunch_merge_flow(pd_list)

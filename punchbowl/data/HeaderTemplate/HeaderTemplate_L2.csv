@@ -19,7 +19,7 @@ comment,COMMENT, Documentation is available on the PUNCH website:,,str,static
 comment,COMMENT, https://punch.spaceops.swri.org and via the DOI referenced above (TBD),,str,static
 comment,COMMENT,----- File Type and Provenance -----------------------------------------,,str,static
 keyword,FILENAME,PUNCH_L1_P11_20220204134800_0.fits,name of file,str,dynamic
-keyword,LEVEL,1,product Level,int,dynamic
+keyword,LEVEL,2,product Level,int,dynamic
 keyword,OBSTYPE,unpolarized NFI image,plain text observation,str,dynamic
 keyword,TYPECODE,P1,observation product type code,str,dynamic
 keyword,L0PARENT,PUNCH_L0_P11_20220204134800_0.fits,name of parent file,str,dynamic

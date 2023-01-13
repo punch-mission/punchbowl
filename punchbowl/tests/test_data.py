@@ -31,10 +31,7 @@ def sample_data():
 @fixture
 def simple_ndcube():
     # Taken from NDCube documentation
-
-    # Define data array.
     data = np.random.rand(4, 4, 5)
-    # Define WCS transformations in an astropy WCS object.
     wcs = astropy.wcs.WCS(naxis=3)
     wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
     wcs.wcs.cunit = "Angstrom", "deg", "deg"
@@ -44,7 +41,6 @@ def simple_ndcube():
     wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
     nd_obj = NDCube(data=data, wcs=wcs)
     return nd_obj
-
 
 def test_sample_data_creation(sample_data):
     assert isinstance(sample_data, PUNCHData)
@@ -140,3 +136,23 @@ def test_unspecified_header_template():
     with pytest.raises(ValueError):
         h = HeaderTemplate.load("")
         assert isinstance(h, HeaderTemplate)
+
+
+@pytest.mark.parametrize("level", [0, 1, 2])
+def test_header_selection_based_on_level(level: int):
+    """Tests if the header can be selected automatically based on the product level"""
+    # Modified from NDCube documentation
+    data = np.random.rand(4, 4, 5)
+    wcs = astropy.wcs.WCS(naxis=3)
+    wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
+    wcs.wcs.cunit = "Angstrom", "deg", "deg"
+    wcs.wcs.cdelt = 0.2, 0.5, 0.4
+    wcs.wcs.crpix = 0, 2, 2
+    wcs.wcs.crval = 10, 0.5, 1
+    wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
+
+    meta = {"LEVEL": level}
+    data = PUNCHData(data=data, wcs=wcs, meta=meta)
+
+    header = data.create_header(None)
+    assert header['LEVEL'] == level

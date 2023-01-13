@@ -7,7 +7,7 @@ from prefect import task, get_run_logger
 
 from punchbowl.data import PUNCHData
 
-TABLE_PATH = os.path.dirname(__file__)
+TABLE_PATH = os.path.dirname(__file__) + "/decoding_tables/"
 
 def decode_sqrt(
         data: Union[np.ndarray, float],
@@ -43,7 +43,6 @@ def decode_sqrt(
 
     table_name = (
         TABLE_PATH
-        + "/decoding_tables/"
         + "tab_fb"
         + str(from_bits)
         + "_tb"
@@ -63,6 +62,11 @@ def decode_sqrt(
     else:
         table = generate_decode_sqrt_table(from_bits, to_bits, ccd_gain,
                                       ccd_offset, ccd_read_noise)
+
+        # Make the directory if it doesn't exist
+        if not os.path.isdir(TABLE_PATH):
+            os.makedirs(TABLE_PATH, exist_ok=True)
+
         np.save(table_name, table)
 
     return decode_sqrt_by_table(data, table)

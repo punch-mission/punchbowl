@@ -3,7 +3,7 @@ from datetime import datetime
 
 # Third party imports
 import numpy as np
-from prefect import task, flow, get_run_logger
+from prefect import task, get_run_logger
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData

@@ -70,7 +70,7 @@ def test_nan_input(sample_punchdata, sample_pixel_map):
 
     input_data = sample_punchdata
 
-    input_data.data[42,42] = np.nan
+    input_data.data[42, 42] = np.nan
 
     flagged_punchdata = flag_punchdata(input_data, sample_pixel_map)
 

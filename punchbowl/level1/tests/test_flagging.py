@@ -1,16 +1,18 @@
 # Core Python imports
+
 # Third party imports
 import numpy as np
 import pytest
-from astropy.wcs import WCS
 from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect.testing.utilities import prefect_test_harness
-from pytest import fixture, mark
+from prefect.logging import disable_run_logger
+from pytest import fixture
 
 # punchbowl imports
 from punchbowl.data import PUNCHData
 from punchbowl.level1.flagging import flag_punchdata, flag_task
+
 
 @fixture
 def sample_pixel_map(shape: tuple = (4096, 4096), n_bad_pixels: int = 20) -> np.ndarray:
@@ -56,7 +58,7 @@ def test_data_loading(sample_punchdata):
     A specific observation is provided. The module loads it as a PUNCHData object. Test for no errors.
     """
 
-    flagged_punchdata = flag_punchdata.fn(sample_punchdata)
+    flagged_punchdata = flag_punchdata(sample_punchdata)
 
     assert isinstance(flagged_punchdata, PUNCHData)
 
@@ -70,7 +72,7 @@ def test_nan_input(sample_punchdata, sample_pixel_map):
 
     input_data.data[42,42] = np.nan
 
-    flagged_punchdata = flag_punchdata.fn(input_data, sample_pixel_map)
+    flagged_punchdata = flag_punchdata(input_data, sample_pixel_map)
 
     assert isinstance(flagged_punchdata, PUNCHData)
 
@@ -80,17 +82,17 @@ def test_artificial_pixel_map(sample_punchdata, sample_pixel_map):
     A known artificial bad pixel map is ingested. The output flags are tested against the input map.
     """
 
-    flagged_punchdata = flag_punchdata.fn(sample_punchdata, sample_pixel_map)
+    flagged_punchdata = flag_punchdata(sample_punchdata, sample_pixel_map)
 
     assert isinstance(flagged_punchdata, PUNCHData)
 
 
-# @pytest.mark.prefect_test
-# def test_flag_task(sample_punchdata):
-#     """
-#     Test the flag_task prefect flow using a test harness
-#     """
-#     with prefect_test_harness():
-#         flagged_punchdata = flag_task(sample_punchdata)
-#
-#         assert isinstance(flagged_punchdata, PUNCHData)
+@pytest.mark.prefect_test
+def test_flag_task(sample_punchdata):
+    """
+    Test the flag_task prefect flow using a test harness
+    """
+    with disable_run_logger():
+        flagged_punchdata = flag_task.fn(sample_punchdata)
+
+        assert isinstance(flagged_punchdata, PUNCHData)

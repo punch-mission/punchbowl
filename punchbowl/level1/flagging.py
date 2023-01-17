@@ -1,10 +1,14 @@
-import numpy as np
+# Core Python imports
 from datetime import datetime
+
+# Third party imports
+import numpy as np
 from prefect import task, flow, get_run_logger
+
+# Punchbowl imports
 from punchbowl.data import PUNCHData
 
 
-@task
 def flag_punchdata(data_object: PUNCHData, bad_pixel_map: np.ndarray = None) -> PUNCHData:
 
     # Flag bad data in the primary data array
@@ -23,10 +27,10 @@ def flag_task(data_object: PUNCHData) -> PUNCHData:
 
     # Read bad pixel map from file
     # bad_pixel_map = np.load('...')
-    bad_pixel_map = np.zeros([4096, 4096])
+    bad_pixel_map = np.zeros([4096, 4096]).astype(bool)
 
-    data_object = flag_punchdata(data_object, bad_pixel_map)
+    data_object2 = flag_punchdata(data_object, bad_pixel_map)
 
     logger.info("flagging finished")
-    data_object.add_history(datetime.now(), "LEVEL1-flagging", "image flagged")
+    data_object2.add_history(datetime.now(), "LEVEL1-flagging", "image flagged")
     return data_object

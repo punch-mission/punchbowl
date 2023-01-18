@@ -15,6 +15,7 @@ setup(
     description="PUNCH science calibration code",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    include_package_data=True,
     install_requires=[
         "numpy",
         "astropy",

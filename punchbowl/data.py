@@ -6,17 +6,20 @@ from collections import namedtuple
 from datetime import datetime
 from typing import Union, List, Dict, Any
 from dateutil.parser import parse as parse_datetime
+from pathlib import Path
 
-import astropy.wcs.wcsapi
-import astropy.units as u
+
 import matplotlib
 import numpy as np
+import astropy.wcs.wcsapi
+import astropy.units as u
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
 import pandas as pd
-from pathlib import Path
+
+from punchbowl.errors import MissingMetadataError
 
 HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
 
@@ -125,7 +128,6 @@ class PUNCHCalibration:
 
 HEADER_TEMPLATE_COLUMNS = ("TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE")
 
-
 class HeaderTemplate:
     """PUNCH data object header template
     Class to generate a PUNCH data object header template, along with associated methods.
@@ -224,8 +226,9 @@ class HeaderTemplate:
         empty_keywords = set(self.find_empty())
         for key, value in meta_dict.items():
             if key in hdr and key in empty_keywords:
-                hdr[key] = value
-                empty_keywords.remove(key)
+                if value != "":  # only update if it's not the empty string
+                    hdr[key] = value
+                    empty_keywords.remove(key)
 
         if empty_keywords:
             warnings.warn(f"Some keywords left empty: {empty_keywords}", RuntimeWarning)
@@ -435,10 +438,7 @@ class PUNCHData(NDCube):
         -------
         None
         """
-        # TODO : make this select the correct header template for writing
-        header = self.create_header(
-            str(Path(__file__).parent / "tests/hdr_test_template.csv")
-        )
+        header = self.create_header(None)  # uses template_path=none so the pipeline selects one based on metadata
 
         for entry in self._history:
             header["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
@@ -453,6 +453,7 @@ class PUNCHData(NDCube):
 
         # Write to FITS
         hdul.writeto(filename, overwrite=overwrite)
+
 
     def _write_ql(self, filename: str) -> None:
         """Write an 8-bit scaled version of the specified data array to a PNG file
@@ -482,19 +483,32 @@ class PUNCHData(NDCube):
         # Write image to file
         matplotlib.image.saveim(filename, output_data)
 
-    def create_header(self, header_file: str = "") -> fits.Header:
+    def create_header(self, template_path: str = None) -> fits.Header:
         """
         Validates / generates PUNCHData object metadata using data product header standards
 
         Parameters
         ----------
-        header_file
+        template_path
             specified header template file with which to validate
 
+        Returns
+        -------
+        fits.Header
+            a full constructed and filled FITS header that reflects the data
         """
-        # TODO: what does this do when `header_file` is empty?
-        template = HeaderTemplate.load(header_file)
+        if template_path is None:
+            template_path = str(Path(__file__).parent / f"data/HeaderTemplate/HeaderTemplate_L{self.product_level}.csv")
+
+        template = HeaderTemplate.load(template_path)
         return template.fill(self.meta)
+
+    @property
+    def product_level(self) -> int:
+        if 'LEVEL' in self.meta:
+            return self.meta['LEVEL']
+        else:
+            raise MissingMetadataError("LEVEL is missing from the metadata.")
 
     @property
     def datetime(self) -> datetime:

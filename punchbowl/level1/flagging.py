@@ -27,7 +27,7 @@ def flag_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("flagging started")
 
     # Read bad pixel map from file
-    bad_pixel_filename = '../data/badpixelmap-' + data_object.meta["TYPECODE"] + data_object.meta["OBSRVTRY"] + '.npz'
+    bad_pixel_filename = '../data/badpixelmap-' + data_object.meta["OBSRVTRY"] + '.npz'
     bad_pixel_map = np.load(bad_pixel_filename)['arr_0']
 
     # Call data flagging function

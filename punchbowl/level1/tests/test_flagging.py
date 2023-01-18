@@ -50,6 +50,9 @@ def sample_punchdata(shape: tuple = (4096, 4096)) -> PUNCHData:
 
     nd_obj = NDCube(data=data, uncertainty=uncertainty, wcs=wcs)
 
+    nd_obj.meta["TYPECODE"] = 'CL'
+    nd_obj.meta["OBSRVTRY"] = '0'
+
     return PUNCHData(nd_obj)
 
 

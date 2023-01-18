@@ -4,6 +4,7 @@ from datetime import datetime
 # Third party imports
 import numpy as np
 from prefect import task, get_run_logger
+# from astropy.io import fits
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
@@ -26,11 +27,12 @@ def flag_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("flagging started")
 
     # Read bad pixel map from file
-    # bad_pixel_map = np.load('...')
-    bad_pixel_map = np.zeros([4096, 4096]).astype(bool)
+    bad_pixel_filename = '../data/badpixelmap-' + data_object.meta["TYPECODE"] + data_object.meta["OBSRVTRY"] + '.npz'
+    bad_pixel_map = np.load(bad_pixel_filename)['arr_0']
 
-    data_object2 = flag_punchdata(data_object, bad_pixel_map)
+    # Call data flagging function
+    data_object = flag_punchdata(data_object, bad_pixel_map)
 
     logger.info("flagging finished")
-    data_object2.add_history(datetime.now(), "LEVEL1-flagging", "image flagged")
+    data_object.add_history(datetime.now(), "LEVEL1-flagging", "image flagged")
     return data_object

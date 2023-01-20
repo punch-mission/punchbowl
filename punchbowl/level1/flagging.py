@@ -11,6 +11,22 @@ from punchbowl.data import PUNCHData
 
 
 def flag_punchdata(data_object: PUNCHData, bad_pixel_map: np.ndarray = None) -> PUNCHData:
+    """
+    Core bad pixel flagging function.
+
+    Parameters
+    ----------
+    data_object
+        Input PUNCHData object
+
+    bad_pixel_map
+        Specified bad pixel map
+
+    Returns
+    -------
+    PUNCHData object with bad pixels flagged in the primary data and uncertainty arrays
+
+    """
 
     # Flag bad data in the primary data array
     data_object.data[bad_pixel_map] = 0
@@ -23,6 +39,20 @@ def flag_punchdata(data_object: PUNCHData, bad_pixel_map: np.ndarray = None) -> 
 
 @task
 def flag_task(data_object: PUNCHData) -> PUNCHData:
+    """
+    Pipeline task for bad pixel flagging
+
+    Parameters
+    ----------
+    data_object
+        Input PUNCHData object
+
+    Returns
+    -------
+    PUNCHData object with bad pixels flagged in the primary data and uncertainty arrays
+
+    """
+
     logger = get_run_logger()
     logger.info("flagging started")
 

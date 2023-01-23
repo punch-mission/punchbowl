@@ -64,6 +64,8 @@ def test_data_loading(sample_punchdata):
     flagged_punchdata = flag_punchdata(sample_punchdata)
 
     assert isinstance(flagged_punchdata, PUNCHData)
+    assert np.all(flagged_punchdata.data == sample_punchdata.data)
+    assert np.all(flagged_punchdata.uncertainty == sample_punchdata.uncertainty)
 
 
 def test_nan_input(sample_punchdata, sample_pixel_map):
@@ -78,6 +80,8 @@ def test_nan_input(sample_punchdata, sample_pixel_map):
     flagged_punchdata = flag_punchdata(input_data, sample_pixel_map)
 
     assert isinstance(flagged_punchdata, PUNCHData)
+    assert np.all(flagged_punchdata.data[np.where(sample_pixel_map == 1)] == 0)
+    assert np.all(flagged_punchdata.uncertainty[np.where(sample_pixel_map == 1)].array == -1)
 
 
 def test_artificial_pixel_map(sample_punchdata, sample_pixel_map):
@@ -88,6 +92,8 @@ def test_artificial_pixel_map(sample_punchdata, sample_pixel_map):
     flagged_punchdata = flag_punchdata(sample_punchdata, sample_pixel_map)
 
     assert isinstance(flagged_punchdata, PUNCHData)
+    assert np.all(flagged_punchdata.data[np.where(sample_pixel_map == 1)] == 0)
+    assert np.all(flagged_punchdata.uncertainty[np.where(sample_pixel_map == 1)].array == -1)
 
 
 @pytest.mark.prefect_test
@@ -99,3 +105,5 @@ def test_flag_task(sample_punchdata):
         flagged_punchdata = flag_task.fn(sample_punchdata)
 
         assert isinstance(flagged_punchdata, PUNCHData)
+        assert np.all(flagged_punchdata.data[np.where(sample_pixel_map == 1)] == 0)
+        assert np.all(flagged_punchdata.uncertainty[np.where(sample_pixel_map == 1)].array == -1)

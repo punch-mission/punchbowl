@@ -57,6 +57,8 @@ def flag_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("flagging started")
 
     # Read bad pixel map from file
+    # TODO - Rename maps to EM36 specification
+    # TODO - Store maps as compressed FITS files
     bad_pixel_filename = '../data/badpixelmap-' + data_object.meta["OBSRVTRY"] + '.npz'
     bad_pixel_map = np.load(bad_pixel_filename)['arr_0']
 

@@ -1,3 +1,5 @@
+import os
+
 from prefect import flow, get_run_logger, task
 
 from punchbowl.data import PUNCHData
@@ -19,6 +21,9 @@ def load_level0_task(input_filename):
 
 @task
 def output_level1_task(data, output_filename):
+    output_dir = os.path.dirname(output_filename)
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
     return data.write(output_filename)
 
 

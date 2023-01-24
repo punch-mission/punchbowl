@@ -4,7 +4,7 @@ from datetime import datetime
 # Third party imports
 import numpy as np
 from prefect import task, get_run_logger
-# from astropy.io import fits
+from astropy.io import fits
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
@@ -31,14 +31,14 @@ def flag_punchdata(data_object: PUNCHData, bad_pixel_map: np.ndarray = None) -> 
     # Flag bad data in the primary data array
     data_object.data[bad_pixel_map] = 0
 
-    # Flag bad data in the associated uncertainty array (coded with -1)
-    data_object.uncertainty.array[bad_pixel_map] = -1
+    # Flag bad data in the associated uncertainty array (coded with infinity)
+    data_object.uncertainty.array[bad_pixel_map] = np.inf
 
     return data_object
 
 
 @task
-def flag_task(data_object: PUNCHData) -> PUNCHData:
+def flag_task(data_object: PUNCHData, bad_pixel_filename: str = None) -> PUNCHData:
     """
     Pipeline task for bad pixel flagging
 
@@ -57,10 +57,12 @@ def flag_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("flagging started")
 
     # Read bad pixel map from file
-    # TODO - Rename maps to EM36 specification
-    # TODO - Store maps as compressed FITS files
-    bad_pixel_filename = '../data/badpixelmap-' + data_object.meta["OBSRVTRY"] + '.npz'
-    bad_pixel_map = np.load(bad_pixel_filename)['arr_0']
+    if bad_pixel_filename == None:
+        id_str = data_object.id
+        bad_pixel_filename = 'data/' + id_str[0:9] + 'DP' + id_str[11:] + '.fits'
+
+    with fits.open(bad_pixel_filename) as hdul:
+        bad_pixel_map = hdul[0].data
 
     # Call data flagging function
     data_object = flag_punchdata(data_object, bad_pixel_map)

@@ -47,6 +47,24 @@ class History:
         """
         self._entries.append(entry)
 
+
+    def add_now(self, source: str, comment: str) -> None:
+        """Adds a new history entry at the current time.
+
+        Parameters
+        ----------
+        source : str
+            what module of the code the history entry originates from
+        comment : str
+            a note of what the history comment means
+
+        Returns
+        -------
+        None
+        """
+        self._entries.append(HistoryEntry(datetime.now(), source, comment))
+
+
     def clear(self) -> None:
         """
         Clears all the history entries so the History is blank
@@ -129,15 +147,24 @@ class NormalizedMetadata(Mapping):
     def __init__(self, contents: dict[str, Any]):
         for key in contents:
             self._validate_key_is_str(key)
+            if key.upper() == "HISTORY-OBJECT":
+                raise KeyError("HISTORY-OBJECT is a reserved keyword for NormalizedMetadata. "
+                               "It cannot be in a passed in contents.")
         self._contents = {k.upper(): v for k, v in contents.items()}
+        self._contents['HISTORY-OBJECT'] = History()
 
     def __iter__(self):
         return self._contents.__iter__()
+
+    @property
+    def history(self):
+        return self._contents['HISTORY-OBJECT']
 
     @staticmethod
     def _validate_key_is_str(key):
         if not isinstance(key, str):
             raise TypeError(f"Keys for NormalizedMetadata must be strings. You provided {type(key)}.")
+
     def __setitem__(self, key: str, value: Any):
         self._validate_key_is_str(key)
         self._contents[key.upper()] = value
@@ -155,7 +182,7 @@ class NormalizedMetadata(Mapping):
         return key.upper() in self._contents
 
     def __len__(self) -> int:
-        return len(self._contents)
+        return len(self._contents) - 1  # we subtract 1 to ignore the history object
 
 
 HEADER_TEMPLATE_COLUMNS = ["TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE"]
@@ -344,7 +371,6 @@ class PUNCHData(NDCube):
             copy=copy,
             **kwargs,
         )
-        self._history = history if history else History()
 
     def add_history(self, time: datetime, source: str, comment: str) -> None:
         """Log a new history entry
@@ -473,7 +499,7 @@ class PUNCHData(NDCube):
         """
         header = self.create_header(None)  # uses template_path=none so the pipeline selects one based on metadata
 
-        for entry in self._history:
+        for entry in self.meta.history:
             header["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
 
         hdu_data = fits.PrimaryHDU(data=self.data, header=header)

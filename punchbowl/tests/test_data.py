@@ -14,6 +14,7 @@ from punchbowl.data import (
     HistoryEntry,
     HeaderTemplate,
     HEADER_TEMPLATE_COLUMNS,
+    NormalizedMetadata
 )
 
 
@@ -156,3 +157,34 @@ def test_header_selection_based_on_level(level: int):
 
     header = data.create_header(None)
     assert header['LEVEL'] == level
+
+
+def test_normalizedmetadata_access_not_case_sensitive():
+    contents = {"hi": "there", "NaME": "marcus", "AGE": 27}
+    example = NormalizedMetadata(contents)
+
+    assert example["hi"] == "there"
+    assert example["Hi"] == "there"
+    assert example["hI"] == "there"
+    assert example["HI"] == "there"
+
+    assert example["age"] == 27
+
+    assert example['name'] == 'marcus'
+
+
+def test_normalizedmetadata_add_new_key():
+    empty = NormalizedMetadata(dict())
+    assert len(empty) == 0
+    assert "name" not in empty
+    empty['NAmE'] = "marcus"
+    assert "nAMe" in empty
+    assert len(empty) == 1
+
+def test_normalizedmetadata_delete_key():
+    example = NormalizedMetadata({"key": "value"})
+    assert "key" in example
+    assert len(example) == 1
+    del example['key']
+    assert "key" not in example
+    assert len(example) == 0

@@ -117,13 +117,41 @@ class History:
         return entry
 
 
-class PUNCHCalibration:
+class NormalizedMetadata:
     """
-    This will be inherited and developed as the various calibration objects, e.g. the quartic fit coefficients, are
-    developed. This will be an abstract base class for all of them.
-    """
+    The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
+    making keyword accesses case-insensitive and providing helpful accessors for commonly used formats of the metadata.
 
-    pass
+    Internally, the keys are always stored as upper-case strings.
+    Unlike the FITS standard, keys can be any length string.
+    """
+    def __init__(self, contents: dict[str, Any]):
+        for key in contents:
+            self._validate_key_is_str(key)
+        self._contents = {k.upper(): v for k, v in contents.items()}
+
+    @staticmethod
+    def _validate_key_is_str(key):
+        if not isinstance(key, str):
+            raise TypeError(f"Keys for NormalizedMetadata must be strings. You provided {type(key)}.")
+    def __setitem__(self, key: str, value: Any):
+        self._validate_key_is_str(key)
+        self._contents[key.upper()] = value
+
+    def __getitem__(self, key: str) -> Any:
+        self._validate_key_is_str(key)
+        return self._contents[key.upper()]
+
+    def __delitem__(self, key: str) -> None:
+        self._validate_key_is_str(key)
+        del self._contents[key.upper()]
+
+    def __contains__(self, key: str) -> bool:
+        self._validate_key_is_str(key)
+        return key.upper() in self._contents
+
+    def __len__(self) -> int:
+        return len(self._contents)
 
 
 HEADER_TEMPLATE_COLUMNS = ("TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE")

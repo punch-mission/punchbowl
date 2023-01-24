@@ -3,8 +3,9 @@ from __future__ import annotations
 import warnings
 import os.path
 from collections import namedtuple
+from collections.abc import Mapping
 from datetime import datetime
-from typing import Union, List, Dict, Any
+from typing import Union, List, Dict, Any, Iterator
 from dateutil.parser import parse as parse_datetime
 from pathlib import Path
 
@@ -117,7 +118,7 @@ class History:
         return entry
 
 
-class NormalizedMetadata:
+class NormalizedMetadata(Mapping):
     """
     The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
     making keyword accesses case-insensitive and providing helpful accessors for commonly used formats of the metadata.
@@ -125,6 +126,10 @@ class NormalizedMetadata:
     Internally, the keys are always stored as upper-case strings.
     Unlike the FITS standard, keys can be any length string.
     """
+
+    def __iter__(self):
+        return self._contents.__iter__()
+
     def __init__(self, contents: dict[str, Any]):
         for key in contents:
             self._validate_key_is_str(key)
@@ -295,7 +300,7 @@ class PUNCHData(NDCube):
         | None = None,
         uncertainty: Any | None = None,
         mask: Any | None = None,
-        meta: Dict | None = None,
+        meta: NormalizedMetadata | None = None,
         unit: astropy.units.Unit = None,
         copy: bool = False,
         history: History | None = None,
@@ -335,7 +340,7 @@ class PUNCHData(NDCube):
             wcs=wcs,
             uncertainty=uncertainty,
             mask=mask,
-            meta=meta,
+            meta=meta if meta is not None else NormalizedMetadata(dict()),
             unit=unit,
             copy=copy,
             **kwargs,
@@ -377,10 +382,11 @@ class PUNCHData(NDCube):
 
         with fits.open(path) as hdul:
             data = hdul[0].data
-            meta = hdul[0].header
+            meta = NormalizedMetadata(dict(hdul[0].header))
             wcs = WCS(hdul[0].header)
             uncertainty = StdDevUncertainty(hdul[1].data)
             unit = u.ct  # counts
+            # TODO: is the unit always counts????
 
         return cls(
             data.newbyteorder().byteswap(inplace=True),

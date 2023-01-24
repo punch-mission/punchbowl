@@ -367,6 +367,6 @@ def decode_sqrt_data(data_object: PUNCHData) -> PUNCHData:
 
     logger.info("square root decoding finished")
 
-    data_object.add_history(datetime.now(), "LEVEL0-decode-sqrt", "image square root decoded")
+    data_object.meta.add_now("LEVEL0-decode-sqrt", "image square root decoded")
 
     return data_object

@@ -11,5 +11,5 @@ def resolve_polarization_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("resolve_polarization started")
     # TODO: actually do the resolution
     logger.info("resolve_polarization ended")
-    data_object.add_history(datetime.now(), "LEVEL2-resolve_polarization", "polarization resovled")
+    data_object.meta.history.add_now("LEVEL2-resolve_polarization", "polarization resovled")
     return data_object

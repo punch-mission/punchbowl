@@ -119,15 +119,9 @@ def test_generate_from_csv_filename():
     assert isinstance(hdr, HeaderTemplate)
 
 
-def test_generate_from_invalid_file():
-    """A base PUNCH header object is initialized from an invalid input file.
-    Test for raised errors. Test that the object does not exist."""
-    pass
-
-
 def test_fill_header(simple_header_template):
     with pytest.warns(RuntimeWarning):
-        meta = {"LEVEL": 1}
+        meta = NormalizedMetadata({"LEVEL": 1})
         header = simple_header_template.fill(meta)
         assert isinstance(header, fits.Header)
         assert header["LEVEL"] == 1
@@ -152,7 +146,7 @@ def test_header_selection_based_on_level(level: int):
     wcs.wcs.crval = 10, 0.5, 1
     wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
 
-    meta = {"LEVEL": level}
+    meta = NormalizedMetadata({"LEVEL": level})
     data = PUNCHData(data=data, wcs=wcs, meta=meta)
 
     header = data.create_header(None)

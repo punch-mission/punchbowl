@@ -126,14 +126,13 @@ class NormalizedMetadata(Mapping):
     Internally, the keys are always stored as upper-case strings.
     Unlike the FITS standard, keys can be any length string.
     """
-
-    def __iter__(self):
-        return self._contents.__iter__()
-
     def __init__(self, contents: dict[str, Any]):
         for key in contents:
             self._validate_key_is_str(key)
         self._contents = {k.upper(): v for k, v in contents.items()}
+
+    def __iter__(self):
+        return self._contents.__iter__()
 
     @staticmethod
     def _validate_key_is_str(key):
@@ -159,7 +158,7 @@ class NormalizedMetadata(Mapping):
         return len(self._contents)
 
 
-HEADER_TEMPLATE_COLUMNS = ("TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE")
+HEADER_TEMPLATE_COLUMNS = ["TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE"]
 
 class HeaderTemplate:
     """PUNCH data object header template
@@ -205,7 +204,7 @@ class HeaderTemplate:
 
         return template
 
-    def fill(self, meta_dict: Dict[str, Any]) -> fits.Header:
+    def fill(self, meta: NormalizedMetadata) -> fits.Header:
         """Parses an input template header comma separated value (CSV) file to generate an astropy header object.
         # TODO: update
 
@@ -257,7 +256,7 @@ class HeaderTemplate:
                 )
 
         empty_keywords = set(self.find_empty())
-        for key, value in meta_dict.items():
+        for key, value in meta.items():
             if key in hdr and key in empty_keywords:
                 if value != "":  # only update if it's not the empty string
                     hdr[key] = value

@@ -3,8 +3,9 @@ from __future__ import annotations
 import warnings
 import os.path
 from collections import namedtuple
+from collections.abc import Mapping
 from datetime import datetime
-from typing import Union, List, Dict, Any
+from typing import Union, List, Dict, Any, Iterator
 from dateutil.parser import parse as parse_datetime
 from pathlib import Path
 
@@ -45,6 +46,24 @@ class History:
 
         """
         self._entries.append(entry)
+
+
+    def add_now(self, source: str, comment: str) -> None:
+        """Adds a new history entry at the current time.
+
+        Parameters
+        ----------
+        source : str
+            what module of the code the history entry originates from
+        comment : str
+            a note of what the history comment means
+
+        Returns
+        -------
+        None
+        """
+        self._entries.append(HistoryEntry(datetime.now(), source, comment))
+
 
     def clear(self) -> None:
         """
@@ -117,16 +136,68 @@ class History:
         return entry
 
 
-class PUNCHCalibration:
+
+class NormalizedMetadata(Mapping):
     """
-    This will be inherited and developed as the various calibration objects, e.g. the quartic fit coefficients, are
-    developed. This will be an abstract base class for all of them.
+    The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
+    making keyword accesses case-insensitive and providing helpful accessors for commonly used formats of the metadata.
+
+    Internally, the keys are always stored as upper-case strings.
+    Unlike the FITS standard, keys can be any length string.
     """
+    def __init__(self, contents: dict[str, Any]):
+        for key in contents:
+            self._validate_key_is_str(key)
+            if key.upper() == "HISTORY-OBJECT":
+                raise KeyError("HISTORY-OBJECT is a reserved keyword for NormalizedMetadata. "
+                               "It cannot be in a passed in contents.")
+        self._contents = {k.upper(): v for k, v in contents.items()}
+        self._contents['HISTORY-OBJECT'] = History()
 
-    pass
+    def __iter__(self):
+        return self._contents.__iter__()
+
+    @property
+    def history(self):
+        return self._contents['HISTORY-OBJECT']
+
+    @staticmethod
+    def _validate_key_is_str(key):
+        if not isinstance(key, str):
+            raise TypeError(f"Keys for NormalizedMetadata must be strings. You provided {type(key)}.")
+
+    def __setitem__(self, key: str, value: Any):
+        self._validate_key_is_str(key)
+        self._contents[key.upper()] = value
+
+    def __getitem__(self, key: str) -> Any:
+        self._validate_key_is_str(key)
+        return self._contents[key.upper()]
+
+    def __delitem__(self, key: str) -> None:
+        self._validate_key_is_str(key)
+        del self._contents[key.upper()]
+
+    def __contains__(self, key: str) -> bool:
+        self._validate_key_is_str(key)
+        return key.upper() in self._contents
+
+    def __len__(self) -> int:
+        return len(self._contents) - 1  # we subtract 1 to ignore the history object
+
+    @property
+    def product_level(self) -> int:
+        if 'LEVEL' in self._contents:
+            return self._contents['LEVEL']
+        else:
+            raise MissingMetadataError("LEVEL is missing from the metadata.")
 
 
-HEADER_TEMPLATE_COLUMNS = ("TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE")
+    @property
+    def datetime(self) -> datetime:
+        return parse_datetime(self._contents["DATE-OBS"])
+
+HEADER_TEMPLATE_COLUMNS = ["TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE"]
 
 class HeaderTemplate:
     """PUNCH data object header template
@@ -172,7 +243,7 @@ class HeaderTemplate:
 
         return template
 
-    def fill(self, meta_dict: Dict[str, Any]) -> fits.Header:
+    def fill(self, meta: NormalizedMetadata) -> fits.Header:
         """Parses an input template header comma separated value (CSV) file to generate an astropy header object.
         # TODO: update
 
@@ -224,7 +295,7 @@ class HeaderTemplate:
                 )
 
         empty_keywords = set(self.find_empty())
-        for key, value in meta_dict.items():
+        for key, value in meta.items():
             if key in hdr and key in empty_keywords:
                 if value != "":  # only update if it's not the empty string
                     hdr[key] = value
@@ -267,7 +338,7 @@ class PUNCHData(NDCube):
         | None = None,
         uncertainty: Any | None = None,
         mask: Any | None = None,
-        meta: Dict | None = None,
+        meta: NormalizedMetadata | None = None,
         unit: astropy.units.Unit = None,
         copy: bool = False,
         history: History | None = None,
@@ -307,12 +378,11 @@ class PUNCHData(NDCube):
             wcs=wcs,
             uncertainty=uncertainty,
             mask=mask,
-            meta=meta,
+            meta=meta if meta is not None else NormalizedMetadata(dict()),
             unit=unit,
             copy=copy,
             **kwargs,
         )
-        self._history = history if history else History()
 
     def add_history(self, time: datetime, source: str, comment: str) -> None:
         """Log a new history entry
@@ -349,10 +419,11 @@ class PUNCHData(NDCube):
 
         with fits.open(path) as hdul:
             data = hdul[0].data
-            meta = hdul[0].header
+            meta = NormalizedMetadata(dict(hdul[0].header))
             wcs = WCS(hdul[0].header)
             uncertainty = StdDevUncertainty(hdul[1].data)
             unit = u.ct  # counts
+            # TODO: is the unit always counts????
 
         return cls(
             data.newbyteorder().byteswap(inplace=True),
@@ -386,7 +457,7 @@ class PUNCHData(NDCube):
         observatory = self.meta["OBSRVTRY"]
         file_level = self.meta["LEVEL"]
         type_code = self.meta["TYPECODE"]
-        date_string = self.datetime.strftime("%Y%m%d%H%M%S")
+        date_string = self.meta.datetime.strftime("%Y%m%d%H%M%S")
         return (
             "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
         )
@@ -440,7 +511,7 @@ class PUNCHData(NDCube):
         """
         header = self.create_header(None)  # uses template_path=none so the pipeline selects one based on metadata
 
-        for entry in self._history:
+        for entry in self.meta.history:
             header["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
 
         hdu_data = fits.PrimaryHDU(data=self.data, header=header)
@@ -498,21 +569,11 @@ class PUNCHData(NDCube):
             a full constructed and filled FITS header that reflects the data
         """
         if template_path is None:
-            template_path = str(Path(__file__).parent / f"data/HeaderTemplate/HeaderTemplate_L{self.product_level}.csv")
+            template_path = str(Path(__file__).parent / f"data/HeaderTemplate/HeaderTemplate_L{self.meta.product_level}.csv")
 
         template = HeaderTemplate.load(template_path)
         return template.fill(self.meta)
 
-    @property
-    def product_level(self) -> int:
-        if 'LEVEL' in self.meta:
-            return self.meta['LEVEL']
-        else:
-            raise MissingMetadataError("LEVEL is missing from the metadata.")
-
-    @property
-    def datetime(self) -> datetime:
-        return parse_datetime(self.meta["date-obs"])
 
     def duplicate_with_updates(self, data: np.ndarray=None,
                                wcs: astropy.wcs.WCS= None,

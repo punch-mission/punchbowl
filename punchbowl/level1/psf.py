@@ -32,5 +32,5 @@ def correct_psf_task(
     data_object = correct_psf(data_object, corrector)
 
     logger.info("correct_psf finished")
-    data_object.add_history(datetime.now(), "LEVEL1-correct_psf", "PSF corrected")
+    data_object.meta.history.add_now("LEVEL1-correct_psf", "PSF corrected")
     return data_object

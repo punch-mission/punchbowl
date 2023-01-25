@@ -112,5 +112,5 @@ def destreak_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("destreak started")
     # TODO: do destreaking in here
     logger.info("destreak finished")
-    data_object.add_history(datetime.now(), "LEVEL1-destreak", "image destreaked")
+    data_object.meta.history.add_now("LEVEL1-destreak", "image destreaked")
     return data_object

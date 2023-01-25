@@ -465,9 +465,9 @@ class PUNCHData(NDCube):
         if filename.endswith(".fits"):
             self._write_fits(filename, overwrite=overwrite)
         elif filename.endswith(".png"):
-            self._write_ql(filename)
+            self._write_ql(filename, overwrite=overwrite)
         elif filename.endswith(".jpg") or filename.endswith(".jpeg"):
-            self._write_ql(filename)
+            self._write_ql(filename, overwrite=overwrite)
         else:
             raise ValueError(
                 "Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). "
@@ -505,18 +505,24 @@ class PUNCHData(NDCube):
         hdul.writeto(filename, overwrite=overwrite)
 
 
-    def _write_ql(self, filename: str) -> None:
+    def _write_ql(self, filename: str, overwrite: bool = True) -> None:
         """Write an 8-bit scaled version of the specified data array to a PNG file
 
         Parameters
         ----------
         filename
             output filename (including path and file extension)
+        overwrite
+            True will overwrite an exiting file, False will throw an exception in that scenario
 
         Returns
         -------
         None
         """
+        if os.path.isfile(filename) and not overwrite:
+            raise OSError(f"File {filename} already exists."
+                           "If you mean to replace it then use the argument 'overwrite=True'.")
+
 
         if self.data.ndim != 2:
             raise ValueError("Specified output data should have two-dimensions.")

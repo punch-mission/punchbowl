@@ -1,5 +1,5 @@
 # Core Python imports
-from datetime import datetime
+import pathlib
 
 # Third party imports
 import numpy as np
@@ -8,6 +8,9 @@ from astropy.io import fits
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
+
+
+THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
 def flag_punchdata(data_object: PUNCHData, bad_pixel_map: np.ndarray = None) -> PUNCHData:
@@ -59,7 +62,7 @@ def flag_task(data_object: PUNCHData, bad_pixel_filename: str = None) -> PUNCHDa
     # Read bad pixel map from file
     if bad_pixel_filename is None:
         id_str = data_object.id
-        bad_pixel_filename = 'data/' + id_str[0:9] + 'DP' + id_str[11:] + '.fits'
+        bad_pixel_filename = str(THIS_DIRECTORY) + '/data/' + id_str[0:9] + 'DP' + id_str[11:] + '.fits'
 
     with fits.open(bad_pixel_filename) as hdul:
         bad_pixel_map = hdul[0].data

@@ -1,4 +1,6 @@
 # Core Python imports
+from datetime import datetime
+import pathlib
 
 # Third party imports
 import numpy as np
@@ -10,8 +12,10 @@ from prefect.logging import disable_run_logger
 from pytest import fixture
 
 # punchbowl imports
-from punchbowl.data import PUNCHData
+from punchbowl.data import PUNCHData,NormalizedMetadata
 from punchbowl.level1.flagging import flag_punchdata, flag_task
+
+THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
 @fixture
@@ -48,15 +52,8 @@ def sample_punchdata(shape: tuple = (2048, 2048)) -> PUNCHData:
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
 
-    nd_obj = NDCube(data=data, uncertainty=uncertainty, wcs=wcs)
-
-    nd_obj.meta["TYPECODE"] = 'CL'
-    nd_obj.meta["LEVEL"] = '1'
-    nd_obj.meta["OBSRVTRY"] = '0'
-    # TODO - date-obs lowercase convention here? data.py demands lowercase
-    nd_obj.meta["date-obs"] = '2008-01-03 08:57:00'
-
-    return PUNCHData(nd_obj)
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 def test_data_loading(sample_punchdata):
@@ -105,7 +102,8 @@ def test_flag_task_filename(sample_punchdata):
     Test the flag_task prefect flow using a test harness, providing a filename
     """
     with disable_run_logger():
-        flagged_punchdata = flag_task.fn(sample_punchdata, bad_pixel_filename='data/PUNCH_L1_DP0_20080103085700.fits')
+        flagged_punchdata = flag_task.fn(sample_punchdata,
+                                         bad_pixel_filename=str(THIS_DIRECTORY) + '/../data/PUNCH_L1_DP0_20080103085700.fits')
 
         assert isinstance(flagged_punchdata, PUNCHData)
         assert np.all(flagged_punchdata.data[np.where(sample_pixel_map == 1)] == 0)

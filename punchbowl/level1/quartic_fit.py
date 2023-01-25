@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import numpy as np
 from prefect import task, get_run_logger
 
@@ -107,7 +105,8 @@ def perform_quartic_fit_task(data_object: PUNCHData) -> PUNCHData:
 
     Returns
     -------
-    None
+    PUNCHData
+        modified version of the input with the quartic fit correction applied
     """
     logger = get_run_logger()
     logger.info("perform_quartic_fit started")

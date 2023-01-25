@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from prefect import task, get_run_logger
 
 from punchbowl.data import PUNCHData
@@ -7,6 +5,18 @@ from punchbowl.data import PUNCHData
 
 @task
 def correct_vignetting_task(data_object: PUNCHData) -> PUNCHData:
+    """Prefect task to correct the vignetting of an image
+
+    Parameters
+    ----------
+    data_object : PUNCHData
+        data to operate on
+
+    Returns
+    -------
+    PUNCHData
+        modified version of the input with the vignetting corrected
+    """
     logger = get_run_logger()
     logger.info("correct_vignetting started")
     # do vignetting correction in here

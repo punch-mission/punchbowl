@@ -187,14 +187,15 @@ class NormalizedMetadata(Mapping):
 
     @property
     def product_level(self) -> int:
-        if 'LEVEL' in self._contents:
-            return self._contents['LEVEL']
-        else:
+        if 'LEVEL' not in self._contents:
             raise MissingMetadataError("LEVEL is missing from the metadata.")
+        return self._contents['LEVEL']
 
 
     @property
     def datetime(self) -> datetime:
+        if 'DATE-OBS' not in self._contents:
+            raise MissingMetadataError("DATE-OBS is missing from the metadata.")
         return parse_datetime(self._contents["DATE-OBS"])
 
 HEADER_TEMPLATE_COLUMNS = ["TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE"]
@@ -245,12 +246,11 @@ class HeaderTemplate:
 
     def fill(self, meta: NormalizedMetadata) -> fits.Header:
         """Parses an input template header comma separated value (CSV) file to generate an astropy header object.
-        # TODO: update
 
         Parameters
         ----------
-        path
-            input filename
+        meta : NormalizedMetadata
+            the contents of the metadata you wish to fill with
 
         Returns
         -------
@@ -306,12 +306,12 @@ class HeaderTemplate:
 
         return hdr
 
-    def find_empty(self) -> list:
+    def find_empty(self) -> list[str]:
         """Return a list of empty required header keywords.
 
         Returns
         -------
-        List
+        list[str]
             List of unassigned keywords
         """
         empty_keywords = []
@@ -324,6 +324,8 @@ class HeaderTemplate:
 
 class PUNCHData(NDCube):
     """PUNCH data object
+
+    PUNCHData is essentially a normal ndcube with a StandardizedMetadata and some helpful methods.
 
     See Also
     --------
@@ -565,6 +567,7 @@ class PUNCHData(NDCube):
                                uncertainty: np.ndarray=None,
                                meta=None,
                                unit=None) -> PUNCHData:
+        """Copies a PUNCHData. Any field specified in the call is modified. All others are a direct copy. """
         return PUNCHData(data=data if data is not None else self.data,
                          wcs=wcs if wcs is not None else self.wcs,
                          uncertainty=uncertainty if uncertainty is not None else self.uncertainty,

@@ -341,7 +341,6 @@ class PUNCHData(NDCube):
         meta: NormalizedMetadata | None = None,
         unit: astropy.units.Unit = None,
         copy: bool = False,
-        history: History | None = None,
         **kwargs,
     ):
         """Initialize PUNCH Data
@@ -362,8 +361,6 @@ class PUNCHData(NDCube):
             Units for the measurements in the primary data array
         copy
             Create arguments as a copy (True), or as a reference where possible (False, default)
-        history
-            Reference of the history of a given data object (modules passed through, etc)
         kwargs
             Additional keyword arguments
 
@@ -383,24 +380,6 @@ class PUNCHData(NDCube):
             copy=copy,
             **kwargs,
         )
-
-    def add_history(self, time: datetime, source: str, comment: str) -> None:
-        """Log a new history entry
-
-        Parameters
-        ----------
-        time
-            time the history update occurred
-        source
-            module that the history update originates from
-        comment
-            explanation of what happened
-
-        Returns
-        -------
-        None
-        """
-        self._history.add_entry(HistoryEntry(time, source, comment))
 
     @classmethod
     def from_fits(cls, path: str) -> PUNCHData:
@@ -486,9 +465,9 @@ class PUNCHData(NDCube):
         if filename.endswith(".fits"):
             self._write_fits(filename, overwrite=overwrite)
         elif filename.endswith(".png"):
-            self._write_ql(filename)
+            self._write_ql(filename, overwrite=overwrite)
         elif filename.endswith(".jpg") or filename.endswith(".jpeg"):
-            self._write_ql(filename)
+            self._write_ql(filename, overwrite=overwrite)
         else:
             raise ValueError(
                 "Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). "
@@ -526,18 +505,24 @@ class PUNCHData(NDCube):
         hdul.writeto(filename, overwrite=overwrite)
 
 
-    def _write_ql(self, filename: str) -> None:
+    def _write_ql(self, filename: str, overwrite: bool = True) -> None:
         """Write an 8-bit scaled version of the specified data array to a PNG file
 
         Parameters
         ----------
         filename
             output filename (including path and file extension)
+        overwrite
+            True will overwrite an exiting file, False will throw an exception in that scenario
 
         Returns
         -------
         None
         """
+        if os.path.isfile(filename) and not overwrite:
+            raise OSError(f"File {filename} already exists."
+                           "If you mean to replace it then use the argument 'overwrite=True'.")
+
 
         if self.data.ndim != 2:
             raise ValueError("Specified output data should have two-dimensions.")
@@ -579,12 +564,10 @@ class PUNCHData(NDCube):
                                wcs: astropy.wcs.WCS= None,
                                uncertainty: np.ndarray=None,
                                meta=None,
-                               history=None,
                                unit=None) -> PUNCHData:
         return PUNCHData(data=data if data is not None else self.data,
                          wcs=wcs if wcs is not None else self.wcs,
                          uncertainty=uncertainty if uncertainty is not None else self.uncertainty,
                          meta=meta if meta is not None else self.meta,
-                         history=history if history is not None else self._history,
                          unit=unit if unit is not None else self.unit
                          )

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import numpy as np
 from prefect import task, get_run_logger
 
@@ -107,13 +105,12 @@ def perform_quartic_fit_task(data_object: PUNCHData) -> PUNCHData:
 
     Returns
     -------
-    None
+    PUNCHData
+        modified version of the input with the quartic fit correction applied
     """
     logger = get_run_logger()
     logger.info("perform_quartic_fit started")
     # TODO: perform calibration
     logger.info("perform_quartic_fit finished")
-    data_object.add_history(
-        datetime.now(), "LEVEL1-perform_quartic_fit", "Quartic fit correction completed"
-    )
+    data_object.meta.history.add_now("Quartic fit correction completed")
     return data_object

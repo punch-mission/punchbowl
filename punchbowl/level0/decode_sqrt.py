@@ -343,6 +343,18 @@ def decode_sqrt_by_table(data: Union[np.ndarray, float], table: np.ndarray):
 
 @task
 def decode_sqrt_data(data_object: PUNCHData) -> PUNCHData:
+    """Prefect task in the pipeline to decode square root encoded data
+
+    Parameters
+    ----------
+    data_object : PUNCHData
+        the object you wish to decode
+
+    Returns
+    -------
+    PUNCHData
+        a modified version of the input with the data square root decoded
+    """
 
     logger = get_run_logger()
     logger.info("square root decoding started")
@@ -367,6 +379,6 @@ def decode_sqrt_data(data_object: PUNCHData) -> PUNCHData:
 
     logger.info("square root decoding finished")
 
-    data_object.add_history(datetime.now(), "LEVEL0-decode-sqrt", "image square root decoded")
+    data_object.meta.add_now("LEVEL0-decode-sqrt", "image square root decoded")
 
     return data_object

@@ -136,6 +136,7 @@ class History:
         return entry
 
 
+
 class NormalizedMetadata(Mapping):
     """
     The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
@@ -184,6 +185,17 @@ class NormalizedMetadata(Mapping):
     def __len__(self) -> int:
         return len(self._contents) - 1  # we subtract 1 to ignore the history object
 
+    @property
+    def product_level(self) -> int:
+        if 'LEVEL' in self._contents:
+            return self._contents['LEVEL']
+        else:
+            raise MissingMetadataError("LEVEL is missing from the metadata.")
+
+
+    @property
+    def datetime(self) -> datetime:
+        return parse_datetime(self._contents["DATE-OBS"])
 
 HEADER_TEMPLATE_COLUMNS = ["TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE"]
 
@@ -445,7 +457,7 @@ class PUNCHData(NDCube):
         observatory = self.meta["OBSRVTRY"]
         file_level = self.meta["LEVEL"]
         type_code = self.meta["TYPECODE"]
-        date_string = self.datetime.strftime("%Y%m%d%H%M%S")
+        date_string = self.meta.datetime.strftime("%Y%m%d%H%M%S")
         return (
             "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
         )
@@ -557,21 +569,11 @@ class PUNCHData(NDCube):
             a full constructed and filled FITS header that reflects the data
         """
         if template_path is None:
-            template_path = str(Path(__file__).parent / f"data/HeaderTemplate/HeaderTemplate_L{self.product_level}.csv")
+            template_path = str(Path(__file__).parent / f"data/HeaderTemplate/HeaderTemplate_L{self.meta.product_level}.csv")
 
         template = HeaderTemplate.load(template_path)
         return template.fill(self.meta)
 
-    @property
-    def product_level(self) -> int:
-        if 'LEVEL' in self.meta:
-            return self.meta['LEVEL']
-        else:
-            raise MissingMetadataError("LEVEL is missing from the metadata.")
-
-    @property
-    def datetime(self) -> datetime:
-        return parse_datetime(self.meta["date-obs"])
 
     def duplicate_with_updates(self, data: np.ndarray=None,
                                wcs: astropy.wcs.WCS= None,

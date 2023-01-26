@@ -398,16 +398,35 @@ class PUNCHData(NDCube):
             loaded object
         """
 
-        # TODO - Note that this may need some rethinking if we need to store compressed data in secondary HDUs
+        # TODO: This could be done more elegantly in a future task
+        # TODO: Below, are the units always counts for the primary data array????
 
         with fits.open(path) as hdul:
-            data = hdul[1].data
-            meta = NormalizedMetadata(dict(hdul[1].header))
-            wcs = WCS(hdul[1].header)
-            #uncertainty = StdDevUncertainty(hdul[1].data)
-            uncertainty = None
-            unit = u.ct  # counts
-            # TODO: is the unit always counts????
+            if len(hdul) == 1:
+                data = hdul[0].data
+                meta = NormalizedMetadata(dict(hdul[0].header))
+                wcs = WCS(hdul[0].header)
+                uncertainty = None
+                unit = u.ct  # counts
+            elif len(hdul) == 2:
+                if isinstance(hdul[1], fits.CompImageHDU):
+                    data = hdul[1].data
+                    meta = NormalizedMetadata(dict(hdul[1].header))
+                    wcs = WCS(hdul[1].header)
+                    uncertainty = None
+                    unit = u.ct  # counts
+                else:
+                    data = hdul[0].data
+                    meta = NormalizedMetadata(dict(hdul[0].header))
+                    wcs = WCS(hdul[0].header)
+                    uncertainty = StdDevUncertainty(hdul[1].data)
+                    unit = u.ct  # counts
+            elif len(hdul) == 3:
+                data = hdul[1].data
+                meta = NormalizedMetadata(dict(hdul[1].header))
+                wcs = WCS(hdul[1].header)
+                uncertainty = StdDevUncertainty(hdul[2].data)
+                unit = u.ct  # counts
 
         return cls(
             data.newbyteorder().byteswap(inplace=True),

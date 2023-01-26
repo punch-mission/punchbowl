@@ -10,7 +10,7 @@ from pytest import fixture, mark
 
 # punchbowl imports
 from punchbowl.data import PUNCHData
-from punchbowl.level2.QuickPUNCH_merge import reproject_array, mosaic, quickpunch_merge_flow
+from punchbowl.level2.QuickPUNCH_merge import reproject_array, quickpunch_merge_flow
 
 
 # Some test inputs
@@ -98,27 +98,6 @@ def test_reproject_array(sample_data, sample_wcs, crpix, crval, cdelt, output_sh
     assert actual.shape == expected.shape
 
 
-def test_mosaic(sample_data, sample_wcs):
-    """
-    Test mosaic usage
-    """
-
-    expected = sample_data
-
-    test_wcs = sample_wcs()
-
-    data_input = [sample_data, sample_data]
-    uncertainty_input = [StdDevUncertainty(np.sqrt(sample_data)), StdDevUncertainty(np.sqrt(sample_data))]
-    wcs_input = [test_wcs, test_wcs]
-
-    wcs_output = sample_wcs()
-    shape_output = (20,20)
-
-    (actual_data, actual_uncertainty) = mosaic.fn(data_input, uncertainty_input, wcs_input,
-                                               wcs_output, shape_output)
-
-    assert actual_data.shape == expected.shape
-
 
 @pytest.mark.prefect_test
 def test_quickpunch_merge_flow(sample_punchdata_list):
@@ -130,3 +109,4 @@ def test_quickpunch_merge_flow(sample_punchdata_list):
     with prefect_test_harness():
         output_punchdata = quickpunch_merge_flow(pd_list)
         assert isinstance(output_punchdata, PUNCHData)
+        assert output_punchdata.data.shape == (4096, 4096)

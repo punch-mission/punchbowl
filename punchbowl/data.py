@@ -398,13 +398,40 @@ class PUNCHData(NDCube):
             loaded object
         """
 
+        # TODO: This could be done more elegantly in a future task
+        # TODO: Below, are the units always counts for the primary data array????
+
         with fits.open(path) as hdul:
-            data = hdul[0].data
-            meta = NormalizedMetadata(dict(hdul[0].header))
-            wcs = WCS(hdul[0].header)
-            uncertainty = StdDevUncertainty(hdul[1].data)
-            unit = u.ct  # counts
-            # TODO: is the unit always counts????
+            # A one-length hdul can be a primary uncompressed data array
+            if len(hdul) == 1:
+                data = hdul[0].data
+                meta = NormalizedMetadata(dict(hdul[0].header))
+                wcs = WCS(hdul[0].header)
+                uncertainty = None
+                unit = u.ct  # counts
+            # A two-length hdul can be a compressed primary data array, or uncompressed data and uncertainty arrays
+            elif len(hdul) == 2:
+                # Compressed primary data array
+                if isinstance(hdul[1], fits.CompImageHDU):
+                    data = hdul[1].data
+                    meta = NormalizedMetadata(dict(hdul[1].header))
+                    wcs = WCS(hdul[1].header)
+                    uncertainty = None
+                    unit = u.ct  # counts
+                # Uncompressed data and uncertainty arrays
+                else:
+                    data = hdul[0].data
+                    meta = NormalizedMetadata(dict(hdul[0].header))
+                    wcs = WCS(hdul[0].header)
+                    uncertainty = StdDevUncertainty(hdul[1].data)
+                    unit = u.ct  # counts
+            # A three-length hdul can be a primary compressed data and uncertainty arrays
+            elif len(hdul) == 3:
+                data = hdul[1].data
+                meta = NormalizedMetadata(dict(hdul[1].header))
+                wcs = WCS(hdul[1].header)
+                uncertainty = StdDevUncertainty(hdul[2].data)
+                unit = u.ct  # counts
 
         return cls(
             data.newbyteorder().byteswap(inplace=True),

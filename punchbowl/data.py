@@ -398,11 +398,14 @@ class PUNCHData(NDCube):
             loaded object
         """
 
+        # TODO - Note that this may need some rethinking if we need to store compressed data in secondary HDUs
+
         with fits.open(path) as hdul:
-            data = hdul[0].data
-            meta = NormalizedMetadata(dict(hdul[0].header))
-            wcs = WCS(hdul[0].header)
-            uncertainty = StdDevUncertainty(hdul[1].data)
+            data = hdul[1].data
+            meta = NormalizedMetadata(dict(hdul[1].header))
+            wcs = WCS(hdul[1].header)
+            #uncertainty = StdDevUncertainty(hdul[1].data)
+            uncertainty = None
             unit = u.ct  # counts
             # TODO: is the unit always counts????
 

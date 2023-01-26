@@ -1,5 +1,6 @@
 # Core Python imports
 import pathlib
+import os
 
 # Third party imports
 import numpy as np
@@ -41,7 +42,7 @@ def flag_punchdata(data_object: PUNCHData, bad_pixel_map: np.ndarray = None) -> 
 
 
 @task
-def flag_task(data_object: PUNCHData, bad_pixel_filename: str = None) -> PUNCHData:
+def flag_task(data_object: PUNCHData, bad_pixel_filename: str) -> PUNCHData:
     """
     Pipeline task for bad pixel flagging
 
@@ -49,6 +50,9 @@ def flag_task(data_object: PUNCHData, bad_pixel_filename: str = None) -> PUNCHDa
     ----------
     data_object
         Input PUNCHData object
+
+    bad_pixel_filename
+        Path to bad pixel calibration file
 
     Returns
     -------
@@ -61,14 +65,12 @@ def flag_task(data_object: PUNCHData, bad_pixel_filename: str = None) -> PUNCHDa
 
     # Read bad pixel map from file
     if bad_pixel_filename is None:
-        id_str = data_object.id
-        bad_pixel_filename = str(THIS_DIRECTORY) + '/data/' + id_str[0:9] + 'DP' + id_str[11:] + '.fits'
+        raise Exception('Must provide bad pixel map path')
 
-    with fits.open(bad_pixel_filename) as hdul:
-        bad_pixel_map = hdul[0].data
+    bad_pixel_map = PUNCHData.from_fits(bad_pixel_filename)
 
     # Call data flagging function
-    data_object = flag_punchdata(data_object, bad_pixel_map)
+    data_object = flag_punchdata(data_object, bad_pixel_map.data.astype(int))
 
     logger.info("flagging finished")
     data_object.meta.history.add_now("LEVEL1-flagging", "image flagged")

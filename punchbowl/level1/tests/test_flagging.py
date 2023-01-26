@@ -1,6 +1,7 @@
 # Core Python imports
 from datetime import datetime
 import pathlib
+import os
 
 # Third party imports
 import numpy as np
@@ -103,7 +104,8 @@ def test_flag_task_filename(sample_punchdata):
     """
     with disable_run_logger():
         flagged_punchdata = flag_task.fn(sample_punchdata,
-                                         bad_pixel_filename=str(THIS_DIRECTORY) + '/../data/PUNCH_L1_DP0_20080103085700.fits')
+                                         bad_pixel_filename=os.path.join(str(THIS_DIRECTORY),
+                                                                          'data/PUNCH_L1_DP0_20080103085700.fits'))
 
         assert isinstance(flagged_punchdata, PUNCHData)
         assert np.all(flagged_punchdata.data[np.where(sample_pixel_map == 1)] == 0)
@@ -112,11 +114,8 @@ def test_flag_task_filename(sample_punchdata):
 @pytest.mark.prefect_test
 def test_flag_task_nofilename(sample_punchdata):
     """
-    Test the flag_task prefect flow using a test harness, generating a filename
+    Test the flag_task prefect flow using a test harness, failing to provide a filename - an error should occur
     """
     with disable_run_logger():
-        flagged_punchdata = flag_task.fn(sample_punchdata)
-
-        assert isinstance(flagged_punchdata, PUNCHData)
-        assert np.all(flagged_punchdata.data[np.where(sample_pixel_map == 1)] == 0)
-        assert np.all(flagged_punchdata.uncertainty[np.where(sample_pixel_map == 1)].array == np.inf)
+        with pytest.raises(Exception):
+            flagged_punchdata = flag_task.fn(sample_punchdata)

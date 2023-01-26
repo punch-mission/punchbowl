@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import numpy as np
 from prefect import task, get_run_logger
 
@@ -108,9 +106,21 @@ def correct_streaks(
 
 @task
 def destreak_task(data_object: PUNCHData) -> PUNCHData:
+    """Prefect task to destreak an image
+
+    Parameters
+    ----------
+    data_object : PUNCHData
+        data to operate on
+
+    Returns
+    -------
+    PUNCHData
+        modified version of the input with streaks removed
+    """
     logger = get_run_logger()
     logger.info("destreak started")
     # TODO: do destreaking in here
     logger.info("destreak finished")
-    data_object.add_history(datetime.now(), "LEVEL1-destreak", "image destreaked")
+    data_object.meta.history.add_now("LEVEL1-destreak", "image destreaked")
     return data_object

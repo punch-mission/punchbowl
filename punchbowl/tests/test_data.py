@@ -14,6 +14,7 @@ from punchbowl.data import (
     HistoryEntry,
     HeaderTemplate,
     HEADER_TEMPLATE_COLUMNS,
+    NormalizedMetadata
 )
 
 
@@ -31,10 +32,7 @@ def sample_data():
 @fixture
 def simple_ndcube():
     # Taken from NDCube documentation
-
-    # Define data array.
     data = np.random.rand(4, 4, 5)
-    # Define WCS transformations in an astropy WCS object.
     wcs = astropy.wcs.WCS(naxis=3)
     wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
     wcs.wcs.cunit = "Angstrom", "deg", "deg"
@@ -44,7 +42,6 @@ def simple_ndcube():
     wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
     nd_obj = NDCube(data=data, wcs=wcs)
     return nd_obj
-
 
 def test_sample_data_creation(sample_data):
     assert isinstance(sample_data, PUNCHData)
@@ -56,7 +53,7 @@ def test_generate_from_filename():
 
 
 def test_write_data(sample_data):
-    with pytest.raises(RuntimeWarning):
+    with pytest.warns(RuntimeWarning):
         sample_data.meta["LEVEL"] = 1
         sample_data.meta["TYPECODE"] = "XX"
         sample_data.meta["OBSRVTRY"] = "Y"
@@ -68,7 +65,7 @@ def test_write_data(sample_data):
         sample_data.meta["POL"] = "M"
 
         sample_data.write(SAMPLE_WRITE_PATH)
-        # Check for writing to file? Read back in and compare?
+        # TODO: Check for writing to file? Read back in and compare?
 
 
 @fixture
@@ -122,15 +119,9 @@ def test_generate_from_csv_filename():
     assert isinstance(hdr, HeaderTemplate)
 
 
-def test_generate_from_invalid_file():
-    """A base PUNCH header object is initialized from an invalid input file.
-    Test for raised errors. Test that the object does not exist."""
-    pass
-
-
 def test_fill_header(simple_header_template):
-    with pytest.raises(RuntimeWarning):
-        meta = {"LEVEL": 1}
+    with pytest.warns(RuntimeWarning):
+        meta = NormalizedMetadata({"LEVEL": 1})
         header = simple_header_template.fill(meta)
         assert isinstance(header, fits.Header)
         assert header["LEVEL"] == 1
@@ -140,3 +131,54 @@ def test_unspecified_header_template():
     with pytest.raises(ValueError):
         h = HeaderTemplate.load("")
         assert isinstance(h, HeaderTemplate)
+
+
+@pytest.mark.parametrize("level", [0, 1, 2])
+def test_header_selection_based_on_level(level: int):
+    """Tests if the header can be selected automatically based on the product level"""
+    # Modified from NDCube documentation
+    data = np.random.rand(4, 4, 5)
+    wcs = astropy.wcs.WCS(naxis=3)
+    wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
+    wcs.wcs.cunit = "Angstrom", "deg", "deg"
+    wcs.wcs.cdelt = 0.2, 0.5, 0.4
+    wcs.wcs.crpix = 0, 2, 2
+    wcs.wcs.crval = 10, 0.5, 1
+    wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
+
+    meta = NormalizedMetadata({"LEVEL": level})
+    data = PUNCHData(data=data, wcs=wcs, meta=meta)
+
+    header = data.create_header(None)
+    assert header['LEVEL'] == level
+
+
+def test_normalizedmetadata_access_not_case_sensitive():
+    contents = {"hi": "there", "NaME": "marcus", "AGE": 27}
+    example = NormalizedMetadata(contents)
+
+    assert example["hi"] == "there"
+    assert example["Hi"] == "there"
+    assert example["hI"] == "there"
+    assert example["HI"] == "there"
+
+    assert example["age"] == 27
+
+    assert example['name'] == 'marcus'
+
+
+def test_normalizedmetadata_add_new_key():
+    empty = NormalizedMetadata(dict())
+    assert len(empty) == 0
+    assert "name" not in empty
+    empty['NAmE'] = "marcus"
+    assert "nAMe" in empty
+    assert len(empty) == 1
+
+def test_normalizedmetadata_delete_key():
+    example = NormalizedMetadata({"key": "value"})
+    assert "key" in example
+    assert len(example) == 1
+    del example['key']
+    assert "key" not in example
+    assert len(example) == 0

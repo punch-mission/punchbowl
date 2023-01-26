@@ -26,6 +26,7 @@ setup(
         "ccsdspy",
         "prefect",
         "regularizepsf",
+        "reproject"
     ],
     extras_require={
         "test": ["pytest", "coverage"],

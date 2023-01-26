@@ -32,9 +32,6 @@ def flag_punchdata(data_object: PUNCHData, bad_pixel_map: np.ndarray = None) -> 
 
     """
 
-    # Flag bad data in the primary data array
-    data_object.data[bad_pixel_map] = 0
-
     # Flag bad data in the associated uncertainty array (coded with infinity)
     data_object.uncertainty.array[bad_pixel_map] = np.inf
 

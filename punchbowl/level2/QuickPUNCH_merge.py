@@ -78,15 +78,16 @@ def quickpunch_merge_flow(data: List) -> PUNCHData:
     reprojected_data = np.zeros([trefoil_shape[0], trefoil_shape[1], len(data_input)])
     reprojected_uncertainty = np.zeros([trefoil_shape[0], trefoil_shape[1], len(data_input)])
 
-    i = 0
-    for idata, iwcs in zip(data_input, wcs_input):
-        reprojected_data[:,:,i] = reproject_array(idata, iwcs, trefoil_wcs, trefoil_shape)
-        i = i+1
+    data_result = [reproject_array.submit(idata, iwcs, trefoil_wcs, trefoil_shape)
+                   for idata, iwcs in zip(data_input, wcs_input)]
+    uncertainty_result = [reproject_array.submit(iuncertainty.array, iwcs, trefoil_wcs, trefoil_shape)
+                          for iuncertainty, iwcs in zip(uncertainty_input, wcs_input)]
 
-    i = 0
-    for iuncertainty, iwcs in zip(uncertainty_input, wcs_input):
-        reprojected_uncertainty[:, :, i] = reproject_array(iuncertainty.array, iwcs, trefoil_wcs, trefoil_shape)
-        i = i+1
+    for i, d in enumerate(data_result):
+        reprojected_data[:, :, i] = d.result()
+
+    for i, d in enumerate(uncertainty_result):
+        reprojected_uncertainty[:, :, i] = d.result()
 
     # Merge these data
     # Carefully deal with missing data (NaN) by only ignoring a pixel missing from all observations

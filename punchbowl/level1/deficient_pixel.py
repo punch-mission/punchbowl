@@ -30,7 +30,7 @@ def sliding_window(arr, window_size):
                arr.shape[1]*arr.itemsize, arr.itemsize)
     return as_strided(arr, shape=shape, strides=strides)
 
-def cell_neighbors(arr, i, j, window_size):
+def cell_neighbors(arr, i, j, window_size=1):
     """
     Return d-th neighbors of cell (i, j)
     borrowed from: https://stackoverflow.com/questions/10996769/pixel-neighbors-in-2d-array-image-using-python
@@ -53,13 +53,13 @@ def mean_example(data_array, mask_array, required_good_count=3, max_window_size=
     output_data_array=data_array.copy()
     for x_i, y_i in zip(x_bad_pix,y_bad_pix):
         window_size=1
-        number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, d=window_size))
+        number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
         while number_good_px < required_good_count:
             window_size+=1
-            number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, d=window_size))
+            number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
             if window_size > max_window_size:
                 break
-        output_data_array[x_i, y_i]=np.sum(cell_neighbors(data_array, x_i, y_i, d=window_size))/number_good_px
+        output_data_array[x_i, y_i]=np.sum(cell_neighbors(data_array, x_i, y_i, window_size=window_size))/number_good_px
     
     return output_data_array
 
@@ -70,13 +70,13 @@ def median_example(data_array, mask_array, required_good_count=3, max_window_siz
     output_data_array=data_array.copy()
     for x_i, y_i in zip(x_bad_pix,y_bad_pix):
         window_size=1
-        number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, d=window_size))
+        number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
         while number_good_px < required_good_count:
             window_size+=1
-            number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, d=window_size))
+            number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
             if window_size > max_window_size:
                 break
-        output_data_array[x_i, y_i]=np.nanmedian(cell_neighbors(data_array, x_i, y_i, d=window_size))
+        output_data_array[x_i, y_i]=np.nanmedian(cell_neighbors(data_array, x_i, y_i, window_size=window_size))
 
     return output_data_array
 
@@ -113,6 +113,7 @@ def remove_deficient_pixels(data_object: PUNCHData,
     # TODO: exclude data if flagged in weight array
     # TODO: update meta data with input file and version of deficient pixel map
     # TODO: output weight - update weights
+    # TODO: decide if bad pixel map should be a PUNCH data object, as the meta/WCS info will be fake
     """
 
     logger = get_run_logger()
@@ -149,7 +150,7 @@ def remove_deficient_pixels(data_object: PUNCHData,
     else:
         raise Exception(f"method specified must be 'mean', or 'median'. Found method={method}")
 
-
+    print(deficient_pixel_array)
     output_uncertainty[deficient_pixel_array==1] = np.inf
     
     output_PUNCHobject=PUNCHData(data_array, 

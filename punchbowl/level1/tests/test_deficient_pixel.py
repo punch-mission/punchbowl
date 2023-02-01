@@ -14,7 +14,6 @@ from pytest import fixture
 
 # punchbowl imports
 from punchbowl.data import PUNCHData,NormalizedMetadata
-#from punchbowl.level1.flagging import flag_punchdata, flag_task
 from punchbowl.level1.deficient_pixel import sliding_window, cell_neighbors, mean_example, median_example, remove_deficient_pixels
 
 
@@ -33,10 +32,9 @@ def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) ->
 
     bad_pixel_map[x_coords, y_coords] = 0
 
-    #bad_pixel_map = bad_pixel_map.astype(bool)
     bad_pixel_map = bad_pixel_map.astype(int)
 
-    uncertainty = bad_pixel_map
+    uncertainty = StdDevUncertainty(bad_pixel_map)
 
     wcs = WCS(naxis=2)
     wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
@@ -47,11 +45,6 @@ def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) ->
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
-
-
-
-
-
 
 
 @fixture
@@ -72,8 +65,6 @@ def sample_punchdata(shape: tuple = (2048, 2048)) -> PUNCHData:
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
-
-
 
 
 @pytest.mark.prefect_test

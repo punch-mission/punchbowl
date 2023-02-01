@@ -150,8 +150,7 @@ def remove_deficient_pixels(data_object: PUNCHData,
     else:
         raise Exception(f"method specified must be 'mean', or 'median'. Found method={method}")
 
-    print(deficient_pixel_array)
-    output_uncertainty[deficient_pixel_array==1] = np.inf
+    output_uncertainty.array[deficient_pixel_array==1] = np.inf
     
     output_PUNCHobject=PUNCHData(data_array, 
                                 wcs=output_wcs, 

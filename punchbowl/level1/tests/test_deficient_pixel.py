@@ -76,5 +76,5 @@ def test_remove_deficient_pixels(sample_punchdata, sample_bad_pixel_map):
         flagged_punchdata = remove_deficient_pixels.fn(sample_punchdata,
                                                        sample_bad_pixel_map)
 
-        assert isinstance(flagged_punchdata, PUNCHData)
+        assert isinstance(flagged_punchdata, PUNCHData) 
         #assert np.all(flagged_punchdata.uncertainty[np.where(sample_pixel_map == 1)].array == np.inf)

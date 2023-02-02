@@ -114,6 +114,8 @@ def remove_deficient_pixels(data_object: PUNCHData,
     # TODO: update meta data with input file and version of deficient pixel map
     # TODO: output weight - update weights
     # TODO: decide if bad pixel map should be a PUNCH data object, as the meta/WCS info will be fake
+    # TODO: if uncertainty object in PUNCH object is updated, then this should be updated here
+
     """
 
     logger = get_run_logger()
@@ -149,6 +151,9 @@ def remove_deficient_pixels(data_object: PUNCHData,
 
     else:
         raise Exception(f"method specified must be 'mean', or 'median'. Found method={method}")
+
+
+
 
     output_uncertainty.array[deficient_pixel_array==1] = np.inf
     

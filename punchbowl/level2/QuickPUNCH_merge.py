@@ -1,12 +1,8 @@
 # Core Python imports
-from datetime import datetime
-from typing import Tuple, List
+from typing import List
 
 # Third party imports
-import numpy as np
-import reproject
-from astropy.wcs import WCS
-from prefect import task, flow, get_run_logger
+from prefect import flow, get_run_logger
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData

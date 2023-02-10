@@ -1,5 +1,4 @@
 # Core Python imports
-from datetime import datetime
 from typing import Tuple, List
 
 # Third party imports
@@ -13,7 +12,7 @@ from punchbowl.data import PUNCHData
 
 
 # ancillary functions
-def generate_wcs(filename: str) -> Tuple[WCS, np.ndarray]:
+def generate_wcs(filename: str) -> Tuple[WCS, Tuple[int, int]]:
     """
     Generate an output WCS from file
 
@@ -124,7 +123,7 @@ def reproject_array(input_array: np.ndarray,
 
     Example Call
     ------------
-    >>> output_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
+    >>> reprojected_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
     """
 
     output_array = reproject.reproject_adaptive((input_array, input_wcs), output_wcs,

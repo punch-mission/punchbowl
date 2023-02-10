@@ -10,16 +10,57 @@ from prefect import task, flow, get_run_logger
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
-from punchbowl.level2.image_merge import reproject_array
+
+
+# core reprojection function
+@task
+def reproject_array(input_array: np.ndarray,
+                    input_wcs: WCS,
+                    output_wcs: WCS,
+                    output_shape: tuple) -> np.ndarray:
+    """Core reprojection function
+
+    Core reprojection function of the PUNCH mosaic generation module.
+        With an input data array and corresponding WCS object, the function 
+        performs a reprojection into the output WCS object system, along with 
+        a specified pixel size for the output array. This utilizes the adaptive 
+        reprojection routine implemented in the reprojection astropy package.
+
+    Parameters
+    ----------
+    input_array
+        input array to be reprojected
+    input_wcs
+        astropy WCS object describing the input array
+    output_wcs
+        astropy WCS object describing the coordinate system to transform to
+    output_shape
+        pixel shape of the reprojected output array
+        
+
+    Returns
+    -------
+    np.ndarray
+        output array after reprojection of the input array
+
+
+    Example Call
+    ------------
+    >>> output_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
+    """
+
+    output_array = reproject.reproject_adaptive((input_array, input_wcs), output_wcs,
+                                                output_shape, roundtrip_coords=False, return_footprint=False)
+    
+    return output_array
+
 
 
 # core module flow
 @flow
-def quickpunch_merge_flow(data: List) -> PUNCHData:
+def image_merge_flow(data: List) -> PUNCHData:
     logger = get_run_logger()
-    logger.info("QuickPUNCH_merge module started")
-
-    # TODO - Think about how to extract as much code as possible from the flow here into a shared function
+    logger.info("image_merge module started")
 
     # Define output WCS from file
     trefoil_wcs = WCS('level2/data/trefoil_hdr.fits')
@@ -56,6 +97,6 @@ def quickpunch_merge_flow(data: List) -> PUNCHData:
     # Pack up an output data object
     data_object = PUNCHData(trefoil_data, uncertainty=trefoil_uncertainty, wcs=trefoil_wcs)
     
-    logger.info("QuickPUNCH_merge flow finished")
-    data_object.meta.history.add_now("LEVEL2-module", "QuickPUNCH_merge ran")
+    logger.info("image_merge flow finished")
+    data_object.meta.history.add_now("LEVEL2-module", "image_merge ran")
     return data_object

@@ -6,7 +6,8 @@ from prefect.testing.utilities import prefect_test_harness
 # punchbowl imports
 from punchbowl.data import PUNCHData
 from punchbowl.level2.image_merge import reproject_array, image_merge_flow
-from punchbowl.level2.tests.test_fixtures import sample_wcs, sample_data, sample_ndcube, sample_punchdata, sample_punchdata_list
+from punchbowl.level2.tests.test_fixtures_mosaic import sample_wcs, sample_data,\
+    sample_ndcube, sample_punchdata, sample_punchdata_list
 
 
 # core unit tests

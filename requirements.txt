@@ -7,10 +7,8 @@ matplotlib==3.6.2
 ccsdspy==0.0.10
 prefect==2.7.1
 regularizepsf==0.0.1
-
 setuptools~=65.6.3
 pytest~=7.2.1
-punchbowl~=0.0.1
 scipy~=1.10.0
 lmfit~=1.1.0
 scikit-image~=0.19.3

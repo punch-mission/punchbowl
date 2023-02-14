@@ -259,7 +259,7 @@ class HeaderTemplate:
         """
         hdr = fits.Header()
 
-        type_converter = {"str": str, "int": int, "float": np.float}
+        type_converter = {"str": str, "int": int, "float": float}
 
         for row_i, entry in self._table.iterrows():
             if entry["TYPE"] == "section":

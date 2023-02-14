@@ -186,7 +186,7 @@ def mean_b_offset(
         to_bits: int = 12,
         ccd_gain: float = 1/4.3,
         ccd_offset: float = 100,
-        ccd_read_noise: float = 17) -> np.float:
+        ccd_read_noise: float = 17) -> float:
     """
     Compute an offset from the naive and robust decoding processes
 
@@ -207,7 +207,7 @@ def mean_b_offset(
 
     Returns
     -------
-    np.float
+    float
         Generated decoding value for use in constructing a decoding table
 
     """
@@ -243,7 +243,7 @@ def decode_sqrt_corrected(
         to_bits: int = 12,
         ccd_gain: float = 1 / 4.3,
         ccd_offset: float = 100,
-        ccd_read_noise: float = 17) -> np.float:
+        ccd_read_noise: float = 17) -> float:
     """
     Compute an individual decoding value for an input data value
 
@@ -264,7 +264,7 @@ def decode_sqrt_corrected(
 
     Returns
     -------
-    np.float
+    float
         Generated decoding value for use in constructing a decoding table
 
     """

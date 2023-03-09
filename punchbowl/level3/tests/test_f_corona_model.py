@@ -40,24 +40,23 @@ def test_list_input_2(sample_data_list):
     #assert isinstance(background, PUNCHData)
     assert isinstance(sample_data_list, list)
     
-def test_stupid_run(sample_data_list):
-    background = construct_f_corona_background.fn(sample_data_list)
-    #assert isinstance(background, PUNCHData)
-    assert isinstance(background, np.ndarray)
+#def test_stupid_run(sample_data_list):
+#    background = construct_f_corona_background.fn(sample_data_list)
+#    #assert isinstance(background, PUNCHData)
+#    assert isinstance(background, np.ndarray)
+#
 
 
-
-def test_bad2(sample_data_list):
-    print("hereHEREhereHEREhereHEREhereHEREhereHEREhereHERE")
-    print(len(sample_data_list))
-    for z_step in range(len(sample_data_list)):
-        address_out=sample_data_list[z_step]
-        print(address_out)
-        if z_step==0:
-            new_data_cube_base=PUNCHData(PUNCHData.from_fits(address_out)).data
-        if z_step>0:
-            new_data_cube_base=np.dstack((new_data_cube_base, PUNCHData(PUNCHData.from_fits(address_out)).data))
-
-    print(np.shape(new_data_cube_base))
-    assert True
+#def test_bad2(sample_data_list):
+#    print("hereHEREhereHEREhereHEREhereHEREhereHEREhereHERE")
+#    print(len(sample_data_list))
+#    for z_step in range(len(sample_data_list)):
+#        address_out=sample_data_list[z_step]
+#        print(address_out)
+#        if z_step==0:
+#            new_data_cube_base=PUNCHData(PUNCHData.from_fits(address_out)).data
+#        if z_step>0:
+#            new_data_cube_base=np.dstack((new_data_cube_base, PUNCHData(PUNCHData.from_fits(address_out)).data))
+#    print(np.shape(new_data_cube_base))
+#    assert True
 

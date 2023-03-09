@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import warnings
 
@@ -11,7 +11,7 @@ from punchbowl.data import PUNCHData
 def query_f_corona_model_source(polarizer: str,
                  PUNCH_product: str,
                  start_datetime: datetime,
-                 end_datetime: datetime) -> list[str]:
+                 end_datetime: datetime) -> List[str]:
     """Creates a list of files based between a start date/time (start_datetime) 
     and an end date/time (end_datetime) for a specifed polarizer and product
     type.
@@ -84,7 +84,7 @@ def query_f_corona_model_source(polarizer: str,
 
 
 @task
-def construct_f_corona_background(data_list: list[str], 
+def construct_f_corona_background(data_list: List[str],
                 method: str = 'percentile',
                 apply_threshold_mask: bool = True,
                 threshold_mask_cutoff: float = 1.5, 

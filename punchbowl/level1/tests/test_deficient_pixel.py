@@ -129,7 +129,7 @@ def test_data_loading(sample_punchdata, perfect_pixel_map):
 
     assert isinstance(deficient_punchdata, PUNCHData)
     assert np.all(deficient_punchdata.data == sample_punchdata.data)
-    #assert np.all(deficient_punchdata.uncertainty == sample_punchdata.uncertainty)
+    assert np.all(deficient_punchdata.uncertainty.array == sample_punchdata.uncertainty.array)
 
 
 @pytest.mark.prefect_test
@@ -145,17 +145,17 @@ def test_artificial_pixel_map(sample_punchdata, sample_bad_pixel_map):
         assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 1)].array == np.inf)
 
 
-#@pytest.mark.prefect_test
-#def test_flag_task_filename(sample_punchdata):
+# @pytest.mark.prefect_test
+# def test_flag_task_filename(sample_punchdata):
 #    """
 #    Test the flag_task prefect flow using a test harness, providing a filename
-#    """ 
+#    """
 #    with disable_run_logger():
 #        flagged_punchdata = remove_deficient_pixels.fn(sample_punchdata,
 #                                         bad_pixel_filename=os.path.join(str(THIS_DIRECTORY),
 #                                        'data/PUNCH_L1_DP0_20080103085700.fits'))
 #        assert isinstance(flagged_punchdata, PUNCHData)
-#        assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 1)].array == np.inf)       
+#        assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 1)].array == np.inf)
 
 
 

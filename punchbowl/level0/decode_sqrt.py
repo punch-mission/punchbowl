@@ -1,9 +1,8 @@
 import os.path
-from datetime import datetime
 from typing import Tuple, Union
 
 import numpy as np
-from prefect import task, get_run_logger
+from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
 
@@ -361,11 +360,11 @@ def decode_sqrt_data(data_object: PUNCHData) -> PUNCHData:
 
     data = data_object.data
 
-    from_bits = data_object.meta['RAWBITS']
-    to_bits = data_object.meta['COMPBITS']
+    from_bits = data_object.meta["RAWBITS"]
+    to_bits = data_object.meta["COMPBITS"]
 
-    ccd_gain = data_object.meta['GAINCMD']
-    ccd_offset = data_object.meta['OFFSET']
+    ccd_gain = data_object.meta["GAINCMD"]
+    ccd_offset = data_object.meta["OFFSET"]
     ccd_read_noise = 17     # DN
 
     decoded_data = decode_sqrt(data,

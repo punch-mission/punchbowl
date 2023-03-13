@@ -374,7 +374,7 @@ class PUNCHData(NDCube):
             wcs=wcs,
             uncertainty=uncertainty,
             mask=mask,
-            meta=meta if meta is not None else NormalizedMetadata(dict()),
+            meta=meta if meta is not None else NormalizedMetadata({}),
             unit=unit,
             copy=copy,
             **kwargs,
@@ -578,7 +578,7 @@ class PUNCHData(NDCube):
             a full constructed and filled FITS header that reflects the data
         """
         if template_path is None:
-            template_path = str(Path(__file__).parent / 
+            template_path = str(Path(__file__).parent /
                                 f"data/HeaderTemplate/HeaderTemplate_L{self.meta.product_level}.csv")
 
         template = HeaderTemplate.load(template_path)

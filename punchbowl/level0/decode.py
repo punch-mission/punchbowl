@@ -1,11 +1,12 @@
-from punchbowl.data import PUNCHData
+from typing import Any, Dict
 
-import numpy as np
-from ndcube import NDCube
-from prefect import task, get_run_logger
-from astropy.wcs import WCS
 import astropy.units as u
-from typing import Dict, Any
+import numpy as np
+from astropy.wcs import WCS
+from ndcube import NDCube
+from prefect import task
+
+from punchbowl.data import PUNCHData
 
 
 @task

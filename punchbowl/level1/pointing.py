@@ -6,7 +6,6 @@ import pandas as pd
 import scipy.ndimage
 from astropy.io import fits
 from astropy.wcs import WCS
-from lmfit.lineshapes import gaussian2d
 from skimage.morphology import dilation, erosion
 
 # This file will be deleted and replaced with alignment.py

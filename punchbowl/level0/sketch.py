@@ -1,11 +1,8 @@
 """
 This file contains the sketches of how this code will work in the long run. It is not meant to be complete yet.
 """
-import pickle
-import struct
-import pandas as pd
 import numpy as np
-import ccsdspy
+import pandas as pd
 from ccsdspy import PacketField
 from ccsdspy.decode import _decode_fixed_length
 
@@ -34,7 +31,7 @@ i = 0
 apid_mask = 0b00011111111111
 file_packet_apids = []
 file_length = len(data)
-apid_data = {apid: [] for apid in packet_length.keys()}
+apid_data = {apid: [] for apid in packet_length}
 while True:
     this_apid = int(data[i : i + 2].hex(), base=16) & apid_mask
     length = int(data[i + 4 : i + 6].hex(), base=16)
@@ -57,7 +54,7 @@ packet_definition = []
 for row in diag_nst_raw.iterrows():
     name = row[1][0]
     kind = row[1][2]
-    kind = "uint" if "U" == row[1][2][0] else "int"
+    kind = "uint" if row[1][2][0] == "U" else "int"
     start_byte = row[1][6]
     start_bit = row[1][7]
     size = row[1][8]

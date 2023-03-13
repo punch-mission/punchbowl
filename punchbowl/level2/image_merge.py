@@ -98,9 +98,9 @@ def reproject_array(input_array: np.ndarray,
     """Core reprojection function
 
     Core reprojection function of the PUNCH mosaic generation module.
-        With an input data array and corresponding WCS object, the function 
-        performs a reprojection into the output WCS object system, along with 
-        a specified pixel size for the output array. This utilizes the adaptive 
+        With an input data array and corresponding WCS object, the function
+        performs a reprojection into the output WCS object system, along with
+        a specified pixel size for the output array. This utilizes the adaptive
         reprojection routine implemented in the reprojection astropy package.
 
     Parameters
@@ -113,7 +113,7 @@ def reproject_array(input_array: np.ndarray,
         astropy WCS object describing the coordinate system to transform to
     output_shape
         pixel shape of the reprojected output array
-        
+
 
     Returns
     -------
@@ -128,7 +128,7 @@ def reproject_array(input_array: np.ndarray,
 
     output_array = reproject.reproject_adaptive((input_array, input_wcs), output_wcs,
                                                 output_shape, roundtrip_coords=False, return_footprint=False)
-    
+
     return output_array
 
 
@@ -139,11 +139,11 @@ def image_merge_flow(data: List) -> PUNCHData:
     logger.info("image_merge module started")
 
     # Define output WCS from file
-    (trefoil_wcs, trefoil_shape) = generate_wcs('level2/data/trefoil_hdr.fits')
+    (trefoil_wcs, trefoil_shape) = generate_wcs("level2/data/trefoil_hdr.fits")
 
     # Generate a mosaic to these specifications from input data
     data_object = mosaic(data, trefoil_wcs, trefoil_shape)
-    
+
     logger.info("image_merge flow finished")
     data_object.meta.history.add_now("LEVEL2-module", "image_merge ran")
     return data_object

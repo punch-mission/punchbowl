@@ -45,9 +45,9 @@ def cell_neighbors(arr: np.ndarray, i: int, j:int, window_size:int=1) -> np.ndar
 
     return window[ix, jx][i0:i1,j0:j1].ravel()
 
-def mean_correct(data_array: np.ndarray, 
-                 mask_array: np.ndarray, 
-                 required_good_count: int=3, 
+def mean_correct(data_array: np.ndarray,
+                 mask_array: np.ndarray,
+                 required_good_count: int=3,
                  max_window_size: int=10) -> np.ndarray:
     x_bad_pix,y_bad_pix=np.where(mask_array==0)
     data_array[mask_array==0] = 0
@@ -61,12 +61,12 @@ def mean_correct(data_array: np.ndarray,
             if window_size > max_window_size:
                 break
         output_data_array[x_i, y_i]=np.sum(cell_neighbors(data_array, x_i, y_i, window_size=window_size))/number_good_px
-    
+
     return output_data_array
 
 
-def median_correct(data_array: np.ndarray, 
-                   mask_array: np.ndarray, 
+def median_correct(data_array: np.ndarray,
+                   mask_array: np.ndarray,
                    required_good_count: int=3,
                    max_window_size: int=10) -> np.ndarray:
     x_bad_pix,y_bad_pix=np.where(mask_array==0)
@@ -86,22 +86,22 @@ def median_correct(data_array: np.ndarray,
 
 
 @task
-def remove_deficient_pixels(data_object: PUNCHData, 
+def remove_deficient_pixels(data_object: PUNCHData,
                             deficient_pixel_map: PUNCHData,
-                            required_good_count: int= 3, 
+                            required_good_count: int= 3,
                             max_window_size: int= 10,
                             method: str= "median"
                             ) -> PUNCHData:
     """subtracts a deficient pixel map from an input data frame.
-        
+
     checks the dimensions of input data frame and map match and
     subtracts the background model from the data frame of interest.
-    
+
     Parameters
     ----------
     data : PUNCHData
         A PUNCHobject data frame to be background subtracted
-        
+
     deficient_pixel_map : PUNCHData
         A deficient_pixel map
 
@@ -113,7 +113,7 @@ def remove_deficient_pixels(data_object: PUNCHData,
 
     TODO
     ----
-    
+
     # TODO: exclude data if flagged in weight array
     # TODO: update meta data with input file and version of deficient pixel map
     # TODO: output weight - update weights
@@ -124,32 +124,32 @@ def remove_deficient_pixels(data_object: PUNCHData,
 
     logger = get_run_logger()
     logger.info("remove_deficient_pixels started")
-    
+
     data_array=data_object.data
     output_wcs=data_object.wcs
     output_meta=data_object.meta
     output_uncertainty=data_object.uncertainty
     output_mask=data_object.mask
-    
+
     deficient_pixel_array=deficient_pixel_map.data
 
     # check dimensions match
     if data_array.shape != deficient_pixel_array.shape:
         raise ValueError("deficient_pixel_array expects the data_object and"
-                         "deficient_pixel_array arrays to have the same dimensions." 
+                         "deficient_pixel_array arrays to have the same dimensions."
                          f"data_array dims: {data_array.shape}"
                          f"and deficient_pixel_map dims: {deficient_pixel_array.shape}")
-            
+
     if method == "median":
-        data_array = median_correct(data_array, 
-                                    deficient_pixel_array, 
+        data_array = median_correct(data_array,
+                                    deficient_pixel_array,
                                     required_good_count=required_good_count,
                                     max_window_size=max_window_size
                                     )
 
     elif method == "mean":
-        data_array = mean_correct(data_array, 
-                                  deficient_pixel_array, 
+        data_array = mean_correct(data_array,
+                                  deficient_pixel_array,
                                   required_good_count=required_good_count,
                                   max_window_size=max_window_size
                                   )
@@ -158,14 +158,14 @@ def remove_deficient_pixels(data_object: PUNCHData,
         raise ValueError(f"method specified must be 'mean', or 'median'. Found method={method}")
 
 
-    # Set deficient pixels to infinity 
+    # Set deficient pixels to infinity
 
     output_uncertainty.array[deficient_pixel_array==0]=0
-    
-    output_object=PUNCHData(data_array, 
-                            wcs=output_wcs, 
+
+    output_object=PUNCHData(data_array,
+                            wcs=output_wcs,
                             uncertainty=output_uncertainty,
-                            meta=output_meta, 
+                            meta=output_meta,
                             mask=output_mask)
 
     logger.info("remove_deficient_pixels finished")

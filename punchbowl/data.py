@@ -1,24 +1,23 @@
 from __future__ import annotations
 
-import warnings
 import os.path
+import warnings
 from collections import namedtuple
 from collections.abc import Mapping
 from datetime import datetime
-from typing import List, Any
-from dateutil.parser import parse as parse_datetime
 from pathlib import Path
+from typing import Any, Dict, List
 
-
+import astropy.units as u
+import astropy.wcs.wcsapi
 import matplotlib as mpl
 import numpy as np
-import astropy.wcs.wcsapi
-import astropy.units as u
+import pandas as pd
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
-import pandas as pd
 
 from punchbowl.errors import MissingMetadataError
 
@@ -133,7 +132,7 @@ class History:
             raise StopIteration
         entry = self._entries[self.current_index]
         self.current_index += 1
-        return entry
+        return entry  # noqa:  RET504
 
 
 
@@ -152,21 +151,21 @@ class NormalizedMetadata(Mapping):
                 raise KeyError("HISTORY-OBJECT is a reserved keyword for NormalizedMetadata. "
                                "It cannot be in a passed in contents.")
         self._contents = {k.upper(): v for k, v in contents.items()}
-        self._contents['HISTORY-OBJECT'] = History()
+        self._contents["HISTORY-OBJECT"] = History()
 
-    def __iter__(self):
+    def __iter__(self)  -> Dict:
         return self._contents.__iter__()
 
     @property
-    def history(self):
+    def history(self) -> History:
         return self._contents["HISTORY-OBJECT"]
 
     @staticmethod
-    def _validate_key_is_str(key):
+    def _validate_key_is_str(key: str) -> None:
         if not isinstance(key, str):
             raise TypeError(f"Keys for NormalizedMetadata must be strings. You provided {type(key)}.")
 
-    def __setitem__(self, key: str, value: Any):
+    def __setitem__(self, key: str, value: Any) -> None:
         self._validate_key_is_str(key)
         self._contents[key.upper()] = value
 
@@ -187,14 +186,14 @@ class NormalizedMetadata(Mapping):
 
     @property
     def product_level(self) -> int:
-        if 'LEVEL' not in self._contents:
+        if "LEVEL" not in self._contents:
             raise MissingMetadataError("LEVEL is missing from the metadata.")
-        return self._contents['LEVEL']
+        return self._contents["LEVEL"]
 
 
     @property
     def datetime(self) -> datetime:
-        if 'DATE-OBS' not in self._contents:
+        if "DATE-OBS" not in self._contents:
             raise MissingMetadataError("DATE-OBS is missing from the metadata.")
         return parse_datetime(self._contents["DATE-OBS"])
 
@@ -207,7 +206,7 @@ class HeaderTemplate:
     - TODO : make custom types of warnings more specific so that they can be filtered
     """
 
-    def __init__(self, template=None):
+    def __init__(self, template: pd.DataFrame=None) -> None:
         self._table = (
             pd.DataFrame(columns=HEADER_TEMPLATE_COLUMNS)
             if template is None
@@ -261,7 +260,7 @@ class HeaderTemplate:
 
         type_converter = {"str": str, "int": int, "float": float}
 
-        for row_i, entry in self._table.iterrows():
+        for _, entry in self._table.iterrows():
             if entry["TYPE"] == "section":
                 if len(entry["COMMENT"]) > 72:
                     warnings.warn(
@@ -296,10 +295,9 @@ class HeaderTemplate:
 
         empty_keywords = set(self.find_empty())
         for key, value in meta.items():
-            if key in hdr and key in empty_keywords:
-                if value != "":  # only update if it's not the empty string
-                    hdr[key] = value
-                    empty_keywords.remove(key)
+            if key in hdr and key in empty_keywords and value != "":  # only update if it's not the empty string
+                hdr[key] = value
+                empty_keywords.remove(key)
 
         if empty_keywords:
             warnings.warn(f"Some keywords left empty: {empty_keywords}", RuntimeWarning)
@@ -315,10 +313,9 @@ class HeaderTemplate:
             List of unassigned keywords
         """
         empty_keywords = []
-        for row_i, row in self._table.iterrows():
-            if row["TYPE"] == "keyword":
-                if not row["VALUE"]:
-                    empty_keywords.append(row["KEYWORD"])
+        for _, row in self._table.iterrows():
+            if row["TYPE"] == "keyword" and not row["VALUE"]:
+                empty_keywords.append(row["KEYWORD"])
         return empty_keywords
 
 
@@ -344,7 +341,7 @@ class PUNCHData(NDCube):
         unit: astropy.units.Unit = None,
         copy: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         """Initialize PUNCH Data
 
         Parameters
@@ -493,9 +490,7 @@ class PUNCHData(NDCube):
 
         if filename.endswith(".fits"):
             self._write_fits(filename, overwrite=overwrite)
-        elif filename.endswith(".png"):
-            self._write_ql(filename, overwrite=overwrite)
-        elif filename.endswith(".jpg") or filename.endswith(".jpeg"):
+        elif filename.endswith((".png", ".jpg", ".jpeg")):
             self._write_ql(filename, overwrite=overwrite)
         else:
             raise ValueError(
@@ -503,7 +498,7 @@ class PUNCHData(NDCube):
                 f"Found: {os.path.splitext(filename)[1]}"
             )
 
-    def _write_fits(self, filename: str, overwrite=True) -> None:
+    def _write_fits(self, filename: str, overwrite: bool=True) -> None:
         """Write PUNCHData elements to FITS files
 
         Parameters
@@ -557,7 +552,7 @@ class PUNCHData(NDCube):
             raise ValueError("Specified output data should have two-dimensions.")
 
         # Scale data array to 8-bit values
-        output_data = np.int(
+        output_data = int(
             np.fix(
                 np.interp(
                     self.data, (self.data.min(), self.data.max()), (0, 2**8 - 1)
@@ -583,7 +578,8 @@ class PUNCHData(NDCube):
             a full constructed and filled FITS header that reflects the data
         """
         if template_path is None:
-            template_path = str(Path(__file__).parent / f"data/HeaderTemplate/HeaderTemplate_L{self.meta.product_level}.csv")
+            template_path = str(Path(__file__).parent / 
+                                f"data/HeaderTemplate/HeaderTemplate_L{self.meta.product_level}.csv")
 
         template = HeaderTemplate.load(template_path)
         return template.fill(self.meta)

@@ -1,11 +1,12 @@
-from typing import Optional, List
-from datetime import datetime
 import warnings
+from datetime import datetime
+from typing import List, Optional
 
-from prefect import task, get_run_logger
 import numpy as np
+from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
+
 
 @task
 def query_f_corona_model_source(polarizer: str,

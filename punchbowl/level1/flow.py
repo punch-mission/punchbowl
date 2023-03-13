@@ -1,14 +1,14 @@
-from prefect import flow, get_run_logger, task
+from prefect import flow, get_run_logger
 
 from punchbowl.level1.alignment import align_task
-from punchbowl.level1.quartic_fit import perform_quartic_fit_task
+from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 from punchbowl.level1.despike import despike_task
 from punchbowl.level1.destreak import destreak_task
-from punchbowl.level1.vignette import correct_vignetting_task
-from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
-from punchbowl.level1.stray_light import remove_stray_light_task
-from punchbowl.level1.psf import correct_psf_task
 from punchbowl.level1.flagging import flag_task
+from punchbowl.level1.psf import correct_psf_task
+from punchbowl.level1.quartic_fit import perform_quartic_fit_task
+from punchbowl.level1.stray_light import remove_stray_light_task
+from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.util import load_image_task, output_image_task
 
 

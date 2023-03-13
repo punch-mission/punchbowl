@@ -1,15 +1,12 @@
 # Core Python imports
 import pathlib
-import os
 
 # Third party imports
 import numpy as np
-from prefect import task, get_run_logger
-from astropy.io import fits
+from prefect import get_run_logger, task
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
-
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -59,10 +56,6 @@ def flag_task(data_object: PUNCHData, bad_pixel_filename: str) -> PUNCHData:
 
     logger = get_run_logger()
     logger.info("flagging started")
-
-    # Read bad pixel map from file
-    if bad_pixel_filename is None:
-        raise Exception('Must provide bad pixel map path')
 
     bad_pixel_map = PUNCHData.from_fits(bad_pixel_filename)
 

@@ -1,7 +1,7 @@
 # Core Python imports
-from datetime import datetime
-import pathlib
 import os
+import pathlib
+from datetime import datetime
 
 # Third party imports
 import numpy as np
@@ -13,7 +13,7 @@ from prefect.logging import disable_run_logger
 from pytest import fixture
 
 # punchbowl imports
-from punchbowl.data import PUNCHData,NormalizedMetadata
+from punchbowl.data import NormalizedMetadata, PUNCHData
 from punchbowl.level1.flagging import flag_punchdata, flag_task
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()

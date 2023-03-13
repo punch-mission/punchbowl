@@ -2,7 +2,7 @@ from prefect import flow, get_run_logger
 
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.quality import quality_flag_task
-from punchbowl.util import output_image_task, load_image_task
+from punchbowl.util import load_image_task, output_image_task
 
 
 @flow

@@ -1,13 +1,13 @@
+import itertools
+
+import lmfit
+import numpy as np
+import pandas as pd
+import scipy.ndimage
 from astropy.io import fits
 from astropy.wcs import WCS
-import pandas as pd
-import numpy as np
-import scipy.ndimage
-from skimage.morphology import erosion, dilation
-import itertools
-import lmfit
 from lmfit.lineshapes import gaussian2d
-
+from skimage.morphology import dilation, erosion
 
 # This file will be deleted and replaced with alignment.py
 

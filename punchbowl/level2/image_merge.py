@@ -1,11 +1,11 @@
 # Core Python imports
-from typing import Tuple, List
+from typing import List, Tuple
 
 # Third party imports
 import numpy as np
 import reproject
 from astropy.wcs import WCS
-from prefect import task, flow, get_run_logger
+from prefect import flow, get_run_logger, task
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData

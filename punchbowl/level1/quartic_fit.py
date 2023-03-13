@@ -1,5 +1,5 @@
 import numpy as np
-from prefect import task, get_run_logger
+from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
 

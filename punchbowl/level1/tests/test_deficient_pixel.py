@@ -1,26 +1,23 @@
 # Core Python imports
-from datetime import datetime
 import pathlib
-import os
 
 # Third party imports
 import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect.logging import disable_run_logger
-from pytest import fixture
 
 # punchbowl imports
-from punchbowl.data import PUNCHData, NormalizedMetadata
-from punchbowl.level1.deficient_pixel import sliding_window, cell_neighbors, mean_example, median_example, remove_deficient_pixels
-
+from punchbowl.data import NormalizedMetadata, PUNCHData
+from punchbowl.level1.deficient_pixel import (
+    remove_deficient_pixels,
+)
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
-@fixture
+@pytest.fixture()
 def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> np.ndarray:
     """
     Generate some random data for testing
@@ -47,8 +44,8 @@ def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) ->
     return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-@fixture
-def perfect_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> np.ndarray:
+@pytest.fixture()
+def perfect_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
     """
     Generate some random data for testing
     """
@@ -69,7 +66,7 @@ def perfect_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> np
     return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-@fixture
+@pytest.fixture()
 def sample_punchdata(shape: tuple = (2048, 2048)) -> PUNCHData:
     """
     Generate a sample PUNCHData object for testing
@@ -89,8 +86,8 @@ def sample_punchdata(shape: tuple = (2048, 2048)) -> PUNCHData:
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-@pytest.mark.prefect_test
-def test_remove_deficient_pixels(sample_punchdata, sample_bad_pixel_map):
+@pytest.mark.prefect_test()
+def test_remove_deficient_pixels(sample_punchdata: PUNCHData, sample_bad_pixel_map: PUNCHData) -> None:
     """
     Test the remove_deficient_pixels prefect flow using a test harness, providing a filename
     """
@@ -101,8 +98,9 @@ def test_remove_deficient_pixels(sample_punchdata, sample_bad_pixel_map):
         assert isinstance(flagged_punchdata, PUNCHData) 
         #assert np.all(flagged_punchdata.uncertainty[np.where(sample_pixel_map == 1)].array == np.inf)
 
-@pytest.mark.prefect_test_2
-def test_nan_input(sample_punchdata, sample_bad_pixel_map):
+
+@pytest.mark.prefect_test()
+def test_nan_input(sample_punchdata: PUNCHData, sample_bad_pixel_map: PUNCHData) -> None:
     """
     The module output is tested when NaN data points are included in the input PUNCHData object. Test for no errors.
     """
@@ -118,8 +116,8 @@ def test_nan_input(sample_punchdata, sample_bad_pixel_map):
 
 
 
-@pytest.mark.prefect_test
-def test_data_loading(sample_punchdata, perfect_pixel_map):
+@pytest.mark.prefect_test()
+def test_data_loading(sample_punchdata: PUNCHData, perfect_pixel_map: PUNCHData) -> None:
     """
     A specific observation is provided. The module loads it as a PUNCHData object. 
     No bad data points, in same as out. uncertainty should be the same in and out.
@@ -132,8 +130,8 @@ def test_data_loading(sample_punchdata, perfect_pixel_map):
     assert np.all(deficient_punchdata.uncertainty.array == sample_punchdata.uncertainty.array)
 
 
-@pytest.mark.prefect_test
-def test_artificial_pixel_map(sample_punchdata, sample_bad_pixel_map):
+@pytest.mark.prefect_test()
+def test_artificial_pixel_map(sample_punchdata: PUNCHData, sample_bad_pixel_map: PUNCHData) -> None: 
     """
     A known artificial bad pixel map is ingested. The output flags are tested against the input map.
     """
@@ -143,27 +141,3 @@ def test_artificial_pixel_map(sample_punchdata, sample_bad_pixel_map):
 
         assert isinstance(flagged_punchdata, PUNCHData)
         assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 1)].array == np.inf)
-
-
-# @pytest.mark.prefect_test
-# def test_flag_task_filename(sample_punchdata):
-#    """
-#    Test the flag_task prefect flow using a test harness, providing a filename
-#    """
-#    with disable_run_logger():
-#        flagged_punchdata = remove_deficient_pixels.fn(sample_punchdata,
-#                                         bad_pixel_filename=os.path.join(str(THIS_DIRECTORY),
-#                                        'data/PUNCH_L1_DP0_20080103085700.fits'))
-#        assert isinstance(flagged_punchdata, PUNCHData)
-#        assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 1)].array == np.inf)
-
-
-
-@pytest.mark.prefect_test
-def test_flag_task_nofilename(sample_punchdata):
-    """
-    Test the flag_task prefect flow using a test harness, failing to provide a filename - an error should occur
-    """
-    with disable_run_logger():
-        with pytest.raises(Exception):
-            flagged_punchdata = remove_deficient_pixels.fn(sample_punchdata)

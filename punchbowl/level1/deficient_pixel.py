@@ -1,13 +1,11 @@
-from typing import Optional
-from datetime import datetime
-from prefect import task, get_run_logger
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
+from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
 
 
-def sliding_window(arr, window_size):
+def sliding_window(arr: np.ndarray, window_size: int) -> np.ndarray:
     """
     Construct a sliding window view of the array
     borrowed from: https://stackoverflow.com/questions/10996769/pixel-neighbors-in-2d-array-image-using-python
@@ -30,7 +28,7 @@ def sliding_window(arr, window_size):
                arr.shape[1]*arr.itemsize, arr.itemsize)
     return as_strided(arr, shape=shape, strides=strides)
 
-def cell_neighbors(arr, i, j, window_size=1):
+def cell_neighbors(arr: np.ndarray, i: int, j:int, window_size:int=1) -> np.ndarray:
     """
     Return d-th neighbors of cell (i, j)
     borrowed from: https://stackoverflow.com/questions/10996769/pixel-neighbors-in-2d-array-image-using-python
@@ -47,7 +45,10 @@ def cell_neighbors(arr, i, j, window_size=1):
 
     return window[ix, jx][i0:i1,j0:j1].ravel()
 
-def mean_example(data_array, mask_array, required_good_count=3, max_window_size=10):
+def mean_correct(data_array: np.ndarray, 
+                 mask_array: np.ndarray, 
+                 required_good_count: int=3, 
+                 max_window_size: int=10) -> np.ndarray:
     x_bad_pix,y_bad_pix=np.where(mask_array==0)
     data_array[mask_array==0] = 0
     output_data_array=data_array.copy()
@@ -64,7 +65,10 @@ def mean_example(data_array, mask_array, required_good_count=3, max_window_size=
     return output_data_array
 
 
-def median_example(data_array, mask_array, required_good_count=3, max_window_size=10):
+def median_correct(data_array: np.ndarray, 
+                   mask_array: np.ndarray, 
+                   required_good_count: int=3,
+                   max_window_size: int=10) -> np.ndarray:
     x_bad_pix,y_bad_pix=np.where(mask_array==0)
     data_array[mask_array==0]=np.nan
     output_data_array=data_array.copy()
@@ -86,7 +90,7 @@ def remove_deficient_pixels(data_object: PUNCHData,
                             deficient_pixel_map: PUNCHData,
                             required_good_count: int= 3, 
                             max_window_size: int= 10,
-                            method: str= 'median'
+                            method: str= "median"
                             ) -> PUNCHData:
     """subtracts a deficient pixel map from an input data frame.
         
@@ -131,42 +135,43 @@ def remove_deficient_pixels(data_object: PUNCHData,
 
     # check dimensions match
     if data_array.shape != deficient_pixel_array.shape:
-        raise Exception("deficient_pixel_array expects the data_object and"
+        raise ValueError("deficient_pixel_array expects the data_object and"
                          "deficient_pixel_array arrays to have the same dimensions." 
-                         f"data_array dims: {data_array.shape} and deficient_pixel_map dims: {deficient_pixel_array.shape}")
+                         f"data_array dims: {data_array.shape}"
+                         f"and deficient_pixel_map dims: {deficient_pixel_array.shape}")
             
-    if method == 'median':
-        data_array = median_example(data_array, 
+    if method == "median":
+        data_array = median_correct(data_array, 
                                     deficient_pixel_array, 
                                     required_good_count=required_good_count,
                                     max_window_size=max_window_size
                                     )
 
-    elif method == 'mean':
-        data_array = mean_example(data_array, 
+    elif method == "mean":
+        data_array = mean_correct(data_array, 
                                   deficient_pixel_array, 
                                   required_good_count=required_good_count,
                                   max_window_size=max_window_size
                                   )
 
     else:
-        raise Exception(f"method specified must be 'mean', or 'median'. Found method={method}")
+        raise ValueError(f"method specified must be 'mean', or 'median'. Found method={method}")
 
 
     # Set deficient pixels to infinity 
 
     output_uncertainty.array[deficient_pixel_array==0]=0
     
-    output_PUNCHobject=PUNCHData(data_array, 
-                                wcs=output_wcs, 
-                                uncertainty=output_uncertainty,
-                                meta=output_meta, 
-                                mask=output_mask)
+    output_object=PUNCHData(data_array, 
+                            wcs=output_wcs, 
+                            uncertainty=output_uncertainty,
+                            meta=output_meta, 
+                            mask=output_mask)
 
     logger.info("remove_deficient_pixels finished")
-    output_PUNCHobject.meta.history.add_now("LEVEL1-remove_deficient_pixels", "deficient pixels removed")
+    output_object.meta.history.add_now("LEVEL1-remove_deficient_pixels", "deficient pixels removed")
 
-    return output_PUNCHobject
+    return output_object
 
 
 

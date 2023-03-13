@@ -5,12 +5,12 @@ import os.path
 from collections import namedtuple
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Union, List, Dict, Any, Iterator
+from typing import List, Any
 from dateutil.parser import parse as parse_datetime
 from pathlib import Path
 
 
-import matplotlib
+import matplotlib as mpl
 import numpy as np
 import astropy.wcs.wcsapi
 import astropy.units as u
@@ -28,7 +28,7 @@ HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
 class History:
     """Representation of the history of edits done to a PUNCHData object"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._entries: List[HistoryEntry] = []
 
     def add_entry(self, entry: HistoryEntry) -> None:
@@ -124,11 +124,11 @@ class History:
             [f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries]
         )
 
-    def __iter__(self):
+    def __iter__(self) -> History:
         self.current_index = 0
         return self
 
-    def __next__(self):
+    def __next__(self) -> HistoryEntry:
         if self.current_index >= len(self):
             raise StopIteration
         entry = self._entries[self.current_index]
@@ -145,7 +145,7 @@ class NormalizedMetadata(Mapping):
     Internally, the keys are always stored as upper-case strings.
     Unlike the FITS standard, keys can be any length string.
     """
-    def __init__(self, contents: dict[str, Any]):
+    def __init__(self, contents: dict[str, Any]) -> None:
         for key in contents:
             self._validate_key_is_str(key)
             if key.upper() == "HISTORY-OBJECT":
@@ -159,7 +159,7 @@ class NormalizedMetadata(Mapping):
 
     @property
     def history(self):
-        return self._contents['HISTORY-OBJECT']
+        return self._contents["HISTORY-OBJECT"]
 
     @staticmethod
     def _validate_key_is_str(key):
@@ -566,7 +566,7 @@ class PUNCHData(NDCube):
         )
 
         # Write image to file
-        matplotlib.image.saveim(filename, output_data)
+        mpl.image.saveim(filename, output_data)
 
     def create_header(self, template_path: str = None) -> fits.Header:
         """

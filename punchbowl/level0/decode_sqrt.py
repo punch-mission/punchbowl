@@ -8,13 +8,15 @@ from punchbowl.data import PUNCHData
 
 TABLE_PATH = os.path.dirname(__file__) + "/decoding_tables/"
 
+
 def decode_sqrt(
         data: Union[np.ndarray, float],
         from_bits: int = 16,
         to_bits: int = 12,
-        ccd_gain: float = 1/4.3,
+        ccd_gain: float = 1 / 4.3,
         ccd_offset: float = 100,
-        ccd_read_noise: float = 17) -> np.ndarray:
+        ccd_read_noise: float = 17,
+        overwrite_table: bool = False) -> np.ndarray:
     """
     Square root decode between specified bitrate values
 
@@ -41,32 +43,32 @@ def decode_sqrt(
     """
 
     table_name = (
-        TABLE_PATH
-        + "tab_fb"
-        + str(from_bits)
-        + "_tb"
-        + str(to_bits)
-        + "_g"
-        + str(1/ccd_gain)
-        + "_b"
-        + str(ccd_offset)
-        + "_r"
-        + str(ccd_read_noise)
-        + ".npy"
+            TABLE_PATH
+            + "tab_fb"
+            + str(from_bits)
+            + "_tb"
+            + str(to_bits)
+            + "_g"
+            + str(1 / ccd_gain)
+            + "_b"
+            + str(ccd_offset)
+            + "_r"
+            + str(ccd_read_noise)
+            + ".npy"
     )
 
     # Check for an existing table, otherwise generate one
-    if os.path.isfile(table_name):
-        table = np.load(table_name)
-    else:
+    if ~os.path.isfile(table_name) or overwrite_table:
         table = generate_decode_sqrt_table(from_bits, to_bits, ccd_gain,
-                                      ccd_offset, ccd_read_noise)
+                                           ccd_offset, ccd_read_noise)
 
         # Make the directory if it doesn't exist
         if not os.path.isdir(TABLE_PATH):
             os.makedirs(TABLE_PATH, exist_ok=True)
 
         np.save(table_name, table)
+    else:
+        table = np.load(table_name)
 
     return decode_sqrt_by_table(data, table)
 
@@ -126,7 +128,7 @@ def decode_sqrt_simple(data: Union[np.ndarray, float], from_bits: int = 16, to_b
 
 def noise_pdf(
         data_value: Union[np.ndarray, float],
-        ccd_gain: float = 1/4.3,
+        ccd_gain: float = 1 / 4.3,
         ccd_offset: float = 100,
         ccd_read_noise: float = 17,
         n_sigma: int = 5,
@@ -183,7 +185,7 @@ def mean_b_offset(
         data_value: float,
         from_bits: int = 16,
         to_bits: int = 12,
-        ccd_gain: float = 1/4.3,
+        ccd_gain: float = 1 / 4.3,
         ccd_offset: float = 100,
         ccd_read_noise: float = 17) -> float:
     """
@@ -203,6 +205,8 @@ def mean_b_offset(
         CCD bias level [DN]
     ccd_read_noise
         CCD read noise level [DN]
+    overwrite_table
+        Toggle to regenerate and overwrite existing decoding table
 
     Returns
     -------
@@ -283,7 +287,7 @@ def decode_sqrt_corrected(
 def generate_decode_sqrt_table(
         from_bits: int = 16,
         to_bits: int = 12,
-        ccd_gain: float = 1/4.3,
+        ccd_gain: float = 1 / 4.3,
         ccd_offset: float = 100,
         ccd_read_noise: float = 17) -> np.ndarray:
     """
@@ -341,13 +345,15 @@ def decode_sqrt_by_table(data: Union[np.ndarray, float], table: np.ndarray):
 
 
 @task
-def decode_sqrt_data(data_object: PUNCHData) -> PUNCHData:
+def decode_sqrt_data(data_object: PUNCHData, overwrite_table: bool = False) -> PUNCHData:
     """Prefect task in the pipeline to decode square root encoded data
 
     Parameters
     ----------
     data_object : PUNCHData
         the object you wish to decode
+    overwrite_table
+        Toggle to regenerate and overwrite existing decoding table
 
     Returns
     -------
@@ -365,19 +371,19 @@ def decode_sqrt_data(data_object: PUNCHData) -> PUNCHData:
 
     ccd_gain = data_object.meta["GAINCMD"]
     ccd_offset = data_object.meta["OFFSET"]
-    ccd_read_noise = 17     # DN
+    ccd_read_noise = 17  # DN
 
     decoded_data = decode_sqrt(data,
-                         from_bits = from_bits,
-                         to_bits = to_bits,
-                         ccd_gain = ccd_gain,
-                         ccd_offset = ccd_offset,
-                         ccd_read_noise = ccd_read_noise)
+                               from_bits=from_bits,
+                               to_bits=to_bits,
+                               ccd_gain=ccd_gain,
+                               ccd_offset=ccd_offset,
+                               ccd_read_noise=ccd_read_noise,
+                               overwrite_table=overwrite_table)
 
-    data_object = data_object.duplicate_with_updates(data = decoded_data)
+    data_object = data_object.duplicate_with_updates(data=decoded_data)
 
     logger.info("square root decoding finished")
-
-    data_object.meta.add_now("LEVEL0-decode-sqrt", "image square root decoded")
+    data_object.meta.history.add_now("LEVEL0-decode-sqrt", "image square root decoded")
 
     return data_object

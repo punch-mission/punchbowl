@@ -60,7 +60,7 @@ def decode_sqrt(
     )
 
     # Check for an existing table, otherwise generate one
-    if ~os.path.isfile(table_name) or overwrite_table:
+    if not os.path.isfile(table_name) or overwrite_table:
         table = generate_decode_sqrt_table(from_bits, to_bits, ccd_gain,
                                            ccd_offset, ccd_read_noise)
 
@@ -321,7 +321,7 @@ def generate_decode_sqrt_table(
     return table
 
 
-def decode_sqrt_by_table(data: Union[np.ndarray, float], table: np.ndarray):
+def decode_sqrt_by_table(data: Union[np.ndarray, float], table: np.ndarray) -> np.ndarray:
     """
     Generates a square root decode table between specified bitrate values and CCD parameters
 

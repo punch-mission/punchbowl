@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 from pytest import fixture
-from prefect.testing.utilities import prefect_test_harness
 from prefect.logging import disable_run_logger
 from ndcube import NDCube
 from astropy.wcs import WCS

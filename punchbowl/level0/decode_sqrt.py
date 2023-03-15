@@ -34,6 +34,8 @@ def decode_sqrt(
         CCD bias level [DN]
     ccd_read_noise
         CCD read noise level [DN]
+    overwrite_table
+        Toggle to regenerate and overwrite existing decoding table
 
     Returns
     -------
@@ -205,8 +207,6 @@ def mean_b_offset(
         CCD bias level [DN]
     ccd_read_noise
         CCD read noise level [DN]
-    overwrite_table
-        Toggle to regenerate and overwrite existing decoding table
 
     Returns
     -------

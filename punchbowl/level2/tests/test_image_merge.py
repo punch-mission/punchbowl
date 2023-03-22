@@ -5,9 +5,8 @@ from prefect.testing.utilities import prefect_test_harness
 
 # punchbowl imports
 from punchbowl.data import PUNCHData
+from punchbowl.tests.test_data import sample_wcs, sample_data, sample_data_random, sample_punchdata, sample_punchdata_list
 from punchbowl.level2.image_merge import reproject_array, image_merge_flow
-from punchbowl.level2.tests.test_fixtures_mosaic import sample_wcs, sample_data,\
-    sample_ndcube, sample_punchdata, sample_punchdata_list
 
 
 # core unit tests
@@ -15,14 +14,14 @@ from punchbowl.level2.tests.test_fixtures_mosaic import sample_wcs, sample_data,
                          [((0, 0), (0, 0), (1, 1)),
                           ((0, 0), (1, 1), (1, 1)),
                           ((1, 1), (2, 2), (1, 1))])
-def test_reproject_array(sample_data, sample_wcs, crpix, crval, cdelt, output_shape=(20, 20)):
+def test_reproject_array(sample_data_random, sample_wcs, crpix, crval, cdelt, output_shape=(50, 50)):
     """
     Test reproject_array usage
     """
 
     test_wcs = sample_wcs(crpix=crpix, crval=crval, cdelt=cdelt)
-    expected = sample_data
-    actual = reproject_array.fn(sample_data, test_wcs, test_wcs, output_shape)
+    expected = sample_data_random
+    actual = reproject_array.fn(sample_data_random, test_wcs, test_wcs, output_shape)
 
     assert actual.shape == expected.shape
 

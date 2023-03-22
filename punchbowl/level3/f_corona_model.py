@@ -168,6 +168,10 @@ def construct_f_corona_background(data_list: List[str],
 
     # create an empty array to fill with data
     #   open the first file in the list to ge the shape of the file
+    if len(data_list)==0:
+        raise ValueError("data_list cannot be empty") 
+    
+    
     output_PUNCHobject=PUNCHData.from_fits(data_list[0])
     output_wcs=output_PUNCHobject.wcs
     output_meta=output_PUNCHobject.meta
@@ -230,7 +234,7 @@ def construct_f_corona_background(data_list: List[str],
         f_background=np.mean(data_cube, axis=0)
 
     else:
-        raise Exception(f"invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. Found {method}")
+        raise ValueError(f"invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. Found {method}")
 
 
 
@@ -243,7 +247,7 @@ def construct_f_corona_background(data_list: List[str],
                                  mask=output_mask)
 
     logger.info("construct_f_corona_background finished")
-    output_PUNCHobject.add_history(datetime.now(), "LEVEL3-construct_f_corona_background", "constructed f corona model")
+    output_PUNCHobject.meta.history.add_now("LEVEL3-construct_f_corona_background", "constructed f corona model")
 
     return output_PUNCHobject
 
@@ -308,7 +312,7 @@ def subtract_f_corona_background(data_object: PUNCHData,
                                 mask=output_mask)
 
     logger.info("subtract_f_corona_background finished")
-    output_PUNCHobject.add_history(datetime.now(), "LEVEL3-subtract_f_corona_background", "subtracted f corona background")
+    output_PUNCHobject.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
 
     return output_PUNCHobject

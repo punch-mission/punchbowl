@@ -1,16 +1,19 @@
-import pytest
-from pytest import fixture
+# Core Python imports
 import pathlib
 import os
-import numpy as np
-from punchbowl.data import (
-    PUNCHData,
-    History,
-    HistoryEntry,
-    HeaderTemplate,
-    HEADER_TEMPLATE_COLUMNS,
-)
+from glob import glob
 
+# Third party imports
+import numpy as np
+import pytest
+from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
+from prefect.logging import disable_run_logger
+
+
+
+# punchbowl imports
+from punchbowl.data import NormalizedMetadata, PUNCHData
 
 from punchbowl.level3.f_corona_model import query_f_corona_model_source
 from punchbowl.level3.f_corona_model import construct_f_corona_background
@@ -23,11 +26,11 @@ TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH = os.path.join(TESTDATA_DIR, "L0_CL1_20211111070246_PUNCHData.fits")
 
 
-@fixture
+@pytest.fixture()
 def sample_data():
     return PUNCHData.from_fits(SAMPLE_FITS_PATH)
 
-@fixture
+@pytest.fixture()
 def sample_data_list():
     number_elements=25
     data_list=[]
@@ -39,24 +42,171 @@ def test_list_input_2(sample_data_list):
     #background = construct_f_corona_background.fn(sample_data)
     #assert isinstance(background, PUNCHData)
     assert isinstance(sample_data_list, list)
-    
-#def test_stupid_run(sample_data_list):
-#    background = construct_f_corona_background.fn(sample_data_list)
-#    #assert isinstance(background, PUNCHData)
-#    assert isinstance(background, np.ndarray)
-#
 
 
-#def test_bad2(sample_data_list):
-#    print("hereHEREhereHEREhereHEREhereHEREhereHEREhereHERE")
-#    print(len(sample_data_list))
-#    for z_step in range(len(sample_data_list)):
-#        address_out=sample_data_list[z_step]
-#        print(address_out)
-#        if z_step==0:
-#            new_data_cube_base=PUNCHData(PUNCHData.from_fits(address_out)).data
-#        if z_step>0:
-#            new_data_cube_base=np.dstack((new_data_cube_base, PUNCHData(PUNCHData.from_fits(address_out)).data))
-#    print(np.shape(new_data_cube_base))
-#    assert True
+
+
+
+@pytest.fixture()
+def one_data(shape: tuple = (2048, 2048)) -> np.ndarray:
+    """
+    Generate some random data for testing
+    """
+    data = np.ones(shape)
+
+    uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+
+
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.02, 0.02
+    wcs.wcs.crpix = 1024, 1024
+    wcs.wcs.crval = 0, 24.75
+
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+@pytest.fixture()
+def zero_data(shape: tuple = (2048, 2048)) -> np.ndarray:
+    """
+    Generate some random data for testing
+    """
+    data = np.zeros(shape)
+
+    uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+
+
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.02, 0.02
+    wcs.wcs.crpix = 1024, 1024
+    wcs.wcs.crval = 0, 24.75
+
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+
+@pytest.fixture()
+def incorrect_shape_data(shape: tuple = (512, 512)) -> np.ndarray:
+    """
+    Generate some random data for testing
+    """
+    data = np.zeros(shape)
+
+    uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+
+
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.02, 0.02
+    wcs.wcs.crpix = 256, 256
+    wcs.wcs.crval = 0, 24.75
+
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+
+
+@pytest.mark.prefect_test()
+def test_basic_subtraction(one_data: PUNCHData, zero_data: PUNCHData) -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    with disable_run_logger():
+        subtraction_punchdata = subtract_f_corona_background.fn(one_data, zero_data)
+
+    assert isinstance(subtraction_punchdata, PUNCHData)
+        
+    assert np.all(subtraction_punchdata.data == 1)
+
+@pytest.mark.prefect_test()
+def test_empty_list() -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    with pytest.raises(ValueError):
+        input_list=glob('./data/*.fits')
+        with disable_run_logger():
+            f_corona_model = construct_f_corona_background.fn(input_list)
+
+    #assert isinstance(f_corona_model, PUNCHData)
+
+@pytest.mark.prefect_test()
+def test_create_simple_bkg() -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    with disable_run_logger():
+        f_corona_model = construct_f_corona_background.fn(input_list)
+
+    assert isinstance(f_corona_model, PUNCHData)
+
+@pytest.mark.prefect_test()
+def test_min_bkg() -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    with disable_run_logger():
+        f_corona_model = construct_f_corona_background.fn(input_list, method='min')
+
+    assert np.all(f_corona_model.data == 0)
+
+@pytest.mark.prefect_test()
+def test_mean_bkg() -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    with disable_run_logger():
+        f_corona_model = construct_f_corona_background.fn(input_list, method='mean')
+
+    assert np.all(f_corona_model.data == 4.5)
+
+@pytest.mark.prefect_test()
+def test_percent_5_bkg() -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    with disable_run_logger():
+        f_corona_model = construct_f_corona_background.fn(input_list)
+
+    assert np.all(f_corona_model.data == 0.45)
+
+@pytest.mark.prefect_test()
+def test_percent_10_bkg() -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    with disable_run_logger():
+        f_corona_model = construct_f_corona_background.fn(input_list, percentile_value=10)
+
+    assert np.all(f_corona_model.data == 0.9)
+
+@pytest.mark.prefect_test()
+def test_typo_method_bkg() -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    with pytest.raises(ValueError):
+        input_list=glob(TESTDATA_DIR+'/data/*.fits')
+        with disable_run_logger():
+            f_corona_model = construct_f_corona_background.fn(input_list, method="Marcus_rules")
+
+
+
+@pytest.mark.prefect_test()
+def test_different_array_size_subtraction(incorrect_shape_data: PUNCHData, zero_data: PUNCHData) -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    with pytest.raises(Exception):
+        with disable_run_logger():
+            subtraction_punchdata = subtract_f_corona_background.fn(incorrect_shape_data, zero_data)
 

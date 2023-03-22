@@ -67,6 +67,86 @@ def perfect_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
 
 
 @pytest.fixture()
+def one_bad_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
+    """
+    Generate pixel map with one bad pixel at 100, 100
+    """
+    bad_pixel_map = np.ones(shape)
+
+    bad_pixel_map = bad_pixel_map.astype(int)
+    
+    bad_pixel_map[100,100]=0
+    
+    uncertainty = StdDevUncertainty(bad_pixel_map)
+
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.02, 0.02
+    wcs.wcs.crpix = 1024, 1024
+    wcs.wcs.crval = 0, 24.75
+
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+@pytest.fixture()
+def nine_bad_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
+    """
+    Generate pixel map with one bad pixel at 100, 100
+    """
+    bad_pixel_map = np.ones(shape)
+
+    bad_pixel_map = bad_pixel_map.astype(int)
+    
+    bad_pixel_map[100,100]=0
+    bad_pixel_map[100,101]=0
+    bad_pixel_map[100,102]=0
+    bad_pixel_map[101,100]=0
+    bad_pixel_map[101,101]=0
+    bad_pixel_map[101,102]=0
+    bad_pixel_map[102,100]=0
+    bad_pixel_map[102,101]=0
+    bad_pixel_map[102,102]=0
+
+
+    uncertainty = StdDevUncertainty(bad_pixel_map)
+
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.02, 0.02
+    wcs.wcs.crpix = 1024, 1024
+    wcs.wcs.crval = 0, 24.75
+
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+
+
+
+@pytest.fixture()
+def increasing_pixel_data(shape: tuple = (2048, 2048)) -> np.ndarray:
+    """
+    Generate data of increasing values for testing; data[0,100]=0.0, data[100,0]=100.0
+    """
+    data = np.ones(shape)
+    for iStep in range(2048):
+        data[iStep,:]=iStep
+    
+    uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.02, 0.02
+    wcs.wcs.crpix = 1024, 1024
+    wcs.wcs.crval = 0, 24.75
+
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+
+@pytest.fixture()
 def sample_punchdata(shape: tuple = (2048, 2048)) -> PUNCHData:
     """
     Generate a sample PUNCHData object for testing
@@ -141,3 +221,56 @@ def test_artificial_pixel_map(sample_punchdata: PUNCHData, sample_bad_pixel_map:
 
         assert isinstance(flagged_punchdata, PUNCHData)
         assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 1)].array == np.inf)
+
+
+@pytest.mark.prefect_test()
+def test_data_window_1(increasing_pixel_data: PUNCHData, one_bad_pixel_map: PUNCHData) -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    with disable_run_logger():
+        deficient_punchdata = remove_deficient_pixels.fn(increasing_pixel_data, one_bad_pixel_map)
+
+    assert isinstance(deficient_punchdata, PUNCHData)
+    assert (deficient_punchdata.data[5,5] == increasing_pixel_data.data[5,5])
+    assert (deficient_punchdata.uncertainty.array[5,5] == increasing_pixel_data.uncertainty.array[5,5])
+    assert (deficient_punchdata.data[100,100] == 100)
+
+@pytest.mark.prefect_test()
+def test_mean_data_window_1(increasing_pixel_data: PUNCHData, one_bad_pixel_map: PUNCHData) -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    with disable_run_logger():
+        deficient_punchdata = remove_deficient_pixels.fn(increasing_pixel_data, one_bad_pixel_map, method='mean')
+
+    assert isinstance(deficient_punchdata, PUNCHData)
+    assert (deficient_punchdata.data[5,5] == increasing_pixel_data.data[5,5])
+    assert (deficient_punchdata.uncertainty.array[5,5] == increasing_pixel_data.uncertainty.array[5,5])
+    assert (deficient_punchdata.data[100,100] == 100)
+
+@pytest.mark.prefect_test()
+def test_data_window_9(increasing_pixel_data: PUNCHData, nine_bad_pixel_map: PUNCHData) -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    with disable_run_logger():
+        deficient_punchdata = remove_deficient_pixels.fn(increasing_pixel_data, nine_bad_pixel_map)
+
+    assert isinstance(deficient_punchdata, PUNCHData)
+    assert (deficient_punchdata.data[5,5] == increasing_pixel_data.data[5,5])
+    assert (deficient_punchdata.uncertainty.array[5,5] == increasing_pixel_data.uncertainty.array[5,5])
+    assert (deficient_punchdata.data[101,101] == 101)  
+
+@pytest.mark.prefect_test()
+def test_mean_data_window_9(increasing_pixel_data: PUNCHData, nine_bad_pixel_map: PUNCHData) -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in 
+    """
+    with disable_run_logger():
+        deficient_punchdata = remove_deficient_pixels.fn(increasing_pixel_data, nine_bad_pixel_map, method='mean')
+
+    assert isinstance(deficient_punchdata, PUNCHData)
+    assert (deficient_punchdata.data[5,5] == increasing_pixel_data.data[5,5])
+    assert (deficient_punchdata.uncertainty.array[5,5] == increasing_pixel_data.uncertainty.array[5,5])
+    assert (deficient_punchdata.data[101,101] == 101)

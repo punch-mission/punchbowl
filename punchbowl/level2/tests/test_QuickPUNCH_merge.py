@@ -5,9 +5,9 @@ from prefect.testing.utilities import prefect_test_harness
 
 # punchbowl imports
 from punchbowl.data import PUNCHData
+from punchbowl.tests.test_data import sample_wcs, sample_data, sample_data_random, sample_punchdata, \
+    sample_punchdata_list
 from punchbowl.level2.QuickPUNCH_merge import quickpunch_merge_flow
-from punchbowl.level2.tests.test_fixtures_mosaic import sample_wcs, sample_data,\
-    sample_ndcube, sample_punchdata, sample_punchdata_list
 
 
 @pytest.mark.prefect_test

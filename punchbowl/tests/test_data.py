@@ -2,10 +2,11 @@ import os
 from datetime import datetime
 
 import astropy
-from astropy.io import fits
-from ndcube import NDCube
 import numpy as np
 import pytest
+from astropy.io import fits
+from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
 from pytest import fixture
 
 from punchbowl.data import (
@@ -17,11 +18,31 @@ from punchbowl.data import (
     NormalizedMetadata
 )
 
-
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH = os.path.join(TESTDATA_DIR, "L0_CL1_20211111070246_PUNCHData.fits")
 SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
 SAMPLE_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_template.csv")
+
+
+# Test fixtures
+@fixture
+def sample_wcs() -> WCS:
+    """
+    Generate a sample WCS for testing
+    """
+
+    def _sample_wcs(naxis=2, crpix=(0, 0), crval=(0, 0), cdelt=(1, 1),
+                    ctype=("HPLN-ARC", "HPLT-ARC")):
+        generated_wcs = WCS(naxis=naxis)
+
+        generated_wcs.wcs.crpix = crpix
+        generated_wcs.wcs.crval = crval
+        generated_wcs.wcs.cdelt = cdelt
+        generated_wcs.wcs.ctype = ctype
+
+        return generated_wcs
+
+    return _sample_wcs
 
 
 @fixture
@@ -30,18 +51,43 @@ def sample_data():
 
 
 @fixture
-def simple_ndcube():
-    # Taken from NDCube documentation
-    data = np.random.rand(4, 4, 5)
-    wcs = astropy.wcs.WCS(naxis=3)
-    wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
-    wcs.wcs.cunit = "Angstrom", "deg", "deg"
-    wcs.wcs.cdelt = 0.2, 0.5, 0.4
-    wcs.wcs.crpix = 0, 2, 2
-    wcs.wcs.crval = 10, 0.5, 1
-    wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
-    nd_obj = NDCube(data=data, wcs=wcs)
-    return nd_obj
+def sample_data_random(shape: tuple = (50, 50)) -> np.ndarray:
+    """
+    Generate some random data for testing
+    """
+
+    return np.random.random(shape)
+
+
+@fixture
+def sample_punchdata(sample_data_random):
+    """
+    Generate a sample PUNCHData object for testing
+    """
+
+    data = sample_data_random
+    uncertainty = StdDevUncertainty(np.sqrt(np.abs(sample_data_random)))
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.1, 0.1
+    wcs.wcs.crpix = 0, 0
+    wcs.wcs.crval = 1, 1
+    wcs.wcs.cname = "HPC lon", "HPC lat"
+
+    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs)
+
+
+@fixture
+def sample_punchdata_list(sample_punchdata):
+    """
+    Generate a list of sample PUNCHData objects for testing
+    """
+
+    sample_pd1 = sample_punchdata
+    sample_pd2 = sample_punchdata
+    return [sample_pd1, sample_pd2]
+
 
 def test_sample_data_creation(sample_data):
     assert isinstance(sample_data, PUNCHData)
@@ -174,6 +220,7 @@ def test_normalizedmetadata_add_new_key():
     empty['NAmE'] = "marcus"
     assert "nAMe" in empty
     assert len(empty) == 1
+
 
 def test_normalizedmetadata_delete_key():
     example = NormalizedMetadata({"key": "value"})

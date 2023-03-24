@@ -28,6 +28,7 @@ def sliding_window(arr: np.ndarray, window_size: int) -> np.ndarray:
                arr.shape[1]*arr.itemsize, arr.itemsize)
     return as_strided(arr, shape=shape, strides=strides)
 
+
 def cell_neighbors(arr: np.ndarray, i: int, j:int, window_size:int=1) -> np.ndarray:
     """
     Return d-th neighbors of cell (i, j)
@@ -43,55 +44,58 @@ def cell_neighbors(arr: np.ndarray, i: int, j:int, window_size:int=1) -> np.ndar
     i1 = window.shape[2] - max(0, window_size - i + ix)
     j1 = window.shape[3] - max(0, window_size - j + jx)
 
-    return window[ix, jx][i0:i1,j0:j1].ravel()
+    return window[ix, jx][i0:i1, j0:j1].ravel()
+
 
 def mean_correct(data_array: np.ndarray,
                  mask_array: np.ndarray,
-                 required_good_count: int=3,
-                 max_window_size: int=10) -> np.ndarray:
-    x_bad_pix,y_bad_pix=np.where(mask_array==0)
-    data_array[mask_array==0] = 0
+                 required_good_count: int = 3,
+                 max_window_size: int = 10) -> np.ndarray:
+    # todo: add docstring
+    x_bad_pix, y_bad_pix = np.where(mask_array == 0)
+    data_array[mask_array == 0] = 0
     output_data_array=data_array.copy()
-    for x_i, y_i in zip(x_bad_pix,y_bad_pix):
-        window_size=1
+    for x_i, y_i in zip(x_bad_pix, y_bad_pix):
+        window_size = 1
         number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
         while number_good_px < required_good_count:
-            window_size+=1
-            number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
+            window_size += 1
+            number_good_px = np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
             if window_size > max_window_size:
                 break
-        output_data_array[x_i, y_i]=np.sum(cell_neighbors(data_array, x_i, y_i, window_size=window_size))/number_good_px
+        output_data_array[x_i, y_i] = np.sum(cell_neighbors(data_array, x_i, y_i, window_size=window_size))/number_good_px
 
     return output_data_array
 
 
 def median_correct(data_array: np.ndarray,
                    mask_array: np.ndarray,
-                   required_good_count: int=3,
-                   max_window_size: int=10) -> np.ndarray:
-    x_bad_pix,y_bad_pix=np.where(mask_array==0)
-    data_array[mask_array==0]=np.nan
+                   required_good_count: int = 3,
+                   max_window_size: int = 10) -> np.ndarray:
+    # todo: add docstring nd combine with mean_correct
+    x_bad_pix, y_bad_pix = np.where(mask_array == 0)
+    data_array[mask_array == 0] = np.nan
     output_data_array=data_array.copy()
-    for x_i, y_i in zip(x_bad_pix,y_bad_pix):
-        window_size=1
+    for x_i, y_i in zip(x_bad_pix, y_bad_pix):
+        window_size = 1
         number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
         while number_good_px < required_good_count:
-            window_size+=1
-            number_good_px=np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
+            window_size += 1
+            number_good_px = np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
             if window_size > max_window_size:
                 break
-        output_data_array[x_i, y_i]=np.nanmedian(cell_neighbors(data_array, x_i, y_i, window_size=window_size))
+        output_data_array[x_i, y_i] = np.nanmedian(cell_neighbors(data_array, x_i, y_i, window_size=window_size))
 
     return output_data_array
 
 
 @task
-def remove_deficient_pixels(data_object: PUNCHData,
-                            deficient_pixel_map: PUNCHData,
-                            required_good_count: int= 3,
-                            max_window_size: int= 10,
-                            method: str= "median"
-                            ) -> PUNCHData:
+def remove_deficient_pixels_task(data: PUNCHData,
+                                 deficient_pixel_map: PUNCHData,
+                                 required_good_count: int= 3,
+                                 max_window_size: int= 10,
+                                 method: str = "median"
+                                 ) -> PUNCHData:
     """subtracts a deficient pixel map from an input data frame.
 
     checks the dimensions of input data frame and map match and
@@ -103,7 +107,18 @@ def remove_deficient_pixels(data_object: PUNCHData,
         A PUNCHobject data frame to be background subtracted
 
     deficient_pixel_map : PUNCHData
-        A deficient_pixel map
+        The deficient pixels to be corrected
+
+    required_good_count : int
+        how many neighboring pixels must not be deficient to correct a pixel,
+            if fewer than that many pixels are good neighbors then the box expands
+
+    max_window_size : int
+        the width of the max window
+
+    method : str
+        either "mean" or "median" depending on which measure should fill the deficient pixel
+
 
     Returns
     -------
@@ -111,25 +126,21 @@ def remove_deficient_pixels(data_object: PUNCHData,
     bkg_subtracted_data : ['punchbowl.data.PUNCHData']
         A background subtracted data frame
 
-    TODO
-    ----
-
     # TODO: exclude data if flagged in weight array
     # TODO: update meta data with input file and version of deficient pixel map
     # TODO: output weight - update weights
-    # TODO: decide if bad pixel map should be a PUNCH data object, as the meta/WCS info will be fake
     # TODO: if uncertainty object in PUNCH object is updated, then this should be updated here
-
     """
 
     logger = get_run_logger()
     logger.info("remove_deficient_pixels started")
 
-    data_array=data_object.data
-    output_wcs=data_object.wcs
-    output_meta=data_object.meta
-    output_uncertainty=data_object.uncertainty
-    output_mask=data_object.mask
+    # todo : remove these references in favor of using the data directly
+    data_array = data.data
+    output_wcs = data.wcs
+    output_meta = data.meta
+    output_uncertainty = data.uncertainty
+    output_mask = data.mask
 
     deficient_pixel_array=deficient_pixel_map.data
 
@@ -157,16 +168,15 @@ def remove_deficient_pixels(data_object: PUNCHData,
     else:
         raise ValueError(f"method specified must be 'mean', or 'median'. Found method={method}")
 
-
     # Set deficient pixels to infinity
+    output_uncertainty.array[deficient_pixel_array == 0] = 0
 
-    output_uncertainty.array[deficient_pixel_array==0]=0
-
-    output_object=PUNCHData(data_array,
-                            wcs=output_wcs,
-                            uncertainty=output_uncertainty,
-                            meta=output_meta,
-                            mask=output_mask)
+    # todo: make use the duplicate_with_updates method
+    output_object = PUNCHData(data_array,
+                              wcs=output_wcs,
+                              uncertainty=output_uncertainty,
+                              meta=output_meta,
+                              mask=output_mask)
 
     logger.info("remove_deficient_pixels finished")
     output_object.meta.history.add_now("LEVEL1-remove_deficient_pixels", "deficient pixels removed")

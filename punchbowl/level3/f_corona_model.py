@@ -10,9 +10,9 @@ from punchbowl.data import PUNCHData
 
 @task
 def query_f_corona_model_source(polarizer: str,
-                 PUNCH_product: str,
-                 start_datetime: datetime,
-                 end_datetime: datetime) -> List[str]:
+                                PUNCH_product: str,
+                                start_datetime: datetime,
+                                end_datetime: datetime) -> List[str]:
     """Creates a list of files based between a start date/time (start_datetime)
     and an end date/time (end_datetime) for a specifed polarizer and product
     type.
@@ -59,18 +59,18 @@ def query_f_corona_model_source(polarizer: str,
 
     # Check for polarizer input, and if valid
     if polarizer not in ["clear", "-60", "60", "0"]:
+        # todo: replace with custom exception
         raise Exception(f"input polarizer expected as string: 'clear', '-60', '60', '0'. Found {polarizer}.")
 
     # Check for PUNCH input, and if valid
-    if PUNCH_product not in ["nfi", "mosaic"] :
+    if PUNCH_product not in ["nfi", "mosaic"]:
+        # todo: replace with custom exception
         raise Exception(f"input PUNCH_product expected as string:  'nfi', 'mosaic'. Found {PUNCH_product}")
 
-
-    #file_list=session.query(File).where(and_(File.state == "created", File.date_obs >= date.today() + relativedelta(months=-1))).all()
-
     # TODO - this place holder has to be removed
-    file_list=[]
-
+    file_list = []
+    # file_list=session.query(File).where(and_(File.state == "created",
+    #                                           File.date_obs >= date.today() + relativedelta(months=-1))).all()
 
     # Check if files found in range
     if len(file_list) == 0:
@@ -81,16 +81,13 @@ def query_f_corona_model_source(polarizer: str,
     return file_list
 
 
-
-
-
 @task
 def construct_f_corona_background(data_list: List[str],
-                method: str = "percentile",
-                apply_threshold_mask: bool = True,
-                threshold_mask_cutoff: float = 1.5,
-                percentile_value: float = 5
-                ) -> PUNCHData:
+                                  method: str = "percentile",
+                                  apply_threshold_mask: bool = True,
+                                  threshold_mask_cutoff: float = 1.5,
+                                  percentile_value: float = 5
+                                  ) -> PUNCHData:
     """Creates a background f corona map from a series of different models.
 
     Creates a background f corona map (method) using a series of different
@@ -123,11 +120,8 @@ def construct_f_corona_background(data_list: List[str],
 
     Parameters
     ----------
-    data_object : [PUNCHData object or numpy.ndarray]
-        input PUNCHData object or numpy data cube to be averaged over,
-        dimensions of the array should be [Y,X,Z], where averages are primarily
-        taken over the Z dimension. The program assumes these are already
-        co-aligned.
+    data_list :
+        list of filenames to use
 
     method : [string = 'percentile', 'mean', min,]
         defines the type of background model to build. Options include
@@ -150,9 +144,6 @@ def construct_f_corona_background(data_list: List[str],
         returns an array of the same dimensions as the x and y dimensions of
         the input array
 
-    TODO
-    ----
-
     # TODO: exclude data if flagged in weight array
     # TODO: pass through REAL meta data and WCS
     # TODO: create 2nd hdu with list of input files
@@ -168,30 +159,30 @@ def construct_f_corona_background(data_list: List[str],
 
     # create an empty array to fill with data
     #   open the first file in the list to ge the shape of the file
-    output_PUNCHobject=PUNCHData.from_fits(data_list[0])
-    output_wcs=output_PUNCHobject.wcs
-    output_meta=output_PUNCHobject.meta
-    #output_uncertainty=shape_PUNCHobject.uncertainty
-    output_mask=output_PUNCHobject.mask
+    if len(data_list) == 0:
+        raise ValueError("data_list cannot be empty") 
+    
+    # todo: replace in favor of using object directly
+    output_PUNCHobject = PUNCHData.from_fits(data_list[0])
+    output_wcs = output_PUNCHobject.wcs
+    output_meta = output_PUNCHobject.meta
+    # output_uncertainty=shape_PUNCHobject.uncertainty
+    output_mask = output_PUNCHobject.mask
 
-    data_shape=np.shape(output_PUNCHobject.data)
+    data_shape = np.shape(output_PUNCHobject.data)
 
     number_of_data_frames=len(data_list)
-    data_cube=np.empty((number_of_data_frames, *data_shape),dtype=float)
+    data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
 
     # create an empty list for data
     meta_list=[]
 
     for iStep, address_out in enumerate(data_list):
-        PUNCHobject=PUNCHData.from_fits(address_out)
-        data_cube[iStep,:,:]=PUNCHobject.data
+        PUNCHobject = PUNCHData.from_fits(address_out)
+        data_cube[iStep, :, :] = PUNCHobject.data
         meta_list.append(PUNCHobject.meta)
 
-    # check the dimensions of the input data array
-    assert np.ndim(data_cube) == 3, "background_map expects a 3 dimensional array"
-
     if apply_threshold_mask:
-
         # copy data arrays
         data_size=data_cube.shape
         temp_data_cube=data_cube.copy()
@@ -199,61 +190,56 @@ def construct_f_corona_background(data_list: List[str],
         data_mask.fill(1)
 
         # Compute the total image mean
-        mean_image=np.average(data_cube, axis=0)
+        mean_image = np.average(data_cube, axis=0)
 
         # Compute the standard deviation for each pixel
-        sd_image=np.std(data_cube, ddof = 1, axis=0)
+        sd_image = np.std(data_cube, ddof=1, axis=0)
 
         # Mask outliers in the cube
         for n in range(data_size[0]):
-            temp_data_cube[n, :, :] = ( np.abs(data_cube[n, :, :].astype(int)- mean_image[:, :])/sd_image[:, :] )
+            temp_data_cube[n, :, :] = (np.abs(data_cube[n, :, :].astype(int) - mean_image[:, :])/sd_image[:, :])
 
         # make int
-        temp_data_cube=temp_data_cube.astype(int)
+        temp_data_cube = temp_data_cube.astype(int)
 
         # mask the data
-        data_mask[temp_data_cube>threshold_mask_cutoff]=np.nan
+        data_mask[temp_data_cube > threshold_mask_cutoff] = np.nan
         data_cube *= data_mask
 
     # calculate the background model
 
     # 'percentile' model
     if method == "percentile":
-        f_background=np.percentile(data_cube, percentile_value, axis=0)
+        f_background = np.percentile(data_cube, percentile_value, axis=0)
 
     # 'min' model
     elif method == "min":
-        f_background=np.min(data_cube, axis=0)
+        f_background = np.min(data_cube, axis=0)
 
     # 'mean' model
     elif method == "mean":
-        f_background=np.mean(data_cube, axis=0)
+        f_background = np.mean(data_cube, axis=0)
 
     else:
-        raise Exception(f"invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. Found {method}")
-
-
-
+        raise ValueError("invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. "
+                         f"Found {method}")
 
     # create an output PUNCHdata object
     # TODO: the weight and wcs should come from all of the input files, not just one
-    output_PUNCHobject=PUNCHData(f_background,
-                                 wcs=output_wcs,
-                                 meta=output_meta,
-                                 mask=output_mask)
+    output_PUNCHobject = PUNCHData(f_background,
+                                   wcs=output_wcs,
+                                   meta=output_meta,
+                                   mask=output_mask)
 
     logger.info("construct_f_corona_background finished")
-    output_PUNCHobject.add_history(datetime.now(), "LEVEL3-construct_f_corona_background", "constructed f corona model")
+    output_PUNCHobject.meta.history.add_now("LEVEL3-construct_f_corona_background", "constructed f corona model")
 
     return output_PUNCHobject
 
 
-
-
-
 @task
-def subtract_f_corona_background(data_object: PUNCHData,
-                                 f_background_model: PUNCHData) -> PUNCHData:
+def subtract_f_corona_background_task(data_object: PUNCHData,
+                                      f_background_model: PUNCHData) -> PUNCHData:
     """subtracts a background f corona model from an input data frame.
 
     checks the dimensions of input data frame and background model match and
@@ -261,10 +247,10 @@ def subtract_f_corona_background(data_object: PUNCHData,
 
     Parameters
     ----------
-    data : ['punchbowl.data.PUNCHData']
+    data_object : ['punchbowl.data.PUNCHData']
         A PUNCHobject data frame to be background subtracted
 
-    f_background : ['punchbowl.data.PUNCHData']
+    f_background_model : ['punchbowl.data.PUNCHData']
         A PUNCHobject background map
 
     Returns
@@ -285,33 +271,28 @@ def subtract_f_corona_background(data_object: PUNCHData,
     logger = get_run_logger()
     logger.info("subtract_f_corona_background started")
 
-    data_array=data_object.data
-    output_wcs=data_object.wcs
-    output_meta=data_object.meta
-    #output_uncertainty=shape_PUNCHobject.uncertainty
-    output_mask=data_object.mask
+    data_array = data_object.data
+    output_wcs = data_object.wcs
+    output_meta = data_object.meta
+    # output_uncertainty=shape_PUNCHobject.uncertainty
+    output_mask = data_object.mask
 
-
-    f_data_array=f_background_model.data
+    f_data_array = f_background_model.data
 
     # check dimensions match
     if data_array.shape != f_data_array.shape:
         raise Exception("f_background_subtraction expects the data_object and"
-                         "f_background arrays to have the same dimensions."
-                         f"data_array dims: {data_array.shape} and f_background_model dims: {f_data_array.shape}")
+                        "f_background arrays to have the same dimensions."
+                        f"data_array dims: {data_array.shape} and f_background_model dims: {f_data_array.shape}")
 
     bkg_subtracted_data = data_array - f_data_array
 
-    output_PUNCHobject=PUNCHData(bkg_subtracted_data,
-                                wcs=output_wcs,
-                                meta=output_meta,
-                                mask=output_mask)
+    output_PUNCHobject = PUNCHData(bkg_subtracted_data,
+                                   wcs=output_wcs,
+                                   meta=output_meta,
+                                   mask=output_mask)
 
     logger.info("subtract_f_corona_background finished")
-    output_PUNCHobject.add_history(datetime.now(), "LEVEL3-subtract_f_corona_background", "subtracted f corona background")
-
+    output_PUNCHobject.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
     return output_PUNCHobject
-
-
-

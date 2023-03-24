@@ -10,9 +10,7 @@ from prefect.logging import disable_run_logger
 
 # punchbowl imports
 from punchbowl.data import NormalizedMetadata, PUNCHData
-from punchbowl.level1.deficient_pixel import (
-    remove_deficient_pixels,
-)
+from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -172,7 +170,7 @@ def test_remove_deficient_pixels(sample_punchdata: PUNCHData, sample_bad_pixel_m
     Test the remove_deficient_pixels prefect flow using a test harness, providing a filename
     """
     with disable_run_logger():
-        flagged_punchdata = remove_deficient_pixels.fn(sample_punchdata,
+        flagged_punchdata = remove_deficient_pixels_task.fn(sample_punchdata,
                                                        sample_bad_pixel_map)
 
         assert isinstance(flagged_punchdata, PUNCHData) 
@@ -189,11 +187,10 @@ def test_nan_input(sample_punchdata: PUNCHData, sample_bad_pixel_map: PUNCHData)
     input_data.data[42, 42] = np.nan
 
     with disable_run_logger():
-        flagged_punchdata = remove_deficient_pixels.fn(input_data, sample_bad_pixel_map)
+        flagged_punchdata = remove_deficient_pixels_task.fn(input_data, sample_bad_pixel_map)
 
         assert isinstance(flagged_punchdata, PUNCHData)
         assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 1)].array == np.inf)
-
 
 
 @pytest.mark.prefect_test()
@@ -203,7 +200,7 @@ def test_data_loading(sample_punchdata: PUNCHData, perfect_pixel_map: PUNCHData)
     No bad data points, in same as out. uncertainty should be the same in and out.
     """
     with disable_run_logger():
-        deficient_punchdata = remove_deficient_pixels.fn(sample_punchdata, perfect_pixel_map)
+        deficient_punchdata = remove_deficient_pixels_task.fn(sample_punchdata, perfect_pixel_map)
 
     assert isinstance(deficient_punchdata, PUNCHData)
     assert np.all(deficient_punchdata.data == sample_punchdata.data)
@@ -217,7 +214,7 @@ def test_artificial_pixel_map(sample_punchdata: PUNCHData, sample_bad_pixel_map:
     """
 
     with disable_run_logger():
-        flagged_punchdata = remove_deficient_pixels.fn(sample_punchdata, sample_bad_pixel_map)
+        flagged_punchdata = remove_deficient_pixels_task.fn(sample_punchdata, sample_bad_pixel_map)
 
         assert isinstance(flagged_punchdata, PUNCHData)
         assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 1)].array == np.inf)
@@ -229,12 +226,13 @@ def test_data_window_1(increasing_pixel_data: PUNCHData, one_bad_pixel_map: PUNC
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
     with disable_run_logger():
-        deficient_punchdata = remove_deficient_pixels.fn(increasing_pixel_data, one_bad_pixel_map)
+        deficient_punchdata = remove_deficient_pixels_task.fn(increasing_pixel_data, one_bad_pixel_map)
 
     assert isinstance(deficient_punchdata, PUNCHData)
     assert (deficient_punchdata.data[5,5] == increasing_pixel_data.data[5,5])
     assert (deficient_punchdata.uncertainty.array[5,5] == increasing_pixel_data.uncertainty.array[5,5])
     assert (deficient_punchdata.data[100,100] == 100)
+
 
 @pytest.mark.prefect_test()
 def test_mean_data_window_1(increasing_pixel_data: PUNCHData, one_bad_pixel_map: PUNCHData) -> None:
@@ -242,12 +240,13 @@ def test_mean_data_window_1(increasing_pixel_data: PUNCHData, one_bad_pixel_map:
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
     with disable_run_logger():
-        deficient_punchdata = remove_deficient_pixels.fn(increasing_pixel_data, one_bad_pixel_map, method='mean')
+        deficient_punchdata = remove_deficient_pixels_task.fn(increasing_pixel_data, one_bad_pixel_map, method='mean')
 
     assert isinstance(deficient_punchdata, PUNCHData)
     assert (deficient_punchdata.data[5,5] == increasing_pixel_data.data[5,5])
     assert (deficient_punchdata.uncertainty.array[5,5] == increasing_pixel_data.uncertainty.array[5,5])
     assert (deficient_punchdata.data[100,100] == 100)
+
 
 @pytest.mark.prefect_test()
 def test_data_window_9(increasing_pixel_data: PUNCHData, nine_bad_pixel_map: PUNCHData) -> None:
@@ -255,12 +254,13 @@ def test_data_window_9(increasing_pixel_data: PUNCHData, nine_bad_pixel_map: PUN
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
     with disable_run_logger():
-        deficient_punchdata = remove_deficient_pixels.fn(increasing_pixel_data, nine_bad_pixel_map)
+        deficient_punchdata = remove_deficient_pixels_task.fn(increasing_pixel_data, nine_bad_pixel_map)
 
     assert isinstance(deficient_punchdata, PUNCHData)
     assert (deficient_punchdata.data[5,5] == increasing_pixel_data.data[5,5])
     assert (deficient_punchdata.uncertainty.array[5,5] == increasing_pixel_data.uncertainty.array[5,5])
     assert (deficient_punchdata.data[101,101] == 101)  
+
 
 @pytest.mark.prefect_test()
 def test_mean_data_window_9(increasing_pixel_data: PUNCHData, nine_bad_pixel_map: PUNCHData) -> None:
@@ -268,7 +268,7 @@ def test_mean_data_window_9(increasing_pixel_data: PUNCHData, nine_bad_pixel_map
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
     with disable_run_logger():
-        deficient_punchdata = remove_deficient_pixels.fn(increasing_pixel_data, nine_bad_pixel_map, method='mean')
+        deficient_punchdata = remove_deficient_pixels_task.fn(increasing_pixel_data, nine_bad_pixel_map, method='mean')
 
     assert isinstance(deficient_punchdata, PUNCHData)
     assert (deficient_punchdata.data[5,5] == increasing_pixel_data.data[5,5])

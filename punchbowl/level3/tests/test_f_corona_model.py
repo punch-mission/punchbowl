@@ -10,15 +10,12 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from prefect.logging import disable_run_logger
 
-
-
 # punchbowl imports
 from punchbowl.data import NormalizedMetadata, PUNCHData
 
 from punchbowl.level3.f_corona_model import query_f_corona_model_source
 from punchbowl.level3.f_corona_model import construct_f_corona_background
-from punchbowl.level3.f_corona_model import subtract_f_corona_background
-
+from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 
 
 TEST_DIRECTORY = pathlib.Path(__file__).parent.resolve()
@@ -30,6 +27,7 @@ SAMPLE_FITS_PATH = os.path.join(TESTDATA_DIR, "L0_CL1_20211111070246_PUNCHData.f
 def sample_data():
     return PUNCHData.from_fits(SAMPLE_FITS_PATH)
 
+
 @pytest.fixture()
 def sample_data_list():
     number_elements=25
@@ -38,13 +36,11 @@ def sample_data_list():
         data_list.append(SAMPLE_FITS_PATH)
     return data_list
 
+
 def test_list_input_2(sample_data_list):
     #background = construct_f_corona_background.fn(sample_data)
     #assert isinstance(background, PUNCHData)
     assert isinstance(sample_data_list, list)
-
-
-
 
 
 @pytest.fixture()
@@ -56,7 +52,6 @@ def one_data(shape: tuple = (2048, 2048)) -> np.ndarray:
 
     uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
 
-
     wcs = WCS(naxis=2)
     wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
     wcs.wcs.cunit = "deg", "deg"
@@ -67,6 +62,7 @@ def one_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
+
 @pytest.fixture()
 def zero_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     """
@@ -75,7 +71,6 @@ def zero_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     data = np.zeros(shape)
 
     uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
-
 
     wcs = WCS(naxis=2)
     wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
@@ -97,7 +92,6 @@ def incorrect_shape_data(shape: tuple = (512, 512)) -> np.ndarray:
 
     uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
 
-
     wcs = WCS(naxis=2)
     wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
     wcs.wcs.cunit = "deg", "deg"
@@ -109,18 +103,18 @@ def incorrect_shape_data(shape: tuple = (512, 512)) -> np.ndarray:
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-
 @pytest.mark.prefect_test()
 def test_basic_subtraction(one_data: PUNCHData, zero_data: PUNCHData) -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
     with disable_run_logger():
-        subtraction_punchdata = subtract_f_corona_background.fn(one_data, zero_data)
+        subtraction_punchdata = subtract_f_corona_background_task.fn(one_data, zero_data)
 
     assert isinstance(subtraction_punchdata, PUNCHData)
         
     assert np.all(subtraction_punchdata.data == 1)
+
 
 @pytest.mark.prefect_test()
 def test_empty_list() -> None:
@@ -132,7 +126,6 @@ def test_empty_list() -> None:
         with disable_run_logger():
             f_corona_model = construct_f_corona_background.fn(input_list)
 
-    #assert isinstance(f_corona_model, PUNCHData)
 
 @pytest.mark.prefect_test()
 def test_create_simple_bkg() -> None:
@@ -145,6 +138,7 @@ def test_create_simple_bkg() -> None:
 
     assert isinstance(f_corona_model, PUNCHData)
 
+
 @pytest.mark.prefect_test()
 def test_min_bkg() -> None:
     """
@@ -155,6 +149,7 @@ def test_min_bkg() -> None:
         f_corona_model = construct_f_corona_background.fn(input_list, method='min')
 
     assert np.all(f_corona_model.data == 0)
+
 
 @pytest.mark.prefect_test()
 def test_mean_bkg() -> None:
@@ -167,6 +162,7 @@ def test_mean_bkg() -> None:
 
     assert np.all(f_corona_model.data == 4.5)
 
+
 @pytest.mark.prefect_test()
 def test_percent_5_bkg() -> None:
     """
@@ -177,6 +173,7 @@ def test_percent_5_bkg() -> None:
         f_corona_model = construct_f_corona_background.fn(input_list)
 
     assert np.all(f_corona_model.data == 0.45)
+
 
 @pytest.mark.prefect_test()
 def test_percent_10_bkg() -> None:
@@ -189,6 +186,7 @@ def test_percent_10_bkg() -> None:
 
     assert np.all(f_corona_model.data == 0.9)
 
+
 @pytest.mark.prefect_test()
 def test_typo_method_bkg() -> None:
     """
@@ -200,7 +198,6 @@ def test_typo_method_bkg() -> None:
             f_corona_model = construct_f_corona_background.fn(input_list, method="Marcus_rules")
 
 
-
 @pytest.mark.prefect_test()
 def test_different_array_size_subtraction(incorrect_shape_data: PUNCHData, zero_data: PUNCHData) -> None:
     """
@@ -208,5 +205,5 @@ def test_different_array_size_subtraction(incorrect_shape_data: PUNCHData, zero_
     """
     with pytest.raises(Exception):
         with disable_run_logger():
-            subtraction_punchdata = subtract_f_corona_background.fn(incorrect_shape_data, zero_data)
+            subtraction_punchdata = subtract_f_corona_background_task.fn(incorrect_shape_data, zero_data)
 

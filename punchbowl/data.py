@@ -46,7 +46,6 @@ class History:
         """
         self._entries.append(entry)
 
-
     def add_now(self, source: str, comment: str) -> None:
         """Adds a new history entry at the current time.
 
@@ -62,7 +61,6 @@ class History:
         None
         """
         self._entries.append(HistoryEntry(datetime.now(), source, comment))
-
 
     def clear(self) -> None:
         """
@@ -135,7 +133,6 @@ class History:
         return entry  # noqa:  RET504
 
 
-
 class NormalizedMetadata(Mapping):
     """
     The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
@@ -197,7 +194,9 @@ class NormalizedMetadata(Mapping):
             raise MissingMetadataError("DATE-OBS is missing from the metadata.")
         return parse_datetime(self._contents["DATE-OBS"])
 
+
 HEADER_TEMPLATE_COLUMNS = ["TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE"]
+
 
 class HeaderTemplate:
     """PUNCH data object header template

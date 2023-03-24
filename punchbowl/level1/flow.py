@@ -1,7 +1,9 @@
+from typing import Union, AnyStr, Optional
+
 from prefect import flow, get_run_logger
 
 from punchbowl.level1.alignment import align_task
-from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
+from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task, create_all_valid_deficient_pixel_map
 from punchbowl.level1.despike import despike_task
 from punchbowl.level1.destreak import destreak_task
 from punchbowl.level1.flagging import flag_task
@@ -10,15 +12,18 @@ from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.util import load_image_task, output_image_task
+from punchbowl.data import PUNCHData
 
 
-@flow
-def level1_core_flow(input_filename: str, output_filename: str) -> None:
+@flow(validate_parameters=False)
+def level1_core_flow(input_data: Union[str, PUNCHData],
+                     deficient_pixel_map: Optional[PUNCHData] = None,
+                     output_filename: Optional[str] = None) -> None:
     """Core flow for level 1
 
     Parameters
     ----------
-    input_filename : str
+    input_data : str
         path to the image coming into level 1 core flow
     output_filename : str
         path of where to write the output from the level 1 core flow
@@ -30,15 +35,25 @@ def level1_core_flow(input_filename: str, output_filename: str) -> None:
     logger = get_run_logger()
 
     logger.info("beginning level 1 core flow")
-    data = load_image_task(input_filename)
+
+    if isinstance(input_data, str):
+        data = load_image_task(input_data)
+    else:
+        data = input_data
+
     data = perform_quartic_fit_task(data)
     data = despike_task(data)
     data = destreak_task(data)
     data = correct_vignetting_task(data)
-    data = remove_deficient_pixels_task(data)
+    if deficient_pixel_map is None:
+        deficient_pixel_map = create_all_valid_deficient_pixel_map(data)
+    data = remove_deficient_pixels_task(data, deficient_pixel_map)
     data = remove_stray_light_task(data)
     data = align_task(data)
     data = correct_psf_task(data)
-    data = flag_task(data)
+    # data = flag_task(data)
     logger.info("ending level 1 core flow")
-    output_image_task(data, output_filename)
+
+    if output_filename is not None:
+        output_image_task(data, output_filename)
+    return data

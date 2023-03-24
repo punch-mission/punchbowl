@@ -60,22 +60,26 @@ def sample_data_random(shape: tuple = (50, 50)) -> np.ndarray:
 
 
 @fixture
-def sample_punchdata(sample_data_random):
+def sample_punchdata():
     """
     Generate a sample PUNCHData object for testing
     """
 
-    data = sample_data_random
-    uncertainty = StdDevUncertainty(np.sqrt(np.abs(sample_data_random)))
-    wcs = WCS(naxis=2)
-    wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
-    wcs.wcs.cunit = "deg", "deg"
-    wcs.wcs.cdelt = 0.1, 0.1
-    wcs.wcs.crpix = 0, 0
-    wcs.wcs.crval = 1, 1
-    wcs.wcs.cname = "HPC lon", "HPC lat"
+    def _sample_punchdata(shape=(50, 50), level=0):
+        data = np.random.random(shape)
+        uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+        wcs.wcs.cunit = "deg", "deg"
+        wcs.wcs.cdelt = 0.1, 0.1
+        wcs.wcs.crpix = 0, 0
+        wcs.wcs.crval = 1, 1
+        wcs.wcs.cname = "HPC lon", "HPC lat"
 
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs)
+        meta = NormalizedMetadata({"LEVEL": level})
+        return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+    return _sample_punchdata
 
 
 @fixture
@@ -84,8 +88,8 @@ def sample_punchdata_list(sample_punchdata):
     Generate a list of sample PUNCHData objects for testing
     """
 
-    sample_pd1 = sample_punchdata
-    sample_pd2 = sample_punchdata
+    sample_pd1 = sample_punchdata()
+    sample_pd2 = sample_punchdata()
     return [sample_pd1, sample_pd2]
 
 

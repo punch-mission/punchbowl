@@ -92,8 +92,8 @@ def median_correct(data_array: np.ndarray,
 @task
 def remove_deficient_pixels_task(data: PUNCHData,
                                  deficient_pixel_map: PUNCHData,
-                                 required_good_count: int= 3,
-                                 max_window_size: int= 10,
+                                 required_good_count: int = 3,
+                                 max_window_size: int = 10,
                                  method: str = "median"
                                  ) -> PUNCHData:
     """subtracts a deficient pixel map from an input data frame.
@@ -172,11 +172,8 @@ def remove_deficient_pixels_task(data: PUNCHData,
     output_uncertainty.array[deficient_pixel_array == 0] = 0
 
     # todo: make use the duplicate_with_updates method
-    output_object = PUNCHData(data_array,
-                              wcs=output_wcs,
-                              uncertainty=output_uncertainty,
-                              meta=output_meta,
-                              mask=output_mask)
+    output_object = data.duplicate_with_updates(data=data_array,
+                                                uncertainty=output_uncertainty)
 
     logger.info("remove_deficient_pixels finished")
     output_object.meta.history.add_now("LEVEL1-remove_deficient_pixels", "deficient pixels removed")
@@ -184,4 +181,7 @@ def remove_deficient_pixels_task(data: PUNCHData,
     return output_object
 
 
+def create_all_valid_deficient_pixel_map(data: PUNCHData) -> PUNCHData:
+    mask_array = np.ones_like(data.data)
+    return data.duplicate_with_updates(data=mask_array)
 

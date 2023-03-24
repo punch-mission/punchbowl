@@ -7,7 +7,6 @@ import pytest
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 from pytest import fixture
 
 from punchbowl.data import (
@@ -221,6 +220,7 @@ def test_normalizedmetadata_add_new_key():
     empty['NAmE'] = "marcus"
     assert "nAMe" in empty
     assert len(empty) == 1
+
 
 def test_normalizedmetadata_delete_key():
     example = NormalizedMetadata({"key": "value"})

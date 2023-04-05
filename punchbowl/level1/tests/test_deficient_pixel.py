@@ -9,14 +9,14 @@ from astropy.wcs import WCS
 from prefect.logging import disable_run_logger
 
 # punchbowl imports
-from punchbowl.data import NormalizedMetadata, PUNCHData
+from punchbowl.data import NormalizedMetadata, PUNCHData, PUNCH_REQUIRED_META_FIELDS
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
 @pytest.fixture()
-def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> np.ndarray:
+def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> PUNCHData:
     """
     Generate some random data for testing
     """
@@ -38,12 +38,13 @@ def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) ->
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"},
+                              required_fields=PUNCH_REQUIRED_META_FIELDS)
     return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
-def perfect_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
+def perfect_pixel_map(shape: tuple = (2048, 2048)) -> PUNCHData:
     """
     Generate some random data for testing
     """
@@ -60,12 +61,13 @@ def perfect_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"},
+                              required_fields=PUNCH_REQUIRED_META_FIELDS)
     return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
-def one_bad_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
+def one_bad_pixel_map(shape: tuple = (2048, 2048)) -> PUNCHData:
     """
     Generate pixel map with one bad pixel at 100, 100
     """
@@ -84,11 +86,13 @@ def one_bad_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"},
+                              required_fields=PUNCH_REQUIRED_META_FIELDS)
     return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
+
 @pytest.fixture()
-def nine_bad_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
+def nine_bad_pixel_map(shape: tuple = (2048, 2048)) -> PUNCHData:
     """
     Generate pixel map with one bad pixel at 100, 100
     """
@@ -116,14 +120,13 @@ def nine_bad_pixel_map(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"},
+                              required_fields=PUNCH_REQUIRED_META_FIELDS)
     return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-
-
 @pytest.fixture()
-def increasing_pixel_data(shape: tuple = (2048, 2048)) -> np.ndarray:
+def increasing_pixel_data(shape: tuple = (2048, 2048)) -> PUNCHData:
     """
     Generate data of increasing values for testing; data[0,100]=0.0, data[100,0]=100.0
     """
@@ -140,7 +143,8 @@ def increasing_pixel_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"},
+                              required_fields=PUNCH_REQUIRED_META_FIELDS)
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
@@ -160,7 +164,8 @@ def sample_punchdata(shape: tuple = (2048, 2048)) -> PUNCHData:
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"},
+                              required_fields=PUNCH_REQUIRED_META_FIELDS)
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 

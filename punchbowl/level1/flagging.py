@@ -36,7 +36,7 @@ def flag_punchdata(data_object: PUNCHData, bad_pixel_map: np.ndarray = None) -> 
 
 
 @task
-def flag_task(data_object: PUNCHData, bad_pixel_filename: str) -> PUNCHData:
+def flag_task(data_object: PUNCHData, bad_pixel_map: PUNCHData) -> PUNCHData:
     """
     Pipeline task for bad pixel flagging
 
@@ -45,8 +45,8 @@ def flag_task(data_object: PUNCHData, bad_pixel_filename: str) -> PUNCHData:
     data_object
         Input PUNCHData object
 
-    bad_pixel_filename
-        Path to bad pixel calibration file
+    bad_pixel_map
+        PUNCHData to store bad pixel map
 
     Returns
     -------
@@ -57,10 +57,8 @@ def flag_task(data_object: PUNCHData, bad_pixel_filename: str) -> PUNCHData:
     logger = get_run_logger()
     logger.info("flagging started")
 
-    bad_pixel_map = PUNCHData.from_fits(bad_pixel_filename)
-
     # Call data flagging function
-    data_object = flag_punchdata(data_object, bad_pixel_map.data.astype(int))
+    data_object = flag_punchdata(data_object, bad_pixel_map.data)
 
     logger.info("flagging finished")
     data_object.meta.history.add_now("LEVEL1-flagging", "image flagged")

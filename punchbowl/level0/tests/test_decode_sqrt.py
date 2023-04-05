@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import numpy as np
 import pytest
 from pytest import fixture
@@ -8,7 +10,7 @@ from astropy.nddata import StdDevUncertainty
 
 # punchbowl imports
 from punchbowl.level0.decode_sqrt import encode_sqrt, decode_sqrt_simple, decode_sqrt, decode_sqrt_data
-from punchbowl.data import PUNCHData
+from punchbowl.data import PUNCHData, NormalizedMetadata, PUNCH_REQUIRED_META_FIELDS
 
 
 # Some test inputs
@@ -27,9 +29,13 @@ def sample_punchdata():
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 0
     wcs.wcs.cname = "HPC lon", "HPC lat"
-    ndcube_obj = NDCube(data=data, uncertainty=uncertainty, wcs=wcs)
+    meta = NormalizedMetadata({"LEVEL": "0",
+                               'OBSRVTRY': 'Y',
+                               'TYPECODE': 'XX',
+                               'DATE-OBS': str(datetime(2023, 1, 1, 0, 0, 1))},
+                              required_fields=PUNCH_REQUIRED_META_FIELDS)
 
-    punchdata_obj = PUNCHData(ndcube_obj)
+    punchdata_obj = PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
     punchdata_obj.meta['RAWBITS'] = 16
     punchdata_obj.meta['COMPBITS'] = 10

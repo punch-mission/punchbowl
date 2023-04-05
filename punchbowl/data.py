@@ -6,7 +6,7 @@ from collections import namedtuple
 from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Set
 
 import astropy.units as u
 import astropy.wcs.wcsapi
@@ -46,7 +46,6 @@ class History:
         """
         self._entries.append(entry)
 
-
     def add_now(self, source: str, comment: str) -> None:
         """Adds a new history entry at the current time.
 
@@ -62,7 +61,6 @@ class History:
         None
         """
         self._entries.append(HistoryEntry(datetime.now(), source, comment))
-
 
     def clear(self) -> None:
         """
@@ -135,7 +133,6 @@ class History:
         return entry  # noqa:  RET504
 
 
-
 class NormalizedMetadata(Mapping):
     """
     The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
@@ -144,16 +141,32 @@ class NormalizedMetadata(Mapping):
     Internally, the keys are always stored as upper-case strings.
     Unlike the FITS standard, keys can be any length string.
     """
-    def __init__(self, contents: dict[str, Any]) -> None:
+    def __init__(self, contents: dict[str, Any], required_fields: Optional[Set[str]] = None) -> None:
+        # Validate all the keys are acceptable
         for key in contents:
             self._validate_key_is_str(key)
             if key.upper() == "HISTORY-OBJECT":
                 raise KeyError("HISTORY-OBJECT is a reserved keyword for NormalizedMetadata. "
                                "It cannot be in a passed in contents.")
+
+        # Create the contents now
         self._contents = {k.upper(): v for k, v in contents.items()}
+
+        self.required_fields = required_fields if required_fields is not None else set()
+        self.validate_required_fields()
+
+        # Add a history object
         self._contents["HISTORY-OBJECT"] = History()
 
-    def __iter__(self)  -> Dict:
+    def validate_required_fields(self):
+        # Check that all required fields are present
+        if self.required_fields is not None:
+            for key in self.required_fields:
+                if key.upper() not in self._contents:
+                    raise RuntimeError(f"{key} is missing."
+                                       f"According to required_keys it must be a key in NormalizedMetadata.")
+
+    def __iter__(self) -> Dict:
         return self._contents.__iter__()
 
     @property
@@ -175,7 +188,10 @@ class NormalizedMetadata(Mapping):
 
     def __delitem__(self, key: str) -> None:
         self._validate_key_is_str(key)
-        del self._contents[key.upper()]
+        if key.upper() in self.required_fields:
+            raise ValueError(f"Cannot delete a required_field: {key}")
+        else:
+            del self._contents[key.upper()]
 
     def __contains__(self, key: str) -> bool:
         self._validate_key_is_str(key)
@@ -190,14 +206,15 @@ class NormalizedMetadata(Mapping):
             raise MissingMetadataError("LEVEL is missing from the metadata.")
         return self._contents["LEVEL"]
 
-
     @property
     def datetime(self) -> datetime:
         if "DATE-OBS" not in self._contents:
             raise MissingMetadataError("DATE-OBS is missing from the metadata.")
         return parse_datetime(self._contents["DATE-OBS"])
 
+
 HEADER_TEMPLATE_COLUMNS = ["TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE"]
+
 
 class HeaderTemplate:
     """PUNCH data object header template
@@ -319,6 +336,9 @@ class HeaderTemplate:
         return empty_keywords
 
 
+PUNCH_REQUIRED_META_FIELDS = {"OBSRVTRY", "LEVEL", "TYPECODE", "DATE-OBS"}
+
+
 class PUNCHData(NDCube):
     """PUNCH data object
 
@@ -333,11 +353,10 @@ class PUNCHData(NDCube):
         self,
         data: np.ndarray,
         wcs: astropy.wcs.wcsapi.BaseLowLevelWCS
-        | astropy.wcs.wcsapi.BaseHighLevelWCS
-        | None = None,
+        | astropy.wcs.wcsapi.BaseHighLevelWCS,
+        meta: NormalizedMetadata,
         uncertainty: Any | None = None,
         mask: Any | None = None,
-        meta: NormalizedMetadata | None = None,
         unit: astropy.units.Unit = None,
         copy: bool = False,
         **kwargs,
@@ -369,12 +388,16 @@ class PUNCHData(NDCube):
 
         PUNCHData objects also contain history information and have special functionality for manipulating PUNCH data.
         """
+        if not PUNCH_REQUIRED_META_FIELDS.issubset(meta.required_fields):
+            missing = {field for field in PUNCH_REQUIRED_META_FIELDS if field not in meta.required_fields}
+            raise ValueError(f"Required fields of meta should contain all PUNCH required fields. Missing {missing}.")
+
         super().__init__(
             data,
             wcs=wcs,
             uncertainty=uncertainty,
             mask=mask,
-            meta=meta if meta is not None else NormalizedMetadata({}),
+            meta=meta,
             unit=unit,
             copy=copy,
             **kwargs,
@@ -402,7 +425,7 @@ class PUNCHData(NDCube):
             # A one-length hdul can be a primary uncompressed data array
             if len(hdul) == 1:
                 data = hdul[0].data
-                meta = NormalizedMetadata(dict(hdul[0].header))
+                meta = NormalizedMetadata(dict(hdul[0].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
                 wcs = WCS(hdul[0].header)
                 uncertainty = None
                 unit = u.ct  # counts
@@ -411,21 +434,21 @@ class PUNCHData(NDCube):
                 # Compressed primary data array
                 if isinstance(hdul[1], fits.CompImageHDU):
                     data = hdul[1].data
-                    meta = NormalizedMetadata(dict(hdul[1].header))
+                    meta = NormalizedMetadata(dict(hdul[1].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
                     wcs = WCS(hdul[1].header)
                     uncertainty = None
                     unit = u.ct  # counts
                 # Uncompressed data and uncertainty arrays
                 else:
                     data = hdul[0].data
-                    meta = NormalizedMetadata(dict(hdul[0].header))
+                    meta = NormalizedMetadata(dict(hdul[0].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
                     wcs = WCS(hdul[0].header)
                     uncertainty = StdDevUncertainty(hdul[1].data)
                     unit = u.ct  # counts
             # A three-length hdul can be a primary compressed data and uncertainty arrays
             elif len(hdul) == 3:
                 data = hdul[1].data
-                meta = NormalizedMetadata(dict(hdul[1].header))
+                meta = NormalizedMetadata(dict(hdul[1].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
                 wcs = WCS(hdul[1].header)
                 uncertainty = StdDevUncertainty(hdul[2].data)
                 unit = u.ct  # counts
@@ -451,7 +474,7 @@ class PUNCHData(NDCube):
         return 1.0 / self.uncertainty.array
 
     @property
-    def id(self) -> str:
+    def filename_base(self) -> str:
         """Dynamically generate an id string for the given data product, using the format 'Ln_ttO_yyyymmddhhmmss'
 
         Returns
@@ -463,9 +486,14 @@ class PUNCHData(NDCube):
         file_level = self.meta["LEVEL"]
         type_code = self.meta["TYPECODE"]
         date_string = self.meta.datetime.strftime("%Y%m%d%H%M%S")
+        # TODO: include version number
         return (
             "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
         )
+
+    @property
+    def is_blank(self) -> bool:
+        return self.meta['BLANK'] if 'BLANK' in self.meta else False
 
     def write(self, filename: str, overwrite=True) -> None:
         """Write PUNCHData elements to file

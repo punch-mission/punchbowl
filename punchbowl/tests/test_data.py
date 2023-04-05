@@ -15,14 +15,12 @@ from punchbowl.data import (
     HistoryEntry,
     HeaderTemplate,
     HEADER_TEMPLATE_COLUMNS,
-    NormalizedMetadata
+    NormalizedMetadata,
+    PUNCH_REQUIRED_META_FIELDS
 )
 
 TESTDATA_DIR = os.path.dirname(__file__)
-SAMPLE_FITS_PATH = os.path.join(TESTDATA_DIR, "L0_CL1_20211111070246_PUNCHData.fits")
-SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
 SAMPLE_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_template.csv")
-
 
 # Test fixtures
 @fixture
@@ -46,36 +44,38 @@ def sample_wcs() -> WCS:
 
 
 @fixture
-def sample_data():
-    return PUNCHData.from_fits(SAMPLE_FITS_PATH)
-
-
-@fixture
 def sample_data_random(shape: tuple = (50, 50)) -> np.ndarray:
     """
     Generate some random data for testing
     """
-
     return np.random.random(shape)
 
 
 @fixture
-def sample_punchdata(sample_data_random):
+def sample_punchdata():
     """
     Generate a sample PUNCHData object for testing
     """
 
-    data = sample_data_random
-    uncertainty = StdDevUncertainty(np.sqrt(np.abs(sample_data_random)))
-    wcs = WCS(naxis=2)
-    wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
-    wcs.wcs.cunit = "deg", "deg"
-    wcs.wcs.cdelt = 0.1, 0.1
-    wcs.wcs.crpix = 0, 0
-    wcs.wcs.crval = 1, 1
-    wcs.wcs.cname = "HPC lon", "HPC lat"
+    def _sample_punchdata(shape=(50, 50), level=0):
+        data = np.random.random(shape)
+        uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+        wcs.wcs.cunit = "deg", "deg"
+        wcs.wcs.cdelt = 0.1, 0.1
+        wcs.wcs.crpix = 0, 0
+        wcs.wcs.crval = 1, 1
+        wcs.wcs.cname = "HPC lon", "HPC lat"
 
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs)
+        meta = NormalizedMetadata({"LEVEL": str(level),
+                                   'OBSRVTRY': 'Y',
+                                   'TYPECODE': 'XX',
+                                   'DATE-OBS': str(datetime(2023, 1, 1, 0, 0, 1))},
+                                  required_fields=PUNCH_REQUIRED_META_FIELDS)
+        return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+    return _sample_punchdata
 
 
 @fixture
@@ -84,34 +84,15 @@ def sample_punchdata_list(sample_punchdata):
     Generate a list of sample PUNCHData objects for testing
     """
 
-    sample_pd1 = sample_punchdata
-    sample_pd2 = sample_punchdata
+    sample_pd1 = sample_punchdata()
+    sample_pd2 = sample_punchdata()
     return [sample_pd1, sample_pd2]
 
 
-def test_sample_data_creation(sample_data):
-    assert isinstance(sample_data, PUNCHData)
-
-
-def test_generate_from_filename():
-    pd = PUNCHData.from_fits(SAMPLE_FITS_PATH)
-    assert isinstance(pd, PUNCHData)
-
-
-def test_write_data(sample_data):
-    with pytest.warns(RuntimeWarning):
-        sample_data.meta["LEVEL"] = 1
-        sample_data.meta["TYPECODE"] = "XX"
-        sample_data.meta["OBSRVTRY"] = "Y"
-        sample_data.meta["VERSION"] = 0.1
-        sample_data.meta["SOFTVERS"] = 0.1
-        sample_data.meta["DATE-OBS"] = str(datetime.now())
-        sample_data.meta["DATE-AQD"] = str(datetime.now())
-        sample_data.meta["DATE-END"] = str(datetime.now())
-        sample_data.meta["POL"] = "M"
-
-        sample_data.write(SAMPLE_WRITE_PATH)
-        # TODO: Check for writing to file? Read back in and compare?
+def test_filename_base_generation(sample_punchdata):
+    actual = sample_punchdata().filename_base
+    expected = "PUNCH_L0_XXY_20230101000001"
+    assert actual == expected
 
 
 @fixture
@@ -192,7 +173,10 @@ def test_header_selection_based_on_level(level: int):
     wcs.wcs.crval = 10, 0.5, 1
     wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
 
-    meta = NormalizedMetadata({"LEVEL": level})
+    meta = NormalizedMetadata({"LEVEL": level,
+                               'DATE-OBS': str(datetime.now()),
+                               "OBSRVTRY": "X",
+                               "TYPECODE": "YY"}, required_fields=PUNCH_REQUIRED_META_FIELDS)
     data = PUNCHData(data=data, wcs=wcs, meta=meta)
 
     header = data.create_header(None)
@@ -229,3 +213,16 @@ def test_normalizedmetadata_delete_key():
     del example['key']
     assert "key" not in example
     assert len(example) == 0
+
+
+def test_normalizedmetdata_missing_required_fields_fails():
+    required_fields = {"age", "name"}
+    with pytest.raises(RuntimeError):
+        NormalizedMetadata({"key": "value"}, required_fields=required_fields)
+
+
+def test_normalizedemetadata_has_all_required_fields():
+    required_fields = {"age", "name"}
+    example = NormalizedMetadata({'name': 'Marcus', 'age': 27}, required_fields=required_fields)
+    for key in required_fields:
+        assert key in example

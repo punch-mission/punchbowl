@@ -1,10 +1,12 @@
+from typing import List
+
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
 
 
 @task
-def quality_flag_task(data_object: PUNCHData) -> PUNCHData:
+def quality_flag_task(data_list: List[PUNCHData]) -> List[PUNCHData]:
     """Prefect task to perform quality flagging
 
     Parameters
@@ -21,5 +23,6 @@ def quality_flag_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("quality_flag started")
     # TODO: actually do the quality flagging
     logger.info("quality_flag ended")
-    data_object.meta.history.add_now("LEVEL2-quality_flag", "quality flagging completed")
-    return data_object
+    for data_object in data_list:
+        data_object.meta.history.add_now("LEVEL2-quality_flag", "quality flagging completed")
+    return data_list

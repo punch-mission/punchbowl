@@ -110,7 +110,14 @@ def perform_quartic_fit_task(data_object: PUNCHData) -> PUNCHData:
     """
     logger = get_run_logger()
     logger.info("perform_quartic_fit started")
-    # TODO: perform calibration
+
+    # todo: load coeffs from a file
+    flat_coeffs = np.array([0, 1, 2, 3, 4])
+    image_shape = data_object.data.shape
+    coeffs = create_coefficient_image(flat_coeffs, image_shape)
+    new_data = photometric_calibration(data_object.data, coeffs)
+
     logger.info("perform_quartic_fit finished")
+    data_object = data_object.duplicate_with_updates(data=new_data)
     data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction completed")
     return data_object

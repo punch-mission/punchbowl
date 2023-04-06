@@ -41,6 +41,7 @@ def correct_psf_task(
     logger = get_run_logger()
     logger.info("correct_psf started")
 
+    # TODO: make pass in object instead of loading from a file
     corrector = ArrayCorrector.load(model_path)
     data_object = correct_psf(data_object, corrector)
 

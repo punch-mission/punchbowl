@@ -12,7 +12,7 @@ from punchbowl.util import load_image_task, output_image_task
 from punchbowl.data import PUNCHData
 
 
-@flow
+@flow(validate_parameters=False)
 def level2_core_flow(data_list: Union[List[str], List[PUNCHData]]):
     logger = get_run_logger()
 
@@ -27,6 +27,6 @@ def level2_core_flow(data_list: Union[List[str], List[PUNCHData]]):
     data_list = identify_bright_structures_task(data_list)
     data_list = quality_flag_task(data_list)
     # TODO: merge only similar polarizations together
-    data_list = merge_many_task(data_list, trefoil_wcs, trefoil_shape)
+    data_list = [merge_many_task(data_list, trefoil_wcs)]
     logger.info("ending level 2 core flow")
     return data_list

@@ -21,7 +21,8 @@ comment,COMMENT,----- File Type and Provenance ---------------------------------
 keyword,FILENAME,PUNCH_L1_P11_20220204134800_0.fits,name of file,str,dynamic
 keyword,LEVEL,2,product Level,int,dynamic
 keyword,OBSTYPE,unpolarized NFI image,plain text observation,str,dynamic
-keyword,TYPECODE,P1,observation product type code,str,dynamic
+keyword,OBSRVTRY,,which observatory data derives from	,str,dynamic
+keyword,TYPECODE,,observation product type code,str,dynamic
 keyword,L0PARENT,PUNCH_L0_P11_20220204134800_0.fits,name of parent file,str,dynamic
 keyword,PIPEVRSN,1.2.3,PUNCHPipe software version number,str,dynamic
 keyword,FILE_RAW,PUNCH_L0_P11_20220204134800_0.fits,raw telemetry filename,str,dynamic
@@ -29,7 +30,7 @@ keyword,ORIGIN,SwRI,institution responsible for creating the file,str,dynamic
 section,COMMENT,----- Temporal Information ---------------------------------------------,,str,static
 keyword,TIMESYS,UTC,principal time system,str,static
 keyword,DATE-BEG,2022-02-03T00:00:36.72,UTC time observation,str,dynamic
-keyword,DATE-OBS,2022-02-03T00:00:36.73,UTC reference time at observatory,str,dynamic
+keyword,DATE-OBS,,UTC reference time at observatory,str,dynamic
 keyword,DATE-END,2022-02-03T00:00:36.73,UTC time of observation end at observatory,str,dynamic
 keyword,DATE,2022-02-03T00:09:11.29,UTC file generation date and time,str,dynamic
 section,COMMENT,----- Instrument and Spacecraft State ----------------------------------,,str,static

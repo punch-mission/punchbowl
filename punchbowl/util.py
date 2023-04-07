@@ -3,7 +3,7 @@ import os
 import numpy as np
 from prefect import task
 
-from punchbowl.data import PUNCHData
+from punchbowl.data import PUNCHData, PUNCH_REQUIRED_META_FIELDS
 
 
 def validate_image_is_square(image: np.ndarray) -> None:

@@ -21,7 +21,7 @@ comment,COMMENT,----- File Type and Provenance ---------------------------------
 keyword,FILENAME,PUNCH_L1_P11_20220204134800_0.fits,name of file,str,dynamic
 keyword,LEVEL,1,product Level,int,dynamic
 keyword,OBSTYPE,unpolarized NFI image,plain text observation,str,dynamic
-keyword,OBSRVTRY,,which observatory data derives from	,str,dynamic
+keyword,OBSRVTRY,,which observatory data derives from,str,dynamic
 keyword,TYPECODE,,observation product type code,str,dynamic
 keyword,L0PARENT,PUNCH_L0_P11_20220204134800_0.fits,name of parent file,str,dynamic
 keyword,PIPEVRSN,1.2.3,PUNCHPipe software version number,str,dynamic

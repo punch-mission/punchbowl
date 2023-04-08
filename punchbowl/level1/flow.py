@@ -17,7 +17,7 @@ from punchbowl.data import PUNCHData
 @flow(validate_parameters=False)
 def level1_core_flow(input_data: Union[str, PUNCHData],
                      deficient_pixel_map: Optional[PUNCHData] = None,
-                     output_filename: Optional[str] = None) -> None:
+                     output_filename: Optional[str] = None):
     """Core flow for level 1
 
     Parameters

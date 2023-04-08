@@ -55,4 +55,4 @@ def level1_core_flow(input_data: Union[str, PUNCHData],
 
     if output_filename is not None:
         output_image_task(data, output_filename)
-    return data
+    return [data]

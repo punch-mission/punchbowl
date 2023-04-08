@@ -26,6 +26,7 @@ def merge_many_task(data: List[PUNCHData], trefoil_wcs: WCS) -> PUNCHData:
     # Pack up an output data object
     data_object = PUNCHData(trefoil_data, uncertainty=trefoil_uncertainty, wcs=trefoil_wcs,
                             meta=data[0].meta)
+    data_object.meta['level'] = 2
     # TODO: what do we do with the meta data???? shouldn't it merge
 
     return data_object

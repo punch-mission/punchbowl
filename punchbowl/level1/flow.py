@@ -39,6 +39,7 @@ def level1_core_flow(input_data: Union[str, PUNCHData],
         data = load_image_task(input_data)
     else:
         data = input_data
+    data.meta['level'] = 1
 
     data = perform_quartic_fit_task(data)
     data = despike_task(data)

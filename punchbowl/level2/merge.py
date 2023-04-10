@@ -6,6 +6,7 @@ import numpy as np
 import reproject
 from astropy.wcs import WCS
 from prefect import flow, get_run_logger, task
+from astropy.nddata import StdDevUncertainty
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
@@ -21,10 +22,10 @@ def merge_many_task(data: List[PUNCHData], trefoil_wcs: WCS) -> PUNCHData:
     # Carefully deal with missing data (NaN) by only ignoring a pixel missing from all observations
     trefoil_data = np.nansum(reprojected_data * reprojected_uncertainty, axis=2) / np.nansum(reprojected_uncertainty,
                                                                                              axis=2)
-    trefoil_uncertainty = np.amax(reprojected_uncertainty)
+    trefoil_uncertainty = np.amax(reprojected_uncertainty, axis=-1)
 
     # Pack up an output data object
-    data_object = PUNCHData(trefoil_data, uncertainty=trefoil_uncertainty, wcs=trefoil_wcs,
+    data_object = PUNCHData(trefoil_data, uncertainty=StdDevUncertainty(trefoil_uncertainty), wcs=trefoil_wcs,
                             meta=data[0].meta)
     data_object.meta['level'] = 2
     # TODO: what do we do with the meta data???? shouldn't it merge

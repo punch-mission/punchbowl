@@ -6,6 +6,7 @@ import numpy as np
 import reproject
 from astropy.wcs import WCS
 from prefect import flow, get_run_logger, task
+from astropy.nddata import StdDevUncertainty
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
@@ -70,5 +71,5 @@ def reproject_many_flow(data: List[PUNCHData], trefoil_wcs: WCS, trefoil_shape: 
                           for d in data]
 
     return [d.duplicate_with_updates(data=data_result[i].result(),
-                                     uncertainty=uncertainty_result[i].result(),
+                                     uncertainty=StdDevUncertainty(uncertainty_result[i].result()),
                                      wcs=trefoil_wcs) for i, d in enumerate(data)]

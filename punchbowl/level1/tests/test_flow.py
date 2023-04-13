@@ -1,14 +1,28 @@
-from prefect import Flow
-import punchpipe.level1.tasks as level1_tasks
-from punchpipe.level1.flow import level1_core_flow
+import tempfile
 
-# level1_graph = SegmentGraph(1, "Level0 to Level1", None)
-# level1_graph.add_task(level1_tasks.destreak_task, None)
-#
-# level1_core_flow = CoreFlow.initialize("Level 0 to Level 1 core", level1_graph)
-# level1_process_flow = level1_core_flow.generate_process_flow()
-# level1_core_flow.run()
+from prefect.testing.utilities import prefect_test_harness
+
+from punchbowl.data import PUNCHData
+from punchbowl.level1.flow import level1_core_flow
+from punchbowl.tests.test_data import sample_punchdata, sample_data_random
 
 
-def test_check_core_flow():
-    assert isinstance(level1_core_flow, Flow)
+# def test_core_flow_runs_with_filenames(sample_punchdata):
+#     with tempfile.TemporaryDirectory() as tmpdirname:
+#         input_name = tmpdirname + "/test_input.fits"
+#         output_name = tmpdirname + "/test_output.fits"
+#         sample_punchdata(shape=(2048, 2048)).write(input_name)
+#         with prefect_test_harness():
+#             level1_core_flow(input_name, output_filename=output_name)
+#         output = PUNCHData.from_fits(output_name)
+#         assert isinstance(output, PUNCHData)
+#         # todo: test more things
+
+
+def test_core_flow_runs_with_objects(sample_punchdata):
+    with prefect_test_harness():
+        output = level1_core_flow(sample_punchdata(shape=(2048, 2048)))
+    assert isinstance(output[0], PUNCHData)
+    # todo: test more things
+
+

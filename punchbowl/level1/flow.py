@@ -1,55 +1,58 @@
-from punchpipe.level1.alignment import align
-from punchpipe.infrastructure.data import PUNCHData
-from punchpipe.level1.quartic_fit import perform_quartic_fit
-from punchpipe.level1.despike import despike
-from punchpipe.level1.destreak import destreak
-from punchpipe.level1.vignette import correct_vignetting
-from punchpipe.level1.deficient_pixel import remove_deficient_pixels
-from punchpipe.level1.stray_light import remove_stray_light
-from punchpipe.level1.alignment import align
-from punchpipe.level1.psf import correct_psf
-from punchpipe.level1.flagging import flag
+from typing import Union, AnyStr, Optional
 
-from prefect import flow, get_run_logger, task
+from prefect import flow, get_run_logger
+
+from punchbowl.level1.alignment import align_task
+from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task, create_all_valid_deficient_pixel_map
+from punchbowl.level1.despike import despike_task
+from punchbowl.level1.destreak import destreak_task
+from punchbowl.level1.psf import correct_psf_task
+from punchbowl.level1.quartic_fit import perform_quartic_fit_task
+from punchbowl.level1.stray_light import remove_stray_light_task
+from punchbowl.level1.vignette import correct_vignetting_task
+from punchbowl.util import load_image_task, output_image_task
+from punchbowl.data import PUNCHData
 
 
-@task
-def load_level0(input_filename):
-    return PUNCHData.from_fits(input_filename)
+@flow(validate_parameters=False)
+def level1_core_flow(input_data: Union[str, PUNCHData],
+                     deficient_pixel_map: Optional[PUNCHData] = None,
+                     output_filename: Optional[str] = None):
+    """Core flow for level 1
 
-@task
-def output_level1(data, output_directory):
-    kind = list(data._cubes.keys())[0]
+    Parameters
+    ----------
+    input_data : str
+        path to the image coming into level 1 core flow
+    output_filename : str
+        path of where to write the output from the level 1 core flow
 
-    data[kind].meta['OBSRVTRY'] = 'Z'
-    data[kind].meta['LEVEL'] = 1
-    data[kind].meta['TYPECODE'] = 'ZZ'
-    data[kind].meta['VERSION'] = 1
-    data[kind].meta['SOFTVERS'] = 1
-    data[kind].meta['DATE-OBS'] = str(datetime.now())
-    data[kind].meta['DATE-AQD'] = str(datetime.now())
-    data[kind].meta['DATE-END'] = str(datetime.now())
-    data[kind].meta['POL'] = 'Z'
-    data[kind].meta['STATE'] = 'finished'
-    data[kind].meta['PROCFLOW'] = '?'
-
-    return data.write(output_directory + data.generate_id() + ".fits")
-
-@flow
-def level1_core_flow(input_filename, output_directory):
+    Returns
+    -------
+    None
+    """
     logger = get_run_logger()
 
     logger.info("beginning level 1 core flow")
-    data = load_level0(input_filename)
-    data = perform_quartic_fit(data)
-    data = despike(data)
-    data = destreak(data)
-    data = correct_vignetting(data)
-    data = remove_deficient_pixels(data)
-    data = remove_stray_light(data)
-    data = align(data)
-    data = correct_psf(data)
-    data = flag(data)
-    logger.info("ending level 1 core flow")
-    output_level1(data, output_directory)
 
+    if isinstance(input_data, str):
+        data = load_image_task(input_data)
+    else:
+        data = input_data
+    data.meta['level'] = 1
+
+    data = perform_quartic_fit_task(data)
+    data = despike_task(data)
+    data = destreak_task(data)
+    data = correct_vignetting_task(data)
+    if deficient_pixel_map is None:
+        deficient_pixel_map = create_all_valid_deficient_pixel_map(data)
+    data = remove_deficient_pixels_task(data, deficient_pixel_map)
+    data = remove_stray_light_task(data)
+    data = align_task(data)
+    data = correct_psf_task(data)
+    logger.info("ending level 1 core flow")
+
+    if output_filename is not None:
+        output_image_task(data, output_filename)
+    return [data]

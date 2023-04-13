@@ -1,23 +1,33 @@
 from __future__ import annotations
+
+import os.path
+import warnings
 from collections import namedtuple
+from collections.abc import Mapping
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set
+
 import astropy.units as u
-import matplotlib
-from typing import Union, List, Dict, Any
+import astropy.wcs.wcsapi
+import matplotlib as mpl
 import numpy as np
+import pandas as pd
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 
+from punchbowl.errors import MissingMetadataError
+
 HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
 
 
 class History:
-    """Representation of the history of edits done to a PUNCHData object
-    """
-    def __init__(self):
+    """Representation of the history of edits done to a PUNCHData object"""
+
+    def __init__(self) -> None:
         self._entries: List[HistoryEntry] = []
 
     def add_entry(self, entry: HistoryEntry) -> None:
@@ -35,6 +45,22 @@ class History:
 
         """
         self._entries.append(entry)
+
+    def add_now(self, source: str, comment: str) -> None:
+        """Adds a new history entry at the current time.
+
+        Parameters
+        ----------
+        source : str
+            what module of the code the history entry originates from
+        comment : str
+            a note of what the history comment means
+
+        Returns
+        -------
+        None
+        """
+        self._entries.append(HistoryEntry(datetime.now(), source, comment))
 
     def clear(self) -> None:
         """
@@ -58,7 +84,7 @@ class History:
         Returns
         -------
         HistoryEntry
-
+            history at specified `index`
         """
         return self._entries[index]
 
@@ -68,7 +94,8 @@ class History:
 
         Returns
         -------
-        HistoryEntry that is the youngest
+        HistoryEntry
+            HistoryEntry that is the youngest
         """
         return self._entries[-1]
 
@@ -76,7 +103,8 @@ class History:
         """
         Returns
         -------
-        int : the number of history entries
+        int
+            the number of history entries
         """
         return len(self._entries)
 
@@ -86,351 +114,512 @@ class History:
 
         Returns
         -------
-        str : a combined record of the history entries
+        str
+            a combined record of the history entries
         """
-        return "\n".join([f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries])
+        return "\n".join(
+            [f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries]
+        )
+
+    def __iter__(self) -> History:
+        self.current_index = 0
+        return self
+
+    def __next__(self) -> HistoryEntry:
+        if self.current_index >= len(self):
+            raise StopIteration
+        entry = self._entries[self.current_index]
+        self.current_index += 1
+        return entry  # noqa:  RET504
 
 
-class PUNCHCalibration:
+class NormalizedMetadata(Mapping):
     """
-    This will be inherited and developed as the various calibration objects, e.g. the quartic fit coefficients, are
-    developed. This will be an abstract base class for all of them.
+    The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
+    making keyword accesses case-insensitive and providing helpful accessors for commonly used formats of the metadata.
+
+    Internally, the keys are always stored as upper-case strings.
+    Unlike the FITS standard, keys can be any length string.
     """
-    pass
+    def __init__(self, contents: dict[str, Any], required_fields: Optional[Set[str]] = None) -> None:
+        # Validate all the keys are acceptable
+        for key in contents:
+            self._validate_key_is_str(key)
+            if key.upper() == "HISTORY-OBJECT":
+                raise KeyError("HISTORY-OBJECT is a reserved keyword for NormalizedMetadata. "
+                               "It cannot be in a passed in contents.")
+
+        # Create the contents now
+        self._contents = {k.upper(): v for k, v in contents.items()}
+
+        self.required_fields = required_fields if required_fields is not None else set()
+        self.validate_required_fields()
+
+        # Add a history object
+        self._contents["HISTORY-OBJECT"] = History()
+
+    def validate_required_fields(self):
+        # Check that all required fields are present
+        if self.required_fields is not None:
+            for key in self.required_fields:
+                if key.upper() not in self._contents:
+                    raise RuntimeError(f"{key} is missing."
+                                       f"According to required_keys it must be a key in NormalizedMetadata.")
+
+    def __iter__(self) -> Dict:
+        return self._contents.__iter__()
+
+    @property
+    def history(self) -> History:
+        return self._contents["HISTORY-OBJECT"]
+
+    @staticmethod
+    def _validate_key_is_str(key: str) -> None:
+        if not isinstance(key, str):
+            raise TypeError(f"Keys for NormalizedMetadata must be strings. You provided {type(key)}.")
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._validate_key_is_str(key)
+        self._contents[key.upper()] = value
+
+    def __getitem__(self, key: str) -> Any:
+        self._validate_key_is_str(key)
+        return self._contents[key.upper()]
+
+    def __delitem__(self, key: str) -> None:
+        self._validate_key_is_str(key)
+        if key.upper() in self.required_fields:
+            raise ValueError(f"Cannot delete a required_field: {key}")
+        else:
+            del self._contents[key.upper()]
+
+    def __contains__(self, key: str) -> bool:
+        self._validate_key_is_str(key)
+        return key.upper() in self._contents
+
+    def __len__(self) -> int:
+        return len(self._contents) - 1  # we subtract 1 to ignore the history object
+
+    @property
+    def product_level(self) -> int:
+        if "LEVEL" not in self._contents:
+            raise MissingMetadataError("LEVEL is missing from the metadata.")
+        return self._contents["LEVEL"]
+
+    @property
+    def datetime(self) -> datetime:
+        if "DATE-OBS" not in self._contents:
+            raise MissingMetadataError("DATE-OBS is missing from the metadata.")
+        return parse_datetime(self._contents["DATE-OBS"])
 
 
-class PUNCHData:
+HEADER_TEMPLATE_COLUMNS = ["TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE"]
+
+
+class HeaderTemplate:
+    """PUNCH data object header template
+    Class to generate a PUNCH data object header template, along with associated methods.
+
+    - TODO : make custom types of warnings more specific so that they can be filtered
+    """
+
+    def __init__(self, template: pd.DataFrame=None) -> None:
+        self._table = (
+            pd.DataFrame(columns=HEADER_TEMPLATE_COLUMNS)
+            if template is None
+            else template
+        )
+        if not np.all(self._table.columns.values == HEADER_TEMPLATE_COLUMNS):
+            raise ValueError(
+                f"HeaderTemplate must have columns {HEADER_TEMPLATE_COLUMNS}"
+                f"Found: {self._table.columns.values}"
+            )
+
+    @classmethod
+    def load(cls, path: str) -> HeaderTemplate:
+        """Loads an input template file to generate a header object.
+
+        Parameters
+        ----------
+        path
+            path to input header template file
+
+        Returns
+        -------
+        HeaderTemplate
+            header template with data from a specified CSV
+        """
+
+        if path.endswith(".csv"):
+            template = HeaderTemplate(template=pd.read_csv(path, keep_default_na=False))
+        else:
+            raise ValueError(
+                "Header template must be a CSV file."
+                f"Found {os.path.splitext(path)[1]} file"
+            )
+
+        return template
+
+    def fill(self, meta: NormalizedMetadata) -> fits.Header:
+        """Parses an input template header comma separated value (CSV) file to generate an astropy header object.
+
+        Parameters
+        ----------
+        meta : NormalizedMetadata
+            the contents of the metadata you wish to fill with
+
+        Returns
+        -------
+        astropy.io.fits.header
+            Header with filled fields
+        """
+        hdr = fits.Header()
+
+        type_converter = {"str": str, "int": int, "float": float}
+
+        for _, entry in self._table.iterrows():
+            if entry["TYPE"] == "section":
+                if len(entry["COMMENT"]) > 72:
+                    warnings.warn(
+                        "Section text exceeds 80 characters, EXTEND will be used.",
+                        RuntimeWarning,
+                    )
+                hdr.append(
+                    ("COMMENT", ("----- " + entry["COMMENT"] + " ").ljust(72, "-")),
+                    end=True,
+                )
+
+            elif entry["TYPE"] == "comment":
+                hdr.append(("COMMENT", entry["VALUE"]), end=True)
+
+            elif entry["TYPE"] == "keyword":
+                if len(entry["VALUE"]) + len(entry["COMMENT"]) > 72:
+                    warnings.warn(
+                        "Section text exceeds 80 characters, EXTEND will be used.",
+                        RuntimeWarning,
+                    )
+
+                hdr.append(
+                    (
+                        entry["KEYWORD"],
+                        type_converter[entry["DATATYPE"]](entry["VALUE"])
+                        if entry["VALUE"]
+                        else "",
+                        entry["COMMENT"],
+                    ),
+                    end=True,
+                )
+
+        empty_keywords = set(self.find_empty())
+        for key, value in meta.items():
+            if key in hdr and key in empty_keywords and value != "":  # only update if it's not the empty string
+                hdr[key] = value
+                empty_keywords.remove(key)
+
+        if empty_keywords:
+            warnings.warn(f"Some keywords left empty: {empty_keywords}", RuntimeWarning)
+
+        return hdr
+
+    def find_empty(self) -> list[str]:
+        """Return a list of empty required header keywords.
+
+        Returns
+        -------
+        list[str]
+            List of unassigned keywords
+        """
+        empty_keywords = []
+        for _, row in self._table.iterrows():
+            if row["TYPE"] == "keyword" and not row["VALUE"]:
+                empty_keywords.append(row["KEYWORD"])
+        return empty_keywords
+
+
+PUNCH_REQUIRED_META_FIELDS = {"OBSRVTRY", "LEVEL", "TYPECODE", "DATE-OBS"}
+
+
+class PUNCHData(NDCube):
     """PUNCH data object
-    Allows for the input of a dictionary of NDCubes for storage and custom methods.
-    Used to bundle multiple data sets together to pass through the PUNCH pipeline.
+
+    PUNCHData is essentially a normal ndcube with a StandardizedMetadata and some helpful methods.
 
     See Also
     --------
     NDCube : Base container for the PUNCHData object
-
-    Examples
-    --------
-    >>> from punchpipe.infrastructure.data import PUNCHData
-    >>> from ndcube import NDCube
-
-    >>> ndcube_obj = NDCube(data, wcs=wcs, uncertainty=uncertainty, meta=meta, unit=unit)
-    >>> data_obj = {'default': ndcube_obj}
-
-    >>> data = PUNCHData(data_obj)
     """
 
-    def __init__(self, data_obj: Union[dict, NDCube, None]):
-        """Initialize the PUNCHData object with either an
-        empty NDCube object, or a provided NDCube / dictionary
-        of NDCube objects
+    def __init__(
+        self,
+        data: np.ndarray,
+        wcs: astropy.wcs.wcsapi.BaseLowLevelWCS
+        | astropy.wcs.wcsapi.BaseHighLevelWCS,
+        meta: NormalizedMetadata,
+        uncertainty: Any | None = None,
+        mask: Any | None = None,
+        unit: astropy.units.Unit = None,
+        copy: bool = False,
+        **kwargs,
+    ) -> None:
+        """Initialize PUNCH Data
 
         Parameters
         ----------
-        data_obj
-            input data object
+        data
+            Primary observation data (2D or multidimensional ndarray)
+        wcs
+            World coordinate system object describing observation data axes
+        uncertainty
+            Measure of pixel uncertainty mapping from the primary data array
+        mask
+            Boolean mapping of invalid pixels mapping from the primary data array (True = masked out invalid pixels)
+        meta
+            Observation metadata, comprised of keywords and values as an astropy FITS header object
+        unit
+            Units for the measurements in the primary data array
+        copy
+            Create arguments as a copy (True), or as a reference where possible (False, default)
+        kwargs
+            Additional keyword arguments
 
-        Returns
-        ----------
-        None
+        Notes
+        -----
+        As the PUNCHData object is a subclass of NDCube, the constructor follows much of the same form.
 
+        PUNCHData objects also contain history information and have special functionality for manipulating PUNCH data.
         """
-        if isinstance(data_obj, dict):
-            self._cubes = data_obj
-        elif isinstance(data_obj, NDCube):
-            self._cubes = ("default", data_obj)
-        elif data_obj is None:
-            self._cubes = dict()
-        else:
-            raise Exception("Please specify either an NDCube object, or a dictionary of NDCube objects")
+        if not PUNCH_REQUIRED_META_FIELDS.issubset(meta.required_fields):
+            missing = {field for field in PUNCH_REQUIRED_META_FIELDS if field not in meta.required_fields}
+            raise ValueError(f"Required fields of meta should contain all PUNCH required fields. Missing {missing}.")
 
-        self._history = History()
-
-    def add_history(self, time: datetime, source: str, comment: str):
-        self._history.add_entry(HistoryEntry(time, source, comment))
+        super().__init__(
+            data,
+            wcs=wcs,
+            uncertainty=uncertainty,
+            mask=mask,
+            meta=meta,
+            unit=unit,
+            copy=copy,
+            **kwargs,
+        )
 
     @classmethod
-    def from_fits(cls, inputs: Union[str, List[str], Dict[str, str]]) -> PUNCHData:
-        """
-        Populates a PUNCHData object from specified FITS files.
-        Specify a filename string, a list of filename strings, or a dictionary of keys and filenames
+    def from_fits(cls, path: str) -> PUNCHData:
+        """Populates a PUNCHData object from specified FITS file.
 
         Parameters
         ----------
-        inputs
-            input from which to generate a PUNCHData object
-            (filename string, a list of filename strings, or a dictionary of keys and filenames)
+        path
+            filename from which to generate a PUNCHData object
 
         Returns
         -------
-        PUNCHData object
-
+        PUNCHData
+            loaded object
         """
 
-        if type(inputs) is str:
-            files = {"default": inputs}
+        # TODO: This could be done more elegantly in a future task
+        # TODO: Below, are the units always counts for the primary data array????
 
-        elif type(inputs) is list:
-            files = {}
-            for file in inputs:
-                if type(file) is str:
-                    files[file] = file
-                else:
-                    raise Exception("PUNCHData objects are generated with a list of filename strings.")
-
-        elif type(inputs) is dict:
-            files = {}
-            for key in inputs:
-                if type(inputs[key]) is str:
-                    files[key] = inputs[key]
-                else:
-                    raise Exception("PUNCHData objects are generated with a dictionary of keys and string filenames.")
-
-        else:
-            raise Exception("PUNCHData objects are generated with a filename string, a list of filename strings, "
-                            "or a dictionary of keys and filenames")
-
-        data_obj = {}
-
-        for key in files:
-            with fits.open(files[key]) as hdul:
+        with fits.open(path) as hdul:
+            # A one-length hdul can be a primary uncompressed data array
+            if len(hdul) == 1:
                 data = hdul[0].data
-                meta = hdul[0].header
+                meta = NormalizedMetadata(dict(hdul[0].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
                 wcs = WCS(hdul[0].header)
-                uncertainty = StdDevUncertainty(hdul[1].data)
+                uncertainty = None
                 unit = u.ct  # counts
-                ndcube_obj = NDCube(data, wcs=wcs, uncertainty=uncertainty, meta=meta, unit=unit)
-                data_obj[key] = ndcube_obj
+            # A two-length hdul can be a compressed primary data array, or uncompressed data and uncertainty arrays
+            elif len(hdul) == 2:
+                # Compressed primary data array
+                if isinstance(hdul[1], fits.CompImageHDU):
+                    data = hdul[1].data
+                    meta = NormalizedMetadata(dict(hdul[1].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
+                    wcs = WCS(hdul[1].header)
+                    uncertainty = None
+                    unit = u.ct  # counts
+                # Uncompressed data and uncertainty arrays
+                else:
+                    data = hdul[0].data
+                    meta = NormalizedMetadata(dict(hdul[0].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
+                    wcs = WCS(hdul[0].header)
+                    uncertainty = StdDevUncertainty(hdul[1].data)
+                    unit = u.ct  # counts
+            # A three-length hdul can be a primary compressed data and uncertainty arrays
+            elif len(hdul) == 3:
+                data = hdul[1].data
+                meta = NormalizedMetadata(dict(hdul[1].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
+                wcs = WCS(hdul[1].header)
+                uncertainty = StdDevUncertainty(hdul[2].data)
+                unit = u.ct  # counts
 
-        return cls(data_obj)
+        return cls(
+            data.newbyteorder().byteswap(inplace=True),
+            wcs=wcs,
+            uncertainty=uncertainty,
+            meta=meta,
+            unit=unit,
+        )
 
-    def weight(self, kind: str = "default") -> np.ndarray:
-        """
-        Generate a corresponding weight map from the uncertainty array
-
-        Parameters
-        ----------
-        kind
-            specified element of the PUNCHData object to generate weights
+    @property
+    def weight(self) -> np.ndarray:
+        """Generate a corresponding weight map from the uncertainty array
 
         Returns
         -------
-        weight
+        np.ndarray
             weight map computed from uncertainty array
-
         """
 
-        return 1./self._cubes[kind].uncertainty.array
+        return 1.0 / self.uncertainty.array
 
-    def __contains__(self, kind) -> bool:
-        return kind in self._cubes
-
-    def __getitem__(self, kind) -> NDCube:
-        return self._cubes[kind]
-
-    def __setitem__(self, kind, data) -> None:
-        if type(data) is NDCube:
-            self._cubes[kind] = data
-        else:
-            raise Exception("PUNCHData entries must contain NDCube objects.")
-
-    def __delitem__(self, kind) -> None:
-        del self._cubes[kind]
-
-    def clear(self) -> None:
-        """remove all NDCubes"""
-        self._cubes.clear()
-
-    def update(self, other: PUNCHData) -> None:
-        """merge two PUNCHData objects"""
-        self._cubes.update(other)
-
-    def generate_id(self, kind: str = "default") -> str:
-        """
-        Dynamically generate an identification string for the given data product,
-            using the format 'Ln_ttO_yyyymmddhhmmss'
-        Parameters
-        ----------
-        kind
-            specified element of the PUNCHData object to write to file
+    @property
+    def filename_base(self) -> str:
+        """Dynamically generate an id string for the given data product, using the format 'Ln_ttO_yyyymmddhhmmss'
 
         Returns
         -------
-        id
+        str
             output identification string
-
         """
-        observatory = self._cubes[kind].meta['OBSRVTRY']
-        file_level = self._cubes[kind].meta['LEVEL']
-        type_code = self._cubes[kind].meta['TYPECODE']
-        date_obs = self._cubes[kind].date_obs
-        date_string = date_obs.strftime("%Y%m%d%H%M%S")
+        observatory = str(self.meta["OBSRVTRY"])
+        file_level = str(self.meta["LEVEL"])
+        type_code = str(self.meta["TYPECODE"])
+        date_string = str(self.meta.datetime.strftime("%Y%m%d%H%M%S"))
+        # TODO: include version number
+        return "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
 
-        filename = 'PUNCH_L' + file_level + '_' + type_code + observatory + '_' + date_string
+    @property
+    def is_blank(self) -> bool:
+        return self.meta['BLANK'] if 'BLANK' in self.meta else False
 
-        return filename
-
-    def write(self, filename: str, kind: str = "default", overwrite=True) -> Dict:
-        """
-        Write PUNCHData elements to file
+    def write(self, filename: str, overwrite=True) -> None:
+        """Write PUNCHData elements to file
 
         Parameters
         ----------
         filename
-            output filename (including path and file extension)
-        kind
-            specified element of the PUNCHData object to write to file
+            output filename (including path and file extension), extension must be .fits, .png, .jpg, or .jpeg
         overwrite
-            True will overwrite an exsiting file, False will create an execption if a file exists
+            True will overwrite an exiting file, False will create an exception if a file exists
 
         Returns
         -------
-        update_table
-            dictionary of pipeline metadata
+        None
+
+        Raises
+        -----
+        ValueError
+            If `filename` does not end in .fits, .png, .jpg, or .jpeg
 
         """
 
-        if filename.endswith('.fits'):
-            self._write_fits(filename, kind, overwrite=overwrite)
-        elif filename.endswith('.png'):
-            self._write_ql(filename, kind)
-        elif (filename.endswith('.jpg')) or (filename.endswith('.jpeg')):
-            self._write_ql(filename, kind)
+        if filename.endswith(".fits"):
+            self._write_fits(filename, overwrite=overwrite)
+        elif filename.endswith((".png", ".jpg", ".jpeg")):
+            self._write_ql(filename, overwrite=overwrite)
         else:
-            raise Exception('Please specify a valid file extension (.fits, .png, .jpg, .jpeg)')
+            raise ValueError(
+                "Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). "
+                f"Found: {os.path.splitext(filename)[1]}"
+            )
 
-        update_table = {'file_id': filename,
-                        'level': self.get_meta(key='LEVEL', kind=kind),
-                        'file_type': self.get_meta(key='TYPECODE', kind=kind),
-                        'observatory': self.get_meta(key='OBSRVTRY', kind=kind),
-                        'file_version': self.get_meta(key='VERSION', kind=kind),
-                        'software_version': self.get_meta(key='SOFTVERS', kind=kind),
-                        'date_acquired': self.get_meta(key='DATE-AQD', kind=kind),
-                        'date_obs': self.get_meta(key='DATE-OBS', kind=kind),
-                        'date_end': self.get_meta(key='DATE-END', kind=kind),
-                        'polarization': self.get_meta(key='POL', kind=kind),
-                        'state': self.get_meta(key='STATE', kind=kind),
-                        'processing_flow': self.get_meta(key='PROCFLOW', kind=kind)
-                        }
-
-        return update_table
-
-    def _write_fits(self, filename: str, kind: str = "default", overwrite=True) -> None:
-        """
-        Write PUNCHData elements to FITS files
+    def _write_fits(self, filename: str, overwrite: bool=True) -> None:
+        """Write PUNCHData elements to FITS files
 
         Parameters
         ----------
         filename
             output filename (including path and file extension)
-        kind
-            specified element of the PUNCHData object to write to file
         overwrite
-            True will overwrite an exsiting file, False will throw an exeception in that scenario
+            True will overwrite an exiting file, False will throw an exception in that scenario
 
         Returns
         -------
-
+        None
         """
+        header = self.create_header(None)  # uses template_path=none so the pipeline selects one based on metadata
 
-        # Populate elements to write to file
-        data = self._cubes[kind].data
-        uncert = self._cubes[kind].uncertainty
-        meta = self._cubes[kind].meta
-        wcs = self._cubes[kind].wcs
+        for entry in self.meta.history:
+            header["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
 
-        hdu_data = fits.PrimaryHDU()
-        hdu_data.data = data
-        # TODO: properly write meta to header
-        # for key, value in meta.items():
-        #     hdu_data.header[key] = value
+        hdu_data = fits.PrimaryHDU(data=self.data, header=header)
 
-        # TODO: remove protected usage by adding a new iterate method
-        for entry in self._history._entries:
-            hdu_data.header['HISTORY'] = f"{entry.datetime}: {entry.source}, {entry.comment}"
+        # TODO : Make an uncertainty header
+        hdu_uncertainty = fits.ImageHDU()
+        hdu_uncertainty.data = self.uncertainty.array
 
-        hdu_uncert = fits.ImageHDU()
-        hdu_uncert.data = uncert.array
-
-        hdul = fits.HDUList([hdu_data, hdu_uncert])
+        hdul = fits.HDUList([hdu_data, hdu_uncertainty])
 
         # Write to FITS
         hdul.writeto(filename, overwrite=overwrite)
 
-    def _write_ql(self, filename: str, kind: str = "default") -> None:
-        """
-        Write an 8-bit scaled version of the specified data array to a PNG file
+
+    def _write_ql(self, filename: str, overwrite: bool = True) -> None:
+        """Write an 8-bit scaled version of the specified data array to a PNG file
 
         Parameters
         ----------
         filename
             output filename (including path and file extension)
-        kind
-            specified element of the PUNCHData object to write to file
+        overwrite
+            True will overwrite an exiting file, False will throw an exception in that scenario
 
         Returns
         -------
         None
-
         """
+        if os.path.isfile(filename) and not overwrite:
+            raise OSError(f"File {filename} already exists."
+                           "If you mean to replace it then use the argument 'overwrite=True'.")
 
-        if self[kind].data.ndim != 2:
-            raise Exception("Specified output data should have two-dimensions.")
+
+        if self.data.ndim != 2:
+            raise ValueError("Specified output data should have two-dimensions.")
 
         # Scale data array to 8-bit values
-        output_data = np.int(np.fix(np.interp(self[kind].data, (self[kind].data.min(), self[kind].data.max()), (0, 2**8 - 1))))
+        output_data = int(
+            np.fix(
+                np.interp(
+                    self.data, (self.data.min(), self.data.max()), (0, 2**8 - 1)
+                )
+            )
+        )
 
         # Write image to file
-        matplotlib.image.saveim(filename, output_data)
+        mpl.image.saveim(filename, output_data)
 
-    def plot(self, kind: str = "default") -> None:
+    def create_header(self, template_path: str = None) -> fits.Header:
         """
-         Generate relevant plots to display or file
+        Validates / generates PUNCHData object metadata using data product header standards
 
-         Parameters
-         ----------
-         kind
-             specified element of the PUNCHData object to write to file
-
-         Returns
-         -------
-         None
-
-         """
-        self._cubes[kind].show()
-
-    def get_meta(self, key: str, kind: str = "default") -> Union[str, int, float]:
-        """
-        Retrieves meta data about a cube
         Parameters
         ----------
-        key
-        kind
+        template_path
+            specified header template file with which to validate
 
         Returns
         -------
-
+        fits.Header
+            a full constructed and filled FITS header that reflects the data
         """
-        return self._cubes[kind].meta[key]
+        if template_path is None:
+            template_path = str(Path(__file__).parent /
+                                f"data/HeaderTemplate/HeaderTemplate_L{self.meta.product_level}.csv")
 
-    def set_meta(self, key: str, value: Any, kind: str = "default") -> None:
-        """
-        Retrieves metadata about a cube
-        Parameters
-        ----------
-        key
-            specified metadata key
-        value
-            Updated metadata information
-        kind
-            specified element of the PUNCHData object to write to file
+        template = HeaderTemplate.load(template_path)
+        return template.fill(self.meta)
 
-        Returns
-        -------
-        None
 
-        """
-        self._cubes[kind].meta[key] = value
-
-    def date_obs(self, kind: str = "default") -> datetime:
-        return parse_datetime(self._cubes[kind].meta["date-obs"])
-
+    def duplicate_with_updates(self, data: np.ndarray=None,
+                               wcs: astropy.wcs.WCS= None,
+                               uncertainty: np.ndarray=None,
+                               meta=None,
+                               unit=None) -> PUNCHData:
+        """Copies a PUNCHData. Any field specified in the call is modified. All others are a direct copy. """
+        return PUNCHData(data=data if data is not None else self.data,
+                         wcs=wcs if wcs is not None else self.wcs,
+                         uncertainty=uncertainty if uncertainty is not None else self.uncertainty,
+                         meta=meta if meta is not None else self.meta,
+                         unit=unit if unit is not None else self.unit
+                         )

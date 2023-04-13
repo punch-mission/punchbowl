@@ -29,8 +29,7 @@ def sample_wcs() -> WCS:
     Generate a sample WCS for testing
     """
 
-    def _sample_wcs(naxis=2, crpix=(0, 0), crval=(0, 0), cdelt=(1, 1),
-                    ctype=("HPLN-ARC", "HPLT-ARC")):
+    def _sample_wcs(naxis=2, crpix=(0, 0), crval=(0, 0), cdelt=(1, 1), ctype=("HPLN-ARC", "HPLT-ARC")):
         generated_wcs = WCS(naxis=naxis)
 
         generated_wcs.wcs.crpix = crpix

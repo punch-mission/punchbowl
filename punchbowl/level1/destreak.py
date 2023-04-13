@@ -120,7 +120,13 @@ def destreak_task(data_object: PUNCHData) -> PUNCHData:
     """
     logger = get_run_logger()
     logger.info("destreak started")
-    # TODO: do destreaking in here
+
+    # todo: extract from metadata
+    exposure_time = 1
+    readout_line_time = 0.1
+    reset_line_time = 0.1
+    new_data = correct_streaks(data_object.data, exposure_time, readout_line_time, reset_line_time)
+    data_object = data_object.duplicate_with_updates(data=new_data)
     logger.info("destreak finished")
     data_object.meta.history.add_now("LEVEL1-destreak", "image destreaked")
     return data_object

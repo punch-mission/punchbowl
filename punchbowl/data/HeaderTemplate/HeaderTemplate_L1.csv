@@ -21,7 +21,8 @@ comment,COMMENT,----- File Type and Provenance ---------------------------------
 keyword,FILENAME,PUNCH_L1_P11_20220204134800_0.fits,name of file,str,dynamic
 keyword,LEVEL,1,product Level,int,dynamic
 keyword,OBSTYPE,unpolarized NFI image,plain text observation,str,dynamic
-keyword,TYPECODE,P1,observation product type code,str,dynamic
+keyword,OBSRVTRY,,which observatory data derives from,str,dynamic
+keyword,TYPECODE,,observation product type code,str,dynamic
 keyword,L0PARENT,PUNCH_L0_P11_20220204134800_0.fits,name of parent file,str,dynamic
 keyword,PIPEVRSN,1.2.3,PUNCHPipe software version number,str,dynamic
 keyword,FILE_RAW,PUNCH_L0_P11_20220204134800_0.fits,raw telemetry filename,str,dynamic
@@ -29,7 +30,7 @@ keyword,ORIGIN,SwRI,institution responsible for creating the file,str,dynamic
 section,COMMENT,----- Temporal Information ---------------------------------------------,,str,static
 keyword,TIMESYS,UTC,principal time system,str,static
 keyword,DATE-BEG,2022-02-03T00:00:36.72,UTC time observation,str,dynamic
-keyword,DATE-OBS,2022-02-03T00:00:36.73,UTC reference time at observatory,str,dynamic
+keyword,DATE-OBS,,UTC reference time at observatory,str,dynamic
 keyword,DATE-END,2022-02-03T00:00:36.73,UTC time of observation end at observatory,str,dynamic
 keyword,DATE,2022-02-03T00:09:11.29,UTC file generation date and time,str,dynamic
 section,COMMENT,----- Instrument and Spacecraft State ----------------------------------,,str,static
@@ -43,102 +44,22 @@ keyword,TELESCOP,PUNCH-1,satellite name,str,dynamic
 keyword,OBJECT,Heliosphere white light,object observed,str,dynamic
 section,COMMENT,----- World Coordinate System ------------------------------------------,,str,static
 keyword,WCSAXES,2,WCS number of axes,int,dynamic
-keyword,CTYPE1,RA---TAN-SIP,TAN (gnomic) projection + SIP distortions,str,dynamic
-keyword,CTYPE2,DEC--TAN-SIP,TAN (gnomic) projection + SIP distortions,str,dynamic
+keyword,CTYPE1,HPLN-ARC,,str,dynamic
+keyword,CTYPE2,HPLT-ARC,,str,dynamic
 keyword,EQUINOX,2000.0,equatorial coordinates definition (yr),float,dynamic
 keyword,LONPOLE,180.0,[deg] native longitude of the celestial pole,float,dynamic
 keyword,LATPOLE,0.0,[deg] native latitude of the celestial pole,float,dynamic
-keyword,CRVAL1,48.7533631556,[deg] RA  of reference point,float,dynamic
-keyword,CRVAL2,28.6608936382,[deg] DEC of reference point,float,dynamic
-keyword,CRPIX1,1024.5,[pixel] X reference pixel,float,dynamic
-keyword,CRPIX2,1024.5,[pixel] Y reference pixel,float,dynamic
+keyword,CRVAL1,1,,float,dynamic
+keyword,CRVAL2,1,,float,dynamic
+keyword,CRPIX1,0,[pixel] X reference pixel,float,dynamic
+keyword,CRPIX2,0,[pixel] Y reference pixel,float,dynamic
 keyword,CUNIT1,deg,X pixel scale units,str,dynamic
 keyword,CUNIT2,deg,Y pixel scale units,str,dynamic
-keyword,CD1_1,0.00148858027091,WCS coordinate description matrix,float,dynamic
-keyword,CD1_2,-0.0246622403061,WCS coordinate description matrix,float,dynamic
-keyword,CD2_1,0.0246756030713,WCS coordinate description matrix,float,dynamic
-keyword,CD2_2,0.00147416682817,WCS coordinate description matrix,float,dynamic
-keyword,IMAGEW,2048,"image width,  in pixels.",int,dynamic
-keyword,IMAGEH,2048,"image height, in pixels.",int,dynamic
-keyword,A_ORDER,2,"polynomial order, axis 1",int,dynamic
-keyword,A_0_0,0,distortion coefficient,float,dynamic
-keyword,A_0_1,0,distortion coefficient,float,dynamic
-keyword,A_0_2,2.07432634079E-06,distortion coefficient,float,dynamic
-keyword,A_1_0,0,distortion coefficient,float,dynamic
-keyword,A_1_1,-1.30414910308E-06,distortion coefficient,float,dynamic
-keyword,A_2_0,2.76593609878E-07,distortion coefficient,float,dynamic
-keyword,B_ORDER,2,"polynomial order, axis 2",int,dynamic
-keyword,B_0_0,0,distortion coefficient,float,dynamic
-keyword,B_0_1,0,distortion coefficient,float,dynamic
-keyword,B_0_2,-1.70573575323E-06,distortion coefficient,float,dynamic
-keyword,B_1_0,0,distortion coefficient,float,dynamic
-keyword,B_1_1,-3.75950597145E-07,distortion coefficient,float,dynamic
-keyword,B_2_0,-7.75683480817E-08,distortion coefficient,float,dynamic
-keyword,AP_ORDER,2,"inv polynomial order, axis 1",int,dynamic
-keyword,AP_0_0,-9.83213034401E-06,distortion coefficient,float,dynamic
-keyword,AP_0_1,-6.91010120998E-06,distortion coefficient,float,dynamic
-keyword,AP_0_2,-2.07430767846E-06,distortion coefficient,float,dynamic
-keyword,AP_1_0,1.48327264523E-06,distortion coefficient,float,dynamic
-keyword,AP_1_1,1.30413755726E-06,distortion coefficient,float,dynamic
-keyword,AP_2_0,-2.76587367172E-07,distortion coefficient,float,dynamic
-keyword,BP_ORDER,2,"inv polynomial order, axis 2",int,dynamic
-keyword,BP_0_0,3.7547963815E-06,distortion coefficient,float,dynamic
-keyword,BP_0_1,3.57240936682E-06,distortion coefficient,float,dynamic
-keyword,BP_0_2,1.70572199361E-06,distortion coefficient,float,dynamic
-keyword,BP_1_0,7.72514526182E-07,distortion coefficient,float,dynamic
-keyword,BP_1_1,3.75949260662E-07,distortion coefficient,float,dynamic
-keyword,BP_2_0,7.75706004712E-08,distortion coefficient,float,dynamic
-keyword,CTYPE1A,RA---ZPN,WCS axis X,str,dynamic
-keyword,CTYPE2A,DEC--ZPN,WCS axis Y,str,dynamic
-keyword,CUNIT1A,deg,"WCS axis X units (theta_x, longitude)",str,dynamic
-keyword,CUNIT2A,deg,"WCS axis Y units (theta_y, latitude)",str,dynamic
-keyword,PC1_1A,0.9944226355,WCS coordinate description matrix,float,dynamic
-keyword,PC1_2A,-0.0572686183,WCS coordinate description matrix,float,dynamic
-keyword,PC2_1A,0.05721285161,WCS coordinate description matrix,float,dynamic
-keyword,PC2_2A,0.994136111,WCS coordinate description matrix,float,dynamic
-keyword,CRPIX1A,495.773,pixel coordinate of reference point,float,dynamic
-keyword,CRPIX2A,507.555,pixel coordinate of reference point,float,dynamic
-keyword,CRVAL1A,249.3460044,[arcsec] x-coordinate of reference point,float,dynamic
-keyword,CRVAL2A,-27.25011692,[arcsec] y-coordinate of reference point,float,dynamic
-keyword,CDELT1A,-0.042305,[arcsec] average pixel scale along axis 1,float,dynamic
-keyword,CDELT2A,0.042305,[arcsec] average pixel scale along axis 2,float,dynamic
-keyword,PV1_1A,0,[deg] native longitude of the reference point,int,dynamic
-keyword,PV1_2A,90,[deg] native latitude of the reference point,int,dynamic
-keyword,PV1_3A,180,[deg] alias for LONPOLE (has precedence),int,dynamic
-keyword,PV2_0A,-1.99E-08,ZPN projection parameters m=0,float,dynamic
-keyword,PV2_1A,1.005010009,ZPN projection parameters m=1,float,dynamic
-keyword,PV2_2A,0.07295829803,ZPN projection parameters m=2,float,dynamic
-keyword,PV2_3A,0.2752920091,ZPN projection parameters m=3,float,dynamic
-keyword,PV2_4A,-0.7018809915,ZPN projection parameters m=4,float,dynamic
-keyword,PV2_5A,1.97518003,ZPN projection parameters m=5,float,dynamic
-keyword,LONPOLEA,180,[deg] native longitude of the celestial pole,int,dynamic
-keyword,LATPOLEA,0,[deg] native latitude of the celestial pole,int,dynamic
-keyword,WCSNAMEB,Helioprojective Zenith Polynomial,coordinate System,str,dynamic
-keyword,CTYPE1B,HPLN-ZPN,WCS axis X,str,dynamic
-keyword,CTYPE2B,HPLT-ZPN,WCS axis Y,str,dynamic
-keyword,CUNIT1B,deg,"WCS axis X units (theta_x, longitude)",str,dynamic
-keyword,CUNIT2B,deg,"WCS axis Y units (theta_y, latitude)",str,dynamic
-keyword,CRPIX1B,495.773,X Pixel coordinate of reference point,float,dynamic
-keyword,CRPIX2B,507.555,Y Pixel coordinate of reference point,float,dynamic
-keyword,PC1_1B,0.9771852982,WCS coordinate description matrix,float,dynamic
-keyword,PC1_2B,0.1935948273,WCS coordinate description matrix,float,dynamic
-keyword,PC2_1B,-0.1934063097,WCS coordinate description matrix,float,dynamic
-keyword,PC2_2B,0.9769037402,WCS coordinate description matrix,float,dynamic
-keyword,CDELT1B,0.042305,[arcsec] average pixel scale along axis 1,float,dynamic
-keyword,CDELT2B,0.042305,[arcsec] average pixel scale along axis 2,float,dynamic
-keyword,CRVAL1B,31.96918657,[arcsec] x-coordinate of reference point,float,dynamic
-keyword,CRVAL2B,-7.215190506,[arcsec] y-coordinate of reference point,float,dynamic
-keyword,PV1_1B,0,[deg] native longitude of the reference point,int,dynamic
-keyword,PV1_2B,90,[deg] native latitude of the reference point,int,dynamic
-keyword,PV1_3B,180,[deg] alias for LONPOLE (has precedence),int,dynamic
-keyword,PV2_0B,-1.99E-08,ZPN projection parameters m=0,float,dynamic
-keyword,PV2_1B,1.005010009,ZPN projection parameters m=1,float,dynamic
-keyword,PV2_2B,0.07295829803,ZPN projection parameters m=2,float,dynamic
-keyword,PV2_3B,0.2752920091,ZPN projection parameters m=3,float,dynamic
-keyword,PV2_4B,-0.7018809915,ZPN projection parameters m=4,float,dynamic
-keyword,PV2_5B,1.97518003,ZPN projection parameters m=5,float,dynamic
-keyword,LONPOLEB,180,[deg] native longitude of the celestial pole,int,dynamic
-keyword,LATPOLEB,0,[deg] native latitude of the celestial pole,int,dynamic
+keyword,CDELT1,0.1,,float,dynamic
+keyword,CDELT2,0.1,,float,dynamic
+keyword,CNAME1,HPC lon,,str,dynamic
+keyword,CNAME2,HPC lat,,str,dynamic
+keyword,MJDREF,0.0,,float,dynamic
 section,COMMENT,----- Camera and Readout State -----------------------------------------,,str,static
 keyword,DETECTOR,CCD 2Kx2K,CCD detector 2048x2048 pixels,str,dynamic
 keyword,EXPTIME,3.0,[s] commanded exposure time,float,dynamic

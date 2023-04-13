@@ -482,14 +482,12 @@ class PUNCHData(NDCube):
         str
             output identification string
         """
-        observatory = self.meta["OBSRVTRY"]
-        file_level = self.meta["LEVEL"]
-        type_code = self.meta["TYPECODE"]
-        date_string = self.meta.datetime.strftime("%Y%m%d%H%M%S")
+        observatory = str(self.meta["OBSRVTRY"])
+        file_level = str(self.meta["LEVEL"])
+        type_code = str(self.meta["TYPECODE"])
+        date_string = str(self.meta.datetime.strftime("%Y%m%d%H%M%S"))
         # TODO: include version number
-        return (
-            "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
-        )
+        return "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
 
     @property
     def is_blank(self) -> bool:

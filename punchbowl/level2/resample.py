@@ -6,6 +6,7 @@ import numpy as np
 import reproject
 from astropy.wcs import WCS
 from prefect import flow, get_run_logger, task
+from astropy.nddata import StdDevUncertainty
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
@@ -46,8 +47,15 @@ def reproject_array(input_array: np.ndarray,
     ------------
     >>> reprojected_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
     """
+    reconstructed_wcs = WCS(naxis=2)
+    reconstructed_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    reconstructed_wcs.wcs.cunit = "deg", "deg"
+    reconstructed_wcs.wcs.cdelt = input_wcs.wcs.cdelt
+    reconstructed_wcs.wcs.crpix = input_wcs.wcs.crpix
+    reconstructed_wcs.wcs.crval = input_wcs.wcs.crval
+    reconstructed_wcs.wcs.cname = "HPC lon", "HPC lat"
 
-    return reproject.reproject_adaptive((input_array, input_wcs),
+    return reproject.reproject_adaptive((input_array, reconstructed_wcs),
                                         output_wcs,
                                         output_shape,
                                         roundtrip_coords=False,
@@ -63,5 +71,5 @@ def reproject_many_flow(data: List[PUNCHData], trefoil_wcs: WCS, trefoil_shape: 
                           for d in data]
 
     return [d.duplicate_with_updates(data=data_result[i].result(),
-                                     uncertainty=uncertainty_result[i].result(),
+                                     uncertainty=StdDevUncertainty(uncertainty_result[i].result()),
                                      wcs=trefoil_wcs) for i, d in enumerate(data)]

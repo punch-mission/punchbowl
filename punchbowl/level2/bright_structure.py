@@ -1,10 +1,12 @@
+from typing import List
+
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
 
 
 @task
-def identify_bright_structures_task(data_object: PUNCHData) -> PUNCHData:
+def identify_bright_structures_task(data_list: List[PUNCHData]) -> List[PUNCHData]:
     """Prefect task to perform bright structure identification
 
     Parameters
@@ -21,6 +23,7 @@ def identify_bright_structures_task(data_object: PUNCHData) -> PUNCHData:
     logger.info("identify_bright_structures_task started")
     # TODO: actually do the identification
     logger.info("identify_bright_structures_task ended")
-    data_object.meta.history.add_now("LEVEL2-bright_structures",
-                                     "bright structure identification completed")
-    return data_object
+    for data_object in data_list:
+        data_object.meta.history.add_now("LEVEL2-bright_structures",
+                                         "bright structure identification completed")
+    return data_list

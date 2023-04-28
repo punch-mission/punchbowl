@@ -418,40 +418,20 @@ class PUNCHData(NDCube):
             loaded object
         """
 
-        # TODO: This could be done more elegantly in a future task
-        # TODO: Below, are the units always counts for the primary data array????
-
         with fits.open(path) as hdul:
-            # A one-length hdul can be a primary uncompressed data array
-            if len(hdul) == 1:
-                data = hdul[0].data
-                meta = NormalizedMetadata(dict(hdul[0].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
-                wcs = WCS(hdul[0].header)
+            hdu_index = next((i for i, hdu in enumerate(hdul) if hdu.data is not None), 0)
+            primary_hdu = hdul[hdu_index]
+            header = primary_hdu.header
+            data = primary_hdu.data
+            meta = NormalizedMetadata(dict(header), required_fields=PUNCH_REQUIRED_META_FIELDS)
+            wcs = WCS(header)
+            unit = u.ct
+
+            if len(hdul) > hdu_index + 1:
+                secondary_hdu = hdul[hdu_index+1]
+                uncertainty = StdDevUncertainty(secondary_hdu.data)
+            else:
                 uncertainty = None
-                unit = u.ct  # counts
-            # A two-length hdul can be a compressed primary data array, or uncompressed data and uncertainty arrays
-            elif len(hdul) == 2:
-                # Compressed primary data array
-                if isinstance(hdul[1], fits.CompImageHDU):
-                    data = hdul[1].data
-                    meta = NormalizedMetadata(dict(hdul[1].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
-                    wcs = WCS(hdul[1].header)
-                    uncertainty = None
-                    unit = u.ct  # counts
-                # Uncompressed data and uncertainty arrays
-                else:
-                    data = hdul[0].data
-                    meta = NormalizedMetadata(dict(hdul[0].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
-                    wcs = WCS(hdul[0].header)
-                    uncertainty = StdDevUncertainty(hdul[1].data)
-                    unit = u.ct  # counts
-            # A three-length hdul can be a primary compressed data and uncertainty arrays
-            elif len(hdul) == 3:
-                data = hdul[1].data
-                meta = NormalizedMetadata(dict(hdul[1].header), required_fields=PUNCH_REQUIRED_META_FIELDS)
-                wcs = WCS(hdul[1].header)
-                uncertainty = StdDevUncertainty(hdul[2].data)
-                unit = u.ct  # counts
 
         return cls(
             data.newbyteorder().byteswap(inplace=True),
@@ -482,12 +462,14 @@ class PUNCHData(NDCube):
         str
             output identification string
         """
-        observatory = str(self.meta["OBSRVTRY"])
-        file_level = str(self.meta["LEVEL"])
-        type_code = str(self.meta["TYPECODE"])
-        date_string = str(self.meta.datetime.strftime("%Y%m%d%H%M%S"))
+        observatory = self.meta["OBSRVTRY"]
+        file_level = self.meta["LEVEL"]
+        type_code = self.meta["TYPECODE"]
+        date_string = self.meta.datetime.strftime("%Y%m%d%H%M%S")
         # TODO: include version number
-        return "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
+        return (
+            "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
+        )
 
     @property
     def is_blank(self) -> bool:
@@ -543,17 +525,21 @@ class PUNCHData(NDCube):
         for entry in self.meta.history:
             header["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
 
-        hdu_data = fits.PrimaryHDU(data=self.data, header=header)
+        hdul_list = []
 
-        # TODO : Make an uncertainty header
-        hdu_uncertainty = fits.ImageHDU()
-        hdu_uncertainty.data = self.uncertainty.array
+        hdu_dummy = fits.PrimaryHDU()
+        hdul_list.append(hdu_dummy)
 
-        hdul = fits.HDUList([hdu_data, hdu_uncertainty])
+        hdu_data = fits.CompImageHDU(data=self.data, header=header)
+        hdul_list.append(hdu_data)
 
-        # Write to FITS
+        if self.uncertainty is not None:
+            hdu_uncertainty = fits.CompImageHDU(data = self.uncertainty.array)
+            hdul_list.append(hdu_uncertainty)
+
+        hdul = fits.HDUList(hdul_list)
+
         hdul.writeto(filename, overwrite=overwrite)
-
 
     def _write_ql(self, filename: str, overwrite: bool = True) -> None:
         """Write an 8-bit scaled version of the specified data array to a PNG file

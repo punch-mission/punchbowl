@@ -9,6 +9,8 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from pytest import fixture
 
+from ndcube import NDCube
+
 from punchbowl.data import (
     PUNCHData,
     History,
@@ -20,7 +22,11 @@ from punchbowl.data import (
 )
 
 TESTDATA_DIR = os.path.dirname(__file__)
+SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "PUNCH_L2_WQM_20080103071000_uncomp.fits")
+SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "PUNCH_L2_WQM_20080103071000.fits")
+SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
 SAMPLE_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_template.csv")
+
 
 # Test fixtures
 @fixture
@@ -29,7 +35,8 @@ def sample_wcs() -> WCS:
     Generate a sample WCS for testing
     """
 
-    def _sample_wcs(naxis=2, crpix=(0, 0), crval=(0, 0), cdelt=(1, 1), ctype=("HPLN-ARC", "HPLT-ARC")):
+    def _sample_wcs(naxis=2, crpix=(0, 0), crval=(0, 0), cdelt=(1, 1),
+                    ctype=("HPLN-ARC", "HPLT-ARC")):
         generated_wcs = WCS(naxis=naxis)
 
         generated_wcs.wcs.crpix = crpix
@@ -43,11 +50,31 @@ def sample_wcs() -> WCS:
 
 
 @fixture
+def sample_data():
+    return PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
+
+
+@fixture
 def sample_data_random(shape: tuple = (50, 50)) -> np.ndarray:
     """
     Generate some random data for testing
     """
     return np.random.random(shape)
+
+
+@fixture
+def simple_ndcube():
+    # Taken from NDCube documentation
+    data = np.random.rand(4, 4, 5)
+    wcs = astropy.wcs.WCS(naxis=3)
+    wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
+    wcs.wcs.cunit = "Angstrom", "deg", "deg"
+    wcs.wcs.cdelt = 0.2, 0.5, 0.4
+    wcs.wcs.crpix = 0, 2, 2
+    wcs.wcs.crval = 10, 0.5, 1
+    wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
+    nd_obj = NDCube(data=data, wcs=wcs)
+    return nd_obj
 
 
 @fixture
@@ -88,11 +115,42 @@ def sample_punchdata_list(sample_punchdata):
     return [sample_pd1, sample_pd2]
 
 
+def test_sample_data_creation(sample_data):
+    assert isinstance(sample_data, PUNCHData)
+
+
+def test_generate_from_filename_uncompressed():
+    pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_UNCOMPRESSED)
+    assert isinstance(pd, PUNCHData)
+    assert isinstance(pd.data, np.ndarray)
+
+
+def test_generate_from_filename_compressed():
+    pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
+    assert isinstance(pd, PUNCHData)
+    assert isinstance(pd.data, np.ndarray)
+
+
+def test_write_data(sample_data):
+    with pytest.warns(RuntimeWarning):
+        sample_data.meta["LEVEL"] = 1
+        sample_data.meta["TYPECODE"] = "XX"
+        sample_data.meta["OBSRVTRY"] = "Y"
+        sample_data.meta["VERSION"] = 0.1
+        sample_data.meta["SOFTVERS"] = 0.1
+        sample_data.meta["DATE-OBS"] = str(datetime.now())
+        sample_data.meta["DATE-AQD"] = str(datetime.now())
+        sample_data.meta["DATE-END"] = str(datetime.now())
+        sample_data.meta["POL"] = "M"
+
+        sample_data.write(SAMPLE_WRITE_PATH)
+        assert os.path.isfile(SAMPLE_WRITE_PATH)
+
+
 def test_filename_base_generation(sample_punchdata):
     actual = sample_punchdata().filename_base
     expected = "PUNCH_L0_XXY_20230101000001"
     assert actual == expected
-
 
 @fixture
 def empty_history():

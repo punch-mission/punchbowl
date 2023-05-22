@@ -29,7 +29,7 @@ setup(
         "reproject"
     ],
     extras_require={
-        "test": ["pytest", "coverage"],
+        "test": ["pytest", "coverage", 'pytest-runner', 'pytest-mpl'],
         "dev": ["pre-commit"],
         "docs": ["jupyter-book"],
     },

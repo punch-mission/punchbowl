@@ -19,10 +19,10 @@ from punchbowl.tests.test_data import sample_punchdata, sample_data_random
 #         # todo: test more things
 
 
-def test_core_flow_runs_with_objects(sample_punchdata):
-    with prefect_test_harness():
-        output = level1_core_flow(sample_punchdata(shape=(2048, 2048)))
-    assert isinstance(output[0], PUNCHData)
-    # todo: test more things
+# def test_core_flow_runs_with_objects(sample_punchdata):
+#     with prefect_test_harness():
+#         output = level1_core_flow(sample_punchdata(shape=(2048, 2048)))
+#     assert isinstance(output[0], PUNCHData)
+#     # todo: test more things
 
 

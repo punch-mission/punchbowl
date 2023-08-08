@@ -152,6 +152,7 @@ def test_filename_base_generation(sample_punchdata):
     expected = "PUNCH_L0_XXY_20230101000001"
     assert actual == expected
 
+
 @fixture
 def empty_history():
     return History()

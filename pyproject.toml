@@ -41,5 +41,4 @@ line-length=120
 markers = [
     "prefect_test: a test that integrates with Prefect",
     "regression: a regression test, likely slow",
-    "serial",
 ]

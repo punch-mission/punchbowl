@@ -1,13 +1,18 @@
-LEVEL:
-    'FITS Required': True
+Level:
+    'FITS Required': {
+        "BITPIX": -32
+    }
     'Documentation, Contact, and Collection Metadata': {
         'DESCRPTN': 'PUNCH Level-1 data, Calibrated instrumental units in camera coordinates'
-        }
+    }
     'File Type and Provenance': {
         'LEVEL': 1
     }
     'Temporal Information': True
-    'Instrument and Spacecraft State': True
+    'Instrument and Spacecraft State': {
+        'OBSLAYR2': False
+        'OBSLAYR3': False
+    }
     'World Coordinate System': True
     'Camera and Readout State': True
     'Onboard Image Processing': True
@@ -18,14 +23,58 @@ LEVEL:
     'FIXITY': True
     'History': True
 
-CL1:
+P1:
+    'NAXIS': 2
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'NAXIS3': False
+    'TITLE': 'PUNCH Level-1 WFI-1 Polarized Image'
+    'OBSTYPE': 'Polarized WFI image'
+    'TYPECODE': 'P1'
+    'FILTER': 'P1'
+    'OBS-MODE': 'Polar_MZP'
+    'OBSLAYR1': 'Polar_M'
+    'POLAR': -60
+    'INSTRUME': 'WFI'
+    'TELESCOP': 'PUNCH-1'
+
+P2:
+    'NAXIS': 2
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'NAXIS3': False
+    'TITLE': 'PUNCH Level-1 WFI-1 Polarized Image'
+    'OBSTYPE': 'Polarized WFI image'
+    'TYPECODE': 'P2'
+    'FILTER': 'P2'
+    'OBS-MODE': 'Polar_MZP'
+    'OBSLAYR1': 'Polar_Z'
+    'POLAR': 0
+    'INSTRUME': 'WFI'
+    'TELESCOP': 'PUNCH-1'
+
+P3:
+    'NAXIS': 2
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'NAXIS3': False
+    'TITLE': 'PUNCH Level-1 WFI-1 Polarized Image'
+    'OBSTYPE': 'Polarized WFI image'
+    'TYPECODE': 'P3'
+    'FILTER': 'P3'
+    'OBS-MODE': 'Polar_MZP'
+    'OBSLAYR1': 'Polar_P'
+    'POLAR': +60
+    'INSTRUME': 'WFI'
+    'TELESCOP': 'PUNCH-1'
+
+CL:
     'NAXIS': 2
     'NAXIS1': 2048
     'NAXIS2': 2048
     'NAXIS3': False
     'TITLE': 'PUNCH Level-1 WFI-1 Clear Image'
     'OBSTYPE': 'Unpolarized WFI image'
-    'OBSRVTRY': 'PUNCH'
     'TYPECODE': 'CL'
     'FILTER': 'Clear'
     'OBS-MODE': 'Unpolarized'

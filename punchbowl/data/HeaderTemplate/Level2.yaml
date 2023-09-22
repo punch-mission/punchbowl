@@ -1,0 +1,65 @@
+Level:
+    'FITS Required': {
+        "BITPIX": -32
+    }
+    'Documentation, Contact, and Collection Metadata': {
+        'DESCRPTN': 'PUNCH Level-2 data, Composite mosaic in output coordinates'
+    }
+    'File Type and Provenance': {
+        'LEVEL': 2
+    }
+    'Temporal Information': True
+    'Instrument and Spacecraft State': True
+    'World Coordinate System': True
+    'Camera and Readout State': True
+    'Onboard Image Processing': True
+    'Calibration Data': True
+    'Image Statistics and Properties': True
+    'Solar Reference Data': True
+    'Spacecraft Location & Environment': {
+        'LOS_ALT': False
+        'HCIX_VOB': False
+        'HCIY_VOB': False
+        'HCIZ_VOB': False
+        'HAEX_OBS': False
+        'HAEY_OBS': False
+        'HAEZ_OBS': False
+    }
+    'FIXITY': True
+    'History': True
+
+MP:
+    'NAXIS': 3
+    'NAXIS1': 3
+    'NAXIS2': 4096
+    'NAXIS3': 4096
+    'TITLE': 'PUNCH Level-2 Polarized Mosaic'
+    'OBSTYPE': 'Polarized mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'MP'
+    'FILTER': False
+    'OBS-MODE': 'Polar_MZP'
+    'OBSLAYR1': 'Polar_M'
+    'OBSLAYR2': 'Polar_Z'
+    'OBSLAYR3': 'Polar_P'
+    'POLAR': False
+    'INSTRUME': 'NFI+WFI MOSAIC'
+    'TELESCOP': 'PUNCH-1-2-3-4'
+
+MC:
+    'NAXIS': 2
+    'NAXIS1': 4096
+    'NAXIS2': 4096
+    'NAXIS3': False
+    'TITLE': 'PUNCH Level-2 Unpolarized Mosaic'
+    'OBSTYPE': 'Unpolarized mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'MC'
+    'FILTER': False
+    'OBS-MODE': 'Unpolarized'
+    'OBSLAYR1': 'Clear'
+    'OBSLAYR2': False
+    'OBSLAYR3': False
+    'POLAR': False
+    'INSTRUME': 'NFI+WFI MOSAIC'
+    'TELESCOP': 'PUNCH-1-2-3-4'

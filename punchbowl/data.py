@@ -6,7 +6,7 @@ from collections import namedtuple
 from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Union
 
 import astropy.units as u
 import astropy.wcs.wcsapi
@@ -16,8 +16,10 @@ import pandas as pd
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from astropy.io.fits import Header, Card
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
+import yaml
 
 from punchbowl.errors import MissingMetadataError
 
@@ -166,7 +168,7 @@ class NormalizedMetadata(Mapping):
                     raise RuntimeError(f"{key} is missing."
                                        f"According to required_keys it must be a key in NormalizedMetadata.")
 
-    def __iter__(self) -> Dict:
+    def __iter__(self):
         return self._contents.__iter__()
 
     @property
@@ -223,117 +225,93 @@ class HeaderTemplate:
     - TODO : make custom types of warnings more specific so that they can be filtered
     """
 
-    def __init__(self, template: pd.DataFrame=None) -> None:
-        self._table = (
-            pd.DataFrame(columns=HEADER_TEMPLATE_COLUMNS)
-            if template is None
-            else template
-        )
-        if not np.all(self._table.columns.values == HEADER_TEMPLATE_COLUMNS):
-            raise ValueError(
-                f"HeaderTemplate must have columns {HEADER_TEMPLATE_COLUMNS}"
-                f"Found: {self._table.columns.values}"
-            )
+    def __init__(self, omniheader: pd.DataFrame, level_definition: Dict, product_definition: Dict) -> None:
+        self.omniheader = omniheader
+        self.level_definition = level_definition
+        self.product_definition = product_definition
 
     @classmethod
-    def load(cls, path: str) -> HeaderTemplate:
-        """Loads an input template file to generate a header object.
+    def from_file(cls, omniheader_path: str, definition_path: str, product_code: str):
+        omniheader = pd.read_csv(omniheader_path, na_filter=False)
+        with open(definition_path, 'r') as f:
+            contents = yaml.safe_load(f)
+        return cls(omniheader, contents['LEVEL'], contents[product_code])
+
+
+    @staticmethod
+    def merge_keys(omniheader, level_definition, product_definition):
+        """Merge two sets of FITS header recipes
 
         Parameters
         ----------
-        path
-            path to input header template file
+        omniheader : DataFrame
+            Omnibus file of all header values, everywhere
+        level_definition : Dict
+            First dictionary of keywords / sections
+        product_definition : Dict
+            Second dictionary of keywords, to be merged into the first
 
         Returns
         -------
-        HeaderTemplate
-            header template with data from a specified CSV
+        Dict
+            Merged section and keyword dictionary
         """
+        output_keys = level_definition.copy()
 
-        if path.endswith(".csv"):
-            template = HeaderTemplate(template=pd.read_csv(path, keep_default_na=False))
+        for key in product_definition:
+            section_num = omniheader.loc[omniheader['KEYWORD'] == key]['SECTION'].values[0]
+            section_str = (omniheader.loc[omniheader['SECTION'] == section_num]['VALUE'].values[0]).strip('- ')
+
+            if output_keys[section_str]:
+                output_keys[section_str] = {key: product_definition[key]}
+            else:
+                output_keys[section_str] = output_keys[section_str] | {key: product_definition[key]}
+
+        return output_keys
+
+    @staticmethod
+    def _prepare_row_output(row, metadata: NormalizedMetadata) -> Union[int, float, np.double]:
+        conversion_func = {'int': int, 'float': float, 'double': np.double, 'str': str}
+        if row['VALUE'] != '':
+            return conversion_func[row['DATATYPE']](row['VALUE'])
         else:
-            raise ValueError(
-                "Header template must be a CSV file."
-                f"Found {os.path.splitext(path)[1]} file"
-            )
+            if row['KEYWORD'] not in metadata:
+                raise MissingMetadataError(f"{row['KEYWORD']} was not found in the metadata.")
+            else:
+                return metadata[row['KEYWORD']]
 
-        return template
+    def fill(self, metadata: NormalizedMetadata):
+        output_header = Header()
 
-    def fill(self, meta: NormalizedMetadata) -> fits.Header:
-        """Parses an input template header comma separated value (CSV) file to generate an astropy header object.
+        output_keys = HeaderTemplate.merge_keys(self.omniheader, self.level_definition, self.product_definition)
 
-        Parameters
-        ----------
-        meta : NormalizedMetadata
-            the contents of the metadata you wish to fill with
+        for i in np.unique(self.omniheader['SECTION']):
+            section_df = self.omniheader.loc[self.omniheader['SECTION'] == i]
+            section_str = section_df.iloc[0]['VALUE'].strip('- ')
 
-        Returns
-        -------
-        astropy.io.fits.header
-            Header with filled fields
-        """
-        hdr = fits.Header()
+            if section_str in output_keys:
+                for _, row in section_df.iterrows():
+                    if row['TYPE'] == 'section':
+                        output_header.append(('COMMENT', row['VALUE']))
+                    elif row['TYPE'] == 'keyword':
+                        value = HeaderTemplate._prepare_row_output(row, metadata)
 
-        type_converter = {"str": str, "int": int, "float": float}
-
-        for _, entry in self._table.iterrows():
-            if entry["TYPE"] == "section":
-                if len(entry["COMMENT"]) > 72:
-                    warnings.warn(
-                        "Section text exceeds 80 characters, EXTEND will be used.",
-                        RuntimeWarning,
-                    )
-                hdr.append(
-                    ("COMMENT", ("----- " + entry["COMMENT"] + " ").ljust(72, "-")),
-                    end=True,
-                )
-
-            elif entry["TYPE"] == "comment":
-                hdr.append(("COMMENT", entry["VALUE"]), end=True)
-
-            elif entry["TYPE"] == "keyword":
-                if len(entry["VALUE"]) + len(entry["COMMENT"]) > 72:
-                    warnings.warn(
-                        "Section text exceeds 80 characters, EXTEND will be used.",
-                        RuntimeWarning,
-                    )
-
-                hdr.append(
-                    (
-                        entry["KEYWORD"],
-                        type_converter[entry["DATATYPE"]](entry["VALUE"])
-                        if entry["VALUE"]
-                        else "",
-                        entry["COMMENT"],
-                    ),
-                    end=True,
-                )
-
-        empty_keywords = set(self.find_empty())
-        for key, value in meta.items():
-            if key in hdr and key in empty_keywords and value != "":  # only update if it's not the empty string
-                hdr[key] = value
-                empty_keywords.remove(key)
-
-        if empty_keywords:
-            warnings.warn(f"Some keywords left empty: {empty_keywords}", RuntimeWarning)
-
-        return hdr
-
-    def find_empty(self) -> list[str]:
-        """Return a list of empty required header keywords.
-
-        Returns
-        -------
-        list[str]
-            List of unassigned keywords
-        """
-        empty_keywords = []
-        for _, row in self._table.iterrows():
-            if row["TYPE"] == "keyword" and not row["VALUE"]:
-                empty_keywords.append(row["KEYWORD"])
-        return empty_keywords
+                        # if we want to include the full section
+                        if isinstance(output_keys[section_str], bool) and output_keys[section_str]:
+                            output_header.append((row['KEYWORD'], value, row['COMMENT']), end=True)
+                        # else if the section has only some keywords included, potentially with modifications
+                        elif isinstance(output_keys[section_str], dict):
+                            # if the keyword has an overwritten value
+                            if (row['KEYWORD'] in output_keys[section_str]
+                               and not isinstance(output_keys[section_str][row['KEYWORD']], bool)):
+                                output_header.append((row['KEYWORD'],
+                                                      output_keys[section_str][row['KEYWORD']],
+                                                      row['COMMENT']), end=True)
+                            else:  # the keyword is dynamic or not overwritten
+                                output_header.append((row['KEYWORD'], value, row['COMMENT']), end=True)
+                        else:
+                            raise RuntimeError("The header template is poorly formed.")
+        return output_header
 
 
 PUNCH_REQUIRED_META_FIELDS = {"OBSRVTRY", "LEVEL", "TYPECODE", "DATE-OBS"}
@@ -559,7 +537,6 @@ class PUNCHData(NDCube):
             raise OSError(f"File {filename} already exists."
                            "If you mean to replace it then use the argument 'overwrite=True'.")
 
-
         if self.data.ndim != 2:
             raise ValueError("Specified output data should have two-dimensions.")
 
@@ -575,7 +552,7 @@ class PUNCHData(NDCube):
         # Write image to file
         mpl.image.saveim(filename, output_data)
 
-    def create_header(self, template_path: str = None) -> fits.Header:
+    def create_header(self,  omnibus_path: str = None, template_path: str = None) -> fits.Header:
         """
         Validates / generates PUNCHData object metadata using data product header standards
 
@@ -591,11 +568,15 @@ class PUNCHData(NDCube):
         """
         if template_path is None:
             template_path = str(Path(__file__).parent /
-                                f"data/HeaderTemplate/HeaderTemplate_L{self.meta.product_level}.csv")
+                                f"data/HeaderTemplate/Level{self.meta.product_level}.yaml")
 
-        template = HeaderTemplate.load(template_path)
+        if omnibus_path is None:
+            omnibus_path = str(Path(__file__).parent / "data/HeaderTemplate/omnibus.csv")
+
+        template = HeaderTemplate.from_file(omnibus_path,
+                                            template_path,
+                                            f"{self.meta['TYPECODE']}{self.meta['OBSERVATORY']}")
         return template.fill(self.meta)
-
 
     def duplicate_with_updates(self, data: np.ndarray=None,
                                wcs: astropy.wcs.WCS= None,

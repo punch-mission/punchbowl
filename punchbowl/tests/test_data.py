@@ -3,6 +3,7 @@ from datetime import datetime
 
 import astropy
 import numpy as np
+import pandas as pd
 import pytest
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
@@ -25,7 +26,8 @@ TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "PUNCH_L2_WQM_20080103071000_uncomp.fits")
 SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "PUNCH_L2_WQM_20080103071000.fits")
 SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
-SAMPLE_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_template.csv")
+SAMPLE_OMNIBUS_PATH = os.path.join(TESTDATA_DIR, "omnibus.csv")
+SAMPLE_LEVEL1_PATH = os.path.join(TESTDATA_DIR, "Level1.yaml")
 
 
 # Test fixtures
@@ -134,8 +136,8 @@ def test_generate_from_filename_compressed():
 def test_write_data(sample_data):
     with pytest.warns(RuntimeWarning):
         sample_data.meta["LEVEL"] = 1
-        sample_data.meta["TYPECODE"] = "XX"
-        sample_data.meta["OBSRVTRY"] = "Y"
+        sample_data.meta["TYPECODE"] = "CL"
+        sample_data.meta["OBSRVTRY"] = "1"
         sample_data.meta["VERSION"] = 0.1
         sample_data.meta["SOFTVERS"] = 0.1
         sample_data.meta["DATE-OBS"] = str(datetime.now())
@@ -179,47 +181,28 @@ def test_history_iterate(empty_history):
         assert entry.comment == str(i), "history objects not read in order"
 
 
-@fixture
-def empty_header():
-    return HeaderTemplate()
-
-
-@fixture
-def simple_header_template():
-    return HeaderTemplate.load(SAMPLE_HEADER_PATH)
-
-
-def test_sample_header_creation(empty_header):
-    """An empty PUNCH header object is initialized. Test for no raised errors. Test that the object exists."""
-    assert isinstance(empty_header, HeaderTemplate)
-    assert np.all(
-        empty_header._table.columns.values == HEADER_TEMPLATE_COLUMNS
-    ), "doesn't have all the columns"
-
-
-def test_generate_from_csv_filename():
+def test_generate_from_filename():
     """A base PUNCH header object is initialized from a comma separated value file template.
     Test for no raised errors. Test that the object exists."""
-    hdr = HeaderTemplate.load(SAMPLE_HEADER_PATH)
+    hdr = HeaderTemplate.from_file(SAMPLE_OMNIBUS_PATH, SAMPLE_LEVEL1_PATH, "CL1")
     assert isinstance(hdr, HeaderTemplate)
+    assert isinstance(hdr.omniheader, pd.DataFrame)
+    assert isinstance(hdr.level_definition, dict)
+    assert isinstance(hdr.product_definition, dict)
 
 
-def test_fill_header(simple_header_template):
-    with pytest.warns(RuntimeWarning):
-        meta = NormalizedMetadata({"LEVEL": 1})
-        header = simple_header_template.fill(meta)
-        assert isinstance(header, fits.Header)
-        assert header["LEVEL"] == 1
+def test_fill_header():
+    hdr = HeaderTemplate.from_file(SAMPLE_OMNIBUS_PATH, SAMPLE_LEVEL1_PATH, "CL1")
+    meta = NormalizedMetadata({"LEVEL": 1})
+    header = hdr.fill(meta)
+    assert isinstance(header, fits.Header)
+    assert header["LEVEL"] == 1
+    assert header['TITLE'] == 'Test'
+    assert header['NAXIS'] == 3
+    assert 'GEOD_LAT' not in header
 
 
-def test_unspecified_header_template():
-    with pytest.raises(ValueError):
-        h = HeaderTemplate.load("")
-        assert isinstance(h, HeaderTemplate)
-
-
-@pytest.mark.parametrize("level", [0, 1, 2])
-def test_header_selection_based_on_level(level: int):
+def test_header_selection_based_on_level():
     """Tests if the header can be selected automatically based on the product level"""
     # Modified from NDCube documentation
     data = np.random.rand(4, 4, 5)
@@ -231,14 +214,14 @@ def test_header_selection_based_on_level(level: int):
     wcs.wcs.crval = 10, 0.5, 1
     wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
 
-    meta = NormalizedMetadata({"LEVEL": level,
+    meta = NormalizedMetadata({"LEVEL": 1,
                                'DATE-OBS': str(datetime.now()),
-                               "OBSRVTRY": "X",
-                               "TYPECODE": "YY"}, required_fields=PUNCH_REQUIRED_META_FIELDS)
+                               "OBSRVTRY": 1,
+                               "TYPECODE": "CL"}, required_fields=PUNCH_REQUIRED_META_FIELDS)
     data = PUNCHData(data=data, wcs=wcs, meta=meta)
 
-    header = data.create_header(None)
-    assert header['LEVEL'] == level
+    header = data.create_header(SAMPLE_OMNIBUS_PATH, SAMPLE_LEVEL1_PATH)
+    assert header['LEVEL'] == 1
 
 
 def test_normalizedmetadata_access_not_case_sensitive():
@@ -273,13 +256,13 @@ def test_normalizedmetadata_delete_key():
     assert len(example) == 0
 
 
-def test_normalizedmetdata_missing_required_fields_fails():
+def test_normalizedmetadata_missing_required_fields_fails():
     required_fields = {"age", "name"}
     with pytest.raises(RuntimeError):
         NormalizedMetadata({"key": "value"}, required_fields=required_fields)
 
 
-def test_normalizedemetadata_has_all_required_fields():
+def test_normalizedmetadata_has_all_required_fields():
     required_fields = {"age", "name"}
     example = NormalizedMetadata({'name': 'Marcus', 'age': 27}, required_fields=required_fields)
     for key in required_fields:

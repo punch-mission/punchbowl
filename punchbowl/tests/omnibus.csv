@@ -1,0 +1,49 @@
+SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,STATE
+0,section,COMMENT,----- FITS Required ----------------------------------------------------,,str,static
+0,keyword,SIMPLE,T,Conforms to FITS Standard,str,static
+0,keyword,BITPIX,16,Number of bits per pixel,int,dynamic
+0,keyword,NAXIS,3,Number of axes,int,dynamic
+0,keyword,NAXIS1,3,Length of the first axis,int,dynamic
+0,keyword,NAXIS2,2048,Length of the second axis,int,dynamic
+0,keyword,NAXIS3,2048,Length of the third axis,int,dynamic
+0,keyword,LONGSTRN,OGIP 1.0,The OGIP long string convention may be used,str,static
+1,section,COMMENT,"Description",,str,static
+1,keyword,DOI,https://doi.org/TBD,Data reference DOI,str,static
+1,keyword,PROJECT,PUNCH,,str,static
+1,keyword,TITLE,A title goes here,,str,dynamic
+1,keyword,KEYVOCAB,Unified Astronomy Thesaurus Keywords,,str,static
+1,keyword,KEYWORDS,"Solar Corona (1483), Solar K Corona (2042), Solar F Corona (1991), Solar Coronal Streamers (1486), Solar Coronal Plumes (2039), Solar Wind (1534), Fast Solar Wind (1872), Slow Solar Wind (1873), Solar Coronal Mass Ejection (310), Heliosphere (711), Polarimetry (1278)",,str,static
+1,keyword,LICENSE,Creative Commons Attribution 4.0 International | CC BY 4.0,,str,static
+1,keyword,DESCRPTN,"PUNCH Level-0 data, Uncalibrated instrumental units in camera coordinates",,str,dynamic
+1,keyword,DOC_URL,https://punch.spaceops.swri.org,,str,dynamic
+1,keyword,LEVEL,,Product Level,int,dynamic
+11,section,COMMENT,----- Spacecraft Location & Environment --------------------------------,,str,static
+11,keyword,GEOD_LAT,,[deg] S/C sub-point geodetic latitude,float,dynamic
+11,keyword,GEOD_LON,,[deg] S/C sub-point longitude,float,dynamic
+11,keyword,GEOD_ALT,,[m] S/C WGS84 altitude,float,dynamic
+11,keyword,LOS_ALT,,[m] line-of-sight altitude above Earth,float,dynamic
+11,keyword,HGLT_OBS,,[deg] S/C heliographic latitude,float,dynamic
+11,keyword,HGLN_OBS,,[deg] S/C heliographic longitude (B0),float,dynamic
+11,keyword,CRLT_OBS,,[deg] S/C Carrington latitude (B0),float,dynamic
+11,keyword,CRLN_OBS,,[deg] S/C Carrington longitude,float,dynamic
+11,keyword,DSUN_OBS,,[m] S/C distance from Sun,float,dynamic
+11,keyword,HEEX_OBS,,[m] S/C Heliocentric Earth Ecliptic X,float,dynamic
+11,keyword,HEEY_OBS,,[m] S/C Heliocentric Earth Ecliptic Y,float,dynamic
+11,keyword,HEEZ_OBS,,[m] S/C Heliocentric Earth Ecliptic Z,float,dynamic
+11,keyword,HCIX_OBS,,[m] S/C Heliocentric Inertial X,float,dynamic
+11,keyword,HCIY_OBS,,[m] S/C Heliocentric Inertial Y,float,dynamic
+11,keyword,HCIZ_OBS,,[m] S/C Heliocentric Inertial Z,float,dynamic
+11,keyword,HCIX_VOB,,[m/s] S/C Heliocentric Inertial X Velocity,float,dynamic
+11,keyword,HCIY_VOB,,[m/s] S/C Heliocentric Inertial Y Velocity,float,dynamic
+11,keyword,HCIZ_VOB,,[m/s] S/C Heliocentric Inertial Z Velocity,float,dynamic
+11,keyword,HAEX_OBS,,[m] S/C Heliocentric Aries Ecliptic X,float,dynamic
+11,keyword,HAEY_OBS,,[m] S/C Heliocentric Aries Ecliptic Y,float,dynamic
+11,keyword,HAEZ_OBS,,[m] S/C Heliocentric Aries Ecliptic Z,float,dynamic
+11,keyword,HEQX_OBS,,[m] S/C Heliocentric Earth Equatorial X,float,dynamic
+11,keyword,HEQY_OBS,,[m] S/C Heliocentric Earth Equatorial Y,float,dynamic
+11,keyword,HEQZ_OBS,,[m] S/C Heliocentric Earth Equatorial Z,float,dynamic
+12,section,COMMENT,----- Fixity -----------------------------------------------------------,,str,static
+12,keyword,CHECKSUM,,,str,dynamic
+12,keyword,DATASUM,,,int,dynamic
+13,section,COMMENT,----- History ----------------------------------------------------------,,str,static
+13,keyword,HISTORY,Records of processing from pipeline,,str,dynamic

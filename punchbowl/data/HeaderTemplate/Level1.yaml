@@ -1,0 +1,35 @@
+LEVEL:
+    'FITS Required': True
+    'Documentation, Contact, and Collection Metadata': {
+        'DESCRPTN': 'PUNCH Level-1 data, Calibrated instrumental units in camera coordinates'
+        }
+    'File Type and Provenance': {
+        'LEVEL': 1
+    }
+    'Temporal Information': True
+    'Instrument and Spacecraft State': True
+    'World Coordinate System': True
+    'Camera and Readout State': True
+    'Onboard Image Processing': True
+    'Calibration Data': True
+    'Image Statistics and Properties': True
+    'Solar Reference Data': True
+    'Spacecraft Location & Environment': True
+    'FIXITY': True
+    'History': True
+
+CL1:
+    'NAXIS': 2
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'NAXIS3': False
+    'TITLE': 'PUNCH Level-1 WFI-1 Clear Image'
+    'OBSTYPE': 'Unpolarized WFI image'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'CL'
+    'FILTER': 'Clear'
+    'OBS-MODE': 'Unpolarized'
+    'OBSLAYR1': 'Unpolarized'
+    'POLAR': 'Clear'
+    'INSTRUME': 'WFI'
+    'TELESCOP': 'PUNCH-1'

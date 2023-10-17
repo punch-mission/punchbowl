@@ -23,244 +23,417 @@ Level:
     'FIXITY': True
     'History': True
 
-# Set up a midlevel specification here, something inbetween level and product (polarized, unpolarized, calibration, etc)
+# Midlevel specifications
 
-P11:
+Polarized:
     'NAXIS': 2
     'NAXIS1': 2048
     'NAXIS2': 2048
     'NAXIS3': False
+
+Unpolarized:
+    'NAXIS': 2
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'NAXIS3': False
+
+Calibration:
+    'NAXIS': 2
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'NAXIS3': False
+
+# How to link these - a parent keyword?
+
+# Product specifications
+
+PM1:
     'TITLE': 'PUNCH Level-0 WFI-1 Polarized Image'
     'OBSTYPE': 'Polarized WFI image'
-    'TYPECODE': 'P1'
+    'TYPECODE': 'PM'
     'FILTER': 'P1'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_M'
     'POLAR': -60
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-1'
     'TELESCOP': 'PUNCH-1'
 
-P21:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PZ1:
     'TITLE': 'PUNCH Level-0 WFI-1 Polarized Image'
     'OBSTYPE': 'Polarized WFI image'
-    'TYPECODE': 'P2'
+    'TYPECODE': 'PZ'
     'FILTER': 'P2'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_Z'
     'POLAR': 0
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-1'
     'TELESCOP': 'PUNCH-1'
 
-P31:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PP1:
     'TITLE': 'PUNCH Level-0 WFI-1 Polarized Image'
     'OBSTYPE': 'Polarized WFI image'
-    'TYPECODE': 'P3'
+    'TYPECODE': 'PP'
     'FILTER': 'P3'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_P'
     'POLAR': +60
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-1'
     'TELESCOP': 'PUNCH-1'
 
-CL1:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+CR1:
     'TITLE': 'PUNCH Level-0 WFI-1 Clear Image'
     'OBSTYPE': 'Unpolarized WFI image'
-    'TYPECODE': 'CL'
+    'TYPECODE': 'CR'
     'FILTER': 'Clear'
     'OBS-MODE': 'Unpolarized'
     'OBSLAYR1': 'Unpolarized'
     'POLAR': 'Clear'
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-1'
     'TELESCOP': 'PUNCH-1'
 
-P12:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PM2:
     'TITLE': 'PUNCH Level-0 WFI-2 Polarized Image'
     'OBSTYPE': 'Polarized WFI image'
-    'TYPECODE': 'P1'
+    'TYPECODE': 'PM'
     'FILTER': 'P1'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_M'
     'POLAR': -60
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-2'
     'TELESCOP': 'PUNCH-2'
 
-P22:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PZ2:
     'TITLE': 'PUNCH Level-0 WFI-2 Polarized Image'
     'OBSTYPE': 'Polarized WFI image'
-    'TYPECODE': 'P2'
+    'TYPECODE': 'PZ'
     'FILTER': 'P2'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_Z'
     'POLAR': 0
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-2'
     'TELESCOP': 'PUNCH-2'
 
-P32:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PP2:
     'TITLE': 'PUNCH Level-0 WFI-2 Polarized Image'
     'OBSTYPE': 'Polarized WFI image'
-    'TYPECODE': 'P3'
+    'TYPECODE': 'PP'
     'FILTER': 'P3'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_P'
     'POLAR': +60
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-2'
     'TELESCOP': 'PUNCH-2'
 
-CL2:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+CR2:
     'TITLE': 'PUNCH Level-0 WFI-2 Clear Image'
     'OBSTYPE': 'Unpolarized WFI image'
-    'TYPECODE': 'CL'
+    'TYPECODE': 'CR'
     'FILTER': 'Clear'
     'OBS-MODE': 'Unpolarized'
     'OBSLAYR1': 'Unpolarized'
     'POLAR': 'Clear'
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-2'
     'TELESCOP': 'PUNCH-2'
 
-P13:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PM3:
     'TITLE': 'PUNCH Level-0 WFI-3 Polarized Image'
     'OBSTYPE': 'Polarized WFI image'
-    'TYPECODE': 'P1'
+    'TYPECODE': 'PM'
     'FILTER': 'P1'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_M'
     'POLAR': -60
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-3'
     'TELESCOP': 'PUNCH-3'
 
-P23:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PZ3:
     'TITLE': 'PUNCH Level-0 WFI-3 Polarized Image'
     'OBSTYPE': 'Polarized WFI image'
-    'TYPECODE': 'P2'
+    'TYPECODE': 'PZ'
     'FILTER': 'P2'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_Z'
     'POLAR': 0
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-3'
     'TELESCOP': 'PUNCH-3'
 
-P33:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PP3:
     'TITLE': 'PUNCH Level-0 WFI-3 Polarized Image'
     'OBSTYPE': 'Polarized WFI image'
-    'TYPECODE': 'P3'
+    'TYPECODE': 'PP'
     'FILTER': 'P3'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_P'
     'POLAR': +60
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-3'
     'TELESCOP': 'PUNCH-3'
 
-CL3:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+CR3:
     'TITLE': 'PUNCH Level-0 WFI-3 Clear Image'
     'OBSTYPE': 'Unpolarized WFI image'
-    'TYPECODE': 'CL'
+    'TYPECODE': 'CR'
     'FILTER': 'Clear'
     'OBS-MODE': 'Unpolarized'
     'OBSLAYR1': 'Unpolarized'
     'POLAR': 'Clear'
-    'INSTRUME': 'WFI'
+    'INSTRUME': 'WFI-3'
     'TELESCOP': 'PUNCH-3'
 
-P14:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PM4:
     'TITLE': 'PUNCH Level-0 NFI Polarized Image'
     'OBSTYPE': 'Polarized NFI image'
-    'TYPECODE': 'P1'
+    'TYPECODE': 'PM'
     'FILTER': 'P1'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_M'
     'POLAR': -60
-    'INSTRUME': 'NFI'
+    'INSTRUME': 'NFI-0'
     'TELESCOP': 'PUNCH-4'
 
-P24:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PZ4:
     'TITLE': 'PUNCH Level-0 NFI Polarized Image'
     'OBSTYPE': 'Polarized NFI image'
-    'TYPECODE': 'P2'
+    'TYPECODE': 'PZ'
     'FILTER': 'P2'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_Z'
     'POLAR': 0
-    'INSTRUME': 'NFI'
+    'INSTRUME': 'NFI-0'
     'TELESCOP': 'PUNCH-4'
 
-P34:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+PP4:
     'TITLE': 'PUNCH Level-0 NFI Polarized Image'
     'OBSTYPE': 'Polarized NFI image'
-    'TYPECODE': 'P3'
+    'TYPECODE': 'PP'
     'FILTER': 'P3'
     'OBS-MODE': 'Polar_MZP'
     'OBSLAYR1': 'Polar_P'
     'POLAR': +60
-    'INSTRUME': 'NFI'
+    'INSTRUME': 'NFI-0'
     'TELESCOP': 'PUNCH-4'
 
-CL4:
-    'NAXIS': 2
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'NAXIS3': False
+CR4:
     'TITLE': 'PUNCH Level-0 NFI Clear Image'
     'OBSTYPE': 'Unpolarized NFI image'
-    'TYPECODE': 'CL'
+    'TYPECODE': 'CR'
     'FILTER': 'Clear'
     'OBS-MODE': 'Unpolarized'
     'OBSLAYR1': 'Unpolarized'
     'POLAR': 'Clear'
-    'INSTRUME': 'NFI'
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+PX1:
+    'TITLE': 'PUNCH Level-0 WFI Non-standard Polarized Image'
+    'OBSTYPE': 'Non-standard polarized WFI image'
+    'TYPECODE': 'PX'
+    'FILTER': 'PX'
+    'OBS-MODE': 'Polar_MZP'
+    'OBSLAYR1': 'Polar_P'
+    'POLAR': True
+    'INSTRUME': 'WFI-1'
+    'TELESCOP': 'PUNCH-1'
+
+PX2:
+    'TITLE': 'PUNCH Level-0 WFI Non-standard Polarized Image'
+    'OBSTYPE': 'Non-standard polarized WFI image'
+    'TYPECODE': 'PX'
+    'FILTER': 'PX'
+    'OBS-MODE': 'Polar_MZP'
+    'OBSLAYR1': 'Polar_P'
+    'POLAR': True
+    'INSTRUME': 'WFI-2'
+    'TELESCOP': 'PUNCH-2'
+
+PX3:
+    'TITLE': 'PUNCH Level-0 WFI Non-standard Polarized Image'
+    'OBSTYPE': 'Non-standard polarized WFI image'
+    'TYPECODE': 'PX'
+    'FILTER': 'PX'
+    'OBS-MODE': 'Polar_MZP'
+    'OBSLAYR1': 'Polar_P'
+    'POLAR': True
+    'INSTRUME': 'WFI-3'
+    'TELESCOP': 'PUNCH-3'
+
+PX4:
+    'TITLE': 'PUNCH Level-0 NFI Non-standard Polarized Image'
+    'OBSTYPE': 'Non-standard polarized NFI image'
+    'TYPECODE': 'PX'
+    'FILTER': 'PX'
+    'OBS-MODE': 'Polar_MZP'
+    'OBSLAYR1': 'Polar_P'
+    'POLAR': True
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+ST4:
+    'TITLE': 'PUNCH Level-0 STEAM Image'
+    'OBSTYPE': 'STEAM Data'
+    'TYPECODE': 'ST'
+    'FILTER': False
+    'OBS-MODE': 'Polar_MZP'
+    'OBSLAYR1': 'Polar_P'
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+DK1:
+    'TITLE': 'PUNCH Level-0 WFI Dark Image'
+    'OBSTYPE': 'WFI dark image image (lamp off)'
+    'TYPECODE': 'DK'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-1'
+    'TELESCOP': 'PUNCH-1'
+
+DK2:
+    'TITLE': 'PUNCH Level-0 WFI Dark Image'
+    'OBSTYPE': 'WFI dark image image (lamp off)'
+    'TYPECODE': 'DK'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-2'
+    'TELESCOP': 'PUNCH-2'
+
+DK3:
+    'TITLE': 'PUNCH Level-0 WFI Dark Image'
+    'OBSTYPE': 'WFI dark image image (lamp off)'
+    'TYPECODE': 'DK'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-3'
+    'TELESCOP': 'PUNCH-3'
+
+DK4:
+    'TITLE': 'PUNCH Level-0 NFI Dark Image'
+    'OBSTYPE': 'NFI dark image image (lamp off)'
+    'TYPECODE': 'DK'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+DY1:
+    'TITLE': 'PUNCH Level-0 WFI Dark Image'
+    'OBSTYPE': 'WFI dark image image (lamp on)'
+    'TYPECODE': 'DY'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-1'
+    'TELESCOP': 'PUNCH-1'
+
+DY2:
+    'TITLE': 'PUNCH Level-0 WFI Dark Image'
+    'OBSTYPE': 'WFI dark image image (lamp on)'
+    'TYPECODE': 'DY'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-2'
+    'TELESCOP': 'PUNCH-2'
+
+DY3:
+    'TITLE': 'PUNCH Level-0 WFI Dark Image'
+    'OBSTYPE': 'WFI dark image image (lamp on)'
+    'TYPECODE': 'DY'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-3'
+    'TELESCOP': 'PUNCH-3'
+
+DY4:
+    'TITLE': 'PUNCH Level-0 NFI Dark Image'
+    'OBSTYPE': 'NFI dark image image (lamp on)'
+    'TYPECODE': 'DY'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+OV1:
+    'TITLE': 'PUNCH Level-0 WFI Overscan Image'
+    'OBSTYPE': 'WFI overscan image'
+    'TYPECODE': 'OV'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-1'
+    'TELESCOP': 'PUNCH-1'
+
+OV2:
+    'TITLE': 'PUNCH Level-0 WFI Overscan Image'
+    'OBSTYPE': 'WFI overscan image'
+    'TYPECODE': 'OV'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-2'
+    'TELESCOP': 'PUNCH-2'
+
+OV3:
+    'TITLE': 'PUNCH Level-0 WFI Overscan Image'
+    'OBSTYPE': 'WFI overscan image'
+    'TYPECODE': 'OV'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-3'
+    'TELESCOP': 'PUNCH-3'
+
+OV4:
+    'TITLE': 'PUNCH Level-0 NFI Overscan Image'
+    'OBSTYPE': 'NFI overscan image'
+    'TYPECODE': 'OV'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+XI1:
+    'TITLE': 'PUNCH Level-0 WFI Experimental Image'
+    'OBSTYPE': 'WFI experimental image'
+    'TYPECODE': 'XI'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-1'
+    'TELESCOP': 'PUNCH-1'
+
+XI2:
+    'TITLE': 'PUNCH Level-0 WFI Experimental Image'
+    'OBSTYPE': 'WFI experimental image'
+    'TYPECODE': 'XI'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-2'
+    'TELESCOP': 'PUNCH-2'
+
+XI3:
+    'TITLE': 'PUNCH Level-0 WFI Experimental Image'
+    'OBSTYPE': 'WFI experimental image'
+    'TYPECODE': 'XI'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'WFI-3'
+    'TELESCOP': 'PUNCH-3'
+
+XI4:
+    'TITLE': 'PUNCH Level-0 NFI Experimental Image'
+    'OBSTYPE': 'NFI experimental image'
+    'TYPECODE': 'XI'
+    'FILTER': False
+    'OBS-MODE': False
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
     'TELESCOP': 'PUNCH-4'

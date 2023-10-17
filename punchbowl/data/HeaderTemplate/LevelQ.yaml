@@ -3,7 +3,7 @@ Level:
         "BITPIX": -32
     }
     'Documentation, Contact, and Collection Metadata': {
-        'DESCRPTN': 'PUNCH Level-2 data, Composite mosaic in output coordinates'
+        'DESCRPTN': 'PUNCH QuickPUNCH data, Composite mosaic in output coordinates'
     }
     'File Type and Provenance': {
         'LEVEL': 2
@@ -46,41 +46,35 @@ Calibration:
 
 # Product specifications
 
-PTM:
-    'TITLE': 'PUNCH Level-2 Polarized Mosaic'
-    'OBSTYPE': 'Polarized mosaic'
+CFM:
+    'TITLE': 'PUNCH QuickPUNCH Unpolarized Mosaic F-corona Model'
+    'OBSTYPE': 'Unpolarized mosaic F-corona model'
     'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'PTM'
+    'TYPECODE': 'CFM'
     'FILTER': False
-    'OBS-MODE': 'Polar_MZP'
-    'OBSLAYR1': 'Polar_M'
-    'OBSLAYR2': 'Polar_Z'
-    'OBSLAYR3': 'Polar_P'
-    'POLAR': False
+    'OBS-MODE': 'Unpolarized'
+    'POLAR': 'Unpolarized'
     'INSTRUME': 'NFI+WFI MOSAIC'
     'TELESCOP': 'PUNCH-1-2-3-4'
 
-PNN:
+CFN:
+    'NAXIS1': 2048
     'NAXIS2': 2048
-    'NAXIS3': 2048
-    'TITLE': 'PUNCH Level-2 Polarized NFI Image'
-    'OBSTYPE': 'Polarized NFI Image'
+    'TITLE': 'PUNCH QuickPUNCH Unpolarized NFI F-corona Model'
+    'OBSTYPE': 'Unpolarized NFI F-corona model'
     'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'PNN'
+    'TYPECODE': 'CFN'
     'FILTER': False
-    'OBS-MODE': 'Polar_MZP'
-    'OBSLAYR1': 'Polar_M'
-    'OBSLAYR2': 'Polar_Z'
-    'OBSLAYR3': 'Polar_P'
-    'POLAR': False
+    'OBS-MODE': 'Unpolarized'
+    'POLAR': 'Unpolarized'
     'INSTRUME': 'NFI-0'
     'TELESCOP': 'PUNCH-4'
 
 CTM:
-    'TITLE': 'PUNCH Level-2 Unpolarized Mosaic'
+    'TITLE': 'PUNCH QuickPUNCH Unpolarized Mosaic'
     'OBSTYPE': 'Unpolarized mosaic'
     'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'PTM'
+    'TYPECODE': 'CTM'
     'FILTER': False
     'OBS-MODE': 'Unpolarized'
     'POLAR': 'Unpolarized'
@@ -90,10 +84,10 @@ CTM:
 CNN:
     'NAXIS1': 2048
     'NAXIS2': 2048
-    'TITLE': 'PUNCH Level-2 Unpolarized NFI Image'
-    'OBSTYPE': 'Unpolarized NFI Image'
+    'TITLE': 'PUNCH QuickPUNCH Unpolarized NFI Image'
+    'OBSTYPE': 'Unpolarized NFI image'
     'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'PNN'
+    'TYPECODE': 'CNN'
     'FILTER': False
     'OBS-MODE': 'Unpolarized'
     'POLAR': 'Unpolarized'

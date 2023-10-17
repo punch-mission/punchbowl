@@ -30,15 +30,29 @@ Level:
     'FIXITY': True
     'History': True
 
-MP:
+# Midlevel specifications
+
+Polarized:
     'NAXIS': 3
-    'NAXIS1': 3
+    'NAXIS1': 2
     'NAXIS2': 4096
     'NAXIS3': 4096
-    'TITLE': 'PUNCH Level-3 Polarized Mosaic'
-    'OBSTYPE': 'Polarized mosaic'
+
+Unpolarized:
+    'NAXIS': 2
+    'NAXIS1': 4096
+    'NAXIS2': 4096
+    'NAXIS3': False
+
+Calibration:
+
+# Product specifications
+
+PFM:
+    'TITLE': 'PUNCH Level-3 Polarized Mosaic F-corona Model'
+    'OBSTYPE': 'Polarized mosaic F-corona model'
     'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'MP'
+    'TYPECODE': 'PFM'
     'FILTER': False
     'OBS-MODE': 'Polar_BpB'
     'OBSLAYR1': 'Polar_B'
@@ -47,19 +61,209 @@ MP:
     'INSTRUME': 'NFI+WFI MOSAIC'
     'TELESCOP': 'PUNCH-1-2-3-4'
 
-MC:
-    'NAXIS': 2
-    'NAXIS1': 4096
-    'NAXIS2': 4096
-    'NAXIS3': False
-    'TITLE': 'PUNCH Level-3 Unpolarized Mosaic'
-    'OBSTYPE': 'Unpolarized mosaic'
+PFN:
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'TITLE': 'PUNCH Level-3 Polarized NFI F-corona Model'
+    'OBSTYPE': 'Polarized NFI F-corona model'
     'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'MC'
+    'TYPECODE': 'PFN'
+    'FILTER': False
+    'OBS-MODE': 'Polar_BpB'
+    'OBSLAYR1': 'Polar_B'
+    'OBSLAYR2': 'Polar_pB'
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+CFM:
+    'TITLE': 'PUNCH Level-3 Unpolarized Mosaic F-corona Model'
+    'OBSTYPE': 'Unpolarized mosaic F-corona model'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'CFM'
     'FILTER': False
     'OBS-MODE': 'Unpolarized'
-    'OBSLAYR1': 'Clear'
-    'OBSLAYR2': False
+    'POLAR': 'Unpolarized'
+    'INSTRUME': 'NFI+WFI MOSAIC'
+    'TELESCOP': 'PUNCH-1-2-3-4'
+
+CFN:
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'TITLE': 'PUNCH Level-3 Unpolarized NFI F-corona Model'
+    'OBSTYPE': 'Unpolarized NFI F-corona model'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'CFN'
+    'FILTER': False
+    'OBS-MODE': 'Unpolarized'
+    'POLAR': 'Unpolarized'
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+PSM:
+    'TITLE': 'PUNCH Level-3 Polarized Mosaic Stellar Model'
+    'OBSTYPE': 'Polarized mosaic stellar model'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'PSM'
+    'FILTER': False
+    'OBS-MODE': 'Polar_BpB'
+    'OBSLAYR1': 'Polar_B'
+    'OBSLAYR2': 'Polar_pB'
     'POLAR': False
     'INSTRUME': 'NFI+WFI MOSAIC'
     'TELESCOP': 'PUNCH-1-2-3-4'
+
+PSN:
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'TITLE': 'PUNCH Level-3 Polarized NFI Stellar Model'
+    'OBSTYPE': 'Polarized NFI stellar model'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'PSN'
+    'FILTER': False
+    'OBS-MODE': 'Polar_BpB'
+    'OBSLAYR1': 'Polar_B'
+    'OBSLAYR2': 'Polar_pB'
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+CSM:
+    'TITLE': 'PUNCH Level-3 Unpolarized Mosaic Stellar Model'
+    'OBSTYPE': 'Unpolarized mosaic stellar model'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'CSM'
+    'FILTER': False
+    'OBS-MODE': 'Unpolarized'
+    'POLAR': 'Unpolarized'
+    'INSTRUME': 'NFI+WFI MOSAIC'
+    'TELESCOP': 'PUNCH-1-2-3-4'
+
+CSN:
+    'NAXIS1': 2048
+    'NAXIS2': 2048
+    'TITLE': 'PUNCH Level-3 Unpolarized NFI Stellar Model'
+    'OBSTYPE': 'Unpolarized NFI stellar model'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'CSN'
+    'FILTER': False
+    'OBS-MODE': 'Unpolarized'
+    'POLAR': 'Unpolarized'
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+PTM:
+    'TITLE': 'PUNCH Level-3 Polarized Mosaic'
+    'OBSTYPE': 'Polarized mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'PTM'
+    'FILTER': False
+    'OBS-MODE': 'Polar_BpB'
+    'OBSLAYR1': 'Polar_B'
+    'OBSLAYR2': 'Polar_pB'
+    'POLAR': False
+    'INSTRUME': 'NFI+WFI MOSAIC'
+    'TELESCOP': 'PUNCH-1-2-3-4'
+
+PNN:
+    'TITLE': 'PUNCH Level-3 Polarized Mosaic'
+    'OBSTYPE': 'Polarized mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'PNN'
+    'FILTER': False
+    'OBS-MODE': 'Polar_BpB'
+    'OBSLAYR1': 'Polar_B'
+    'OBSLAYR2': 'Polar_pB'
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+CTM:
+    'TITLE': 'PUNCH Level-3 Unpolarized Mosaic'
+    'OBSTYPE': 'Unpolarized mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'CTM'
+    'FILTER': False
+    'OBS-MODE': 'Unpolarized'
+    'POLAR': 'Unpolarized'
+    'POLAR': False
+    'INSTRUME': 'NFI+WFI MOSAIC'
+    'TELESCOP': 'PUNCH-1-2-3-4'
+
+CNN:
+    'TITLE': 'PUNCH Level-3 Unpolarized Mosaic'
+    'OBSTYPE': 'Unpolarized mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'CNN'
+    'FILTER': False
+    'OBS-MODE': 'Unpolarized'
+    'POLAR': 'Unpolarized'
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+VAM:
+    'TITLE': 'PUNCH Level-3 Derived Wind Velocity'
+    'TYPECODE': 'VAM'
+
+VAN:
+    'TITLE': 'PUNCH Level-3 Derived Wind Velocity'
+    'TYPECODE': 'VAN'
+
+PAM:
+    'TITLE': 'PUNCH Level-3 Polarized Low Noise Mosaic'
+    'OBSTYPE': 'Polarized low noise mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'PAM'
+    'FILTER': False
+    'OBS-MODE': 'Polar_BpB'
+    'OBSLAYR1': 'Polar_B'
+    'OBSLAYR2': 'Polar_pB'
+    'POLAR': False
+    'INSTRUME': 'NFI+WFI MOSAIC'
+    'TELESCOP': 'PUNCH-1-2-3-4'
+
+PAN:
+    'TITLE': 'PUNCH Level-3 Polarized Low Noise Mosaic'
+    'OBSTYPE': 'Polarized low noise mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'PAN'
+    'FILTER': False
+    'OBS-MODE': 'Polar_BpB'
+    'OBSLAYR1': 'Polar_B'
+    'OBSLAYR2': 'Polar_pB'
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+CAM:
+    'TITLE': 'PUNCH Level-3 Unpolarized Low Noise Mosaic'
+    'OBSTYPE': 'Unpolarized low noise mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'CAM'
+    'FILTER': False
+    'OBS-MODE': 'Unpolarized'
+    'POLAR': 'Unpolarized'
+    'POLAR': False
+    'INSTRUME': 'NFI+WFI MOSAIC'
+    'TELESCOP': 'PUNCH-1-2-3-4'
+
+CAN:
+    'TITLE': 'PUNCH Level-3 Unpolarized Low Noise Mosaic'
+    'OBSTYPE': 'Unpolarized low noise mosaic'
+    'OBSRVTRY': 'PUNCH'
+    'TYPECODE': 'CAN'
+    'FILTER': False
+    'OBS-MODE': 'Unpolarized'
+    'POLAR': 'Unpolarized'
+    'POLAR': False
+    'INSTRUME': 'NFI-0'
+    'TELESCOP': 'PUNCH-4'
+
+PLM:
+    'TITLE': 'All-PUNCH (r,log-theta) combined montage'
+    'TYPECODE': 'PLM'
+
+VOM:
+    'TITLE': 'Speed display plot'
+    'TYPECODE': 'VQM'

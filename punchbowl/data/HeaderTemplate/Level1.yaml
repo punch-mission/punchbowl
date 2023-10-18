@@ -1,238 +1,264 @@
 # Level specification
 Level:
-    - FITS Required:
-        BITPIX: -32
-    - Documentation, Contact, and Collection Metadata:
-        DESCRPTN: PUNCH Level-1 data, Calibrated instrumental units in camera coordinates
-    - File Type and Provenance:
-        LEVEL: 1
-    - Temporal Information
-    - Instrument and Spacecraft State:
-        OBSLAYR2: False
-        OBSLAYR3: False
-    - World Coordinate System
-    - Camera and Readout State
-    - Onboard Image Processing
-    - Calibration Data
-    - Image Statistics and Properties
-    - Solar Reference Data
-    - Spacecraft Location & Environment
-    - FIXITY
-    - History
+    FITS Required:
+        overrides:
+            BITPIX: -32
+    Documentation, Contact, and Collection Metadata:
+        overrides:
+            DESCRPTN: PUNCH Level-1 data, Calibrated instrumental units in camera coordinates
+    File Type and Provenance:
+        overrides:
+            LEVEL: 1
+    Temporal Information:
+    Instrument and Spacecraft State:
+        omits: [OBSLAYR2, OBSLAYR3]
+    World Coordinate System:
+    Camera and Readout State:
+    Onboard Image Processing:
+    Calibration Data:
+    Image Statistics and Properties:
+    Solar Reference Data:
+    Spacecraft Location & Environment:
+    FIXITY:
+    History:
+
 
 # Kind specifications
 Kinds:
     Polarized:
-        NAXIS: 2
-        NAXIS1: 2048
-        NAXIS2: 2048
-        NAXIS3: False
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+        omits:
+            NAXIS3:
 
     Unpolarized:
-        NAXIS: 2
-        NAXIS1: 2048
-        NAXIS2: 2048
-        NAXIS3: False
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+        omits:
+            NAXIS3:
 
     Calibration:
-        NAXIS: 2
-        NAXIS1: 2048
-        NAXIS2: 2048
-        NAXIS3: False
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+        omits:
+            NAXIS3:
 
     PM:
-        TYPECODE: 'PM'
-        FILTER: 'P1'
-        OBS-MODE: 'Polar_MZP'
-        OBSLAYR1: 'Polar_M'
-        POLAR: -60
+        overrides:
+            TYPECODE: PM
+            FILTER: P1
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            POLAR: -60
 
     PZ:
-        'TYPECODE': 'PZ'
-        'FILTER': 'P2'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_Z'
-        'POLAR': 0
+        overrides:
+            TYPECODE: PZ
+            FILTER: P2
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_Z
+            POLAR: 0
 
     PP:
-        'TYPECODE': 'PP'
-        'FILTER': 'P3'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_P'
-        'POLAR': +60
+        overrides:
+            TYPECODE: PP
+            FILTER: P3
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_P
+            POLAR: +60
 
     CR:
-        'TYPECODE': 'CR'
-        'FILTER': 'Clear'
-        'OBS-MODE': 'Unpolarized'
-        'OBSLAYR1': 'Unpolarized'
-        'POLAR': 'Clear'
+        overrides:
+            TYPECODE: CR
+            FILTER: Clear
+            OBS-MODE: Unpolarized
+            OBSLAYR1: Unpolarized
+            POLAR: Clear
 
-Spacecraft:
-    1:
-        craftname: WFI-1
-        crafttype: WFI
-        obsname: PUNCH-1
-    2: WFI-2,
-    3: WFI-3,
-    4: NFI-0}
 
 # Product specifications
 Products:
     PM?:
-        kinds: [Polarized, WFI-1, PM]
+        kinds: [Polarized, PM]
         overrides:
-            TITLE: 'PUNCH Level-1 {craftname} Polarized Image'
-            OBSTYPE: 'Polarized {crafttype} image'
-            TELESCOP: '{obsname}'
+            TITLE: PUNCH Level-1 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-    PZ1:
-        kinds: [Polarized, WFI-1, PZ]
+    PZ?:
+        kinds: [Polarized, PZ]
         overrides:
-            'TITLE': 'PUNCH Level-1 WFI-1 Polarized Image'
-            'OBSTYPE': 'Polarized WFI image'
+            TITLE: PUNCH Level-1 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-    PP1:
-        kinds: [Polarized, WFI-1, PP]
+    PP?:
+        kinds: [Polarized, PP]
         overrides:
-            'TITLE': 'PUNCH Level-1 WFI-1 Polarized Image'
-            'OBSTYPE': 'Polarized WFI image'
+            TITLE: PUNCH Level-1 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-    CR1:
-        kinds: [Unpolarized, WFI-1, CR]
+    CR?:
+        kinds: [Unpolarized, CR]
         overrides:
-            'TITLE': 'PUNCH Level-1 WFI-1 Clear Image'
-            'OBSTYPE': 'Unpolarized WFI image'
+            TITLE: PUNCH Level-1 {craftname} Clear Image
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-    PM2:
-        'TITLE': 'PUNCH Level-1 WFI-2 Polarized Image'
-        'OBSTYPE': 'Polarized WFI image'
-        'TYPECODE': 'PM'
-        'FILTER': 'P1'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_M'
-        'POLAR': -60
-        'INSTRUME': 'WFI-2'
-        'TELESCOP': 'PUNCH-2'
+    BD?:
+        kinds: [Calibration]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Deficient Pixel Map
+            OBSTYPE: {crafttype} deficient pixel map
+            TYPECODE: BD
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    PZ2:
-        'TITLE': 'PUNCH Level-1 WFI-2 Polarized Image'
-        'OBSTYPE': 'Polarized WFI image'
-        'TYPECODE': 'PZ'
-        'FILTER': 'P2'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_Z'
-        'POLAR': 0
-        'INSTRUME': 'WFI-2'
-        'TELESCOP': 'PUNCH-2'
+    FQ?:
+        kinds: [Calibration]
+        override:
+            NAXIS: 3
+            NAXIS1: 5
+            NAXIS2: 2048
+            NAXIS3: 2048
+            TITLE: PUNCH Level-1 {craftname} Flat-field Parameter map (quartic polynomial coefficients)
+            OBSTYPE: {crafttype} flat-field parameter map (quartic polynomial coefficients)
+            TYPECODE: FQ
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    PP2:
-        'TITLE': 'PUNCH Level-1 WFI-2 Polarized Image'
-        'OBSTYPE': 'Polarized WFI image'
-        'TYPECODE': 'PP'
-        'FILTER': 'P3'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_P'
-        'POLAR': +60
-        'INSTRUME': 'WFI-2'
-        'TELESCOP': 'PUNCH-2'
+    GM?:
+        kinds: [Calibration, PM]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Vignetting Function
+            OBSTYPE: {crafttype} vignetting function
+            TYPECODE: GM
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    CR2:
-        'TITLE': 'PUNCH Level-1 WFI-2 Clear Image'
-        'OBSTYPE': 'Unpolarized WFI image'
-        'TYPECODE': 'CR'
-        'FILTER': 'Clear'
-        'OBS-MODE': 'Unpolarized'
-        'OBSLAYR1': 'Unpolarized'
-        'POLAR': 'Clear'
-        'INSTRUME': 'WFI-2'
-        'TELESCOP': 'PUNCH-2'
+    GZ?:
+        kinds: [Calibration, PZ]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Vignetting Function
+            OBSTYPE: {crafttype} vignetting function
+            TYPECODE: GZ
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    PM3:
-        'TITLE': 'PUNCH Level-1 WFI-3 Polarized Image'
-        'OBSTYPE': 'Polarized WFI image'
-        'TYPECODE': 'PM'
-        'FILTER': 'P1'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_M'
-        'POLAR': -60
-        'INSTRUME': 'WFI-3'
-        'TELESCOP': 'PUNCH-3'
+    GP?:
+        kinds: [Calibration, PP]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Vignetting Function
+            OBSTYPE: {crafttype} vignetting function
+            TYPECODE: GP
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    PZ3:
-        'TITLE': 'PUNCH Level-1 WFI-3 Polarized Image'
-        'OBSTYPE': 'Polarized WFI image'
-        'TYPECODE': 'PZ'
-        'FILTER': 'P2'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_Z'
-        'POLAR': 0
-        'INSTRUME': 'WFI-3'
-        'TELESCOP': 'PUNCH-3'
+    GR?:
+        kinds: [Calibration, CR]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Vignetting Function
+            OBSTYPE: {crafttype} vignetting function
+            TYPECODE: GR
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    PP3:
-        'TITLE': 'PUNCH Level-1 WFI-3 Polarized Image'
-        'OBSTYPE': 'Polarized WFI image'
-        'TYPECODE': 'PP'
-        'FILTER': 'P3'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_P'
-        'POLAR': +60
-        'INSTRUME': 'WFI-3'
-        'TELESCOP': 'PUNCH-3'
+    SM?:
+        kinds: [Calibration, PM]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
+            OBSTYPE: {crafttype} additive stray light model
+            TYPECODE: SM
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    CR3:
-        'TITLE': 'PUNCH Level-1 WFI-3 Clear Image'
-        'OBSTYPE': 'Unpolarized WFI image'
-        'TYPECODE': 'CR'
-        'FILTER': 'Clear'
-        'OBS-MODE': 'Unpolarized'
-        'OBSLAYR1': 'Unpolarized'
-        'POLAR': 'Clear'
-        'INSTRUME': 'WFI-3'
-        'TELESCOP': 'PUNCH-3'
+    SZ?:
+        kinds: [Calibration, PZ]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
+            OBSTYPE: {crafttype} additive stray light model
+            TYPECODE: SZ
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    PM4:
-        'TITLE': 'PUNCH Level-1 NFI Polarized Image'
-        'OBSTYPE': 'Polarized NFI image'
-        'TYPECODE': 'PM'
-        'FILTER': 'P1'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_M'
-        'POLAR': -60
-        'INSTRUME': 'NFI-0'
-        'TELESCOP': 'PUNCH-4'
+    SP?:
+        kinds: [Calibration, PP]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
+            OBSTYPE: {crafttype} additive stray light model
+            TYPECODE: SP
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    PZ4:
-        'TITLE': 'PUNCH Level-1 NFI Polarized Image'
-        'OBSTYPE': 'Polarized NFI image'
-        'TYPECODE': 'PZ'
-        'FILTER': 'P2'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_Z'
-        'POLAR': 0
-        'INSTRUME': 'NFI-0'
-        'TELESCOP': 'PUNCH-4'
+    SR?:
+        kinds: [Calibration, CR]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
+            OBSTYPE: {crafttype} additive stray light model
+            TYPECODE: SR
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:
 
-    PP4:
-        'TITLE': 'PUNCH Level-1 NFI Polarized Image'
-        'OBSTYPE': 'Polarized NFI image'
-        'TYPECODE': 'PP'
-        'FILTER': 'P3'
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_P'
-        'POLAR': +60
-        'INSTRUME': 'NFI-0'
-        'TELESCOP': 'PUNCH-4'
-
-    CR4:
-        'TITLE': 'PUNCH Level-1 NFI Clear Image'
-        'OBSTYPE': 'Unpolarized NFI image'
-        'TYPECODE': 'CR'
-        'FILTER': 'Clear'
-        'OBS-MODE': 'Unpolarized'
-        'OBSLAYR1': 'Unpolarized'
-        'POLAR': 'Clear'
-        'INSTRUME': 'NFI-0'
-        'TELESCOP': 'PUNCH-4'
-
+    RG?:
+        kinds: [Calibration]
+        override:
+            TITLE: PUNCH Level-1 {craftname} Point Spread Function Model
+            OBSTYPE: {crafttype} point spread function model
+            TYPECODE: RG
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
+        omit:
+            FILTER:
+            OBS-MODE:
+            POLAR:

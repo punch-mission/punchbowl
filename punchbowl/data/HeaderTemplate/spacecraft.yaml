@@ -1,0 +1,25 @@
+Spacecraft:
+    1:
+        craftname: WFI-1
+        crafttype: WFI
+        obsname: PUNCH-1
+    2:
+        craftname: WFI-1
+        crafttype: WFI
+        obsname: PUNCH-1
+    3:
+        craftname: WFI-1
+        crafttype: WFI
+        obsname: PUNCH-1
+    4:
+        craftname: WFI-1
+        crafttype: WFI
+        obsname: PUNCH-1
+    M:
+        craftname: WFI+NFI Mosaic
+        crafttype: Mosaic
+        obsname: PUNCH 1-2-3-4
+    N:
+        craftname: NFI-0
+        crafttype: NFI
+        obsname: PUNCH-4

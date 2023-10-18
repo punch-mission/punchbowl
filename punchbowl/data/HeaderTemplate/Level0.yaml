@@ -134,13 +134,9 @@ Products:
             TITLE: PUNCH Level-0 STEAM Image
             OBSTYPE: STEAM Data
             TYPECODE: ST
-            OBS-MODE: Polar_MZP
-            OBSLAYR1: Polar_P
             INSTRUME: NFI-0
             TELESCOP: PUNCH-4
-        omit:
-            FILTER:
-            POLAR:
+        omits: [OBS-MODE, OBSLAYR1, FILTER, POLAR]
 
     DK?:
         kinds: [Calibration]
@@ -150,10 +146,7 @@ Products:
             TYPECODE: DK
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     DY?:
         kinds: [Calibration]
@@ -163,10 +156,7 @@ Products:
             TYPECODE: DY
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     OV?:
         kinds: [Calibration]
@@ -176,10 +166,7 @@ Products:
             TYPECODE: OV
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     XI?:
         kinds: [Calibration]
@@ -189,7 +176,4 @@ Products:
             TYPECODE: XI
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]

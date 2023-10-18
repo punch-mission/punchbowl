@@ -124,10 +124,7 @@ Products:
             TYPECODE: BD
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     FQ?:
         kinds: [Calibration]
@@ -141,10 +138,7 @@ Products:
             TYPECODE: FQ
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+    omits: [FILTER, OBS-MODE, POLAR]
 
     GM?:
         kinds: [Calibration, PM]
@@ -154,10 +148,7 @@ Products:
             TYPECODE: GM
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     GZ?:
         kinds: [Calibration, PZ]
@@ -167,10 +158,7 @@ Products:
             TYPECODE: GZ
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     GP?:
         kinds: [Calibration, PP]
@@ -180,10 +168,7 @@ Products:
             TYPECODE: GP
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     GR?:
         kinds: [Calibration, CR]
@@ -193,10 +178,7 @@ Products:
             TYPECODE: GR
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     SM?:
         kinds: [Calibration, PM]
@@ -206,10 +188,7 @@ Products:
             TYPECODE: SM
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     SZ?:
         kinds: [Calibration, PZ]
@@ -219,10 +198,7 @@ Products:
             TYPECODE: SZ
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     SP?:
         kinds: [Calibration, PP]
@@ -232,10 +208,7 @@ Products:
             TYPECODE: SP
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     SR?:
         kinds: [Calibration, CR]
@@ -245,10 +218,7 @@ Products:
             TYPECODE: SR
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]
 
     RG?:
         kinds: [Calibration]
@@ -258,7 +228,4 @@ Products:
             TYPECODE: RG
             INSTRUME: {craftname}
             TELESCOP: {obsname}
-        omit:
-            FILTER:
-            OBS-MODE:
-            POLAR:
+        omits: [FILTER, OBS-MODE, POLAR]

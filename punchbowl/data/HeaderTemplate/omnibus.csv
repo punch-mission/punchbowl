@@ -20,7 +20,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,STATE
 2,keyword,FILENAME,,Name of file,str,dynamic
 2,keyword,LEVEL,,Product Level,int,dynamic
 2,keyword,OBSTYPE,,Plain text observation,str,dynamic
-2,keyword,OBSRVTRY,,Which observatory data derives from,str,dynamic
 2,keyword,TYPECODE,,Observation product type code,str,dynamic
 2,keyword,PIPEVRSN,,PUNCHPipe software version number,str,dynamic
 2,keyword,FILE_RAW,,Raw telemetry filename,str,dynamic

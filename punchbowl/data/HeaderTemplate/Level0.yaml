@@ -19,7 +19,7 @@ Level:
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
-    FIXITY:
+    Fixity:
     History:
 
 
@@ -30,24 +30,21 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits:
-            NAXIS3:
+        omits: [NAXIS3]
 
     Unpolarized:
         overrides:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits:
-            NAXIS3:
+        omits: [NAXIS3]
 
     Calibration:
         overrides:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits:
-            NAXIS3:
+        omits: [NAXIS3]
 
     PM:
         overrides:
@@ -124,13 +121,13 @@ Products:
             TYPECODE: PX
             FILTER: PX
             OBS-MODE: Polar_MZP
-            OBSLAYR1: Polar_X
+            OBSLAYR1: Polar_X   
             POLAR:
             INSTRUME: {craftname}
             TELESCOP: {obsname}
 
     ST4:
-        override:
+        overrides:
             TITLE: PUNCH Level-0 STEAM Image
             OBSTYPE: STEAM Data
             TYPECODE: ST
@@ -140,7 +137,7 @@ Products:
 
     DK?:
         kinds: [Calibration]
-        override:
+        overrides:
             TITLE: PUNCH Level-0 {craftname} Dark Image
             OBSTYPE: {crafttype} dark image image (lamp off)
             TYPECODE: DK
@@ -150,7 +147,7 @@ Products:
 
     DY?:
         kinds: [Calibration]
-        override:
+        overrides:
             TITLE: PUNCH Level-0 {craftname} Dark Image
             OBSTYPE: {crafttype} dark image image (lamp on)
             TYPECODE: DY
@@ -160,7 +157,7 @@ Products:
 
     OV?:
         kinds: [Calibration]
-        override:
+        overrides:
             TITLE: PUNCH Level-0 {craftname} Overscan Image
             OBSTYPE: {crafttype} overscan image
             TYPECODE: OV
@@ -170,7 +167,7 @@ Products:
 
     XI?:
         kinds: [Calibration]
-        override:
+        overrides:
             TITLE: PUNCH Level-0 {craftname} Experimental Image
             OBSTYPE: {crafttype} experimental image
             TYPECODE: XI

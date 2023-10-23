@@ -19,7 +19,7 @@ Level:
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
-    FIXITY:
+    Fixity:
     History:
 
 
@@ -30,24 +30,21 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits:
-            NAXIS3:
+        omits: [NAXIS3]
 
     Unpolarized:
         overrides:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits:
-            NAXIS3:
+        omits: [NAXIS3]
 
     Calibration:
         overrides:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits:
-            NAXIS3:
+        omits: [NAXIS3]
 
     PM:
         overrides:
@@ -118,9 +115,9 @@ Products:
 
     BD?:
         kinds: [Calibration]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Deficient Pixel Map
-            OBSTYPE: {crafttype} deficient pixel map
+            OBSTYPE: '{crafttype} deficient pixel map'
             TYPECODE: BD
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -128,13 +125,13 @@ Products:
 
     FQ?:
         kinds: [Calibration]
-        override:
+        overrides:
             NAXIS: 3
             NAXIS1: 5
             NAXIS2: 2048
             NAXIS3: 2048
             TITLE: PUNCH Level-1 {craftname} Flat-field Parameter map (quartic polynomial coefficients)
-            OBSTYPE: {crafttype} flat-field parameter map (quartic polynomial coefficients)
+            OBSTYPE: '{crafttype} flat-field parameter map (quartic polynomial coefficients)'
             TYPECODE: FQ
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -142,9 +139,9 @@ Products:
 
     GM?:
         kinds: [Calibration, PM]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Vignetting Function
-            OBSTYPE: {crafttype} vignetting function
+            OBSTYPE: '{crafttype} vignetting function'
             TYPECODE: GM
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -152,9 +149,9 @@ Products:
 
     GZ?:
         kinds: [Calibration, PZ]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Vignetting Function
-            OBSTYPE: {crafttype} vignetting function
+            OBSTYPE: '{crafttype} vignetting function'
             TYPECODE: GZ
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -162,9 +159,9 @@ Products:
 
     GP?:
         kinds: [Calibration, PP]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Vignetting Function
-            OBSTYPE: {crafttype} vignetting function
+            OBSTYPE: '{crafttype} vignetting function'
             TYPECODE: GP
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -172,9 +169,9 @@ Products:
 
     GR?:
         kinds: [Calibration, CR]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Vignetting Function
-            OBSTYPE: {crafttype} vignetting function
+            OBSTYPE: '{crafttype} vignetting function'
             TYPECODE: GR
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -182,9 +179,9 @@ Products:
 
     SM?:
         kinds: [Calibration, PM]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
-            OBSTYPE: {crafttype} additive stray light model
+            OBSTYPE: '{crafttype} additive stray light model'
             TYPECODE: SM
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -192,9 +189,9 @@ Products:
 
     SZ?:
         kinds: [Calibration, PZ]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
-            OBSTYPE: {crafttype} additive stray light model
+            OBSTYPE: '{crafttype} additive stray light model'
             TYPECODE: SZ
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -202,9 +199,9 @@ Products:
 
     SP?:
         kinds: [Calibration, PP]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
-            OBSTYPE: {crafttype} additive stray light model
+            OBSTYPE: '{crafttype} additive stray light model'
             TYPECODE: SP
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -212,9 +209,9 @@ Products:
 
     SR?:
         kinds: [Calibration, CR]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
-            OBSTYPE: {crafttype} additive stray light model
+            OBSTYPE: '{crafttype} additive stray light model'
             TYPECODE: SR
             INSTRUME: {craftname}
             TELESCOP: {obsname}
@@ -222,9 +219,9 @@ Products:
 
     RG?:
         kinds: [Calibration]
-        override:
+        overrides:
             TITLE: PUNCH Level-1 {craftname} Point Spread Function Model
-            OBSTYPE: {crafttype} point spread function model
+            OBSTYPE: '{crafttype} point spread function model'
             TYPECODE: RG
             INSTRUME: {craftname}
             TELESCOP: {obsname}

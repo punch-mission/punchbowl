@@ -1,155 +1,137 @@
+# Level specification
 Level:
-    'FITS Required': {
-        "BITPIX": -32
-    }
-    'Documentation, Contact, and Collection Metadata': {
-        'DESCRPTN': 'PUNCH QuickLook data, Composite mosaic in output coordinates'
-    }
-    'File Type and Provenance': {
-        'LEVEL': 2
-    }
-    'Temporal Information': True
-    'Instrument and Spacecraft State': True
-    'World Coordinate System': True
-    'Camera and Readout State': True
-    'Onboard Image Processing': True
-    'Calibration Data': True
-    'Image Statistics and Properties': True
-    'Solar Reference Data': True
-    'Spacecraft Location & Environment': {
-        'LOS_ALT': False
-        'HCIX_VOB': False
-        'HCIY_VOB': False
-        'HCIZ_VOB': False
-        'HAEX_OBS': False
-        'HAEY_OBS': False
-        'HAEZ_OBS': False
-    }
-    'FIXITY': True
-    'History': True
+    FITS Required:
+        overrides:
+            BITPIX: -32
+    Documentation, Contact, and Collection Metadata:
+        overrides:
+            DESCRPTN: PUNCH QuickLook data, Composite mosaic in output coordinates
+    File Type and Provenance:
+        overrides:
+            LEVEL: L
+            OBSRVTRY: PUNCH
+    Temporal Information:
+    Instrument and Spacecraft State:
+    World Coordinate System:
+    Camera and Readout State:
+    Onboard Image Processing:
+    Calibration Data:
+    Image Statistics and Properties:
+    Solar Reference Data:
+    Spacecraft Location & Environment:
+        omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]
+    Fixity:
+    History:
 
-# Midlevel specifications
 
-Polarized:
-    'NAXIS': 3
-    'NAXIS1': 3
-    'NAXIS2': 4096
-    'NAXIS3': 4096
+# Kind specifications
+Kinds:
+    Polarized:
+        overrides:
+            NAXIS: 3
+            NAXIS1: 3
+            NAXIS2: 4096
+            NAXIS2: 4096
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            OBSLAYR2: Polar_Z
+            OBSLAYR3: Polar_P
+        omits: [FILTER, POLAR]
 
-Unpolarized:
-    'NAXIS': 2
-    'NAXIS1': 4096
-    'NAXIS2': 4096
-    'NAXIS3': False
+    Unpolarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+            OBS-MODE: Unpolarized
+            POLAR: Unpolarized
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
-Calibration:
+    Calibration:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+        omits: [NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
 # Product specifications
+Products:
+    CFM:
+        kinds: [Unpolarized, Calibration]
+        overrides:
+            TITLE: PUNCH Level-2 Unpolarized Quicklook Mosaic F-Corona Model
+            OBSTYPE: Unpolarized quicklook mosaic F-corona model
+            TYPECODE: CF
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-CFM:
-    'TITLE': 'PUNCH QuickLook Unpolarized Mosaic F-corona Model'
-    'OBSTYPE': 'Unpolarized mosaic F-corona model'
-    'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'CFM'
-    'FILTER': False
-    'OBS-MODE': 'Unpolarized'
-    'POLAR': 'Unpolarized'
-    'INSTRUME': 'NFI+WFI MOSAIC'
-    'TELESCOP': 'PUNCH-1-2-3-4'
+    CFN:
+        kinds: [Unpolarized, Calibration]
+        overrides:
+            NAXIS2: 2048
+            NAXIS3: 2048
+            TITLE: PUNCH Level-2 Unpolarized Quicklook NFI F-Corona Model
+            OBSTYPE: Unpolarized NFI quicklook F-corona model
+            TYPECODE: CF
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-CFN:
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'TITLE': 'PUNCH QuickLook Unpolarized NFI F-corona Model'
-    'OBSTYPE': 'Unpolarized NFI F-corona model'
-    'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'CFN'
-    'FILTER': False
-    'OBS-MODE': 'Unpolarized'
-    'POLAR': 'Unpolarized'
-    'INSTRUME': 'NFI-0'
-    'TELESCOP': 'PUNCH-4'
+    CTM:
+        kinds: [Unpolarized]
+        overrides:
+            TITLE: PUNCH Level-2 Unpolarized Quicklook Mosaic
+            OBSTYPE: Unpolarized quicklook mosaic
+            TYPECODE: CT
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-CTM:
-    'TITLE': 'PUNCH QuickLook Unpolarized Mosaic'
-    'OBSTYPE': 'Unpolarized mosaic'
-    'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'CTM'
-    'FILTER': False
-    'OBS-MODE': 'Unpolarized'
-    'POLAR': 'Unpolarized'
-    'INSTRUME': 'NFI+WFI MOSAIC'
-    'TELESCOP': 'PUNCH-1-2-3-4'
+    CNN:
+        kinds: [Unpolarized]
+        overrides:
+            NAXIS1: 2048
+            NAXIS2: 2048
+            TITLE: PUNCH Level-2 Unpolarized Quicklook NFI Image
+            OBSTYPE: Unpolarized NFI quicklook image
+            TYPECODE: CN
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-CNN:
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'TITLE': 'PUNCH QuickLook Unpolarized NFI Image'
-    'OBSTYPE': 'Unpolarized NFI image'
-    'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'CNN'
-    'FILTER': False
-    'OBS-MODE': 'Unpolarized'
-    'POLAR': 'Unpolarized'
-    'INSTRUME': 'NFI-0'
-    'TELESCOP': 'PUNCH-4'
+    PFM:
+        kinds: [Polarized]
+        overrides:
+            TITLE: PUNCH Level-2 Polarized Quicklook Mosaic F-Corona Model
+            OBSTYPE: Polarized quicklook mosaic F-corona model
+            TYPECODE: PF
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-PFM:
-    'TITLE': 'PUNCH QuickLook Polarized Mosaic F-corona Model'
-    'OBSTYPE': 'Polarized mosaic F-corona model'
-    'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'PFM'
-    'FILTER': False
-    'OBS-MODE': 'Polar_MZP'
-    'OBSLAYR1': 'Polar_M'
-    'OBSLAYR2': 'Polar_Z'
-    'OBSLAYR3': 'Polar_P'
-    'POLAR': False
-    'INSTRUME': 'NFI+WFI MOSAIC'
-    'TELESCOP': 'PUNCH-1-2-3-4'
+    PFN:
+        kinds: [Polarized]
+        overrides:
+            NAXIS2: 2048
+            NAXIS3: 2048
+            TITLE: PUNCH Level-2 Polarized Quicklook NFI F-Corona Model
+            OBSTYPE: Polarized NFI quicklook F-corona model
+            TYPECODE: PF
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-PFN:
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'TITLE': 'PUNCH QuickLook Polarized NFI F-corona Model'
-    'OBSTYPE': 'Polarized NFI F-corona model'
-    'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'PFN'
-    'FILTER': False
-    'OBS-MODE': 'Polar_MZP'
-    'OBSLAYR1': 'Polar_M'
-    'OBSLAYR2': 'Polar_Z'
-    'OBSLAYR3': 'Polar_P'
-    'POLAR': False
-    'INSTRUME': 'NFI-0'
-    'TELESCOP': 'PUNCH-4'
+    PTM:
+        kinds: [Polarized]
+        overrides:
+            TITLE: PUNCH Level-2 Polarized Quicklook Mosaic
+            OBSTYPE: Polarized quicklook mosaic
+            TYPECODE: PT
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
-PTM:
-    'TITLE': 'PUNCH QuickLook Polarized Mosaic'
-    'OBSTYPE': 'Polarized mosaic'
-    'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'PTM'
-    'FILTER': False
-    'OBS-MODE': 'Polar_MZP'
-    'OBSLAYR1': 'Polar_M'
-    'OBSLAYR2': 'Polar_Z'
-    'OBSLAYR3': 'Polar_P'
-    'POLAR': False
-    'INSTRUME': 'NFI+WFI MOSAIC'
-    'TELESCOP': 'PUNCH-1-2-3-4'
-
-PNN:
-    'NAXIS1': 2048
-    'NAXIS2': 2048
-    'TITLE': 'PUNCH QuickLook Polarized NFI Image'
-    'OBSTYPE': 'Polarized NFI image'
-    'OBSRVTRY': 'PUNCH'
-    'TYPECODE': 'PNN'
-    'FILTER': False
-    'OBS-MODE': 'Polar_MZP'
-    'OBSLAYR1': 'Polar_M'
-    'OBSLAYR2': 'Polar_Z'
-    'OBSLAYR3': 'Polar_P'
-    'POLAR': False
-    'INSTRUME': 'NFI-0'
-    'TELESCOP': 'PUNCH-4'
+    PNN:
+        kinds: [Polarized]
+        overrides:
+            NAXIS2: 2048
+            NAXIS3: 2048
+            TITLE: PUNCH Level-2 Polarized Quicklook NFI Image
+            OBSTYPE: Polarized NFI quicklook image
+            TYPECODE: PN
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}

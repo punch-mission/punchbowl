@@ -1,100 +1,98 @@
+# Level specification
 Level:
-    - FITS Required:
-        BITPIX: -32
-    - Documentation, Contact, and Collection Metadata:
-        DESCRPTN: PUNCH Level-2 data, Composite mosaic in output coordinates
-    - File Type and Provenance:
-        LEVEL: 2
-        OBSRVTRY: PUNCH
-    - Temporal Information
-    - Instrument and Spacecraft State:
-    - World Coordinate System
-    - Camera and Readout State
-    - Onboard Image Processing
-    - Calibration Data
-    - Image Statistics and Properties
-    - Solar Reference Data
-    - Spacecraft Location & Environment:
-        LOS_ALT: False
-        HCIX_VOB: False
-        HCIY_VOB: False
-        HCIZ_VOB: False
-        HAEX_OBS: False
-        HAEY_OBS: False
-        HAEZ_OBS: False
-    - FIXITY
-    - History
+    FITS Required:
+        overrides:
+            BITPIX: -32
+    Documentation, Contact, and Collection Metadata:
+        overrides:
+            DESCRPTN: PUNCH Level-2 data, Composite mosaic in output coordinates
+    File Type and Provenance:
+        overrides:
+            LEVEL: 2
+            OBSRVTRY: PUNCH
+    Temporal Information:
+    Instrument and Spacecraft State:
+    World Coordinate System:
+    Camera and Readout State:
+    Onboard Image Processing:
+    Calibration Data:
+    Image Statistics and Properties:
+    Solar Reference Data:
+    Spacecraft Location & Environment:
+        omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]
+    Fixity:
+    History:
+
 
 # Kind specifications
 Kinds:
     Polarized:
-        'NAXIS': 3
-        'NAXIS1': 3
-        'NAXIS2': 4096
-        'NAXIS3': 4096
+        overrides:
+            NAXIS: 3
+            NAXIS1: 3
+            NAXIS2: 4096
+            NAXIS2: 4096
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            OBSLAYR2: Polar_Z
+            OBSLAYR3: Polar_P
+        omits: [FILTER, POLAR]
 
     Unpolarized:
-        'NAXIS': 2
-        'NAXIS1': 4096
-        'NAXIS2': 4096
-        'NAXIS3': False
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+            OBS-MODE: Unpolarized
+            POLAR: Unpolarized
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
-    Mosaic:
-        'INSTRUME': 'NFI+WFI MOSAIC'
-        'TELESCOP': 'PUNCH-1-2-3-4'
+    Calibration:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+        omits: [NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+
 
 # Product specifications
 Products:
     PTM:
-        kinds: [polarized, mosaic]
+        kinds: [Polarized]
         overrides:
-            'TITLE': 'PUNCH Level-2 Polarized Mosaic'
-            'OBSTYPE': 'Polarized mosaic'
-            'TYPECODE': 'PTM'
-            'FILTER': False
-            'OBS-MODE': 'Polar_MZP'
-            'OBSLAYR1': 'Polar_M'
-            'OBSLAYR2': 'Polar_Z'
-            'OBSLAYR3': 'Polar_P'
-            'POLAR': False
-
+            TITLE: PUNCH Level-2 Polarized Mosaic
+            OBSTYPE: Polarized mosaic
+            TYPECODE: PT
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
     PNN:
-        'NAXIS2': 2048
-        'NAXIS3': 2048
-        'TITLE': 'PUNCH Level-2 Polarized NFI Image'
-        'OBSTYPE': 'Polarized NFI Image'
-        'OBSRVTRY': 'PUNCH'
-        'TYPECODE': 'PNN'
-        'FILTER': False
-        'OBS-MODE': 'Polar_MZP'
-        'OBSLAYR1': 'Polar_M'
-        'OBSLAYR2': 'Polar_Z'
-        'OBSLAYR3': 'Polar_P'
-        'POLAR': False
-        'INSTRUME': 'NFI-0'
-        'TELESCOP': 'PUNCH-4'
+        kinds: [Polarized]
+        overrides:
+            NAXIS2: 2048
+            NAXIS3: 2048
+            TITLE: PUNCH Level-2 Polarized NFI Image
+            OBSTYPE: Polarized NFI Image
+            TYPECODE: PN
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
     CTM:
-        'TITLE': 'PUNCH Level-2 Unpolarized Mosaic'
-        'OBSTYPE': 'Unpolarized mosaic'
-        'OBSRVTRY': 'PUNCH'
-        'TYPECODE': 'PTM'
-        'FILTER': False
-        'OBS-MODE': 'Unpolarized'
-        'POLAR': 'Unpolarized'
-        'INSTRUME': 'NFI+WFI MOSAIC'
-        'TELESCOP': 'PUNCH-1-2-3-4'
+        kinds: [Unpolarized]
+        overrides:
+            TITLE: PUNCH Level-2 Unpolarized Mosaic
+            OBSTYPE: Unpolarized mosaic
+            TYPECODE: CT
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}
 
     CNN:
-        'NAXIS1': 2048
-        'NAXIS2': 2048
-        'TITLE': 'PUNCH Level-2 Unpolarized NFI Image'
-        'OBSTYPE': 'Unpolarized NFI Image'
-        'OBSRVTRY': 'PUNCH'
-        'TYPECODE': 'PNN'
-        'FILTER': False
-        'OBS-MODE': 'Unpolarized'
-        'POLAR': 'Unpolarized'
-        'INSTRUME': 'NFI-0'
-        'TELESCOP': 'PUNCH-4'
+        kinds: [Unpolarized]
+        overrides:
+            NAXIS1: 2048
+            NAXIS2: 2048
+            TITLE: PUNCH Level-2 Unpolarized NFI Image
+            OBSTYPE: Unpolarized NFI Image
+            TYPECODE: CN
+            INSTRUME: {craftname}
+            TELESCOP: {obsname}

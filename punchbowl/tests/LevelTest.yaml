@@ -34,5 +34,5 @@ Products:
         overrides:
             TITLE: 'My name is {craftname}'
 
-    CBA:
+    CB1:
         kinds: [Kind2, KindB]

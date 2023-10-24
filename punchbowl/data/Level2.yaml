@@ -65,6 +65,7 @@ Products:
             TYPECODE: PT
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: M
 
     PNN:
         kinds: [Polarized]
@@ -76,6 +77,7 @@ Products:
             TYPECODE: PN
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: N
 
     CTM:
         kinds: [Unpolarized]
@@ -85,6 +87,7 @@ Products:
             TYPECODE: CT
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: M
 
     CNN:
         kinds: [Unpolarized]
@@ -96,3 +99,4 @@ Products:
             TYPECODE: CN
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: N

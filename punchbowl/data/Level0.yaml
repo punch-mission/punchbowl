@@ -84,10 +84,11 @@ Products:
     PM?:
         kinds: [Polarized, PM]
         overrides:
-            TITLE: PUNCH Level-0 {craftname} Polarized Image
-            OBSTYPE: Polarized {crafttype} image
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            TITLE: "PUNCH Level-0 {craftname} Polarized Image"
+            OBSTYPE: "Polarized {crafttype} image"
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            CRAFT: "{craftid}"
 
     PZ?:
         kinds: [Polarized, PZ]
@@ -96,6 +97,7 @@ Products:
             OBSTYPE: Polarized {crafttype} image
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: "{craftid}"
 
     PP?:
         kinds: [Polarized, PP]
@@ -104,6 +106,7 @@ Products:
             OBSTYPE: Polarized {crafttype} image
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: "{craftid}"
 
     CR?:
         kinds: [Unpolarized, CR]
@@ -112,6 +115,7 @@ Products:
             OBSTYPE: Unpolarized {crafttype} image
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: "{craftid}"
 
     PX?:
         kinds: [Polarized]
@@ -125,6 +129,7 @@ Products:
             POLAR:
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: "{craftid}"
 
     ST4:
         overrides:
@@ -133,44 +138,49 @@ Products:
             TYPECODE: ST
             INSTRUME: NFI-0
             TELESCOP: PUNCH-4
+            CRAFT: "{craftid}"
         omits: [OBS-MODE, OBSLAYR1, FILTER, POLAR]
 
     DK?:
         kinds: [Calibration]
         overrides:
             TITLE: PUNCH Level-0 {craftname} Dark Image
-            OBSTYPE: {crafttype} dark image image (lamp off)
+            OBSTYPE: "{crafttype} dark image image (lamp off)"
             TYPECODE: DK
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     DY?:
         kinds: [Calibration]
         overrides:
             TITLE: PUNCH Level-0 {craftname} Dark Image
-            OBSTYPE: {crafttype} dark image image (lamp on)
+            OBSTYPE: "{crafttype} dark image image (lamp on)"
             TYPECODE: DY
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     OV?:
         kinds: [Calibration]
         overrides:
             TITLE: PUNCH Level-0 {craftname} Overscan Image
-            OBSTYPE: {crafttype} overscan image
+            OBSTYPE: "{crafttype} overscan image"
             TYPECODE: OV
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     XI?:
         kinds: [Calibration]
         overrides:
             TITLE: PUNCH Level-0 {craftname} Experimental Image
-            OBSTYPE: {crafttype} experimental image
+            OBSTYPE: "{crafttype} experimental image"
             TYPECODE: XI
             INSTRUME: {craftname}
             TELESCOP: {obsname}
+            CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]

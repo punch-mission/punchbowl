@@ -149,140 +149,127 @@ def test_normalizedmetadata_to_fits_header(tmpdir):
     assert isinstance(header, fits.Header)
 
 
-# def test_metasection_creation():
-#     fields = OrderedDict()
-#     fields['key1'] = MetaField("key1", "comment", 4, int, False, False, 3)
-#     fields['key2'] = MetaField("key2", "comment", 4, int, False, False, 3)
-#     ms = MetaSection("section name", fields)
-#     assert 'key1' in ms
-#     assert 'key2' in ms
-#     assert
+@fixture
+def sample_wcs() -> WCS:
+    """
+    Generate a sample WCS for testing
+    """
 
-# # Test fixtures
-# @fixture
-# def sample_wcs() -> WCS:
-#     """
-#     Generate a sample WCS for testing
-#     """
-#
-#     def _sample_wcs(naxis=2, crpix=(0, 0), crval=(0, 0), cdelt=(1, 1),
-#                     ctype=("HPLN-ARC", "HPLT-ARC")):
-#         generated_wcs = WCS(naxis=naxis)
-#
-#         generated_wcs.wcs.crpix = crpix
-#         generated_wcs.wcs.crval = crval
-#         generated_wcs.wcs.cdelt = cdelt
-#         generated_wcs.wcs.ctype = ctype
-#
-#         return generated_wcs
-#
-#     return _sample_wcs
-#
-#
-# @fixture
-# def sample_data():
-#     return PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
-#
-#
-# @fixture
-# def sample_data_random(shape: tuple = (50, 50)) -> np.ndarray:
-#     """
-#     Generate some random data for testing
-#     """
-#     return np.random.random(shape)
-#
-#
-# @fixture
-# def simple_ndcube():
-#     # Taken from NDCube documentation
-#     data = np.random.rand(4, 4, 5)
-#     wcs = astropy.wcs.WCS(naxis=3)
-#     wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
-#     wcs.wcs.cunit = "Angstrom", "deg", "deg"
-#     wcs.wcs.cdelt = 0.2, 0.5, 0.4
-#     wcs.wcs.crpix = 0, 2, 2
-#     wcs.wcs.crval = 10, 0.5, 1
-#     wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
-#     nd_obj = NDCube(data=data, wcs=wcs)
-#     return nd_obj
-#
-#
-# @fixture
-# def sample_punchdata():
-#     """
-#     Generate a sample PUNCHData object for testing
-#     """
-#
-#     def _sample_punchdata(shape=(50, 50), level=0):
-#         data = np.random.random(shape)
-#         uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
-#         wcs = WCS(naxis=2)
-#         wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
-#         wcs.wcs.cunit = "deg", "deg"
-#         wcs.wcs.cdelt = 0.1, 0.1
-#         wcs.wcs.crpix = 0, 0
-#         wcs.wcs.crval = 1, 1
-#         wcs.wcs.cname = "HPC lon", "HPC lat"
-#
-#         meta = NormalizedMetadata({"LEVEL": str(level),
-#                                    'OBSRVTRY': 'Y',
-#                                    'TYPECODE': 'XX',
-#                                    'DATE-OBS': str(datetime(2023, 1, 1, 0, 0, 1))},
-#                                   required_fields=PUNCH_REQUIRED_META_FIELDS)
-#         return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
-#
-#     return _sample_punchdata
-#
-#
-# @fixture
-# def sample_punchdata_list(sample_punchdata):
-#     """
-#     Generate a list of sample PUNCHData objects for testing
-#     """
-#
-#     sample_pd1 = sample_punchdata()
-#     sample_pd2 = sample_punchdata()
-#     return [sample_pd1, sample_pd2]
-#
-#
-# def test_sample_data_creation(sample_data):
-#     assert isinstance(sample_data, PUNCHData)
-#
-#
-# def test_generate_from_filename_uncompressed():
-#     pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_UNCOMPRESSED)
-#     assert isinstance(pd, PUNCHData)
-#     assert isinstance(pd.data, np.ndarray)
-#
-#
-# def test_generate_from_filename_compressed():
-#     pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
-#     assert isinstance(pd, PUNCHData)
-#     assert isinstance(pd.data, np.ndarray)
-#
-#
-# def test_write_data(sample_data):
-#     with pytest.warns(RuntimeWarning):
-#         sample_data.meta["LEVEL"] = 1
-#         sample_data.meta["TYPECODE"] = "CL"
-#         sample_data.meta["OBSRVTRY"] = "1"
-#         sample_data.meta["VERSION"] = 0.1
-#         sample_data.meta["SOFTVERS"] = 0.1
-#         sample_data.meta["DATE-OBS"] = str(datetime.now())
-#         sample_data.meta["DATE-AQD"] = str(datetime.now())
-#         sample_data.meta["DATE-END"] = str(datetime.now())
-#         sample_data.meta["POL"] = "M"
-#
-#         sample_data.write(SAMPLE_WRITE_PATH)
-#         assert os.path.isfile(SAMPLE_WRITE_PATH)
-#
-#
-# def test_filename_base_generation(sample_punchdata):
-#     actual = sample_punchdata().filename_base
-#     expected = "PUNCH_L0_XXY_20230101000001"
-#     assert actual == expected
-#
-#
+    def _sample_wcs(naxis=2, crpix=(0, 0), crval=(0, 0), cdelt=(1, 1),
+                    ctype=("HPLN-ARC", "HPLT-ARC")):
+        generated_wcs = WCS(naxis=naxis)
+
+        generated_wcs.wcs.crpix = crpix
+        generated_wcs.wcs.crval = crval
+        generated_wcs.wcs.cdelt = cdelt
+        generated_wcs.wcs.ctype = ctype
+
+        return generated_wcs
+
+    return _sample_wcs
+
+
+@fixture
+def sample_data():
+    return PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
+
+
+@fixture
+def sample_data_random(shape: tuple = (50, 50)) -> np.ndarray:
+    """
+    Generate some random data for testing
+    """
+    return np.random.random(shape)
+
+
+@fixture
+def simple_ndcube():
+    # Taken from NDCube documentation
+    data = np.random.rand(4, 4, 5)
+    wcs = astropy.wcs.WCS(naxis=3)
+    wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
+    wcs.wcs.cunit = "Angstrom", "deg", "deg"
+    wcs.wcs.cdelt = 0.2, 0.5, 0.4
+    wcs.wcs.crpix = 0, 2, 2
+    wcs.wcs.crval = 10, 0.5, 1
+    wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
+    nd_obj = NDCube(data=data, wcs=wcs)
+    return nd_obj
+
+
+@fixture
+def sample_punchdata():
+    """
+    Generate a sample PUNCHData object for testing
+    """
+
+    def _sample_punchdata(shape=(50, 50), level=0):
+        data = np.random.random(shape)
+        uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+        wcs.wcs.cunit = "deg", "deg"
+        wcs.wcs.cdelt = 0.1, 0.1
+        wcs.wcs.crpix = 0, 0
+        wcs.wcs.crval = 1, 1
+        wcs.wcs.cname = "HPC lon", "HPC lat"
+
+        # meta = NormalizedMetadata({"LEVEL": str(level),
+        #                            'OBSRVTRY': 'Y',
+        #                            'TYPECODE': 'XX',
+        #                            'DATE-OBS': })
+        meta = NormalizedMetadata.load_template("PM1", "0")
+        meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
+        return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+    return _sample_punchdata
+
+
+@fixture
+def sample_punchdata_list(sample_punchdata):
+    """
+    Generate a list of sample PUNCHData objects for testing
+    """
+    sample_pd1 = sample_punchdata()
+    sample_pd2 = sample_punchdata()
+    return [sample_pd1, sample_pd2]
+
+
+def test_sample_data_creation(sample_data):
+    assert isinstance(sample_data, PUNCHData)
+
+
+def test_generate_from_filename_uncompressed():
+    pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_UNCOMPRESSED)
+    assert isinstance(pd, PUNCHData)
+    assert isinstance(pd.data, np.ndarray)
+
+
+def test_generate_from_filename_compressed():
+    pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
+    assert isinstance(pd, PUNCHData)
+    assert isinstance(pd.data, np.ndarray)
+
+
+def test_write_data(sample_punchdata):
+    sample_data = sample_punchdata()
+    sample_data.meta["LEVEL"] = "1"
+    sample_data.meta["TYPECODE"] = "CL"
+    sample_data.meta["OBSRVTRY"] = "1"
+    sample_data.meta["PIPEVRSN"] = "0.1"
+    sample_data.meta["DATE-OBS"] = str(datetime.now())
+    sample_data.meta["DATE-END"] = str(datetime.now())
+
+    sample_data.write(SAMPLE_WRITE_PATH)
+    assert os.path.isfile(SAMPLE_WRITE_PATH)
+
+
+def test_filename_base_generation(sample_punchdata):
+    actual = sample_punchdata().filename_base
+    expected = "PUNCH_L0_PM1_20230101000001"
+    assert actual == expected
+
+
 
 @fixture
 def empty_history():
@@ -324,90 +311,9 @@ def test_load_spacecraft_yaml():
         assert "crafttype" in v
         assert "obsname" in v
 
-#
-# def test_generate_from_filename():
-#     """A base PUNCH header object is initialized from a comma separated value file template.
-#     Test for no raised errors. Test that the object exists."""
-#     hdr = HeaderTemplate.from_file(SAMPLE_OMNIBUS_PATH, SAMPLE_LEVEL1_PATH, "CL1")
-#     assert isinstance(hdr, HeaderTemplate)
-#     assert isinstance(hdr.omniheader, pd.DataFrame)
-#     assert isinstance(hdr.level_definition, dict)
-#     assert isinstance(hdr.product_definition, dict)
-#
-#
-# def test_fill_header():
-#     hdr = HeaderTemplate.from_file(SAMPLE_OMNIBUS_PATH, SAMPLE_LEVEL1_PATH, "CL1")
-#     meta = NormalizedMetadata({"LEVEL": 1})
-#     header = hdr.fill(meta)
-#     assert isinstance(header, fits.Header)
-#     assert header["LEVEL"] == 1
-#     assert header['TITLE'] == 'Test'
-#     assert header['NAXIS'] == 3
-#     assert 'GEOD_LAT' not in header
-#
-#
-# def test_header_selection_based_on_level():
-#     """Tests if the header can be selected automatically based on the product level"""
-#     # Modified from NDCube documentation
-#     data = np.random.rand(4, 4, 5)
-#     wcs = astropy.wcs.WCS(naxis=3)
-#     wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
-#     wcs.wcs.cunit = "Angstrom", "deg", "deg"
-#     wcs.wcs.cdelt = 0.2, 0.5, 0.4
-#     wcs.wcs.crpix = 0, 2, 2
-#     wcs.wcs.crval = 10, 0.5, 1
-#     wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
-#
-#     meta = NormalizedMetadata({"LEVEL": 1,
-#                                'DATE-OBS': str(datetime.now()),
-#                                "OBSRVTRY": 1,
-#                                "TYPECODE": "CL"}, required_fields=PUNCH_REQUIRED_META_FIELDS)
-#     data = PUNCHData(data=data, wcs=wcs, meta=meta)
-#
-#     header = data.create_header(SAMPLE_OMNIBUS_PATH, SAMPLE_LEVEL1_PATH)
-#     assert header['LEVEL'] == 1
-#
-#
-# def test_normalizedmetadata_access_not_case_sensitive():
-#     contents = {"hi": "there", "NaME": "marcus", "AGE": 27}
-#     example = NormalizedMetadata(contents)
-#
-#     assert example["hi"] == "there"
-#     assert example["Hi"] == "there"
-#     assert example["hI"] == "there"
-#     assert example["HI"] == "there"
-#
-#     assert example["age"] == 27
-#
-#     assert example['name'] == 'marcus'
-#
-#
-# def test_normalizedmetadata_add_new_key():
-#     empty = NormalizedMetadata(dict())
-#     assert len(empty) == 0
-#     assert "name" not in empty
-#     empty['NAmE'] = "marcus"
-#     assert "nAMe" in empty
-#     assert len(empty) == 1
-#
-#
-# def test_normalizedmetadata_delete_key():
-#     example = NormalizedMetadata({"key": "value"})
-#     assert "key" in example
-#     assert len(example) == 1
-#     del example['key']
-#     assert "key" not in example
-#     assert len(example) == 0
-#
-#
-# def test_normalizedmetadata_missing_required_fields_fails():
-#     required_fields = {"age", "name"}
-#     with pytest.raises(RuntimeError):
-#         NormalizedMetadata({"key": "value"}, required_fields=required_fields)
-#
-#
-# def test_normalizedmetadata_has_all_required_fields():
-#     required_fields = {"age", "name"}
-#     example = NormalizedMetadata({'name': 'Marcus', 'age': 27}, required_fields=required_fields)
-#     for key in required_fields:
-#         assert key in example
+
+
+def test_create_level0_normalized_metadata():
+    m = NormalizedMetadata.load_template("PM1", "0")
+    assert 'DATE-OBS' in m
+    assert "OBSRVTRY" in m

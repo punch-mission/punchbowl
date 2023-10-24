@@ -205,7 +205,7 @@ class MetaField:
         if isinstance(value, self._datatype):
             self._value = value
         else:
-            raise TypeError(f"Value was {type(value)} but must be {self._datatype}.")
+            raise TypeError(f"Value of {self.keyword} was {type(value)} but must be {self._datatype}.")
 
     @property
     def default(self):
@@ -219,7 +219,7 @@ class MetaField:
             raise TypeError(f"Value was {type(default)} but must be {self._default}.")
 
 
-class NormalizedMetadata:
+class NormalizedMetadata(Mapping):
     """
     The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
     making keyword accesses case-insensitive and providing helpful accessors for commonly used formats of the metadata.
@@ -227,28 +227,17 @@ class NormalizedMetadata:
     Internally, the keys are always stored as upper-case strings.
     Unlike the FITS standard, keys can be any length string.
     """
+
+    def __len__(self) -> int:
+        return sum([len(section) for section in self._contents.values()])
+
+
     def __init__(self,
                  contents: t.OrderedDict[str, t.OrderedDict[str, MetaField]],
                  history: t.Optional[History] = None) -> None:
 
         self._contents = contents
         self._history = history if history is not None else History()
-
-        # # Validate all the keys are acceptable
-        # for key in contents:
-        #     self._validate_key_is_str(key)
-        #     if key.upper() == "HISTORY-OBJECT":
-        #         raise KeyError("HISTORY-OBJECT is a reserved keyword for NormalizedMetadata. "
-        #                        "It cannot be in a passed in contents.")
-        #
-        # # Create the contents now
-        # self._contents = {k.upper(): v for k, v in contents.items()}
-        #
-        # self.required_fields = required_fields if required_fields is not None else set()
-        # self.validate_required_fields()
-        #
-        # # Add a history object
-        # self._contents["HISTORY-OBJECT"] = History()
 
     def __iter__(self):
         return self._contents.__iter__()
@@ -296,7 +285,7 @@ class NormalizedMetadata:
         if spacecraft not in spacecraft_def:
             raise RuntimeError(f"Spacecraft {spacecraft} not in spacecraft_def.")
 
-        if level is not None and omniheader is not None:
+        if level is not None and level_spec_path is not None:
             raise RuntimeError("Only specify the level or level_spec_path, not both.")
         elif level is not None:
             level_spec_path = get_data_path(f"Level{level}.yaml")
@@ -378,14 +367,14 @@ class NormalizedMetadata:
                         try:
                             value = datatype(value)
                         except ValueError:
-                            raise RuntimeError("Value was of the wrong type to parse")
+                            raise RuntimeError(f"Value was of the wrong type to parse for {e['KEYWORD']}")
                         finally:
                             if isinstance(value, str):
                                 value = value.format(**spacecraft_def[spacecraft])
                         try:
                             default = datatype(default)
                         except ValueError:
-                            raise RuntimeError("Default was of the wrong type to parse")
+                            raise RuntimeError(f"Default was of the wrong type to parse for {e['KEYWORD']}")
                         finally:
                             if isinstance(value, str):
                                 default = default.format(**spacecraft_def[spacecraft])
@@ -417,7 +406,7 @@ class NormalizedMetadata:
         self._validate_key_is_str(key)
         for section_name, section in self._contents.items():
             if key in section:
-                self._contents[section_name][key.upper()] = value
+                self._contents[section_name][key.upper()].value = value
                 return
 
         # reaching here means we haven't returned
@@ -449,118 +438,18 @@ class NormalizedMetadata:
                 return True
         return False
 
+    @property
+    def product_level(self) -> int:
+        if "LEVEL" not in self:
+            raise MissingMetadataError("LEVEL is missing from the metadata.")
+        return self["LEVEL"].value
 
-    # @property
-    # def product_level(self) -> int:
-    #     if "LEVEL" not in self._contents:
-    #         raise MissingMetadataError("LEVEL is missing from the metadata.")
-    #     return self._contents["LEVEL"]
-    #
-    # @property
-    # def datetime(self) -> datetime:
-    #     if "DATE-OBS" not in self._contents:
-    #         raise MissingMetadataError("DATE-OBS is missing from the metadata.")
-    #     return parse_datetime(self._contents["DATE-OBS"])
-#
-#
-# HEADER_TEMPLATE_COLUMNS = ["TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "STATE"]
-#
-#
-# class HeaderTemplate:
-#     """PUNCH data object header template
-#     Class to generate a PUNCH data object header template, along with associated methods.
-#
-#     - TODO : make custom types of warnings more specific so that they can be filtered
-#     """
-#
-#     def __init__(self, omniheader: pd.DataFrame, level_definition: Dict, product_definition: Dict) -> None:
-#         self.omniheader = omniheader
-#         self.level_definition = level_definition
-#         self.product_definition = product_definition
-#
-#     @classmethod
-#     def from_file(cls, omniheader_path: str, definition_path: str, product_code: str):
-#         omniheader = pd.read_csv(omniheader_path, na_filter=False)
-#         with open(definition_path, 'r') as f:
-#             contents = yaml.safe_load(f)
-#         return cls(omniheader, contents['LEVEL'], contents[product_code])
-#
-#
-#     @staticmethod
-#     def merge_keys(omniheader, level_definition, product_definition):
-#         """Merge two sets of FITS header recipes
-#
-#         Parameters
-#         ----------
-#         omniheader : DataFrame
-#             Omnibus file of all header values, everywhere
-#         level_definition : Dict
-#             First dictionary of keywords / sections
-#         product_definition : Dict
-#             Second dictionary of keywords, to be merged into the first
-#
-#         Returns
-#         -------
-#         Dict
-#             Merged section and keyword dictionary
-#         """
-#         output_keys = level_definition.copy()
-#
-#         for key in product_definition:
-#             section_num = omniheader.loc[omniheader['KEYWORD'] == key]['SECTION'].values[0]
-#             section_str = (omniheader.loc[omniheader['SECTION'] == section_num]['VALUE'].values[0]).strip('- ')
-#
-#             if output_keys[section_str]:
-#                 output_keys[section_str] = {key: product_definition[key]}
-#             else:
-#                 output_keys[section_str] = output_keys[section_str] | {key: product_definition[key]}
-#
-#         return output_keys
-#
-#     @staticmethod
-#     def _prepare_row_output(row, metadata: NormalizedMetadata) -> Union[int, float, np.double]:
-#         conversion_func = {'int': int, 'float': float, 'double': np.double, 'str': str}
-#         if row['VALUE'] != '':
-#             return conversion_func[row['DATATYPE']](row['VALUE'])
-#         else:
-#             if row['KEYWORD'] not in metadata:
-#                 raise MissingMetadataError(f"{row['KEYWORD']} was not found in the metadata.")
-#             else:
-#                 return metadata[row['KEYWORD']]
-#
-#     def fill(self, metadata: NormalizedMetadata):
-#         output_header = Header()
-#
-#         output_keys = HeaderTemplate.merge_keys(self.omniheader, self.level_definition, self.product_definition)
-#
-#         for i in np.unique(self.omniheader['SECTION']):
-#             section_df = self.omniheader.loc[self.omniheader['SECTION'] == i]
-#             section_str = section_df.iloc[0]['VALUE'].strip('- ')
-#
-#             if section_str in output_keys:
-#                 for _, row in section_df.iterrows():
-#                     if row['TYPE'] == 'section':
-#                         output_header.append(('COMMENT', row['VALUE']))
-#                     elif row['TYPE'] == 'keyword':
-#                         value = HeaderTemplate._prepare_row_output(row, metadata)
-#
-#                         # if we want to include the full section
-#                         if isinstance(output_keys[section_str], bool) and output_keys[section_str]:
-#                             output_header.append((row['KEYWORD'], value, row['COMMENT']), end=True)
-#                         # else if the section has only some keywords included, potentially with modifications
-#                         elif isinstance(output_keys[section_str], dict):
-#                             # if the keyword has an overwritten value
-#                             if (row['KEYWORD'] in output_keys[section_str]
-#                                and not isinstance(output_keys[section_str][row['KEYWORD']], bool)):
-#                                 output_header.append((row['KEYWORD'],
-#                                                       output_keys[section_str][row['KEYWORD']],
-#                                                       row['COMMENT']), end=True)
-#                             else:  # the keyword is dynamic or not overwritten
-#                                 output_header.append((row['KEYWORD'], value, row['COMMENT']), end=True)
-#                         else:
-#                             raise RuntimeError("The header template is poorly formed.")
-#         return output_header
-#
+    @property
+    def datetime(self) -> datetime:
+        if "DATE-OBS" not in self:
+            raise MissingMetadataError("DATE-OBS is missing from the metadata.")
+        return parse_datetime(self["DATE-OBS"].value)
+
 
 class PUNCHData(NDCube):
     """PUNCH data object
@@ -681,13 +570,13 @@ class PUNCHData(NDCube):
         str
             output identification string
         """
-        observatory = self.meta["OBSRVTRY"]
-        file_level = self.meta["LEVEL"]
-        type_code = self.meta["TYPECODE"]
+        craft = self.meta["CRAFT"].value
+        file_level = self.meta["LEVEL"].value
+        type_code = self.meta["TYPECODE"].value
         date_string = self.meta.datetime.strftime("%Y%m%d%H%M%S")
         # TODO: include version number
         return (
-            "PUNCH_L" + file_level + "_" + type_code + observatory + "_" + date_string
+            "PUNCH_L" + file_level + "_" + type_code + craft + "_" + date_string
         )
 
     def write(self, filename: str, overwrite=True) -> None:
@@ -735,7 +624,7 @@ class PUNCHData(NDCube):
         -------
         None
         """
-        header = self.create_header(None)  # uses template_path=none so the pipeline selects one based on metadata
+        header = self.meta.to_fits_header()
 
         for entry in self.meta.history:
             header["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
@@ -789,31 +678,6 @@ class PUNCHData(NDCube):
         # Write image to file
         mpl.image.saveim(filename, output_data)
 
-    # def create_header(self,  omnibus_path: str = None, template_path: str = None) -> fits.Header:
-    #     """
-    #     Validates / generates PUNCHData object metadata using data product header standards
-    #
-    #     Parameters
-    #     ----------
-    #     template_path
-    #         specified header template file with which to validate
-    #
-    #     Returns
-    #     -------
-    #     fits.Header
-    #         a full constructed and filled FITS header that reflects the data
-    #     """
-    #     if template_path is None:
-    #         template_path = str(Path(__file__).parent /
-    #                             f"data/HeaderTemplate/Level{self.meta.product_level}.yaml")
-    #
-    #     if omnibus_path is None:
-    #         omnibus_path = str(Path(__file__).parent / "data/HeaderTemplate/omniheader.csv")
-    #
-    #     template = HeaderTemplate.from_file(omnibus_path,
-    #                                         template_path,
-    #                                         f"{self.meta['TYPECODE']}{self.meta['OBSRVTRY']}")
-    #     return template.fill(self.meta)
 
     def duplicate_with_updates(self, data: np.ndarray=None,
                                wcs: astropy.wcs.WCS= None,

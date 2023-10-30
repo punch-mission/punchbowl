@@ -27,21 +27,25 @@ _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def get_data_path(path):
+    """Returns root data path"""
     return os.path.join(_ROOT, 'data', path)
 
 
 def load_omniheader(path=None):
+    """Loads full metadata specifications"""
     if path is None:
         path = get_data_path("omniheader.csv")
     return pd.read_csv(path, na_filter=False)
 
 
 def load_level_spec(path):
+    """Loads data product metadata specifications"""
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 
 
 def load_spacecraft_def(path=None):
+    """Loads spacecraft metadata specifications"""
     if path is None:
         path = get_data_path("spacecraft.yaml")
     with open(path, 'r') as f:
@@ -164,6 +168,7 @@ ValueType = t.Union[int, str, float]
 
 
 class MetaField:
+    """The MetaField object describes a single field within the NormalizedMetadata object"""
     def __init__(self,
                  keyword: str,
                  comment: str,
@@ -188,18 +193,22 @@ class MetaField:
 
     @property
     def keyword(self):
+        """returns MetaField keyword"""
         return self._keyword
 
     @property
     def comment(self):
+        """returns MetaField comment"""
         return self._comment
 
     @property
     def value(self):
+        """returns MetaField value"""
         return self._value
 
     @value.setter
     def value(self, value: ValueType):
+        """sets value withing MetaField object"""
         if not self._mutable:
             raise RuntimeError("Cannot mutate this value because it is set to immutable.")
         if isinstance(value, self._datatype):
@@ -229,8 +238,8 @@ class NormalizedMetadata(Mapping):
     """
 
     def __len__(self) -> int:
+        """returns number of entry cards in NormalizedMetadata object"""
         return sum([len(section) for section in self._contents.values()])
-
 
     def __init__(self,
                  contents: t.OrderedDict[str, t.OrderedDict[str, MetaField]],
@@ -243,6 +252,15 @@ class NormalizedMetadata(Mapping):
         return self._contents.__iter__()
 
     def to_fits_header(self) -> Header:
+        """
+        Converts a constructed NormalizedMetdata object to an Astropy FITS compliant header object
+
+        Returns
+        -------
+        Header
+            Astropy FITS compliant header object
+
+        """
         hdr = fits.Header()
         for section in self._contents:
             hdr.append(
@@ -270,6 +288,22 @@ class NormalizedMetadata(Mapping):
 
     @staticmethod
     def _match_product_code_in_level_spec(product_code, level_spec):
+        """
+        Parses the specified product code and level specification to find a corresponding set
+
+        Parameters
+        ----------
+        product_code
+            Specified data product code
+        level_spec
+            Data product level specifications
+
+        Returns
+        -------
+        Dict
+            Product code specification parsed from file
+
+        """
         if product_code in level_spec['Products']:
             return level_spec['Products'][product_code]
         else:
@@ -282,6 +316,28 @@ class NormalizedMetadata(Mapping):
 
     @staticmethod
     def _load_template_files(omniheader_path, level, level_spec_path, spacecraft, spacecraft_def_path):
+        """
+        Loads template files from specified locations
+
+        Parameters
+        ----------
+        omniheader_path
+            Path to full omniheader specifications
+        level
+            Specified data product level
+        level_spec_path
+            Path to data product level specifications
+        spacecraft
+            Specified spacecraft code
+        spacecraft_def_path
+            Path to spacecraft specifications
+
+        Returns
+        -------
+        Tuple
+            Header specification entries
+
+        """
         omniheader = load_omniheader(omniheader_path)
         spacecraft_def = load_spacecraft_def(spacecraft_def_path)
         if spacecraft not in spacecraft_def:
@@ -300,6 +356,22 @@ class NormalizedMetadata(Mapping):
 
     @staticmethod
     def _determine_omits_and_overrides(level_spec, product_def):
+        """
+        Reads level specifications and product definitions and determines keywords to omit or overwrite
+
+        Parameters
+        ----------
+        level_spec
+            Data product level specifications
+        product_def
+            Data product specifications
+
+        Returns
+        -------
+        Tuple
+            Keywords and values to omit and override
+
+        """
         this_kinds = product_def['kinds']
         omits, overrides = [], {}
         for section in level_spec['Level']:
@@ -335,6 +407,28 @@ class NormalizedMetadata(Mapping):
                       level_spec_path: t.Optional[str] = None,
                       omniheader_path: t.Optional[str] = None,
                       spacecraft_def_path: t.Optional[str] = None) -> NormalizedMetadata:
+        """
+        Given data product specification, loads relevant template files and constructs a NormalizedMetadata object
+
+        Parameters
+        ----------
+        product_code
+            Specified data product code
+        level
+            Specified data product level
+        level_spec_path
+            Path to data product level specifications
+        omniheader_path
+            Path to full omniheader specifications
+        spacecraft_def_path
+            Path to spacecraft specifications
+
+        Returns
+        -------
+        NormalizedMetadata
+            Constructed NormalizedMetadata object from template specifications
+
+        """
         # load all needed files
         spacecraft = product_code[-1]
         omniheader, level_spec, spacecraft_def = NormalizedMetadata._load_template_files(omniheader_path,
@@ -391,20 +485,50 @@ class NormalizedMetadata(Mapping):
 
     @property
     def sections(self) -> t.List[str]:
+        """returns header keys"""
         return list(self._contents.keys())
 
     @property
     def history(self) -> History:
+        """returns header history"""
         return self._history
 
     @staticmethod
     def _validate_key_is_str(key: str) -> None:
+        """
+        Validates that the provided key is a valid header keyword string
+
+        Parameters
+        ----------
+        key
+            Header key string
+
+        Returns
+        -------
+        None
+
+        """
         if not isinstance(key, str):
             raise TypeError(f"Keys for NormalizedMetadata must be strings. You provided {type(key)}.")
         if len(key) > 8:
             raise ValueError("Keys must be <= 8 characters long")
 
     def __setitem__(self, key: str, value: t.Any) -> None:
+        """
+        Sets specified pair of keyword and value in the NormalizedMetadata object
+
+        Parameters
+        ----------
+        key
+            Header key string
+        value
+            Header value
+
+        Returns
+        -------
+        None
+
+        """
         self._validate_key_is_str(key)
         for section_name, section in self._contents.items():
             if key in section:
@@ -415,6 +539,20 @@ class NormalizedMetadata(Mapping):
         raise RuntimeError(f"MetaField with key={key} not found.")
 
     def __getitem__(self, key: str) -> t.Any:
+        """
+        Gets specified keyword from NormalizedMetadata object
+
+        Parameters
+        ----------
+        key
+            Header key string
+
+        Returns
+        -------
+        t.Any
+            Returned header value
+
+        """
         self._validate_key_is_str(key)
         for section_name, section in self._contents.items():
             if key in section:
@@ -424,6 +562,19 @@ class NormalizedMetadata(Mapping):
         raise RuntimeError(f"MetaField with key={key} not found.")
 
     def __delitem__(self, key: str) -> None:
+        """
+        Deletes specified keyword entry from the NormalizedMetadata object
+
+        Parameters
+        ----------
+        key
+            Header key string
+
+        Returns
+        -------
+        None
+
+        """
         self._validate_key_is_str(key)
         for section_name, section in self._contents.items():
             if key in section:
@@ -434,6 +585,20 @@ class NormalizedMetadata(Mapping):
         raise RuntimeError(f"MetaField with key={key} not found.")
 
     def __contains__(self, key: str) -> bool:
+        """
+        Determines if the specified keyword is contained within the NormalizedMetadata object
+
+        Parameters
+        ----------
+        key
+            Header key string
+
+        Returns
+        -------
+        Boolean
+            Value indicating if the specified keyword is contained within the NormalizedMetadata object
+
+        """
         self._validate_key_is_str(key)
         for section_name, section in self._contents.items():
             if key in section:
@@ -442,12 +607,14 @@ class NormalizedMetadata(Mapping):
 
     @property
     def product_level(self) -> int:
+        """returns data product level if indicated in metadata"""
         if "LEVEL" not in self:
             raise MissingMetadataError("LEVEL is missing from the metadata.")
         return self["LEVEL"].value
 
     @property
     def datetime(self) -> datetime:
+        """returns a datetime representation of the 'DATE-OBS' header keyword if indicated in metadata"""
         if "DATE-OBS" not in self:
             raise MissingMetadataError("DATE-OBS is missing from the metadata.")
         return parse_datetime(self["DATE-OBS"].value)

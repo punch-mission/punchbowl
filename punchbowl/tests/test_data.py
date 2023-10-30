@@ -312,8 +312,17 @@ def test_load_spacecraft_yaml():
         assert "obsname" in v
 
 
-
 def test_create_level0_normalized_metadata():
     m = NormalizedMetadata.load_template("PM1", "0")
     assert 'DATE-OBS' in m
     assert "OBSRVTRY" in m
+
+
+def test_normalized_metadata_to_fits_writes_history():
+    m = NormalizedMetadata.load_template("PM1", "0")
+    m.history.add_now("Test", "does it write?")
+    m.history.add_now("Test", "how about twice?")
+    h = m.to_fits_header()
+    assert "HISTORY" in h
+    assert "does it write?" in str(h['HISTORY'])
+    assert "how about twice" in str(h['HISTORY'])

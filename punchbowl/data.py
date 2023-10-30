@@ -264,6 +264,8 @@ class NormalizedMetadata(Mapping):
                     ),
                     end=True,
                 )
+        for entry in self.history:
+            hdr["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
         return hdr
 
     @staticmethod

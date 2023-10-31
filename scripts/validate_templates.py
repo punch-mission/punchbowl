@@ -1,12 +1,12 @@
-from collections import OrderedDict
-import yaml
 import argparse
 import os
 
 import pandas as pd
-import numpy as np
 
-from punchbowl.data import History, MetaField, NormalizedMetadata
+from punchbowl.data import NormalizedMetadata, load_level_spec, load_spacecraft_def
+
+
+LEVELS = ["0", "1", "2", "3", "L", "Q"]
 
 
 def parse_args():
@@ -16,12 +16,8 @@ def parse_args():
 
 
 def check_all_files_exist(paths):
-    assert "Level0.yaml" in paths, "Level0.yaml not found"
-    assert "Level1.yaml" in paths, "Level1.yaml not found"
-    assert "Level2.yaml" in paths, "Level2.yaml not found"
-    assert "Level3.yaml" in paths, "Level3.yaml not found"
-    assert "LevelL.yaml" in paths, "LevelL.yaml not found"
-    assert "LevelQ.yaml" in paths, "LevelQ.yaml not found"
+    for level in LEVELS:
+        assert f"Level{level}.yaml" in paths, f"Level{level}.yaml not found"
     assert "spacecraft.yaml" in paths, "spacecraft.yaml not found"
     assert "omniheader.csv" in paths, "omniheader.csv not found"
 
@@ -33,16 +29,30 @@ def validate_omniheader(directory):
     # TODO: validate the values in each column match allowed, e.g. SECTION are only numbers
 
 
+def construct_all_product_headers(directory, level):
+    level_path = os.path.join(directory, f"Level{level}.yaml")
+    level_spec = load_level_spec(level_path)
+    product_keys = list(level_spec['Products'].keys())
+    crafts = load_spacecraft_def().keys()
+    product_keys = sorted(list(set([pc.replace("?", craft) for craft in crafts for pc in product_keys])))
+    for pc in product_keys:
+        try:
+            meta = NormalizedMetadata.load_template(pc, level)
+        except Exception as e:
+            assert False, f"failed to create {pc} for level {level} because: {e}"
+
+
 if __name__ == "__main__":
     # provide directory with contents
     args = parse_args()
-    print(args.dir)
 
     check_all_files_exist(set(os.listdir(args.dir)))
 
     validate_omniheader(args.dir)
 
-    for level in ["0", "1", "2", "3", "L", "Q"]:
-        print(level)
+    for level in LEVELS:
+        construct_all_product_headers(args.dir, level)
+
+    print("No problems were found in the headers!")
 
 

@@ -44,7 +44,7 @@ Kinds:
             NAXIS1: 4096
             NAXIS2: 4096
             OBS-MODE: Unpolarized
-            POLAR: Unpolarized
+            POLAR: -999
         omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Calibration:
@@ -63,8 +63,8 @@ Products:
             TITLE: PUNCH Level-2 Polarized Mosaic
             OBSTYPE: Polarized mosaic
             TYPECODE: PT
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     PNN:
@@ -75,8 +75,8 @@ Products:
             TITLE: PUNCH Level-2 Polarized NFI Image
             OBSTYPE: Polarized NFI Image
             TYPECODE: PN
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     CTM:
@@ -85,8 +85,8 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized Mosaic
             OBSTYPE: Unpolarized mosaic
             TYPECODE: CT
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     CNN:
@@ -97,6 +97,6 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized NFI Image
             OBSTYPE: Unpolarized NFI Image
             TYPECODE: CN
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N

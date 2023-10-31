@@ -44,7 +44,7 @@ Kinds:
             NAXIS1: 4096
             NAXIS2: 4096
             OBS-MODE: Unpolarized
-            POLAR: Unpolarized
+            POLAR: -999
         omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Calibration:
@@ -63,8 +63,8 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized QuickPUNCH Mosaic F-Corona Model
             OBSTYPE: Unpolarized quicklook mosaic F-corona model
             TYPECODE: CF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
     CFN:
         kinds: [Unpolarized, Calibration]
@@ -74,8 +74,8 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized QuickPUNCH NFI F-Corona Model
             OBSTYPE: Unpolarized NFI quicklook F-corona model
             TYPECODE: CF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     CTM:
@@ -84,8 +84,8 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized QuickPUNCH Mosaic
             OBSTYPE: Unpolarized quicklook mosaic
             TYPECODE: CT
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
     CNN:
         kinds: [Unpolarized]
@@ -95,6 +95,6 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized QuickPUNCH NFI Image
             OBSTYPE: Unpolarized NFI quicklook image
             TYPECODE: CN
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N

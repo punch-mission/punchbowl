@@ -76,7 +76,7 @@ Kinds:
             FILTER: Clear
             OBS-MODE: Unpolarized
             OBSLAYR1: Unpolarized
-            POLAR: Clear
+            POLAR: -999
 
 
 # Product specifications
@@ -95,8 +95,8 @@ Products:
         overrides:
             TITLE: PUNCH Level-0 {craftname} Polarized Image
             OBSTYPE: Polarized {crafttype} image
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
 
     PP?:
@@ -104,8 +104,8 @@ Products:
         overrides:
             TITLE: PUNCH Level-0 {craftname} Polarized Image
             OBSTYPE: Polarized {crafttype} image
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
 
     CR?:
@@ -113,8 +113,8 @@ Products:
         overrides:
             TITLE: PUNCH Level-0 {craftname} Clear Image
             OBSTYPE: Unpolarized {crafttype} image
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
 
     PX?:
@@ -126,12 +126,13 @@ Products:
             FILTER: PX
             OBS-MODE: Polar_MZP
             OBSLAYR1: Polar_X   
-            POLAR:
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            POLAR: -999
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
 
     ST4:
+        kinds: []
         overrides:
             TITLE: PUNCH Level-0 STEAM Image
             OBSTYPE: STEAM Data
@@ -147,8 +148,8 @@ Products:
             TITLE: PUNCH Level-0 {craftname} Dark Image
             OBSTYPE: "{crafttype} dark image image (lamp off)"
             TYPECODE: DK
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -158,8 +159,8 @@ Products:
             TITLE: PUNCH Level-0 {craftname} Dark Image
             OBSTYPE: "{crafttype} dark image image (lamp on)"
             TYPECODE: DY
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -169,8 +170,8 @@ Products:
             TITLE: PUNCH Level-0 {craftname} Overscan Image
             OBSTYPE: "{crafttype} overscan image"
             TYPECODE: OV
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -180,7 +181,7 @@ Products:
             TITLE: PUNCH Level-0 {craftname} Experimental Image
             OBSTYPE: "{crafttype} experimental image"
             TYPECODE: XI
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]

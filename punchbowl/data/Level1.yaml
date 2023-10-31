@@ -76,7 +76,7 @@ Kinds:
             FILTER: Clear
             OBS-MODE: Unpolarized
             OBSLAYR1: Unpolarized
-            POLAR: Clear
+            POLAR: -999
 
 
 # Product specifications
@@ -86,8 +86,8 @@ Products:
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image
             OBSTYPE: Polarized {crafttype} image
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
 
     PZ?:
@@ -95,8 +95,8 @@ Products:
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image
             OBSTYPE: Polarized {crafttype} image
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
 
     PP?:
@@ -104,8 +104,8 @@ Products:
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image
             OBSTYPE: Polarized {crafttype} image
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
 
     CR?:
@@ -113,8 +113,8 @@ Products:
         overrides:
             TITLE: PUNCH Level-1 {craftname} Clear Image
             OBSTYPE: Unpolarized {crafttype} image
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
 
     BD?:
@@ -123,8 +123,8 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Deficient Pixel Map
             OBSTYPE: '{crafttype} deficient pixel map'
             TYPECODE: BD
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -138,10 +138,10 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Flat-field Parameter map (quartic polynomial coefficients)
             OBSTYPE: '{crafttype} flat-field parameter map (quartic polynomial coefficients)'
             TYPECODE: FQ
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
-    omits: [FILTER, OBS-MODE, POLAR]
+        omits: [FILTER, OBS-MODE, POLAR]
 
     GM?:
         kinds: [Calibration, PM]
@@ -149,8 +149,8 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Vignetting Function
             OBSTYPE: '{crafttype} vignetting function'
             TYPECODE: GM
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -160,8 +160,8 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Vignetting Function
             OBSTYPE: '{crafttype} vignetting function'
             TYPECODE: GZ
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -171,8 +171,8 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Vignetting Function
             OBSTYPE: '{crafttype} vignetting function'
             TYPECODE: GP
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -182,8 +182,8 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Vignetting Function
             OBSTYPE: '{crafttype} vignetting function'
             TYPECODE: GR
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -193,8 +193,8 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
             OBSTYPE: '{crafttype} additive stray light model'
             TYPECODE: SM
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -204,8 +204,8 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
             OBSTYPE: '{crafttype} additive stray light model'
             TYPECODE: SZ
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -215,8 +215,8 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
             OBSTYPE: '{crafttype} additive stray light model'
             TYPECODE: SP
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -226,8 +226,8 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
             OBSTYPE: '{crafttype} additive stray light model'
             TYPECODE: SR
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
@@ -237,7 +237,7 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Point Spread Function Model
             OBSTYPE: '{crafttype} point spread function model'
             TYPECODE: RG
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]

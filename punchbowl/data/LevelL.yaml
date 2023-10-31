@@ -44,7 +44,7 @@ Kinds:
             NAXIS1: 4096
             NAXIS2: 4096
             OBS-MODE: Unpolarized
-            POLAR: Unpolarized
+            POLAR: -999
         omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Calibration:
@@ -62,8 +62,8 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized Quicklook Mosaic F-Corona Model
             OBSTYPE: Unpolarized quicklook mosaic F-corona model
             TYPECODE: CF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     CFN:
@@ -74,8 +74,8 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized Quicklook NFI F-Corona Model
             OBSTYPE: Unpolarized NFI quicklook F-corona model
             TYPECODE: CF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     CTM:
@@ -84,8 +84,8 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized Quicklook Mosaic
             OBSTYPE: Unpolarized quicklook mosaic
             TYPECODE: CT
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     CNN:
@@ -96,8 +96,8 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized Quicklook NFI Image
             OBSTYPE: Unpolarized NFI quicklook image
             TYPECODE: CN
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     PFM:
@@ -106,8 +106,8 @@ Products:
             TITLE: PUNCH Level-2 Polarized Quicklook Mosaic F-Corona Model
             OBSTYPE: Polarized quicklook mosaic F-corona model
             TYPECODE: PF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     PFN:
@@ -118,8 +118,8 @@ Products:
             TITLE: PUNCH Level-2 Polarized Quicklook NFI F-Corona Model
             OBSTYPE: Polarized NFI quicklook F-corona model
             TYPECODE: PF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     PTM:
@@ -128,8 +128,8 @@ Products:
             TITLE: PUNCH Level-2 Polarized Quicklook Mosaic
             OBSTYPE: Polarized quicklook mosaic
             TYPECODE: PT
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     PNN:
@@ -140,6 +140,6 @@ Products:
             TITLE: PUNCH Level-2 Polarized Quicklook NFI Image
             OBSTYPE: Polarized NFI quicklook image
             TYPECODE: PN
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N

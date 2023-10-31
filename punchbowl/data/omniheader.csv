@@ -21,6 +21,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 2,keyword,LEVEL,,Product Level,str,TRUE,TRUE,
 2,keyword,OBSTYPE,,Plain text observation,str,TRUE,TRUE,
 2,keyword,TYPECODE,,Observation product type code,str,TRUE,TRUE,
+2,keyword,CRAFT,,Spacecraft code,str,TRUE,TRUE,
 2,keyword,PIPEVRSN,,PUNCHPipe software version number,str,TRUE,TRUE,
 2,keyword,FILE_RAW,,Raw telemetry filename,str,TRUE,TRUE,
 2,keyword,ORIGIN,SwRI,Institution responsible for creating the file,str,TRUE,TRUE,SwRI
@@ -42,7 +43,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,POLAR,-999,[deg] Polarizer angle or fill value for clear,int,TRUE,TRUE,-999
 4,keyword,INSTRUME,,Instrument name,str,TRUE,TRUE,
 4,keyword,TELESCOP,,Satellite name,str,TRUE,TRUE,
-4,keyword,CRAFT,,Spacecraft name,str,TRUE,TRUE,
 4,keyword,OBSRVTRY,PUNCH,Observatory name,str,TRUE,TRUE,PUNCH
 4,keyword,OBJECT,Heliosphere white light,Object observed,str,TRUE,TRUE,Heliosphere white light
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System

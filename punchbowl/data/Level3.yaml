@@ -43,7 +43,7 @@ Kinds:
             NAXIS1: 4096
             NAXIS2: 4096
             OBS-MODE: Unpolarized
-            POLAR: Unpolarized
+            POLAR: -999
         omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Calibration:
@@ -62,8 +62,8 @@ Products:
             TITLE: PUNCH Level-3 Polarized Mosaic F-Corona Model
             OBSTYPE: Polarized mosaic F-corona model
             TYPECODE: PF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     PFN:
@@ -74,8 +74,8 @@ Products:
             TITLE: PUNCH Level-3 Polarized NFI F-Corona Model
             OBSTYPE: Polarized NFI F-corona model
             TYPECODE: PF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     CFM:
@@ -84,8 +84,8 @@ Products:
             TITLE: PUNCH Level-3 Unpolarized Mosaic F-Corona Model
             OBSTYPE: Unpolarized mosaic F-corona model
             TYPECODE: CF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     CFN:
@@ -96,8 +96,8 @@ Products:
             TITLE: PUNCH Level-3 Unpolarized NFI F-Corona Model
             OBSTYPE: Unpolarized NFI F-corona model
             TYPECODE: CF
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     PSM:
@@ -106,8 +106,8 @@ Products:
             TITLE: PUNCH Level-3 Polarized Mosaic Stellar Model
             OBSTYPE: Polarized mosaic stellar model
             TYPECODE: PS
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     PSN:
@@ -118,8 +118,8 @@ Products:
             TITLE: PUNCH Level-3 Polarized NFI Stellar Model
             OBSTYPE: Polarized NFI stellar model
             TYPECODE: PS
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     CSM:
@@ -128,8 +128,8 @@ Products:
             TITLE: PUNCH Level-3 Unpolarized Mosaic Stellar Model
             OBSTYPE: Unpolarized mosaic stellar model
             TYPECODE: CS
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     CSN:
@@ -140,8 +140,8 @@ Products:
             TITLE: PUNCH Level-3 Unpolarized NFI Stellar Model
             OBSTYPE: Unpolarized NFI stellar model
             TYPECODE: CS
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     PTM:
@@ -150,8 +150,8 @@ Products:
             TITLE: PUNCH Level-3 Polarized Mosaic
             OBSTYPE: Polarized mosaic
             TYPECODE: PT
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     PNN:
@@ -162,8 +162,8 @@ Products:
             TITLE: PUNCH Level-3 Polarized NFI Image
             OBSTYPE: Polarized NFI image
             TYPECODE: PN
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     CTM:
@@ -172,8 +172,8 @@ Products:
             TITLE: PUNCH Level-3 Unpolarized Mosaic
             OBSTYPE: Unpolarized mosaic
             TYPECODE: CT
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     CNN:
@@ -184,8 +184,8 @@ Products:
             TITLE: PUNCH Level-3 Unpolarized NFI Image
             OBSTYPE: Unpolarized NFI image
             TYPECODE: CN
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     VAM:
@@ -193,8 +193,8 @@ Products:
         overrides:
             TITLE: PUNCH Level-3 Derived Wind Velocity
             TYPECODE: VA
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     VAN:
@@ -202,8 +202,8 @@ Products:
         overrides:
             TITLE: PUNCH Level-3 Derived Wind Velocity
             TYPECODE: VA
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     PAM:
@@ -212,8 +212,8 @@ Products:
             TITLE: PUNCH Level-3 Polarized Low Noise Mosaic
             OBSTYPE: Polarized low noise mosaic
             TYPECODE: PA
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     PAN:
@@ -224,8 +224,8 @@ Products:
             TITLE: PUNCH Level-3 Polarized Low Noise NFI Image
             OBSTYPE: Polarized low noise NFI image
             TYPECODE: PA
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     CAM:
@@ -234,8 +234,8 @@ Products:
             TITLE: PUNCH Level-3 Unpolarized Low Noise Mosaic
             OBSTYPE: Unpolarized low noise mosaic
             TYPECODE: CA
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     CAN:
@@ -246,8 +246,8 @@ Products:
             TITLE: PUNCH Level-3 Unpolarized Low Noise NFI Image
             OBSTYPE: Unpolarized low noise NFI image
             TYPECODE: CA
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: N
 
     PLM:
@@ -255,8 +255,8 @@ Products:
         overrides:
             TITLE: All-PUNCH (r,log-theta) combined montage
             TYPECODE: PL
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M
 
     VOM:
@@ -264,6 +264,6 @@ Products:
         overrides:
             TITLE: Speed display plot
             TYPECODE: VQ
-            INSTRUME: {craftname}
-            TELESCOP: {obsname}
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
             CRAFT: M

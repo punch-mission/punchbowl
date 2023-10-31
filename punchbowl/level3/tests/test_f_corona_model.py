@@ -123,7 +123,7 @@ def test_empty_list() -> None:
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
     with pytest.raises(ValueError):
-        input_list=glob('./data/*.fits')
+        input_list = glob('./data/*.fits')
         with disable_run_logger():
             f_corona_model = construct_f_corona_background.fn(input_list)
 
@@ -133,7 +133,7 @@ def test_create_simple_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list)
 
@@ -145,7 +145,7 @@ def test_min_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list, method='min')
 
@@ -157,7 +157,7 @@ def test_mean_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list, method='mean')
 
@@ -169,7 +169,7 @@ def test_percent_5_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list)
 
@@ -181,7 +181,7 @@ def test_percent_10_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list, percentile_value=10)
 

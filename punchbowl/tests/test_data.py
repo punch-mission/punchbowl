@@ -23,8 +23,7 @@ from punchbowl.data import (
 )
 
 TESTDATA_DIR = os.path.dirname(__file__)
-SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "PUNCH_L2_WQM_20080103071000_uncomp.fits")
-SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "PUNCH_L2_WQM_20080103071000.fits")
+SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
 SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
 SAMPLE_OMNIBUS_PATH = os.path.join(TESTDATA_DIR, "omniheader.csv")
 SAMPLE_LEVEL_PATH = os.path.join(TESTDATA_DIR, "LevelTest.yaml")
@@ -239,12 +238,6 @@ def test_sample_data_creation(sample_data):
     assert isinstance(sample_data, PUNCHData)
 
 
-def test_generate_from_filename_uncompressed():
-    pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_UNCOMPRESSED)
-    assert isinstance(pd, PUNCHData)
-    assert isinstance(pd.data, np.ndarray)
-
-
 def test_generate_from_filename_compressed():
     pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
     assert isinstance(pd, PUNCHData)
@@ -326,3 +319,82 @@ def test_normalized_metadata_to_fits_writes_history():
     assert "HISTORY" in h
     assert "does it write?" in str(h['HISTORY'])
     assert "how about twice" in str(h['HISTORY'])
+
+
+def test_empty_history_equal():
+    assert History() == History()
+
+
+def test_history_equality():
+    entry = HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment")
+
+    h1 = History()
+    h1.add_entry(entry)
+
+    h2 = History()
+    h2.add_entry(entry)
+
+    assert h1 == h2
+
+
+def test_history_not_equals_if_different():
+    h1 = History()
+    h1.add_now("Test", "one")
+
+    h2 = History()
+    h2.add_now("Test", "two")
+
+    assert h1 != h2
+
+
+def test_history_cannot_compare_to_nonhistory_type():
+    h1 = History()
+    h2 = {"Not": "History"}
+    with pytest.raises(TypeError):
+        h1 == h2
+
+
+def test_from_fits_for_metadata(tmpdir):
+    m = NormalizedMetadata.load_template("PM1", "0")
+    m.history.add_now("Test", "does it write?")
+    m.history.add_now("Test", "how about twice?")
+    m['DESCRPTN'] = 'This is a test!'
+    h = m.to_fits_header()
+
+    path = os.path.join(tmpdir, "from_fits_test.fits")
+    d = PUNCHData(np.zeros((2048, 2048), dtype=np.int16), WCS(h), m)
+    d.write(path)
+
+    loaded = PUNCHData.from_fits(path)
+    assert loaded.meta == m
+
+
+def test_normalizecmetadata_from_fits_header():
+    m = NormalizedMetadata.load_template("PM1", "0")
+    m['DESCRPTN'] = 'This is a test!'
+    m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment"))
+    m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test2", "test comment"))
+    h = m.to_fits_header()
+
+    recovered = NormalizedMetadata.from_fits_header(h)
+
+    assert recovered == m
+
+def test_empty_history_from_fits_header():
+    m = NormalizedMetadata.load_template("PM1", "0")
+    h = m.to_fits_header()
+
+    assert History.from_fits_header(h) == History()
+
+
+def test_filled_history_from_fits_header(tmpdir):
+    constructed_history = History()
+    constructed_history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment"))
+    constructed_history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test2", "test comment"))
+
+    m = NormalizedMetadata.load_template("PM1", "0")
+    m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment"))
+    m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test2", "test comment"))
+    h = m.to_fits_header()
+
+    assert History.from_fits_header(h) == constructed_history

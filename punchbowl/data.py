@@ -163,6 +163,24 @@ class History:
         self.current_index += 1
         return entry  # noqa:  RET504
 
+    def __eq__(self, other):
+        if isinstance(other, History):
+            return self._entries == other._entries
+        else:
+            raise TypeError(f"Can only check equality between two history objects, found History and {type(other)}")
+
+    @classmethod
+    def from_fits_header(cls, head: Header):
+        if 'HISTORY' not in head:
+            return cls()
+        else:
+            out = cls()
+            for row in head['HISTORY'][1:]:
+                dt, source, comment = row.split(" => ")
+                dt = parse_datetime(dt)
+                out.add_entry(HistoryEntry(dt, source, comment))
+            return out
+
 
 ValueType = t.Union[int, str, float]
 
@@ -227,6 +245,13 @@ class MetaField:
         else:
             raise TypeError(f"Value was {type(default)} but must be {self._default}.")
 
+    def __eq__(self, other):
+        if not isinstance(other, MetaField):
+            raise RuntimeError(f"MetaFields can only be compared to their own type, found {type(other)}.")
+        return (self._keyword == other._keyword and self._comment == other._comment and self._value == other._value
+                and self._datatype == other._datatype and self.nullable == other.nullable
+                and self._mutable == other._mutable and self._default == other._default)
+
 
 class NormalizedMetadata(Mapping):
     """
@@ -250,6 +275,12 @@ class NormalizedMetadata(Mapping):
 
     def __iter__(self):
         return self._contents.__iter__()
+
+    def __eq__(self, other):
+        if isinstance(other, NormalizedMetadata):
+            return self._contents == other._contents and self._history == other._history
+        else:
+            raise TypeError(f"Can only check equality between two NormalizedMetadata, found {type(other)}.")
 
     def to_fits_header(self) -> Header:
         """
@@ -283,8 +314,30 @@ class NormalizedMetadata(Mapping):
                     end=True,
                 )
         for entry in self.history:
-            hdr["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
+            hdr["HISTORY"] = f"{entry.datetime} => {entry.source} => {entry.comment}"
         return hdr
+
+    @classmethod
+    def from_fits_header(cls, h: Header) -> NormalizedMetadata:
+        if "TYPECODE" not in h:
+            raise RuntimeError("TYPECODE must a field of the header")
+        if "CRAFT" not in h:
+            raise RuntimeError("CRAFT must be a field of the header")
+        if "LEVEL" not in h:
+            raise RuntimeError("LEVEL must be a field of the header")
+
+        type_code, craft_code, level = h['TYPECODE'], h['CRAFT'], h['LEVEL']
+
+        m = NormalizedMetadata.load_template(type_code + craft_code, level)
+
+        for k, v in h.items():
+            if k not in ("COMMENT", "HISTORY"):
+                if k not in m:
+                    raise RuntimeError(f"Unexpected key of {k} found in header for Level {level} {type_code + craft_code} type meta.")
+                m[k] = v
+        m._history = History.from_fits_header(h)
+
+        return m
 
     @staticmethod
     def _match_product_code_in_level_spec(product_code, level_spec):
@@ -700,7 +753,7 @@ class PUNCHData(NDCube):
             primary_hdu = hdul[hdu_index]
             header = primary_hdu.header
             data = primary_hdu.data
-            meta = NormalizedMetadata(dict(header))  # TODO: make work!
+            meta = NormalizedMetadata.from_fits_header(header)
             wcs = WCS(header)
             unit = u.ct
 
@@ -794,9 +847,6 @@ class PUNCHData(NDCube):
         None
         """
         header = self.meta.to_fits_header()
-
-        for entry in self.meta.history:
-            header["HISTORY"] = f"{entry.datetime}: {entry.source}, {entry.comment}"
 
         hdul_list = []
 

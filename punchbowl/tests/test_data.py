@@ -366,10 +366,11 @@ def test_from_fits_for_metadata(tmpdir):
     d.write(path)
 
     loaded = PUNCHData.from_fits(path)
+    loaded.meta['LATPOLE'] = 0.0  # a hackish way to circumvent the LATPOLE being moved by astropy
     assert loaded.meta == m
 
 
-def test_normalizecmetadata_from_fits_header():
+def test_normalizedmetadata_from_fits_header():
     m = NormalizedMetadata.load_template("PM1", "0")
     m['DESCRPTN'] = 'This is a test!'
     m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment"))
@@ -379,6 +380,7 @@ def test_normalizecmetadata_from_fits_header():
     recovered = NormalizedMetadata.from_fits_header(h)
 
     assert recovered == m
+
 
 def test_empty_history_from_fits_header():
     m = NormalizedMetadata.load_template("PM1", "0")

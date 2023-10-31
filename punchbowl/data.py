@@ -848,6 +848,12 @@ class PUNCHData(NDCube):
         """
         header = self.meta.to_fits_header()
 
+        # update the header with the WCS
+        wcs_header = self.wcs.to_header()
+        for k, v in wcs_header.items():
+            if k in header:
+                header[k] = v
+
         hdul_list = []
 
         hdu_dummy = fits.PrimaryHDU()
@@ -857,7 +863,11 @@ class PUNCHData(NDCube):
         hdul_list.append(hdu_data)
 
         if self.uncertainty is not None:
-            hdu_uncertainty = fits.CompImageHDU(data = self.uncertainty.array)
+            hdu_uncertainty = fits.CompImageHDU(data=self.uncertainty.array)
+            # write WCS to uncertainty header
+            for k, v in wcs_header.items():
+                if k in hdu_uncertainty.header:
+                    hdu_uncertainty.header[k] = v
             hdul_list.append(hdu_uncertainty)
 
         hdul = fits.HDUList(hdul_list)

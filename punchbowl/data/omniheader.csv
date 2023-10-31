@@ -32,6 +32,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 3,keyword,DATE-AVG,,UTC reference time,str,TRUE,TRUE,
 3,keyword,DATE-END,,UTC time of observation end,str,TRUE,TRUE,
 3,keyword,DATE,,UTC file generation date and time,str,TRUE,TRUE,
+3,keyword,MJDREF,0,[d] MJD of fiducial time,float,TRUE,TRUE,0
 4,section,COMMENT,Instrument and Spacecraft State,,str,TRUE,TRUE, Instrument and Spacecraft State
 4,keyword,WAVELNTH,530,[nm] average peak response,int,TRUE,TRUE,530
 4,keyword,WAVEUNIT,nanometer,Unit of observation measurement,str,TRUE,TRUE,nanometer
@@ -47,51 +48,29 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,OBJECT,Heliosphere white light,Object observed,str,TRUE,TRUE,Heliosphere white light
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
 5,keyword,WCSAXES,2,WCS number of axes,int,TRUE,TRUE,2
-5,keyword,CTYPE1,RA---TAN-SIP,TAN (gnomic) projection + SIP distortions,str,TRUE,TRUE,RA---TAN-SIP
-5,keyword,CTYPE2,DEC--TAN-SIP,TAN (gnomic) projection + SIP distortions,str,TRUE,TRUE,DEC--TAN-SIP
+5,keyword,CTYPE1,RA---TAN,TAN (gnomic) projection + SIP distortions,str,TRUE,TRUE,RA---TAN-SIP
+5,keyword,CTYPE2,DEC--TAN,TAN (gnomic) projection + SIP distortions,str,TRUE,TRUE,DEC--TAN-SIP
 5,keyword,EQUINOX,2000,Equatorial coordinates definition (yr),float,TRUE,TRUE,2000
 5,keyword,LONPOLE,180,[deg] native longitude of the celestial pole,float,TRUE,TRUE,180
 5,keyword,LATPOLE,0,[deg] native latitude of the celestial pole,float,TRUE,TRUE,0
 5,keyword,CRVAL1,48.75336316,[deg] RA  of reference point,float,TRUE,TRUE,48.75336316
 5,keyword,CRVAL2,28.66089364,[deg] DEC of reference point,float,TRUE,TRUE,28.66089364
+5,keyword,CDELT1,-0.042305,[arcsec] average pixel scale along axis 1,float,TRUE,TRUE,-0.042305
+5,keyword,CDELT2,0.042305,[arcsec] average pixel scale along axis 2,float,TRUE,TRUE,0.042305
 5,keyword,CRPIX1,1024.5,[pixel] X reference pixel,float,TRUE,TRUE,1024.5
 5,keyword,CRPIX2,1024.5,[pixel] Y reference pixel,float,TRUE,TRUE,1024.5
 5,keyword,CUNIT1,deg,X pixel scale units,str,TRUE,TRUE,deg
 5,keyword,CUNIT2,deg,Y pixel scale units,str,TRUE,TRUE,deg
+5,keyword,PC1_1,1,WCS coordinate transformation matrix           ,float,TRUE,TRUE,1
+5,keyword,PC1_2,0,WCS coordinate transformation matrix           ,float,TRUE,TRUE,0
+5,keyword,PC2_1,0,WCS coordinate transformation matrix           ,float,TRUE,TRUE,0
+5,keyword,PC2_2,1,WCS coordinate transformation matrix           ,float,TRUE,TRUE,1
 5,keyword,CD1_1,0.00148858,WCS coordinate description matrix,float,TRUE,TRUE,0.00148858
 5,keyword,CD1_2,-0.02466224,WCS coordinate description matrix,float,TRUE,TRUE,-0.02466224
 5,keyword,CD2_1,0.024675603,WCS coordinate description matrix,float,TRUE,TRUE,0.024675603
 5,keyword,CD2_2,0.001474167,WCS coordinate description matrix,float,TRUE,TRUE,0.001474167
 5,keyword,IMAGEW,2048,"image width,  in pixels.",int,TRUE,TRUE,2048
 5,keyword,IMAGEH,2048,"image height, in pixels.",int,TRUE,TRUE,2048
-5,keyword,A_ORDER,2,"polynomial order, axis 1",int,TRUE,TRUE,2
-5,keyword,A_0_0,0,distortion coefficient,float,TRUE,TRUE,0
-5,keyword,A_0_1,0,distortion coefficient,float,TRUE,TRUE,0
-5,keyword,A_0_2,2.07E-06,distortion coefficient,float,TRUE,TRUE,2.07E-06
-5,keyword,A_1_0,0,distortion coefficient,float,TRUE,TRUE,0
-5,keyword,A_1_1,-1.30E-06,distortion coefficient,float,TRUE,TRUE,-1.30E-06
-5,keyword,A_2_0,2.77E-07,distortion coefficient,float,TRUE,TRUE,2.77E-07
-5,keyword,B_ORDER,2,"polynomial order, axis 2",int,TRUE,TRUE,2
-5,keyword,B_0_0,0,distortion coefficient,float,TRUE,TRUE,0
-5,keyword,B_0_1,0,distortion coefficient,float,TRUE,TRUE,0
-5,keyword,B_0_2,-1.71E-06,distortion coefficient,float,TRUE,TRUE,-1.71E-06
-5,keyword,B_1_0,0,distortion coefficient,float,TRUE,TRUE,0
-5,keyword,B_1_1,-3.76E-07,distortion coefficient,float,TRUE,TRUE,-3.76E-07
-5,keyword,B_2_0,-7.76E-08,distortion coefficient,float,TRUE,TRUE,-7.76E-08
-5,keyword,AP_ORDER,2,"inv polynomial order, axis 1",int,TRUE,TRUE,2
-5,keyword,AP_0_0,-9.83E-06,distortion coefficient,float,TRUE,TRUE,-9.83E-06
-5,keyword,AP_0_1,-6.91E-06,distortion coefficient,float,TRUE,TRUE,-6.91E-06
-5,keyword,AP_0_2,-2.07E-06,distortion coefficient,float,TRUE,TRUE,-2.07E-06
-5,keyword,AP_1_0,1.48E-06,distortion coefficient,float,TRUE,TRUE,1.48E-06
-5,keyword,AP_1_1,1.30E-06,distortion coefficient,float,TRUE,TRUE,1.30E-06
-5,keyword,AP_2_0,-2.77E-07,distortion coefficient,float,TRUE,TRUE,-2.77E-07
-5,keyword,BP_ORDER,2,"inv polynomial order, axis 2",int,TRUE,TRUE,2
-5,keyword,BP_0_0,3.75E-06,distortion coefficient,float,TRUE,TRUE,3.75E-06
-5,keyword,BP_0_1,3.57E-06,distortion coefficient,float,TRUE,TRUE,3.57E-06
-5,keyword,BP_0_2,1.71E-06,distortion coefficient,float,TRUE,TRUE,1.71E-06
-5,keyword,BP_1_0,7.73E-07,distortion coefficient,float,TRUE,TRUE,7.73E-07
-5,keyword,BP_1_1,3.76E-07,distortion coefficient,float,TRUE,TRUE,3.76E-07
-5,keyword,BP_2_0,7.76E-08,distortion coefficient,float,TRUE,TRUE,7.76E-08
 5,keyword,CTYPE1A,RA---ZPN,WCS axis X,str,TRUE,TRUE,RA---ZPN
 5,keyword,CTYPE2A,DEC--ZPN,WCS axis Y,str,TRUE,TRUE,DEC--ZPN
 5,keyword,CUNIT1A,deg,"WCS axis X units (theta_x, longitude)",str,TRUE,TRUE,deg

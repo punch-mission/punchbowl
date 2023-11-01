@@ -26,7 +26,6 @@ def validate_omniheader(directory):
     omniheader = pd.read_csv(os.path.join(directory, "omniheader.csv"), na_filter=False)
     expected_columns = {"SECTION", "TYPE", "KEYWORD", "VALUE", "COMMENT", "DATATYPE", "NULLABLE", "MUTABLE", "DEFAULT"}
     assert set(omniheader.columns) == expected_columns, "Omniheader columns do not match expected"
-    # TODO: validate the values in each column match allowed, e.g. SECTION are only numbers
 
 
 def construct_all_product_headers(directory, level):

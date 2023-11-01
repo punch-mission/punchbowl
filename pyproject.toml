@@ -36,3 +36,9 @@ line-length=120
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["E402"]
 "*/tests/*" = ['S101']
+
+[tool.pytest.ini_options]
+markers = [
+    "prefect_test: a test that integrates with Prefect",
+    "regression: a regression test, likely slow",
+]

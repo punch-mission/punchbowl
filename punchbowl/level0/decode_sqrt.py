@@ -366,11 +366,11 @@ def decode_sqrt_data(data_object: PUNCHData, overwrite_table: bool = False) -> P
 
     data = data_object.data
 
-    from_bits = data_object.meta["RAWBITS"]
-    to_bits = data_object.meta["COMPBITS"]
+    from_bits = data_object.meta["RAWBITS"].value
+    to_bits = data_object.meta["COMPBITS"].value
 
-    ccd_gain = data_object.meta["GAINCMD"]
-    ccd_offset = data_object.meta["OFFSET"]
+    ccd_gain = data_object.meta["GAINCMD"].value
+    ccd_offset = data_object.meta["OFFSET"].value
     ccd_read_noise = 17  # DN
 
     decoded_data = decode_sqrt(data,

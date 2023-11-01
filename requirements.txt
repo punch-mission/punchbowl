@@ -13,4 +13,6 @@ scipy
 lmfit
 scikit-image
 reproject
+pylibjpeg
 python-dateutil
+pyyaml

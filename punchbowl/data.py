@@ -263,7 +263,7 @@ class MetaField:
         """sets value withing MetaField object"""
         if not self._mutable:
             raise RuntimeError("Cannot mutate this value because it is set to immutable.")
-        if isinstance(value, (self._datatype | None)):
+        if isinstance(value, self._datatype) or value is None:
             self._value = value
         else:
             raise TypeError(f"Value of {self.keyword} was {type(value)} but must be {self._datatype}.")
@@ -274,7 +274,7 @@ class MetaField:
 
     @default.setter
     def default(self, default: ValueType):
-        if isinstance(default, self._datatype):
+        if isinstance(default, self._datatype) or default is None:
             self._default = default
         else:
             raise TypeError(f"Value was {type(default)} but must be {self._default}.")
@@ -571,31 +571,29 @@ class NormalizedMetadata(Mapping):
                         if e['KEYWORD'] in overrides:
                             value = overrides[e['KEYWORD']]
                         try:
-                            #value = datatype(value)
-                            if datatype is str: value = datatype(value)
-                            if (datatype is int) or (datatype is float):
+                            if datatype is str:
+                                value = datatype(value)
+                                value = value.format(**spacecraft_def[spacecraft])
+                            elif (datatype is int) or (datatype is float):
                                 if value != '':
                                     value = datatype(value)
                                 else:
                                     value = None
                         except ValueError:
                             raise RuntimeError(f"Value was of the wrong type to parse for {e['KEYWORD']}")
-                        finally:
-                            if isinstance(value, str):
-                                value = value.format(**spacecraft_def[spacecraft])
+
                         try:
-                            # datatype(default or 0)
-                            if datatype is str: default = datatype(default)
-                            if (datatype is int) or (datatype is float):
+                            if datatype is str:
+                                default = datatype(default)
+                                default = default.format(**spacecraft_def[spacecraft])
+                            elif (datatype is int) or (datatype is float):
                                 if default != '':
                                     default = datatype(default)
                                 else:
                                     default = None
                         except ValueError:
                             raise RuntimeError(f"Default was of the wrong type to parse for {e['KEYWORD']}")
-                        finally:
-                            if isinstance(value, str):
-                                default = default.format(**spacecraft_def[spacecraft])
+
                         contents[section_title][e['KEYWORD']] = MetaField(e['KEYWORD'],
                                                                           e['COMMENT'].format(**spacecraft_def[spacecraft]),
                                                                           value,

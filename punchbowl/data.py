@@ -1,23 +1,21 @@
 from __future__ import annotations
 
 import os.path
-import warnings
 from collections import namedtuple, OrderedDict
 from collections.abc import Mapping
 from datetime import datetime
-from pathlib import Path
 import typing as t
+from dateutil.parser import parse as parse_datetime
 
+from astropy.io import fits
+from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
+from astropy.io.fits import Header
 import astropy.units as u
 import astropy.wcs.wcsapi
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
-from astropy.io import fits
-from astropy.nddata import StdDevUncertainty
-from astropy.wcs import WCS
-from astropy.io.fits import Header, Card
-from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 import yaml
 
@@ -31,21 +29,24 @@ def get_data_path(path):
     return os.path.join(_ROOT, 'data', path)
 
 
-def load_omniheader(path=None):
+def load_omniheader(path:t.Optional[str] = None) -> pd.DataFrame:
     """Loads full metadata specifications"""
     if path is None:
         path = get_data_path("omniheader.csv")
     return pd.read_csv(path, na_filter=False)
 
 
-def load_level_spec(path):
+def load_level_spec(path: str) -> dict[str, t.Any]:
     """Loads data product metadata specifications"""
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 
 
-def load_spacecraft_def(path=None):
-    """Loads spacecraft metadata specifications"""
+def load_spacecraft_def(path: t.Optional[str] = None) -> dict[str, t.Any]:
+    """Loads spacecraft metadata specifications
+
+    If path is None, then it loads a default from the package.
+    """
     if path is None:
         path = get_data_path("spacecraft.yaml")
     with open(path, 'r') as f:
@@ -59,6 +60,7 @@ class History:
     """Representation of the history of edits done to a PUNCHData object"""
 
     def __init__(self) -> None:
+        """Create blank history"""
         self._entries: t.List[HistoryEntry] = []
 
     def add_entry(self, entry: HistoryEntry) -> None:
@@ -126,7 +128,7 @@ class History:
         Returns
         -------
         HistoryEntry
-            HistoryEntry that is the youngest
+            returns HistoryEntry that is the youngest
         """
         return self._entries[-1]
 
@@ -170,7 +172,19 @@ class History:
             raise TypeError(f"Can only check equality between two history objects, found History and {type(other)}")
 
     @classmethod
-    def from_fits_header(cls, head: Header):
+    def from_fits_header(cls, head: Header) -> History:
+        """Constructs a history from a FITS header
+
+        Parameters
+        ----------
+        head : Header
+            a FITS header to read from
+
+        Returns
+        -------
+        History
+            the history derived from a given FITS header
+        """
         if 'HISTORY' not in head:
             return cls()
         else:
@@ -187,6 +201,7 @@ ValueType = t.Union[int, str, float]
 
 class MetaField:
     """The MetaField object describes a single field within the NormalizedMetadata object"""
+
     def __init__(self,
                  keyword: str,
                  comment: str,
@@ -195,6 +210,25 @@ class MetaField:
                  nullable: bool,
                  mutable: bool,
                  default: t.Optional[t.Union[int, str, float]]):
+        """Create a MetaField
+
+        Parameters
+        ----------
+        keyword: str
+            FITS keyword for this field
+        comment: str
+            FITS compliant comment for this field
+        value : int, str, or float
+            the value associated with this field
+        datatype : int, str, or float type
+            what type of data is expected for the value and default
+        nullable : bool
+            if true, the default will be used in the case of None for the value
+        mutable : bool
+            if false, the value can never be changed after creation
+        default : int, str, or float
+            the default value to use if value is None and nullable is True
+        """
         if value is not None and not isinstance(value, datatype):
             raise TypeError(f"MetaField value and kind must match. Found kind={datatype} and value={type(value)}.")
         if default is not None and not isinstance(default, datatype):
@@ -210,12 +244,12 @@ class MetaField:
         self._default = default
 
     @property
-    def keyword(self):
+    def keyword(self) -> str:
         """returns MetaField keyword"""
         return self._keyword
 
     @property
-    def comment(self):
+    def comment(self) -> str:
         """returns MetaField comment"""
         return self._comment
 
@@ -245,7 +279,7 @@ class MetaField:
         else:
             raise TypeError(f"Value was {type(default)} but must be {self._default}.")
 
-    def __eq__(self, other):
+    def __eq__(self, other: MetaField) -> bool:
         if not isinstance(other, MetaField):
             raise RuntimeError(f"MetaFields can only be compared to their own type, found {type(other)}.")
         return (self._keyword == other._keyword and self._comment == other._comment and self._value == other._value
@@ -256,10 +290,11 @@ class MetaField:
 class NormalizedMetadata(Mapping):
     """
     The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
-    making keyword accesses case-insensitive and providing helpful accessors for commonly used formats of the metadata.
+    uniting the history and header fields while providing helpful accessors for commonly used formats of the metadata.
 
-    Internally, the keys are always stored as upper-case strings.
-    Unlike the FITS standard, keys can be any length string.
+    Internally, the keys are always stored as FITS compliant upper-case strings. These are stored in sections.
+    So the contents dictionary should have a key of a section title mapped to a dictionary of field keys mapped to
+    MetaFields.
     """
 
     def __len__(self) -> int:
@@ -269,6 +304,15 @@ class NormalizedMetadata(Mapping):
     def __init__(self,
                  contents: t.OrderedDict[str, t.OrderedDict[str, MetaField]],
                  history: t.Optional[History] = None) -> None:
+        """Create a Normalized Metadata. Also see `from_template` as that is often more helpful.
+
+        Parameters
+        ----------
+        contents: OrderedDict[str, OrderedDict[str, MetaField]]
+            contents of the meta information
+        history: History
+            history contents for this meta field
+        """
 
         self._contents = contents
         self._history = history if history is not None else History()
@@ -276,7 +320,7 @@ class NormalizedMetadata(Mapping):
     def __iter__(self):
         return self._contents.__iter__()
 
-    def __eq__(self, other):
+    def __eq__(self, other: NormalizedMetadata):
         if isinstance(other, NormalizedMetadata):
             return self._contents == other._contents and self._history == other._history
         else:
@@ -319,6 +363,18 @@ class NormalizedMetadata(Mapping):
 
     @classmethod
     def from_fits_header(cls, h: Header) -> NormalizedMetadata:
+        """ Construct a normalized Metadata from a PUNCH FITS header
+
+        Parameters
+        ----------
+        h : Header
+            a PUNCH FITS header from Astropy
+
+        Returns
+        -------
+        NormalizedMetadata
+            the corresponding NormalizedMetadata
+        """
         if "TYPECODE" not in h:
             raise RuntimeError("TYPECODE must a field of the header")
         if "CRAFT" not in h:
@@ -340,7 +396,7 @@ class NormalizedMetadata(Mapping):
         return m
 
     @staticmethod
-    def _match_product_code_in_level_spec(product_code, level_spec):
+    def _match_product_code_in_level_spec(product_code: str, level_spec: dict) -> dict:
         """
         Parses the specified product code and level specification to find a corresponding set
 
@@ -349,13 +405,12 @@ class NormalizedMetadata(Mapping):
         product_code
             Specified data product code
         level_spec
-            Data product level specifications
+            Data product level specifications, loaded from `load_level_spec`
 
         Returns
         -------
         Dict
             Product code specification parsed from file
-
         """
         if product_code in level_spec['Products']:
             return level_spec['Products'][product_code]
@@ -368,7 +423,11 @@ class NormalizedMetadata(Mapping):
                 raise RuntimeError(f"Product code {product_code} not found in level_spec")
 
     @staticmethod
-    def _load_template_files(omniheader_path, level, level_spec_path, spacecraft, spacecraft_def_path):
+    def _load_template_files(omniheader_path: str,
+                             level: str,
+                             level_spec_path: str,
+                             spacecraft: str,
+                             spacecraft_def_path: str):
         """
         Loads template files from specified locations
 
@@ -389,7 +448,6 @@ class NormalizedMetadata(Mapping):
         -------
         Tuple
             Header specification entries
-
         """
         omniheader = load_omniheader(omniheader_path)
         spacecraft_def = load_spacecraft_def(spacecraft_def_path)
@@ -408,7 +466,7 @@ class NormalizedMetadata(Mapping):
         return omniheader, level_spec, spacecraft_def
 
     @staticmethod
-    def _determine_omits_and_overrides(level_spec, product_def):
+    def _determine_omits_and_overrides(level_spec: dict, product_def: dict):
         """
         Reads level specifications and product definitions and determines keywords to omit or overwrite
 
@@ -423,7 +481,6 @@ class NormalizedMetadata(Mapping):
         -------
         Tuple
             Keywords and values to omit and override
-
         """
         this_kinds = product_def['kinds']
         omits, overrides = [], {}
@@ -466,7 +523,7 @@ class NormalizedMetadata(Mapping):
         Parameters
         ----------
         product_code
-            Specified data product code
+            Specified data product code, a three character code like PM1
         level
             Specified data product level
         level_spec_path
@@ -676,7 +733,7 @@ class NormalizedMetadata(Mapping):
 class PUNCHData(NDCube):
     """PUNCH data object
 
-    PUNCHData is essentially a normal ndcube with a StandardizedMetadata and some helpful methods.
+    PUNCHData is essentially a normal ndcube with a NormalizedMetadata and some helpful methods.
 
     See Also
     --------
@@ -906,7 +963,6 @@ class PUNCHData(NDCube):
 
         # Write image to file
         mpl.image.saveim(filename, output_data)
-
 
     def duplicate_with_updates(self, data: np.ndarray=None,
                                wcs: astropy.wcs.WCS= None,

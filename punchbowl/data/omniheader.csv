@@ -41,7 +41,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,OBSLAYR1,,Image Mode for first datacube layer,str,TRUE,TRUE,
 4,keyword,OBSLAYR2,,Image Mode for second datacube layer,str,TRUE,TRUE,
 4,keyword,OBSLAYR3,,Image Mode for third datacube layer,str,TRUE,TRUE,
-4,keyword,POLAR,-999,[deg] Polarizer angle or fill value for clear,int,TRUE,TRUE,-999
+4,keyword,POLAR,,[deg] Polarizer angle or fill value for clear,int,TRUE,TRUE,
 4,keyword,INSTRUME,,Instrument name,str,TRUE,TRUE,
 4,keyword,TELESCOP,,Satellite name,str,TRUE,TRUE,
 4,keyword,OBSRVTRY,PUNCH,Observatory name,str,TRUE,TRUE,PUNCH
@@ -156,7 +156,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 7,keyword,COMPBITS,10,[bits] compressed image bits per pixel,int,TRUE,TRUE,10
 7,keyword,SQRTCODE,,square-root coding table name,str,TRUE,TRUE,
 7,keyword,COMPRESS,,image compression type,str,TRUE,TRUE,
-7,keyword,COMP_RAT,-1,compressed/uncompressed data ratio,float,TRUE,TRUE,-999
+7,keyword,COMP_RAT,,compressed/uncompressed data ratio,float,TRUE,TRUE,
 8,section,COMMENT, Calibration Data,,str,TRUE,TRUE, Calibration Data
 8,keyword,CALCF,,quartic fit filename,str,TRUE,TRUE,
 8,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,
@@ -165,53 +165,53 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 8,keyword,CALSL,,stray light model filename(TBC),str,TRUE,TRUE,
 9,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
 9,keyword,BUNIT,DN/s,units of observation,str,TRUE,TRUE,DN/s
-9,keyword,DATAZER,0,number of pixels=0,int,TRUE,TRUE,0
-9,keyword,DATASAT,1,number of saturated pixels,int,TRUE,TRUE,1
-9,keyword,DSATVAL,1.92E-10,saturation value in calibrated units,float,TRUE,TRUE,1.92E-10
-9,keyword,DATAAVG,3.89E-11,average non-zero pixel value,float,TRUE,TRUE,3.89E-11
-9,keyword,DATAMDN,2.82E-11,median non-zero pixel value,float,TRUE,TRUE,2.82E-11
-9,keyword,DATASIG,3.10E-11,standard deviation of non-zero pixels,float,TRUE,TRUE,3.10E-11
-9,keyword,DATAP01,9.90E-13,1% of non-zero pixels are LE this value,float,TRUE,TRUE,9.90E-13
-9,keyword,DATAP10,1.43E-11,10% of non-zero pixels are LE this value,float,TRUE,TRUE,1.43E-11
-9,keyword,DATAP25,1.89E-11,25% of non-zero pixels are LE this value,float,TRUE,TRUE,1.89E-11
-9,keyword,DATAP50,2.82E-11,50% of non-zero pixels are LE this value,float,TRUE,TRUE,2.82E-11
-9,keyword,DATAP75,4.73E-11,75% of non-zero pixels are LE this value,float,TRUE,TRUE,4.73E-11
-9,keyword,DATAP90,8.01E-11,90% of non-zero pixels are LE this value,float,TRUE,TRUE,8.01E-11
-9,keyword,DATAP95,1.08E-10,95% of non-zero pixels are LE this value,float,TRUE,TRUE,1.08E-10
-9,keyword,DATAP98,1.40E-10,98% of non-zero pixels are LE this value,float,TRUE,TRUE,1.40E-10
-9,keyword,DATAP99,1.59E-10,99% of non-zero pixels are LE this value,float,TRUE,TRUE,1.59E-10
-9,keyword,DATAMIN,23,minimum valid physical value,int,TRUE,TRUE,23
-9,keyword,DATAMAX,1234,maximum valid physical value,int,TRUE,TRUE,1234
+9,keyword,DATAZER,,number of pixels=0,int,TRUE,TRUE,
+9,keyword,DATASAT,,number of saturated pixels,int,TRUE,TRUE,
+9,keyword,DSATVAL,,saturation value in calibrated units,float,TRUE,TRUE,
+9,keyword,DATAAVG,,average non-zero pixel value,float,TRUE,TRUE,
+9,keyword,DATAMDN,,median non-zero pixel value,float,TRUE,TRUE,
+9,keyword,DATASIG,,standard deviation of non-zero pixels,float,TRUE,TRUE,
+9,keyword,DATAP01,,1% of non-zero pixels are LE this value,float,TRUE,TRUE,
+9,keyword,DATAP10,,10% of non-zero pixels are LE this value,float,TRUE,TRUE,
+9,keyword,DATAP25,,25% of non-zero pixels are LE this value,float,TRUE,TRUE,
+9,keyword,DATAP50,,50% of non-zero pixels are LE this value,float,TRUE,TRUE,
+9,keyword,DATAP75,,75% of non-zero pixels are LE this value,float,TRUE,TRUE,
+9,keyword,DATAP90,,90% of non-zero pixels are LE this value,float,TRUE,TRUE,
+9,keyword,DATAP95,,95% of non-zero pixels are LE this value,float,TRUE,TRUE,
+9,keyword,DATAP98,,98% of non-zero pixels are LE this value,float,TRUE,TRUE,
+9,keyword,DATAP99,,99% of non-zero pixels are LE this value,float,TRUE,TRUE,
+9,keyword,DATAMIN,,minimum valid physical value,int,TRUE,TRUE,
+9,keyword,DATAMAX,,maximum valid physical value,int,TRUE,TRUE,
 10,section,COMMENT,Solar Reference Data,,str,TRUE,TRUE,Solar Reference Data
-10,keyword,RSUN_ARC,-1,[arcsec] photospheric solar radius,float,TRUE,TRUE,-1
-10,keyword,RSUN_REF,-1,[m] assumed physical solar radius,float,TRUE,TRUE,-1
-10,keyword,SOLAR_EP,-1,[deg] S/C ecliptic North to solar North angle,float,TRUE,TRUE,-1
-10,keyword,CAR_ROT,-1,Carrington Rotation number,int,TRUE,TRUE,-1
+10,keyword,RSUN_ARC,,[arcsec] photospheric solar radius,float,TRUE,TRUE,
+10,keyword,RSUN_REF,,[m] assumed physical solar radius,float,TRUE,TRUE,
+10,keyword,SOLAR_EP,,[deg] S/C ecliptic North to solar North angle,float,TRUE,TRUE,
+10,keyword,CAR_ROT,,Carrington Rotation number,int,TRUE,TRUE,
 11,section,COMMENT, Spacecraft Location & Environment,,str,TRUE,TRUE, Spacecraft Location & Environment
-11,keyword,GEOD_LAT,-1,[deg] S/C sub-point geodetic latitude,float,TRUE,TRUE,-1
-11,keyword,GEOD_LON,-1,[deg] S/C sub-point longitude,float,TRUE,TRUE,-1
-11,keyword,GEOD_ALT,-1,[m] S/C WGS84 altitude,float,TRUE,TRUE,-1
-11,keyword,LOS_ALT,-1,[m] line-of-sight altitude above Earth,float,TRUE,TRUE,-1
-11,keyword,HGLT_OBS,-1,[deg] S/C heliographic latitude,float,TRUE,TRUE,-1
-11,keyword,HGLN_OBS,-1,[deg] S/C heliographic longitude (B0),float,TRUE,TRUE,-1
-11,keyword,CRLT_OBS,-1,[deg] S/C Carrington latitude (B0),float,TRUE,TRUE,-1
-11,keyword,CRLN_OBS,-1,[deg] S/C Carrington longitude,float,TRUE,TRUE,-1
-11,keyword,DSUN_OBS,-1,[m] S/C distance from Sun,float,TRUE,TRUE,-1
-11,keyword,HEEX_OBS,-1,[m] S/C Heliocentric Earth Ecliptic X,float,TRUE,TRUE,-1
-11,keyword,HEEY_OBS,-1,[m] S/C Heliocentric Earth Ecliptic Y,float,TRUE,TRUE,-1
-11,keyword,HEEZ_OBS,-1,[m] S/C Heliocentric Earth Ecliptic Z,float,TRUE,TRUE,-1
-11,keyword,HCIX_OBS,-1,[m] S/C Heliocentric Inertial X,float,TRUE,TRUE,-1
-11,keyword,HCIY_OBS,-1,[m] S/C Heliocentric Inertial Y,float,TRUE,TRUE,-1
-11,keyword,HCIZ_OBS,-1,[m] S/C Heliocentric Inertial Z,float,TRUE,TRUE,-1
-11,keyword,HCIX_VOB,-1,[m/s] S/C Heliocentric Inertial X Velocity,float,TRUE,TRUE,-1
-11,keyword,HCIY_VOB,-1,[m/s] S/C Heliocentric Inertial Y Velocity,float,TRUE,TRUE,-1
-11,keyword,HCIZ_VOB,-1,[m/s] S/C Heliocentric Inertial Z Velocity,float,TRUE,TRUE,-1
-11,keyword,HAEX_OBS,-1,[m] S/C Heliocentric Aries Ecliptic X,float,TRUE,TRUE,-1
-11,keyword,HAEY_OBS,-1,[m] S/C Heliocentric Aries Ecliptic Y,float,TRUE,TRUE,-1
-11,keyword,HAEZ_OBS,-1,[m] S/C Heliocentric Aries Ecliptic Z,float,TRUE,TRUE,-1
-11,keyword,HEQX_OBS,-1,[m] S/C Heliocentric Earth Equatorial X,float,TRUE,TRUE,-1
-11,keyword,HEQY_OBS,-1,[m] S/C Heliocentric Earth Equatorial Y,float,TRUE,TRUE,-1
-11,keyword,HEQZ_OBS,-1,[m] S/C Heliocentric Earth Equatorial Z,float,TRUE,TRUE,-1
+11,keyword,GEOD_LAT,,[deg] S/C sub-point geodetic latitude,float,TRUE,TRUE,
+11,keyword,GEOD_LON,,[deg] S/C sub-point longitude,float,TRUE,TRUE,
+11,keyword,GEOD_ALT,,[m] S/C WGS84 altitude,float,TRUE,TRUE,
+11,keyword,LOS_ALT,,[m] line-of-sight altitude above Earth,float,TRUE,TRUE,
+11,keyword,HGLT_OBS,,[deg] S/C heliographic latitude,float,TRUE,TRUE,
+11,keyword,HGLN_OBS,,[deg] S/C heliographic longitude (B0),float,TRUE,TRUE,
+11,keyword,CRLT_OBS,,[deg] S/C Carrington latitude (B0),float,TRUE,TRUE,
+11,keyword,CRLN_OBS,,[deg] S/C Carrington longitude,float,TRUE,TRUE,
+11,keyword,DSUN_OBS,,[m] S/C distance from Sun,float,TRUE,TRUE,
+11,keyword,HEEX_OBS,,[m] S/C Heliocentric Earth Ecliptic X,float,TRUE,TRUE,
+11,keyword,HEEY_OBS,,[m] S/C Heliocentric Earth Ecliptic Y,float,TRUE,TRUE,
+11,keyword,HEEZ_OBS,,[m] S/C Heliocentric Earth Ecliptic Z,float,TRUE,TRUE,
+11,keyword,HCIX_OBS,,[m] S/C Heliocentric Inertial X,float,TRUE,TRUE,
+11,keyword,HCIY_OBS,,[m] S/C Heliocentric Inertial Y,float,TRUE,TRUE,
+11,keyword,HCIZ_OBS,,[m] S/C Heliocentric Inertial Z,float,TRUE,TRUE,
+11,keyword,HCIX_VOB,,[m/s] S/C Heliocentric Inertial X Velocity,float,TRUE,TRUE,
+11,keyword,HCIY_VOB,,[m/s] S/C Heliocentric Inertial Y Velocity,float,TRUE,TRUE,
+11,keyword,HCIZ_VOB,,[m/s] S/C Heliocentric Inertial Z Velocity,float,TRUE,TRUE,
+11,keyword,HAEX_OBS,,[m] S/C Heliocentric Aries Ecliptic X,float,TRUE,TRUE,
+11,keyword,HAEY_OBS,,[m] S/C Heliocentric Aries Ecliptic Y,float,TRUE,TRUE,
+11,keyword,HAEZ_OBS,,[m] S/C Heliocentric Aries Ecliptic Z,float,TRUE,TRUE,
+11,keyword,HEQX_OBS,,[m] S/C Heliocentric Earth Equatorial X,float,TRUE,TRUE,
+11,keyword,HEQY_OBS,,[m] S/C Heliocentric Earth Equatorial Y,float,TRUE,TRUE,
+11,keyword,HEQZ_OBS,,[m] S/C Heliocentric Earth Equatorial Z,float,TRUE,TRUE,
 12,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
 12,keyword,CHECKSUM,,,str,TRUE,TRUE,
 12,keyword,DATASUM,0,,int,TRUE,TRUE,0

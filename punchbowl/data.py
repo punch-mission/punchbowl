@@ -263,7 +263,7 @@ class MetaField:
         """sets value withing MetaField object"""
         if not self._mutable:
             raise RuntimeError("Cannot mutate this value because it is set to immutable.")
-        if isinstance(value, self._datatype):
+        if isinstance(value, (self._datatype | None)):
             self._value = value
         else:
             raise TypeError(f"Value of {self.keyword} was {type(value)} but must be {self._datatype}.")
@@ -571,14 +571,26 @@ class NormalizedMetadata(Mapping):
                         if e['KEYWORD'] in overrides:
                             value = overrides[e['KEYWORD']]
                         try:
-                            value = datatype(value)
+                            #value = datatype(value)
+                            if datatype is str: value = datatype(value)
+                            if (datatype is int) or (datatype is float):
+                                if value != '':
+                                    value = datatype(value)
+                                else:
+                                    value = None
                         except ValueError:
                             raise RuntimeError(f"Value was of the wrong type to parse for {e['KEYWORD']}")
                         finally:
                             if isinstance(value, str):
                                 value = value.format(**spacecraft_def[spacecraft])
                         try:
-                            default = datatype(default)
+                            # datatype(default or 0)
+                            if datatype is str: default = datatype(default)
+                            if (datatype is int) or (datatype is float):
+                                if default != '':
+                                    default = datatype(default)
+                                else:
+                                    default = None
                         except ValueError:
                             raise RuntimeError(f"Default was of the wrong type to parse for {e['KEYWORD']}")
                         finally:

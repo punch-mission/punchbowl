@@ -88,7 +88,7 @@ Products:
             OBSTYPE: "Polarized {crafttype} image"
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
 
     PZ?:
         kinds: [Polarized, PZ]
@@ -97,7 +97,7 @@ Products:
             OBSTYPE: Polarized {crafttype} image
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
 
     PP?:
         kinds: [Polarized, PP]
@@ -106,7 +106,7 @@ Products:
             OBSTYPE: Polarized {crafttype} image
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
 
     CR?:
         kinds: [Unpolarized, CR]
@@ -115,7 +115,7 @@ Products:
             OBSTYPE: Unpolarized {crafttype} image
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
 
     PX?:
         kinds: [Polarized]
@@ -129,7 +129,7 @@ Products:
             POLAR: -999
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
 
     ST4:
         kinds: []
@@ -139,7 +139,7 @@ Products:
             TYPECODE: ST
             INSTRUME: NFI-0
             TELESCOP: PUNCH-4
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [OBS-MODE, OBSLAYR1, FILTER, POLAR]
 
     DK?:
@@ -150,7 +150,7 @@ Products:
             TYPECODE: DK
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     DY?:
@@ -161,7 +161,7 @@ Products:
             TYPECODE: DY
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     OV?:
@@ -172,7 +172,7 @@ Products:
             TYPECODE: OV
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     XI?:
@@ -183,5 +183,5 @@ Products:
             TYPECODE: XI
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]

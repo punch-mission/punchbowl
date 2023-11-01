@@ -377,19 +377,19 @@ class NormalizedMetadata(Mapping):
         """
         if "TYPECODE" not in h:
             raise RuntimeError("TYPECODE must a field of the header")
-        if "CRAFT" not in h:
-            raise RuntimeError("CRAFT must be a field of the header")
+        if "OBSCODE" not in h:
+            raise RuntimeError("OBSCODE must be a field of the header")
         if "LEVEL" not in h:
             raise RuntimeError("LEVEL must be a field of the header")
 
-        type_code, craft_code, level = h['TYPECODE'], h['CRAFT'], h['LEVEL']
+        type_code, obs_code, level = h['TYPECODE'], h['OBSCODE'], h['LEVEL']
 
-        m = NormalizedMetadata.load_template(type_code + craft_code, level)
+        m = NormalizedMetadata.load_template(type_code + obs_code, level)
 
         for k, v in h.items():
             if k not in ("COMMENT", "HISTORY"):
                 if k not in m:
-                    raise RuntimeError(f"Unexpected key of {k} found in header for Level {level} {type_code + craft_code} type meta.")
+                    raise RuntimeError(f"Unexpected key of {k} found in header for Level {level} {type_code + obs_code} type meta.")
                 m[k] = v
         m._history = History.from_fits_header(h)
 
@@ -861,13 +861,13 @@ class PUNCHData(NDCube):
         str
             output identification string
         """
-        craft = self.meta["CRAFT"].value
+        obscode = self.meta["OBSCODE"].value
         file_level = self.meta["LEVEL"].value
         type_code = self.meta["TYPECODE"].value
         date_string = self.meta.datetime.strftime("%Y%m%d%H%M%S")
         # TODO: include version number
         return (
-            "PUNCH_L" + file_level + "_" + type_code + craft + "_" + date_string
+            "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string
         )
 
     def write(self, filename: str, overwrite=True) -> None:

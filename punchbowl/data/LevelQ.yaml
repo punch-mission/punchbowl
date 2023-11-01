@@ -65,7 +65,7 @@ Products:
             TYPECODE: CF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: M
+            OBSCODE: M
     CFN:
         kinds: [Unpolarized, Calibration]
         overrides:
@@ -76,7 +76,7 @@ Products:
             TYPECODE: CF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: N
+            OBSCODE: N
 
     CTM:
         kinds: [Unpolarized]
@@ -86,7 +86,7 @@ Products:
             TYPECODE: CT
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: M
+            OBSCODE: M
     CNN:
         kinds: [Unpolarized]
         overrides:
@@ -97,4 +97,4 @@ Products:
             TYPECODE: CN
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: N
+            OBSCODE: N

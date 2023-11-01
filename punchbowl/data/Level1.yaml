@@ -88,7 +88,7 @@ Products:
             OBSTYPE: Polarized {crafttype} image
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
 
     PZ?:
         kinds: [Polarized, PZ]
@@ -97,7 +97,7 @@ Products:
             OBSTYPE: Polarized {crafttype} image
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
 
     PP?:
         kinds: [Polarized, PP]
@@ -106,7 +106,7 @@ Products:
             OBSTYPE: Polarized {crafttype} image
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
 
     CR?:
         kinds: [Unpolarized, CR]
@@ -115,7 +115,7 @@ Products:
             OBSTYPE: Unpolarized {crafttype} image
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
 
     BD?:
         kinds: [Calibration]
@@ -125,7 +125,7 @@ Products:
             TYPECODE: BD
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     FQ?:
@@ -140,7 +140,7 @@ Products:
             TYPECODE: FQ
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     GM?:
@@ -151,7 +151,7 @@ Products:
             TYPECODE: GM
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     GZ?:
@@ -162,7 +162,7 @@ Products:
             TYPECODE: GZ
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     GP?:
@@ -173,7 +173,7 @@ Products:
             TYPECODE: GP
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     GR?:
@@ -184,7 +184,7 @@ Products:
             TYPECODE: GR
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     SM?:
@@ -195,7 +195,7 @@ Products:
             TYPECODE: SM
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     SZ?:
@@ -206,7 +206,7 @@ Products:
             TYPECODE: SZ
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     SP?:
@@ -217,7 +217,7 @@ Products:
             TYPECODE: SP
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     SR?:
@@ -228,7 +228,7 @@ Products:
             TYPECODE: SR
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
     RG?:
@@ -239,5 +239,5 @@ Products:
             TYPECODE: RG
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: "{craftid}"
+            OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]

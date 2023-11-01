@@ -64,7 +64,7 @@ Products:
             TYPECODE: CF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: M
+            OBSCODE: M
 
     CFN:
         kinds: [Unpolarized, Calibration]
@@ -76,7 +76,7 @@ Products:
             TYPECODE: CF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: N
+            OBSCODE: N
 
     CTM:
         kinds: [Unpolarized]
@@ -86,7 +86,7 @@ Products:
             TYPECODE: CT
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: M
+            OBSCODE: M
 
     CNN:
         kinds: [Unpolarized]
@@ -98,7 +98,7 @@ Products:
             TYPECODE: CN
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: N
+            OBSCODE: N
 
     PFM:
         kinds: [Polarized]
@@ -108,7 +108,7 @@ Products:
             TYPECODE: PF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: M
+            OBSCODE: M
 
     PFN:
         kinds: [Polarized]
@@ -120,7 +120,7 @@ Products:
             TYPECODE: PF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: N
+            OBSCODE: N
 
     PTM:
         kinds: [Polarized]
@@ -130,7 +130,7 @@ Products:
             TYPECODE: PT
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: M
+            OBSCODE: M
 
     PNN:
         kinds: [Polarized]
@@ -142,4 +142,4 @@ Products:
             TYPECODE: PN
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
-            CRAFT: N
+            OBSCODE: N

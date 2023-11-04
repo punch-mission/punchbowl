@@ -10,7 +10,7 @@ from astropy.nddata import StdDevUncertainty
 
 # punchbowl imports
 from punchbowl.level0.decode_sqrt import encode_sqrt, decode_sqrt_simple, decode_sqrt, decode_sqrt_data
-from punchbowl.data import PUNCHData, NormalizedMetadata, PUNCH_REQUIRED_META_FIELDS
+from punchbowl.data import PUNCHData, NormalizedMetadata
 
 
 # Some test inputs
@@ -29,11 +29,8 @@ def sample_punchdata():
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 0
     wcs.wcs.cname = "HPC lon", "HPC lat"
-    meta = NormalizedMetadata({"LEVEL": "0",
-                               'OBSRVTRY': 'Y',
-                               'TYPECODE': 'XX',
-                               'DATE-OBS': str(datetime(2023, 1, 1, 0, 0, 1))},
-                              required_fields=PUNCH_REQUIRED_META_FIELDS)
+    meta = NormalizedMetadata.load_template("PM1", "0")
+    meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
 
     punchdata_obj = PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 

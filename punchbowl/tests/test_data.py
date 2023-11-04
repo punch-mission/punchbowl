@@ -1,8 +1,10 @@
 import os
 from datetime import datetime
+from collections import OrderedDict
 
 import astropy
 import numpy as np
+import pandas as pd
 import pytest
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
@@ -15,20 +17,137 @@ from punchbowl.data import (
     PUNCHData,
     History,
     HistoryEntry,
-    HeaderTemplate,
-    HEADER_TEMPLATE_COLUMNS,
     NormalizedMetadata,
-    PUNCH_REQUIRED_META_FIELDS
+    MetaField,
+    load_spacecraft_def
 )
 
 TESTDATA_DIR = os.path.dirname(__file__)
-SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "PUNCH_L2_WQM_20080103071000_uncomp.fits")
-SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "PUNCH_L2_WQM_20080103071000.fits")
+SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
 SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
-SAMPLE_HEADER_PATH = os.path.join(TESTDATA_DIR, "hdr_test_template.csv")
+SAMPLE_OMNIBUS_PATH = os.path.join(TESTDATA_DIR, "omniheader.csv")
+SAMPLE_LEVEL_PATH = os.path.join(TESTDATA_DIR, "LevelTest.yaml")
+SAMPLE_SPACECRAFT_DEF_PATH = os.path.join(TESTDATA_DIR, "spacecraft.yaml")
 
 
-# Test fixtures
+def test_metafield_creation_keyword_too_long():
+    """ cannot create an invalid metafield"""
+    with pytest.raises(ValueError):
+        mf = MetaField("TOO LONG KEYWORD",
+                       "What's up?", 3, int, False, True, -99)
+
+
+def test_metafield_creation_kinds_do_not_match():
+    """the value, default, and kind must all agree"""
+    with pytest.raises(TypeError):
+        mf = MetaField("HI",
+                       "What's up?", 3, str, False, True, "hi there")
+
+    with pytest.raises(TypeError):
+        mf = MetaField("TOO LONG KEYWORD",
+                       "What's up?", "hi there", str, False, True, -99)
+
+
+def test_metafield_update():
+    """ you can update a metafield if it is set to be mutable"""
+    mf = MetaField("HI", "What's up?", 3, int, False, True, -99)
+    assert mf.keyword == "HI"
+    assert mf.comment == "What's up?"
+    assert mf.value == 3
+    assert mf._datatype == int
+    assert not mf.nullable
+    assert mf._mutable
+    assert mf.default == -99
+
+    mf.value = 100
+    assert mf.value == 100
+
+    mf.default = -999
+    assert mf.default == -999
+
+
+def test_metafield_not_mutable():
+    """ you cannot update immutable metafields"""
+    mf = MetaField("HI", "What's up?", 3, int, False, False, -99)
+    assert mf.keyword == "HI"
+    assert mf.comment == "What's up?"
+    assert mf.value == 3
+    assert mf._datatype == int
+    assert not mf.nullable
+    assert not mf._mutable
+    assert mf.default == -99
+
+    with pytest.raises(RuntimeError):
+        mf.value = 100
+
+
+def test_metafield_wrong_kind_for_update():
+    """ you must abide by the kind for an update"""
+    mf = MetaField("HI", "What's up?", 3, int, False, True, -99)
+    assert mf.keyword == "HI"
+    assert mf.comment == "What's up?"
+    assert mf.value == 3
+    assert mf._datatype == int
+    assert not mf.nullable
+    assert mf._mutable
+    assert mf.default == -99
+
+    with pytest.raises(TypeError):
+        mf.value = "this is invalid"
+
+    with pytest.raises(TypeError):
+        mf.default = "this is invalid"
+
+
+def test_normalizedmetadata_from_template_abq():
+    result = NormalizedMetadata.load_template("ABT",
+                                              omniheader_path=SAMPLE_OMNIBUS_PATH,
+                                              level_spec_path=SAMPLE_LEVEL_PATH,
+                                              spacecraft_def_path=SAMPLE_SPACECRAFT_DEF_PATH)
+    assert isinstance(result, NormalizedMetadata)
+    assert 'Section 1' in result.sections
+    assert 'Section 2' in result.sections
+    assert 'Section 3' in result.sections
+    assert 'Section 4' in result.sections
+    assert 'Section 5' not in result.sections
+
+    assert 'KEYOMIT1' not in result
+    assert 'KEYOMIT2' not in result
+    assert result['KEYALTER'].value == 2
+    assert result['OTHERKEY'].value == 'Test'
+    assert result['TITLE'].value == 'My name is test-0'
+
+
+def test_normalizedmetadata_from_template_cb1():
+    result = NormalizedMetadata.load_template("CB1",
+                                              omniheader_path=SAMPLE_OMNIBUS_PATH,
+                                              level_spec_path=SAMPLE_LEVEL_PATH,
+                                              spacecraft_def_path=SAMPLE_SPACECRAFT_DEF_PATH)
+    assert isinstance(result, NormalizedMetadata)
+    assert 'Section 1' in result.sections
+    assert 'Section 2' in result.sections
+    assert 'Section 3' in result.sections
+    assert 'Section 4' in result.sections
+    assert 'Section 5' not in result.sections
+
+    assert 'KEYOMIT1' not in result
+    assert 'KEYOMIT2' not in result
+    assert result['KEYALTER'].value == 3
+    assert result['OTHERKEY'].value == 'No test'
+    assert result['TITLE'].value == 'A default value'
+    assert result['TITLE'].comment == 'with a default comment'
+
+
+def test_normalizedmetadata_to_fits_header(tmpdir):
+    result = NormalizedMetadata.load_template("CB1",
+                                              omniheader_path=SAMPLE_OMNIBUS_PATH,
+                                              level_spec_path=SAMPLE_LEVEL_PATH,
+                                              spacecraft_def_path=SAMPLE_SPACECRAFT_DEF_PATH)
+    header = result.to_fits_header()
+    header.tofile(os.path.join(str(tmpdir), "test.fits"), overwrite=True)
+    assert isinstance(header, fits.Header)
+
+
 @fixture
 def sample_wcs() -> WCS:
     """
@@ -94,11 +213,12 @@ def sample_punchdata():
         wcs.wcs.crval = 1, 1
         wcs.wcs.cname = "HPC lon", "HPC lat"
 
-        meta = NormalizedMetadata({"LEVEL": str(level),
-                                   'OBSRVTRY': 'Y',
-                                   'TYPECODE': 'XX',
-                                   'DATE-OBS': str(datetime(2023, 1, 1, 0, 0, 1))},
-                                  required_fields=PUNCH_REQUIRED_META_FIELDS)
+        # meta = NormalizedMetadata({"LEVEL": str(level),
+        #                            'OBSRVTRY': 'Y',
+        #                            'TYPECODE': 'XX',
+        #                            'DATE-OBS': })
+        meta = NormalizedMetadata.load_template("PM1", "0")
+        meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
         return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
     return _sample_punchdata
@@ -109,7 +229,6 @@ def sample_punchdata_list(sample_punchdata):
     """
     Generate a list of sample PUNCHData objects for testing
     """
-
     sample_pd1 = sample_punchdata()
     sample_pd2 = sample_punchdata()
     return [sample_pd1, sample_pd2]
@@ -119,38 +238,31 @@ def test_sample_data_creation(sample_data):
     assert isinstance(sample_data, PUNCHData)
 
 
-def test_generate_from_filename_uncompressed():
-    pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_UNCOMPRESSED)
-    assert isinstance(pd, PUNCHData)
-    assert isinstance(pd.data, np.ndarray)
-
-
 def test_generate_from_filename_compressed():
     pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
     assert isinstance(pd, PUNCHData)
     assert isinstance(pd.data, np.ndarray)
 
 
-def test_write_data(sample_data):
-    with pytest.warns(RuntimeWarning):
-        sample_data.meta["LEVEL"] = 1
-        sample_data.meta["TYPECODE"] = "XX"
-        sample_data.meta["OBSRVTRY"] = "Y"
-        sample_data.meta["VERSION"] = 0.1
-        sample_data.meta["SOFTVERS"] = 0.1
-        sample_data.meta["DATE-OBS"] = str(datetime.now())
-        sample_data.meta["DATE-AQD"] = str(datetime.now())
-        sample_data.meta["DATE-END"] = str(datetime.now())
-        sample_data.meta["POL"] = "M"
+def test_write_data(sample_punchdata):
+    sample_data = sample_punchdata()
+    sample_data.meta["LEVEL"] = "1"
+    sample_data.meta["TYPECODE"] = "CL"
+    sample_data.meta["OBSRVTRY"] = "1"
+    sample_data.meta["PIPEVRSN"] = "0.1"
+    sample_data.meta["DATE-OBS"] = str(datetime.now())
+    sample_data.meta["DATE-END"] = str(datetime.now())
 
-        sample_data.write(SAMPLE_WRITE_PATH)
-        assert os.path.isfile(SAMPLE_WRITE_PATH)
+    sample_data.write(SAMPLE_WRITE_PATH)
+    assert os.path.isfile(SAMPLE_WRITE_PATH)
 
 
 def test_filename_base_generation(sample_punchdata):
     actual = sample_punchdata().filename_base
-    expected = "PUNCH_L0_XXY_20230101000001"
+    expected = "PUNCH_L0_PM1_20230101000001"
     assert actual == expected
+
+
 
 @fixture
 def empty_history():
@@ -178,108 +290,113 @@ def test_history_iterate(empty_history):
         assert entry.comment == str(i), "history objects not read in order"
 
 
-@fixture
-def empty_header():
-    return HeaderTemplate()
+def test_load_spacecraft_yaml():
+    """ tests that spacecraft yaml can be loaded and is well-formed"""
+    sc_yaml = load_spacecraft_def(path=SAMPLE_SPACECRAFT_DEF_PATH)
+    for i in range(1, 5):
+        assert str(i) in sc_yaml
+    assert "M" in sc_yaml
+    assert "N" in sc_yaml
+    assert "T" in sc_yaml
+
+    for _, v in sc_yaml.items():
+        assert "craftname" in v
+        assert "crafttype" in v
+        assert "obsname" in v
 
 
-@fixture
-def simple_header_template():
-    return HeaderTemplate.load(SAMPLE_HEADER_PATH)
+def test_create_level0_normalized_metadata():
+    m = NormalizedMetadata.load_template("PM1", "0")
+    assert 'DATE-OBS' in m
+    assert "OBSRVTRY" in m
 
 
-def test_sample_header_creation(empty_header):
-    """An empty PUNCH header object is initialized. Test for no raised errors. Test that the object exists."""
-    assert isinstance(empty_header, HeaderTemplate)
-    assert np.all(
-        empty_header._table.columns.values == HEADER_TEMPLATE_COLUMNS
-    ), "doesn't have all the columns"
+def test_normalized_metadata_to_fits_writes_history():
+    m = NormalizedMetadata.load_template("PM1", "0")
+    m.history.add_now("Test", "does it write?")
+    m.history.add_now("Test", "how about twice?")
+    h = m.to_fits_header()
+    assert "HISTORY" in h
+    assert "does it write?" in str(h['HISTORY'])
+    assert "how about twice" in str(h['HISTORY'])
 
 
-def test_generate_from_csv_filename():
-    """A base PUNCH header object is initialized from a comma separated value file template.
-    Test for no raised errors. Test that the object exists."""
-    hdr = HeaderTemplate.load(SAMPLE_HEADER_PATH)
-    assert isinstance(hdr, HeaderTemplate)
+def test_empty_history_equal():
+    assert History() == History()
 
 
-def test_fill_header(simple_header_template):
-    with pytest.warns(RuntimeWarning):
-        meta = NormalizedMetadata({"LEVEL": 1})
-        header = simple_header_template.fill(meta)
-        assert isinstance(header, fits.Header)
-        assert header["LEVEL"] == 1
+def test_history_equality():
+    entry = HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment")
+
+    h1 = History()
+    h1.add_entry(entry)
+
+    h2 = History()
+    h2.add_entry(entry)
+
+    assert h1 == h2
 
 
-def test_unspecified_header_template():
-    with pytest.raises(ValueError):
-        h = HeaderTemplate.load("")
-        assert isinstance(h, HeaderTemplate)
+def test_history_not_equals_if_different():
+    h1 = History()
+    h1.add_now("Test", "one")
+
+    h2 = History()
+    h2.add_now("Test", "two")
+
+    assert h1 != h2
 
 
-@pytest.mark.parametrize("level", [0, 1, 2])
-def test_header_selection_based_on_level(level: int):
-    """Tests if the header can be selected automatically based on the product level"""
-    # Modified from NDCube documentation
-    data = np.random.rand(4, 4, 5)
-    wcs = astropy.wcs.WCS(naxis=3)
-    wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
-    wcs.wcs.cunit = "Angstrom", "deg", "deg"
-    wcs.wcs.cdelt = 0.2, 0.5, 0.4
-    wcs.wcs.crpix = 0, 2, 2
-    wcs.wcs.crval = 10, 0.5, 1
-    wcs.wcs.cname = "wavelength", "HPC lat", "HPC lon"
-
-    meta = NormalizedMetadata({"LEVEL": level,
-                               'DATE-OBS': str(datetime.now()),
-                               "OBSRVTRY": "X",
-                               "TYPECODE": "YY"}, required_fields=PUNCH_REQUIRED_META_FIELDS)
-    data = PUNCHData(data=data, wcs=wcs, meta=meta)
-
-    header = data.create_header(None)
-    assert header['LEVEL'] == level
+def test_history_cannot_compare_to_nonhistory_type():
+    h1 = History()
+    h2 = {"Not": "History"}
+    with pytest.raises(TypeError):
+        h1 == h2
 
 
-def test_normalizedmetadata_access_not_case_sensitive():
-    contents = {"hi": "there", "NaME": "marcus", "AGE": 27}
-    example = NormalizedMetadata(contents)
+def test_from_fits_for_metadata(tmpdir):
+    m = NormalizedMetadata.load_template("PM1", "0")
+    m.history.add_now("Test", "does it write?")
+    m.history.add_now("Test", "how about twice?")
+    m['DESCRPTN'] = 'This is a test!'
+    h = m.to_fits_header()
 
-    assert example["hi"] == "there"
-    assert example["Hi"] == "there"
-    assert example["hI"] == "there"
-    assert example["HI"] == "there"
+    path = os.path.join(tmpdir, "from_fits_test.fits")
+    d = PUNCHData(np.zeros((2048, 2048), dtype=np.int16), WCS(h), m)
+    d.write(path)
 
-    assert example["age"] == 27
-
-    assert example['name'] == 'marcus'
-
-
-def test_normalizedmetadata_add_new_key():
-    empty = NormalizedMetadata(dict())
-    assert len(empty) == 0
-    assert "name" not in empty
-    empty['NAmE'] = "marcus"
-    assert "nAMe" in empty
-    assert len(empty) == 1
+    loaded = PUNCHData.from_fits(path)
+    loaded.meta['LATPOLE'] = 0.0  # a hackish way to circumvent the LATPOLE being moved by astropy
+    assert loaded.meta == m
 
 
-def test_normalizedmetadata_delete_key():
-    example = NormalizedMetadata({"key": "value"})
-    assert "key" in example
-    assert len(example) == 1
-    del example['key']
-    assert "key" not in example
-    assert len(example) == 0
+def test_normalizedmetadata_from_fits_header():
+    m = NormalizedMetadata.load_template("PM1", "0")
+    m['DESCRPTN'] = 'This is a test!'
+    m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment"))
+    m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test2", "test comment"))
+    h = m.to_fits_header()
+
+    recovered = NormalizedMetadata.from_fits_header(h)
+
+    assert recovered == m
 
 
-def test_normalizedmetdata_missing_required_fields_fails():
-    required_fields = {"age", "name"}
-    with pytest.raises(RuntimeError):
-        NormalizedMetadata({"key": "value"}, required_fields=required_fields)
+def test_empty_history_from_fits_header():
+    m = NormalizedMetadata.load_template("PM1", "0")
+    h = m.to_fits_header()
+
+    assert History.from_fits_header(h) == History()
 
 
-def test_normalizedemetadata_has_all_required_fields():
-    required_fields = {"age", "name"}
-    example = NormalizedMetadata({'name': 'Marcus', 'age': 27}, required_fields=required_fields)
-    for key in required_fields:
-        assert key in example
+def test_filled_history_from_fits_header(tmpdir):
+    constructed_history = History()
+    constructed_history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment"))
+    constructed_history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test2", "test comment"))
+
+    m = NormalizedMetadata.load_template("PM1", "0")
+    m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment"))
+    m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test2", "test comment"))
+    h = m.to_fits_header()
+
+    assert History.from_fits_header(h) == constructed_history

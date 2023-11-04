@@ -1,9 +1,15 @@
 format: jb-book
-root: intro
+root: index
 parts:
+  - caption: Concepts
+    chapters:
+    - file: intro
+    - file: overview
+    - file: data-handling
   - caption: Tutorials
     chapters:
-    - file: quickstart
+    - file: getting-data
+    - file: running-standard
     - file: modified-pipeline
   - caption: Segment descriptions
     chapters:
@@ -17,3 +23,10 @@ parts:
         - file: level1/alignment
     - file: level2/level2
     - file: level3/level3
+  - caption: Reference material
+    chapters:
+    - file: API reference
+  - caption: Help and contributions
+    chapters:
+    - file: getting-help
+    - file: contributing

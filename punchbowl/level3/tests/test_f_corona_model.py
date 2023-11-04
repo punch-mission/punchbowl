@@ -11,7 +11,7 @@ from astropy.wcs import WCS
 from prefect.logging import disable_run_logger
 
 # punchbowl imports
-from punchbowl.data import NormalizedMetadata, PUNCHData, PUNCH_REQUIRED_META_FIELDS
+from punchbowl.data import NormalizedMetadata, PUNCHData
 
 from punchbowl.level3.f_corona_model import query_f_corona_model_source
 from punchbowl.level3.f_corona_model import construct_f_corona_background
@@ -59,8 +59,7 @@ def one_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"},
-                              required_fields=PUNCH_REQUIRED_META_FIELDS)
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03T08:57:00"})
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
@@ -80,8 +79,7 @@ def zero_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"},
-                              required_fields=PUNCH_REQUIRED_META_FIELDS)
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03T08:57:00"})
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
@@ -101,8 +99,8 @@ def incorrect_shape_data(shape: tuple = (512, 512)) -> np.ndarray:
     wcs.wcs.crpix = 256, 256
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"},
-                              required_fields=PUNCH_REQUIRED_META_FIELDS)
+    meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03T08:57:00"})
+
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
@@ -125,7 +123,7 @@ def test_empty_list() -> None:
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
     with pytest.raises(ValueError):
-        input_list=glob('./data/*.fits')
+        input_list = glob('./data/*.fits')
         with disable_run_logger():
             f_corona_model = construct_f_corona_background.fn(input_list)
 
@@ -135,7 +133,7 @@ def test_create_simple_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list)
 
@@ -147,7 +145,7 @@ def test_min_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list, method='min')
 
@@ -159,7 +157,7 @@ def test_mean_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list, method='mean')
 
@@ -171,7 +169,7 @@ def test_percent_5_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list)
 
@@ -183,7 +181,7 @@ def test_percent_10_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
-    input_list=glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list, percentile_value=10)
 
@@ -196,7 +194,7 @@ def test_typo_method_bkg() -> None:
     dataset of increasing values passed in, a bad pixel map is passed in 
     """
     with pytest.raises(ValueError):
-        input_list=glob(TESTDATA_DIR+'/data/*.fits')
+        input_list = glob(TESTDATA_DIR+'/data/*.fits')
         with disable_run_logger():
             f_corona_model = construct_f_corona_background.fn(input_list, method="Marcus_rules")
 

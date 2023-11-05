@@ -1,1 +1,1 @@
-include punchbowl/data/HeaderTemplate/*.csv
+include punchbowl/data/*

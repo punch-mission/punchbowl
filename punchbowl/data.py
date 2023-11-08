@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import os.path
 from collections import namedtuple, OrderedDict
 from collections.abc import Mapping
@@ -926,11 +927,11 @@ class PUNCHData(NDCube):
         hdu_dummy = fits.PrimaryHDU()
         hdul_list.append(hdu_dummy)
 
-        hdu_data = fits.CompImageHDU(data=self.data, header=header)
+        hdu_data = fits.ImageHDU(data=self.data, header=header)
         hdul_list.append(hdu_data)
 
         if self.uncertainty is not None:
-            hdu_uncertainty = fits.CompImageHDU(data=self.uncertainty.array)
+            hdu_uncertainty = fits.ImageHDU(data=self.uncertainty.array)
             # write WCS to uncertainty header
             for k, v in wcs_header.items():
                 if k in hdu_uncertainty.header:

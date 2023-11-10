@@ -1,1 +1,0 @@
-# Identify deficient pixels

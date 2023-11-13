@@ -1,0 +1,6 @@
+Pipeline
+=========
+
+.. toctree::
+
+    overview

@@ -30,8 +30,11 @@ release = '0.0.1'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-]
+
+extensions = ['autoapi.extension',
+              'sphinx.ext.autodoc',
+              'sphinx.ext.napoleon',
+              'sphinx_favicon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -47,9 +50,36 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'pydata-sphinx-theme'
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
+html_theme = "pydata_sphinx_theme"
+html_show_sourcelink = False
 html_static_path = ['_static']
+html_theme_options = {
+    "use_edit_page_button": True,
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/punch-mission/punchbowl",
+            "icon": "fa-brands fa-github",
+            "type": "fontawesome",
+        }
+    ],
+    "show_nav_level": 1,
+    "show_toc_level": 3,
+    "logo": {
+        "text": "punchbowl",
+        "image_light": "_static/logo.png",
+        "image_dark": "_static/logo.png",
+    }
+}
+html_context = {
+    # "github_url": "https://github.com", # or your GitHub Enterprise site
+    "github_user": "punch-mission",
+    "github_repo": "punchbowl",
+    "github_version": "main",
+    "doc_path": "docs/source/",
+}
+
+
+autoapi_dirs = ['../../punchbowl']
+
+favicons = ["favicon.ico"]

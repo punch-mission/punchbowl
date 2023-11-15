@@ -268,6 +268,9 @@ def test_read_write_uncertainty_data(sample_punchdata):
 
     with fits.open(SAMPLE_WRITE_PATH) as hdul:
         fitsio_read_uncertainty = hdul[2].data
+        fitsio_read_header = hdul[2].header
+
+    assert fitsio_read_header['BITPIX'] == 8
 
     assert sample_data.uncertainty.array.dtype == 'uint8'
     assert pdata_read_data.uncertainty.array.dtype == 'uint8'

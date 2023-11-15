@@ -203,7 +203,7 @@ def sample_punchdata():
     """
 
     def _sample_punchdata(shape=(50, 50), level=0):
-        data = np.random.random(shape)
+        data = np.random.random(shape).astype(np.float32)
         uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
@@ -255,6 +255,26 @@ def test_write_data(sample_punchdata):
 
     sample_data.write(SAMPLE_WRITE_PATH)
     assert os.path.isfile(SAMPLE_WRITE_PATH)
+
+
+def test_read_write_uncertainty_data(sample_punchdata):
+    sample_data = sample_punchdata()
+    uncertainty = StdDevUncertainty(np.sqrt(np.abs(sample_data.data)).astype('uint8'))
+    sample_data.uncertainty = uncertainty
+
+    sample_data.write(SAMPLE_WRITE_PATH)
+
+    pdata_read_data = PUNCHData.from_fits(SAMPLE_WRITE_PATH)
+
+    with fits.open(SAMPLE_WRITE_PATH) as hdul:
+        fitsio_read_uncertainty = hdul[2].data
+        fitsio_read_header = hdul[2].header
+
+    assert fitsio_read_header['BITPIX'] == 8
+
+    assert sample_data.uncertainty.array.dtype == 'uint8'
+    assert pdata_read_data.uncertainty.array.dtype == 'uint8'
+    assert fitsio_read_uncertainty.dtype == 'uint8'
 
 
 def test_filename_base_generation(sample_punchdata):

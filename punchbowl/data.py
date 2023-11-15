@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import os.path
 from collections import namedtuple, OrderedDict
 from collections.abc import Mapping

@@ -931,6 +931,7 @@ class PUNCHData(NDCube):
 
         if self.uncertainty is not None:
             hdu_uncertainty = fits.CompImageHDU(data=self.uncertainty.array)
+            hdu_uncertainty.header['BITPIX'] = 8
             # write WCS to uncertainty header
             for k, v in wcs_header.items():
                 if k in hdu_uncertainty.header:

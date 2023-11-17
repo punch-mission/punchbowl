@@ -257,6 +257,14 @@ def test_write_data(sample_punchdata):
     assert os.path.isfile(SAMPLE_WRITE_PATH)
 
 
+def test_generate_data_statistics(sample_punchdata):
+    sample_data = sample_punchdata()
+
+    sample_data._update_statistics()
+
+    assert sample_data.meta['DATAZER'].value == len(np.where(sample_data.data == 0)[0])
+
+
 def test_read_write_uncertainty_data(sample_punchdata):
     sample_data = sample_punchdata()
     uncertainty = StdDevUncertainty(np.sqrt(np.abs(sample_data.data)).astype('uint8'))

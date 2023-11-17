@@ -913,6 +913,10 @@ class PUNCHData(NDCube):
         -------
         None
         """
+
+        # Update data statistics
+        self._update_statistics()
+
         header = self.meta.to_fits_header()
 
         # update the header with the WCS
@@ -927,6 +931,7 @@ class PUNCHData(NDCube):
         hdul_list.append(hdu_dummy)
 
         hdu_data = fits.CompImageHDU(data=self.data, header=header)
+        # hdu_data.add_checksum(override_datasum=True)
         hdul_list.append(hdu_data)
 
         if self.uncertainty is not None:
@@ -936,6 +941,7 @@ class PUNCHData(NDCube):
             for k, v in wcs_header.items():
                 if k in hdu_uncertainty.header:
                     hdu_uncertainty.header[k] = v
+            # hdu_uncertainty.add_checksum(override_datasum=True)
             hdul_list.append(hdu_uncertainty)
 
         hdul = fits.HDUList(hdul_list)
@@ -974,6 +980,42 @@ class PUNCHData(NDCube):
 
         # Write image to file
         mpl.image.saveim(filename, output_data)
+
+    def _update_statistics(self):
+        """Updates image statistics in metadata before writing to file"""
+
+        # TODO - Sort out data saturation values
+        # TODO - Determine datamin / datamax datatype, set to int for now
+        # TODO - Devise a more elegant way to handle data arrays of all zeros
+
+        self.meta['DATAZER'] = len(np.where(self.data == 0)[0])
+        self.meta['DATASAT'] = 0
+        self.meta['DSATVAL'] = 0.
+        nonzero_data = self.data[np.where(self.data != 0)[0]].flatten()
+        if len(nonzero_data) != 0:
+            percentiles = np.percentile(nonzero_data, [1,10,25,50,75,90,95,98,99])
+            average = np.mean(nonzero_data).item()
+            median = np.median(nonzero_data).item()
+            stdev = np.std(nonzero_data).item()
+        else:
+            percentiles = [0.,0.,0.,0.,0.,0.,0.,0.,0.]
+            average = 0.
+            median = 0.
+            stdev = 0.
+        self.meta['DATAAVG'] = average
+        self.meta['DATAMDN'] = median
+        self.meta['DATASIG'] = stdev
+        self.meta['DATAP01'] = percentiles[0]
+        self.meta['DATAP10'] = percentiles[1]
+        self.meta['DATAP25'] = percentiles[2]
+        self.meta['DATAP50'] = percentiles[3]
+        self.meta['DATAP75'] = percentiles[4]
+        self.meta['DATAP90'] = percentiles[5]
+        self.meta['DATAP95'] = percentiles[6]
+        self.meta['DATAP98'] = percentiles[7]
+        self.meta['DATAP99'] = percentiles[8]
+        self.meta['DATAMIN'] = int(self.data.min().item())
+        self.meta['DATAMAX'] = int(self.data.max().item())
 
     def duplicate_with_updates(self, data: np.ndarray=None,
                                wcs: astropy.wcs.WCS= None,

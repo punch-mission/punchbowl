@@ -984,7 +984,7 @@ class PUNCHData(NDCube):
     def _update_statistics(self):
         """Updates image statistics in metadata before writing to file"""
 
-        # TODO - Sort out data saturation values
+        # TODO - Determine handling for data saturation keywords (DATASAT, DSATVAL)
         # TODO - Determine datamin / datamax datatype, set to int for now
         # TODO - Devise a more elegant way to handle data arrays of all zeros
 
@@ -1014,8 +1014,9 @@ class PUNCHData(NDCube):
         self.meta['DATAP95'] = percentiles[6]
         self.meta['DATAP98'] = percentiles[7]
         self.meta['DATAP99'] = percentiles[8]
-        self.meta['DATAMIN'] = int(self.data.min().item())
-        self.meta['DATAMAX'] = int(self.data.max().item())
+        self.meta['DATAMIN'] = float(self.data.min().item())
+        # Set non-saturated values here?
+        self.meta['DATAMAX'] = float(self.data.max().item())
 
     def duplicate_with_updates(self, data: np.ndarray=None,
                                wcs: astropy.wcs.WCS= None,

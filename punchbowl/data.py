@@ -819,6 +819,8 @@ class PUNCHData(NDCube):
             hdu_index = next((i for i, hdu in enumerate(hdul) if hdu.data is not None), 0)
             primary_hdu = hdul[hdu_index]
             header = primary_hdu.header
+            header['CHECKSUM'] = ''
+            header['DATASUM'] = ''
             data = primary_hdu.data
             meta = NormalizedMetadata.from_fits_header(header)
             wcs = WCS(header)
@@ -931,7 +933,6 @@ class PUNCHData(NDCube):
         hdul_list.append(hdu_dummy)
 
         hdu_data = fits.CompImageHDU(data=self.data, header=header)
-        # hdu_data.add_checksum(override_datasum=True)
         hdul_list.append(hdu_data)
 
         if self.uncertainty is not None:
@@ -941,12 +942,11 @@ class PUNCHData(NDCube):
             for k, v in wcs_header.items():
                 if k in hdu_uncertainty.header:
                     hdu_uncertainty.header[k] = v
-            # hdu_uncertainty.add_checksum(override_datasum=True)
             hdul_list.append(hdu_uncertainty)
 
         hdul = fits.HDUList(hdul_list)
 
-        hdul.writeto(filename, overwrite=overwrite)
+        hdul.writeto(filename, overwrite=overwrite, checksum=True)
 
     def _write_ql(self, filename: str, overwrite: bool = True) -> None:
         """Write an 8-bit scaled version of the specified data array to a PNG file

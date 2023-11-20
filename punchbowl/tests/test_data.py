@@ -387,6 +387,8 @@ def test_from_fits_for_metadata(tmpdir):
     m.history.add_now("Test", "does it write?")
     m.history.add_now("Test", "how about twice?")
     m['DESCRPTN'] = 'This is a test!'
+    m['CHECKSUM'] = ''
+    m['DATASUM'] = ''
     h = m.to_fits_header()
 
     path = os.path.join(tmpdir, "from_fits_test.fits")

@@ -180,8 +180,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 9,keyword,DATAP95,,95% of non-zero pixels are LE this value,float,TRUE,TRUE,
 9,keyword,DATAP98,,98% of non-zero pixels are LE this value,float,TRUE,TRUE,
 9,keyword,DATAP99,,99% of non-zero pixels are LE this value,float,TRUE,TRUE,
-9,keyword,DATAMIN,,minimum valid physical value,int,TRUE,TRUE,
-9,keyword,DATAMAX,,maximum valid physical value,int,TRUE,TRUE,
+9,keyword,DATAMIN,,minimum valid physical value,float,TRUE,TRUE,
+9,keyword,DATAMAX,,maximum valid physical value,float,TRUE,TRUE,
 10,section,COMMENT,Solar Reference Data,,str,TRUE,TRUE,Solar Reference Data
 10,keyword,RSUN_ARC,,[arcsec] photospheric solar radius,float,TRUE,TRUE,
 10,keyword,RSUN_REF,,[m] assumed physical solar radius,float,TRUE,TRUE,

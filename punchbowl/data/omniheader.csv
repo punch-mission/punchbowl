@@ -214,6 +214,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 11,keyword,HEQZ_OBS,,[m] S/C Heliocentric Earth Equatorial Z,float,TRUE,TRUE,
 12,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
 12,keyword,CHECKSUM,,,str,TRUE,TRUE,
-12,keyword,DATASUM,0,,int,TRUE,TRUE,0
+12,keyword,DATASUM,0,,str,TRUE,TRUE,0
 13,section,COMMENT,History,,str,TRUE,TRUE,History
 13,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline

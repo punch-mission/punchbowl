@@ -984,13 +984,15 @@ class PUNCHData(NDCube):
     def _update_statistics(self):
         """Updates image statistics in metadata before writing to file"""
 
-        # TODO - Determine handling for data saturation keywords (DATASAT, DSATVAL)
-        # TODO - Determine datamin / datamax datatype, set to int for now
+        # TODO - Determine / set data saturation value (DSATVAL) and usage of (DATAMAX)
         # TODO - Devise a more elegant way to handle data arrays of all zeros
 
         self.meta['DATAZER'] = len(np.where(self.data == 0)[0])
-        self.meta['DATASAT'] = 0
-        self.meta['DSATVAL'] = 0.
+
+        self.meta['DSATVAL'] = 9999.
+        saturated_data = self.data[np.where(self.data >= self.meta['DSATVAL'].value)[0]].flatten()
+        self.meta['DATASAT'] = len(saturated_data)
+
         nonzero_data = self.data[np.where(self.data != 0)[0]].flatten()
         if len(nonzero_data) != 0:
             percentiles = np.percentile(nonzero_data, [1,10,25,50,75,90,95,98,99])
@@ -999,9 +1001,8 @@ class PUNCHData(NDCube):
             stdev = np.std(nonzero_data).item()
         else:
             percentiles = [0.,0.,0.,0.,0.,0.,0.,0.,0.]
-            average = 0.
-            median = 0.
-            stdev = 0.
+            average = median = stdev = 0.
+
         self.meta['DATAAVG'] = average
         self.meta['DATAMDN'] = median
         self.meta['DATASIG'] = stdev
@@ -1015,7 +1016,6 @@ class PUNCHData(NDCube):
         self.meta['DATAP98'] = percentiles[7]
         self.meta['DATAP99'] = percentiles[8]
         self.meta['DATAMIN'] = float(self.data.min().item())
-        # Set non-saturated values here?
         self.meta['DATAMAX'] = float(self.data.max().item())
 
     def duplicate_with_updates(self, data: np.ndarray=None,

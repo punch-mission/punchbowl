@@ -17,8 +17,6 @@ Level:
     Onboard Image Processing:
     Calibration Data:
     Image Statistics and Properties:
-        overrides:
-            BUNIT: BSUN
     Solar Reference Data:
     Spacecraft Location & Environment:
         omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]

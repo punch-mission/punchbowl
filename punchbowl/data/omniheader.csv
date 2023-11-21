@@ -164,7 +164,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 8,keyword,CALPM,,bad pixel map filename (TBC),str,TRUE,TRUE,
 8,keyword,CALSL,,stray light model filename(TBC),str,TRUE,TRUE,
 9,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
-9,keyword,BUNIT,DN/s,units of observation,str,TRUE,TRUE,DN/s
+9,keyword,BUNIT,BSUN,units of observation,str,TRUE,TRUE,DN/s
 9,keyword,DATAZER,,number of pixels=0,int,TRUE,TRUE,
 9,keyword,DATASAT,,number of saturated pixels,int,TRUE,TRUE,
 9,keyword,DSATVAL,,saturation value in calibrated units,float,TRUE,TRUE,

@@ -17,8 +17,6 @@ Level:
     Onboard Image Processing:
     Calibration Data:
     Image Statistics and Properties:
-        overrides:
-            BUNIT: BSUN
     Solar Reference Data:
     Spacecraft Location & Environment:
     Fixity:

@@ -818,10 +818,11 @@ class PUNCHData(NDCube):
         with fits.open(path) as hdul:
             hdu_index = next((i for i, hdu in enumerate(hdul) if hdu.data is not None), 0)
             primary_hdu = hdul[hdu_index]
+            data = primary_hdu.data
             header = primary_hdu.header
+            # Reset checksum and datasum to match astropy.io.fits behavior
             header['CHECKSUM'] = ''
             header['DATASUM'] = ''
-            data = primary_hdu.data
             meta = NormalizedMetadata.from_fits_header(header)
             wcs = WCS(header)
             unit = u.ct
@@ -916,7 +917,6 @@ class PUNCHData(NDCube):
         None
         """
 
-        # Update data statistics
         self._update_statistics()
 
         header = self.meta.to_fits_header()

@@ -992,18 +992,14 @@ class PUNCHData(NDCube):
         self.meta['DSATVAL'] = 9999.
         self.meta['DATASAT'] = len(np.where(self.data >= self.meta['DSATVAL'].value)[0])
 
-        percentile_percentages = [1,10,25,50,75,90,95,98,99]
-
         nonzero_data = self.data[np.where(self.data != 0)].flatten()
 
-        percentile_values = np.percentile(nonzero_data, percentile_percentages)
-        average = np.mean(nonzero_data).item()
-        median = np.median(nonzero_data).item()
-        stdev = np.std(nonzero_data).item()
+        self.meta['DATAAVG'] = np.mean(nonzero_data).item()
+        self.meta['DATAMDN'] = np.median(nonzero_data).item()
+        self.meta['DATASIG'] = np.std(nonzero_data).item()
 
-        self.meta['DATAAVG'] = average
-        self.meta['DATAMDN'] = median
-        self.meta['DATASIG'] = stdev
+        percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
+        percentile_values = np.percentile(nonzero_data, percentile_percentages)
 
         for percent, value in zip(percentile_percentages, percentile_values):
             self.meta[f'DATAP{percent:02d}'] = value

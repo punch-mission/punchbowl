@@ -392,7 +392,7 @@ def test_from_fits_for_metadata(tmpdir):
     h = m.to_fits_header()
 
     path = os.path.join(tmpdir, "from_fits_test.fits")
-    d = PUNCHData(np.zeros((2048, 2048), dtype=np.int16), WCS(h), m)
+    d = PUNCHData(data=np.tile(np.arange(2048, dtype=np.int16), (2048, 1)), wcs=WCS(h), meta=m)
     d.write(path)
 
     loaded = PUNCHData.from_fits(path)

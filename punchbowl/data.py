@@ -990,31 +990,24 @@ class PUNCHData(NDCube):
         self.meta['DATAZER'] = len(np.where(self.data == 0)[0])
 
         self.meta['DSATVAL'] = 9999.
-        saturated_data = self.data[np.where(self.data >= self.meta['DSATVAL'].value)[0]].flatten()
-        self.meta['DATASAT'] = len(saturated_data)
+        self.meta['DATASAT'] = len(np.where(self.data >= self.meta['DSATVAL'].value)[0])
 
-        nonzero_data = self.data[np.where(self.data != 0)[0]].flatten()
-        if len(nonzero_data) != 0:
-            percentiles = np.percentile(nonzero_data, [1,10,25,50,75,90,95,98,99])
-            average = np.mean(nonzero_data).item()
-            median = np.median(nonzero_data).item()
-            stdev = np.std(nonzero_data).item()
-        else:
-            percentiles = [0.,0.,0.,0.,0.,0.,0.,0.,0.]
-            average = median = stdev = 0.
+        percentile_percentages = [1,10,25,50,75,90,95,98,99]
+
+        nonzero_data = self.data[np.where(self.data != 0)].flatten()
+
+        percentile_values = np.percentile(nonzero_data, percentile_percentages)
+        average = np.mean(nonzero_data).item()
+        median = np.median(nonzero_data).item()
+        stdev = np.std(nonzero_data).item()
 
         self.meta['DATAAVG'] = average
         self.meta['DATAMDN'] = median
         self.meta['DATASIG'] = stdev
-        self.meta['DATAP01'] = percentiles[0]
-        self.meta['DATAP10'] = percentiles[1]
-        self.meta['DATAP25'] = percentiles[2]
-        self.meta['DATAP50'] = percentiles[3]
-        self.meta['DATAP75'] = percentiles[4]
-        self.meta['DATAP90'] = percentiles[5]
-        self.meta['DATAP95'] = percentiles[6]
-        self.meta['DATAP98'] = percentiles[7]
-        self.meta['DATAP99'] = percentiles[8]
+
+        for percent, value in zip(percentile_percentages, percentile_values):
+            self.meta[f'DATAP{percent:02d}'] = value
+
         self.meta['DATAMIN'] = float(self.data.min().item())
         self.meta['DATAMAX'] = float(self.data.max().item())
 

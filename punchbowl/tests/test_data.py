@@ -262,7 +262,24 @@ def test_generate_data_statistics(sample_punchdata):
 
     sample_data._update_statistics()
 
+    nonzero_sample_data = sample_data.data[np.where(sample_data.data != 0)].flatten()
+
     assert sample_data.meta['DATAZER'].value == len(np.where(sample_data.data == 0)[0])
+
+    assert sample_data.meta['DATASAT'].value == len(np.where(sample_data.data >= sample_data.meta['DSATVAL'].value)[0])
+
+    assert sample_data.meta['DATAAVG'].value == np.mean(nonzero_sample_data)
+    assert sample_data.meta['DATAMDN'].value == np.median(nonzero_sample_data)
+    assert sample_data.meta['DATASIG'].value == np.std(nonzero_sample_data)
+
+    percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
+    percentile_values = np.percentile(nonzero_sample_data, percentile_percentages)
+
+    for percent, value in zip(percentile_percentages, percentile_values):
+        assert sample_data.meta[f'DATAP{percent:02d}'].value == value
+
+    assert sample_data.meta['DATAMIN'].value == float(sample_data.data.min())
+    assert sample_data.meta['DATAMAX'].value == float(sample_data.data.max())
 
 
 def test_read_write_uncertainty_data(sample_punchdata):

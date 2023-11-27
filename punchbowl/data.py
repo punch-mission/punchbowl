@@ -42,6 +42,14 @@ def load_level_spec(path: str) -> dict[str, t.Any]:
         return yaml.safe_load(f)
 
 
+def load_trefoil_wcs():
+    """Loads Level 2 trefoil world coordinate system and shape"""
+    trefoil_wcs = WCS(get_data_path("trefoil_hdr.fits"))
+    trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
+    trefoil_shape = (4096, 4096)
+    return trefoil_wcs, trefoil_shape
+
+
 def load_spacecraft_def(path: t.Optional[str] = None) -> dict[str, t.Any]:
     """Loads spacecraft metadata specifications
 

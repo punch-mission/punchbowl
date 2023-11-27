@@ -984,12 +984,10 @@ class PUNCHData(NDCube):
     def _update_statistics(self):
         """Updates image statistics in metadata before writing to file"""
 
-        # TODO - Determine / set data saturation value (DSATVAL) and usage of (DATAMAX)
-        # TODO - Devise a more elegant way to handle data arrays of all zeros
+        # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
 
         self.meta['DATAZER'] = len(np.where(self.data == 0)[0])
 
-        self.meta['DSATVAL'] = 9999.
         self.meta['DATASAT'] = len(np.where(self.data >= self.meta['DSATVAL'].value)[0])
 
         nonzero_data = self.data[np.where(self.data != 0)].flatten()

@@ -20,6 +20,7 @@ from ndcube import NDCube
 import yaml
 
 from punchbowl.errors import MissingMetadataError
+from punchbowl.exceptions import InvalidDataError
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -985,6 +986,9 @@ class PUNCHData(NDCube):
         """Updates image statistics in metadata before writing to file"""
 
         # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
+
+        if not np.any(self.data):
+            raise InvalidDataError(f"Input data array expected to contain non-zero data.")
 
         self.meta['DATAZER'] = len(np.where(self.data == 0)[0])
 

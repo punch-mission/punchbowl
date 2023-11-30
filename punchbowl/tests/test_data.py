@@ -21,6 +21,7 @@ from punchbowl.data import (
     MetaField,
     load_spacecraft_def
 )
+from punchbowl.exceptions import InvalidDataError
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -255,6 +256,21 @@ def test_write_data(sample_punchdata):
 
     sample_data.write(SAMPLE_WRITE_PATH)
     assert os.path.isfile(SAMPLE_WRITE_PATH)
+
+
+def test_generate_data_statistics_from_zeros(sample_punchdata):
+    m = NormalizedMetadata.load_template("PM1", "0")
+    m.history.add_now("Test", "does it write?")
+    m.history.add_now("Test", "how about twice?")
+    m['DESCRPTN'] = 'This is a test!'
+    m['CHECKSUM'] = ''
+    m['DATASUM'] = ''
+    h = m.to_fits_header()
+
+    sample_data = PUNCHData(data=np.zeros((2048,2048),dtype=np.int16), wcs=WCS(h), meta=m)
+
+    with pytest.raises(InvalidDataError):
+        sample_data._update_statistics()
 
 
 def test_generate_data_statistics(sample_punchdata):

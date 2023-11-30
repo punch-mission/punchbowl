@@ -20,6 +20,7 @@ from ndcube import NDCube
 import yaml
 
 from punchbowl.errors import MissingMetadataError
+from punchbowl.exceptions import InvalidDataError
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -818,8 +819,11 @@ class PUNCHData(NDCube):
         with fits.open(path) as hdul:
             hdu_index = next((i for i, hdu in enumerate(hdul) if hdu.data is not None), 0)
             primary_hdu = hdul[hdu_index]
-            header = primary_hdu.header
             data = primary_hdu.data
+            header = primary_hdu.header
+            # Reset checksum and datasum to match astropy.io.fits behavior
+            header['CHECKSUM'] = ''
+            header['DATASUM'] = ''
             meta = NormalizedMetadata.from_fits_header(header)
             wcs = WCS(header)
             unit = u.ct
@@ -913,6 +917,9 @@ class PUNCHData(NDCube):
         -------
         None
         """
+
+        self._update_statistics()
+
         header = self.meta.to_fits_header()
 
         # update the header with the WCS
@@ -940,7 +947,7 @@ class PUNCHData(NDCube):
 
         hdul = fits.HDUList(hdul_list)
 
-        hdul.writeto(filename, overwrite=overwrite)
+        hdul.writeto(filename, overwrite=overwrite, checksum=True)
 
     def _write_ql(self, filename: str, overwrite: bool = True) -> None:
         """Write an 8-bit scaled version of the specified data array to a PNG file
@@ -974,6 +981,33 @@ class PUNCHData(NDCube):
 
         # Write image to file
         mpl.image.saveim(filename, output_data)
+
+    def _update_statistics(self):
+        """Updates image statistics in metadata before writing to file"""
+
+        # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
+
+        if not np.any(self.data) or np.all(np.isnan(self.data)) or np.all(np.isinf(self.data)):
+            raise InvalidDataError(f"Input data array expected to contain real, non-zero data.")
+
+        self.meta['DATAZER'] = len(np.where(self.data == 0)[0])
+
+        self.meta['DATASAT'] = len(np.where(self.data >= self.meta['DSATVAL'].value)[0])
+
+        nonzero_data = self.data[np.where(self.data != 0)].flatten()
+
+        self.meta['DATAAVG'] = np.mean(nonzero_data).item()
+        self.meta['DATAMDN'] = np.median(nonzero_data).item()
+        self.meta['DATASIG'] = np.std(nonzero_data).item()
+
+        percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
+        percentile_values = np.percentile(nonzero_data, percentile_percentages)
+
+        for percent, value in zip(percentile_percentages, percentile_values):
+            self.meta[f'DATAP{percent:02d}'] = value
+
+        self.meta['DATAMIN'] = float(self.data.min().item())
+        self.meta['DATAMAX'] = float(self.data.max().item())
 
     def duplicate_with_updates(self, data: np.ndarray=None,
                                wcs: astropy.wcs.WCS= None,

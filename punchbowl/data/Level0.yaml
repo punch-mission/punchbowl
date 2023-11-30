@@ -17,6 +17,10 @@ Level:
     Onboard Image Processing:
     Calibration Data:
     Image Statistics and Properties:
+        overrides:
+            DSATVAL: 65535
+            BUNIT: DN
+        omits: [BSUN_DEF]
     Solar Reference Data:
     Spacecraft Location & Environment:
     Fixity:

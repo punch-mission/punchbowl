@@ -987,8 +987,8 @@ class PUNCHData(NDCube):
 
         # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
 
-        if not np.any(self.data):
-            raise InvalidDataError(f"Input data array expected to contain non-zero data.")
+        if not np.any(self.data) or np.all(np.isnan(self.data)) or np.all(np.isinf(self.data)):
+            raise InvalidDataError(f"Input data array expected to contain real, non-zero data.")
 
         self.meta['DATAZER'] = len(np.where(self.data == 0)[0])
 

@@ -20,7 +20,6 @@ def level2_core_flow(data_list: Union[List[str], List[PUNCHData]]):
     trefoil_wcs, trefoil_shape = load_trefoil_wcs()
 
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
-    # data_list = promote_level(data_list)  # comes out are level 2 files
     data_list = resolve_polarization_task(data_list)
     data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape)
     data_list = identify_bright_structures_task(data_list)

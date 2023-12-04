@@ -36,7 +36,10 @@ extensions = ['autoapi.extension',
               'sphinx.ext.napoleon',
               'sphinx_favicon',
               'nbsphinx',
+              'sphinxcontrib.mermaid',
               'IPython.sphinxext.ipython_console_highlighting']
+
+nbsphinx_requirejs_path = ''
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -85,3 +88,5 @@ html_context = {
 autoapi_dirs = ['../../punchbowl']
 
 favicons = ["favicon.ico"]
+
+mermaid_verbose = True

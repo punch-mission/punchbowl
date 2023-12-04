@@ -22,9 +22,10 @@ consists of several segments of processing.
 
 
 These segments are the following:
+
 - Raw to *Level 0*: converts raw satellite data to FITS images
 - Level 0 to *Level 1*: basic image calibration
-- Level 1 to *Level 2*: polarization resolution and quality marking
+- Level 1 to *Level 2*: polarization resolution, image merging, quality marking
 - Level 2 to *Level 3*: background subtraction
 
 We identify these segments by their finishing level, i.e. the Level 1 products come from the Level 0 to Level 1 segment

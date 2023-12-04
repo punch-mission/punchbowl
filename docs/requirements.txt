@@ -4,3 +4,4 @@ sphinx-autoapi
 sphinx-favicon
 nbsphinx
 ipython
+sphinxcontrib-mermaid

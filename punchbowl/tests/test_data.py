@@ -19,7 +19,8 @@ from punchbowl.data import (
     HistoryEntry,
     NormalizedMetadata,
     MetaField,
-    load_spacecraft_def
+    load_spacecraft_def,
+    load_trefoil_wcs
 )
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -420,3 +421,9 @@ def test_filled_history_from_fits_header(tmpdir):
     h = m.to_fits_header()
 
     assert History.from_fits_header(h) == constructed_history
+
+
+def test_load_trefoil_wcs():
+    trefoil_wcs, trefoil_shape = load_trefoil_wcs()
+    assert trefoil_shape == (4096, 4096)
+    assert isinstance(trefoil_wcs, WCS)

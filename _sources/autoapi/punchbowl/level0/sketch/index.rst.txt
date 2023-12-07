@@ -1,0 +1,74 @@
+:py:mod:`punchbowl.level0.sketch`
+=================================
+
+.. py:module:: punchbowl.level0.sketch
+
+.. autoapi-nested-parse::
+
+   This file contains the sketches of how this code will work in the long run. It is not meant to be complete yet.
+
+
+
+Module Contents
+---------------
+
+.. py:data:: overview
+
+   
+
+.. py:data:: packet_length
+
+   
+
+.. py:data:: data
+
+   
+
+.. py:data:: i
+   :value: 0
+
+   
+
+.. py:data:: apid_mask
+   :value: 2047
+
+   
+
+.. py:data:: file_packet_apids
+   :value: []
+
+   
+
+.. py:data:: file_length
+
+   
+
+.. py:data:: apid_data
+
+   
+
+.. py:data:: this_apid
+
+   
+
+.. py:data:: eng_adcsio
+
+   
+
+.. py:data:: diag_nst_raw
+
+   
+
+.. py:data:: packet_definition
+   :value: []
+
+   
+
+.. py:data:: name
+
+   
+
+.. py:data:: decoded
+
+   
+

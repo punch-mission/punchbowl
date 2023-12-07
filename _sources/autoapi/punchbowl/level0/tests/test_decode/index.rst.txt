@@ -1,0 +1,22 @@
+:py:mod:`punchbowl.level0.tests.test_decode`
+============================================
+
+.. py:module:: punchbowl.level0.tests.test_decode
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level0.tests.test_decode.test_created_fake_ndcube
+
+
+
+.. py:function:: test_created_fake_ndcube()
+
+

@@ -1,0 +1,30 @@
+:py:mod:`punchbowl.level1.alignment`
+====================================
+
+.. py:module:: punchbowl.level1.alignment
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.alignment.align_task
+
+
+
+.. py:function:: align_task(data_object: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+
+   Determines the pointing of the image and updates the metadata appropriately
+
+   :param data_object: data object to align
+   :type data_object: PUNCHData
+
+   :returns: a modified version of the input with the WCS more accurately determined
+   :rtype: PUNCHData
+
+

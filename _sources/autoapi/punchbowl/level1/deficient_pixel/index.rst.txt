@@ -1,0 +1,72 @@
+:py:mod:`punchbowl.level1.deficient_pixel`
+==========================================
+
+.. py:module:: punchbowl.level1.deficient_pixel
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.deficient_pixel.sliding_window
+   punchbowl.level1.deficient_pixel.cell_neighbors
+   punchbowl.level1.deficient_pixel.mean_correct
+   punchbowl.level1.deficient_pixel.median_correct
+   punchbowl.level1.deficient_pixel.remove_deficient_pixels_task
+   punchbowl.level1.deficient_pixel.create_all_valid_deficient_pixel_map
+
+
+
+.. py:function:: sliding_window(arr: numpy.ndarray, window_size: int) -> numpy.ndarray
+
+   Construct a sliding window view of the array
+   borrowed from: https://stackoverflow.com/questions/10996769/pixel-neighbors-in-2d-array-image-using-python
+
+
+.. py:function:: cell_neighbors(arr: numpy.ndarray, i: int, j: int, window_size: int = 1) -> numpy.ndarray
+
+   Return d-th neighbors of cell (i, j)
+   borrowed from: https://stackoverflow.com/questions/10996769/pixel-neighbors-in-2d-array-image-using-python
+
+
+.. py:function:: mean_correct(data_array: numpy.ndarray, mask_array: numpy.ndarray, required_good_count: int = 3, max_window_size: int = 10) -> numpy.ndarray
+
+
+.. py:function:: median_correct(data_array: numpy.ndarray, mask_array: numpy.ndarray, required_good_count: int = 3, max_window_size: int = 10) -> numpy.ndarray
+
+
+.. py:function:: remove_deficient_pixels_task(data: punchbowl.data.PUNCHData, deficient_pixel_map: punchbowl.data.PUNCHData, required_good_count: int = 3, max_window_size: int = 10, method: str = 'median') -> punchbowl.data.PUNCHData
+
+   subtracts a deficient pixel map from an input data frame.
+
+   checks the dimensions of input data frame and map match and
+   subtracts the background model from the data frame of interest.
+
+   :param data: A PUNCHobject data frame to be background subtracted
+   :type data: PUNCHData
+   :param deficient_pixel_map: The deficient pixels to be corrected
+   :type deficient_pixel_map: PUNCHData
+   :param required_good_count:
+                               how many neighboring pixels must not be deficient to correct a pixel,
+                                   if fewer than that many pixels are good neighbors then the box expands
+   :type required_good_count: int
+   :param max_window_size: the width of the max window
+   :type max_window_size: int
+   :param method: either "mean" or "median" depending on which measure should fill the deficient pixel
+   :type method: str
+
+   :returns: * **bkg_subtracted_data** (*['punchbowl.data.PUNCHData']*) -- A background subtracted data frame
+             * **# TODO** (*exclude data if flagged in weight array*)
+             * **# TODO** (*update meta data with input file and version of deficient pixel map*)
+             * **# TODO** (*output weight - update weights*)
+             * **# TODO** (*if uncertainty object in PUNCH object is updated, then this should be updated here*)
+
+
+.. py:function:: create_all_valid_deficient_pixel_map(data: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+
+

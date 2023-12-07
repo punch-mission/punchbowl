@@ -1,0 +1,22 @@
+:py:mod:`punchbowl.level2.flow`
+===============================
+
+.. py:module:: punchbowl.level2.flow
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level2.flow.level2_core_flow
+
+
+
+.. py:function:: level2_core_flow(data_list: Union[List[str], List[punchbowl.data.PUNCHData]])
+
+

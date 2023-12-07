@@ -1,0 +1,47 @@
+:py:mod:`punchbowl.util`
+========================
+
+.. py:module:: punchbowl.util
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.util.validate_image_is_square
+   punchbowl.util.output_image_task
+   punchbowl.util.load_image_task
+
+
+
+.. py:function:: validate_image_is_square(image: numpy.ndarray) -> None
+
+
+.. py:function:: output_image_task(data: punchbowl.data.PUNCHData, output_filename: str) -> None
+
+   Prefect task to write an image to disk
+
+   :param data: data that is to be written
+   :type data: PUNCHData
+   :param output_filename: where to write the file out
+   :type output_filename: str
+
+   :rtype: None
+
+
+.. py:function:: load_image_task(input_filename: str) -> punchbowl.data.PUNCHData
+
+   Prefect task to load data for processing
+
+   :param input_filename: path to file to load
+   :type input_filename: str
+
+   :returns: loaded version of the image
+   :rtype: PUNCHData
+
+

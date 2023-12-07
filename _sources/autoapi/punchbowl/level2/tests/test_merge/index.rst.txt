@@ -1,0 +1,24 @@
+:py:mod:`punchbowl.level2.tests.test_merge`
+===========================================
+
+.. py:module:: punchbowl.level2.tests.test_merge
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level2.tests.test_merge.test_merge_many_task
+
+
+
+.. py:function:: test_merge_many_task(sample_punchdata_list)
+
+   Test the image_merge prefect flow using a test harness
+
+

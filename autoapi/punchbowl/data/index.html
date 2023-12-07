@@ -1,0 +1,1379 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="../../../_static/favicon.ico" rel="icon" type="image/x-icon">
+    <title>punchbowl.data &#8212; punchbowl 0.0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/punchbowl/data/index';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="punchbowl.errors" href="../errors/index.html" />
+    <link rel="prev" title="punchbowl.tests.test_data" href="../tests/test_data/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="../../../_static/logo.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">punchbowl</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../intro.html">
+                        Introduction
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../data/index.html">
+                        Data
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../pipeline/index.html">
+                        Pipeline
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../help.html">
+                        Help
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../contribute.html">
+                        Contribute
+                      </a>
+                    </li>
+                
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+                    <li class="nav-item current active">
+                      <a class="nav-link dropdown-item nav-internal" href="../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/punch-mission/punchbowl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../intro.html">
+                        Introduction
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../data/index.html">
+                        Data
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../pipeline/index.html">
+                        Pipeline
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../help.html">
+                        Help
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../contribute.html">
+                        Contribute
+                      </a>
+                    </li>
+                
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links-2">
+                    More
+                </button>
+                <ul id="pst-nav-more-links-2" class="dropdown-menu">
+                    
+                    <li class="nav-item current active">
+                      <a class="nav-link dropdown-item nav-internal" href="../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/punch-mission/punchbowl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl</span></code></a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../level0/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../level0/tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../level0/tests/test_ccsds/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests.test_ccsds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level0/tests/test_decode/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests.test_decode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level0/tests/test_decode_sqrt/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests.test_decode_sqrt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level0/tests/test_flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests.test_flow</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../level0/ccsds/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.ccsds</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level0/decode/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.decode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level0/decode_sqrt/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.decode_sqrt</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level0/flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.flow</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level0/sketch/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.sketch</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../level1/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../level1/tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_alignment/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_alignment</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_deficient_pixel/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_deficient_pixel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_despike/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_despike</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_destreak/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_destreak</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_flow</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_pointing/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_pointing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_psf/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_psf</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_quartic_fit/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_quartic_fit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_stray_light/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_stray_light</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level1/tests/test_vignette/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_vignette</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../level1/alignment/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.alignment</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level1/deficient_pixel/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.deficient_pixel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level1/despike/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.despike</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level1/destreak/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.destreak</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level1/flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.flow</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level1/psf/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.psf</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level1/quartic_fit/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.quartic_fit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level1/stray_light/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.stray_light</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level1/vignette/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.vignette</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../level2/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../level2/tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../level2/tests/test_bright_structure/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_bright_structure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level2/tests/test_flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_flow</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level2/tests/test_merge/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_merge</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level2/tests/test_polarization/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_polarization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level2/tests/test_quality/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_quality</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../level2/tests/test_resample/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_resample</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../level2/bright_structure/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.bright_structure</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level2/flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.flow</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level2/merge/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.merge</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level2/polarization/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.polarization</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level2/quality/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.quality</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level2/resample/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.resample</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../level3/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../level3/tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../level3/tests/test_f_corona_model/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3.tests.test_f_corona_model</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../level3/f_corona_model/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3.f_corona_model</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../level3/flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3.flow</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-10"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tests/test_data/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.tests.test_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.data</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../errors/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.errors</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../exceptions/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.exceptions</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../util/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.util</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl</span></code></a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><code...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="module-punchbowl.data">
+<span id="punchbowl-data"></span><h1><a class="reference internal" href="#module-punchbowl.data" title="punchbowl.data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.data</span></code></a><a class="headerlink" href="#module-punchbowl.data" title="Link to this heading">#</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading">#</a></h3>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.data.History" title="punchbowl.data.History"><code class="xref py py-obj docutils literal notranslate"><span class="pre">History</span></code></a></p></td>
+<td><p>Representation of the history of edits done to a PUNCHData object</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#punchbowl.data.MetaField" title="punchbowl.data.MetaField"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MetaField</span></code></a></p></td>
+<td><p>The MetaField object describes a single field within the NormalizedMetadata object</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.data.NormalizedMetadata" title="punchbowl.data.NormalizedMetadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalizedMetadata</span></code></a></p></td>
+<td><p>The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PUNCHData</span></code></a></p></td>
+<td><p>PUNCH data object</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h3>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.data.get_data_path" title="punchbowl.data.get_data_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_data_path</span></code></a>(path)</p></td>
+<td><p>Returns root data path</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#punchbowl.data.load_omniheader" title="punchbowl.data.load_omniheader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_omniheader</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p>Loads full metadata specifications</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.data.load_level_spec" title="punchbowl.data.load_level_spec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_level_spec</span></code></a>(→ dict[str, Any])</p></td>
+<td><p>Loads data product metadata specifications</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#punchbowl.data.load_trefoil_wcs" title="punchbowl.data.load_trefoil_wcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_trefoil_wcs</span></code></a>()</p></td>
+<td><p>Loads Level 2 trefoil world coordinate system and shape</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.data.load_spacecraft_def" title="punchbowl.data.load_spacecraft_def"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_spacecraft_def</span></code></a>(→ dict[str, Any])</p></td>
+<td><p>Loads spacecraft metadata specifications</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="attributes">
+<h3>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">#</a></h3>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.data._ROOT" title="punchbowl.data._ROOT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">_ROOT</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#punchbowl.data.HistoryEntry" title="punchbowl.data.HistoryEntry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HistoryEntry</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.data.ValueType" title="punchbowl.data.ValueType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValueType</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py data">
+<dt class="sig sig-object py" id="punchbowl.data._ROOT">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">_ROOT</span></span><a class="headerlink" href="#punchbowl.data._ROOT" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="punchbowl.data.get_data_path">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">get_data_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.get_data_path" title="Link to this definition">#</a></dt>
+<dd><p>Returns root data path</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="punchbowl.data.load_omniheader">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">load_omniheader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#punchbowl.data.load_omniheader" title="Link to this definition">#</a></dt>
+<dd><p>Loads full metadata specifications</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="punchbowl.data.load_level_spec">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">load_level_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#punchbowl.data.load_level_spec" title="Link to this definition">#</a></dt>
+<dd><p>Loads data product metadata specifications</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="punchbowl.data.load_trefoil_wcs">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">load_trefoil_wcs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.load_trefoil_wcs" title="Link to this definition">#</a></dt>
+<dd><p>Loads Level 2 trefoil world coordinate system and shape</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="punchbowl.data.load_spacecraft_def">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">load_spacecraft_def</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#punchbowl.data.load_spacecraft_def" title="Link to this definition">#</a></dt>
+<dd><p>Loads spacecraft metadata specifications</p>
+<p>If path is None, then it loads a default from the package.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="punchbowl.data.HistoryEntry">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">HistoryEntry</span></span><a class="headerlink" href="#punchbowl.data.HistoryEntry" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="punchbowl.data.History">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">History</span></span><a class="headerlink" href="#punchbowl.data.History" title="Link to this definition">#</a></dt>
+<dd><p>Representation of the history of edits done to a PUNCHData object</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.add_entry">
+<span class="sig-name descname"><span class="pre">add_entry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">HistoryEntry</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#punchbowl.data.History.add_entry" title="Link to this definition">#</a></dt>
+<dd><p>Add an entry to the History log</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entry</strong> (<em>HistoryEntry</em>) – A HistoryEntry object to add to the History log</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.add_now">
+<span class="sig-name descname"><span class="pre">add_now</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#punchbowl.data.History.add_now" title="Link to this definition">#</a></dt>
+<dd><p>Adds a new history entry at the current time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>str</em>) – what module of the code the history entry originates from</p></li>
+<li><p><strong>comment</strong> (<em>str</em>) – a note of what the history comment means</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#punchbowl.data.History.clear" title="Link to this definition">#</a></dt>
+<dd><p>Clears all the history entries so the History is blank</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">HistoryEntry</span></span></span><a class="headerlink" href="#punchbowl.data.History.__getitem__" title="Link to this definition">#</a></dt>
+<dd><p>Given an index, returns the requested HistoryEntry</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> (<em>int</em>) – numerical index of the history entry, increasing number typically indicates an older entry</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>history at specified <cite>index</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HistoryEntry</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.most_recent">
+<span class="sig-name descname"><span class="pre">most_recent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">HistoryEntry</span></span></span><a class="headerlink" href="#punchbowl.data.History.most_recent" title="Link to this definition">#</a></dt>
+<dd><p>Gets the most recent HistoryEntry, i.e. the youngest</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>returns HistoryEntry that is the youngest</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>HistoryEntry</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#punchbowl.data.History.__len__" title="Link to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the number of history entries</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#punchbowl.data.History.__str__" title="Link to this definition">#</a></dt>
+<dd><p>Formats a string combining all the history entries</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a combined record of the history entries</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#punchbowl.data.History" title="punchbowl.data.History"><span class="pre">History</span></a></span></span><a class="headerlink" href="#punchbowl.data.History.__iter__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.__next__">
+<span class="sig-name descname"><span class="pre">__next__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">HistoryEntry</span></span></span><a class="headerlink" href="#punchbowl.data.History.__next__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.History.__eq__" title="Link to this definition">#</a></dt>
+<dd><p>Return self==value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.History.from_fits_header">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_fits_header</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.io.fits.Header</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#punchbowl.data.History" title="punchbowl.data.History"><span class="pre">History</span></a></span></span><a class="headerlink" href="#punchbowl.data.History.from_fits_header" title="Link to this definition">#</a></dt>
+<dd><p>Constructs a history from a FITS header</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>head</strong> (<em>Header</em>) – a FITS header to read from</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the history derived from a given FITS header</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#punchbowl.data.History" title="punchbowl.data.History">History</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="punchbowl.data.ValueType">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">ValueType</span></span><a class="headerlink" href="#punchbowl.data.ValueType" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="punchbowl.data.MetaField">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">MetaField</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keyword</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">datatype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nullable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mutable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.MetaField" title="Link to this definition">#</a></dt>
+<dd><p>The MetaField object describes a single field within the NormalizedMetadata object</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.MetaField.keyword">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">keyword</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#punchbowl.data.MetaField.keyword" title="Link to this definition">#</a></dt>
+<dd><p>returns MetaField keyword</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.MetaField.comment">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">comment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#punchbowl.data.MetaField.comment" title="Link to this definition">#</a></dt>
+<dd><p>returns MetaField comment</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.MetaField.value">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">value</span></span><a class="headerlink" href="#punchbowl.data.MetaField.value" title="Link to this definition">#</a></dt>
+<dd><p>returns MetaField value</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.MetaField.default">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default</span></span><a class="headerlink" href="#punchbowl.data.MetaField.default" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.MetaField.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#punchbowl.data.MetaField" title="punchbowl.data.MetaField"><span class="pre">MetaField</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#punchbowl.data.MetaField.__eq__" title="Link to this definition">#</a></dt>
+<dd><p>Return self==value.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">NormalizedMetadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OrderedDict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">OrderedDict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#punchbowl.data.MetaField" title="punchbowl.data.MetaField"><span class="pre">MetaField</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#punchbowl.data.History" title="punchbowl.data.History"><span class="pre">History</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">collections.abc.Mapping</span></code></p>
+<p>The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
+uniting the history and header fields while providing helpful accessors for commonly used formats of the metadata.</p>
+<p>Internally, the keys are always stored as FITS compliant upper-case strings. These are stored in sections.
+So the contents dictionary should have a key of a section title mapped to a dictionary of field keys mapped to
+MetaFields.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.sections">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sections</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.sections" title="Link to this definition">#</a></dt>
+<dd><p>returns header keys</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.history">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">history</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#punchbowl.data.History" title="punchbowl.data.History"><span class="pre">History</span></a></em><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.history" title="Link to this definition">#</a></dt>
+<dd><p>returns header history</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.product_level">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">product_level</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.product_level" title="Link to this definition">#</a></dt>
+<dd><p>returns data product level if indicated in metadata</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.datetime">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">datetime</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">datetime.datetime</span></em><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.datetime" title="Link to this definition">#</a></dt>
+<dd><p>returns a datetime representation of the ‘DATE-OBS’ header keyword if indicated in metadata</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.__len__" title="Link to this definition">#</a></dt>
+<dd><p>returns number of entry cards in NormalizedMetadata object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.__iter__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#punchbowl.data.NormalizedMetadata" title="punchbowl.data.NormalizedMetadata"><span class="pre">NormalizedMetadata</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.__eq__" title="Link to this definition">#</a></dt>
+<dd><p>Return self==value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.to_fits_header">
+<span class="sig-name descname"><span class="pre">to_fits_header</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">astropy.io.fits.Header</span></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.to_fits_header" title="Link to this definition">#</a></dt>
+<dd><p>Converts a constructed NormalizedMetdata object to an Astropy FITS compliant header object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Astropy FITS compliant header object</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Header</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.from_fits_header">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_fits_header</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.io.fits.Header</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#punchbowl.data.NormalizedMetadata" title="punchbowl.data.NormalizedMetadata"><span class="pre">NormalizedMetadata</span></a></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.from_fits_header" title="Link to this definition">#</a></dt>
+<dd><p>Construct a normalized Metadata from a PUNCH FITS header</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>h</strong> (<em>Header</em>) – a PUNCH FITS header from Astropy</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the corresponding NormalizedMetadata</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#punchbowl.data.NormalizedMetadata" title="punchbowl.data.NormalizedMetadata">NormalizedMetadata</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata._match_product_code_in_level_spec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_match_product_code_in_level_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata._match_product_code_in_level_spec" title="Link to this definition">#</a></dt>
+<dd><p>Parses the specified product code and level specification to find a corresponding set</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>product_code</strong> – Specified data product code</p></li>
+<li><p><strong>level_spec</strong> – Data product level specifications, loaded from <cite>load_level_spec</cite></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Product code specification parsed from file</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata._load_template_files">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_load_template_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omniheader_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level_spec_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_def_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata._load_template_files" title="Link to this definition">#</a></dt>
+<dd><p>Loads template files from specified locations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>omniheader_path</strong> – Path to full omniheader specifications</p></li>
+<li><p><strong>level</strong> – Specified data product level</p></li>
+<li><p><strong>level_spec_path</strong> – Path to data product level specifications</p></li>
+<li><p><strong>spacecraft</strong> – Specified spacecraft code</p></li>
+<li><p><strong>spacecraft_def_path</strong> – Path to spacecraft specifications</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Header specification entries</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata._determine_omits_and_overrides">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_determine_omits_and_overrides</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level_spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product_def</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata._determine_omits_and_overrides" title="Link to this definition">#</a></dt>
+<dd><p>Reads level specifications and product definitions and determines keywords to omit or overwrite</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level_spec</strong> – Data product level specifications</p></li>
+<li><p><strong>product_def</strong> – Data product specifications</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Keywords and values to omit and override</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.load_template">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level_spec_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omniheader_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacecraft_def_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#punchbowl.data.NormalizedMetadata" title="punchbowl.data.NormalizedMetadata"><span class="pre">NormalizedMetadata</span></a></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.load_template" title="Link to this definition">#</a></dt>
+<dd><p>Given data product specification, loads relevant template files and constructs a NormalizedMetadata object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>product_code</strong> – Specified data product code, a three character code like PM1</p></li>
+<li><p><strong>level</strong> – Specified data product level</p></li>
+<li><p><strong>level_spec_path</strong> – Path to data product level specifications</p></li>
+<li><p><strong>omniheader_path</strong> – Path to full omniheader specifications</p></li>
+<li><p><strong>spacecraft_def_path</strong> – Path to spacecraft specifications</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Constructed NormalizedMetadata object from template specifications</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#punchbowl.data.NormalizedMetadata" title="punchbowl.data.NormalizedMetadata">NormalizedMetadata</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata._validate_key_is_str">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_validate_key_is_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata._validate_key_is_str" title="Link to this definition">#</a></dt>
+<dd><p>Validates that the provided key is a valid header keyword string</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – Header key string</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.__setitem__">
+<span class="sig-name descname"><span class="pre">__setitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.__setitem__" title="Link to this definition">#</a></dt>
+<dd><p>Sets specified pair of keyword and value in the NormalizedMetadata object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – Header key string</p></li>
+<li><p><strong>value</strong> – Header value</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.__getitem__" title="Link to this definition">#</a></dt>
+<dd><p>Gets specified keyword from NormalizedMetadata object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – Header key string</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returned header value</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>t.Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.__delitem__">
+<span class="sig-name descname"><span class="pre">__delitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.__delitem__" title="Link to this definition">#</a></dt>
+<dd><p>Deletes specified keyword entry from the NormalizedMetadata object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – Header key string</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.NormalizedMetadata.__contains__">
+<span class="sig-name descname"><span class="pre">__contains__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#punchbowl.data.NormalizedMetadata.__contains__" title="Link to this definition">#</a></dt>
+<dd><p>Determines if the specified keyword is contained within the NormalizedMetadata object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – Header key string</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Value indicating if the specified keyword is contained within the NormalizedMetadata object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="punchbowl.data.PUNCHData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">punchbowl.data.</span></span><span class="sig-name descname"><span class="pre">PUNCHData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.wcs.wcsapi.BaseLowLevelWCS</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">astropy.wcs.wcsapi.BaseHighLevelWCS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#punchbowl.data.NormalizedMetadata" title="punchbowl.data.NormalizedMetadata"><span class="pre">NormalizedMetadata</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">uncertainty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.units.Unit</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.PUNCHData" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">ndcube.NDCube</span></code></p>
+<p>PUNCH data object</p>
+<p>PUNCHData is essentially a normal ndcube with a NormalizedMetadata and some helpful methods.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">NDCube</span></code></dt><dd><p>Base container for the PUNCHData object</p>
+</dd>
+</dl>
+</div>
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.PUNCHData.weight">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weight</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><a class="headerlink" href="#punchbowl.data.PUNCHData.weight" title="Link to this definition">#</a></dt>
+<dd><p>Generate a corresponding weight map from the uncertainty array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>weight map computed from uncertainty array</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="punchbowl.data.PUNCHData.filename_base">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filename_base</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#punchbowl.data.PUNCHData.filename_base" title="Link to this definition">#</a></dt>
+<dd><p>Dynamically generate an id string for the given data product, using the format ‘Ln_ttO_yyyymmddhhmmss’</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>output identification string</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.PUNCHData.from_fits">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">PUNCHData</span></a></span></span><a class="headerlink" href="#punchbowl.data.PUNCHData.from_fits" title="Link to this definition">#</a></dt>
+<dd><p>Populates a PUNCHData object from specified FITS file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – filename from which to generate a PUNCHData object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>loaded object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData">PUNCHData</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.PUNCHData.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#punchbowl.data.PUNCHData.write" title="Link to this definition">#</a></dt>
+<dd><p>Write PUNCHData elements to file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – output filename (including path and file extension), extension must be .fits, .png, .jpg, or .jpeg</p></li>
+<li><p><strong>overwrite</strong> – True will overwrite an exiting file, False will create an exception if a file exists</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If <cite>filename</cite> does not end in .fits, .png, .jpg, or .jpeg</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.PUNCHData._write_fits">
+<span class="sig-name descname"><span class="pre">_write_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#punchbowl.data.PUNCHData._write_fits" title="Link to this definition">#</a></dt>
+<dd><p>Write PUNCHData elements to FITS files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – output filename (including path and file extension)</p></li>
+<li><p><strong>overwrite</strong> – True will overwrite an exiting file, False will throw an exception in that scenario</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.PUNCHData._write_ql">
+<span class="sig-name descname"><span class="pre">_write_ql</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#punchbowl.data.PUNCHData._write_ql" title="Link to this definition">#</a></dt>
+<dd><p>Write an 8-bit scaled version of the specified data array to a PNG file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – output filename (including path and file extension)</p></li>
+<li><p><strong>overwrite</strong> – True will overwrite an exiting file, False will throw an exception in that scenario</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.PUNCHData._update_statistics">
+<span class="sig-name descname"><span class="pre">_update_statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#punchbowl.data.PUNCHData._update_statistics" title="Link to this definition">#</a></dt>
+<dd><p>Updates image statistics in metadata before writing to file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="punchbowl.data.PUNCHData.duplicate_with_updates">
+<span class="sig-name descname"><span class="pre">duplicate_with_updates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">astropy.wcs.WCS</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uncertainty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">PUNCHData</span></a></span></span><a class="headerlink" href="#punchbowl.data.PUNCHData.duplicate_with_updates" title="Link to this definition">#</a></dt>
+<dd><p>Copies a PUNCHData. Any field specified in the call is modified. All others are a direct copy.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../tests/test_data/index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.tests.test_data</span></code></p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../errors/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.errors</span></code></p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#classes">Classes</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#attributes">Attributes</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data._ROOT"><code class="docutils literal notranslate"><span class="pre">_ROOT</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.get_data_path"><code class="docutils literal notranslate"><span class="pre">get_data_path()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.load_omniheader"><code class="docutils literal notranslate"><span class="pre">load_omniheader()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.load_level_spec"><code class="docutils literal notranslate"><span class="pre">load_level_spec()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.load_trefoil_wcs"><code class="docutils literal notranslate"><span class="pre">load_trefoil_wcs()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.load_spacecraft_def"><code class="docutils literal notranslate"><span class="pre">load_spacecraft_def()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.HistoryEntry"><code class="docutils literal notranslate"><span class="pre">HistoryEntry</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History"><code class="docutils literal notranslate"><span class="pre">History</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.add_entry"><code class="docutils literal notranslate"><span class="pre">History.add_entry()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.add_now"><code class="docutils literal notranslate"><span class="pre">History.add_now()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.clear"><code class="docutils literal notranslate"><span class="pre">History.clear()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.__getitem__"><code class="docutils literal notranslate"><span class="pre">History.__getitem__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.most_recent"><code class="docutils literal notranslate"><span class="pre">History.most_recent()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.__len__"><code class="docutils literal notranslate"><span class="pre">History.__len__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.__str__"><code class="docutils literal notranslate"><span class="pre">History.__str__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.__iter__"><code class="docutils literal notranslate"><span class="pre">History.__iter__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.__next__"><code class="docutils literal notranslate"><span class="pre">History.__next__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.__eq__"><code class="docutils literal notranslate"><span class="pre">History.__eq__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.History.from_fits_header"><code class="docutils literal notranslate"><span class="pre">History.from_fits_header()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.ValueType"><code class="docutils literal notranslate"><span class="pre">ValueType</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.MetaField"><code class="docutils literal notranslate"><span class="pre">MetaField</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.MetaField.keyword"><code class="docutils literal notranslate"><span class="pre">MetaField.keyword</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.MetaField.comment"><code class="docutils literal notranslate"><span class="pre">MetaField.comment</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.MetaField.value"><code class="docutils literal notranslate"><span class="pre">MetaField.value</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.MetaField.default"><code class="docutils literal notranslate"><span class="pre">MetaField.default</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.MetaField.__eq__"><code class="docutils literal notranslate"><span class="pre">MetaField.__eq__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.sections"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.sections</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.history"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.history</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.product_level"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.product_level</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.datetime"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.datetime</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.__len__"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.__len__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.__iter__"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.__iter__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.__eq__"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.__eq__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.to_fits_header"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.to_fits_header()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.from_fits_header"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.from_fits_header()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata._match_product_code_in_level_spec"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata._match_product_code_in_level_spec()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata._load_template_files"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata._load_template_files()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata._determine_omits_and_overrides"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata._determine_omits_and_overrides()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.load_template"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.load_template()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata._validate_key_is_str"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata._validate_key_is_str()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.__setitem__"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.__setitem__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.__getitem__"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.__getitem__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.__delitem__"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.__delitem__()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.NormalizedMetadata.__contains__"><code class="docutils literal notranslate"><span class="pre">NormalizedMetadata.__contains__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.PUNCHData"><code class="docutils literal notranslate"><span class="pre">PUNCHData</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.PUNCHData.weight"><code class="docutils literal notranslate"><span class="pre">PUNCHData.weight</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.PUNCHData.filename_base"><code class="docutils literal notranslate"><span class="pre">PUNCHData.filename_base</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.PUNCHData.from_fits"><code class="docutils literal notranslate"><span class="pre">PUNCHData.from_fits()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.PUNCHData.write"><code class="docutils literal notranslate"><span class="pre">PUNCHData.write()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.PUNCHData._write_fits"><code class="docutils literal notranslate"><span class="pre">PUNCHData._write_fits()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.PUNCHData._write_ql"><code class="docutils literal notranslate"><span class="pre">PUNCHData._write_ql()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.PUNCHData._update_statistics"><code class="docutils literal notranslate"><span class="pre">PUNCHData._update_statistics()</span></code></a></li>
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.data.PUNCHData.duplicate_with_updates"><code class="docutils literal notranslate"><span class="pre">PUNCHData.duplicate_with_updates()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/punch-mission/punchbowl/edit/main/docs/source/autoapi/punchbowl/data/index.rst">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023, PUNCH Science Operations Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

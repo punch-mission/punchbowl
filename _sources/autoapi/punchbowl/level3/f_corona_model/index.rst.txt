@@ -1,0 +1,137 @@
+:py:mod:`punchbowl.level3.f_corona_model`
+=========================================
+
+.. py:module:: punchbowl.level3.f_corona_model
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level3.f_corona_model.query_f_corona_model_source
+   punchbowl.level3.f_corona_model.construct_f_corona_background
+   punchbowl.level3.f_corona_model.subtract_f_corona_background_task
+
+
+
+.. py:function:: query_f_corona_model_source(polarizer: str, PUNCH_product: str, start_datetime: datetime.datetime, end_datetime: datetime.datetime) -> List[str]
+
+   Creates a list of files based between a start date/time (start_datetime)
+   and an end date/time (end_datetime) for a specifed polarizer and product
+   type.
+
+   Creates a list of files based between a start date/time (start_datetime)
+   and an end date/time (end_datetime) for a specifed polarizer and
+   PUNCH_product. The start and end times can both be input explicitly,
+   individually, or derived from a mid time.
+
+   if start_datetime (datetime object) and an end_datetime(datetime object)
+   are specified a list of files between those dates is produced for the
+   specified polarizer and PUNCH_product.
+
+
+   :param polarizer: input a string specifying the type of polarizer to search for
+   :type polarizer: string [= 'clear', '-60', '60', '0' ]
+   :param PUNCH_product:
+   :type PUNCH_product: string [= 'mosaic', 'nfi']
+   :param start_datetime: input a start_datetime of interest.
+   :type start_datetime: datetime
+   :param end_datetime: input a start_datetime of interest.
+   :type end_datetime: datetime
+
+   :returns: **file_list** -- returns a list of files over the specified period for the specified
+             polarizer.
+   :rtype: [list]
+
+   .. todo::
+
+      # TODO: Improve Query database code
+      # TODO: Change placeholder output list
+      # TODO: add option to have selective cadence
+      # TODO: update wanings and exceptions to match standards
+
+
+.. py:function:: construct_f_corona_background(data_list: List[str], method: str = 'percentile', apply_threshold_mask: bool = True, threshold_mask_cutoff: float = 1.5, percentile_value: float = 5) -> punchbowl.data.PUNCHData
+
+   Creates a background f corona map from a series of different models.
+
+   Creates a background f corona map (method) using a series of different
+   averaging and minimization methods, values calculated across an input
+   data cube of dimensions array((z,y,x)). The x,y plane should contain
+   the spatial information, and the z dimension the temporal information,
+   the dimension to be minimized/averaged over. The background is taken
+   across the z dimension of the data cube. These include:
+
+       'mean' - takes the average across each pixel in the z dimension
+       of the data cube.
+
+       'min' - takes the min value across each pixel in the z dimension
+       of the data cube.
+
+       'percentile' - computes the percentile of the data along the z axis
+       of the data cube. Requires kwargs 'percentile_value', or the 5th
+       percentile is used by default. Optional inputs include:
+
+           percentile_value - the value to which the percentile should be
+           calculated
+
+   A threshold can be applied to reject outliers by applying
+   apply_threshold_mask=1. The threshold uses the standard deviation to
+   identify outliers, mask, and reject them. The masked array is used with the
+   above background methods. If apply_threshold_mask is invoked a
+   threshold_mask_cutoff is required, thus us the sigma-level at which to
+   discard outliers. If not specified a default is 1.5.
+
+
+   :param data_list: list of filenames to use
+   :param method: defines the type of background model to build. Options include
+   :type method: [string = 'percentile', 'mean', min,]
+   :param percentile_value: if using method='percentile', this is the value of the
+                            percentile the data along the z axis is calculated to.
+   :type percentile_value: [float]
+   :param apply_threshold_mask: if set outliers are masked from the data cube using the
+                                threshold_mask_cutoff parameter.
+   :type apply_threshold_mask: [int]
+   :param threshold_mask_cutoff: if using method='stacker', this is the sigma-level at which
+                                 to discard outliers. The default is 1.5.
+   :type threshold_mask_cutoff: [float]
+
+   :returns: * **return output_PUNCHobject** (*['punchbowl.data.PUNCHData']*) -- returns an array of the same dimensions as the x and y dimensions of
+               the input array
+             * **# TODO** (*exclude data if flagged in weight array*)
+             * **# TODO** (*pass through REAL meta data and WCS*)
+             * **# TODO** (*create 2nd hdu with list of input files*)
+             * **# TODO** (*add an x,y window to average over*)
+             * **# TODO** (*needs to look at the weights (uncertainties) for trefoil images, so we don't average*)
+             * **# TODO** (*output weight*)
+
+
+.. py:function:: subtract_f_corona_background_task(data_object: punchbowl.data.PUNCHData, f_background_model: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+
+   subtracts a background f corona model from an input data frame.
+
+   checks the dimensions of input data frame and background model match and
+   subtracts the background model from the data frame of interest.
+
+   :param data_object: A PUNCHobject data frame to be background subtracted
+   :type data_object: ['punchbowl.data.PUNCHData']
+   :param f_background_model: A PUNCHobject background map
+   :type f_background_model: ['punchbowl.data.PUNCHData']
+
+   :returns: **bkg_subtracted_data** -- A background subtracted data frame
+   :rtype: ['punchbowl.data.PUNCHData']
+
+   .. todo::
+
+      # TODO: exclude data if flagged in weight array
+      # TODO: pass through REAL meta data and WCS
+      # TODO: create 2nd hdu with list of input files
+      # TODO: needs to look at the weights (uncertainties) for trefoil images, so we don't average
+      # TODO: output weight - combine weights
+
+

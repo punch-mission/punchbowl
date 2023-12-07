@@ -1,0 +1,17 @@
+:py:mod:`punchbowl.exceptions`
+==============================
+
+.. py:module:: punchbowl.exceptions
+
+
+Module Contents
+---------------
+
+.. py:exception:: InvalidDataError
+
+
+   Bases: :py:obj:`ValueError`
+
+   Invalid data error
+
+

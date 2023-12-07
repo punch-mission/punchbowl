@@ -1,0 +1,6 @@
+:py:mod:`punchbowl.level2.tests.test_bright_structure`
+======================================================
+
+.. py:module:: punchbowl.level2.tests.test_bright_structure
+
+

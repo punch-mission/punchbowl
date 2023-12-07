@@ -1,0 +1,97 @@
+:py:mod:`punchbowl.level1.destreak`
+===================================
+
+.. py:module:: punchbowl.level1.destreak
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.destreak.streak_correction_matrix
+   punchbowl.level1.destreak.correct_streaks
+   punchbowl.level1.destreak.destreak_task
+
+
+
+.. py:function:: streak_correction_matrix(n: int, exposure_time: float, readout_line_time: float, reset_line_time: float) -> numpy.ndarray
+
+   Computes a matrix used in correcting streaks in PUNCH images
+
+   Computes the inverse of a matrix of size n where the major diagonal
+       contains the value exposure_time, the lower triangle contains readout_line_time
+       and the upper triangle contains the reset_line_time.
+           i.e. X[i,i]=diag, X[0:i-1,i]=below, X[0,i+1:n-1]=above
+
+   Adapted from solarsoft sc_inverse
+
+   :param n: size of the matrix (n x n)
+   :type n: int
+   :param exposure_time: the exposure time, i.e. value on the diagonal of the matrix
+   :type exposure_time: float
+   :param readout_line_time: the readout line time, i.e. value in the lower triangle
+   :type readout_line_time: float
+   :param reset_line_time: the reset line time, i.e. value in the upper triangle
+   :type reset_line_time: float
+
+   :returns: value of specified streak correction array
+   :rtype: np.ndarray
+
+   :raises np.linalg.LinAlgError: Singular matrix: Matrix isn't invertible
+
+   .. rubric:: Notes
+
+   As long as the units are consistent, this should work. For PUNCH, we use milliseconds.
+
+   .. rubric:: Examples
+
+   >>> streak_correction_matrix(3, 1, 2, 3)
+   array([[-0.38461538,  0.23076923,  0.46153846],
+          [ 0.30769231, -0.38461538,  0.23076923],
+          [ 0.15384615,  0.30769231, -0.38461538]])
+
+
+.. py:function:: correct_streaks(image: numpy.ndarray, exposure_time: float, readout_line_time: float, reset_line_time: float) -> numpy.ndarray
+
+   Corrects an image for streaks
+
+   :param image: image to be corrected
+   :type image: np.ndarray (2D)
+   :param exposure_time: exposure time in consistent units (e.g. milliseconds) with readout_line_time and reset_line time
+   :type exposure_time: float
+   :param readout_line_time: time to read out a line in consistent units (e.g. milliseconds) with exposure_time and reset_line time
+   :type readout_line_time: float
+   :param reset_line_time: time to reset CCD in consistent units (e.g. milliseconds) with readout_line_time and exposure_time
+   :type reset_line_time: float
+
+   :returns: a streak-corrected image
+   :rtype: np.ndarray
+
+   :raises ValueError: If the image is not 2D or not square
+   :raises TypeError: If the image is not a numpy array
+   :raises np.linalg.LinAlgError: Singular matrix: Matrix isn't invertible
+
+   .. rubric:: Examples
+
+   >>> correct_streaks(np.arange(9).reshape(3,3), 1, 2, 3)
+   array([[ 3.46153846,  3.76923077,  4.07692308],
+      [ 0.23076923,  0.38461538,  0.53846154],
+      [-1.38461538, -1.30769231, -1.23076923]])
+
+
+.. py:function:: destreak_task(data_object: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+
+   Prefect task to destreak an image
+
+   :param data_object: data to operate on
+   :type data_object: PUNCHData
+
+   :returns: modified version of the input with streaks removed
+   :rtype: PUNCHData
+
+

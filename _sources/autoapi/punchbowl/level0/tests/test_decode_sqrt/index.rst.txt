@@ -1,0 +1,42 @@
+:py:mod:`punchbowl.level0.tests.test_decode_sqrt`
+=================================================
+
+.. py:module:: punchbowl.level0.tests.test_decode_sqrt
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level0.tests.test_decode_sqrt.sample_punchdata
+   punchbowl.level0.tests.test_decode_sqrt.test_encoding
+   punchbowl.level0.tests.test_decode_sqrt.test_decoding
+   punchbowl.level0.tests.test_decode_sqrt.test_encode_then_decode
+   punchbowl.level0.tests.test_decode_sqrt.test_decode_sqrt_data_task
+
+
+
+.. py:function:: sample_punchdata()
+
+   Generate a sample PUNCHData object for testing
+
+
+.. py:function:: test_encoding()
+
+
+.. py:function:: test_decoding()
+
+
+.. py:function:: test_encode_then_decode(from_bits, to_bits)
+
+
+.. py:function:: test_decode_sqrt_data_task(sample_punchdata)
+
+   Test the decode_sqrt_data prefect task using a test harness
+
+

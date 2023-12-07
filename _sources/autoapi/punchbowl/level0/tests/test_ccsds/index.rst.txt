@@ -1,0 +1,41 @@
+:py:mod:`punchbowl.level0.tests.test_ccsds`
+===========================================
+
+.. py:module:: punchbowl.level0.tests.test_ccsds
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level0.tests.test_ccsds.test_load_sci_packets
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level0.tests.test_ccsds.DATA_DIR
+   punchbowl.level0.tests.test_ccsds.FILENAMES
+
+
+.. py:data:: DATA_DIR
+   :value: '/Users/jhughes/Desktop/RAW_CCSDS_DATA/'
+
+   
+
+.. py:data:: FILENAMES
+   :value: ['PUNCH_0E_RAW_2023_201_18_51_V01.tlm', 'PUNCH_0E_RAW_2023_201_19_07_V01.tlm',...
+
+   
+
+.. py:function:: test_load_sci_packets()
+
+

@@ -1,0 +1,30 @@
+:py:mod:`punchbowl.level1.vignette`
+===================================
+
+.. py:module:: punchbowl.level1.vignette
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.vignette.correct_vignetting_task
+
+
+
+.. py:function:: correct_vignetting_task(data_object: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+
+   Prefect task to correct the vignetting of an image
+
+   :param data_object: data to operate on
+   :type data_object: PUNCHData
+
+   :returns: modified version of the input with the vignetting corrected
+   :rtype: PUNCHData
+
+

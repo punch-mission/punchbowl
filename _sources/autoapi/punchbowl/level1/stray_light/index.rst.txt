@@ -1,0 +1,30 @@
+:py:mod:`punchbowl.level1.stray_light`
+======================================
+
+.. py:module:: punchbowl.level1.stray_light
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.stray_light.remove_stray_light_task
+
+
+
+.. py:function:: remove_stray_light_task(data_object: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+
+   Prefect task to remove stray light from an image
+
+   :param data_object: data to operate on
+   :type data_object: PUNCHData
+
+   :returns: modified version of the input with the stray light removed
+   :rtype: PUNCHData
+
+

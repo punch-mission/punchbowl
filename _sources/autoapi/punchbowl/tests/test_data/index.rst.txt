@@ -1,0 +1,219 @@
+:py:mod:`punchbowl.tests.test_data`
+===================================
+
+.. py:module:: punchbowl.tests.test_data
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.tests.test_data.test_metafield_creation_keyword_too_long
+   punchbowl.tests.test_data.test_metafield_creation_kinds_do_not_match
+   punchbowl.tests.test_data.test_metafield_update
+   punchbowl.tests.test_data.test_metafield_not_mutable
+   punchbowl.tests.test_data.test_metafield_wrong_kind_for_update
+   punchbowl.tests.test_data.test_normalizedmetadata_from_template_abq
+   punchbowl.tests.test_data.test_normalizedmetadata_from_template_cb1
+   punchbowl.tests.test_data.test_normalizedmetadata_to_fits_header
+   punchbowl.tests.test_data.sample_wcs
+   punchbowl.tests.test_data.sample_data
+   punchbowl.tests.test_data.sample_data_random
+   punchbowl.tests.test_data.simple_ndcube
+   punchbowl.tests.test_data.sample_punchdata
+   punchbowl.tests.test_data.sample_punchdata_list
+   punchbowl.tests.test_data.test_sample_data_creation
+   punchbowl.tests.test_data.test_generate_from_filename_compressed
+   punchbowl.tests.test_data.test_write_data
+   punchbowl.tests.test_data.test_generate_data_statistics_from_zeros
+   punchbowl.tests.test_data.test_generate_data_statistics
+   punchbowl.tests.test_data.test_read_write_uncertainty_data
+   punchbowl.tests.test_data.test_filename_base_generation
+   punchbowl.tests.test_data.empty_history
+   punchbowl.tests.test_data.test_history_add_one
+   punchbowl.tests.test_data.test_history_iterate
+   punchbowl.tests.test_data.test_load_spacecraft_yaml
+   punchbowl.tests.test_data.test_create_level0_normalized_metadata
+   punchbowl.tests.test_data.test_normalized_metadata_to_fits_writes_history
+   punchbowl.tests.test_data.test_empty_history_equal
+   punchbowl.tests.test_data.test_history_equality
+   punchbowl.tests.test_data.test_history_not_equals_if_different
+   punchbowl.tests.test_data.test_history_cannot_compare_to_nonhistory_type
+   punchbowl.tests.test_data.test_from_fits_for_metadata
+   punchbowl.tests.test_data.test_normalizedmetadata_from_fits_header
+   punchbowl.tests.test_data.test_empty_history_from_fits_header
+   punchbowl.tests.test_data.test_filled_history_from_fits_header
+   punchbowl.tests.test_data.test_load_trefoil_wcs
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.tests.test_data.TESTDATA_DIR
+   punchbowl.tests.test_data.SAMPLE_FITS_PATH_COMPRESSED
+   punchbowl.tests.test_data.SAMPLE_WRITE_PATH
+   punchbowl.tests.test_data.SAMPLE_OMNIBUS_PATH
+   punchbowl.tests.test_data.SAMPLE_LEVEL_PATH
+   punchbowl.tests.test_data.SAMPLE_SPACECRAFT_DEF_PATH
+
+
+.. py:data:: TESTDATA_DIR
+
+   
+
+.. py:data:: SAMPLE_FITS_PATH_COMPRESSED
+
+   
+
+.. py:data:: SAMPLE_WRITE_PATH
+
+   
+
+.. py:data:: SAMPLE_OMNIBUS_PATH
+
+   
+
+.. py:data:: SAMPLE_LEVEL_PATH
+
+   
+
+.. py:data:: SAMPLE_SPACECRAFT_DEF_PATH
+
+   
+
+.. py:function:: test_metafield_creation_keyword_too_long()
+
+   cannot create an invalid metafield
+
+
+.. py:function:: test_metafield_creation_kinds_do_not_match()
+
+   the value, default, and kind must all agree
+
+
+.. py:function:: test_metafield_update()
+
+   you can update a metafield if it is set to be mutable
+
+
+.. py:function:: test_metafield_not_mutable()
+
+   you cannot update immutable metafields
+
+
+.. py:function:: test_metafield_wrong_kind_for_update()
+
+   you must abide by the kind for an update
+
+
+.. py:function:: test_normalizedmetadata_from_template_abq()
+
+
+.. py:function:: test_normalizedmetadata_from_template_cb1()
+
+
+.. py:function:: test_normalizedmetadata_to_fits_header(tmpdir)
+
+
+.. py:function:: sample_wcs() -> astropy.wcs.WCS
+
+   Generate a sample WCS for testing
+
+
+.. py:function:: sample_data()
+
+
+.. py:function:: sample_data_random(shape: tuple = (50, 50)) -> numpy.ndarray
+
+   Generate some random data for testing
+
+
+.. py:function:: simple_ndcube()
+
+
+.. py:function:: sample_punchdata()
+
+   Generate a sample PUNCHData object for testing
+
+
+.. py:function:: sample_punchdata_list(sample_punchdata)
+
+   Generate a list of sample PUNCHData objects for testing
+
+
+.. py:function:: test_sample_data_creation(sample_data)
+
+
+.. py:function:: test_generate_from_filename_compressed()
+
+
+.. py:function:: test_write_data(sample_punchdata)
+
+
+.. py:function:: test_generate_data_statistics_from_zeros(sample_punchdata)
+
+
+.. py:function:: test_generate_data_statistics(sample_punchdata)
+
+
+.. py:function:: test_read_write_uncertainty_data(sample_punchdata)
+
+
+.. py:function:: test_filename_base_generation(sample_punchdata)
+
+
+.. py:function:: empty_history()
+
+
+.. py:function:: test_history_add_one(empty_history)
+
+
+.. py:function:: test_history_iterate(empty_history)
+
+
+.. py:function:: test_load_spacecraft_yaml()
+
+   tests that spacecraft yaml can be loaded and is well-formed
+
+
+.. py:function:: test_create_level0_normalized_metadata()
+
+
+.. py:function:: test_normalized_metadata_to_fits_writes_history()
+
+
+.. py:function:: test_empty_history_equal()
+
+
+.. py:function:: test_history_equality()
+
+
+.. py:function:: test_history_not_equals_if_different()
+
+
+.. py:function:: test_history_cannot_compare_to_nonhistory_type()
+
+
+.. py:function:: test_from_fits_for_metadata(tmpdir)
+
+
+.. py:function:: test_normalizedmetadata_from_fits_header()
+
+
+.. py:function:: test_empty_history_from_fits_header()
+
+
+.. py:function:: test_filled_history_from_fits_header(tmpdir)
+
+
+.. py:function:: test_load_trefoil_wcs()
+
+

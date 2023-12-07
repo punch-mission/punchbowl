@@ -1,0 +1,30 @@
+:py:mod:`punchbowl.level2.bright_structure`
+===========================================
+
+.. py:module:: punchbowl.level2.bright_structure
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level2.bright_structure.identify_bright_structures_task
+
+
+
+.. py:function:: identify_bright_structures_task(data_list: List[punchbowl.data.PUNCHData]) -> List[punchbowl.data.PUNCHData]
+
+   Prefect task to perform bright structure identification
+
+   :param data_object: data to operate on
+   :type data_object: PUNCHData
+
+   :returns: modified version of the input data with the bright structures identified
+   :rtype: PUNCHData
+
+

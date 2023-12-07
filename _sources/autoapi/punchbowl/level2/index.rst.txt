@@ -1,0 +1,29 @@
+:py:mod:`punchbowl.level2`
+==========================
+
+.. py:module:: punchbowl.level2
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   tests/index.rst
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   bright_structure/index.rst
+   flow/index.rst
+   merge/index.rst
+   polarization/index.rst
+   quality/index.rst
+   resample/index.rst
+
+

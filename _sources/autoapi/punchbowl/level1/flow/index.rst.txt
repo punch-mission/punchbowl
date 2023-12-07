@@ -1,0 +1,31 @@
+:py:mod:`punchbowl.level1.flow`
+===============================
+
+.. py:module:: punchbowl.level1.flow
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.flow.level1_core_flow
+
+
+
+.. py:function:: level1_core_flow(input_data: Union[str, punchbowl.data.PUNCHData], deficient_pixel_map: Optional[punchbowl.data.PUNCHData] = None, output_filename: Optional[str] = None)
+
+   Core flow for level 1
+
+   :param input_data: path to the image coming into level 1 core flow
+   :type input_data: str
+   :param output_filename: path of where to write the output from the level 1 core flow
+   :type output_filename: str
+
+   :rtype: None
+
+

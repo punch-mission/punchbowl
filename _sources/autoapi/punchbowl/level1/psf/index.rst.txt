@@ -1,0 +1,48 @@
+:py:mod:`punchbowl.level1.psf`
+==============================
+
+.. py:module:: punchbowl.level1.psf
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.psf.correct_psf
+   punchbowl.level1.psf.correct_psf_task
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.psf.THIS_DIRECTORY
+
+
+.. py:data:: THIS_DIRECTORY
+
+   
+
+.. py:function:: correct_psf(data: punchbowl.data.PUNCHData, corrector: regularizepsf.corrector.ArrayCorrector, alpha: float = 0, epsilon: float = 0.035) -> punchbowl.data.PUNCHData
+
+
+.. py:function:: correct_psf_task(data_object: punchbowl.data.PUNCHData, model_path: pathlib.Path = THIS_DIRECTORY / 'data' / 'punch_array_corrector.h5') -> punchbowl.data.PUNCHData
+
+   Prefect Task to correct the PSF of an iamge
+
+   :param data_object: data to operate on
+   :type data_object: PUNCHData
+   :param model_path: path to the PSF model to use in the correction
+   :type model_path: pathlib.Path
+
+   :returns: modified version of the input with the PSF corrected
+   :rtype: PUNCHData
+
+

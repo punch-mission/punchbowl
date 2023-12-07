@@ -1,0 +1,697 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="../../../../_static/favicon.ico" rel="icon" type="image/x-icon">
+    <title>punchbowl.level1.alignment &#8212; punchbowl 0.0.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=eafc0fe6" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/punchbowl/level1/alignment/index';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="punchbowl.level1.deficient_pixel" href="../deficient_pixel/index.html" />
+    <link rel="prev" title="punchbowl.level1.tests.test_vignette" href="../tests/test_vignette/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/logo.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="../../../../_static/logo.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">punchbowl</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../intro.html">
+                        Introduction
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../data/index.html">
+                        Data
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../pipeline/index.html">
+                        Pipeline
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../help.html">
+                        Help
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../contribute.html">
+                        Contribute
+                      </a>
+                    </li>
+                
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+                    <li class="nav-item current active">
+                      <a class="nav-link dropdown-item nav-internal" href="../../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/punch-mission/punchbowl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../intro.html">
+                        Introduction
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../data/index.html">
+                        Data
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../pipeline/index.html">
+                        Pipeline
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../help.html">
+                        Help
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../contribute.html">
+                        Contribute
+                      </a>
+                    </li>
+                
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links-2">
+                    More
+                </button>
+                <ul id="pst-nav-more-links-2" class="dropdown-menu">
+                    
+                    <li class="nav-item current active">
+                      <a class="nav-link dropdown-item nav-internal" href="../../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/punch-mission/punchbowl" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl</span></code></a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../level0/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../level0/tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../level0/tests/test_ccsds/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests.test_ccsds</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../level0/tests/test_decode/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests.test_decode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../level0/tests/test_decode_sqrt/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests.test_decode_sqrt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../level0/tests/test_flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.tests.test_flow</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../level0/ccsds/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.ccsds</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level0/decode/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.decode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level0/decode_sqrt/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.decode_sqrt</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level0/flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.flow</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level0/sketch/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level0.sketch</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1</span></code></a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l3 has-children"><a class="reference internal" href="../tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_alignment/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_alignment</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_deficient_pixel/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_deficient_pixel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_despike/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_despike</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_destreak/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_destreak</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_flow</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_pointing/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_pointing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_psf/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_psf</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_quartic_fit/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_quartic_fit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_stray_light/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_stray_light</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tests/test_vignette/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_vignette</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3 current active"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.alignment</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../deficient_pixel/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.deficient_pixel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../despike/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.despike</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../destreak/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.destreak</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.flow</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../psf/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.psf</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../quartic_fit/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.quartic_fit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../stray_light/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.stray_light</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../vignette/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.vignette</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../level2/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../level2/tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../level2/tests/test_bright_structure/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_bright_structure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../level2/tests/test_flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_flow</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../level2/tests/test_merge/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_merge</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../level2/tests/test_polarization/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_polarization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../level2/tests/test_quality/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_quality</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../level2/tests/test_resample/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.tests.test_resample</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../level2/bright_structure/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.bright_structure</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level2/flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.flow</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level2/merge/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.merge</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level2/polarization/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.polarization</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level2/quality/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.quality</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level2/resample/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level2.resample</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../level3/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../level3/tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../level3/tests/test_f_corona_model/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3.tests.test_f_corona_model</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../level3/f_corona_model/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3.f_corona_model</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../level3/flow/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level3.flow</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../tests/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.tests</span></code></a><input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-10"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tests/test_data/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.tests.test_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../data/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.data</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../errors/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.errors</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../exceptions/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.exceptions</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../util/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.util</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1</span></code></a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><code...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="module-punchbowl.level1.alignment">
+<span id="punchbowl-level1-alignment"></span><h1><a class="reference internal" href="#module-punchbowl.level1.alignment" title="punchbowl.level1.alignment"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.alignment</span></code></a><a class="headerlink" href="#module-punchbowl.level1.alignment" title="Link to this heading">#</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">#</a></h2>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Link to this heading">#</a></h3>
+<table class="autosummary longtable table autosummary">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.level1.alignment.align_task" title="punchbowl.level1.alignment.align_task"><code class="xref py py-obj docutils literal notranslate"><span class="pre">align_task</span></code></a>(→ punchbowl.data.PUNCHData)</p></td>
+<td><p>Determines the pointing of the image and updates the metadata appropriately</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="punchbowl.level1.alignment.align_task">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.level1.alignment.</span></span><span class="sig-name descname"><span class="pre">align_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></span><a class="headerlink" href="#punchbowl.level1.alignment.align_task" title="Link to this definition">#</a></dt>
+<dd><p>Determines the pointing of the image and updates the metadata appropriately</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data_object</strong> (<a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><em>PUNCHData</em></a>) – data object to align</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a modified version of the input with the WCS more accurately determined</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData">PUNCHData</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../tests/test_vignette/index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.tests.test_vignette</span></code></p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../deficient_pixel/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">punchbowl.level1.deficient_pixel</span></code></p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.level1.alignment.align_task"><code class="docutils literal notranslate"><span class="pre">align_task()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/punch-mission/punchbowl/edit/main/docs/source/autoapi/punchbowl/level1/alignment/index.rst">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023, PUNCH Science Operations Center.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

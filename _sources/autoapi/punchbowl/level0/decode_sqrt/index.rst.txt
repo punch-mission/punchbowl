@@ -1,0 +1,161 @@
+:py:mod:`punchbowl.level0.decode_sqrt`
+======================================
+
+.. py:module:: punchbowl.level0.decode_sqrt
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level0.decode_sqrt.decode_sqrt
+   punchbowl.level0.decode_sqrt.encode_sqrt
+   punchbowl.level0.decode_sqrt.decode_sqrt_simple
+   punchbowl.level0.decode_sqrt.noise_pdf
+   punchbowl.level0.decode_sqrt.mean_b_offset
+   punchbowl.level0.decode_sqrt.decode_sqrt_corrected
+   punchbowl.level0.decode_sqrt.generate_decode_sqrt_table
+   punchbowl.level0.decode_sqrt.decode_sqrt_by_table
+   punchbowl.level0.decode_sqrt.decode_sqrt_data
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level0.decode_sqrt.TABLE_PATH
+
+
+.. py:data:: TABLE_PATH
+
+   
+
+.. py:function:: decode_sqrt(data: Union[numpy.ndarray, float], from_bits: int = 16, to_bits: int = 12, ccd_gain: float = 1 / 4.3, ccd_offset: float = 100, ccd_read_noise: float = 17, overwrite_table: bool = False) -> numpy.ndarray
+
+   Square root decode between specified bitrate values
+
+   :param data: Input encoded data array
+   :param from_bits: Specified bitrate of encoded image to unpack
+   :param to_bits: Specified bitrate of output data (decoded)
+   :param ccd_gain: CCD gain [photons / DN]
+   :param ccd_offset: CCD bias level [DN]
+   :param ccd_read_noise: CCD read noise level [DN]
+   :param overwrite_table: Toggle to regenerate and overwrite existing decoding table
+
+   :returns: Square root decoded version of the input image
+   :rtype: np.ndarray
+
+
+.. py:function:: encode_sqrt(data: Union[numpy.ndarray, float], from_bits: int = 16, to_bits: int = 12) -> numpy.ndarray
+
+   Square root encode between specified bitrate values
+
+   :param data: Input data array
+   :param from_bits: Specified bitrate of original input image
+   :param to_bits: Specified bitrate of output encoded image
+
+   :returns: Encoded version of input data
+   :rtype: np.ndarray
+
+
+.. py:function:: decode_sqrt_simple(data: Union[numpy.ndarray, float], from_bits: int = 16, to_bits: int = 12) -> numpy.ndarray
+
+   Performs a simple decoding using the naive squaring strategy
+
+   :param data: Input data array
+   :param from_bits: Specified bitrate of original input image
+   :param to_bits: Specified bitrate of output encoded image
+
+   :returns: Decoded version of input data
+   :rtype: np.ndarray
+
+
+.. py:function:: noise_pdf(data_value: Union[numpy.ndarray, float], ccd_gain: float = 1 / 4.3, ccd_offset: float = 100, ccd_read_noise: float = 17, n_sigma: int = 5, n_steps: int = 10000) -> Tuple
+
+   Generates a probability distribution function (pdf) from an input data value
+
+   :param data_value: Input data value
+   :param ccd_gain: CCD gain [DN / electron]
+   :param ccd_offset: CCD bias level [DN]
+   :param ccd_read_noise: CCD read noise level [DN]
+   :param n_sigma: Number of sigma steps
+   :param n_steps: Number of data steps
+
+   :returns: * *np.ndarray* -- Data step distribution
+             * *normal* -- Data normal distribution
+
+
+.. py:function:: mean_b_offset(data_value: float, from_bits: int = 16, to_bits: int = 12, ccd_gain: float = 1 / 4.3, ccd_offset: float = 100, ccd_read_noise: float = 17) -> float
+
+   Compute an offset from the naive and robust decoding processes
+
+   :param data_value: Input data value [DN]
+   :param from_bits: Specified bitrate of encoded image to unpack
+   :param to_bits: Specified bitrate of output data (decoded)
+   :param ccd_gain: CCD gain [DN / electron]
+   :param ccd_offset: CCD bias level [DN]
+   :param ccd_read_noise: CCD read noise level [DN]
+
+   :returns: Generated decoding value for use in constructing a decoding table
+   :rtype: float
+
+
+.. py:function:: decode_sqrt_corrected(data_value: float, from_bits: int = 16, to_bits: int = 12, ccd_gain: float = 1 / 4.3, ccd_offset: float = 100, ccd_read_noise: float = 17) -> float
+
+   Compute an individual decoding value for an input data value
+
+   :param data_value: Input data value [DN]
+   :param from_bits: Specified bitrate of encoded image to unpack
+   :param to_bits: Specified bitrate of output data (decoded)
+   :param ccd_gain: CCD gain [DN / electron]
+   :param ccd_offset: CCD bias level [DN]
+   :param ccd_read_noise: CCD read noise level [DN]
+
+   :returns: Generated decoding value for use in constructing a decoding table
+   :rtype: float
+
+
+.. py:function:: generate_decode_sqrt_table(from_bits: int = 16, to_bits: int = 12, ccd_gain: float = 1 / 4.3, ccd_offset: float = 100, ccd_read_noise: float = 17) -> numpy.ndarray
+
+   Generates a square root decode table between specified bitrate values and CCD parameters
+
+   :param from_bits: Specified bitrate of encoded image to unpack
+   :param to_bits: Specified bitrate of output data (decoded)
+   :param ccd_gain: CCD gain [DN / electron]
+   :param ccd_offset: CCD bias level [DN]
+   :param ccd_read_noise: CCD read noise level [DN]
+
+   :returns: Generated square root decoding table
+   :rtype: table
+
+
+.. py:function:: decode_sqrt_by_table(data: Union[numpy.ndarray, float], table: numpy.ndarray) -> numpy.ndarray
+
+   Generates a square root decode table between specified bitrate values and CCD parameters
+
+   :param data: Input encoded data array
+   :param table: Square root decoding table
+
+   :returns: Decoded version of input data
+   :rtype: np.ndarray
+
+
+.. py:function:: decode_sqrt_data(data_object: punchbowl.data.PUNCHData, overwrite_table: bool = False) -> punchbowl.data.PUNCHData
+
+   Prefect task in the pipeline to decode square root encoded data
+
+   :param data_object: the object you wish to decode
+   :type data_object: PUNCHData
+   :param overwrite_table: Toggle to regenerate and overwrite existing decoding table
+
+   :returns: a modified version of the input with the data square root decoded
+   :rtype: PUNCHData
+
+

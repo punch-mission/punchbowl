@@ -1,0 +1,30 @@
+:py:mod:`punchbowl.level2.polarization`
+=======================================
+
+.. py:module:: punchbowl.level2.polarization
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level2.polarization.resolve_polarization_task
+
+
+
+.. py:function:: resolve_polarization_task(data_list: List[punchbowl.data.PUNCHData]) -> List[punchbowl.data.PUNCHData]
+
+   Prefect task to resolve the polarization
+
+   :param data_object: data to operate on
+   :type data_object: PUNCHData
+
+   :returns: modified version of the input with polarization resolved
+   :rtype: PUNCHData
+
+

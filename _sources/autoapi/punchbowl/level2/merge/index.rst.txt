@@ -1,0 +1,22 @@
+:py:mod:`punchbowl.level2.merge`
+================================
+
+.. py:module:: punchbowl.level2.merge
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level2.merge.merge_many_task
+
+
+
+.. py:function:: merge_many_task(data: List[punchbowl.data.PUNCHData], trefoil_wcs: astropy.wcs.WCS) -> punchbowl.data.PUNCHData
+
+

@@ -1,0 +1,124 @@
+:py:mod:`punchbowl.level3.tests.test_f_corona_model`
+====================================================
+
+.. py:module:: punchbowl.level3.tests.test_f_corona_model
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level3.tests.test_f_corona_model.sample_data
+   punchbowl.level3.tests.test_f_corona_model.sample_data_list
+   punchbowl.level3.tests.test_f_corona_model.test_list_input_2
+   punchbowl.level3.tests.test_f_corona_model.one_data
+   punchbowl.level3.tests.test_f_corona_model.zero_data
+   punchbowl.level3.tests.test_f_corona_model.incorrect_shape_data
+   punchbowl.level3.tests.test_f_corona_model.test_basic_subtraction
+   punchbowl.level3.tests.test_f_corona_model.test_empty_list
+   punchbowl.level3.tests.test_f_corona_model.test_create_simple_bkg
+   punchbowl.level3.tests.test_f_corona_model.test_min_bkg
+   punchbowl.level3.tests.test_f_corona_model.test_mean_bkg
+   punchbowl.level3.tests.test_f_corona_model.test_percent_5_bkg
+   punchbowl.level3.tests.test_f_corona_model.test_percent_10_bkg
+   punchbowl.level3.tests.test_f_corona_model.test_typo_method_bkg
+   punchbowl.level3.tests.test_f_corona_model.test_different_array_size_subtraction
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level3.tests.test_f_corona_model.TEST_DIRECTORY
+   punchbowl.level3.tests.test_f_corona_model.TESTDATA_DIR
+   punchbowl.level3.tests.test_f_corona_model.SAMPLE_FITS_PATH
+
+
+.. py:data:: TEST_DIRECTORY
+
+   
+
+.. py:data:: TESTDATA_DIR
+
+   
+
+.. py:data:: SAMPLE_FITS_PATH
+
+   
+
+.. py:function:: sample_data()
+
+
+.. py:function:: sample_data_list()
+
+
+.. py:function:: test_list_input_2(sample_data_list)
+
+
+.. py:function:: one_data(shape: tuple = (2048, 2048)) -> numpy.ndarray
+
+   Generate some random data for testing
+
+
+.. py:function:: zero_data(shape: tuple = (2048, 2048)) -> numpy.ndarray
+
+   Generate some random data for testing
+
+
+.. py:function:: incorrect_shape_data(shape: tuple = (512, 512)) -> numpy.ndarray
+
+   Generate some random data for testing
+
+
+.. py:function:: test_basic_subtraction(one_data: punchbowl.data.PUNCHData, zero_data: punchbowl.data.PUNCHData) -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_empty_list() -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_create_simple_bkg() -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_min_bkg() -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_mean_bkg() -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_percent_5_bkg() -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_percent_10_bkg() -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_typo_method_bkg() -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_different_array_size_subtraction(incorrect_shape_data: punchbowl.data.PUNCHData, zero_data: punchbowl.data.PUNCHData) -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+

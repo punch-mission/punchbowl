@@ -1,0 +1,86 @@
+:py:mod:`punchbowl.level1.quartic_fit`
+======================================
+
+.. py:module:: punchbowl.level1.quartic_fit
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.quartic_fit.create_coefficient_image
+   punchbowl.level1.quartic_fit.photometric_calibration
+   punchbowl.level1.quartic_fit.perform_quartic_fit_task
+
+
+
+.. py:function:: create_coefficient_image(flat_coefficients: numpy.ndarray, image_shape: tuple) -> numpy.ndarray
+
+   Given a set of coefficients that should apply for every pixel,
+       converts them to the required coefficient_image format.
+
+   :param flat_coefficients: A one-dimensional list of coefficients that should apply to every pixel in the image.
+                             Coefficients should be ordered from the highest power to lowest as expected in `photometric_calibration`, e.g.
+                             f(i,j) = a+b*IMG[i,j]+c*IMG[i,j]^2 would have flat_coefficients of [c, b, a]
+   :type flat_coefficients: np.ndarray
+   :param image_shape: A tuple of the shape of the image that will be calibrated using `photometric_calibration`
+   :type image_shape: tuple
+
+   :rtype: An image of coefficients that apply to every pixel as expected by `photometric_calibration`
+
+
+.. py:function:: photometric_calibration(image: numpy.ndarray, coefficient_image: numpy.ndarray) -> numpy.ndarray
+
+   Computes a non-linear photometric callibration of PUNCH images
+
+   Each instrument is subject to an independent non-linear photometric response,
+   which needs to be corrected. The module converts from raw camera digitizer
+   number (DN) to photometric units at each pixel. Each pixel is replaced with
+   the corresponding value of the quartic polynomial in the current CF data
+   product for that particular camera.
+
+   A quartic polynomial is applied as follows:
+       X[i,j]=a[i,j]+b[i,j]*DN[i,j]+c[i,j]*DN[i,j]^2+d[i,j]*DN[i,j]^3+e[i,j]*DN[i,j]^4
+   for each pixel in the detector. Where each quantity (a, b, c, d, e) is a function
+   of pixel location [i,j], and is generated using dark current and Stim lamp
+   maps. Where:
+       - a = offset (dark and the bias).
+       - b, b, c, d, e = higher order terms.
+       Specifically coefficient_image[i,j,:] = [e, d, c, b, a] (highest order terms first)
+
+   As each pixel is independent, a quartic fit calibration file (CF) of
+   dimensions 2k*2k*5 is constructed, with each layer containing one of the five
+   polynomial coefficients for each pixel.
+
+   :param image: Image to be corrected.
+   :type image: np.ndarray
+   :param coefficient_image: Frame containing uncertainty values.
+                             The first two dimensions are the spatial dimensions of the image.
+                             The last dimension iterates over the powers of the coefficients. Starting with index 0 being the highest power
+                             and counting down.
+   :type coefficient_image: np.ndarray
+
+   :returns: a photometrically corrected frame
+   :rtype: np.ndarray
+
+   .. rubric:: Examples
+
+   # TODO: add example
+
+
+.. py:function:: perform_quartic_fit_task(data_object: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+
+   Prefect task to perform the quartic fit calibration on the data
+
+   :param data_object: a data object that needs calibration
+   :type data_object: PUNCHData
+
+   :returns: modified version of the input with the quartic fit correction applied
+   :rtype: PUNCHData
+
+

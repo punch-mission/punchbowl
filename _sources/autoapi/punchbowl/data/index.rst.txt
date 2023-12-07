@@ -1,0 +1,455 @@
+:py:mod:`punchbowl.data`
+========================
+
+.. py:module:: punchbowl.data
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.data.History
+   punchbowl.data.MetaField
+   punchbowl.data.NormalizedMetadata
+   punchbowl.data.PUNCHData
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.data.get_data_path
+   punchbowl.data.load_omniheader
+   punchbowl.data.load_level_spec
+   punchbowl.data.load_trefoil_wcs
+   punchbowl.data.load_spacecraft_def
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.data._ROOT
+   punchbowl.data.HistoryEntry
+   punchbowl.data.ValueType
+
+
+.. py:data:: _ROOT
+
+   
+
+.. py:function:: get_data_path(path)
+
+   Returns root data path
+
+
+.. py:function:: load_omniheader(path: Optional[str] = None) -> pandas.DataFrame
+
+   Loads full metadata specifications
+
+
+.. py:function:: load_level_spec(path: str) -> dict[str, Any]
+
+   Loads data product metadata specifications
+
+
+.. py:function:: load_trefoil_wcs()
+
+   Loads Level 2 trefoil world coordinate system and shape
+
+
+.. py:function:: load_spacecraft_def(path: Optional[str] = None) -> dict[str, Any]
+
+   Loads spacecraft metadata specifications
+
+   If path is None, then it loads a default from the package.
+
+
+.. py:data:: HistoryEntry
+
+   
+
+.. py:class:: History
+
+
+   Representation of the history of edits done to a PUNCHData object
+
+   .. py:method:: add_entry(entry: HistoryEntry) -> None
+
+      Add an entry to the History log
+
+      :param entry: A HistoryEntry object to add to the History log
+      :type entry: HistoryEntry
+
+      :rtype: None
+
+
+   .. py:method:: add_now(source: str, comment: str) -> None
+
+      Adds a new history entry at the current time.
+
+      :param source: what module of the code the history entry originates from
+      :type source: str
+      :param comment: a note of what the history comment means
+      :type comment: str
+
+      :rtype: None
+
+
+   .. py:method:: clear() -> None
+
+      Clears all the history entries so the History is blank
+
+      :rtype: None
+
+
+   .. py:method:: __getitem__(index: int) -> HistoryEntry
+
+      Given an index, returns the requested HistoryEntry
+
+      :param index: numerical index of the history entry, increasing number typically indicates an older entry
+      :type index: int
+
+      :returns: history at specified `index`
+      :rtype: HistoryEntry
+
+
+   .. py:method:: most_recent() -> HistoryEntry
+
+      Gets the most recent HistoryEntry, i.e. the youngest
+
+      :returns: returns HistoryEntry that is the youngest
+      :rtype: HistoryEntry
+
+
+   .. py:method:: __len__() -> int
+
+      :returns: the number of history entries
+      :rtype: int
+
+
+   .. py:method:: __str__() -> str
+
+      Formats a string combining all the history entries
+
+      :returns: a combined record of the history entries
+      :rtype: str
+
+
+   .. py:method:: __iter__() -> History
+
+
+   .. py:method:: __next__() -> HistoryEntry
+
+
+   .. py:method:: __eq__(other)
+
+      Return self==value.
+
+
+   .. py:method:: from_fits_header(head: astropy.io.fits.Header) -> History
+      :classmethod:
+
+      Constructs a history from a FITS header
+
+      :param head: a FITS header to read from
+      :type head: Header
+
+      :returns: the history derived from a given FITS header
+      :rtype: History
+
+
+
+.. py:data:: ValueType
+
+   
+
+.. py:class:: MetaField(keyword: str, comment: str, value: Optional[Union[int, str, float]], datatype, nullable: bool, mutable: bool, default: Optional[Union[int, str, float]])
+
+
+   The MetaField object describes a single field within the NormalizedMetadata object
+
+   .. py:property:: keyword
+      :type: str
+
+      returns MetaField keyword
+
+   .. py:property:: comment
+      :type: str
+
+      returns MetaField comment
+
+   .. py:property:: value
+
+      returns MetaField value
+
+   .. py:property:: default
+
+
+   .. py:method:: __eq__(other: MetaField) -> bool
+
+      Return self==value.
+
+
+
+.. py:class:: NormalizedMetadata(contents: OrderedDict[str, OrderedDict[str, MetaField]], history: Optional[History] = None)
+
+
+   Bases: :py:obj:`collections.abc.Mapping`
+
+   The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
+   uniting the history and header fields while providing helpful accessors for commonly used formats of the metadata.
+
+   Internally, the keys are always stored as FITS compliant upper-case strings. These are stored in sections.
+   So the contents dictionary should have a key of a section title mapped to a dictionary of field keys mapped to
+   MetaFields.
+
+   .. py:property:: sections
+      :type: List[str]
+
+      returns header keys
+
+   .. py:property:: history
+      :type: History
+
+      returns header history
+
+   .. py:property:: product_level
+      :type: int
+
+      returns data product level if indicated in metadata
+
+   .. py:property:: datetime
+      :type: datetime.datetime
+
+      returns a datetime representation of the 'DATE-OBS' header keyword if indicated in metadata
+
+   .. py:method:: __len__() -> int
+
+      returns number of entry cards in NormalizedMetadata object
+
+
+   .. py:method:: __iter__()
+
+
+   .. py:method:: __eq__(other: NormalizedMetadata)
+
+      Return self==value.
+
+
+   .. py:method:: to_fits_header() -> astropy.io.fits.Header
+
+      Converts a constructed NormalizedMetdata object to an Astropy FITS compliant header object
+
+      :returns: Astropy FITS compliant header object
+      :rtype: Header
+
+
+   .. py:method:: from_fits_header(h: astropy.io.fits.Header) -> NormalizedMetadata
+      :classmethod:
+
+      Construct a normalized Metadata from a PUNCH FITS header
+
+      :param h: a PUNCH FITS header from Astropy
+      :type h: Header
+
+      :returns: the corresponding NormalizedMetadata
+      :rtype: NormalizedMetadata
+
+
+   .. py:method:: _match_product_code_in_level_spec(product_code: str, level_spec: dict) -> dict
+      :staticmethod:
+
+      Parses the specified product code and level specification to find a corresponding set
+
+      :param product_code: Specified data product code
+      :param level_spec: Data product level specifications, loaded from `load_level_spec`
+
+      :returns: Product code specification parsed from file
+      :rtype: Dict
+
+
+   .. py:method:: _load_template_files(omniheader_path: str, level: str, level_spec_path: str, spacecraft: str, spacecraft_def_path: str)
+      :staticmethod:
+
+      Loads template files from specified locations
+
+      :param omniheader_path: Path to full omniheader specifications
+      :param level: Specified data product level
+      :param level_spec_path: Path to data product level specifications
+      :param spacecraft: Specified spacecraft code
+      :param spacecraft_def_path: Path to spacecraft specifications
+
+      :returns: Header specification entries
+      :rtype: Tuple
+
+
+   .. py:method:: _determine_omits_and_overrides(level_spec: dict, product_def: dict)
+      :staticmethod:
+
+      Reads level specifications and product definitions and determines keywords to omit or overwrite
+
+      :param level_spec: Data product level specifications
+      :param product_def: Data product specifications
+
+      :returns: Keywords and values to omit and override
+      :rtype: Tuple
+
+
+   .. py:method:: load_template(product_code: str, level: Optional[str] = None, level_spec_path: Optional[str] = None, omniheader_path: Optional[str] = None, spacecraft_def_path: Optional[str] = None) -> NormalizedMetadata
+      :classmethod:
+
+      Given data product specification, loads relevant template files and constructs a NormalizedMetadata object
+
+      :param product_code: Specified data product code, a three character code like PM1
+      :param level: Specified data product level
+      :param level_spec_path: Path to data product level specifications
+      :param omniheader_path: Path to full omniheader specifications
+      :param spacecraft_def_path: Path to spacecraft specifications
+
+      :returns: Constructed NormalizedMetadata object from template specifications
+      :rtype: NormalizedMetadata
+
+
+   .. py:method:: _validate_key_is_str(key: str) -> None
+      :staticmethod:
+
+      Validates that the provided key is a valid header keyword string
+
+      :param key: Header key string
+
+      :rtype: None
+
+
+   .. py:method:: __setitem__(key: str, value: Any) -> None
+
+      Sets specified pair of keyword and value in the NormalizedMetadata object
+
+      :param key: Header key string
+      :param value: Header value
+
+      :rtype: None
+
+
+   .. py:method:: __getitem__(key: str) -> Any
+
+      Gets specified keyword from NormalizedMetadata object
+
+      :param key: Header key string
+
+      :returns: Returned header value
+      :rtype: t.Any
+
+
+   .. py:method:: __delitem__(key: str) -> None
+
+      Deletes specified keyword entry from the NormalizedMetadata object
+
+      :param key: Header key string
+
+      :rtype: None
+
+
+   .. py:method:: __contains__(key: str) -> bool
+
+      Determines if the specified keyword is contained within the NormalizedMetadata object
+
+      :param key: Header key string
+
+      :returns: Value indicating if the specified keyword is contained within the NormalizedMetadata object
+      :rtype: Boolean
+
+
+
+.. py:class:: PUNCHData(data: numpy.ndarray, wcs: astropy.wcs.wcsapi.BaseLowLevelWCS | astropy.wcs.wcsapi.BaseHighLevelWCS, meta: NormalizedMetadata, uncertainty: Any | None = None, mask: Any | None = None, unit: astropy.units.Unit = None, copy: bool = False, **kwargs)
+
+
+   Bases: :py:obj:`ndcube.NDCube`
+
+   PUNCH data object
+
+   PUNCHData is essentially a normal ndcube with a NormalizedMetadata and some helpful methods.
+
+   .. seealso::
+
+      :obj:`NDCube`
+          Base container for the PUNCHData object
+
+   .. py:property:: weight
+      :type: numpy.ndarray
+
+      Generate a corresponding weight map from the uncertainty array
+
+      :returns: weight map computed from uncertainty array
+      :rtype: np.ndarray
+
+   .. py:property:: filename_base
+      :type: str
+
+      Dynamically generate an id string for the given data product, using the format 'Ln_ttO_yyyymmddhhmmss'
+
+      :returns: output identification string
+      :rtype: str
+
+   .. py:method:: from_fits(path: str) -> PUNCHData
+      :classmethod:
+
+      Populates a PUNCHData object from specified FITS file.
+
+      :param path: filename from which to generate a PUNCHData object
+
+      :returns: loaded object
+      :rtype: PUNCHData
+
+
+   .. py:method:: write(filename: str, overwrite=True) -> None
+
+      Write PUNCHData elements to file
+
+      :param filename: output filename (including path and file extension), extension must be .fits, .png, .jpg, or .jpeg
+      :param overwrite: True will overwrite an exiting file, False will create an exception if a file exists
+
+      :rtype: None
+
+      :raises ValueError: If `filename` does not end in .fits, .png, .jpg, or .jpeg
+
+
+   .. py:method:: _write_fits(filename: str, overwrite: bool = True) -> None
+
+      Write PUNCHData elements to FITS files
+
+      :param filename: output filename (including path and file extension)
+      :param overwrite: True will overwrite an exiting file, False will throw an exception in that scenario
+
+      :rtype: None
+
+
+   .. py:method:: _write_ql(filename: str, overwrite: bool = True) -> None
+
+      Write an 8-bit scaled version of the specified data array to a PNG file
+
+      :param filename: output filename (including path and file extension)
+      :param overwrite: True will overwrite an exiting file, False will throw an exception in that scenario
+
+      :rtype: None
+
+
+   .. py:method:: _update_statistics()
+
+      Updates image statistics in metadata before writing to file
+
+
+   .. py:method:: duplicate_with_updates(data: numpy.ndarray = None, wcs: astropy.wcs.WCS = None, uncertainty: numpy.ndarray = None, meta=None, unit=None) -> PUNCHData
+
+      Copies a PUNCHData. Any field specified in the call is modified. All others are a direct copy.
+
+
+

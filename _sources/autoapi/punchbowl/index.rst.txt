@@ -1,0 +1,31 @@
+:py:mod:`punchbowl`
+===================
+
+.. py:module:: punchbowl
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   level0/index.rst
+   level1/index.rst
+   level2/index.rst
+   level3/index.rst
+   tests/index.rst
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   data/index.rst
+   errors/index.rst
+   exceptions/index.rst
+   util/index.rst
+
+

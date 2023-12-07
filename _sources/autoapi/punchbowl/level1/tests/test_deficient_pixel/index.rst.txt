@@ -1,0 +1,115 @@
+:py:mod:`punchbowl.level1.tests.test_deficient_pixel`
+=====================================================
+
+.. py:module:: punchbowl.level1.tests.test_deficient_pixel
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.tests.test_deficient_pixel.sample_bad_pixel_map
+   punchbowl.level1.tests.test_deficient_pixel.perfect_pixel_map
+   punchbowl.level1.tests.test_deficient_pixel.one_bad_pixel_map
+   punchbowl.level1.tests.test_deficient_pixel.nine_bad_pixel_map
+   punchbowl.level1.tests.test_deficient_pixel.increasing_pixel_data
+   punchbowl.level1.tests.test_deficient_pixel.sample_punchdata
+   punchbowl.level1.tests.test_deficient_pixel.test_remove_deficient_pixels
+   punchbowl.level1.tests.test_deficient_pixel.test_nan_input
+   punchbowl.level1.tests.test_deficient_pixel.test_data_loading
+   punchbowl.level1.tests.test_deficient_pixel.test_artificial_pixel_map
+   punchbowl.level1.tests.test_deficient_pixel.test_data_window_1
+   punchbowl.level1.tests.test_deficient_pixel.test_mean_data_window_1
+   punchbowl.level1.tests.test_deficient_pixel.test_data_window_9
+   punchbowl.level1.tests.test_deficient_pixel.test_mean_data_window_9
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.tests.test_deficient_pixel.THIS_DIRECTORY
+
+
+.. py:data:: THIS_DIRECTORY
+
+   
+
+.. py:function:: sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> punchbowl.data.PUNCHData
+
+   Generate some random data for testing
+
+
+.. py:function:: perfect_pixel_map(shape: tuple = (2048, 2048)) -> punchbowl.data.PUNCHData
+
+   Generate some random data for testing
+
+
+.. py:function:: one_bad_pixel_map(shape: tuple = (2048, 2048)) -> punchbowl.data.PUNCHData
+
+   Generate pixel map with one bad pixel at 100, 100
+
+
+.. py:function:: nine_bad_pixel_map(shape: tuple = (2048, 2048)) -> punchbowl.data.PUNCHData
+
+   Generate pixel map with one bad pixel at 100, 100
+
+
+.. py:function:: increasing_pixel_data(shape: tuple = (2048, 2048)) -> punchbowl.data.PUNCHData
+
+   Generate data of increasing values for testing; data[0,100]=0.0, data[100,0]=100.0
+
+
+.. py:function:: sample_punchdata(shape: tuple = (2048, 2048)) -> punchbowl.data.PUNCHData
+
+   Generate a sample PUNCHData object for testing
+
+
+.. py:function:: test_remove_deficient_pixels(sample_punchdata: punchbowl.data.PUNCHData, sample_bad_pixel_map: punchbowl.data.PUNCHData) -> None
+
+   Test the remove_deficient_pixels prefect flow using a test harness, providing a filename
+
+
+.. py:function:: test_nan_input(sample_punchdata: punchbowl.data.PUNCHData, sample_bad_pixel_map: punchbowl.data.PUNCHData) -> None
+
+   The module output is tested when NaN data points are included in the input PUNCHData object. Test for no errors.
+
+
+.. py:function:: test_data_loading(sample_punchdata: punchbowl.data.PUNCHData, perfect_pixel_map: punchbowl.data.PUNCHData) -> None
+
+   A specific observation is provided. The module loads it as a PUNCHData object.
+   No bad data points, in same as out. uncertainty should be the same in and out.
+
+
+.. py:function:: test_artificial_pixel_map(sample_punchdata: punchbowl.data.PUNCHData, sample_bad_pixel_map: punchbowl.data.PUNCHData) -> None
+
+   A known artificial bad pixel map is ingested. The output flags are tested against the input map.
+
+
+.. py:function:: test_data_window_1(increasing_pixel_data: punchbowl.data.PUNCHData, one_bad_pixel_map: punchbowl.data.PUNCHData) -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_mean_data_window_1(increasing_pixel_data: punchbowl.data.PUNCHData, one_bad_pixel_map: punchbowl.data.PUNCHData) -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_data_window_9(increasing_pixel_data: punchbowl.data.PUNCHData, nine_bad_pixel_map: punchbowl.data.PUNCHData) -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+
+.. py:function:: test_mean_data_window_9(increasing_pixel_data: punchbowl.data.PUNCHData, nine_bad_pixel_map: punchbowl.data.PUNCHData) -> None
+
+   dataset of increasing values passed in, a bad pixel map is passed in
+
+

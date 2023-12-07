@@ -1,0 +1,57 @@
+:py:mod:`punchbowl.level1.tests.test_quartic_fit`
+=================================================
+
+.. py:module:: punchbowl.level1.tests.test_quartic_fit
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.tests.test_quartic_fit.fake_one_image
+   punchbowl.level1.tests.test_quartic_fit.quartic_coefficients_image
+   punchbowl.level1.tests.test_quartic_fit.test_create_coeff_image_with_only_one_coeff
+   punchbowl.level1.tests.test_quartic_fit.test_create_coeff_image_with_two_coeff
+   punchbowl.level1.tests.test_quartic_fit.test_create_coefficient_image
+   punchbowl.level1.tests.test_quartic_fit.test_calibration_with_single_constant_coeff
+   punchbowl.level1.tests.test_quartic_fit.test_calibration_with_all_one_coefficients
+   punchbowl.level1.tests.test_quartic_fit.test_calibration_with_range_coefficients
+
+
+
+.. py:function:: fake_one_image(shape=(10, 10))
+
+   :param shape: the shape of the image to create
+   :type shape: tuple
+
+   :rtype: A fake image of the given shape with values of all 1
+
+
+.. py:function:: quartic_coefficients_image()
+
+   :rtype: Quartic coefficient image with flat_coefficients of [0, 1, 2, 3, 4]
+
+
+.. py:function:: test_create_coeff_image_with_only_one_coeff()
+
+
+.. py:function:: test_create_coeff_image_with_two_coeff()
+
+
+.. py:function:: test_create_coefficient_image(quartic_coefficients_image)
+
+
+.. py:function:: test_calibration_with_single_constant_coeff(fake_one_image, constant, shape=(10, 10))
+
+
+.. py:function:: test_calibration_with_all_one_coefficients(fake_one_image, shape=(10, 10))
+
+
+.. py:function:: test_calibration_with_range_coefficients(fake_one_image, shape=(10, 10))
+
+

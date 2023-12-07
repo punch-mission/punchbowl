@@ -1,0 +1,46 @@
+:py:mod:`punchbowl.level2.resample`
+===================================
+
+.. py:module:: punchbowl.level2.resample
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level2.resample.reproject_array
+   punchbowl.level2.resample.reproject_many_flow
+
+
+
+.. py:function:: reproject_array(input_array: numpy.ndarray, input_wcs: astropy.wcs.WCS, output_wcs: astropy.wcs.WCS, output_shape: tuple) -> numpy.ndarray
+
+   Core reprojection function
+
+   Core reprojection function of the PUNCH mosaic generation module.
+       With an input data array and corresponding WCS object, the function
+       performs a reprojection into the output WCS object system, along with
+       a specified pixel size for the output array. This utilizes the adaptive
+       reprojection routine implemented in the reprojection astropy package.
+
+   :param input_array: input array to be reprojected
+   :param input_wcs: astropy WCS object describing the input array
+   :param output_wcs: astropy WCS object describing the coordinate system to transform to
+   :param output_shape: pixel shape of the reprojected output array
+
+   :returns: output array after reprojection of the input array
+   :rtype: np.ndarray
+
+   Example Call
+   ------------
+   >>> reprojected_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
+
+
+.. py:function:: reproject_many_flow(data: List[punchbowl.data.PUNCHData], trefoil_wcs: astropy.wcs.WCS, trefoil_shape: numpy.ndarray) -> List[punchbowl.data.PUNCHData]
+
+

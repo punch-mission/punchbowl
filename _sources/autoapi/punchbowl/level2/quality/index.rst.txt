@@ -1,0 +1,30 @@
+:py:mod:`punchbowl.level2.quality`
+==================================
+
+.. py:module:: punchbowl.level2.quality
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level2.quality.quality_flag_task
+
+
+
+.. py:function:: quality_flag_task(data_list: List[punchbowl.data.PUNCHData]) -> List[punchbowl.data.PUNCHData]
+
+   Prefect task to perform quality flagging
+
+   :param data_object: data to operate on
+   :type data_object: PUNCHData
+
+   :returns: modified version of the input data with the quality of pixels flagged
+   :rtype: PUNCHData
+
+

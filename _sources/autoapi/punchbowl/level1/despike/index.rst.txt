@@ -1,0 +1,30 @@
+:py:mod:`punchbowl.level1.despike`
+==================================
+
+.. py:module:: punchbowl.level1.despike
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.despike.despike_task
+
+
+
+.. py:function:: despike_task(data_object: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+
+   Prefect task to perform despiking
+
+   :param data_object: data to operate on
+   :type data_object: PUNCHData
+
+   :returns: a modified version of the input with spikes removed
+   :rtype: PUNCHData
+
+

@@ -1,0 +1,25 @@
+:py:mod:`punchbowl.errors`
+==========================
+
+.. py:module:: punchbowl.errors
+
+
+Module Contents
+---------------
+
+.. py:exception:: InvalidHeaderError
+
+
+   Bases: :py:obj:`Exception`
+
+   Common base class for all non-exit exceptions.
+
+
+.. py:exception:: MissingMetadataError
+
+
+   Bases: :py:obj:`Exception`
+
+   Common base class for all non-exit exceptions.
+
+

@@ -31,7 +31,7 @@ Kinds:
             NAXIS: 3
             NAXIS1: 2
             NAXIS2: 4096
-            NAXIS2: 4096
+            NAXIS3: 4096
             OBS-MODE: Polar_BpB
             OBSLAYR1: Polar_B
             OBSLAYR2: Polar_pB

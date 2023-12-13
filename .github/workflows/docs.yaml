@@ -15,7 +15,7 @@ jobs:
     - uses: r-lib/actions/setup-pandoc@v2
       with:
         pandoc-version: '2.17.1' # The pandoc version to download (if necessary) and use.
-        
+
     # Install dependencies
     - name: Set up Python 3.10
       uses: actions/setup-python@v2

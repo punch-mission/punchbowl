@@ -1,8 +1,8 @@
-import pytest
-from pytest import fixture
 import pathlib
 
 import numpy as np
+import pytest
+from pytest import fixture
 
 from punchbowl.level1.destreak import correct_streaks, streak_correction_matrix
 

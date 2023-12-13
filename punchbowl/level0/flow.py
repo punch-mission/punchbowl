@@ -1,10 +1,7 @@
 from prefect import flow, get_run_logger
 
-from punchbowl.level0.decode import (
-    create_level0_from_packets,
-    decode_ccsds_packets,
-    write_level0,
-)
+from punchbowl.level0.decode import (create_level0_from_packets,
+                                     decode_ccsds_packets, write_level0)
 
 
 @flow

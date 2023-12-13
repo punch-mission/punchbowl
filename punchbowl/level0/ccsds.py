@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import os
-import math
-import typing as t
 import logging
+import typing as t
 
 import ccsdspy
-import pandas as pd
-import pylibjpeg
 import numpy as np
+import pandas as pd
 
 log = logging.getLogger(__name__)
 
@@ -312,7 +309,7 @@ def load_sci_packet_definitions(definitions_excel_path: str, packet_names: t.Lis
         packet_definition = []
         for row in table.iterrows():
             name = row[1][0]
-            kind = 'uint'
+            kind = "uint"
             size = row[1][8]
             packet_definition.append(ccsdspy.PacketField(name=name, data_type=kind, bit_length=size))
 
@@ -334,7 +331,7 @@ def load_sci_packet_definitions(definitions_excel_path: str, packet_names: t.Lis
 
 def unpack_ccsds(tlm_data_path: str,
                  packet_definitions: t.Dict[str, t.Union[ccsdspy.VariableLength, ccsdspy.FixedLength]]) -> t.Dict[str, t.Dict[str, np.ndarray]]:
-    with open(tlm_data_path, 'rb') as mixed_file:
+    with open(tlm_data_path, "rb") as mixed_file:
         stream_by_apid = ccsdspy.split_by_apid(mixed_file)
 
     unpacked_contents = dict()
@@ -343,5 +340,3 @@ def unpack_ccsds(tlm_data_path: str,
         unpacked_contents[packet_name] = packet_definitions[packet_name].load(stream, include_primary_header=True)
 
     return unpacked_contents
-
-

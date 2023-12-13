@@ -129,7 +129,7 @@ Products:
             TYPECODE: PX
             FILTER: PX
             OBS-MODE: Polar_MZP
-            OBSLAYR1: Polar_X   
+            OBSLAYR1: Polar_X
             POLAR: -999
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"

@@ -5,12 +5,12 @@ from datetime import datetime
 import numpy as np
 from astropy.wcs import WCS
 
-from punchbowl.data import PUNCHData, NormalizedMetadata
+from punchbowl.data import NormalizedMetadata, PUNCHData
 
 
 def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):
     meta = NormalizedMetadata.load_template("CFM", "3")
-    meta['DATE-OBS'] = str(datetime.now())
+    meta["DATE-OBS"] = str(datetime.now())
     wcs = WCS(naxis=2)
     for i in range(10):
         data = np.ones((10, 10)) * i
@@ -21,7 +21,7 @@ def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):
 
 def create_punchdata_test_data(path="../punchbowl/tests/"):
     meta = NormalizedMetadata.load_template("CFM", "3")
-    meta['DATE-OBS'] = str(datetime.now())
+    meta["DATE-OBS"] = str(datetime.now())
     wcs = WCS(naxis=2)
     data = np.ones((10, 10))
     obj = PUNCHData(data, wcs, meta)

@@ -1,12 +1,12 @@
 # Core Python imports
-from typing import List, Tuple
+from typing import List
 
 # Third party imports
 import numpy as np
 import reproject
-from astropy.wcs import WCS
-from prefect import flow, get_run_logger, task
 from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
+from prefect import flow, task
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData

@@ -30,7 +30,7 @@ extend-select = ['W',
                 ]
 target-version = 'py38'
 ignore = ['TRY003', 'ANN101', 'ANN401', 'ANN102', 'ANN003'] # , , 'TRY003', 'RET505', , 'RET506']
-exclude = ['tests']
+exclude = ['tests', 'scripts', 'docs']
 line-length=120
 
 [tool.ruff.per-file-ignores]

@@ -184,4 +184,3 @@ def remove_deficient_pixels_task(data: PUNCHData,
 def create_all_valid_deficient_pixel_map(data: PUNCHData) -> PUNCHData:
     mask_array = np.ones_like(data.data)
     return data.duplicate_with_updates(data=mask_array)
-

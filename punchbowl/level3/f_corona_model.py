@@ -160,8 +160,8 @@ def construct_f_corona_background(data_list: List[str],
     # create an empty array to fill with data
     #   open the first file in the list to ge the shape of the file
     if len(data_list) == 0:
-        raise ValueError("data_list cannot be empty") 
-    
+        raise ValueError("data_list cannot be empty")
+
     # todo: replace in favor of using object directly
     output_PUNCHobject = PUNCHData.from_fits(data_list[0])
     output_wcs = output_PUNCHobject.wcs

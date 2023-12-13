@@ -1,5 +1,6 @@
-from setuptools import setup, find_packages
 import pathlib
+
+from setuptools import find_packages, setup
 
 here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / "README.md").read_text(encoding="utf-8")
@@ -29,7 +30,7 @@ setup(
         "reproject"
     ],
     extras_require={
-        "test": ["pytest", "coverage", 'pytest-runner', 'pytest-mpl'],
+        "test": ["pytest", "coverage", "pytest-runner", "pytest-mpl"],
         "dev": ["pre-commit"],
         "docs": ["jupyter-book"],
     },

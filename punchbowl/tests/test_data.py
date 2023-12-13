@@ -1,6 +1,6 @@
 import os
-from datetime import datetime
 from collections import OrderedDict
+from datetime import datetime
 
 import astropy
 import numpy as np
@@ -9,19 +9,12 @@ import pytest
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 from pytest import fixture
 
-from ndcube import NDCube
-
-from punchbowl.data import (
-    PUNCHData,
-    History,
-    HistoryEntry,
-    NormalizedMetadata,
-    MetaField,
-    load_spacecraft_def,
-    load_trefoil_wcs
-)
+from punchbowl.data import (History, HistoryEntry, MetaField,
+                            NormalizedMetadata, PUNCHData, load_spacecraft_def,
+                            load_trefoil_wcs)
 from punchbowl.exceptions import InvalidDataError
 
 TESTDATA_DIR = os.path.dirname(__file__)

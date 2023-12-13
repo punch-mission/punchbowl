@@ -315,7 +315,7 @@ def generate_decode_sqrt_table(
 
     table = np.zeros(2 ** to_bits)
 
-    for i in range(0, 2 ** to_bits):
+    for i in range(2 ** to_bits):
         table[i] = decode_sqrt_corrected(i, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise)
 
     return table

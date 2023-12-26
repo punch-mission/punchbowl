@@ -77,9 +77,8 @@ def photometric_calibration(
     if len(image.shape) != 2:
         raise ValueError("`image` must be a 2-D image")
 
-    if len(coefficient_image.shape) != 2:
+    if len(coefficient_image.shape) != 3:
         raise ValueError("`coefficient_image` must be a 3-D image")
-
 
     if coefficient_image.shape[:-1] != image.shape:
         raise ValueError("`coefficient_image` and `image` must have the same shape`")

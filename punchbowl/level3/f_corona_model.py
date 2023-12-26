@@ -1,16 +1,17 @@
 import warnings
-from datetime import datetime
 from typing import List
+from datetime import datetime
 
 import numpy as np
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
+from punchbowl.exceptions import InvalidDataError
 
 
 @task
 def query_f_corona_model_source(polarizer: str,
-                                PUNCH_product: str,
+                                product: str,
                                 start_datetime: datetime,
                                 end_datetime: datetime) -> List[str]:
     """Creates a list of files based between a start date/time (start_datetime)
@@ -32,7 +33,7 @@ def query_f_corona_model_source(polarizer: str,
     polarizer : string [= 'clear', '-60', '60', '0' ]
         input a string specifying the type of polarizer to search for
 
-    PUNCH_product : string [= 'mosaic', 'nfi']
+    product : string [= 'mosaic', 'nfi']
 
     start_datetime : datetime
         input a start_datetime of interest.
@@ -59,13 +60,11 @@ def query_f_corona_model_source(polarizer: str,
 
     # Check for polarizer input, and if valid
     if polarizer not in ["clear", "-60", "60", "0"]:
-        # todo: replace with custom exception
-        raise Exception(f"input polarizer expected as string: 'clear', '-60', '60', '0'. Found {polarizer}.")
+        raise ValueError(f"input polarizer expected as string: 'clear', '-60', '60', '0'. Found {polarizer}.")
 
     # Check for PUNCH input, and if valid
-    if PUNCH_product not in ["nfi", "mosaic"]:
-        # todo: replace with custom exception
-        raise Exception(f"input PUNCH_product expected as string:  'nfi', 'mosaic'. Found {PUNCH_product}")
+    if product not in ["nfi", "mosaic"]:
+        raise ValueError(f"input PUNCH_product expected as string:  'nfi', 'mosaic'. Found {product}")
 
     # TODO - this place holder has to be removed
     file_list = []
@@ -74,7 +73,8 @@ def query_f_corona_model_source(polarizer: str,
 
     # Check if files found in range
     if len(file_list) == 0:
-        warnings.warn(f"No files found over specified dates: from: {start_datetime} to: {end_datetime}.")
+        warnings.warn(f"No files found over specified dates: from: {start_datetime} to: {end_datetime}.",
+                      stacklevel=2)
 
     logger.info("query_f_corona_model_source finished")
 
@@ -160,16 +160,16 @@ def construct_f_corona_background(data_list: List[str],
     # create an empty array to fill with data
     #   open the first file in the list to ge the shape of the file
     if len(data_list) == 0:
-        raise ValueError("data_list cannot be empty") 
-    
-    # todo: replace in favor of using object directly
-    output_PUNCHobject = PUNCHData.from_fits(data_list[0])
-    output_wcs = output_PUNCHobject.wcs
-    output_meta = output_PUNCHobject.meta
-    # output_uncertainty=shape_PUNCHobject.uncertainty
-    output_mask = output_PUNCHobject.mask
+        raise ValueError("data_list cannot be empty")
 
-    data_shape = np.shape(output_PUNCHobject.data)
+    # todo: replace in favor of using object directly
+    output = PUNCHData.from_fits(data_list[0])
+    output_wcs = output.wcs
+    output_meta = output.meta
+    # output_uncertainty=shape_PUNCHobject.uncertainty
+    output_mask = output.mask
+
+    data_shape = np.shape(output.data)
 
     number_of_data_frames=len(data_list)
     data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
@@ -177,10 +177,10 @@ def construct_f_corona_background(data_list: List[str],
     # create an empty list for data
     meta_list=[]
 
-    for iStep, address_out in enumerate(data_list):
-        PUNCHobject = PUNCHData.from_fits(address_out)
-        data_cube[iStep, :, :] = PUNCHobject.data
-        meta_list.append(PUNCHobject.meta)
+    for i, address_out in enumerate(data_list):
+        data_object = PUNCHData.from_fits(address_out)
+        data_cube[i, :, :] = data_object.data
+        meta_list.append(data_object.meta)
 
     if apply_threshold_mask:
         # copy data arrays
@@ -226,15 +226,15 @@ def construct_f_corona_background(data_list: List[str],
 
     # create an output PUNCHdata object
     # TODO: the weight and wcs should come from all of the input files, not just one
-    output_PUNCHobject = PUNCHData(f_background,
+    output = PUNCHData(f_background,
                                    wcs=output_wcs,
                                    meta=output_meta,
                                    mask=output_mask)
 
     logger.info("construct_f_corona_background finished")
-    output_PUNCHobject.meta.history.add_now("LEVEL3-construct_f_corona_background", "constructed f corona model")
+    output.meta.history.add_now("LEVEL3-construct_f_corona_background", "constructed f corona model")
 
-    return output_PUNCHobject
+    return output
 
 
 @task
@@ -281,18 +281,18 @@ def subtract_f_corona_background_task(data_object: PUNCHData,
 
     # check dimensions match
     if data_array.shape != f_data_array.shape:
-        raise Exception("f_background_subtraction expects the data_object and"
+        raise InvalidDataError("f_background_subtraction expects the data_object and"
                         "f_background arrays to have the same dimensions."
                         f"data_array dims: {data_array.shape} and f_background_model dims: {f_data_array.shape}")
 
     bkg_subtracted_data = data_array - f_data_array
 
-    output_PUNCHobject = PUNCHData(bkg_subtracted_data,
+    output = PUNCHData(bkg_subtracted_data,
                                    wcs=output_wcs,
                                    meta=output_meta,
                                    mask=output_mask)
 
     logger.info("subtract_f_corona_background finished")
-    output_PUNCHobject.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
+    output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
-    return output_PUNCHobject
+    return output

@@ -74,24 +74,24 @@ def photometric_calibration(
     """
 
     # inspect dimensions
-    assert len(image.shape) == 2, "`image` must be a 2-D image"
-    assert len(coefficient_image.shape) == 3, "`coefficient_image` must be a 3-D image"
+    if len(image.shape) != 2:
+        raise ValueError("`image` must be a 2-D image")
 
-    # inspect dimensions of correction map and data_frame
-    assert (
-        coefficient_image.shape[:-1] == image.shape
-    ), "`coefficient_image` and `image` must have the same shape`"
+    if len(coefficient_image.shape) != 3:
+        raise ValueError("`coefficient_image` must be a 3-D image")
+
+    if coefficient_image.shape[:-1] != image.shape:
+        raise ValueError("`coefficient_image` and `image` must have the same shape`")
 
     # find the number of quartic fit coefficients
     num_coeffs = coefficient_image.shape[2]
-    corrected_data = np.sum(
+    return np.sum(
         [
             coefficient_image[..., i] * np.power(image, num_coeffs - i - 1)
             for i in range(num_coeffs)
         ],
         axis=0,
     )
-    return corrected_data
 
 
 @task

@@ -9,18 +9,17 @@ import pytest
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 from pytest import fixture
 
-from ndcube import NDCube
-
 from punchbowl.data import (
-    PUNCHData,
     History,
     HistoryEntry,
-    NormalizedMetadata,
     MetaField,
+    NormalizedMetadata,
+    PUNCHData,
     load_spacecraft_def,
-    load_trefoil_wcs
+    load_trefoil_wcs,
 )
 from punchbowl.exceptions import InvalidDataError
 

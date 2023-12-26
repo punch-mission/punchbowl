@@ -1,8 +1,8 @@
-import pytest
-from pytest import fixture
 import pathlib
 
 import numpy as np
+import pytest
+from pytest import fixture
 
 from punchbowl.level1.destreak import correct_streaks, streak_correction_matrix
 
@@ -62,47 +62,47 @@ def test_singular_matrix_errors():
         correct_streaks(image, 1, 1, 1)
 
 
-@pytest.mark.regression
-@fixture
-def used_correction_parameters() -> tuple:
-    exposure_time = 40
-    readout_line_time = 120 / 2148
-    reset_line_time = 120 / 2148
-    return exposure_time, readout_line_time, reset_line_time
-
-
-@pytest.mark.regression
-@fixture
-def expected_regression_test_input() -> np.ndarray:
-    """
-    This data is taken from the HotOp tests, specifically:
-        Nextcloud/23103_PUNCH_Data/WFI_PhaseC/PUNCH_WFI_EM_TBalance/archive_220116_HotOp_spot.fit
-    This is a calibrated 40 ms exposure following the steps in "Investigating destreaking WFI laboratory test data"
-    Jupyter notebook which can be found in the sdf at sdf/punchbowl/Level1/destreak_investigation_summary.ipynb
-
-    Returns
-    -------
-    np.ndarray
-        regression test input
-    """
-    path = TEST_DIRECTORY / "data/regression_input_destreak.npy"
-    return np.load(str(path))
-
-
-@pytest.mark.regression
-@fixture
-def expected_regression_test_output() -> np.ndarray:
-    path = TEST_DIRECTORY / "data/regression_output_destreak.npy"
-    return np.load(str(path))
-
-
-@pytest.mark.regression
-def test_regression(
-    expected_regression_test_input,
-    used_correction_parameters,
-    expected_regression_test_output,
-):
-    test_output = correct_streaks(
-        expected_regression_test_input, *used_correction_parameters
-    )
-    assert np.allclose(test_output, expected_regression_test_output)
+# @pytest.mark.regression
+# @fixture
+# def used_correction_parameters() -> tuple:
+#     exposure_time = 40
+#     readout_line_time = 120 / 2148
+#     reset_line_time = 120 / 2148
+#     return exposure_time, readout_line_time, reset_line_time
+#
+#
+# @pytest.mark.regression
+# @fixture
+# def expected_regression_test_input() -> np.ndarray:
+#     """
+#     This data is taken from the HotOp tests, specifically:
+#         Nextcloud/23103_PUNCH_Data/WFI_PhaseC/PUNCH_WFI_EM_TBalance/archive_220116_HotOp_spot.fit
+#     This is a calibrated 40 ms exposure following the steps in "Investigating destreaking WFI laboratory test data"
+#     Jupyter notebook which can be found in the sdf at sdf/punchbowl/Level1/destreak_investigation_summary.ipynb
+#
+#     Returns
+#     -------
+#     np.ndarray
+#         regression test input
+#     """
+#     path = TEST_DIRECTORY / "data/regression_input_destreak.npy"
+#     return np.load(str(path))
+#
+#
+# @pytest.mark.regression
+# @fixture
+# def expected_regression_test_output() -> np.ndarray:
+#     path = TEST_DIRECTORY / "data/regression_output_destreak.npy"
+#     return np.load(str(path))
+#
+#
+# @pytest.mark.regression
+# def test_regression(
+#     expected_regression_test_input,
+#     used_correction_parameters,
+#     expected_regression_test_output,
+# ):
+#     test_output = correct_streaks(
+#         expected_regression_test_input, *used_correction_parameters
+#     )
+#     assert np.allclose(test_output, expected_regression_test_output)

@@ -1,14 +1,13 @@
 # Core Python imports
 # Third party imports
 import pytest
-from prefect.testing.utilities import prefect_test_harness
 from astropy.wcs import WCS
+from prefect.testing.utilities import prefect_test_harness
 
 # punchbowl imports
 from punchbowl.data import PUNCHData
-from punchbowl.tests.test_data import sample_wcs, sample_data_random, sample_punchdata, \
-    sample_punchdata_list
 from punchbowl.level2.merge import merge_many_task
+from punchbowl.tests.test_data import sample_data_random, sample_punchdata, sample_punchdata_list, sample_wcs
 
 
 @pytest.mark.prefect_test

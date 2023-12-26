@@ -1,10 +1,8 @@
 import numpy as np
 import pytest
 from pytest import fixture
-from punchbowl.level1.quartic_fit import (
-    photometric_calibration,
-    create_coefficient_image,
-)
+
+from punchbowl.level1.quartic_fit import create_coefficient_image, photometric_calibration
 
 
 @fixture

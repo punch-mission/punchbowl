@@ -1,12 +1,11 @@
 # Core Python imports
-from typing import List, Tuple
+from typing import List
 
 # Third party imports
 import numpy as np
-import reproject
-from astropy.wcs import WCS
-from prefect import flow, get_run_logger, task
 from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
+from prefect import task
 
 # Punchbowl imports
 from punchbowl.data import PUNCHData
@@ -27,7 +26,7 @@ def merge_many_task(data: List[PUNCHData], trefoil_wcs: WCS) -> PUNCHData:
     # Pack up an output data object
     data_object = PUNCHData(trefoil_data, uncertainty=StdDevUncertainty(trefoil_uncertainty), wcs=trefoil_wcs,
                             meta=data[0].meta)
-    data_object.meta['LEVEL'] = "2"
+    data_object.meta["LEVEL"] = "2"
     # TODO: what do we do with the meta data???? shouldn't it merge
 
     return data_object

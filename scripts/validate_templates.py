@@ -1,10 +1,9 @@
-import argparse
 import os
+import argparse
 
 import pandas as pd
 
 from punchbowl.data import NormalizedMetadata, load_level_spec, load_spacecraft_def
-
 
 LEVELS = ["0", "1", "2", "3", "L", "Q"]
 
@@ -31,7 +30,7 @@ def validate_omniheader(directory):
 def construct_all_product_headers(directory, level):
     level_path = os.path.join(directory, f"Level{level}.yaml")
     level_spec = load_level_spec(level_path)
-    product_keys = list(level_spec['Products'].keys())
+    product_keys = list(level_spec["Products"].keys())
     crafts = load_spacecraft_def().keys()
     product_keys = sorted(list(set([pc.replace("?", craft) for craft in crafts for pc in product_keys])))
     for pc in product_keys:
@@ -53,5 +52,3 @@ if __name__ == "__main__":
         construct_all_product_headers(args.dir, level)
 
     print("No problems were found in the headers!")
-
-

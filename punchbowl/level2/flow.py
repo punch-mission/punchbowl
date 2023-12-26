@@ -1,19 +1,18 @@
-from typing import Union, List
+from typing import List, Union
 
 from prefect import flow, get_run_logger
-from astropy.wcs import WCS
 
+from punchbowl.data import PUNCHData, load_trefoil_wcs
+from punchbowl.level2.bright_structure import identify_bright_structures_task
+from punchbowl.level2.merge import merge_many_task
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.quality import quality_flag_task
-from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.resample import reproject_many_flow
-from punchbowl.level2.merge import merge_many_task
-from punchbowl.util import load_image_task, output_image_task
-from punchbowl.data import PUNCHData, load_trefoil_wcs
+from punchbowl.util import load_image_task
 
 
 @flow(validate_parameters=False)
-def level2_core_flow(data_list: Union[List[str], List[PUNCHData]]):
+def level2_core_flow(data_list: Union[List[str], List[PUNCHData]]) -> List[PUNCHData]:
     logger = get_run_logger()
 
     logger.info("beginning level 2 core flow")

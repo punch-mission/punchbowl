@@ -1,6 +1,6 @@
 # Core Python imports
-import pathlib
 import os
+import pathlib
 from glob import glob
 
 # Third party imports
@@ -12,11 +12,11 @@ from prefect.logging import disable_run_logger
 
 # punchbowl imports
 from punchbowl.data import NormalizedMetadata, PUNCHData
-
-from punchbowl.level3.f_corona_model import query_f_corona_model_source
-from punchbowl.level3.f_corona_model import construct_f_corona_background
-from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
-
+from punchbowl.level3.f_corona_model import (
+    construct_f_corona_background,
+    query_f_corona_model_source,
+    subtract_f_corona_background_task,
+)
 
 TEST_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -107,20 +107,20 @@ def incorrect_shape_data(shape: tuple = (512, 512)) -> np.ndarray:
 @pytest.mark.prefect_test()
 def test_basic_subtraction(one_data: PUNCHData, zero_data: PUNCHData) -> None:
     """
-    dataset of increasing values passed in, a bad pixel map is passed in 
+    dataset of increasing values passed in, a bad pixel map is passed in
     """
     with disable_run_logger():
         subtraction_punchdata = subtract_f_corona_background_task.fn(one_data, zero_data)
 
     assert isinstance(subtraction_punchdata, PUNCHData)
-        
+
     assert np.all(subtraction_punchdata.data == 1)
 
 
 @pytest.mark.prefect_test()
 def test_empty_list() -> None:
     """
-    dataset of increasing values passed in, a bad pixel map is passed in 
+    dataset of increasing values passed in, a bad pixel map is passed in
     """
     with pytest.raises(ValueError):
         input_list = glob('./data/*.fits')
@@ -131,7 +131,7 @@ def test_empty_list() -> None:
 @pytest.mark.prefect_test()
 def test_create_simple_bkg() -> None:
     """
-    dataset of increasing values passed in, a bad pixel map is passed in 
+    dataset of increasing values passed in, a bad pixel map is passed in
     """
     input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
@@ -143,7 +143,7 @@ def test_create_simple_bkg() -> None:
 @pytest.mark.prefect_test()
 def test_min_bkg() -> None:
     """
-    dataset of increasing values passed in, a bad pixel map is passed in 
+    dataset of increasing values passed in, a bad pixel map is passed in
     """
     input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
@@ -155,7 +155,7 @@ def test_min_bkg() -> None:
 @pytest.mark.prefect_test()
 def test_mean_bkg() -> None:
     """
-    dataset of increasing values passed in, a bad pixel map is passed in 
+    dataset of increasing values passed in, a bad pixel map is passed in
     """
     input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
@@ -167,7 +167,7 @@ def test_mean_bkg() -> None:
 @pytest.mark.prefect_test()
 def test_percent_5_bkg() -> None:
     """
-    dataset of increasing values passed in, a bad pixel map is passed in 
+    dataset of increasing values passed in, a bad pixel map is passed in
     """
     input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
@@ -179,7 +179,7 @@ def test_percent_5_bkg() -> None:
 @pytest.mark.prefect_test()
 def test_percent_10_bkg() -> None:
     """
-    dataset of increasing values passed in, a bad pixel map is passed in 
+    dataset of increasing values passed in, a bad pixel map is passed in
     """
     input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
@@ -191,7 +191,7 @@ def test_percent_10_bkg() -> None:
 @pytest.mark.prefect_test()
 def test_typo_method_bkg() -> None:
     """
-    dataset of increasing values passed in, a bad pixel map is passed in 
+    dataset of increasing values passed in, a bad pixel map is passed in
     """
     with pytest.raises(ValueError):
         input_list = glob(TESTDATA_DIR+'/data/*.fits')
@@ -202,9 +202,8 @@ def test_typo_method_bkg() -> None:
 @pytest.mark.prefect_test()
 def test_different_array_size_subtraction(incorrect_shape_data: PUNCHData, zero_data: PUNCHData) -> None:
     """
-    dataset of increasing values passed in, a bad pixel map is passed in 
+    dataset of increasing values passed in, a bad pixel map is passed in
     """
     with pytest.raises(Exception):
         with disable_run_logger():
             subtraction_punchdata = subtract_f_corona_background_task.fn(incorrect_shape_data, zero_data)
-

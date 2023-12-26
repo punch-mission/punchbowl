@@ -2,15 +2,15 @@ from datetime import datetime
 
 import numpy as np
 import pytest
-from pytest import fixture
-from prefect.logging import disable_run_logger
-from ndcube import NDCube
-from astropy.wcs import WCS
 from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
+from ndcube import NDCube
+from prefect.logging import disable_run_logger
+from pytest import fixture
 
+from punchbowl.data import NormalizedMetadata, PUNCHData
 # punchbowl imports
-from punchbowl.level0.decode_sqrt import encode_sqrt, decode_sqrt_simple, decode_sqrt, decode_sqrt_data
-from punchbowl.data import PUNCHData, NormalizedMetadata
+from punchbowl.level0.decode_sqrt import decode_sqrt, decode_sqrt_data, decode_sqrt_simple, encode_sqrt
 
 
 # Some test inputs

@@ -12,9 +12,11 @@ from prefect.logging import disable_run_logger
 
 # punchbowl imports
 from punchbowl.data import NormalizedMetadata, PUNCHData
-from punchbowl.level3.f_corona_model import (construct_f_corona_background,
-                                             query_f_corona_model_source,
-                                             subtract_f_corona_background_task)
+from punchbowl.level3.f_corona_model import (
+    construct_f_corona_background,
+    query_f_corona_model_source,
+    subtract_f_corona_background_task,
+)
 
 TEST_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 TESTDATA_DIR = os.path.dirname(__file__)

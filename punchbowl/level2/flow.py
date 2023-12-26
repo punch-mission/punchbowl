@@ -12,7 +12,7 @@ from punchbowl.util import load_image_task
 
 
 @flow(validate_parameters=False)
-def level2_core_flow(data_list: Union[List[str], List[PUNCHData]]):
+def level2_core_flow(data_list: Union[List[str], List[PUNCHData]]) -> List[PUNCHData]:
     logger = get_run_logger()
 
     logger.info("beginning level 2 core flow")

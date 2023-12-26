@@ -10,8 +10,7 @@ from pytest import fixture
 
 from punchbowl.data import NormalizedMetadata, PUNCHData
 # punchbowl imports
-from punchbowl.level0.decode_sqrt import (decode_sqrt, decode_sqrt_data,
-                                          decode_sqrt_simple, encode_sqrt)
+from punchbowl.level0.decode_sqrt import decode_sqrt, decode_sqrt_data, decode_sqrt_simple, encode_sqrt
 
 
 # Some test inputs

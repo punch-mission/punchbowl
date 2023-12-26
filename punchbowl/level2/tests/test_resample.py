@@ -6,8 +6,7 @@ from prefect.testing.utilities import prefect_test_harness
 
 from punchbowl.level2.resample import reproject_array, reproject_many_flow
 # punchbowl imports
-from punchbowl.tests.test_data import (sample_data_random, sample_punchdata,
-                                       sample_punchdata_list, sample_wcs)
+from punchbowl.tests.test_data import sample_data_random, sample_punchdata, sample_punchdata_list, sample_wcs
 
 
 @pytest.mark.parametrize("crpix, crval, cdelt",

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import os.path
 import typing as t
+import os.path
+from datetime import datetime
 from collections import OrderedDict, namedtuple
 from collections.abc import Mapping
-from datetime import datetime
 
 import astropy.units as u
 import astropy.wcs.wcsapi
@@ -25,8 +25,8 @@ from punchbowl.exceptions import InvalidDataError
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-def get_data_path(path):
-    """Returns root data path"""
+def get_data_path(path: str) -> str:
+    """Returns root data path given the filename requested"""
     return os.path.join(_ROOT, "data", path)
 
 
@@ -43,7 +43,7 @@ def load_level_spec(path: str) -> dict[str, t.Any]:
         return yaml.safe_load(f)
 
 
-def load_trefoil_wcs():
+def load_trefoil_wcs() -> astropy.wcs.WCS:
     """Loads Level 2 trefoil world coordinate system and shape"""
     trefoil_wcs = WCS(get_data_path("trefoil_hdr.fits"))
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
@@ -174,11 +174,10 @@ class History:
         self.current_index += 1
         return entry
 
-    def __eq__(self, other):
-        if isinstance(other, History):
-            return self._entries == other._entries
-        else:
+    def __eq__(self, other: History) -> bool:
+        if not isinstance(other, History):
             raise TypeError(f"Can only check equality between two history objects, found History and {type(other)}")
+        return self._entries == other._entries
 
     @classmethod
     def from_fits_header(cls, head: Header) -> History:
@@ -195,14 +194,14 @@ class History:
             the history derived from a given FITS header
         """
         if "HISTORY" not in head:
-            return cls()
+            out = cls()
         else:
             out = cls()
             for row in head["HISTORY"][1:]:
                 dt, source, comment = row.split(" => ")
                 dt = parse_datetime(dt)
                 out.add_entry(HistoryEntry(dt, source, comment))
-            return out
+        return out
 
 
 ValueType = t.Union[int, str, float]
@@ -215,10 +214,10 @@ class MetaField:
                  keyword: str,
                  comment: str,
                  value: t.Optional[t.Union[int, str, float]],
-                 datatype,
+                 datatype: t.Any,
                  nullable: bool,
                  mutable: bool,
-                 default: t.Optional[t.Union[int, str, float]]):
+                 default: t.Optional[t.Union[int, str, float]]) -> None:
         """Create a MetaField
 
         Parameters
@@ -241,7 +240,8 @@ class MetaField:
         if value is not None and not isinstance(value, datatype):
             raise TypeError(f"MetaField value and kind must match. Found kind={datatype} and value={type(value)}.")
         if default is not None and not isinstance(default, datatype):
-            raise TypeError(f"MetaField default and kind must match. Found kind={datatype} and default={type(default)}.")
+            raise TypeError("MetaField default and kind must match."
+                            f"Found kind={datatype} and default={type(default)}.")
         if len(keyword) > 8:
             raise ValueError("Keywords must be 8 characters or shorter to comply with FITS")
         self._keyword = keyword
@@ -263,12 +263,12 @@ class MetaField:
         return self._comment
 
     @property
-    def value(self):
+    def value(self) -> ValueType:
         """returns MetaField value"""
         return self._value
 
     @value.setter
-    def value(self, value: ValueType):
+    def value(self, value: ValueType) -> None:
         """sets value withing MetaField object"""
         if not self._mutable:
             raise RuntimeError("Cannot mutate this value because it is set to immutable.")
@@ -278,11 +278,11 @@ class MetaField:
             raise TypeError(f"Value of {self.keyword} was {type(value)} but must be {self._datatype}.")
 
     @property
-    def default(self):
+    def default(self) -> ValueType:
         return self._default
 
     @default.setter
-    def default(self, default: ValueType):
+    def default(self, default: ValueType) -> None:
         if isinstance(default, self._datatype) or default is None:
             self._default = default
         else:
@@ -290,7 +290,7 @@ class MetaField:
 
     def __eq__(self, other: MetaField) -> bool:
         if not isinstance(other, MetaField):
-            raise RuntimeError(f"MetaFields can only be compared to their own type, found {type(other)}.")
+            raise TypeError(f"MetaFields can only be compared to their own type, found {type(other)}.")
         return (self._keyword == other._keyword and self._comment == other._comment and self._value == other._value
                 and self._datatype == other._datatype and self.nullable == other.nullable
                 and self._mutable == other._mutable and self._default == other._default)
@@ -326,14 +326,14 @@ class NormalizedMetadata(Mapping):
         self._contents = contents
         self._history = history if history is not None else History()
 
-    def __iter__(self):
+    def __iter__(self) -> t.Iterator[t.Any]:
         return self._contents.__iter__()
 
-    def __eq__(self, other: NormalizedMetadata):
-        if isinstance(other, NormalizedMetadata):
-            return self._contents == other._contents and self._history == other._history
-        else:
+    def __eq__(self, other: NormalizedMetadata) -> bool:
+        if not isinstance(other, NormalizedMetadata):
             raise TypeError(f"Can only check equality between two NormalizedMetadata, found {type(other)}.")
+        return self._contents == other._contents and self._history == other._history
+
 
     def to_fits_header(self) -> Header:
         """
@@ -351,7 +351,7 @@ class NormalizedMetadata(Mapping):
                 ("COMMENT", ("----- " + section + " ").ljust(72, "-")),
                 end=True,
             )
-            for key, field in self._contents[section].items():
+            for field in self._contents[section].values():
                 if field.value is not None:
                     value = field.value
                 elif field.value is None and field.nullable:
@@ -398,9 +398,10 @@ class NormalizedMetadata(Mapping):
         for k, v in h.items():
             if k not in ("COMMENT", "HISTORY"):
                 if k not in m:
-                    raise RuntimeError(f"Unexpected key of {k} found in header for Level {level} {type_code + obs_code} type meta.")
+                    raise RuntimeError(f"Unexpected key of {k} found in header for Level"
+                                       f"{level} {type_code + obs_code} type meta.")
                 m[k] = v
-        m._history = History.from_fits_header(h)
+        m.history = History.from_fits_header(h)
 
         return m
 
@@ -423,12 +424,12 @@ class NormalizedMetadata(Mapping):
         """
         if product_code in level_spec["Products"]:
             return level_spec["Products"][product_code]
-        else:
+        else:  # noqa: RET505, okay structure
             type_code = product_code[:-1]
-            found_type_codes = {pc[:-1] for pc in level_spec["Products"].keys()}
+            found_type_codes = {pc[:-1] for pc in level_spec["Products"]}
             if type_code in found_type_codes:
                 return level_spec["Products"][type_code + "?"]
-            else:
+            else:  # noqa: RET505, okay structure
                 raise RuntimeError(f"Product code {product_code} not found in level_spec")
 
     @staticmethod
@@ -436,7 +437,7 @@ class NormalizedMetadata(Mapping):
                              level: str,
                              level_spec_path: str,
                              spacecraft: str,
-                             spacecraft_def_path: str):
+                             spacecraft_def_path: str) -> t.Tuple[dict, dict, dict]:
         """
         Loads template files from specified locations
 
@@ -465,7 +466,7 @@ class NormalizedMetadata(Mapping):
 
         if level is not None and level_spec_path is not None:
             raise RuntimeError("Only specify the level or level_spec_path, not both.")
-        elif level is not None:
+        elif level is not None:  # noqa: RET506, fine structure
             level_spec_path = get_data_path(f"Level{level}.yaml")
             level_spec = load_level_spec(level_spec_path)
         elif level_spec_path is not None:
@@ -475,7 +476,9 @@ class NormalizedMetadata(Mapping):
         return omniheader, level_spec, spacecraft_def
 
     @staticmethod
-    def _determine_omits_and_overrides(level_spec: dict, product_def: dict):
+    def _determine_omits_and_overrides(level_spec: dict,  # noqa: C901, not too complex
+                                       product_def: dict) -> t.Tuple[t.List[str],
+                                                                     t.Dict[str, str]]:
         """
         Reads level specifications and product definitions and determines keywords to omit or overwrite
 
@@ -520,7 +523,7 @@ class NormalizedMetadata(Mapping):
         return omits, overrides
 
     @classmethod
-    def load_template(cls,
+    def load_template(cls,  # noqa: C901, not too complex
                       product_code: str,
                       level: t.Optional[str] = None,
                       level_spec_path: t.Optional[str] = None,
@@ -584,24 +587,18 @@ class NormalizedMetadata(Mapping):
                                 value = datatype(value)
                                 value = value.format(**spacecraft_def[spacecraft])
                             elif (datatype is int) or (datatype is float):
-                                if value != "":
-                                    value = datatype(value)
-                                else:
-                                    value = None
-                        except ValueError:
-                            raise RuntimeError(f"Value was of the wrong type to parse for {e['KEYWORD']}")
+                                value = datatype(value) if value != "" else None
+                        except ValueError as err:
+                            raise RuntimeError(f"Value was of the wrong type to parse for {e['KEYWORD']}") from err
 
                         try:
                             if datatype is str:
                                 default = datatype(default)
                                 default = default.format(**spacecraft_def[spacecraft])
                             elif (datatype is int) or (datatype is float):
-                                if default != "":
-                                    default = datatype(default)
-                                else:
-                                    default = None
-                        except ValueError:
-                            raise RuntimeError(f"Default was of the wrong type to parse for {e['KEYWORD']}")
+                                default = datatype(default) if default != "" else None
+                        except ValueError as err:
+                            raise RuntimeError(f"Default was of the wrong type to parse for {e['KEYWORD']}") from err
 
                         contents[section_title][e["KEYWORD"]] = MetaField(e["KEYWORD"],
                                                                           e["COMMENT"].format(**spacecraft_def[spacecraft]),
@@ -621,6 +618,10 @@ class NormalizedMetadata(Mapping):
     def history(self) -> History:
         """returns header history"""
         return self._history
+
+    @history.setter
+    def history(self, history: History) -> None:
+        self._history = history
 
     @staticmethod
     def _validate_key_is_str(key: str) -> None:
@@ -729,10 +730,7 @@ class NormalizedMetadata(Mapping):
 
         """
         self._validate_key_is_str(key)
-        for section_name, section in self._contents.items():
-            if key in section:
-                return True
-        return False
+        return any(key in section for section in self._contents.values())
 
     @property
     def product_level(self) -> int:
@@ -880,7 +878,7 @@ class PUNCHData(NDCube):
             "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string
         )
 
-    def write(self, filename: str, overwrite=True) -> None:
+    def write(self, filename: str, overwrite: bool = True) -> None:
         """Write PUNCHData elements to file
 
         Parameters
@@ -990,7 +988,7 @@ class PUNCHData(NDCube):
         # Write image to file
         mpl.image.saveim(filename, output_data)
 
-    def _update_statistics(self):
+    def _update_statistics(self) -> None:
         """Updates image statistics in metadata before writing to file"""
 
         # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
@@ -1017,11 +1015,12 @@ class PUNCHData(NDCube):
         self.meta["DATAMIN"] = float(self.data.min().item())
         self.meta["DATAMAX"] = float(self.data.max().item())
 
-    def duplicate_with_updates(self, data: np.ndarray=None,
-                               wcs: astropy.wcs.WCS= None,
-                               uncertainty: np.ndarray=None,
-                               meta=None,
-                               unit=None) -> PUNCHData:
+    def duplicate_with_updates(self,
+                               data: t.Optional[np.ndarray] = None,
+                               wcs: t.Optional[astropy.wcs.WCS] = None,
+                               uncertainty: t.Optional[np.ndarray] = None,
+                               meta: t.Optional[NormalizedMetadata] = None,
+                               unit: t.Optional[astropy.units.Unit] = None) -> PUNCHData:
         """Copies a PUNCHData. Any field specified in the call is modified. All others are a direct copy. """
         return PUNCHData(data=data if data is not None else self.data,
                          wcs=wcs if wcs is not None else self.wcs,

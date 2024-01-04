@@ -17,6 +17,6 @@ Functions
 
 
 
-.. py:function:: level2_core_flow(data_list: Union[List[str], List[punchbowl.data.PUNCHData]])
+.. py:function:: level2_core_flow(data_list: Union[List[str], List[punchbowl.data.PUNCHData]]) -> List[punchbowl.data.PUNCHData]
 
 

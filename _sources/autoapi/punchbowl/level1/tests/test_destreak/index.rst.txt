@@ -19,10 +19,6 @@ Functions
    punchbowl.level1.tests.test_destreak.test_not_2dim_destreaking_errors
    punchbowl.level1.tests.test_destreak.test_not_numpy_image_destreaking_errors
    punchbowl.level1.tests.test_destreak.test_singular_matrix_errors
-   punchbowl.level1.tests.test_destreak.used_correction_parameters
-   punchbowl.level1.tests.test_destreak.expected_regression_test_input
-   punchbowl.level1.tests.test_destreak.expected_regression_test_output
-   punchbowl.level1.tests.test_destreak.test_regression
 
 
 
@@ -54,25 +50,5 @@ Attributes
 
 
 .. py:function:: test_singular_matrix_errors()
-
-
-.. py:function:: used_correction_parameters() -> tuple
-
-
-.. py:function:: expected_regression_test_input() -> numpy.ndarray
-
-   This data is taken from the HotOp tests, specifically:
-       Nextcloud/23103_PUNCH_Data/WFI_PhaseC/PUNCH_WFI_EM_TBalance/archive_220116_HotOp_spot.fit
-   This is a calibrated 40 ms exposure following the steps in "Investigating destreaking WFI laboratory test data"
-   Jupyter notebook which can be found in the sdf at sdf/punchbowl/Level1/destreak_investigation_summary.ipynb
-
-   :returns: regression test input
-   :rtype: np.ndarray
-
-
-.. py:function:: expected_regression_test_output() -> numpy.ndarray
-
-
-.. py:function:: test_regression(expected_regression_test_input, used_correction_parameters, expected_regression_test_output)
 
 

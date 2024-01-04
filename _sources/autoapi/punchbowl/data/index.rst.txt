@@ -46,9 +46,9 @@ Attributes
 
    
 
-.. py:function:: get_data_path(path)
+.. py:function:: get_data_path(path: str) -> str
 
-   Returns root data path
+   Returns root data path given the filename requested
 
 
 .. py:function:: load_omniheader(path: Optional[str] = None) -> pandas.DataFrame
@@ -61,7 +61,7 @@ Attributes
    Loads data product metadata specifications
 
 
-.. py:function:: load_trefoil_wcs()
+.. py:function:: load_trefoil_wcs() -> astropy.wcs.WCS
 
    Loads Level 2 trefoil world coordinate system and shape
 
@@ -150,7 +150,7 @@ Attributes
    .. py:method:: __next__() -> HistoryEntry
 
 
-   .. py:method:: __eq__(other)
+   .. py:method:: __eq__(other: History) -> bool
 
       Return self==value.
 
@@ -172,7 +172,7 @@ Attributes
 
    
 
-.. py:class:: MetaField(keyword: str, comment: str, value: Optional[Union[int, str, float]], datatype, nullable: bool, mutable: bool, default: Optional[Union[int, str, float]])
+.. py:class:: MetaField(keyword: str, comment: str, value: Optional[Union[int, str, float]], datatype: Any, nullable: bool, mutable: bool, default: Optional[Union[int, str, float]])
 
 
    The MetaField object describes a single field within the NormalizedMetadata object
@@ -188,10 +188,12 @@ Attributes
       returns MetaField comment
 
    .. py:property:: value
+      :type: ValueType
 
       returns MetaField value
 
    .. py:property:: default
+      :type: ValueType
 
 
    .. py:method:: __eq__(other: MetaField) -> bool
@@ -237,10 +239,10 @@ Attributes
       returns number of entry cards in NormalizedMetadata object
 
 
-   .. py:method:: __iter__()
+   .. py:method:: __iter__() -> Iterator[Any]
 
 
-   .. py:method:: __eq__(other: NormalizedMetadata)
+   .. py:method:: __eq__(other: NormalizedMetadata) -> bool
 
       Return self==value.
 
@@ -277,7 +279,7 @@ Attributes
       :rtype: Dict
 
 
-   .. py:method:: _load_template_files(omniheader_path: str, level: str, level_spec_path: str, spacecraft: str, spacecraft_def_path: str)
+   .. py:method:: _load_template_files(omniheader_path: str, level: str, level_spec_path: str, spacecraft: str, spacecraft_def_path: str) -> Tuple[dict, dict, dict]
       :staticmethod:
 
       Loads template files from specified locations
@@ -292,7 +294,7 @@ Attributes
       :rtype: Tuple
 
 
-   .. py:method:: _determine_omits_and_overrides(level_spec: dict, product_def: dict)
+   .. py:method:: _determine_omits_and_overrides(level_spec: dict, product_def: dict) -> Tuple[List[str], Dict[str, str]]
       :staticmethod:
 
       Reads level specifications and product definitions and determines keywords to omit or overwrite
@@ -410,7 +412,7 @@ Attributes
       :rtype: PUNCHData
 
 
-   .. py:method:: write(filename: str, overwrite=True) -> None
+   .. py:method:: write(filename: str, overwrite: bool = True) -> None
 
       Write PUNCHData elements to file
 
@@ -442,12 +444,12 @@ Attributes
       :rtype: None
 
 
-   .. py:method:: _update_statistics()
+   .. py:method:: _update_statistics() -> None
 
       Updates image statistics in metadata before writing to file
 
 
-   .. py:method:: duplicate_with_updates(data: numpy.ndarray = None, wcs: astropy.wcs.WCS = None, uncertainty: numpy.ndarray = None, meta=None, unit=None) -> PUNCHData
+   .. py:method:: duplicate_with_updates(data: Optional[numpy.ndarray] = None, wcs: Optional[astropy.wcs.WCS] = None, uncertainty: Optional[numpy.ndarray] = None, meta: Optional[NormalizedMetadata] = None, unit: Optional[astropy.units.Unit] = None) -> PUNCHData
 
       Copies a PUNCHData. Any field specified in the call is modified. All others are a direct copy.
 

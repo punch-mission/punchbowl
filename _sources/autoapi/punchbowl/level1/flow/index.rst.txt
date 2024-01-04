@@ -17,7 +17,7 @@ Functions
 
 
 
-.. py:function:: level1_core_flow(input_data: Union[str, punchbowl.data.PUNCHData], deficient_pixel_map: Optional[punchbowl.data.PUNCHData] = None, output_filename: Optional[str] = None)
+.. py:function:: level1_core_flow(input_data: Union[str, punchbowl.data.PUNCHData], deficient_pixel_map: Optional[punchbowl.data.PUNCHData] = None, output_filename: Optional[str] = None) -> List[punchbowl.data.PUNCHData]
 
    Core flow for level 1
 

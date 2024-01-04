@@ -17,6 +17,6 @@ Functions
 
 
 
-.. py:function:: level0_core_flow(ccsds_path: str, output_path: str) -> None
+.. py:function:: level0_core_flow() -> None
 
 

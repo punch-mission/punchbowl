@@ -4,31 +4,3 @@
 .. py:module:: punchbowl.level0.decode
 
 
-Module Contents
----------------
-
-
-Functions
-~~~~~~~~~
-
-.. autoapisummary::
-
-   punchbowl.level0.decode.decode_ccsds_packets
-   punchbowl.level0.decode.create_fake_ndcube
-   punchbowl.level0.decode.create_level0_from_packets
-   punchbowl.level0.decode.write_level0
-
-
-
-.. py:function:: decode_ccsds_packets(path: str)
-
-
-.. py:function:: create_fake_ndcube()
-
-
-.. py:function:: create_level0_from_packets(packet_contents)
-
-
-.. py:function:: write_level0(level0: punchbowl.data.PUNCHData, path: str) -> Dict[str, Any]
-
-

@@ -19,7 +19,7 @@ Functions
 
 
 
-.. py:function:: query_f_corona_model_source(polarizer: str, PUNCH_product: str, start_datetime: datetime.datetime, end_datetime: datetime.datetime) -> List[str]
+.. py:function:: query_f_corona_model_source(polarizer: str, product: str, start_datetime: datetime.datetime, end_datetime: datetime.datetime) -> List[str]
 
    Creates a list of files based between a start date/time (start_datetime)
    and an end date/time (end_datetime) for a specifed polarizer and product
@@ -37,8 +37,8 @@ Functions
 
    :param polarizer: input a string specifying the type of polarizer to search for
    :type polarizer: string [= 'clear', '-60', '60', '0' ]
-   :param PUNCH_product:
-   :type PUNCH_product: string [= 'mosaic', 'nfi']
+   :param product:
+   :type product: string [= 'mosaic', 'nfi']
    :param start_datetime: input a start_datetime of interest.
    :type start_datetime: datetime
    :param end_datetime: input a start_datetime of interest.

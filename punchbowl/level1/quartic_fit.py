@@ -32,7 +32,7 @@ def create_coefficient_image(
 def photometric_calibration(
     image: np.ndarray, coefficient_image: np.ndarray
 ) -> np.ndarray:
-    """Computes a non-linear photometric callibration of PUNCH images
+    """Computes a non-linear photometric calibration of PUNCH images
 
     Each instrument is subject to an independent non-linear photometric response,
     which needs to be corrected. The module converts from raw camera digitizer

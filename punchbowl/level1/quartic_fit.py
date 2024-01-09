@@ -21,16 +21,34 @@ def create_coefficient_image(
 
     Returns
     -------
-    An image of coefficients that apply to every pixel as expected by `photometric_calibration`
-
+    np.ndarray
+        An image of coefficients that apply to every pixel as expected by `photometric_calibration`
     """
     return np.stack(
         [np.ones(image_shape) * coeff for coeff in flat_coefficients], axis=2
     )
 
 
+def create_constant_quartic_coefficients(img_shape: tuple) -> np.ndarray:
+    """Creates a constant coefficients image that preserves the original values,
+    i.e. b = 0 and all other coefficients are 0
+
+    Parameters
+    ----------
+    img_shape : tuple[Int]
+        size of the image to create the coefficients for
+
+    Returns
+    -------
+    np.ndarray
+        An image of coefficients that apply to every pixel as expected by `photometric_calibration`
+    """
+    return create_coefficient_image(np.array([0, 0, 0, 1, 0]), img_shape)
+
+
 def photometric_calibration(
-    image: np.ndarray, coefficient_image: np.ndarray
+        image: np.ndarray,
+        coefficient_image: np.ndarray
 ) -> np.ndarray:
     """Computes a non-linear photometric calibration of PUNCH images
 
@@ -70,7 +88,11 @@ def photometric_calibration(
 
     Examples
     --------
-    # TODO: add example
+    ```
+    >>> punch_image = np.ones((100,100))
+    >>> coefficient_image = create_coefficient_image(np.array([0, 0, 0, 1, 0]), punch_image.shape)
+    >>> data = photometric_calibration(punch_image, coefficient_image)
+    ```
     """
 
     # inspect dimensions
@@ -84,24 +106,26 @@ def photometric_calibration(
         raise ValueError("`coefficient_image` and `image` must have the same shape`")
 
     # find the number of quartic fit coefficients
-    num_coeffs = coefficient_image.shape[2]
+    num_coefficients = coefficient_image.shape[2]
     return np.sum(
         [
-            coefficient_image[..., i] * np.power(image, num_coeffs - i - 1)
-            for i in range(num_coeffs)
+            coefficient_image[..., i] * np.power(image, num_coefficients - i - 1)
+            for i in range(num_coefficients)
         ],
         axis=0,
     )
 
 
 @task
-def perform_quartic_fit_task(data_object: PUNCHData) -> PUNCHData:
+def perform_quartic_fit_task(data_object: PUNCHData, quartic_coefficients: np.ndarray) -> PUNCHData:
     """Prefect task to perform the quartic fit calibration on the data
 
     Parameters
     ----------
     data_object : PUNCHData
         a data object that needs calibration
+    quartic_coefficients: np.ndarray
+        a cube of coefficients as produced by `create_coefficients_image` or `create_ones_coefficients_image`
 
     Returns
     -------
@@ -111,11 +135,7 @@ def perform_quartic_fit_task(data_object: PUNCHData) -> PUNCHData:
     logger = get_run_logger()
     logger.info("perform_quartic_fit started")
 
-    # todo: load coeffs from a file
-    flat_coeffs = np.array([0, 1, 2, 3, 4])
-    image_shape = data_object.data.shape
-    coeffs = create_coefficient_image(flat_coeffs, image_shape)
-    new_data = photometric_calibration(data_object.data, coeffs)
+    new_data = photometric_calibration(data_object.data, quartic_coefficients)
 
     logger.info("perform_quartic_fit finished")
     data_object = data_object.duplicate_with_updates(data=new_data)

@@ -8,7 +8,7 @@ from punchbowl.level1.deficient_pixel import create_all_valid_deficient_pixel_ma
 from punchbowl.level1.despike import despike_task
 from punchbowl.level1.destreak import destreak_task
 from punchbowl.level1.psf import correct_psf_task
-from punchbowl.level1.quartic_fit import create_constant_quartic_coefficients, perform_quartic_fit_task
+from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.util import load_image_task, output_image_task
@@ -16,7 +16,7 @@ from punchbowl.util import load_image_task, output_image_task
 
 @flow(validate_parameters=False)
 def level1_core_flow(input_data: Union[str, PUNCHData],
-                     quartic_coefficients: Optional[PUNCHData] = None,
+                     quartic_coefficient_path: Optional[str] = None,
                      deficient_pixel_map: Optional[PUNCHData] = None,
                      output_filename: Optional[str] = None) -> List[PUNCHData]:
     """Core flow for level 1
@@ -38,13 +38,10 @@ def level1_core_flow(input_data: Union[str, PUNCHData],
 
     data = load_image_task(input_data) if isinstance(input_data, str) else input_data
 
-    if quartic_coefficients is None:
-        quartic_coefficients = create_constant_quartic_coefficients(data.data.shape)
-
     if deficient_pixel_map is None:
         deficient_pixel_map = create_all_valid_deficient_pixel_map(data)
 
-    data = perform_quartic_fit_task(data, quartic_coefficients)
+    data = perform_quartic_fit_task(data, quartic_coefficient_path)
     data = despike_task(data)
     data = destreak_task(data)
     data = correct_vignetting_task(data)

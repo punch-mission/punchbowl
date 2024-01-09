@@ -1,3 +1,5 @@
+import typing as t
+
 import numpy as np
 from prefect import get_run_logger, task
 
@@ -117,15 +119,16 @@ def photometric_calibration(
 
 
 @task
-def perform_quartic_fit_task(data_object: PUNCHData, quartic_coefficients: np.ndarray) -> PUNCHData:
+def perform_quartic_fit_task(data_object: PUNCHData, quartic_coefficients_path: t.Optional[str] = None) -> PUNCHData:
     """Prefect task to perform the quartic fit calibration on the data
 
     Parameters
     ----------
     data_object : PUNCHData
         a data object that needs calibration
-    quartic_coefficients: np.ndarray
-        a cube of coefficients as produced by `create_coefficients_image` or `create_ones_coefficients_image`
+    quartic_coefficients_path: Optional[str]
+        path to a  cube of coefficients as produced by `create_coefficients_image` or `create_ones_coefficients_image`,
+        skips correction if it is None
 
     Returns
     -------
@@ -135,9 +138,14 @@ def perform_quartic_fit_task(data_object: PUNCHData, quartic_coefficients: np.nd
     logger = get_run_logger()
     logger.info("perform_quartic_fit started")
 
-    new_data = photometric_calibration(data_object.data, quartic_coefficients)
+    if quartic_coefficients_path is not None:
+        quartic_coefficients = PUNCHData.from_fits(quartic_coefficients_path)
+        new_data = photometric_calibration(data_object.data, quartic_coefficients.data)
+        data_object = data_object.duplicate_with_updates(data=new_data)
+        data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction completed")
+    else:
+        data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction skipped since path is empty")
 
     logger.info("perform_quartic_fit finished")
-    data_object = data_object.duplicate_with_updates(data=new_data)
-    data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction completed")
+
     return data_object

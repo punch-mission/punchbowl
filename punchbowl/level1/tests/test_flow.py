@@ -15,7 +15,8 @@ from punchbowl.tests.test_data import sample_data_random, sample_punchdata
 #         assert isinstance(output, PUNCHData)
 
 
-# def test_core_flow_runs_with_objects(sample_punchdata):
-#     with prefect_test_harness():
-#         output = level1_core_flow(sample_punchdata(shape=(2048, 2048)))
-#     assert isinstance(output[0], PUNCHData)
+def test_core_flow_runs_with_objects(sample_punchdata):
+    """Simply tests that the core flow runs with objects"""
+    with prefect_test_harness():
+        output = level1_core_flow(sample_punchdata(shape=(2048, 2048)))
+    assert isinstance(output[0], PUNCHData)

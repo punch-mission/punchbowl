@@ -125,8 +125,7 @@ def remove_deficient_pixels_task(data: PUNCHData,
 
     Returns
     -------
-
-    bkg_subtracted_data : ['punchbowl.data.PUNCHData']
+    PUNCHData
         A background subtracted data frame
 
     # TODO: exclude data if flagged in weight array

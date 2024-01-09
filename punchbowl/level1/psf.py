@@ -42,7 +42,7 @@ def correct_psf_task(
     if model_path is not None:
         corrector = ArrayCorrector.load(model_path)
         data_object = correct_psf(data_object, corrector)
-        data_object.meta.history.add_now("LEVEL1-correct_psf", "PSF corrected")
+        data_object.meta.history.add_now("LEVEL1-correct_psf", f"PSF corrected with {model_path} model")
     else:
         data_object.meta.history.add_now("LEVEL1-correct_psf", "Empty model path so no correction applied")
         logger.info("No model path so PSF correction is skipped")

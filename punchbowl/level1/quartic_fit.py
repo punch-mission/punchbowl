@@ -33,7 +33,7 @@ def create_coefficient_image(
 
 def create_constant_quartic_coefficients(img_shape: tuple) -> np.ndarray:
     """Creates a constant coefficients image that preserves the original values,
-    i.e. b = 0 and all other coefficients are 0
+    i.e. b = 1 and all other coefficients are 0
 
     Parameters
     ----------

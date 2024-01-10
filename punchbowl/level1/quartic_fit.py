@@ -54,29 +54,11 @@ def photometric_calibration(
 ) -> np.ndarray:
     """Computes a non-linear photometric calibration of PUNCH images
 
-    Each instrument is subject to an independent non-linear photometric response,
-    which needs to be corrected. The module converts from raw camera digitizer
-    number (DN) to photometric units at each pixel. Each pixel is replaced with
-    the corresponding value of the quartic polynomial in the current CF data
-    product for that particular camera.
-
-    A quartic polynomial is applied as follows:
-        X[i,j]=a[i,j]+b[i,j]*DN[i,j]+c[i,j]*DN[i,j]^2+d[i,j]*DN[i,j]^3+e[i,j]*DN[i,j]^4
-    for each pixel in the detector. Where each quantity (a, b, c, d, e) is a function
-    of pixel location [i,j], and is generated using dark current and Stim lamp
-    maps. Where:
-        - a = offset (dark and the bias).
-        - b, b, c, d, e = higher order terms.
-        Specifically coefficient_image[i,j,:] = [e, d, c, b, a] (highest order terms first)
-
-    As each pixel is independent, a quartic fit calibration file (CF) of
-    dimensions 2k*2k*5 is constructed, with each layer containing one of the five
-    polynomial coefficients for each pixel.
-
     Parameters
     ----------
     image : np.ndarray
         Image to be corrected.
+
     coefficient_image : np.ndarray
         Frame containing uncertainty values.
         The first two dimensions are the spatial dimensions of the image.
@@ -88,13 +70,32 @@ def photometric_calibration(
     np.ndarray
         a photometrically corrected frame
 
+    Notes
+    ------
+    Each instrument is subject to an independent non-linear photometric response,
+    which needs to be corrected. The module converts from raw camera digitizer
+    number (DN) to photometric units at each pixel. Each pixel is replaced with
+    the corresponding value of the quartic polynomial in the current CF data
+    product for that particular camera.
+
+    A quartic polynomial is applied as follows:
+
+    .. math:: X_{i,j} = a_{i,j}+b_{i,j}*DN_{i,j}+c_{i,j}*DN_{i,j}^2+d_{i,j}*DN_{i,j}^3+e_{i,j}*DN_{i,j}^4
+
+    for each pixel in the detector. Where each quantity (a, b, c, d, e) is a function
+    of pixel location (i,j), and is generated using dark current and Stim lamp
+    maps. a = offset (dark and the bias). b, b, c, d, e = higher order terms.
+    Specifically ``coefficient_image[i,j,:] = [e, d, c, b, a]`` (highest order terms first)
+
+    As each pixel is independent, a quartic fit calibration file (CF) of
+    dimensions 2k*2k*5 is constructed, with each layer containing one of the five
+    polynomial coefficients for each pixel.
+
     Examples
     --------
-    ```
     >>> punch_image = np.ones((100,100))
     >>> coefficient_image = create_coefficient_image(np.array([0, 0, 0, 1, 0]), punch_image.shape)
     >>> data = photometric_calibration(punch_image, coefficient_image)
-    ```
     """
 
     # inspect dimensions
@@ -134,6 +135,11 @@ def perform_quartic_fit_task(data_object: PUNCHData, quartic_coefficients_path: 
     -------
     PUNCHData
         modified version of the input with the quartic fit correction applied
+
+    See Also
+    --------
+    photometric_calibration
+
     """
     logger = get_run_logger()
     logger.info("perform_quartic_fit started")

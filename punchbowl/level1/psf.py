@@ -1,11 +1,9 @@
-import pathlib
+import typing as t
 
 from prefect import get_run_logger, task
 from regularizepsf.corrector import ArrayCorrector
 
 from punchbowl.data import PUNCHData
-
-THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
 def correct_psf(
@@ -22,7 +20,7 @@ def correct_psf(
 @task
 def correct_psf_task(
     data_object: PUNCHData,
-    model_path: pathlib.Path = THIS_DIRECTORY / "data" / "punch_array_corrector.h5",
+    model_path: t.Optional[str] = None,
 ) -> PUNCHData:
     """ Prefect Task to correct the PSF of an iamge
 
@@ -30,7 +28,7 @@ def correct_psf_task(
     ----------
     data_object : PUNCHData
         data to operate on
-    model_path : pathlib.Path
+    model_path : str
         path to the PSF model to use in the correction
 
     Returns
@@ -41,10 +39,13 @@ def correct_psf_task(
     logger = get_run_logger()
     logger.info("correct_psf started")
 
-    # TODO: make pass in object instead of loading from a file
-    corrector = ArrayCorrector.load(model_path)
-    data_object = correct_psf(data_object, corrector)
+    if model_path is not None:
+        corrector = ArrayCorrector.load(model_path)
+        data_object = correct_psf(data_object, corrector)
+        data_object.meta.history.add_now("LEVEL1-correct_psf", f"PSF corrected with {model_path} model")
+    else:
+        data_object.meta.history.add_now("LEVEL1-correct_psf", "Empty model path so no correction applied")
+        logger.info("No model path so PSF correction is skipped")
 
     logger.info("correct_psf finished")
-    data_object.meta.history.add_now("LEVEL1-correct_psf", "PSF corrected")
     return data_object

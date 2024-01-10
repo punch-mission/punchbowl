@@ -203,7 +203,7 @@ def sample_punchdata():
     Generate a sample PUNCHData object for testing
     """
 
-    def _sample_punchdata(shape=(50, 50), level=0):
+    def _sample_punchdata(shape=(50, 50)):
         data = np.random.random(shape).astype(np.float32)
         uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
         wcs = WCS(naxis=2)
@@ -214,10 +214,6 @@ def sample_punchdata():
         wcs.wcs.crval = 1, 1
         wcs.wcs.cname = "HPC lon", "HPC lat"
 
-        # meta = NormalizedMetadata({"LEVEL": str(level),
-        #                            'OBSRVTRY': 'Y',
-        #                            'TYPECODE': 'XX',
-        #                            'DATE-OBS': })
         meta = NormalizedMetadata.load_template("PM1", "0")
         meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
         return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)

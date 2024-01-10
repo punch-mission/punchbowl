@@ -6,6 +6,7 @@ import numpy as np
 from astropy.wcs import WCS
 
 from punchbowl.data import NormalizedMetadata, PUNCHData
+from punchbowl.level1.quartic_fit import create_constant_quartic_coefficients
 
 
 def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):
@@ -29,6 +30,17 @@ def create_punchdata_test_data(path="../punchbowl/tests/"):
     obj.write(file_path, overwrite=True)
 
 
+def create_quartic_coefficients_test_data(path="../punchbowl/level1/tests/data/"):
+    meta = NormalizedMetadata.load_template("CF1", "1")
+    meta['DATE-OBS'] = str(datetime.now())
+    wcs = WCS(naxis=3)
+    data = create_constant_quartic_coefficients((10, 10))
+    obj = PUNCHData(data, wcs, meta)
+    file_path = os.path.join(path, "test_quartic_coeffs.fits")
+    obj.write(file_path, overwrite=True)
+
+
 if __name__ == "__main__":
     create_f_corona_test_data()
     create_punchdata_test_data()
+    create_quartic_coefficients_test_data()

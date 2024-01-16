@@ -14,6 +14,7 @@ Functions
 .. autoapisummary::
 
    punchbowl.level1.quartic_fit.create_coefficient_image
+   punchbowl.level1.quartic_fit.create_constant_quartic_coefficients
    punchbowl.level1.quartic_fit.photometric_calibration
    punchbowl.level1.quartic_fit.perform_quartic_fit_task
 
@@ -31,31 +32,25 @@ Functions
    :param image_shape: A tuple of the shape of the image that will be calibrated using `photometric_calibration`
    :type image_shape: tuple
 
-   :rtype: An image of coefficients that apply to every pixel as expected by `photometric_calibration`
+   :returns: An image of coefficients that apply to every pixel as expected by `photometric_calibration`
+   :rtype: np.ndarray
+
+
+.. py:function:: create_constant_quartic_coefficients(img_shape: tuple) -> numpy.ndarray
+
+   Creates a constant coefficients image that preserves the original values,
+   i.e. b = 1 and all other coefficients are 0
+
+   :param img_shape: size of the image to create the coefficients for
+   :type img_shape: tuple[Int]
+
+   :returns: An image of coefficients that apply to every pixel as expected by `photometric_calibration`
+   :rtype: np.ndarray
 
 
 .. py:function:: photometric_calibration(image: numpy.ndarray, coefficient_image: numpy.ndarray) -> numpy.ndarray
 
-   Computes a non-linear photometric callibration of PUNCH images
-
-   Each instrument is subject to an independent non-linear photometric response,
-   which needs to be corrected. The module converts from raw camera digitizer
-   number (DN) to photometric units at each pixel. Each pixel is replaced with
-   the corresponding value of the quartic polynomial in the current CF data
-   product for that particular camera.
-
-   A quartic polynomial is applied as follows:
-       X[i,j]=a[i,j]+b[i,j]*DN[i,j]+c[i,j]*DN[i,j]^2+d[i,j]*DN[i,j]^3+e[i,j]*DN[i,j]^4
-   for each pixel in the detector. Where each quantity (a, b, c, d, e) is a function
-   of pixel location [i,j], and is generated using dark current and Stim lamp
-   maps. Where:
-       - a = offset (dark and the bias).
-       - b, b, c, d, e = higher order terms.
-       Specifically coefficient_image[i,j,:] = [e, d, c, b, a] (highest order terms first)
-
-   As each pixel is independent, a quartic fit calibration file (CF) of
-   dimensions 2k*2k*5 is constructed, with each layer containing one of the five
-   polynomial coefficients for each pixel.
+   Computes a non-linear photometric calibration of PUNCH images
 
    :param image: Image to be corrected.
    :type image: np.ndarray
@@ -68,19 +63,47 @@ Functions
    :returns: a photometrically corrected frame
    :rtype: np.ndarray
 
+   .. rubric:: Notes
+
+   Each instrument is subject to an independent non-linear photometric response,
+   which needs to be corrected. The module converts from raw camera digitizer
+   number (DN) to photometric units at each pixel. Each pixel is replaced with
+   the corresponding value of the quartic polynomial in the current CF data
+   product for that particular camera.
+
+   A quartic polynomial is applied as follows:
+
+   .. math:: X_{i,j} = a_{i,j}+b_{i,j}*DN_{i,j}+c_{i,j}*DN_{i,j}^2+d_{i,j}*DN_{i,j}^3+e_{i,j}*DN_{i,j}^4
+
+   for each pixel in the detector. Where each quantity (a, b, c, d, e) is a function
+   of pixel location (i,j), and is generated using dark current and Stim lamp
+   maps. a = offset (dark and the bias). b, b, c, d, e = higher order terms.
+   Specifically ``coefficient_image[i,j,:] = [e, d, c, b, a]`` (highest order terms first)
+
+   As each pixel is independent, a quartic fit calibration file (CF) of
+   dimensions 2k*2k*5 is constructed, with each layer containing one of the five
+   polynomial coefficients for each pixel.
+
    .. rubric:: Examples
 
-   # TODO: add example
+   >>> punch_image = np.ones((100,100))
+   >>> coefficient_image = create_coefficient_image(np.array([0, 0, 0, 1, 0]), punch_image.shape)
+   >>> data = photometric_calibration(punch_image, coefficient_image)
 
 
-.. py:function:: perform_quartic_fit_task(data_object: punchbowl.data.PUNCHData) -> punchbowl.data.PUNCHData
+.. py:function:: perform_quartic_fit_task(data_object: punchbowl.data.PUNCHData, quartic_coefficients_path: Optional[str] = None) -> punchbowl.data.PUNCHData
 
    Prefect task to perform the quartic fit calibration on the data
 
    :param data_object: a data object that needs calibration
    :type data_object: PUNCHData
+   :param quartic_coefficients_path: path to a  cube of coefficients as produced by `create_coefficients_image` or `create_ones_coefficients_image`,
+                                     skips correction if it is None
+   :type quartic_coefficients_path: Optional[str]
 
    :returns: modified version of the input with the quartic fit correction applied
    :rtype: PUNCHData
+
+   .. seealso:: :obj:`photometric_calibration`
 
 

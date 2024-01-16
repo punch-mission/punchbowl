@@ -544,21 +544,6 @@ document.write(`
 </tr>
 </tbody>
 </table>
-</section>
-<section id="attributes">
-<h3>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">#</a></h3>
-<table class="autosummary longtable table autosummary">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.level1.psf.THIS_DIRECTORY" title="punchbowl.level1.psf.THIS_DIRECTORY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">THIS_DIRECTORY</span></code></a></p></td>
-<td><p></p></td>
-</tr>
-</tbody>
-</table>
-<dl class="py data">
-<dt class="sig sig-object py" id="punchbowl.level1.psf.THIS_DIRECTORY">
-<span class="sig-prename descclassname"><span class="pre">punchbowl.level1.psf.</span></span><span class="sig-name descname"><span class="pre">THIS_DIRECTORY</span></span><a class="headerlink" href="#punchbowl.level1.psf.THIS_DIRECTORY" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="punchbowl.level1.psf.correct_psf">
 <span class="sig-prename descclassname"><span class="pre">punchbowl.level1.psf.</span></span><span class="sig-name descname"><span class="pre">correct_psf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">corrector</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">regularizepsf.corrector.ArrayCorrector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.035</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></span><a class="headerlink" href="#punchbowl.level1.psf.correct_psf" title="Link to this definition">#</a></dt>
@@ -566,13 +551,13 @@ document.write(`
 
 <dl class="py function">
 <dt class="sig sig-object py" id="punchbowl.level1.psf.correct_psf_task">
-<span class="sig-prename descclassname"><span class="pre">punchbowl.level1.psf.</span></span><span class="sig-name descname"><span class="pre">correct_psf_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pathlib.Path</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">THIS_DIRECTORY</span> <span class="pre">/</span> <span class="pre">'data'</span> <span class="pre">/</span> <span class="pre">'punch_array_corrector.h5'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></span><a class="headerlink" href="#punchbowl.level1.psf.correct_psf_task" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">punchbowl.level1.psf.</span></span><span class="sig-name descname"><span class="pre">correct_psf_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></span><a class="headerlink" href="#punchbowl.level1.psf.correct_psf_task" title="Link to this definition">#</a></dt>
 <dd><p>Prefect Task to correct the PSF of an iamge</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data_object</strong> (<a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><em>PUNCHData</em></a>) – data to operate on</p></li>
-<li><p><strong>model_path</strong> (<em>pathlib.Path</em>) – path to the PSF model to use in the correction</p></li>
+<li><p><strong>model_path</strong> (<em>str</em>) – path to the PSF model to use in the correction</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -635,9 +620,7 @@ document.write(`
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#attributes">Attributes</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.level1.psf.THIS_DIRECTORY"><code class="docutils literal notranslate"><span class="pre">THIS_DIRECTORY</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.level1.psf.correct_psf"><code class="docutils literal notranslate"><span class="pre">correct_psf()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.level1.psf.correct_psf_task"><code class="docutils literal notranslate"><span class="pre">correct_psf_task()</span></code></a></li>
 </ul>

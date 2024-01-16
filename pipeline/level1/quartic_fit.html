@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="../../_static/favicon.ico" rel="icon" type="image/x-icon">
-    <title>Level 0 &#8212; punchbowl 0.0.1 documentation</title>
+    <title>Quartic Fit &#8212; punchbowl 0.0.1 documentation</title>
   
   
   
@@ -39,11 +39,13 @@
     <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'pipeline/level0/index';</script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'pipeline/level1/quartic_fit';</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Test1" href="test1.html" />
-    <link rel="prev" title="Pipeline Overivew" href="../overview.html" />
+    <link rel="next" title="Level 2" href="../level2/index.html" />
+    <link rel="prev" title="Test2" href="test2.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -386,15 +388,15 @@ document.write(`
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="../overview.html">Pipeline Overivew</a></li>
-<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">Level 0</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="test1.html">Test1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="test2.html">Test2</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../level0/index.html">Level 0</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../level0/test1.html">Test1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../level0/test2.html">Test2</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../level1/index.html">Level 1</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../level1/test1.html">Test1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../level1/test2.html">Test2</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../level1/quartic_fit.html">Quartic Fit</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="index.html">Level 1</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="test1.html">Test1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="test2.html">Test2</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Quartic Fit</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../level2/index.html">Level 2</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
@@ -453,7 +455,10 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Pipeline</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Level 0</li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Level 1</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Quartic Fit</li>
   </ul>
 </nav>
 </div>
@@ -470,14 +475,26 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="level-0">
-<h1>Level 0<a class="headerlink" href="#level-0" title="Link to this heading">#</a></h1>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="test1.html">Test1</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test2.html">Test2</a></li>
-</ul>
-</div>
+  <section id="quartic-fit">
+<h1>Quartic Fit<a class="headerlink" href="#quartic-fit" title="Link to this heading">#</a></h1>
+<section id="concept">
+<h2>Concept<a class="headerlink" href="#concept" title="Link to this heading">#</a></h2>
+<p>The quartic fit correction takes care of the flat field, gain, and other pixel-by-pixel effects.
+There are five coefficients (a, b, c, d, e) for each pixel that define a function for correction:</p>
+<div class="math notranslate nohighlight">
+\[X_{i,j} = a_{i,j}+b_{i,j}*DN_{i,j}+c_{i,j}*DN_{i,j}^2+d_{i,j}*DN_{i,j}^3+e_{i,j}*DN_{i,j}^4\]</div>
+<p>For pixel at coordinate (i, j), the original image values in DN are corrected to be X using the five coefficients
+in a polynomial correction.</p>
+</section>
+<section id="applying-correction">
+<h2>Applying correction<a class="headerlink" href="#applying-correction" title="Link to this heading">#</a></h2>
+<p>The correction is carried out primarily in the <code class="docutils literal notranslate"><span class="pre">punchbowl.level1.quartic_fit.photometric_calibration</span></code> function:</p>
+<p>If you wish to incorporate this as a Prefect task in a custom pipeline,
+using something like the <code class="docutils literal notranslate"><span class="pre">punchbowl.level1.quartic_fit.perform_quartic_fit_task</span></code> is recommended.</p>
+</section>
+<section id="deriving-coefficients">
+<h2>Deriving coefficients<a class="headerlink" href="#deriving-coefficients" title="Link to this heading">#</a></h2>
+</section>
 </section>
 
 
@@ -491,20 +508,20 @@ document.write(`
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../overview.html"
+       href="test2.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Pipeline Overivew</p>
+        <p class="prev-next-title">Test2</p>
       </div>
     </a>
     <a class="right-next"
-       href="test1.html"
+       href="../level2/index.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Test1</p>
+        <p class="prev-next-title">Level 2</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -519,10 +536,24 @@ document.write(`
 
 
   <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#concept">Concept</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#applying-correction">Applying correction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#deriving-coefficients">Deriving coefficients</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
 
   
   <div class="tocsection editthispage">
-    <a href="https://github.com/punch-mission/punchbowl/edit/main/docs/source/pipeline/level0/index.rst">
+    <a href="https://github.com/punch-mission/punchbowl/edit/main/docs/source/pipeline/level1/quartic_fit.rst">
       <i class="fa-solid fa-pencil"></i>
       
       

@@ -39,6 +39,8 @@
     <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/punchbowl/level1/quartic_fit/index';</script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
@@ -539,10 +541,13 @@ document.write(`
 <tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.level1.quartic_fit.create_coefficient_image" title="punchbowl.level1.quartic_fit.create_coefficient_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_coefficient_image</span></code></a>(→ numpy.ndarray)</p></td>
 <td><p>Given a set of coefficients that should apply for every pixel,</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#punchbowl.level1.quartic_fit.photometric_calibration" title="punchbowl.level1.quartic_fit.photometric_calibration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">photometric_calibration</span></code></a>(→ numpy.ndarray)</p></td>
-<td><p>Computes a non-linear photometric callibration of PUNCH images</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#punchbowl.level1.quartic_fit.create_constant_quartic_coefficients" title="punchbowl.level1.quartic_fit.create_constant_quartic_coefficients"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_constant_quartic_coefficients</span></code></a>(→ numpy.ndarray)</p></td>
+<td><p>Creates a constant coefficients image that preserves the original values,</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.level1.quartic_fit.perform_quartic_fit_task" title="punchbowl.level1.quartic_fit.perform_quartic_fit_task"><code class="xref py py-obj docutils literal notranslate"><span class="pre">perform_quartic_fit_task</span></code></a>(→ punchbowl.data.PUNCHData)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#punchbowl.level1.quartic_fit.photometric_calibration" title="punchbowl.level1.quartic_fit.photometric_calibration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">photometric_calibration</span></code></a>(→ numpy.ndarray)</p></td>
+<td><p>Computes a non-linear photometric calibration of PUNCH images</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#punchbowl.level1.quartic_fit.perform_quartic_fit_task" title="punchbowl.level1.quartic_fit.perform_quartic_fit_task"><code class="xref py py-obj docutils literal notranslate"><span class="pre">perform_quartic_fit_task</span></code></a>(→ punchbowl.data.PUNCHData)</p></td>
 <td><p>Prefect task to perform the quartic fit calibration on the data</p></td>
 </tr>
 </tbody>
@@ -563,8 +568,29 @@ f(i,j) = a+b*IMG[i,j]+c*IMG[i,j]^2 would have flat_coefficients of [c, b, a]</p>
 <li><p><strong>image_shape</strong> (<em>tuple</em>) – A tuple of the shape of the image that will be calibrated using <cite>photometric_calibration</cite></p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>An image of coefficients that apply to every pixel as expected by <cite>photometric_calibration</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="punchbowl.level1.quartic_fit.create_constant_quartic_coefficients">
+<span class="sig-prename descclassname"><span class="pre">punchbowl.level1.quartic_fit.</span></span><span class="sig-name descname"><span class="pre">create_constant_quartic_coefficients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#punchbowl.level1.quartic_fit.create_constant_quartic_coefficients" title="Link to this definition">#</a></dt>
+<dd><p>Creates a constant coefficients image that preserves the original values,
+i.e. b = 1 and all other coefficients are 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>img_shape</strong> (<em>tuple</em><em>[</em><em>Int</em><em>]</em>) – size of the image to create the coefficients for</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An image of coefficients that apply to every pixel as expected by <cite>photometric_calibration</cite></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -572,29 +598,7 @@ f(i,j) = a+b*IMG[i,j]+c*IMG[i,j]^2 would have flat_coefficients of [c, b, a]</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="punchbowl.level1.quartic_fit.photometric_calibration">
 <span class="sig-prename descclassname"><span class="pre">punchbowl.level1.quartic_fit.</span></span><span class="sig-name descname"><span class="pre">photometric_calibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coefficient_image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#punchbowl.level1.quartic_fit.photometric_calibration" title="Link to this definition">#</a></dt>
-<dd><p>Computes a non-linear photometric callibration of PUNCH images</p>
-<p>Each instrument is subject to an independent non-linear photometric response,
-which needs to be corrected. The module converts from raw camera digitizer
-number (DN) to photometric units at each pixel. Each pixel is replaced with
-the corresponding value of the quartic polynomial in the current CF data
-product for that particular camera.</p>
-<dl class="simple">
-<dt>A quartic polynomial is applied as follows:</dt><dd><p>X[i,j]=a[i,j]+b[i,j]*DN[i,j]+c[i,j]*DN[i,j]^2+d[i,j]*DN[i,j]^3+e[i,j]*DN[i,j]^4</p>
-</dd>
-</dl>
-<p>for each pixel in the detector. Where each quantity (a, b, c, d, e) is a function
-of pixel location [i,j], and is generated using dark current and Stim lamp
-maps. Where:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>a = offset (dark and the bias).</p></li>
-<li><p>b, b, c, d, e = higher order terms.</p></li>
-</ul>
-<p>Specifically coefficient_image[i,j,:] = [e, d, c, b, a] (highest order terms first)</p>
-</div></blockquote>
-<p>As each pixel is independent, a quartic fit calibration file (CF) of
-dimensions 2k*2k*5 is constructed, with each layer containing one of the five
-polynomial coefficients for each pixel.</p>
+<dd><p>Computes a non-linear photometric calibration of PUNCH images</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -612,17 +616,41 @@ and counting down.</p></li>
 <dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>Each instrument is subject to an independent non-linear photometric response,
+which needs to be corrected. The module converts from raw camera digitizer
+number (DN) to photometric units at each pixel. Each pixel is replaced with
+the corresponding value of the quartic polynomial in the current CF data
+product for that particular camera.</p>
+<p>A quartic polynomial is applied as follows:</p>
+<div class="math notranslate nohighlight">
+\[X_{i,j} = a_{i,j}+b_{i,j}*DN_{i,j}+c_{i,j}*DN_{i,j}^2+d_{i,j}*DN_{i,j}^3+e_{i,j}*DN_{i,j}^4\]</div>
+<p>for each pixel in the detector. Where each quantity (a, b, c, d, e) is a function
+of pixel location (i,j), and is generated using dark current and Stim lamp
+maps. a = offset (dark and the bias). b, b, c, d, e = higher order terms.
+Specifically <code class="docutils literal notranslate"><span class="pre">coefficient_image[i,j,:]</span> <span class="pre">=</span> <span class="pre">[e,</span> <span class="pre">d,</span> <span class="pre">c,</span> <span class="pre">b,</span> <span class="pre">a]</span></code> (highest order terms first)</p>
+<p>As each pixel is independent, a quartic fit calibration file (CF) of
+dimensions 2k*2k*5 is constructed, with each layer containing one of the five
+polynomial coefficients for each pixel.</p>
 <p class="rubric">Examples</p>
-<p># TODO: add example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">punch_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coefficient_image</span> <span class="o">=</span> <span class="n">create_coefficient_image</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">punch_image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">photometric_calibration</span><span class="p">(</span><span class="n">punch_image</span><span class="p">,</span> <span class="n">coefficient_image</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="punchbowl.level1.quartic_fit.perform_quartic_fit_task">
-<span class="sig-prename descclassname"><span class="pre">punchbowl.level1.quartic_fit.</span></span><span class="sig-name descname"><span class="pre">perform_quartic_fit_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></span><a class="headerlink" href="#punchbowl.level1.quartic_fit.perform_quartic_fit_task" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">punchbowl.level1.quartic_fit.</span></span><span class="sig-name descname"><span class="pre">perform_quartic_fit_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">quartic_coefficients_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><span class="pre">punchbowl.data.PUNCHData</span></a></span></span><a class="headerlink" href="#punchbowl.level1.quartic_fit.perform_quartic_fit_task" title="Link to this definition">#</a></dt>
 <dd><p>Prefect task to perform the quartic fit calibration on the data</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data_object</strong> (<a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><em>PUNCHData</em></a>) – a data object that needs calibration</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_object</strong> (<a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData"><em>PUNCHData</em></a>) – a data object that needs calibration</p></li>
+<li><p><strong>quartic_coefficients_path</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – path to a  cube of coefficients as produced by <cite>create_coefficients_image</cite> or <cite>create_ones_coefficients_image</cite>,
+skips correction if it is None</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>modified version of the input with the quartic fit correction applied</p>
@@ -631,6 +659,10 @@ and counting down.</p></li>
 <dd class="field-odd"><p><a class="reference internal" href="../../data/index.html#punchbowl.data.PUNCHData" title="punchbowl.data.PUNCHData">PUNCHData</a></p>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#punchbowl.level1.quartic_fit.photometric_calibration" title="punchbowl.level1.quartic_fit.photometric_calibration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">photometric_calibration</span></code></a></p>
+</div>
 </dd></dl>
 
 </section>
@@ -686,6 +718,7 @@ and counting down.</p></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#functions">Functions</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.level1.quartic_fit.create_coefficient_image"><code class="docutils literal notranslate"><span class="pre">create_coefficient_image()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.level1.quartic_fit.create_constant_quartic_coefficients"><code class="docutils literal notranslate"><span class="pre">create_constant_quartic_coefficients()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.level1.quartic_fit.photometric_calibration"><code class="docutils literal notranslate"><span class="pre">photometric_calibration()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#punchbowl.level1.quartic_fit.perform_quartic_fit_task"><code class="docutils literal notranslate"><span class="pre">perform_quartic_fit_task()</span></code></a></li>
 </ul>

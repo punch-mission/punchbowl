@@ -4,3 +4,37 @@
 .. py:module:: punchbowl.level1.tests.test_flow
 
 
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.tests.test_flow.test_core_flow_runs_with_objects
+   punchbowl.level1.tests.test_flow.test_core_flow_runs_with_objects_and_calibration_files
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   punchbowl.level1.tests.test_flow.THIS_DIRECTORY
+
+
+.. py:data:: THIS_DIRECTORY
+
+   
+
+.. py:function:: test_core_flow_runs_with_objects(sample_punchdata)
+
+   Simply tests that the core flow runs with objects
+
+
+.. py:function:: test_core_flow_runs_with_objects_and_calibration_files(sample_punchdata)
+
+

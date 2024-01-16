@@ -60,7 +60,7 @@ Functions
    :param method: either "mean" or "median" depending on which measure should fill the deficient pixel
    :type method: str
 
-   :returns: * **bkg_subtracted_data** (*['punchbowl.data.PUNCHData']*) -- A background subtracted data frame
+   :returns: * *PUNCHData* -- A background subtracted data frame
              * **# TODO** (*exclude data if flagged in weight array*)
              * **# TODO** (*update meta data with input file and version of deficient pixel map*)
              * **# TODO** (*output weight - update weights*)

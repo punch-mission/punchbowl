@@ -15,6 +15,7 @@ Functions
 
    punchbowl.level1.tests.test_quartic_fit.fake_one_image
    punchbowl.level1.tests.test_quartic_fit.quartic_coefficients_image
+   punchbowl.level1.tests.test_quartic_fit.test_create_constant_coefficient_image
    punchbowl.level1.tests.test_quartic_fit.test_create_coeff_image_with_only_one_coeff
    punchbowl.level1.tests.test_quartic_fit.test_create_coeff_image_with_two_coeff
    punchbowl.level1.tests.test_quartic_fit.test_create_coefficient_image
@@ -35,6 +36,9 @@ Functions
 .. py:function:: quartic_coefficients_image()
 
    :rtype: Quartic coefficient image with flat_coefficients of [0, 1, 2, 3, 4]
+
+
+.. py:function:: test_create_constant_coefficient_image()
 
 
 .. py:function:: test_create_coeff_image_with_only_one_coeff()

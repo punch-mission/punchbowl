@@ -13,6 +13,11 @@ Level:
     Temporal Information:
     Instrument and Spacecraft State:
     World Coordinate System:
+        overrides:
+            CRPIX1: 0.0
+            CDELT1: 1.0
+            CRPIX1A: 0.0
+            CDELT1A: 1.0
     Camera and Readout State:
     Onboard Image Processing:
     Calibration Data:
@@ -29,9 +34,9 @@ Kinds:
     Polarized:
         overrides:
             NAXIS: 3
-            NAXIS1: 3
+            NAXIS1: 4096
             NAXIS2: 4096
-            NAXIS3: 4096
+            NAXIS3: 3
             OBS-MODE: Polar_MZP
             OBSLAYR1: Polar_M
             OBSLAYR2: Polar_Z
@@ -70,8 +75,8 @@ Products:
     PNN:
         kinds: [Polarized]
         overrides:
+            NAXIS1: 2048
             NAXIS2: 2048
-            NAXIS3: 2048
             TITLE: PUNCH Level-2 Polarized NFI Image
             OBSTYPE: Polarized NFI Image
             TYPECODE: PN

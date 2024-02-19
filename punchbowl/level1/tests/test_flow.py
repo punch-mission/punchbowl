@@ -28,8 +28,10 @@ def test_core_flow_runs_with_objects(sample_punchdata):
 
 def test_core_flow_runs_with_objects_and_calibration_files(sample_punchdata):
     quartic_coefficient_path = THIS_DIRECTORY / "data" / "test_quartic_coeffs.fits"
+    vignetting_path = THIS_DIRECTORY / "data" / "test_vignetting_function.fits"
 
     with prefect_test_harness():
         output = level1_core_flow(sample_punchdata(shape=(10, 10)),
-                                  quartic_coefficient_path=quartic_coefficient_path)
+                                  quartic_coefficient_path=quartic_coefficient_path,
+                                  vignetting_function_path=vignetting_path)
     assert isinstance(output[0], PUNCHData)

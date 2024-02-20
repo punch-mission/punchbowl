@@ -4,6 +4,7 @@ from astropy.io import fits
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
+from punchbowl.exceptions import InvalidDataError
 
 
 @task
@@ -25,21 +26,24 @@ def correct_vignetting_task(data_object: PUNCHData, vignetting_file: pathlib) ->
     logger = get_run_logger()
     logger.info("correct_vignetting started")
 
-    # TODO - Check for correct vignetting file (check spacecraft, etc?)
-    # TODO - Handle incorrect size array?
-    # TODO - Sort out vignetting function slice to take
+    if vignetting_file is None:
+        data_object.meta.history.add_now("LEVEL1-correct_vignetting", "Vignetting skipped")
+    elif not vignetting_file.exists():
+        raise InvalidDataError(f"File {vignetting_file} does not exist.")
+    else:
+        with fits.open(vignetting_file) as hdul:
+            vignetting_header = hdul[1].header
+            vignetting_function = hdul[1].data
 
-    if vignetting_file is not None:
-        if not vignetting_file.exists():
-            raise OSError(f"File {vignetting_file} does not exist.")
+        if vignetting_header['TELESCOP'] != data_object.meta['TELESCOP'].value:
+            raise InvalidDataError(f"Incorrect TELESCOP value within {vignetting_file}")
+        elif vignetting_header['OBSLAYR1'] != data_object.meta['OBSLAYR1'].value:
+            raise InvalidDataError(f"Incorrect polarization state within {vignetting_file}")
+        elif vignetting_function.shape != data_object.data.shape:
+            raise InvalidDataError(f"Incorrect vignetting function shape within {vignetting_file}")
         else:
-            with fits.open(vignetting_file) as hdul:
-                vignetting_function = hdul[1].data
-
             data_object.data[:,:] /= vignetting_function[:,:]
             data_object.meta.history.add_now("LEVEL1-correct_vignetting", "Vignetting corrected")
-    else:
-        data_object.meta.history.add_now("LEVEL1-correct_vignetting", "Vignetting skipped")
 
     logger.info("correct_vignetting finished")
     return data_object

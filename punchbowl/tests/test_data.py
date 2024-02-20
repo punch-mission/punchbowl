@@ -234,6 +234,29 @@ def sample_punchdata():
 
     return _sample_punchdata
 
+@fixture
+def sample_punchdata_clear():
+    """
+    Generate a sample PUNCHData object for testing
+    """
+
+    def _sample_punchdata_clear(shape=(50, 50)):
+        data = np.random.random(shape).astype(np.float32)
+        uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+        wcs.wcs.cunit = "deg", "deg"
+        wcs.wcs.cdelt = 0.1, 0.1
+        wcs.wcs.crpix = 0, 0
+        wcs.wcs.crval = 1, 1
+        wcs.wcs.cname = "HPC lon", "HPC lat"
+
+        meta = NormalizedMetadata.load_template("CR1", "0")
+        meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
+        return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+    return _sample_punchdata_clear
+
 
 @fixture
 def sample_punchdata_list(sample_punchdata):

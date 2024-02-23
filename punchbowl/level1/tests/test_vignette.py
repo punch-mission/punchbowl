@@ -50,7 +50,7 @@ def test_invalid_polarization_state(sample_punchdata: PUNCHData) -> None:
     """
 
     sample_data = sample_punchdata(shape=(10, 10))
-    vignetting_filename = THIS_DIRECTORY / "data" / "test_vignetting_function.fits"
+    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
 
     with disable_run_logger():
         with pytest.warns(UserWarning):
@@ -66,7 +66,7 @@ def test_invalid_telescope(sample_punchdata: PUNCHData) -> None:
 
     sample_data = sample_punchdata(shape=(10, 10))
     sample_data.meta['TELESCOP'].value = 'PUNCH-2'
-    vignetting_filename = THIS_DIRECTORY / "data" / "test_vignetting_function.fits"
+    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
 
     with disable_run_logger():
         with pytest.warns(UserWarning):
@@ -81,7 +81,7 @@ def test_invalid_data_file(sample_punchdata_clear: PUNCHData) -> None:
     """
 
     sample_data = sample_punchdata_clear(shape=(20, 20))
-    vignetting_filename = THIS_DIRECTORY / "data" / "test_vignetting_function.fits"
+    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
 
     with disable_run_logger():
         with pytest.raises(InvalidDataError):
@@ -95,7 +95,7 @@ def test_vignetting_correction(sample_punchdata_clear: PUNCHData) -> None:
     """
 
     sample_data = sample_punchdata_clear(shape=(10, 10))
-    vignetting_filename = THIS_DIRECTORY / "data" / "test_vignetting_function.fits"
+    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
 
     with disable_run_logger():
         corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)

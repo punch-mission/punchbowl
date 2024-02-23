@@ -61,9 +61,9 @@ def create_vignetting_test_data(path="../punchbowl/level1/tests/data/"):
     meta = NormalizedMetadata.load_template("GR1", "1")
     meta['DATE-OBS'] = str(datetime.now())
     wcs = WCS(naxis=2)
-    data = np.random.random((10, 10))
+    data = np.load('data/sample_vignetting.npy')
     obj = PUNCHData(data, wcs, meta)
-    file_path = os.path.join(path, "test_vignetting_function.fits")
+    file_path = os.path.join(path, obj.filename_base + '.fits')
     obj.write(file_path, overwrite=True, skip_wcs_conversion=True)
 
 

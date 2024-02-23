@@ -28,7 +28,7 @@ def test_core_flow_runs_with_objects(sample_punchdata):
 
 def test_core_flow_runs_with_objects_and_calibration_files(sample_punchdata_clear):
     quartic_coefficient_path = THIS_DIRECTORY / "data" / "test_quartic_coeffs.fits"
-    vignetting_path = THIS_DIRECTORY / "data" / "test_vignetting_function.fits"
+    vignetting_path = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
 
     with prefect_test_harness():
         output = level1_core_flow(sample_punchdata_clear(shape=(10, 10)),

@@ -30,8 +30,8 @@ def sample_data():
 
 @pytest.fixture()
 def sample_data_list():
-    number_elements=25
-    data_list=[]
+    number_elements = 25
+    data_list = []
     for iStep in range(number_elements):
         data_list.append(SAMPLE_FITS_PATH)
     return data_list

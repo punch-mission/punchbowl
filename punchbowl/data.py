@@ -11,16 +11,21 @@ import astropy.wcs.wcsapi
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
+import sunpy.map
 import yaml
+from astropy.coordinates import GCRS, EarthLocation, SkyCoord
 from astropy.io import fits
 from astropy.io.fits import Header
 from astropy.nddata import StdDevUncertainty
+from astropy.time import Time
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
+from sunpy.coordinates import frames, sun
+from sunpy.coordinates.sun import _sun_north_angle_to_z
+from sunpy.map import solar_angular_radius
 
 from punchbowl.errors import MissingMetadataError
-from punchbowl.exceptions import InvalidDataError
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -60,6 +65,56 @@ def load_spacecraft_def(path: t.Optional[str] = None) -> dict[str, t.Any]:
         path = get_data_path("spacecraft.yaml")
     with open(path, "r") as f:
         return yaml.safe_load(f)
+
+
+def extract_crota_from_wcs(wcs, is_3d=False):
+    index = 1 if is_3d else 0
+    return np.arctan2(wcs.wcs.pc[index+1, index], wcs.wcs.pc[index, index]) * u.rad
+
+
+def calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, data_shape):
+    is_3d = len(data_shape) == 3
+    index = 1 if is_3d else 0
+
+    # we're at the center of the Earth
+    test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
+    test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
+
+    # follow the SunPy tutorial from here
+    # https://docs.sunpy.org/en/stable/generated/gallery/units_and_coordinates/radec_to_hpc_map.html#sphx-glr-generated-gallery-units-and-coordinates-radec-to-hpc-map-py
+    reference_coord = SkyCoord(wcs_celestial.wcs.crval[index] * u.Unit(wcs_celestial.wcs.cunit[index]),
+                               wcs_celestial.wcs.crval[index+1] * u.Unit(wcs_celestial.wcs.cunit[index+1]),
+                               frame='gcrs',
+                               obstime=date_obs,
+                               obsgeoloc=test_gcrs.cartesian,
+                               obsgeovel=test_gcrs.velocity.to_cartesian(),
+                               distance=test_gcrs.hcrs.distance
+                               )
+
+    reference_coord_arcsec = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
+
+    cdelt1 = (np.abs(wcs_celestial.wcs.cdelt[index]) * u.deg).to(u.arcsec)
+    cdelt2 = (np.abs(wcs_celestial.wcs.cdelt[index+1]) * u.deg).to(u.arcsec)
+
+    geocentric = GCRS(obstime=date_obs)
+    p_angle = _sun_north_angle_to_z(geocentric)
+
+    crota = extract_crota_from_wcs(wcs_celestial, is_3d=is_3d)
+
+    new_header = sunpy.map.make_fitswcs_header(data_shape[index:], reference_coord_arcsec,
+                                               reference_pixel=u.Quantity([wcs_celestial.wcs.crpix[index] - 1,
+                                                                           wcs_celestial.wcs.crpix[index+1] - 1] * u.pixel),
+                                               scale=u.Quantity([cdelt1, cdelt2] * u.arcsec / u.pix),
+                                               rotation_angle=-p_angle-crota,
+                                               observatory='PUNCH',
+                                               projection_code='ARC')
+
+    wcs_helio = WCS(new_header)
+
+    if is_3d:
+        wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 0)
+
+    return wcs_helio, p_angle
 
 
 HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
@@ -611,8 +666,17 @@ class NormalizedMetadata(Mapping):
 
     @property
     def sections(self) -> t.List[str]:
-        """returns header keys"""
+        """returns header sections"""
         return list(self._contents.keys())
+
+    @property
+    def fits_keys(self) -> t.List[str]:
+        """returns fits keys in header template"""
+
+        def flatten(xss):
+            return [x for xs in xss for x in xs]
+
+        return flatten([list(self._contents[section_name].keys()) for section_name in self._contents.keys()])
 
     @property
     def history(self) -> History:
@@ -641,7 +705,7 @@ class NormalizedMetadata(Mapping):
         if not isinstance(key, str):
             raise TypeError(f"Keys for NormalizedMetadata must be strings. You provided {type(key)}.")
         if len(key) > 8:
-            raise ValueError("Keys must be <= 8 characters long")
+            raise ValueError(f"Keys must be <= 8 characters long, received {key}")
 
     def __setitem__(self, key: str, value: t.Any) -> None:
         """
@@ -878,7 +942,7 @@ class PUNCHData(NDCube):
             "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string
         )
 
-    def write(self, filename: str, overwrite: bool = True) -> None:
+    def write(self, filename: str, overwrite: bool = True, skip_wcs_conversion: bool=False) -> None:
         """Write PUNCHData elements to file
 
         Parameters
@@ -900,7 +964,7 @@ class PUNCHData(NDCube):
         """
 
         if filename.endswith(".fits"):
-            self._write_fits(filename, overwrite=overwrite)
+            self._write_fits(filename, overwrite=overwrite, skip_wcs_conversion=skip_wcs_conversion)
         elif filename.endswith((".png", ".jpg", ".jpeg")):
             self._write_ql(filename, overwrite=overwrite)
         else:
@@ -909,7 +973,55 @@ class PUNCHData(NDCube):
                 f"Found: {os.path.splitext(filename)[1]}"
             )
 
-    def _write_fits(self, filename: str, overwrite: bool=True) -> None:
+    def construct_wcs_header_fields(self) -> Header:
+        """Computes primary and secondary WCS header cards to add to a data object
+
+        Returns
+        -------
+        Header
+
+        """
+        date_obs = Time(self.meta.datetime)
+
+        celestial_wcs_header = self.wcs.to_header()
+        output_header = astropy.io.fits.Header()
+
+        unused_keys = ['DATE-OBS', 'DATE-BEG', 'DATE-AVG', 'DATE-END', 'DATE',
+                       'MJD-OBS', 'TELAPSE', 'RSUN_REF', 'TIMESYS']
+
+        helio_wcs, p_angle = calculate_helio_wcs_from_celestial(wcs_celestial=self.wcs,
+                                                       date_obs=date_obs,
+                                                       data_shape=self.data.shape)
+
+        helio_wcs_header = helio_wcs.to_header()
+
+        for key in unused_keys:
+            if key in celestial_wcs_header:
+                del celestial_wcs_header[key]
+            if key in helio_wcs_header:
+                del helio_wcs_header[key]
+
+        if self.meta['CTYPE1'] is not None:
+            for key, value in helio_wcs.to_header().items():
+                output_header[key] = value
+        if self.meta['CTYPE1A'] is not None:
+            for key, value in celestial_wcs_header.items():
+                output_header[key + 'A'] = value
+
+        index = 1 if len(self.data.shape) == 3 else 0
+        center_helio_coord = SkyCoord(helio_wcs.wcs.crval[index]*u.deg,
+                                      helio_wcs.wcs.crval[index+1]*u.deg,
+                                      frame=frames.Helioprojective,
+                                      obstime=date_obs,
+                                      observer='earth')
+
+        output_header['RSUN_ARC'] = solar_angular_radius(center_helio_coord).value
+        output_header['SOLAR_EP'] = p_angle.value
+        output_header['CAR_ROT'] = float(sun.carrington_rotation_number(t=date_obs))
+
+        return output_header
+
+    def _write_fits(self, filename: str, overwrite: bool=True, skip_wcs_conversion: bool=False) -> None:
         """Write PUNCHData elements to FITS files
 
         Parameters
@@ -929,26 +1041,28 @@ class PUNCHData(NDCube):
         header = self.meta.to_fits_header()
 
         # update the header with the WCS
-        wcs_header = self.wcs.to_header()
-        for k, v in wcs_header.items():
-            if k in header:
-                header[k] = v
+        if skip_wcs_conversion:
+            wcs_header = self.wcs.to_header()
+        else:
+            wcs_header = self.construct_wcs_header_fields()
+        for key, value in wcs_header.items():
+            if key in header:
+                header[key] = (self.meta[key]._datatype)(value)
+                self.meta[key] = (self.meta[key]._datatype)(value)
 
         hdul_list = []
-
         hdu_dummy = fits.PrimaryHDU()
         hdul_list.append(hdu_dummy)
 
-        hdu_data = fits.CompImageHDU(data=self.data, header=header)
+        hdu_data = fits.CompImageHDU(data=self.data, header=header, name='Primary data array')
         hdul_list.append(hdu_data)
 
         if self.uncertainty is not None:
-            hdu_uncertainty = fits.CompImageHDU(data=self.uncertainty.array)
-            hdu_uncertainty.header["BITPIX"] = 8
+            hdu_uncertainty = fits.CompImageHDU(data=self.uncertainty.array, name='Uncertainty array')
+            hdu_uncertainty.header['BITPIX'] = 8
             # write WCS to uncertainty header
-            for k, v in wcs_header.items():
-                if k in hdu_uncertainty.header:
-                    hdu_uncertainty.header[k] = v
+            for key, value in wcs_header.items():
+                hdu_uncertainty.header[key] = value
             hdul_list.append(hdu_uncertainty)
 
         hdul = fits.HDUList(hdul_list)
@@ -993,8 +1107,8 @@ class PUNCHData(NDCube):
 
         # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
 
-        if not np.any(self.data) or np.all(np.isnan(self.data)) or np.all(np.isinf(self.data)):
-            raise InvalidDataError("Input data array expected to contain real, non-zero data.")
+        # if not np.any(self.data) or np.all(np.isnan(self.data)) or np.all(np.isinf(self.data)):
+        #     raise InvalidDataError("Input data array expected to contain real, non-zero data.")
 
         self.meta["DATAZER"] = len(np.where(self.data == 0)[0])
 
@@ -1002,18 +1116,25 @@ class PUNCHData(NDCube):
 
         nonzero_data = self.data[np.where(self.data != 0)].flatten()
 
-        self.meta["DATAAVG"] = np.mean(nonzero_data).item()
-        self.meta["DATAMDN"] = np.median(nonzero_data).item()
-        self.meta["DATASIG"] = np.std(nonzero_data).item()
+        if len(nonzero_data) > 0:
+            self.meta["DATAAVG"] = np.nanmean(nonzero_data).item()
+            self.meta["DATAMDN"] = np.nanmedian(nonzero_data).item()
+            self.meta["DATASIG"] = np.nanstd(nonzero_data).item()
+        else:
+            self.meta['DATAAVG'] = -999.0
+            self.meta['DATAMDN'] = -999.0
+            self.meta['DATASIG'] = -999.0
 
         percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
-        percentile_values = np.percentile(nonzero_data, percentile_percentages)
+        percentile_values = np.nanpercentile(nonzero_data, percentile_percentages)
+        if np.any(np.isnan(percentile_values)):  # report nan if any of the values are nan
+            percentile_values = [-999.0 for _ in percentile_percentages]
 
         for percent, value in zip(percentile_percentages, percentile_values):
             self.meta[f"DATAP{percent:02d}"] = value
 
-        self.meta["DATAMIN"] = float(self.data.min().item())
-        self.meta["DATAMAX"] = float(self.data.max().item())
+        self.meta["DATAMIN"] = float(np.nanmin(self.data))
+        self.meta["DATAMAX"] = float(np.nanmax(self.data))
 
     def duplicate_with_updates(self,
                                data: t.Optional[np.ndarray] = None,

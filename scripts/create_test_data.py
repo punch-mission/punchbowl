@@ -57,9 +57,19 @@ def create_quartic_coefficients_test_data(path="../punchbowl/level1/tests/data/"
     file_path = os.path.join(path, "test_quartic_coeffs.fits")
     obj.write(file_path, overwrite=True, skip_wcs_conversion=True)
 
+def create_vignetting_test_data(path="../punchbowl/level1/tests/data/"):
+    meta = NormalizedMetadata.load_template("GR1", "1")
+    meta['DATE-OBS'] = str(datetime.now())
+    wcs = WCS(naxis=2)
+    data = np.load('data/sample_vignetting.npy')
+    obj = PUNCHData(data, wcs, meta)
+    file_path = os.path.join(path, obj.filename_base + '.fits')
+    obj.write(file_path, overwrite=True, skip_wcs_conversion=True)
+
 
 if __name__ == "__main__":
     create_header_validation_test_data()
     create_f_corona_test_data()
     create_punchdata_test_data()
     create_quartic_coefficients_test_data()
+    create_vignetting_test_data()

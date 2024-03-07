@@ -17,6 +17,7 @@ from punchbowl.util import load_image_task, output_image_task
 @flow(validate_parameters=False)
 def level1_core_flow(input_data: Union[str, PUNCHData],
                      quartic_coefficient_path: Optional[str] = None,
+                     vignetting_function_path: Optional[str] = None,
                      deficient_pixel_map: Optional[PUNCHData] = None,
                      output_filename: Optional[str] = None) -> List[PUNCHData]:
     """Core flow for level 1
@@ -44,7 +45,7 @@ def level1_core_flow(input_data: Union[str, PUNCHData],
     data = perform_quartic_fit_task(data, quartic_coefficient_path)
     data = despike_task(data)
     data = destreak_task(data)
-    data = correct_vignetting_task(data)
+    data = correct_vignetting_task(data, vignetting_function_path)
     data = remove_deficient_pixels_task(data, deficient_pixel_map)
     data = remove_stray_light_task(data)
     data = align_task(data)

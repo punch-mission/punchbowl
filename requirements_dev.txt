@@ -14,8 +14,12 @@ scipy
 lmfit
 scikit-image
 reproject
+pylibjpeg
 python-dateutil
+pyyaml
+
 ruff
 pytest
 coverage
 hypothesis
+pre-commit

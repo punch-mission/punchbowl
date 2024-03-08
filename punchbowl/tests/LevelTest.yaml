@@ -1,0 +1,38 @@
+# Level specification
+Level:
+    Section 1:
+        overrides:
+            DESCRPTN: Tester
+    Section 2:
+        omits: [KEYOMIT1, KEYOMIT2]
+    Section 3:
+    Section 4:
+
+# Kind specifications
+Kinds:
+    Kind1:
+        overrides:
+            KEYALTER: 2
+
+    Kind2:
+        overrides:
+            KEYALTER: 3
+
+    KindA:
+        overrides:
+            OTHERKEY: Test
+
+    KindB:
+        overrides:
+            OTHERKEY: No test
+
+
+# Product specifications
+Products:
+    AB?:
+        kinds: [Kind1, KindA]
+        overrides:
+            TITLE: 'My name is {craftname}'
+
+    CB1:
+        kinds: [Kind2, KindB]

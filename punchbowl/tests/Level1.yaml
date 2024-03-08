@@ -1,0 +1,7 @@
+LEVEL:
+    'FITS Required': True
+    'Description': True
+    'History': True
+
+CL1:
+    'TITLE': 'Test'

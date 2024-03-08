@@ -63,7 +63,10 @@ def mean_correct(data_array: np.ndarray,
             number_good_px = np.sum(cell_neighbors(mask_array, x_i, y_i, window_size=window_size))
             if window_size > max_window_size:
                 break
-        output_data_array[x_i, y_i] = np.sum(cell_neighbors(data_array, x_i, y_i, window_size=window_size))/number_good_px
+        output_data_array[x_i, y_i] = np.sum(cell_neighbors(data_array,
+                                                            x_i,
+                                                            y_i,
+                                                            window_size=window_size))/number_good_px
 
     return output_data_array
 
@@ -122,8 +125,7 @@ def remove_deficient_pixels_task(data: PUNCHData,
 
     Returns
     -------
-
-    bkg_subtracted_data : ['punchbowl.data.PUNCHData']
+    PUNCHData
         A background subtracted data frame
 
     # TODO: exclude data if flagged in weight array
@@ -137,10 +139,7 @@ def remove_deficient_pixels_task(data: PUNCHData,
 
     # todo : remove these references in favor of using the data directly
     data_array = data.data
-    output_wcs = data.wcs
-    output_meta = data.meta
     output_uncertainty = data.uncertainty
-    output_mask = data.mask
 
     deficient_pixel_array=deficient_pixel_map.data
 
@@ -184,4 +183,3 @@ def remove_deficient_pixels_task(data: PUNCHData,
 def create_all_valid_deficient_pixel_map(data: PUNCHData) -> PUNCHData:
     mask_array = np.ones_like(data.data)
     return data.duplicate_with_updates(data=mask_array)
-

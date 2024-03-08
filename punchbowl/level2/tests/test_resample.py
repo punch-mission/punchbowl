@@ -1,15 +1,12 @@
 # Core Python imports
 # Third party imports
 import pytest
-from prefect.testing.utilities import prefect_test_harness
 from astropy.wcs import WCS
+from prefect.testing.utilities import prefect_test_harness
 
-# punchbowl imports
-from punchbowl.tests.test_data import (sample_wcs,
-                                       sample_data_random,
-                                       sample_punchdata,
-                                       sample_punchdata_list)
 from punchbowl.level2.resample import reproject_array, reproject_many_flow
+# punchbowl imports
+from punchbowl.tests.test_data import sample_data_random, sample_punchdata, sample_punchdata_list, sample_wcs
 
 
 @pytest.mark.parametrize("crpix, crval, cdelt",
@@ -32,7 +29,7 @@ def test_reproject_many_flow(sample_punchdata_list):
     trefoil_wcs = WCS("level2/data/trefoil_hdr.fits")
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
 
-    trefoil_shape = (4096, 4096)
+    trefoil_shape = (128, 128)
     with prefect_test_harness():
         output = reproject_many_flow(sample_punchdata_list, trefoil_wcs, trefoil_shape)
     for result in output:

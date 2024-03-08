@@ -1,0 +1,14 @@
+SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
+0,section,COMMENT,Section 1,,str,FALSE,FALSE,
+0,keyword,DESCRPTN,Empty Value,Comment,str,FALSE,FALSE,
+1,section,COMMENT,Section 2,,str,FALSE,FALSE,
+1,keyword,KEYFILL,Always Present,With a Comment,str,FALSE,FALSE,
+1,keyword,KEYOMIT1,Skip this,and its comment,str,FALSE,FALSE,
+1,keyword,KEYOMIT2,Skip this too,and its comment,str,FALSE,FALSE,
+2,section,COMMENT,Section 3,,str,FALSE,FALSE,
+2,keyword,KEYALTER,1,a key to alter,int,TRUE,FALSE,100
+3,section,COMMENT,Section 4,,str,FALSE,FALSE,
+3,keyword,OTHERKEY,empty,blargh,str,FALSE,FALSE,
+3,keyword,TITLE,A default value,with a default comment,str,FALSE,FALSE,
+4,section,COMMENT,Section 5,,str,FALSE,FALSE
+4,keyword,IGNORE,ignored,ignored,str,FALSE,FALSE

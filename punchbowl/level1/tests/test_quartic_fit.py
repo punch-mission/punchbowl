@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
 from pytest import fixture
+
 from punchbowl.level1.quartic_fit import (
-    photometric_calibration,
     create_coefficient_image,
+    create_constant_quartic_coefficients,
+    photometric_calibration,
 )
 
 
@@ -33,6 +35,16 @@ def quartic_coefficients_image():
     flat_coeffs = np.array([0, 1, 2, 3, 4])
     image_shape = (10, 10)
     return create_coefficient_image(flat_coeffs, image_shape)
+
+
+def test_create_constant_coefficient_image():
+    image_shape = (10, 20)
+    coeffs = create_constant_quartic_coefficients(image_shape)
+    assert coeffs.shape[:-1] == image_shape
+    assert coeffs.shape[-1] == 5
+    for i in [0, 1, 2, 4]:
+        assert np.all(coeffs[:, :, i] == 0)
+    assert np.all(coeffs[:, :, 3] == 1)
 
 
 def test_create_coeff_image_with_only_one_coeff():

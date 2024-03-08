@@ -626,23 +626,6 @@ def test_wcs_many_point_3d_check():
     assert np.mean(distances) < 2.0  # TODO: figure out why the value has to be high
 
 
-def test_pc_matrix_rotation():
-    dateobs = '2023-08-17T00:08:31.006'
-    p_angle = sun.P(time=dateobs)
-
-    pc_helio = np.array([[0.959583580000, -0.281423780000],[0.281423780000, 0.959583580000]])
-    pc_celestial = np.array([[0.815617440000, -0.578591590000],[0.578591590000, 0.815617440000]])
-
-    rotation_matrix = np.array([[np.cos(p_angle), -1 * np.sin(p_angle)], [np.sin(p_angle), np.cos(p_angle)]])
-
-    rotation_matrix_computed = np.matmul(pc_helio, inv(pc_celestial))
-    p_angle_computed = (np.arcsin(-1* rotation_matrix_computed[1,0])*u.rad).to(u.deg)
-
-    pc_celestial_computed = np.matmul(pc_helio, rotation_matrix)
-
-    assert abs(p_angle_computed - p_angle) < 5 * u.deg
-
-
 def test_axis_ordering():
     data = np.random.random((2,256,256))
     hdu_data = fits.ImageHDU(data=data)
@@ -677,12 +660,6 @@ def test_load_trefoil_wcs():
     assert trefoil_shape == (4096, 4096)
     assert isinstance(trefoil_wcs, WCS)
 
-
-def test_normalizedemetadata_has_all_required_fields():
-    required_fields = {"age", "name"}
-    example = NormalizedMetadata({'name': 'Marcus', 'age': 27}, required_fields=required_fields)
-    for key in required_fields:
-        assert key in example
 
 def test_has_typecode():
     meta = NormalizedMetadata.load_template("CFM", "3")

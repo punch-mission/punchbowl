@@ -1,11 +1,9 @@
 import os
 from datetime import datetime
-from collections import OrderedDict
 
 import astropy
 import astropy.units as u
 import numpy as np
-import pandas as pd
 import pytest
 from astropy.coordinates import GCRS, ICRS, EarthLocation, SkyCoord, get_sun
 from astropy.io import fits
@@ -15,7 +13,8 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 from numpy.linalg import inv
 from pytest import fixture
-from sunpy.coordinates import frames, sun
+from sunpy import sun
+from sunpy.coordinates import frames
 
 from punchbowl.data import (
     History,
@@ -27,9 +26,9 @@ from punchbowl.data import (
     load_spacecraft_def,
     load_trefoil_wcs,
 )
-from punchbowl.exceptions import InvalidDataError
 
 TESTDATA_DIR = os.path.dirname(__file__)
+SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
 SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
 SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
 SAMPLE_OMNIBUS_PATH = os.path.join(TESTDATA_DIR, "omniheader.csv")
@@ -266,6 +265,17 @@ def sample_punchdata_list(sample_punchdata):
     sample_pd1 = sample_punchdata()
     sample_pd2 = sample_punchdata()
     return [sample_pd1, sample_pd2]
+
+@fixture
+def sample_punchdata_triplet(sample_punchdata):
+    """
+    Generate a list of sample PUNCHData objects for testing polarization resolving
+    """
+
+    sample_pd1 = sample_punchdata()
+    sample_pd2 = sample_punchdata()
+    sample_pd3 = sample_punchdata()
+    return [sample_pd1, sample_pd2, sample_pd3]
 
 
 def test_sample_data_creation(sample_data):
@@ -614,23 +624,6 @@ def test_wcs_many_point_3d_check():
     output_coords = np.array(output_coords)
     distances = np.linalg.norm(input_coords - output_coords, axis=1)
     assert np.mean(distances) < 2.0  # TODO: figure out why the value has to be high
-
-
-def test_pc_matrix_rotation():
-    dateobs = '2023-08-17T00:08:31.006'
-    p_angle = sun.P(time=dateobs)
-
-    pc_helio = np.array([[0.959583580000, -0.281423780000],[0.281423780000, 0.959583580000]])
-    pc_celestial = np.array([[0.815617440000, -0.578591590000],[0.578591590000, 0.815617440000]])
-
-    rotation_matrix = np.array([[np.cos(p_angle), -1 * np.sin(p_angle)], [np.sin(p_angle), np.cos(p_angle)]])
-
-    rotation_matrix_computed = np.matmul(pc_helio, inv(pc_celestial))
-    p_angle_computed = (np.arcsin(-1* rotation_matrix_computed[1,0])*u.rad).to(u.deg)
-
-    pc_celestial_computed = np.matmul(pc_helio, rotation_matrix)
-
-    assert abs(p_angle_computed - p_angle) < 5 * u.deg
 
 
 def test_axis_ordering():

@@ -1,11 +1,9 @@
 import os
 from datetime import datetime
-from collections import OrderedDict
 
 import astropy
 import astropy.units as u
 import numpy as np
-import pandas as pd
 import pytest
 from astropy.coordinates import GCRS, ICRS, EarthLocation, SkyCoord, get_sun
 from astropy.io import fits
@@ -13,12 +11,21 @@ from astropy.nddata import StdDevUncertainty
 from astropy.time import Time
 from astropy.wcs import WCS
 from ndcube import NDCube
+from numpy.linalg import inv
 from pytest import fixture
+from sunpy import sun
+from sunpy.coordinates import frames
 
-from punchbowl.data import (HEADER_TEMPLATE_COLUMNS,
-                            PUNCH_REQUIRED_META_FIELDS, HeaderTemplate,
-                            History, HistoryEntry, NormalizedMetadata,
-                            PUNCHData)
+from punchbowl.data import (
+    History,
+    HistoryEntry,
+    MetaField,
+    NormalizedMetadata,
+    PUNCHData,
+    calculate_helio_wcs_from_celestial,
+    load_spacecraft_def,
+    load_trefoil_wcs,
+)
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -681,4 +688,3 @@ def test_has_typecode():
     meta = NormalizedMetadata.load_template("CFM", "3")
     meta["DATE-OBS"] = str(datetime.now())
     assert "TYPECODE" in meta
-

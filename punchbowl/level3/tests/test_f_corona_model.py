@@ -118,6 +118,17 @@ def test_basic_subtraction(one_data: PUNCHData, zero_data: PUNCHData) -> None:
 
 
 @pytest.mark.prefect_test()
+def test_empty_list() -> None:
+    """
+    dataset of increasing values passed in, a bad pixel map is passed in
+    """
+    with pytest.raises(ValueError):
+        input_list = []
+        with disable_run_logger():
+            f_corona_model = construct_f_corona_background.fn(input_list)
+
+
+@pytest.mark.prefect_test()
 def test_create_simple_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in

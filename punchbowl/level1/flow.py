@@ -44,7 +44,7 @@ def level1_core_flow(input_data: Union[str, PUNCHData],
         deficient_pixel_map = create_all_valid_deficient_pixel_map(data)
 
     data = perform_quartic_fit_task(data, quartic_coefficient_path)
-    data = despike_task(data)
+    data = despike_task(data)  # TODO: allow configuration of the run with different despike options
     data = destreak_task(data)
     data = correct_vignetting_task(data, vignetting_function_path)
     data = remove_deficient_pixels_task(data, deficient_pixel_map)

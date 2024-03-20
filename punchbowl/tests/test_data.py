@@ -359,7 +359,8 @@ def test_generate_data_statistics(sample_punchdata):
 
 def test_read_write_uncertainty_data(sample_punchdata):
     sample_data = sample_punchdata()
-    uncertainty = StdDevUncertainty(np.sqrt(np.abs(sample_data.data)).astype('uint8'))
+    sqrt_data_array = np.sqrt(np.abs(sample_data.data))
+    uncertainty = StdDevUncertainty(np.interp(sqrt_data_array, (sqrt_data_array.min(), sqrt_data_array.max()), (0,1)).astype('float'))
     sample_data.uncertainty = uncertainty
 
     sample_data.write(SAMPLE_WRITE_PATH)
@@ -372,8 +373,8 @@ def test_read_write_uncertainty_data(sample_punchdata):
 
     assert fitsio_read_header['BITPIX'] == 8
 
-    assert sample_data.uncertainty.array.dtype == 'uint8'
-    assert pdata_read_data.uncertainty.array.dtype == 'uint8'
+    assert sample_data.uncertainty.array.dtype == 'float'
+    assert pdata_read_data.uncertainty.array.dtype == 'float'
     assert fitsio_read_uncertainty.dtype == 'uint8'
 
 

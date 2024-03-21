@@ -22,7 +22,7 @@ def correct_psf_task(
     data_object: PUNCHData,
     model_path: t.Optional[str] = None,
 ) -> PUNCHData:
-    """ Prefect Task to correct the PSF of an iamge
+    """Prefect Task to correct the PSF of an iamge
 
     Parameters
     ----------

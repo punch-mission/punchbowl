@@ -33,9 +33,9 @@ def correct_vignetting_task(data_object: PUNCHData, vignetting_file: pathlib) ->
     else:
         vignetting_function = PUNCHData.from_fits(vignetting_file)
 
-        if vignetting_function.meta['TELESCOP'].value != data_object.meta['TELESCOP'].value:
+        if vignetting_function.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
             warnings.warn(f"Incorrect TELESCOP value within {vignetting_file}", UserWarning)
-        elif vignetting_function.meta['OBSLAYR1'].value != data_object.meta['OBSLAYR1'].value:
+        elif vignetting_function.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
             warnings.warn(f"Incorrect polarization state within {vignetting_file}", UserWarning)
         elif vignetting_function.data.shape != data_object.data.shape:
             raise InvalidDataError(f"Incorrect vignetting function shape within {vignetting_file}")

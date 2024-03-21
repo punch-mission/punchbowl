@@ -15,12 +15,14 @@ from punchbowl.util import load_image_task, output_image_task
 
 
 @flow(validate_parameters=False)
-def level1_core_flow(input_data: Union[str, PUNCHData],
-                     quartic_coefficient_path: Optional[str] = None,
-                     vignetting_function_path: Optional[str] = None,
-                     stray_light_path: Optional[str] = None,
-                     deficient_pixel_map: Optional[PUNCHData] = None,
-                     output_filename: Optional[str] = None) -> List[PUNCHData]:
+def level1_core_flow(
+    input_data: Union[str, PUNCHData],
+    quartic_coefficient_path: Optional[str] = None,
+    vignetting_function_path: Optional[str] = None,
+    stray_light_path: Optional[str] = None,
+    deficient_pixel_map: Optional[PUNCHData] = None,
+    output_filename: Optional[str] = None,
+) -> List[PUNCHData]:
     """Core flow for level 1
 
     Parameters

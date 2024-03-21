@@ -6,9 +6,7 @@ from prefect import get_run_logger, task
 from punchbowl.data import PUNCHData
 
 
-def create_coefficient_image(
-    flat_coefficients: np.ndarray, image_shape: tuple
-) -> np.ndarray:
+def create_coefficient_image(flat_coefficients: np.ndarray, image_shape: tuple) -> np.ndarray:
     """Given a set of coefficients that should apply for every pixel,
         converts them to the required coefficient_image format.
 
@@ -26,9 +24,7 @@ def create_coefficient_image(
     np.ndarray
         An image of coefficients that apply to every pixel as expected by `photometric_calibration`
     """
-    return np.stack(
-        [np.ones(image_shape) * coeff for coeff in flat_coefficients], axis=2
-    )
+    return np.stack([np.ones(image_shape) * coeff for coeff in flat_coefficients], axis=2)
 
 
 def create_constant_quartic_coefficients(img_shape: tuple) -> np.ndarray:
@@ -48,10 +44,7 @@ def create_constant_quartic_coefficients(img_shape: tuple) -> np.ndarray:
     return create_coefficient_image(np.array([0, 0, 0, 1, 0]), img_shape)
 
 
-def photometric_calibration(
-        image: np.ndarray,
-        coefficient_image: np.ndarray
-) -> np.ndarray:
+def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) -> np.ndarray:
     """Computes a non-linear photometric calibration of PUNCH images
 
     Parameters
@@ -111,10 +104,7 @@ def photometric_calibration(
     # find the number of quartic fit coefficients
     num_coefficients = coefficient_image.shape[2]
     return np.sum(
-        [
-            coefficient_image[..., i] * np.power(image, num_coefficients - i - 1)
-            for i in range(num_coefficients)
-        ],
+        [coefficient_image[..., i] * np.power(image, num_coefficients - i - 1) for i in range(num_coefficients)],
         axis=0,
     )
 
@@ -148,8 +138,9 @@ def perform_quartic_fit_task(data_object: PUNCHData, quartic_coefficients_path: 
         quartic_coefficients = PUNCHData.from_fits(quartic_coefficients_path)
         new_data = photometric_calibration(data_object.data, quartic_coefficients.data)
         data_object = data_object.duplicate_with_updates(data=new_data)
-        data_object.meta.history.add_now("LEVEL1-quartic_fit",
-                                         f"Quartic fit correction completed with {quartic_coefficients_path}")
+        data_object.meta.history.add_now(
+            "LEVEL1-quartic_fit", f"Quartic fit correction completed with {quartic_coefficients_path}"
+        )
     else:
         data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction skipped since path is empty")
 

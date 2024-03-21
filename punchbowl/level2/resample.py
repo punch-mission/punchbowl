@@ -13,10 +13,7 @@ from punchbowl.data import PUNCHData
 
 
 @task
-def reproject_array(input_array: np.ndarray,
-                    input_wcs: WCS,
-                    output_wcs: WCS,
-                    output_shape: tuple) -> np.ndarray:
+def reproject_array(input_array: np.ndarray, input_wcs: WCS, output_wcs: WCS, output_shape: tuple) -> np.ndarray:
     """Core reprojection function
 
     Core reprojection function of the PUNCH mosaic generation module.
@@ -55,21 +52,20 @@ def reproject_array(input_array: np.ndarray,
     reconstructed_wcs.wcs.crval = input_wcs.wcs.crval
     reconstructed_wcs.wcs.cname = "HPC lon", "HPC lat"
 
-    return reproject.reproject_adaptive((input_array, reconstructed_wcs),
-                                        output_wcs,
-                                        output_shape,
-                                        roundtrip_coords=False,
-                                        return_footprint=False)
+    return reproject.reproject_adaptive(
+        (input_array, reconstructed_wcs), output_wcs, output_shape, roundtrip_coords=False, return_footprint=False
+    )
 
 
 @flow(validate_parameters=False)
 def reproject_many_flow(data: List[PUNCHData], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> List[PUNCHData]:
     # TODO: add docstring
-    data_result = [reproject_array.submit(d.data, d.wcs, trefoil_wcs, trefoil_shape)
-                   for d in data]
-    uncertainty_result = [reproject_array.submit(d.uncertainty.array, d.wcs, trefoil_wcs, trefoil_shape)
-                          for d in data]
+    data_result = [reproject_array.submit(d.data, d.wcs, trefoil_wcs, trefoil_shape) for d in data]
+    uncertainty_result = [reproject_array.submit(d.uncertainty.array, d.wcs, trefoil_wcs, trefoil_shape) for d in data]
 
-    return [d.duplicate_with_updates(data=data_result[i].result(),
-                                     uncertainty=StdDevUncertainty(uncertainty_result[i].result()),
-                                     wcs=trefoil_wcs) for i, d in enumerate(data)]
+    return [
+        d.duplicate_with_updates(
+            data=data_result[i].result(), uncertainty=StdDevUncertainty(uncertainty_result[i].result()), wcs=trefoil_wcs
+        )
+        for i, d in enumerate(data)
+    ]

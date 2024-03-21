@@ -8,14 +8,15 @@ from punchbowl.data import PUNCHData
 
 
 def find_spikes(
-                data: np.ndarray,
-                uncertainty: np.ndarray,
-                threshold: float = 4,
-                required_yes: int = 6,
-                veto_limit: int = 2,
-                diff_method: str = 'sigma',
-                dilation: int = 0,
-                index_of_interest: t.Optional[int] = None):
+    data: np.ndarray,
+    uncertainty: np.ndarray,
+    threshold: float = 4,
+    required_yes: int = 6,
+    veto_limit: int = 2,
+    diff_method: str = "sigma",
+    dilation: int = 0,
+    index_of_interest: t.Optional[int] = None,
+):
     """Identifies bright structures in temporal series of images
     Given a time sequence of images, identify "spikes" that exceed a
     threshold in a single frame.
@@ -110,13 +111,13 @@ def find_spikes(
         raise ValueError("`data` must be a 3-D array")
 
     # test if odd number of frames, or if a frame of interest has been included
-    z_shape = np.shape(data[:,0,0])
+    z_shape = np.shape(data[:, 0, 0])
     if z_shape[0] % 2 == 0:
         if index_of_interest is None:
             raise ValueError("Number of frames in `data` must be odd or have `frame_of_interest` set.")
     else:
         if index_of_interest is None:
-            index_of_interest = z_shape[0]//2
+            index_of_interest = z_shape[0] // 2
 
     frame_of_interest = data[index_of_interest, :, :]
     frame_of_interest_uncertainty = uncertainty[index_of_interest, :, :]
@@ -128,10 +129,10 @@ def find_spikes(
     reference_cube = np.stack([frame_of_interest for _ in range(voters_array.shape[0])], axis=0)
     difference_array = np.abs(reference_cube - voters_array)
 
-    if diff_method == 'abs':
+    if diff_method == "abs":
         threshold_array = np.full(voters_array.shape, threshold)
-    elif diff_method == 'sigma':
-        threshold_array = threshold * np.nanstd(voters_array, axis=0, where=voters_array_uncertainty<1.0)
+    elif diff_method == "sigma":
+        threshold_array = threshold * np.nanstd(voters_array, axis=0, where=voters_array_uncertainty < 1.0)
     else:
         raise ValueError(f"A `diff_method` of `sigma` or `abs` is expected. Found diff_method={diff_method}.")
 
@@ -154,14 +155,15 @@ def find_spikes(
 
 
 @task
-def identify_bright_structures_task(data: PUNCHData,
-                                    voter_filenames: list[str],
-                                    threshold: float = 4,
-                                    required_yes: int = 6,
-                                    veto_limit: int = 2,
-                                    diff_method: str = 'sigma',
-                                    dilation: int = 0
-                                     ) -> PUNCHData:
+def identify_bright_structures_task(
+    data: PUNCHData,
+    voter_filenames: list[str],
+    threshold: float = 4,
+    required_yes: int = 6,
+    veto_limit: int = 2,
+    diff_method: str = "sigma",
+    dilation: int = 0,
+) -> PUNCHData:
     """Prefect task to perform bright structure identification
 
     Parameters
@@ -196,21 +198,22 @@ def identify_bright_structures_task(data: PUNCHData,
     voters_uncertainty.append(data.uncertainty)
 
     # apply find spikes
-    spike_mask=find_spikes(data=np.array(voters),
-                           uncertainty=np.array(voters_uncertainty),
-                           threshold=threshold,
-                           required_yes=required_yes,
-                           veto_limit=veto_limit,
-                           diff_method=diff_method,
-                           dilation=dilation,
-                           index_of_interest=-1)
+    spike_mask = find_spikes(
+        data=np.array(voters),
+        uncertainty=np.array(voters_uncertainty),
+        threshold=threshold,
+        required_yes=required_yes,
+        veto_limit=veto_limit,
+        diff_method=diff_method,
+        dilation=dilation,
+        index_of_interest=-1,
+    )
 
     # add the uncertainty to the output punch data object
     data.uncertainty = np.max([data.uncertainty, spike_mask], axis=0)
 
     logger.info("identify_bright_structures_task ended")
 
-    data.meta.history.add_now("LEVEL2-bright_structures",
-                              "bright structure identification completed")
+    data.meta.history.add_now("LEVEL2-bright_structures", "bright structure identification completed")
 
     return data

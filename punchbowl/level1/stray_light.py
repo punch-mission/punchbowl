@@ -33,9 +33,9 @@ def remove_stray_light_task(data_object: PUNCHData, stray_light_path: pathlib) -
     else:
         stray_light_model = PUNCHData.from_fits(stray_light_path)
 
-        if stray_light_model.meta['TELESCOP'].value != data_object.meta['TELESCOP'].value:
+        if stray_light_model.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
             warnings.warn(f"Incorrect TELESCOP value within {stray_light_path}", UserWarning)
-        elif stray_light_model.meta['OBSLAYR1'].value != data_object.meta['OBSLAYR1'].value:
+        elif stray_light_model.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
             warnings.warn(f"Incorrect polarization state within {stray_light_path}", UserWarning)
         elif stray_light_model.data.shape != data_object.data.shape:
             raise InvalidDataError(f"Incorrect vignetting function shape within {stray_light_path}")

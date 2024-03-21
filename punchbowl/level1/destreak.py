@@ -98,9 +98,7 @@ def correct_streaks(
 
     """
     validate_image_is_square(image)
-    correction_matrix = streak_correction_matrix(
-        image.shape[0], exposure_time, readout_line_time, reset_line_time
-    )
+    correction_matrix = streak_correction_matrix(image.shape[0], exposure_time, readout_line_time, reset_line_time)
     return correction_matrix @ image
 
 

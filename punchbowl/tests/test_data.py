@@ -377,6 +377,30 @@ def test_read_write_uncertainty_data(sample_punchdata):
     assert fitsio_read_uncertainty.dtype == 'uint8'
 
 
+def test_uncertainty_bounds(sample_punchdata):
+    sample_data_certain = sample_punchdata()
+    sample_data_certain.uncertainty.array[:,:] = 0
+    sample_data_certain.write(SAMPLE_WRITE_PATH)
+
+    punchdata_read_data_certain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
+    with fits.open(SAMPLE_WRITE_PATH) as hdul:
+        manual_read_data_certain = hdul[2].data
+
+    assert np.all(punchdata_read_data_certain == 0)
+    assert np.all(manual_read_data_certain == 0)
+
+    sample_data_uncertain = sample_punchdata()
+    sample_data_uncertain.uncertainty.array[:,:] = 1
+    sample_data_uncertain.write(SAMPLE_WRITE_PATH)
+
+    punchdata_read_data_uncertain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
+    with fits.open(SAMPLE_WRITE_PATH) as hdul:
+        manual_read_data_uncertain = hdul[2].data
+
+    assert np.all(punchdata_read_data_uncertain == 1)
+    assert np.all(manual_read_data_uncertain == 255)
+
+
 def test_invalid_uncertainty_range(sample_punchdata):
     sample_data = sample_punchdata()
     sqrt_data_array = np.sqrt(np.abs(sample_data.data))

@@ -437,6 +437,13 @@ def test_create_level0_normalized_metadata():
     assert "OBSRVTRY" in m
 
 
+def test_create_level3_normalized_metadata():
+    m = NormalizedMetadata.load_template("PTM", "3")
+    assert "GEOD_LAT" in m
+    assert "HGLN_OBS" in m
+    assert "HEEX_OBS" in m
+
+
 def test_normalized_metadata_to_fits_writes_history():
     m = NormalizedMetadata.load_template("PM1", "0")
     m.history.add_now("Test", "does it write?")

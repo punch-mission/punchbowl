@@ -402,7 +402,7 @@ def test_uncertainty_bounds(sample_punchdata):
     assert np.all(manual_read_data_uncertain == 1)
 
 
-def test_invalid_uncertainty_range(sample_punchdata):
+def test_invalid_uncertainty_range_error(sample_punchdata):
     sample_data = sample_punchdata()
     sqrt_data_array = np.sqrt(np.abs(sample_data.data))
     uncertainty = StdDevUncertainty(np.interp(sqrt_data_array, (sqrt_data_array.min(), sqrt_data_array.max()), (0,1.1)).astype('float'))
@@ -527,21 +527,6 @@ def test_normalizedmetadata_from_fits_header():
     assert recovered == m
 
 
-# def test_generate_level3_data_product(tmpdir):
-#     m = NormalizedMetadata.load_template("PTM", "3")
-#     m['DATE-OBS'] = datetime.utcnow().isoformat()
-#     h = m.to_fits_header()
-#
-#     path = os.path.join(tmpdir, "from_fits_test.fits")
-#     d = PUNCHData(np.ones((2, 4096, 4096), dtype=np.float32), WCS(h), m)
-#     d.write(path)
-#
-#     loaded = PUNCHData.from_fits(path)
-#     loaded.meta['LATPOLE'] = 0.0
-#
-#     assert loaded.meta == m
-
-
 def test_sun_location():
     time_current = Time(datetime.utcnow())
 
@@ -630,8 +615,6 @@ def test_wcs_many_point_3d_check():
     wcs_celestial = d.wcs
     wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, d.data.shape)
 
-    print("d", d.wcs)
-    print("celestial", wcs_celestial)
     npoints = 20
     input_coords = np.stack([np.ones(npoints, dtype=int),
                              np.linspace(0, 4096, npoints).astype(int),

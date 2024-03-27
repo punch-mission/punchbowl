@@ -218,7 +218,8 @@ def sample_punchdata():
 
     def _sample_punchdata(shape=(50, 50)):
         data = np.random.random(shape).astype(np.float32)
-        uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+        sqrt_abs_data = np.sqrt(np.abs(data))
+        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype(np.float32))
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
         wcs.wcs.cunit = "deg", "deg"
@@ -241,7 +242,8 @@ def sample_punchdata_clear():
 
     def _sample_punchdata_clear(shape=(50, 50)):
         data = np.random.random(shape).astype(np.float32)
-        uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+        sqrt_abs_data = np.sqrt(np.abs(data))
+        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype(np.float32))
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
         wcs.wcs.cunit = "deg", "deg"
@@ -359,8 +361,6 @@ def test_generate_data_statistics(sample_punchdata):
 
 def test_read_write_uncertainty_data(sample_punchdata):
     sample_data = sample_punchdata()
-    uncertainty = StdDevUncertainty(np.sqrt(np.abs(sample_data.data)).astype('uint8'))
-    sample_data.uncertainty = uncertainty
 
     sample_data.write(SAMPLE_WRITE_PATH)
 
@@ -368,13 +368,48 @@ def test_read_write_uncertainty_data(sample_punchdata):
 
     with fits.open(SAMPLE_WRITE_PATH) as hdul:
         fitsio_read_uncertainty = hdul[2].data
-        fitsio_read_header = hdul[2].header
 
-    assert fitsio_read_header['BITPIX'] == 8
+    assert sample_data.uncertainty.array.dtype == 'float32'
+    assert pdata_read_data.uncertainty.array.dtype == 'float32'
+    assert fitsio_read_uncertainty.dtype == 'float32'
 
-    assert sample_data.uncertainty.array.dtype == 'uint8'
-    assert pdata_read_data.uncertainty.array.dtype == 'uint8'
-    assert fitsio_read_uncertainty.dtype == 'uint8'
+    assert (sample_data.uncertainty.array.min() >= 0) and (sample_data.uncertainty.array.max() <= 1)
+    assert (pdata_read_data.uncertainty.array.min() >= 0) and (pdata_read_data.uncertainty.array.max() <= 1)
+    assert (fitsio_read_uncertainty.min() >= 0) and (fitsio_read_uncertainty.max() <= 1)
+
+
+def test_uncertainty_bounds(sample_punchdata):
+    sample_data_certain = sample_punchdata()
+    sample_data_certain.uncertainty.array[:, :] = 0
+    sample_data_certain.write(SAMPLE_WRITE_PATH)
+
+    punchdata_read_data_certain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
+    with fits.open(SAMPLE_WRITE_PATH) as hdul:
+        manual_read_data_certain = hdul[2].data
+
+    assert np.all(punchdata_read_data_certain == 0)
+    assert np.all(manual_read_data_certain == 0)
+
+    sample_data_uncertain = sample_punchdata()
+    sample_data_uncertain.uncertainty.array[:, :] = 1
+    sample_data_uncertain.write(SAMPLE_WRITE_PATH)
+
+    punchdata_read_data_uncertain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
+    with fits.open(SAMPLE_WRITE_PATH) as hdul:
+        manual_read_data_uncertain = hdul[2].data
+
+    assert np.all(punchdata_read_data_uncertain == 1)
+    assert np.all(manual_read_data_uncertain == 1)
+
+
+def test_invalid_uncertainty_range_error(sample_punchdata):
+    sample_data = sample_punchdata()
+    sqrt_data_array = np.sqrt(np.abs(sample_data.data))
+    uncertainty = StdDevUncertainty(np.interp(sqrt_data_array, (sqrt_data_array.min(), sqrt_data_array.max()), (0,1.1)).astype('float'))
+    sample_data.uncertainty = uncertainty
+
+    with pytest.raises(ValueError):
+        sample_data.write(SAMPLE_WRITE_PATH)
 
 
 def test_generate_wcs_metadata(sample_punchdata):
@@ -499,21 +534,6 @@ def test_normalizedmetadata_from_fits_header():
     assert recovered == m
 
 
-# def test_generate_level3_data_product(tmpdir):
-#     m = NormalizedMetadata.load_template("PTM", "3")
-#     m['DATE-OBS'] = datetime.utcnow().isoformat()
-#     h = m.to_fits_header()
-#
-#     path = os.path.join(tmpdir, "from_fits_test.fits")
-#     d = PUNCHData(np.ones((2, 4096, 4096), dtype=np.float32), WCS(h), m)
-#     d.write(path)
-#
-#     loaded = PUNCHData.from_fits(path)
-#     loaded.meta['LATPOLE'] = 0.0
-#
-#     assert loaded.meta == m
-
-
 def test_sun_location():
     time_current = Time(datetime.utcnow())
 
@@ -602,8 +622,6 @@ def test_wcs_many_point_3d_check():
     wcs_celestial = d.wcs
     wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, d.data.shape)
 
-    print("d", d.wcs)
-    print("celestial", wcs_celestial)
     npoints = 20
     input_coords = np.stack([np.ones(npoints, dtype=int),
                              np.linspace(0, 4096, npoints).astype(int),

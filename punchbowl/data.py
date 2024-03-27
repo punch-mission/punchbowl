@@ -855,6 +855,8 @@ class PUNCHData(NDCube):
             World coordinate system object describing observation data axes
         uncertainty
             Measure of pixel uncertainty mapping from the primary data array
+            Characterized as 0-1 within the data object, and stored as 8-bit unsigned integers when written to file
+
         mask
             Boolean mapping of invalid pixels mapping from the primary data array (True = masked out invalid pixels)
         meta
@@ -911,8 +913,12 @@ class PUNCHData(NDCube):
             unit = u.ct
 
             if len(hdul) > hdu_index + 1:
-                secondary_hdu = hdul[hdu_index + 1]
-                uncertainty = StdDevUncertainty(secondary_hdu.data)
+                secondary_hdu = hdul[hdu_index+1]
+                uncertainty = secondary_hdu.data
+                if (uncertainty.min() < 0) or (uncertainty.max() > 1):
+                    raise ValueError("Uncertainty array in file outside of expected range (0-1).")
+                else:
+                    uncertainty = StdDevUncertainty(uncertainty)
             else:
                 uncertainty = None
 
@@ -1079,12 +1085,16 @@ class PUNCHData(NDCube):
         hdul_list.append(hdu_data)
 
         if self.uncertainty is not None:
-            hdu_uncertainty = fits.CompImageHDU(data=self.uncertainty.array, name="Uncertainty array")
-            hdu_uncertainty.header["BITPIX"] = 8
-            # write WCS to uncertainty header
-            for key, value in wcs_header.items():
-                hdu_uncertainty.header[key] = value
-            hdul_list.append(hdu_uncertainty)
+            if (self.uncertainty.array.min() < 0) or (self.uncertainty.array.max() > 1):
+                raise ValueError("Uncertainty array outside of expected range (0-1).")
+            else:
+                hdu_uncertainty = fits.CompImageHDU(data=np.copy(self.uncertainty.array), name='Uncertainty array')
+                # write WCS to uncertainty header
+                for key, value in wcs_header.items():
+                    hdu_uncertainty.header[key] = value
+                # Save as an 8-bit unsigned integer
+                hdu_uncertainty.scale('uint8', bscale=1/255)
+                hdul_list.append(hdu_uncertainty)
 
         hdul = fits.HDUList(hdul_list)
 

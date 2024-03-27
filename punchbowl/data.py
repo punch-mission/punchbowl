@@ -914,12 +914,11 @@ class PUNCHData(NDCube):
 
             if len(hdul) > hdu_index + 1:
                 secondary_hdu = hdul[hdu_index+1]
-                scaled_uncertainty = secondary_hdu.data
-                if (scaled_uncertainty.min() < 0) or (scaled_uncertainty.max() > 255):
-                    raise ValueError("Uncertainty array in file outside of expected range (0-255).")
+                uncertainty = secondary_hdu.data
+                if (uncertainty.min() < 0) or (uncertainty.max() > 1):
+                    raise ValueError("Uncertainty array in file outside of expected range (0-1).")
                 else:
-                    uncertainty = StdDevUncertainty(np.fix(np.interp(scaled_uncertainty,
-                                                      (0, 2**8 - 1), (0, 1))).astype('float'))
+                    uncertainty = StdDevUncertainty(uncertainty)
             else:
                 uncertainty = None
 
@@ -1089,13 +1088,12 @@ class PUNCHData(NDCube):
             if (self.uncertainty.array.min() < 0) or (self.uncertainty.array.max() > 1):
                 raise ValueError("Uncertainty array outside of expected range (0-1).")
             else:
-                scaled_uncertainty = np.fix(np.interp(self.uncertainty.array,
-                                                      (0, 1), (0, 2**8 - 1))).astype('uint8')
-                hdu_uncertainty = fits.CompImageHDU(data=scaled_uncertainty, name='Uncertainty array')
-                hdu_uncertainty.header['BITPIX'] = 8
+                hdu_uncertainty = fits.CompImageHDU(data=np.copy(self.uncertainty.array), name='Uncertainty array')
                 # write WCS to uncertainty header
                 for key, value in wcs_header.items():
                     hdu_uncertainty.header[key] = value
+                # Save as an 8-bit unsigned integer
+                hdu_uncertainty.scale('uint8', bscale=1/255)
                 hdul_list.append(hdu_uncertainty)
 
         hdul = fits.HDUList(hdul_list)

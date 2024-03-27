@@ -219,7 +219,7 @@ def sample_punchdata():
     def _sample_punchdata(shape=(50, 50)):
         data = np.random.random(shape).astype(np.float32)
         sqrt_abs_data = np.sqrt(np.abs(data))
-        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype('float'))
+        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype(np.float32))
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
         wcs.wcs.cunit = "deg", "deg"
@@ -243,7 +243,7 @@ def sample_punchdata_clear():
     def _sample_punchdata_clear(shape=(50, 50)):
         data = np.random.random(shape).astype(np.float32)
         sqrt_abs_data = np.sqrt(np.abs(data))
-        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype('float'))
+        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype(np.float32))
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
         wcs.wcs.cunit = "deg", "deg"
@@ -368,18 +368,19 @@ def test_read_write_uncertainty_data(sample_punchdata):
 
     with fits.open(SAMPLE_WRITE_PATH) as hdul:
         fitsio_read_uncertainty = hdul[2].data
-        fitsio_read_header = hdul[2].header
 
-    assert fitsio_read_header['BITPIX'] == 8
+    assert sample_data.uncertainty.array.dtype == 'float32'
+    assert pdata_read_data.uncertainty.array.dtype == 'float32'
+    assert fitsio_read_uncertainty.dtype == 'float32'
 
-    assert sample_data.uncertainty.array.dtype == 'float'
-    assert pdata_read_data.uncertainty.array.dtype == 'float'
-    assert fitsio_read_uncertainty.dtype == 'uint8'
+    assert (sample_data.uncertainty.array.min() >= 0) and (sample_data.uncertainty.array.max() <= 1)
+    assert (pdata_read_data.uncertainty.array.min() >= 0) and (pdata_read_data.uncertainty.array.max() <= 1)
+    assert (fitsio_read_uncertainty.min() >= 0) and (fitsio_read_uncertainty.max() <= 1)
 
 
 def test_uncertainty_bounds(sample_punchdata):
     sample_data_certain = sample_punchdata()
-    sample_data_certain.uncertainty.array[:,:] = 0
+    sample_data_certain.uncertainty.array[:, :] = 0
     sample_data_certain.write(SAMPLE_WRITE_PATH)
 
     punchdata_read_data_certain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
@@ -390,7 +391,7 @@ def test_uncertainty_bounds(sample_punchdata):
     assert np.all(manual_read_data_certain == 0)
 
     sample_data_uncertain = sample_punchdata()
-    sample_data_uncertain.uncertainty.array[:,:] = 1
+    sample_data_uncertain.uncertainty.array[:, :] = 1
     sample_data_uncertain.write(SAMPLE_WRITE_PATH)
 
     punchdata_read_data_uncertain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
@@ -398,7 +399,7 @@ def test_uncertainty_bounds(sample_punchdata):
         manual_read_data_uncertain = hdul[2].data
 
     assert np.all(punchdata_read_data_uncertain == 1)
-    assert np.all(manual_read_data_uncertain == 255)
+    assert np.all(manual_read_data_uncertain == 1)
 
 
 def test_invalid_uncertainty_range(sample_punchdata):

@@ -7,6 +7,7 @@ from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import create_all_valid_deficient_pixel_map, remove_deficient_pixels_task
 from punchbowl.level1.despike import despike_task
 from punchbowl.level1.destreak import destreak_task
+from punchbowl.level1.initial_uncertainty import initial_uncertainty_task
 from punchbowl.level1.psf import correct_psf_task
 from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.stray_light import remove_stray_light_task
@@ -44,6 +45,8 @@ def level1_core_flow(
 
     if deficient_pixel_map is None:
         deficient_pixel_map = create_all_valid_deficient_pixel_map(data)
+
+    data = initial_uncertainty_task(data)
 
     data = perform_quartic_fit_task(data, quartic_coefficient_path)
     data = despike_task(data)  # TODO: allow configuration of the run with different despike options

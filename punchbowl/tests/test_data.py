@@ -26,6 +26,7 @@ from punchbowl.data import (
     load_spacecraft_def,
     load_trefoil_wcs,
 )
+from punchbowl.level1.initial_uncertainty import initial_uncertainty
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -357,6 +358,18 @@ def test_generate_data_statistics(sample_punchdata):
 
     assert sample_data.meta['DATAMIN'].value == float(sample_data.data.min())
     assert sample_data.meta['DATAMAX'].value == float(sample_data.data.max())
+
+
+def test_initial_uncertainty_calculation(sample_punchdata):
+    sample_data = sample_punchdata()
+
+    # Manually call update of uncertainty
+    sample_data = initial_uncertainty(sample_data)
+
+    # Check that uncertainty exists and is within range
+    assert sample_data.uncertainty.array.shape == sample_data.data.shape
+    assert sample_data.uncertainty.array.min() >= 0
+    assert sample_data.uncertainty.array.max() <= 1
 
 
 def test_read_write_uncertainty_data(sample_punchdata):

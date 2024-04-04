@@ -14,13 +14,10 @@ Level:
     Instrument and Spacecraft State:
     World Coordinate System:
         overrides:
-            CRPIX1: 0.0
-            CDELT1: 1.0
-            CRPIX1A: 0.0
-            CDELT1A: 1.0
-    Camera and Readout State:
-    Onboard Image Processing:
-    Calibration Data:
+            CRPIX3: 0.0
+            CDELT3: 1.0
+            CRPIX3A: 0.0
+            CDELT3A: 1.0
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:

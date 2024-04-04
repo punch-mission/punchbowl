@@ -371,11 +371,11 @@ def test_read_write_uncertainty_data(sample_punchdata):
 
     assert sample_data.uncertainty.array.dtype == 'float32'
     assert pdata_read_data.uncertainty.array.dtype == 'float32'
-    assert fitsio_read_uncertainty.dtype == 'float32'
+    assert fitsio_read_uncertainty.dtype == 'uint8'
 
     assert (sample_data.uncertainty.array.min() >= 0) and (sample_data.uncertainty.array.max() <= 1)
     assert (pdata_read_data.uncertainty.array.min() >= 0) and (pdata_read_data.uncertainty.array.max() <= 1)
-    assert (fitsio_read_uncertainty.min() >= 0) and (fitsio_read_uncertainty.max() <= 1)
+    assert (fitsio_read_uncertainty.min() >= 0) and (fitsio_read_uncertainty.max() <= 255)
 
 
 def test_uncertainty_bounds(sample_punchdata):
@@ -610,8 +610,8 @@ def test_wcs_many_point_3d_check():
     date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
     m['DATE-OBS'] = str(date_obs)
     sun_radec = get_sun(date_obs)
-    m['CRVAL2A'] = sun_radec.ra.to(u.deg).value
-    m['CRVAL3A'] = sun_radec.dec.to(u.deg).value
+    m['CRVAL1A'] = sun_radec.ra.to(u.deg).value
+    m['CRVAL2A'] = sun_radec.dec.to(u.deg).value
     h = m.to_fits_header()
     d = PUNCHData(np.ones((2, 4096, 4096), dtype=np.float32), WCS(h, key='A'), m)
 
@@ -623,16 +623,17 @@ def test_wcs_many_point_3d_check():
     wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, d.data.shape)
 
     npoints = 20
-    input_coords = np.stack([np.ones(npoints, dtype=int),
+    input_coords = np.stack([
                              np.linspace(0, 4096, npoints).astype(int),
-                             np.linspace(0, 4096, npoints).astype(int)], axis=1)
+                             np.linspace(0, 4096, npoints).astype(int),
+                             np.ones(npoints, dtype=int),], axis=1)
 
     points_celestial = wcs_celestial.all_pix2world(input_coords, 0)
     points_helio = wcs_helio.all_pix2world(input_coords, 0)
 
     output_coords = []
     for c_pix, c_celestial, c_helio in zip(input_coords, points_celestial, points_helio):
-        skycoord_celestial = SkyCoord(c_celestial[1] * u.deg, c_celestial[2] * u.deg,
+        skycoord_celestial = SkyCoord(c_celestial[0] * u.deg, c_celestial[1] * u.deg,
                                       frame=GCRS,
                                       obstime=date_obs,
                                       observer=test_gcrs,
@@ -642,13 +643,12 @@ def test_wcs_many_point_3d_check():
                                       )
 
         intermediate = skycoord_celestial.transform_to(frames.Helioprojective)
-        output_coords.append(wcs_helio.all_world2pix(1,
-                                                     intermediate.data.lon.to(u.deg).value,
-                                                     intermediate.data.lat.to(u.deg).value, 0))
+        output_coords.append(wcs_helio.all_world2pix(intermediate.data.lon.to(u.deg).value,
+                                                     intermediate.data.lat.to(u.deg).value, 2, 0))
 
     output_coords = np.array(output_coords)
     distances = np.linalg.norm(input_coords - output_coords, axis=1)
-    assert np.mean(distances) < 2.0  # TODO: figure out why the value has to be high
+    assert np.nanmean(distances) < 0.1
 
 
 def test_axis_ordering():

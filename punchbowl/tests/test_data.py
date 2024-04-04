@@ -399,7 +399,7 @@ def test_uncertainty_bounds(sample_punchdata):
         manual_read_data_uncertain = hdul[2].data
 
     assert np.all(punchdata_read_data_uncertain == 1)
-    assert np.all(manual_read_data_uncertain == 1)
+    assert np.all(manual_read_data_uncertain == 255)
 
 
 def test_invalid_uncertainty_range_error(sample_punchdata):

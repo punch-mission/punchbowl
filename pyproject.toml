@@ -1,5 +1,81 @@
+[build-system]
+
+requires = ["setuptools",
+            "wheel"]
+
+[project]
+name = "punchbowl"
+version = "0.0.1"
+dependencies = [
+        "numpy",
+        "astropy",
+        "sunpy",
+        "pandas",
+        "ndcube",
+        "matplotlib",
+        "ccsdspy",
+        "prefect",
+        "regularizepsf",
+        "solpolpy",
+        "scipy",
+        "lmfit",
+        "sunkit-image",
+        "setuptools",
+        "reproject",
+        "pylibjpeg",
+        "python-dateutil",
+        "pyyaml"
+]
+requires-python = ">=3.9"
+authors = [
+    {name = "J. Marcus Hughes", email = "hughes.jmb@gmail.com"},
+    {name = "Chris Lowder", email="chris.lowder@swri.org"}
+]
+maintainers = [
+  {name = "J. Marcus Hughes", email = "hughes.jmb@gmail.com"}
+]
+description = "TODO"
+readme = "TODO"
+license = {file = "TODO"}
+keywords = ["TODO"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python"
+]
+
+[project.optional-dependencies]
+dev = ["pytest",
+            "coverage",
+            "pytest-cov",
+            "flake8",
+            "pytest-runner",
+            "pytest-mpl",
+            "pre-commit",
+            "ruff",
+            "hypothesis"]
+docs = ["sphinx",
+            "pydata-sphinx-theme",
+            "sphinx-autoapi",
+            "sphinx-favicon",
+            "nbsphinx",
+            "ipython",
+            "sphinxcontrib-mermaid"]
+
+[project.urls]
+#Homepage = "https://example.com"
+#Documentation = "https://readthedocs.org"
+#Repository = "https://github.com/punch-mission/simpunch.git"
+#"Bug Tracker" = "https://github.com/punch-mission/simpunch/issues"
+#Changelog = "https://github.com/punch-mission/thuban/blob/main/CHANGELOG.md"
+
+[tool.setuptools]
+packages = ["punchbowl"]
+
+[tool.codespell]
+skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
+
 [tool.ruff]
-target-version = 'py38'
+target-version = 'py39'
 exclude = ['tests', 'scripts', 'docs']
 line-length=120
 

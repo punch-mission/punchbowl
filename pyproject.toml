@@ -23,7 +23,8 @@ dependencies = [
         "setuptools",
         "reproject",
         "pylibjpeg",
-        "python-dateutil",
+        "python-dateutil"
+]
 requires-python = ">=3.9"
 authors = [
     {name = "J. Marcus Hughes", email = "marcus.hughes@gmail.com"},

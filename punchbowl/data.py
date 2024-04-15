@@ -70,7 +70,7 @@ def load_spacecraft_def(path: t.Optional[str] = None) -> dict[str, t.Any]:
         return yaml.safe_load(f)
 
 
-def extract_crota_from_wcs(wcs, is_3d=False):
+def extract_crota_from_wcs(wcs):
     return np.arctan2(wcs.wcs.pc[1, 0], wcs.wcs.pc[0, 0]) * u.rad
 
 
@@ -101,7 +101,7 @@ def calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, data_shape):
     geocentric = GCRS(obstime=date_obs)
     p_angle = _sun_north_angle_to_z(geocentric)
 
-    crota = extract_crota_from_wcs(wcs_celestial, is_3d=is_3d)
+    crota = extract_crota_from_wcs(wcs_celestial)
 
     new_header = sunpy.map.make_fitswcs_header(
         data_shape[1:] if is_3d else data_shape,

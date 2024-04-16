@@ -1,5 +1,5 @@
 import warnings
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 import numpy as np
@@ -235,7 +235,8 @@ def construct_f_corona_background(
 
 
 @task
-def subtract_f_corona_background_task(data_object: PUNCHData, f_background_model: PUNCHData) -> PUNCHData:
+def subtract_f_corona_background_task(data_object: PUNCHData,
+                                      f_background_model_path: Optional[str]) -> PUNCHData:
     """subtracts a background f corona model from an input data frame.
 
     checks the dimensions of input data frame and background model match and
@@ -243,11 +244,11 @@ def subtract_f_corona_background_task(data_object: PUNCHData, f_background_model
 
     Parameters
     ----------
-    data_object : ['punchbowl.data.PUNCHData']
+    data_object : punchbowl.data.PUNCHData
         A PUNCHobject data frame to be background subtracted
 
-    f_background_model : ['punchbowl.data.PUNCHData']
-        A PUNCHobject background map
+    f_background_model_path : str
+        path to a PUNCHobject background map
 
     Returns
     -------
@@ -267,13 +268,16 @@ def subtract_f_corona_background_task(data_object: PUNCHData, f_background_model
     logger = get_run_logger()
     logger.info("subtract_f_corona_background started")
 
+    if f_background_model_path is None:
+        f_data_array = create_empty_f_background_model(data_object)
+    else:
+        f_data_array = PUNCHData.from_fits(f_background_model_path).data
+
     data_array = data_object.data
     output_wcs = data_object.wcs
     output_meta = data_object.meta
     # output_uncertainty=shape_PUNCHobject.uncertainty
     output_mask = data_object.mask
-
-    f_data_array = f_background_model.data
 
     # check dimensions match
     if data_array.shape != f_data_array.shape:
@@ -291,3 +295,7 @@ def subtract_f_corona_background_task(data_object: PUNCHData, f_background_model
     output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
     return output
+
+
+def create_empty_f_background_model(data_object: PUNCHData) -> np.ndarray:
+    return np.zeros_like(data_object.data)

@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from prefect import get_run_logger, task
@@ -89,7 +91,7 @@ def median_correct(
 @task
 def remove_deficient_pixels_task(
     data: PUNCHData,
-    deficient_pixel_map: PUNCHData,
+    deficient_pixel_map_path: Optional[str],
     required_good_count: int = 3,
     max_window_size: int = 10,
     method: str = "median",
@@ -104,8 +106,8 @@ def remove_deficient_pixels_task(
     data : PUNCHData
         A PUNCHobject data frame to be background subtracted
 
-    deficient_pixel_map : PUNCHData
-        The deficient pixels to be corrected
+    deficient_pixel_map_path : Optional[str]
+        The path to the deficient pixel map use to in correction
 
     required_good_count : int
         how many neighboring pixels must not be deficient to correct a pixel,
@@ -136,6 +138,11 @@ def remove_deficient_pixels_task(
     data_array = data.data
     output_uncertainty = data.uncertainty
 
+    if deficient_pixel_map_path is None:
+        deficient_pixel_map = create_all_valid_deficient_pixel_map(data)
+    else:
+        deficient_pixel_map = PUNCHData.from_fits(deficient_pixel_map_path)
+
     deficient_pixel_array = deficient_pixel_map.data
 
     # check dimensions match
@@ -163,7 +170,6 @@ def remove_deficient_pixels_task(
     # Set deficient pixels to infinity
     output_uncertainty.array[deficient_pixel_array == 0] = 0
 
-    # todo: make use the duplicate_with_updates method
     output_object = data.duplicate_with_updates(data=data_array, uncertainty=output_uncertainty)
 
     logger.info("remove_deficient_pixels finished")

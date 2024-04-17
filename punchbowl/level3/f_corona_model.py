@@ -45,15 +45,11 @@ def query_f_corona_model_source(
     file_list : [list]
         returns a list of files over the specified period for the specified
         polarizer.
-
-    TODO
-    ----
+    """
     # TODO: Improve Query database code
     # TODO: Change placeholder output list
     # TODO: add option to have selective cadence
     # TODO: update wanings and exceptions to match standards
-
-    """
     logger = get_run_logger()
     logger.info("query_f_corona_model_source started")
 
@@ -142,6 +138,7 @@ def construct_f_corona_background(
     return output_PUNCHobject : ['punchbowl.data.PUNCHData']
         returns an array of the same dimensions as the x and y dimensions of
         the input array
+    """
 
     # TODO: exclude data if flagged in weight array
     # TODO: pass through REAL meta data and WCS
@@ -149,7 +146,6 @@ def construct_f_corona_background(
     # TODO: add an x,y window to average over
     # TODO: needs to look at the weights (uncertainties) for trefoil images, so we don't average
     # TODO: output weight
-    """
     logger = get_run_logger()
     logger.info("construct_f_corona_background started")
 
@@ -268,16 +264,12 @@ def subtract_f_corona_background_task(data_object: PUNCHData,
 
     bkg_subtracted_data : ['punchbowl.data.PUNCHData']
         A background subtracted data frame
-
-    TODO
-    ----
-
+    """
     # TODO: exclude data if flagged in weight array
     # TODO: pass through REAL meta data and WCS
     # TODO: create 2nd hdu with list of input files
     # TODO: needs to look at the weights (uncertainties) for trefoil images, so we don't average
     # TODO: output weight - combine weights
-    """
     logger = get_run_logger()
     logger.info("subtract_f_corona_background started")
 

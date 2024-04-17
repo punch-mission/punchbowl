@@ -101,6 +101,9 @@ def remove_deficient_pixels(data: PUNCHData,
             f"and deficient_pixel_map dims: {deficient_pixels.shape}"
         )
 
+    if np.all(deficient_pixels == 0):
+        raise ValueError("All pixels in mask are deficient and cannot be corrected.")
+
     if method == "median":
         data_array = median_correct(
             data.data, deficient_pixels, required_good_count=required_good_count, max_window_size=max_window_size
@@ -185,5 +188,5 @@ def remove_deficient_pixels_task(
 
 
 def create_all_valid_deficient_pixel_map(data: PUNCHData) -> PUNCHData:
-    mask_array = np.zeros_like(data.data)
+    mask_array = np.ones_like(data.data)
     return data.duplicate_with_updates(data=mask_array)

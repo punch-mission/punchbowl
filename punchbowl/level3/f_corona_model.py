@@ -234,6 +234,19 @@ def construct_f_corona_background(
     return output
 
 
+def subtract_f_corona_background(data_object: PUNCHData, f_background_model_array: np.ndarray) -> PUNCHData:
+    # check dimensions match
+    if data_object.data.shape != f_background_model_array.shape:
+        raise InvalidDataError(
+            "f_background_subtraction expects the data_object and"
+            "f_background arrays to have the same dimensions."
+            f"data_array dims: {data_object.data.shape} and f_background_model dims: {f_background_model_array.shape}"
+        )
+
+    bkg_subtracted_data = data_object.data - f_background_model_array
+
+    return data_object.duplicate_with_updates(data=bkg_subtracted_data)
+
 @task
 def subtract_f_corona_background_task(data_object: PUNCHData,
                                       f_background_model_path: Optional[str]) -> PUNCHData:
@@ -273,23 +286,7 @@ def subtract_f_corona_background_task(data_object: PUNCHData,
     else:
         f_data_array = PUNCHData.from_fits(f_background_model_path).data
 
-    data_array = data_object.data
-    output_wcs = data_object.wcs
-    output_meta = data_object.meta
-    # output_uncertainty=shape_PUNCHobject.uncertainty
-    output_mask = data_object.mask
-
-    # check dimensions match
-    if data_array.shape != f_data_array.shape:
-        raise InvalidDataError(
-            "f_background_subtraction expects the data_object and"
-            "f_background arrays to have the same dimensions."
-            f"data_array dims: {data_array.shape} and f_background_model dims: {f_data_array.shape}"
-        )
-
-    bkg_subtracted_data = data_array - f_data_array
-
-    output = PUNCHData(bkg_subtracted_data, wcs=output_wcs, meta=output_meta, mask=output_mask)
+    output = subtract_f_corona_background(data_object, f_data_array)
 
     logger.info("subtract_f_corona_background finished")
     output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")

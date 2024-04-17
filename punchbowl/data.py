@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import sunpy.map
 import yaml
-from astropy.coordinates import GCRS, EarthLocation, SkyCoord
+from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
 from astropy.io.fits import Header
 from astropy.nddata import StdDevUncertainty
@@ -28,6 +28,9 @@ from sunpy.map import solar_angular_radius
 from punchbowl.errors import MissingMetadataError
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
+
+PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
+                                                     11: StokesSymbol("B", "total brightness")})
 
 
 def get_data_path(path: str) -> str:
@@ -67,14 +70,12 @@ def load_spacecraft_def(path: t.Optional[str] = None) -> dict[str, t.Any]:
         return yaml.safe_load(f)
 
 
-def extract_crota_from_wcs(wcs, is_3d=False):
-    index = 1 if is_3d else 0
-    return np.arctan2(wcs.wcs.pc[index + 1, index], wcs.wcs.pc[index, index]) * u.rad
+def extract_crota_from_wcs(wcs):
+    return np.arctan2(wcs.wcs.pc[1, 0], wcs.wcs.pc[0, 0]) * u.rad
 
 
 def calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, data_shape):
     is_3d = len(data_shape) == 3
-    index = 1 if is_3d else 0
 
     # we're at the center of the Earth
     test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
@@ -83,8 +84,8 @@ def calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, data_shape):
     # follow the SunPy tutorial from here
     # https://docs.sunpy.org/en/stable/generated/gallery/units_and_coordinates/radec_to_hpc_map.html#sphx-glr-generated-gallery-units-and-coordinates-radec-to-hpc-map-py
     reference_coord = SkyCoord(
-        wcs_celestial.wcs.crval[index] * u.Unit(wcs_celestial.wcs.cunit[index]),
-        wcs_celestial.wcs.crval[index + 1] * u.Unit(wcs_celestial.wcs.cunit[index + 1]),
+        wcs_celestial.wcs.crval[0] * u.Unit(wcs_celestial.wcs.cunit[0]),
+        wcs_celestial.wcs.crval[1] * u.Unit(wcs_celestial.wcs.cunit[1]),
         frame="gcrs",
         obstime=date_obs,
         obsgeoloc=test_gcrs.cartesian,
@@ -94,30 +95,30 @@ def calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, data_shape):
 
     reference_coord_arcsec = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
 
-    cdelt1 = (np.abs(wcs_celestial.wcs.cdelt[index]) * u.deg).to(u.arcsec)
-    cdelt2 = (np.abs(wcs_celestial.wcs.cdelt[index + 1]) * u.deg).to(u.arcsec)
+    cdelt1 = (np.abs(wcs_celestial.wcs.cdelt[0]) * u.deg).to(u.arcsec)
+    cdelt2 = (np.abs(wcs_celestial.wcs.cdelt[1]) * u.deg).to(u.arcsec)
 
     geocentric = GCRS(obstime=date_obs)
     p_angle = _sun_north_angle_to_z(geocentric)
 
-    crota = extract_crota_from_wcs(wcs_celestial, is_3d=is_3d)
+    crota = extract_crota_from_wcs(wcs_celestial)
 
     new_header = sunpy.map.make_fitswcs_header(
-        data_shape[index:],
+        data_shape[1:] if is_3d else data_shape,
         reference_coord_arcsec,
         reference_pixel=u.Quantity(
-            [wcs_celestial.wcs.crpix[index] - 1, wcs_celestial.wcs.crpix[index + 1] - 1] * u.pixel
+            [wcs_celestial.wcs.crpix[0] - 1, wcs_celestial.wcs.crpix[1] - 1] * u.pixel
         ),
         scale=u.Quantity([cdelt1, cdelt2] * u.arcsec / u.pix),
         rotation_angle=-p_angle - crota,
         observatory="PUNCH",
-        projection_code="ARC",
+        projection_code=wcs_celestial.wcs.ctype[0][-3:],
     )
 
     wcs_helio = WCS(new_header)
 
     if is_3d:
-        wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 0)
+        wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 2)
 
     return wcs_helio, p_angle
 
@@ -843,6 +844,7 @@ class PUNCHData(NDCube):
         mask: t.Any | None = None,
         unit: astropy.units.Unit = None,
         copy: bool = False,
+        wcs_radec: astropy.wcs.wcsapi.BaseLowLevelWCS | astropy.wcs.wcsapi.BaseHighLevelWCS | None = None,
         **kwargs,
     ) -> None:
         """Initialize PUNCH Data
@@ -852,7 +854,7 @@ class PUNCHData(NDCube):
         data
             Primary observation data (2D or multidimensional ndarray)
         wcs
-            World coordinate system object describing observation data axes
+            World coordinate system object describing observation data axes, should be in helio coordinates
         uncertainty
             Measure of pixel uncertainty mapping from the primary data array
             Characterized as 0-1 within the data object, and stored as 8-bit unsigned integers when written to file
@@ -865,6 +867,8 @@ class PUNCHData(NDCube):
             Units for the measurements in the primary data array
         copy
             Create arguments as a copy (True), or as a reference where possible (False, default)
+        wcs_radec
+            World coordinate system object describing observation data axes, should be in RA/DEC coordinates
         kwargs
             Additional keyword arguments
 
@@ -884,15 +888,18 @@ class PUNCHData(NDCube):
             copy=copy,
             **kwargs,
         )
+        self._wcs_radec = wcs_radec
 
     @classmethod
-    def from_fits(cls, path: str) -> PUNCHData:
+    def from_fits(cls, path: str, key: str = ' ') -> PUNCHData:
         """Populates a PUNCHData object from specified FITS file.
 
         Parameters
         ----------
         path
             filename from which to generate a PUNCHData object
+        key: str
+            the WCS key from the header to use
 
         Returns
         -------
@@ -909,12 +916,12 @@ class PUNCHData(NDCube):
             header["CHECKSUM"] = ""
             header["DATASUM"] = ""
             meta = NormalizedMetadata.from_fits_header(header)
-            wcs = WCS(header)
+            wcs = WCS(header, hdul, key=key)
             unit = u.ct
 
             if len(hdul) > hdu_index + 1:
                 secondary_hdu = hdul[hdu_index+1]
-                uncertainty = secondary_hdu.data
+                uncertainty = (secondary_hdu.data / 255).astype(np.float32)
                 if (uncertainty.min() < 0) or (uncertainty.max() > 1):
                     raise ValueError("Uncertainty array in file outside of expected range (0-1).")
                 else:
@@ -1033,10 +1040,9 @@ class PUNCHData(NDCube):
             for key, value in celestial_wcs_header.items():
                 output_header[key + "A"] = value
 
-        index = 1 if len(self.data.shape) == 3 else 0
         center_helio_coord = SkyCoord(
-            helio_wcs.wcs.crval[index] * u.deg,
-            helio_wcs.wcs.crval[index + 1] * u.deg,
+            helio_wcs.wcs.crval[0] * u.deg,
+            helio_wcs.wcs.crval[1] * u.deg,
             frame=frames.Helioprojective,
             obstime=date_obs,
             observer="earth",
@@ -1088,12 +1094,12 @@ class PUNCHData(NDCube):
             if (self.uncertainty.array.min() < 0) or (self.uncertainty.array.max() > 1):
                 raise ValueError("Uncertainty array outside of expected range (0-1).")
             else:
-                hdu_uncertainty = fits.CompImageHDU(data=np.copy(self.uncertainty.array), name='Uncertainty array')
+                scaled_uncertainty = (self.uncertainty.array * 255).astype(np.uint8)
+                hdu_uncertainty = fits.CompImageHDU(data=scaled_uncertainty, name='Uncertainty array')
                 # write WCS to uncertainty header
                 for key, value in wcs_header.items():
                     hdu_uncertainty.header[key] = value
                 # Save as an 8-bit unsigned integer
-                hdu_uncertainty.scale('uint8', bscale=1/255)
                 hdul_list.append(hdu_uncertainty)
 
         hdul = fits.HDUList(hdul_list)

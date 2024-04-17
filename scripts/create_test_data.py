@@ -41,7 +41,7 @@ def create_header_validation_test_data(path="../punchbowl/tests/"):
     h = m.to_fits_header()
 
     data = np.ones((2, 4096, 4096), dtype=np.float32)
-    uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)).astype(np.int8))
+    uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)).astype(np.float32))
 
     d = PUNCHData(data=data, uncertainty=uncertainty, wcs=WCS(h), meta=m)
     file_path = os.path.join(path, "test_header_validation.fits")
@@ -57,11 +57,13 @@ def create_quartic_coefficients_test_data(path="../punchbowl/level1/tests/data/"
     file_path = os.path.join(path, "test_quartic_coeffs.fits")
     obj.write(file_path, overwrite=True, skip_wcs_conversion=True)
 
+
 def create_vignetting_test_data(path="../punchbowl/level1/tests/data/"):
     meta = NormalizedMetadata.load_template("GR1", "1")
     meta['DATE-OBS'] = str(datetime.now())
     wcs = WCS(naxis=2)
-    data = np.load('data/sample_vignetting.npy')
+    # data = np.load('data/sample_vignetting.npy')
+    data = np.random.random((10, 10))
     obj = PUNCHData(data, wcs, meta)
     file_path = os.path.join(path, obj.filename_base + '.fits')
     obj.write(file_path, overwrite=True, skip_wcs_conversion=True)

@@ -23,18 +23,21 @@ dependencies = [
         "setuptools",
         "reproject",
         "pylibjpeg",
-        "python-dateutil",
-        "pyyaml"
+        "python-dateutil"
 ]
 requires-python = ">=3.9"
 authors = [
-    {name = "J. Marcus Hughes", email = "hughes.jmb@gmail.com"},
-    {name = "Chris Lowder", email="chris.lowder@swri.org"}
+    {name = "J. Marcus Hughes", email = "marcus.hughes@gmail.com"},
+    {name = "Chris Lowder", email = "chris.lowder@swri.org"},
+    {name = "Matthew West", email = "matthew.west@swri.org"},
+    {name = "Sarak Kovac", email = "sarah.kovac@swri.org"},
+    {name = "Ritesh Patel", email = "ritesh.patel@swri.org"},
+    {name = "Dan Seaton", email = "daniel.seaton@swri.org"}
 ]
 maintainers = [
   {name = "J. Marcus Hughes", email = "hughes.jmb@gmail.com"}
 ]
-description = "TODO"
+description = "PUNCH science calibration code"
 readme = "TODO"
 license = {file = "TODO"}
 keywords = ["TODO"]
@@ -64,8 +67,8 @@ docs = ["sphinx",
 [project.urls]
 #Homepage = "https://example.com"
 #Documentation = "https://readthedocs.org"
-#Repository = "https://github.com/punch-mission/simpunch.git"
-#"Bug Tracker" = "https://github.com/punch-mission/simpunch/issues"
+Repository = "https://github.com/punch-mission/punchbowl.git"
+"Bug Tracker" = "https://github.com/punch-mission/punchbowl/issues"
 #Changelog = "https://github.com/punch-mission/thuban/blob/main/CHANGELOG.md"
 
 [tool.setuptools]

@@ -95,7 +95,7 @@ def compute_uncertainty(data_array: np.ndarray) -> np.ndarray:
     return uncertainty_array
 
 
-def initial_uncertainty(data_object: PUNCHData) -> PUNCHData:
+def update_initial_uncertainty(data_object: PUNCHData) -> PUNCHData:
     """Function to compute initial uncertainty
 
     Parameters
@@ -115,7 +115,7 @@ def initial_uncertainty(data_object: PUNCHData) -> PUNCHData:
 
 
 @task
-def initial_uncertainty_task(data_object: PUNCHData) -> PUNCHData:
+def update_initial_uncertainty_task(data_object: PUNCHData) -> PUNCHData:
     """Prefect task to compute initial uncertainty
 
     Parameters
@@ -131,7 +131,7 @@ def initial_uncertainty_task(data_object: PUNCHData) -> PUNCHData:
     logger = get_run_logger()
     logger.info("initial uncertainty computation started")
 
-    data_object = initial_uncertainty(data_object)
+    data_object = update_initial_uncertainty(data_object)
 
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed")
 

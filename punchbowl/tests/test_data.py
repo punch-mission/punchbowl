@@ -26,7 +26,7 @@ from punchbowl.data import (
     load_spacecraft_def,
     load_trefoil_wcs,
 )
-from punchbowl.level1.initial_uncertainty import initial_uncertainty
+from punchbowl.level1.initial_uncertainty import update_initial_uncertainty
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -364,7 +364,7 @@ def test_initial_uncertainty_calculation(sample_punchdata):
     sample_data = sample_punchdata()
 
     # Manually call update of uncertainty
-    sample_data = initial_uncertainty(sample_data)
+    sample_data = update_initial_uncertainty(sample_data)
 
     # Check that uncertainty exists and is within range
     assert sample_data.uncertainty.array.shape == sample_data.data.shape

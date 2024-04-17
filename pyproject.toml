@@ -25,9 +25,9 @@ dependencies = [
         "pylibjpeg",
         "python-dateutil"
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
-    {name = "J. Marcus Hughes", email = "marcus.hughes@gmail.com"},
+    {name = "J. Marcus Hughes", email = "marcus.hughes@swri.org"},
     {name = "Chris Lowder", email = "chris.lowder@swri.org"},
     {name = "Matthew West", email = "matthew.west@swri.org"},
     {name = "Sarak Kovac", email = "sarah.kovac@swri.org"},
@@ -35,7 +35,7 @@ authors = [
     {name = "Dan Seaton", email = "daniel.seaton@swri.org"}
 ]
 maintainers = [
-  {name = "J. Marcus Hughes", email = "hughes.jmb@gmail.com"}
+  {name = "J. Marcus Hughes", email = "marcus.hughes@swri.org"}
 ]
 description = "PUNCH science calibration code"
 readme = "TODO"

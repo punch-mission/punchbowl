@@ -1,4 +1,7 @@
+from typing import Optional
+
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 from numpy.lib.stride_tricks import as_strided
 from prefect import get_run_logger, task
 
@@ -47,7 +50,6 @@ def cell_neighbors(arr: np.ndarray, i: int, j: int, window_size: int = 1) -> np.
 def mean_correct(
     data_array: np.ndarray, mask_array: np.ndarray, required_good_count: int = 3, max_window_size: int = 10
 ) -> np.ndarray:
-    # todo: add docstring
     x_bad_pix, y_bad_pix = np.where(mask_array == 0)
     data_array[mask_array == 0] = 0
     output_data_array = data_array.copy()
@@ -69,7 +71,6 @@ def mean_correct(
 def median_correct(
     data_array: np.ndarray, mask_array: np.ndarray, required_good_count: int = 3, max_window_size: int = 10
 ) -> np.ndarray:
-    # todo: add docstring nd combine with mean_correct
     x_bad_pix, y_bad_pix = np.where(mask_array == 0)
     data_array[mask_array == 0] = np.nan
     output_data_array = data_array.copy()
@@ -86,10 +87,46 @@ def median_correct(
     return output_data_array
 
 
+def remove_deficient_pixels(data: PUNCHData,
+                            deficient_pixels: np.ndarray,
+                            required_good_count: int = 3,
+                            max_window_size: int = 10,
+                            method: str = 'median') -> PUNCHData:
+    # check dimensions match
+    if data.data.shape != deficient_pixels.shape:
+        raise ValueError(
+            "deficient_pixel_array expects the data_object and"
+            "deficient_pixel_array arrays to have the same dimensions."
+            f"data_array dims: {data.data.shape}"
+            f"and deficient_pixel_map dims: {deficient_pixels.shape}"
+        )
+
+    if np.all(deficient_pixels == 0):
+        raise ValueError("All pixels in mask are deficient and cannot be corrected.")
+
+    if method == "median":
+        data_array = median_correct(
+            data.data, deficient_pixels, required_good_count=required_good_count, max_window_size=max_window_size
+        )
+    elif method == "mean":
+        data_array = mean_correct(
+            data.data, deficient_pixels, required_good_count=required_good_count, max_window_size=max_window_size
+        )
+    else:
+        raise ValueError(f"method specified must be 'mean', or 'median'. Found method={method}")
+
+    # Set deficient pixels to complete uncertainty
+    output_uncertainty = data.uncertainty.array.copy()
+    output_uncertainty[deficient_pixels == 0] = 1
+
+    output_object = data.duplicate_with_updates(data=data_array, uncertainty=StdDevUncertainty(output_uncertainty))
+    return output_object
+
+
 @task
 def remove_deficient_pixels_task(
     data: PUNCHData,
-    deficient_pixel_map: PUNCHData,
+    deficient_pixel_map_path: Optional[str],
     required_good_count: int = 3,
     max_window_size: int = 10,
     method: str = "median",
@@ -104,8 +141,8 @@ def remove_deficient_pixels_task(
     data : PUNCHData
         A PUNCHobject data frame to be background subtracted
 
-    deficient_pixel_map : PUNCHData
-        The deficient pixels to be corrected
+    deficient_pixel_map_path : Optional[str]
+        The path to the deficient pixel map use to in correction
 
     required_good_count : int
         how many neighboring pixels must not be deficient to correct a pixel,
@@ -132,39 +169,17 @@ def remove_deficient_pixels_task(
     logger = get_run_logger()
     logger.info("remove_deficient_pixels started")
 
-    # todo : remove these references in favor of using the data directly
-    data_array = data.data
-    output_uncertainty = data.uncertainty
+    if deficient_pixel_map_path is None:
+        deficient_pixel_map = create_all_valid_deficient_pixel_map(data)
+    else:
+        deficient_pixel_map = PUNCHData.from_fits(deficient_pixel_map_path)
 
     deficient_pixel_array = deficient_pixel_map.data
 
-    # check dimensions match
-    if data_array.shape != deficient_pixel_array.shape:
-        raise ValueError(
-            "deficient_pixel_array expects the data_object and"
-            "deficient_pixel_array arrays to have the same dimensions."
-            f"data_array dims: {data_array.shape}"
-            f"and deficient_pixel_map dims: {deficient_pixel_array.shape}"
-        )
-
-    if method == "median":
-        data_array = median_correct(
-            data_array, deficient_pixel_array, required_good_count=required_good_count, max_window_size=max_window_size
-        )
-
-    elif method == "mean":
-        data_array = mean_correct(
-            data_array, deficient_pixel_array, required_good_count=required_good_count, max_window_size=max_window_size
-        )
-
-    else:
-        raise ValueError(f"method specified must be 'mean', or 'median'. Found method={method}")
-
-    # Set deficient pixels to infinity
-    output_uncertainty.array[deficient_pixel_array == 0] = 0
-
-    # todo: make use the duplicate_with_updates method
-    output_object = data.duplicate_with_updates(data=data_array, uncertainty=output_uncertainty)
+    output_object = remove_deficient_pixels(data, deficient_pixel_array,
+                                            required_good_count=required_good_count,
+                                            max_window_size=max_window_size,
+                                            method=method)
 
     logger.info("remove_deficient_pixels finished")
     output_object.meta.history.add_now("LEVEL1-remove_deficient_pixels", "deficient pixels removed")

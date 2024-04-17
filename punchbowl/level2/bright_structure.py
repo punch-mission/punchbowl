@@ -94,7 +94,7 @@ def find_spikes(
         location.
 
     dilation: int
-        TODO
+        If nonzero, this is the number of times to morphologically dilate pixels marked as bright structures.
 
     index_of_interest : int
         if you have an even number of frames, or you don't want to find spikes
@@ -175,13 +175,6 @@ def identify_bright_structures_task(
     -------
     PUNCHData
         modified version of the input data with the bright structures identified
-
-    TODO
-    ----
-        Need polarization of frames to match
-
-
-
     """
     logger = get_run_logger()
     logger.info("identify_bright_structures_task started")

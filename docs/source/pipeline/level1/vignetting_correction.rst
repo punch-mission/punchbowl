@@ -1,5 +1,5 @@
 Vignetting correction
-=============
+=======================
 
 Concept
 ---------

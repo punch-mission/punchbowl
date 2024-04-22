@@ -32,7 +32,6 @@ def starfield_background(
         list of filenames to use
 
 
-
     Returns
     -------
     return output_PUNCHobject : ['punchbowl.data.PUNCHData']
@@ -59,7 +58,7 @@ def starfield_background(
         processor=remove_starfield.ImageProcessor(),  # wcs_key='A'),
         dec_bounds=(0, 35), ra_bounds=(100, 160), target_mem_usage=1000)
 
-    #TODO: make something like if write = true
+    # TODO: make something like if write = true
     plt.figure(figsize=(15, 5))
     starfield.plot(pmin=5)
     plt.savefig(outpath + 'generated_starfield.png', dpi=300)
@@ -95,3 +94,45 @@ def subtract_starfield_background(data_object: PUNCHData, starfield_background_m
 # for ifile in [ifiles[500]]:
 #     subtracted = starfield.subtract_from_image(ifile, processor=remove_starfield.ImageProcessor())
 #     subtracted.save(outpath+f'{os.path.splitext(os.path.basename(ifile))[0]}_starfield_removed.fits', overwrite=True)
+
+@task
+def subtract_starfield_background_task(data_object: PUNCHData,
+                                      starfield_background_path: Optional[str]) -> PUNCHData:
+    """subtracts a background starfield from an input data frame.
+
+    checks the dimensions of input data frame and background model match and
+    subtracts the background starfield from the data frame of interest.
+
+    Parameters
+    ----------
+    data_object : punchbowl.data.PUNCHData
+        A PUNCHobject data frame to be background subtracted
+
+    starfield_background_path : str
+        path to a PUNCHobject background starfield map
+
+    Returns
+    -------
+
+    star_subtracted_data : ['punchbowl.data.PUNCHData']
+        A background starfield subtracted data frame
+    """
+
+    logger = get_run_logger()
+    logger.info("subtract_starfield_background started")
+
+    if starfield_background_path is None:
+        star_data_array = create_empty_starfield_background(data_object)
+    else:
+        star_data_array = PUNCHData.from_fits(starfield_background_path).data
+
+    output = subtract_starfield_background(data_object, star_data_array)
+
+    logger.info("subtract_f_corona_background finished")
+    output.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
+
+    return output
+
+
+def create_empty_starfield_background(data_object: PUNCHData) -> np.ndarray:
+    return np.zeros_like(data_object.data)

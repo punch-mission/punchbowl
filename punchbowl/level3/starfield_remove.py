@@ -1,5 +1,6 @@
 import remove_starfield
 from remove_starfield.reducers import SkewGaussianReducer, GaussianReducer
+from remove_starfield import starfield
 import glob
 import matplotlib.pyplot as plt
 import os
@@ -15,10 +16,10 @@ from punchbowl.data import PUNCHData
 from punchbowl.exceptions import InvalidDataError
 
 
-def starfield_background(
-    data_list: List[str],
-    outpath: str = ".") -> PUNCHData:
-
+def generate_starfield_background(
+        data_list: List[str],
+        map_scale: float = 0.01,
+        target_mem_usage: float = 1000) -> PUNCHData:
     """Creates a background starfield map from a series of PUNCH images over
     a long period of time.
 
@@ -27,7 +28,8 @@ def starfield_background(
 
     Parameters
     ----------
-    outpath
+    target_mem_usage
+    map_scale
     data_list :
         list of filenames to use
 
@@ -49,23 +51,23 @@ def starfield_background(
     # # todo: replace in favor of using object directly
     # output = PUNCHData.from_fits(data_list[0])
 
-    #TODO: get RA and DEC bounds from first and last files
+    # TODO: get RA and DEC bounds from first and last files
 
-    ifiles = sorted(glob.glob(data_list + '*.fits'))
+    ifiles = sorted(glob.glob(data_list))
     starfield = remove_starfield.build_starfield_estimate(
         ifiles, attribution=True, frame_count=True,
-        reducer=GaussianReducer(n_sigma=5), map_scale=0.01,
+        reducer=GaussianReducer(n_sigma=5), map_scale=map_scale,
         processor=remove_starfield.ImageProcessor(),  # wcs_key='A'),
-        dec_bounds=(0, 35), ra_bounds=(100, 160), target_mem_usage=1000)
+        dec_bounds=(0, 35), ra_bounds=(100, 160), target_mem_usage=target_mem_usage)
 
     # TODO: make something like if write = true
-    plt.figure(figsize=(15, 5))
-    starfield.plot(pmin=5)
-    plt.savefig(outpath + 'generated_starfield.png', dpi=300)
-    starfield.save(outpath + 'generated_starfield.h5')
+    # plt.figure(figsize=(15, 5))
+    # starfield.plot(pmin=5)
+    # plt.savefig(outpath + 'generated_starfield.png', dpi=300)
+    # starfield.save(outpath + 'generated_starfield.h5')
 
     # create an output PUNCHdata object
-    output = PUNCHData(starfield.starfield, wcs=starfield.wcs)
+    output = PUNCHData(starfield.starfield, wcs=starfield.wcs, meta=starfield.meta)
 
     logger.info("construct_starfield_background finished")
     output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield model")
@@ -73,22 +75,24 @@ def starfield_background(
     return output
 
 
-## Input->NDcube of MZP
-## Outputs of Level3 is BpB
+# Input->NDcube of MZP
+# Outputs of Level3 is BpB
 # 2 funcs -> starfield generation; starfield subtraction
 
-def subtract_starfield_background(data_object: PUNCHData, starfield_background_model_array: np.ndarray) -> PUNCHData:
+def subtract_starfield_background(data_object: PUNCHData, starfield_background_model: PUNCHData) -> PUNCHData:
     # check dimensions match
-    if data_object.data.shape != starfield_background_model_array.shape:
+    if data_object.data.shape != starfield_background_model.data.shape:
         raise InvalidDataError(
             "starfield_background_subtraction expects the data_object and"
             "starfield_background arrays to have the same dimensions."
-            f"data_array dims: {data_object.data.shape} and f_background_model dims: {starfield_background_model_array.shape}"
+            f"data_array dims: {data_object.data.shape} and starfield_background_model dims: {starfield_background_model.shape}"
         )
 
-    starfield_subtracted_data = data_object.data - starfield_background_model_array
+    starfield_subtracted_data = starfield.subtract_from_image(data_object.data,
+                                                              processor=remove_starfield.ImageProcessor())
 
     return data_object.duplicate_with_updates(data=starfield_subtracted_data)
+
 
 # # Here we use different options for WISPRImageProcessor---this is the second use case our processor supports
 # for ifile in [ifiles[500]]:
@@ -97,10 +101,10 @@ def subtract_starfield_background(data_object: PUNCHData, starfield_background_m
 
 @task
 def subtract_starfield_background_task(data_object: PUNCHData,
-                                      starfield_background_path: Optional[str]) -> PUNCHData:
+                                       starfield_background_path: Optional[str]) -> PUNCHData:
     """subtracts a background starfield from an input data frame.
 
-    checks the dimensions of input data frame and background model match and
+    checks the dimensions of input data frame and background starfield match and
     subtracts the background starfield from the data frame of interest.
 
     Parameters

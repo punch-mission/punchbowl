@@ -12,22 +12,24 @@ from datetime import datetime
 import numpy as np
 from prefect import get_run_logger, task
 
-from punchbowl.data import PUNCHData
+from punchbowl.data import PUNCHData, NormalizedMetadata
 from punchbowl.exceptions import InvalidDataError
 
 
 def generate_starfield_background(
-        data_list: List[str],
+        data_object: PUNCHData,
+        n_sigma: float = 5,
         map_scale: float = 0.01,
         target_mem_usage: float = 1000) -> PUNCHData:
-    """Creates a background starfield map from a series of PUNCH images over
+    """Creates a background starfield_bg map from a series of PUNCH images over
     a long period of time.
 
-    Creates a background starfield map
+    Creates a background starfield_bg map
 
 
     Parameters
     ----------
+    n_sigma
     target_mem_usage
     map_scale
     data_list :
@@ -45,7 +47,7 @@ def generate_starfield_background(
 
     # create an empty array to fill with data
     #   open the first file in the list to ge the shape of the file
-    if len(data_list) == 0:
+    if len(data_object.data) == 0:
         raise ValueError("data_list cannot be empty")
 
     # # todo: replace in favor of using object directly
@@ -53,31 +55,22 @@ def generate_starfield_background(
 
     # TODO: get RA and DEC bounds from first and last files
 
-    ifiles = sorted(glob.glob(data_list))
-    starfield = remove_starfield.build_starfield_estimate(
-        ifiles, attribution=True, frame_count=True,
-        reducer=GaussianReducer(n_sigma=5), map_scale=map_scale,
-        processor=remove_starfield.ImageProcessor(),  # wcs_key='A'),
-        dec_bounds=(0, 35), ra_bounds=(100, 160), target_mem_usage=target_mem_usage)
-
-    # TODO: make something like if write = true
-    # plt.figure(figsize=(15, 5))
-    # starfield.plot(pmin=5)
-    # plt.savefig(outpath + 'generated_starfield.png', dpi=300)
-    # starfield.save(outpath + 'generated_starfield.h5')
+    # ifiles = sorted(glob.glob(data_list))
+    starfield_bg = remove_starfield.build_starfield_estimate(
+        data_object, attribution=True, frame_count=True,
+        reducer=GaussianReducer(n_sigma=n_sigma), map_scale=map_scale,
+        processor=remove_starfield.ImageProcessor(),
+        target_mem_usage=target_mem_usage)  # dec_bounds=(0, 35), ra_bounds=(100, 160), # wcs_key='A'),
 
     # create an output PUNCHdata object
-    output = PUNCHData(starfield.starfield, wcs=starfield.wcs, meta=starfield.meta)
+    meta_norm = NormalizedMetadata.from_fits_header(starfield_bg['meta'])
+    output = PUNCHData(starfield_bg.starfield, wcs=starfield_bg.wcs, meta=meta_norm)
 
     logger.info("construct_starfield_background finished")
-    output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield model")
+    output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     return output
 
-
-# Input->NDcube of MZP
-# Outputs of Level3 is BpB
-# 2 funcs -> starfield generation; starfield subtraction
 
 def subtract_starfield_background(data_object: PUNCHData, starfield_background_model: PUNCHData) -> PUNCHData:
     # check dimensions match
@@ -85,7 +78,7 @@ def subtract_starfield_background(data_object: PUNCHData, starfield_background_m
         raise InvalidDataError(
             "starfield_background_subtraction expects the data_object and"
             "starfield_background arrays to have the same dimensions."
-            f"data_array dims: {data_object.data.shape} and starfield_background_model dims: {starfield_background_model.shape}"
+            f"data_array dims: {data_object.data.shape} and starfield_background_model dims: {starfield_background_model.data.shape}"
         )
 
     starfield_subtracted_data = starfield.subtract_from_image(data_object.data,

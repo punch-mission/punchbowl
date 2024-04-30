@@ -1,6 +1,6 @@
 import remove_starfield
 from remove_starfield.reducers import SkewGaussianReducer, GaussianReducer
-from remove_starfield import starfield
+from remove_starfield import Starfield
 import glob
 import matplotlib.pyplot as plt
 import os
@@ -29,11 +29,10 @@ def generate_starfield_background(
 
     Parameters
     ----------
+    data_object
     n_sigma
     target_mem_usage
     map_scale
-    data_list :
-        list of filenames to use
 
 
     Returns
@@ -50,12 +49,10 @@ def generate_starfield_background(
     if len(data_object.data) == 0:
         raise ValueError("data_list cannot be empty")
 
-    # # todo: replace in favor of using object directly
+    # todo: replace in favor of using object directly
+    # Creates starfield map for complete sky
     # output = PUNCHData.from_fits(data_list[0])
 
-    # TODO: get RA and DEC bounds from first and last files
-
-    # ifiles = sorted(glob.glob(data_list))
     starfield_bg = remove_starfield.build_starfield_estimate(
         data_object, attribution=True, frame_count=True,
         reducer=GaussianReducer(n_sigma=n_sigma), map_scale=map_scale,
@@ -72,19 +69,19 @@ def generate_starfield_background(
     return output
 
 
-def subtract_starfield_background(data_object: PUNCHData, starfield_background_model: PUNCHData) -> PUNCHData:
+def subtract_starfield_background(data_object: PUNCHData, starfield_background_model: Starfield):
     # check dimensions match
-    if data_object.data.shape != starfield_background_model.data.shape:
+    if data_object.data.shape != starfield_background_model.starfield.shape:
         raise InvalidDataError(
             "starfield_background_subtraction expects the data_object and"
             "starfield_background arrays to have the same dimensions."
-            f"data_array dims: {data_object.data.shape} and starfield_background_model dims: {starfield_background_model.data.shape}"
+            f"data_array dims: {data_object.data.shape} and starfield_background_model dims: {starfield_background_model.starfield.shape}"
         )
 
-    starfield_subtracted_data = starfield.subtract_from_image(data_object.data,
+    starfield_subtracted_data = Starfield.subtract_from_image(starfield_background_model, data_object,
                                                               processor=remove_starfield.ImageProcessor())
 
-    return data_object.duplicate_with_updates(data=starfield_subtracted_data)
+    return data_object.duplicate_with_updates(data=starfield_subtracted_data.subtracted)
 
 
 # # Here we use different options for WISPRImageProcessor---this is the second use case our processor supports

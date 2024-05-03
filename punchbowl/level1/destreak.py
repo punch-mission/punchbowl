@@ -1,4 +1,5 @@
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
@@ -124,7 +125,12 @@ def destreak_task(data_object: PUNCHData) -> PUNCHData:
     readout_line_time = 0.1
     reset_line_time = 0.1
     new_data = correct_streaks(data_object.data, exposure_time, readout_line_time, reset_line_time)
-    data_object = data_object.duplicate_with_updates(data=new_data)
+
+    new_uncertainty = StdDevUncertainty(np.maximum(new_data, data_object.data) /
+                                        np.minimum(new_data, data_object.data) * data_object.uncertainty.array)
+
+    data_object = data_object.duplicate_with_updates(data=new_data, uncertainty=new_uncertainty)
+
     logger.info("destreak finished")
     data_object.meta.history.add_now("LEVEL1-destreak", "image destreaked")
     return data_object

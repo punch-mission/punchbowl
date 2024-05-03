@@ -1,6 +1,8 @@
 import pathlib
 import warnings
 
+import numpy as np
+from astropy.nddata import StdDevUncertainty
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
@@ -40,7 +42,13 @@ def correct_vignetting_task(data_object: PUNCHData, vignetting_file: pathlib) ->
         elif vignetting_function.data.shape != data_object.data.shape:
             raise InvalidDataError(f"Incorrect vignetting function shape within {vignetting_file}")
         else:
-            data_object.data[:, :] /= vignetting_function.data[:, :]
+            new_data = data_object.data[:, :] / vignetting_function.data[:, :]
+
+            new_uncertainty = StdDevUncertainty(np.maximum(new_data, data_object.data) /
+                                                np.minimum(new_data, data_object.data) * data_object.uncertainty.array)
+
+            data_object = data_object.duplicate_with_updates(data=new_data, uncertainty=new_uncertainty)
+
             data_object.meta.history.add_now("LEVEL1-correct_vignetting", "Vignetting corrected")
 
     logger.info("correct_vignetting finished")

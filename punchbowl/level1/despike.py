@@ -1,4 +1,5 @@
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 from prefect import get_run_logger, task
 from scipy.signal import convolve2d, medfilt2d
 
@@ -77,10 +78,14 @@ def despike_task(data_object: PUNCHData, unsharp_size=3, method="convolve", alph
     """
     logger = get_run_logger()
     logger.info("despike started")
-    data_object.data[...] = spikejones(
+    new_data = spikejones(
         data_object.data[...], unsharp_size=unsharp_size, method=method, alpha=alpha, dilation=dilation
     )
-    # TODO: update uncertainty properly
+    new_uncertainty = StdDevUncertainty(np.maximum(new_data, data_object.data) /
+                                        np.minimum(new_data, data_object.data) * data_object.uncertainty.array)
+
+    data_object = data_object.duplicate_with_updates(data=new_data, uncertainty=new_uncertainty)
+
     logger.info("despike finished")
     data_object.meta.history.add_now("LEVEL1-despike", "image despiked")
     return data_object

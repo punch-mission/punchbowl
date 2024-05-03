@@ -1,6 +1,7 @@
 import typing as t
 
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
@@ -137,7 +138,9 @@ def perform_quartic_fit_task(data_object: PUNCHData, quartic_coefficients_path: 
     if quartic_coefficients_path is not None:
         quartic_coefficients = PUNCHData.from_fits(quartic_coefficients_path)
         new_data = photometric_calibration(data_object.data, quartic_coefficients.data)
-        data_object = data_object.duplicate_with_updates(data=new_data)
+        new_uncertainty = StdDevUncertainty(np.maximum(new_data, data_object.data) /
+                                            np.minimum(new_data, data_object.data) * data_object.uncertainty.array)
+        data_object = data_object.duplicate_with_updates(data=new_data, uncertainty=new_uncertainty)
         data_object.meta.history.add_now(
             "LEVEL1-quartic_fit", f"Quartic fit correction completed with {quartic_coefficients_path}"
         )

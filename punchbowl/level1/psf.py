@@ -1,5 +1,7 @@
 import typing as t
 
+import numpy as np
+from astropy.nddata import StdDevUncertainty
 from prefect import get_run_logger, task
 from regularizepsf.corrector import ArrayCorrector
 
@@ -41,7 +43,13 @@ def correct_psf_task(
 
     if model_path is not None:
         corrector = ArrayCorrector.load(model_path)
-        data_object = correct_psf(data_object, corrector)
+        new_data_object = correct_psf(data_object, corrector)
+
+        new_uncertainty = StdDevUncertainty(np.maximum(new_data_object.data, data_object.data) /
+                                            np.minimum(new_data_object.data, data_object.data) * data_object.uncertainty.array)
+
+        data_object = data_object.duplicate_with_updates(data=new_data_object.data, uncertainty=new_uncertainty)
+
         data_object.meta.history.add_now("LEVEL1-correct_psf", f"PSF corrected with {model_path} model")
     else:
         data_object.meta.history.add_now("LEVEL1-correct_psf", "Empty model path so no correction applied")

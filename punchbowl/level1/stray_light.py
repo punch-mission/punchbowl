@@ -1,6 +1,8 @@
 import pathlib
 import warnings
 
+import numpy as np
+from astropy.nddata import StdDevUncertainty
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData
@@ -40,7 +42,13 @@ def remove_stray_light_task(data_object: PUNCHData, stray_light_path: pathlib) -
         elif stray_light_model.data.shape != data_object.data.shape:
             raise InvalidDataError(f"Incorrect vignetting function shape within {stray_light_path}")
         else:
-            data_object.data[:, :] -= stray_light_model.data[:, :]
+            new_data = data_object.data[:, :] - stray_light_model.data[:, :]
+
+            new_uncertainty = StdDevUncertainty(np.maximum(new_data, data_object.data) /
+                                                np.minimum(new_data, data_object.data) * data_object.uncertainty.array)
+
+            data_object = data_object.duplicate_with_updates(data=new_data, uncertainty=new_uncertainty)
+
             data_object.meta.history.add_now("LEVEL1-remove_stray_light", "stray light removed")
 
     logger.info("remove_stray_light finished")

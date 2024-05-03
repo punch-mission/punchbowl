@@ -69,18 +69,19 @@ def generate_starfield_background(
     return output
 
 
-def subtract_starfield_background(data_object: PUNCHData, starfield_background_model: Starfield):
+def subtract_starfield_background(data_object: PUNCHData, starfield_background_model: Starfield) -> PUNCHData:
     # check dimensions match
-    if data_object.data.shape != starfield_background_model.starfield.shape:
-        raise InvalidDataError(
-            "starfield_background_subtraction expects the data_object and"
-            "starfield_background arrays to have the same dimensions."
-            f"data_array dims: {data_object.data.shape} and starfield_background_model dims: {starfield_background_model.starfield.shape}"
-        )
+    # if data_object.data.shape != starfield_background_model.starfield.shape:
+    #     raise InvalidDataError(
+    #         "starfield_background_subtraction expects the data_object and"
+    #         "starfield_background arrays to have the same dimensions."
+    #         f"data_array dims: {data_object.data.shape} and starfield_background_model dims: {starfield_background_model.starfield.shape}"
+    #     )
 
     starfield_subtracted_data = Starfield.subtract_from_image(starfield_background_model, data_object,
                                                               processor=remove_starfield.ImageProcessor())
 
+    starfield_subtracted_data.subtracted = np.nan_to_num(starfield_subtracted_data.subtracted, nan=-999.0)
     return data_object.duplicate_with_updates(data=starfield_subtracted_data.subtracted)
 
 

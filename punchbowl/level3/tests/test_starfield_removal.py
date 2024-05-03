@@ -21,7 +21,7 @@ from punchbowl.level3.starfield_remove import (
 
 
 @pytest.fixture()
-def one_data(shape: tuple = (2048, 2048)) -> PUNCHData:
+def one_data(shape: tuple = (128, 128)) -> PUNCHData:
     """
     Generate some random data for testing
     """
@@ -40,7 +40,7 @@ def one_data(shape: tuple = (2048, 2048)) -> PUNCHData:
 
 
 @pytest.fixture()
-def zero_starfield_data(shape: tuple = (2048, 2048)) -> Starfield:
+def zero_starfield_data(shape: tuple = (256, 256)) -> Starfield:
     """
     Generate some random data for testing
     """

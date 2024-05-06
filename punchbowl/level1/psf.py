@@ -1,6 +1,5 @@
 import typing as t
 
-import numpy as np
 from astropy.nddata import StdDevUncertainty
 from prefect import get_run_logger, task
 from regularizepsf.corrector import ArrayCorrector
@@ -15,8 +14,9 @@ def correct_psf(
     epsilon: float = 0.035,
 ) -> PUNCHData:
     new_data = corrector.correct_image(data.data, alpha=alpha, epsilon=epsilon)
+    new_uncertainty = StdDevUncertainty(corrector.correct_image(data.uncertainty.array, alpha=alpha, epsilon=epsilon))
 
-    return data.duplicate_with_updates(data=new_data)
+    return data.duplicate_with_updates(data=new_data, uncertainty=new_uncertainty)
 
 
 @task
@@ -45,10 +45,7 @@ def correct_psf_task(
         corrector = ArrayCorrector.load(model_path)
         new_data_object = correct_psf(data_object, corrector)
 
-        new_uncertainty = StdDevUncertainty(np.maximum(new_data_object.data, data_object.data) /
-                                            np.minimum(new_data_object.data, data_object.data) * data_object.uncertainty.array)
-
-        data_object = data_object.duplicate_with_updates(data=new_data_object.data, uncertainty=new_uncertainty)
+        data_object = data_object.duplicate_with_updates(data=new_data_object.data, uncertainty=new_data_object.uncertainty)
 
         data_object.meta.history.add_now("LEVEL1-correct_psf", f"PSF corrected with {model_path} model")
     else:

@@ -81,8 +81,9 @@ def despike_task(data_object: PUNCHData, unsharp_size=3, method="convolve", alph
     new_data = spikejones(
         data_object.data[...], unsharp_size=unsharp_size, method=method, alpha=alpha, dilation=dilation
     )
-    new_uncertainty = StdDevUncertainty(np.maximum(new_data, data_object.data) /
-                                        np.minimum(new_data, data_object.data) * data_object.uncertainty.array)
+    new_uncertainty = StdDevUncertainty(spikejones(
+        data_object.uncertainty.array[...], unsharp_size=unsharp_size, method=method, alpha=alpha, dilation=dilation
+    ))
 
     data_object = data_object.duplicate_with_updates(data=new_data, uncertainty=new_uncertainty)
 

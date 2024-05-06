@@ -125,9 +125,7 @@ def destreak_task(data_object: PUNCHData) -> PUNCHData:
     readout_line_time = 0.1
     reset_line_time = 0.1
     new_data = correct_streaks(data_object.data, exposure_time, readout_line_time, reset_line_time)
-
-    new_uncertainty = StdDevUncertainty(np.maximum(new_data, data_object.data) /
-                                        np.minimum(new_data, data_object.data) * data_object.uncertainty.array)
+    new_uncertainty = StdDevUncertainty(correct_streaks(data_object.uncertainty.array, exposure_time, readout_line_time, reset_line_time))
 
     data_object = data_object.duplicate_with_updates(data=new_data, uncertainty=new_uncertainty)
 

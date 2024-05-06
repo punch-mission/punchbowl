@@ -1,11 +1,11 @@
 import typing as t
-from typing import List
 
 import numpy as np
 from prefect import get_run_logger, task
 from skimage.morphology import binary_dilation
 
 from punchbowl.data import PUNCHData
+
 
 def find_spikes(
     data: np.ndarray,
@@ -73,7 +73,7 @@ def find_spikes(
 
     threshold : float
         This is the threshold over which a pixel is voted as a spike.
-        
+
     nvotes: int
         (default is 3) - number of 'voting' frames on either side of the
         central frame; actual number of votes is twice this.
@@ -112,7 +112,7 @@ def find_spikes(
 
     # test if odd number of frames, or if a frame of interest has been included
     z_shape = np.shape(data[:, 0, 0])
-    
+
     if z_shape[0] % 2 == 0:
         if index_of_interest is None:
             raise ValueError("Number of frames in `data` must be odd or have `frame_of_interest` set.")
@@ -140,7 +140,7 @@ def find_spikes(
     yes_vote_count = np.sum(difference_array > threshold_array, axis=0)
     no_vote_count = np.full(frame_of_interest.shape, voters_array.shape[0]) - yes_vote_count
     flagged_features_array = yes_vote_count > required_yes
-    
+
     # if the number of no votes exceeds a veto limit, then veto
     veto_mask = no_vote_count > veto_limit
 
@@ -201,10 +201,10 @@ def identify_bright_structures_task(
         veto_limit=veto_limit,
         diff_method=diff_method,
         dilation=dilation,
-        index_of_interest=-1,
+        index_of_interest=-1)
 
     # add the uncertainty to the output punch data object
-    data.uncertainty = np.max([data.uncertainty, spike_mask], axis=0)
+    data.uncertainty.arrray = np.max([data.uncertainty, spike_mask], axis=0)
 
     logger.info("identify_bright_structures_task ended")
     data.meta.history.add_now("LEVEL2-bright_structures",

@@ -1,5 +1,5 @@
 import warnings
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 import numpy as np
@@ -10,10 +10,9 @@ from punchbowl.exceptions import InvalidDataError
 
 
 @task
-def query_f_corona_model_source(polarizer: str,
-                                product: str,
-                                start_datetime: datetime,
-                                end_datetime: datetime) -> List[str]:
+def query_f_corona_model_source(
+    polarizer: str, product: str, start_datetime: datetime, end_datetime: datetime
+) -> List[str]:
     """Creates a list of files based between a start date/time (start_datetime)
     and an end date/time (end_datetime) for a specifed polarizer and product
     type.
@@ -46,15 +45,11 @@ def query_f_corona_model_source(polarizer: str,
     file_list : [list]
         returns a list of files over the specified period for the specified
         polarizer.
-
-    TODO
-    ----
+    """
     # TODO: Improve Query database code
     # TODO: Change placeholder output list
     # TODO: add option to have selective cadence
     # TODO: update wanings and exceptions to match standards
-
-    """
     logger = get_run_logger()
     logger.info("query_f_corona_model_source started")
 
@@ -73,8 +68,7 @@ def query_f_corona_model_source(polarizer: str,
 
     # Check if files found in range
     if len(file_list) == 0:
-        warnings.warn(f"No files found over specified dates: from: {start_datetime} to: {end_datetime}.",
-                      stacklevel=2)
+        warnings.warn(f"No files found over specified dates: from: {start_datetime} to: {end_datetime}.", stacklevel=2)
 
     logger.info("query_f_corona_model_source finished")
 
@@ -82,12 +76,13 @@ def query_f_corona_model_source(polarizer: str,
 
 
 @task
-def construct_f_corona_background(data_list: List[str],
-                                  method: str = "percentile",
-                                  apply_threshold_mask: bool = True,
-                                  threshold_mask_cutoff: float = 1.5,
-                                  percentile_value: float = 5
-                                  ) -> PUNCHData:
+def construct_f_corona_background(
+    data_list: List[str],
+    method: str = "percentile",
+    apply_threshold_mask: bool = True,
+    threshold_mask_cutoff: float = 1.5,
+    percentile_value: float = 5,
+) -> PUNCHData:
     """Creates a background f corona map from a series of different models.
 
     Creates a background f corona map (method) using a series of different
@@ -143,6 +138,7 @@ def construct_f_corona_background(data_list: List[str],
     return output_PUNCHobject : ['punchbowl.data.PUNCHData']
         returns an array of the same dimensions as the x and y dimensions of
         the input array
+    """
 
     # TODO: exclude data if flagged in weight array
     # TODO: pass through REAL meta data and WCS
@@ -150,7 +146,6 @@ def construct_f_corona_background(data_list: List[str],
     # TODO: add an x,y window to average over
     # TODO: needs to look at the weights (uncertainties) for trefoil images, so we don't average
     # TODO: output weight
-    """
     logger = get_run_logger()
     logger.info("construct_f_corona_background started")
 
@@ -171,11 +166,11 @@ def construct_f_corona_background(data_list: List[str],
 
     data_shape = np.shape(output.data)
 
-    number_of_data_frames=len(data_list)
+    number_of_data_frames = len(data_list)
     data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
 
     # create an empty list for data
-    meta_list=[]
+    meta_list = []
 
     for i, address_out in enumerate(data_list):
         data_object = PUNCHData.from_fits(address_out)
@@ -184,8 +179,8 @@ def construct_f_corona_background(data_list: List[str],
 
     if apply_threshold_mask:
         # copy data arrays
-        data_size=data_cube.shape
-        temp_data_cube=data_cube.copy()
+        data_size = data_cube.shape
+        temp_data_cube = data_cube.copy()
         data_mask = data_cube.copy()
         data_mask.fill(1)
 
@@ -197,7 +192,7 @@ def construct_f_corona_background(data_list: List[str],
 
         # Mask outliers in the cube
         for n in range(data_size[0]):
-            temp_data_cube[n, :, :] = (np.abs(data_cube[n, :, :].astype(int) - mean_image[:, :])/sd_image[:, :])
+            temp_data_cube[n, :, :] = np.abs(data_cube[n, :, :].astype(int) - mean_image[:, :]) / sd_image[:, :]
 
         # make int
         temp_data_cube = temp_data_cube.astype(int)
@@ -221,15 +216,13 @@ def construct_f_corona_background(data_list: List[str],
         f_background = np.mean(data_cube, axis=0)
 
     else:
-        raise ValueError("invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. "
-                         f"Found {method}")
+        raise ValueError(
+            "invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. " f"Found {method}"
+        )
 
     # create an output PUNCHdata object
     # TODO: the weight and wcs should come from all of the input files, not just one
-    output = PUNCHData(f_background,
-                                   wcs=output_wcs,
-                                   meta=output_meta,
-                                   mask=output_mask)
+    output = PUNCHData(f_background, wcs=output_wcs, meta=output_meta, mask=output_mask)
 
     logger.info("construct_f_corona_background finished")
     output.meta.history.add_now("LEVEL3-construct_f_corona_background", "constructed f corona model")
@@ -237,9 +230,22 @@ def construct_f_corona_background(data_list: List[str],
     return output
 
 
+def subtract_f_corona_background(data_object: PUNCHData, f_background_model_array: np.ndarray) -> PUNCHData:
+    # check dimensions match
+    if data_object.data.shape != f_background_model_array.shape:
+        raise InvalidDataError(
+            "f_background_subtraction expects the data_object and"
+            "f_background arrays to have the same dimensions."
+            f"data_array dims: {data_object.data.shape} and f_background_model dims: {f_background_model_array.shape}"
+        )
+
+    bkg_subtracted_data = data_object.data - f_background_model_array
+
+    return data_object.duplicate_with_updates(data=bkg_subtracted_data)
+
 @task
 def subtract_f_corona_background_task(data_object: PUNCHData,
-                                      f_background_model: PUNCHData) -> PUNCHData:
+                                      f_background_model_path: Optional[str]) -> PUNCHData:
     """subtracts a background f corona model from an input data frame.
 
     checks the dimensions of input data frame and background model match and
@@ -247,52 +253,38 @@ def subtract_f_corona_background_task(data_object: PUNCHData,
 
     Parameters
     ----------
-    data_object : ['punchbowl.data.PUNCHData']
+    data_object : punchbowl.data.PUNCHData
         A PUNCHobject data frame to be background subtracted
 
-    f_background_model : ['punchbowl.data.PUNCHData']
-        A PUNCHobject background map
+    f_background_model_path : str
+        path to a PUNCHobject background map
 
     Returns
     -------
 
     bkg_subtracted_data : ['punchbowl.data.PUNCHData']
         A background subtracted data frame
-
-    TODO
-    ----
-
+    """
     # TODO: exclude data if flagged in weight array
     # TODO: pass through REAL meta data and WCS
     # TODO: create 2nd hdu with list of input files
     # TODO: needs to look at the weights (uncertainties) for trefoil images, so we don't average
     # TODO: output weight - combine weights
-    """
     logger = get_run_logger()
     logger.info("subtract_f_corona_background started")
 
-    data_array = data_object.data
-    output_wcs = data_object.wcs
-    output_meta = data_object.meta
-    # output_uncertainty=shape_PUNCHobject.uncertainty
-    output_mask = data_object.mask
+    if f_background_model_path is None:
+        f_data_array = create_empty_f_background_model(data_object)
+    else:
+        f_data_array = PUNCHData.from_fits(f_background_model_path).data
 
-    f_data_array = f_background_model.data
-
-    # check dimensions match
-    if data_array.shape != f_data_array.shape:
-        raise InvalidDataError("f_background_subtraction expects the data_object and"
-                        "f_background arrays to have the same dimensions."
-                        f"data_array dims: {data_array.shape} and f_background_model dims: {f_data_array.shape}")
-
-    bkg_subtracted_data = data_array - f_data_array
-
-    output = PUNCHData(bkg_subtracted_data,
-                                   wcs=output_wcs,
-                                   meta=output_meta,
-                                   mask=output_mask)
+    output = subtract_f_corona_background(data_object, f_data_array)
 
     logger.info("subtract_f_corona_background finished")
     output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
     return output
+
+
+def create_empty_f_background_model(data_object: PUNCHData) -> np.ndarray:
+    return np.zeros_like(data_object.data)

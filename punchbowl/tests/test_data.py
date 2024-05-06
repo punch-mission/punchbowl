@@ -1,16 +1,20 @@
 import os
 from datetime import datetime
-from collections import OrderedDict
 
 import astropy
+import astropy.units as u
 import numpy as np
-import pandas as pd
 import pytest
+from astropy.coordinates import GCRS, ICRS, EarthLocation, SkyCoord, get_sun
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
+from astropy.time import Time
 from astropy.wcs import WCS
 from ndcube import NDCube
+from numpy.linalg import inv
 from pytest import fixture
+from sunpy import sun
+from sunpy.coordinates import frames
 
 from punchbowl.data import (
     History,
@@ -18,12 +22,14 @@ from punchbowl.data import (
     MetaField,
     NormalizedMetadata,
     PUNCHData,
+    calculate_helio_wcs_from_celestial,
     load_spacecraft_def,
     load_trefoil_wcs,
 )
-from punchbowl.exceptions import InvalidDataError
+from punchbowl.level1.initial_uncertainty import update_initial_uncertainty
 
 TESTDATA_DIR = os.path.dirname(__file__)
+SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
 SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
 SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
 SAMPLE_OMNIBUS_PATH = os.path.join(TESTDATA_DIR, "omniheader.csv")
@@ -149,6 +155,14 @@ def test_normalizedmetadata_to_fits_header(tmpdir):
     assert isinstance(header, fits.Header)
 
 
+def test_normalizedmetadata_get_keys():
+    result = NormalizedMetadata.load_template("CB1",
+                                              omniheader_path=SAMPLE_OMNIBUS_PATH,
+                                              level_spec_path=SAMPLE_LEVEL_PATH,
+                                              spacecraft_def_path=SAMPLE_SPACECRAFT_DEF_PATH)
+    keys = result.fits_keys
+    assert len(keys) == 5
+
 @fixture
 def sample_wcs() -> WCS:
     """
@@ -187,8 +201,8 @@ def simple_ndcube():
     # Taken from NDCube documentation
     data = np.random.rand(4, 4, 5)
     wcs = astropy.wcs.WCS(naxis=3)
-    wcs.wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
-    wcs.wcs.cunit = "Angstrom", "deg", "deg"
+    wcs.wcs.ctype = "STOKES", "HPLT-TAN", "HPLN-TAN"
+    wcs.wcs.cunit = "", "deg", "deg"
     wcs.wcs.cdelt = 0.2, 0.5, 0.4
     wcs.wcs.crpix = 0, 2, 2
     wcs.wcs.crval = 10, 0.5, 1
@@ -205,7 +219,8 @@ def sample_punchdata():
 
     def _sample_punchdata(shape=(50, 50)):
         data = np.random.random(shape).astype(np.float32)
-        uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
+        sqrt_abs_data = np.sqrt(np.abs(data))
+        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype(np.float32))
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
         wcs.wcs.cunit = "deg", "deg"
@@ -220,6 +235,30 @@ def sample_punchdata():
 
     return _sample_punchdata
 
+@fixture
+def sample_punchdata_clear():
+    """
+    Generate a sample PUNCHData object for testing
+    """
+
+    def _sample_punchdata_clear(shape=(50, 50)):
+        data = np.random.random(shape).astype(np.float32)
+        sqrt_abs_data = np.sqrt(np.abs(data))
+        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype(np.float32))
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+        wcs.wcs.cunit = "deg", "deg"
+        wcs.wcs.cdelt = 0.1, 0.1
+        wcs.wcs.crpix = 0, 0
+        wcs.wcs.crval = 1, 1
+        wcs.wcs.cname = "HPC lon", "HPC lat"
+
+        meta = NormalizedMetadata.load_template("CR1", "0")
+        meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
+        return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+    return _sample_punchdata_clear
+
 
 @fixture
 def sample_punchdata_list(sample_punchdata):
@@ -229,6 +268,17 @@ def sample_punchdata_list(sample_punchdata):
     sample_pd1 = sample_punchdata()
     sample_pd2 = sample_punchdata()
     return [sample_pd1, sample_pd2]
+
+@fixture
+def sample_punchdata_triplet(sample_punchdata):
+    """
+    Generate a list of sample PUNCHData objects for testing polarization resolving
+    """
+
+    sample_pd1 = sample_punchdata()
+    sample_pd2 = sample_punchdata()
+    sample_pd3 = sample_punchdata()
+    return [sample_pd1, sample_pd2, sample_pd3]
 
 
 def test_sample_data_creation(sample_data):
@@ -265,8 +315,24 @@ def test_generate_data_statistics_from_zeros(sample_punchdata):
 
     sample_data = PUNCHData(data=np.zeros((2048,2048),dtype=np.int16), wcs=WCS(h), meta=m)
 
-    with pytest.raises(InvalidDataError):
-        sample_data._update_statistics()
+    sample_data._update_statistics()
+
+    assert sample_data.meta['DATAZER'].value == 2048*2048
+
+    assert sample_data.meta['DATASAT'].value == 0
+
+    assert sample_data.meta['DATAAVG'].value == -999.0
+    assert sample_data.meta['DATAMDN'].value == -999.0
+    assert sample_data.meta['DATASIG'].value == -999.0
+
+    percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
+    percentile_values = [-999.0 for _ in percentile_percentages]
+
+    for percent, value in zip(percentile_percentages, percentile_values):
+        assert sample_data.meta[f'DATAP{percent:02d}'].value == value
+
+    assert sample_data.meta['DATAMIN'].value == 0.0
+    assert sample_data.meta['DATAMAX'].value == 0.0
 
 
 def test_generate_data_statistics(sample_punchdata):
@@ -294,10 +360,20 @@ def test_generate_data_statistics(sample_punchdata):
     assert sample_data.meta['DATAMAX'].value == float(sample_data.data.max())
 
 
+def test_initial_uncertainty_calculation(sample_punchdata):
+    sample_data = sample_punchdata()
+
+    # Manually call update of uncertainty
+    sample_data = update_initial_uncertainty(sample_data)
+
+    # Check that uncertainty exists and is within range
+    assert sample_data.uncertainty.array.shape == sample_data.data.shape
+    assert sample_data.uncertainty.array.min() >= 0
+    assert sample_data.uncertainty.array.max() <= 1
+
+
 def test_read_write_uncertainty_data(sample_punchdata):
     sample_data = sample_punchdata()
-    uncertainty = StdDevUncertainty(np.sqrt(np.abs(sample_data.data)).astype('uint8'))
-    sample_data.uncertainty = uncertainty
 
     sample_data.write(SAMPLE_WRITE_PATH)
 
@@ -305,20 +381,61 @@ def test_read_write_uncertainty_data(sample_punchdata):
 
     with fits.open(SAMPLE_WRITE_PATH) as hdul:
         fitsio_read_uncertainty = hdul[2].data
-        fitsio_read_header = hdul[2].header
 
-    assert fitsio_read_header['BITPIX'] == 8
-
-    assert sample_data.uncertainty.array.dtype == 'uint8'
-    assert pdata_read_data.uncertainty.array.dtype == 'uint8'
+    assert sample_data.uncertainty.array.dtype == 'float32'
+    assert pdata_read_data.uncertainty.array.dtype == 'float32'
     assert fitsio_read_uncertainty.dtype == 'uint8'
+
+    assert (sample_data.uncertainty.array.min() >= 0) and (sample_data.uncertainty.array.max() <= 1)
+    assert (pdata_read_data.uncertainty.array.min() >= 0) and (pdata_read_data.uncertainty.array.max() <= 1)
+    assert (fitsio_read_uncertainty.min() >= 0) and (fitsio_read_uncertainty.max() <= 255)
+
+
+def test_uncertainty_bounds(sample_punchdata):
+    sample_data_certain = sample_punchdata()
+    sample_data_certain.uncertainty.array[:, :] = 0
+    sample_data_certain.write(SAMPLE_WRITE_PATH)
+
+    punchdata_read_data_certain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
+    with fits.open(SAMPLE_WRITE_PATH) as hdul:
+        manual_read_data_certain = hdul[2].data
+
+    assert np.all(punchdata_read_data_certain == 0)
+    assert np.all(manual_read_data_certain == 0)
+
+    sample_data_uncertain = sample_punchdata()
+    sample_data_uncertain.uncertainty.array[:, :] = 1
+    sample_data_uncertain.write(SAMPLE_WRITE_PATH)
+
+    punchdata_read_data_uncertain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
+    with fits.open(SAMPLE_WRITE_PATH) as hdul:
+        manual_read_data_uncertain = hdul[2].data
+
+    assert np.all(punchdata_read_data_uncertain == 1)
+    assert np.all(manual_read_data_uncertain == 255)
+
+
+def test_invalid_uncertainty_range_error(sample_punchdata):
+    sample_data = sample_punchdata()
+    sqrt_data_array = np.sqrt(np.abs(sample_data.data))
+    uncertainty = StdDevUncertainty(np.interp(sqrt_data_array, (sqrt_data_array.min(), sqrt_data_array.max()), (0,1.1)).astype('float'))
+    sample_data.uncertainty = uncertainty
+
+    with pytest.raises(ValueError):
+        sample_data.write(SAMPLE_WRITE_PATH)
+
+
+def test_generate_wcs_metadata(sample_punchdata):
+    sample_data = sample_punchdata()
+    sample_header = sample_data.construct_wcs_header_fields()
+
+    assert isinstance(sample_header, astropy.io.fits.Header)
 
 
 def test_filename_base_generation(sample_punchdata):
     actual = sample_punchdata().filename_base
     expected = "PUNCH_L0_PM1_20230101000001"
     assert actual == expected
-
 
 
 @fixture
@@ -368,6 +485,13 @@ def test_create_level0_normalized_metadata():
     assert "OBSRVTRY" in m
 
 
+def test_create_level3_normalized_metadata():
+    m = NormalizedMetadata.load_template("PTM", "3")
+    assert "GEOD_LAT" in m
+    assert "HGLN_OBS" in m
+    assert "HEEX_OBS" in m
+
+
 def test_normalized_metadata_to_fits_writes_history():
     m = NormalizedMetadata.load_template("PM1", "0")
     m.history.add_now("Test", "does it write?")
@@ -411,24 +535,6 @@ def test_history_cannot_compare_to_nonhistory_type():
         h1 == h2
 
 
-def test_from_fits_for_metadata(tmpdir):
-    m = NormalizedMetadata.load_template("PM1", "0")
-    m.history.add_now("Test", "does it write?")
-    m.history.add_now("Test", "how about twice?")
-    m['DESCRPTN'] = 'This is a test!'
-    m['CHECKSUM'] = ''
-    m['DATASUM'] = ''
-    h = m.to_fits_header()
-
-    path = os.path.join(tmpdir, "from_fits_test.fits")
-    d = PUNCHData(data=np.tile(np.arange(2048, dtype=np.int16), (2048, 1)), wcs=WCS(h), meta=m)
-    d.write(path)
-
-    loaded = PUNCHData.from_fits(path)
-    loaded.meta['LATPOLE'] = 0.0  # a hackish way to circumvent the LATPOLE being moved by astropy
-    assert loaded.meta == m
-
-
 def test_normalizedmetadata_from_fits_header():
     m = NormalizedMetadata.load_template("PM1", "0")
     m['DESCRPTN'] = 'This is a test!'
@@ -439,6 +545,132 @@ def test_normalizedmetadata_from_fits_header():
     recovered = NormalizedMetadata.from_fits_header(h)
 
     assert recovered == m
+
+
+def test_sun_location():
+    time_current = Time(datetime.utcnow())
+
+    skycoord_sun = astropy.coordinates.get_sun(Time(datetime.utcnow()))
+
+    skycoord_origin = SkyCoord(0*u.deg, 0*u.deg,
+                              frame=frames.Helioprojective,
+                              obstime=time_current,
+                              observer='earth')
+
+    with frames.Helioprojective.assume_spherical_screen(skycoord_origin.observer):
+        skycoord_origin_celestial = skycoord_origin.transform_to(GCRS)
+
+    with frames.Helioprojective.assume_spherical_screen(skycoord_origin.observer):
+        assert skycoord_origin_celestial.separation(skycoord_sun) < 1 * u.arcsec
+        assert skycoord_origin.separation(skycoord_sun) < 1 * u.arcsec
+
+
+def test_wcs_many_point_2d_check():
+    m = NormalizedMetadata.load_template("CTM", "2")
+    # m['DATE-OBS'] = str(datetime.utcnow().isoformat())
+    date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
+    m['DATE-OBS'] = str(date_obs)
+    # date_obs = Time(m['DATE-OBS'].value, format='isot', scale='utc')
+    sun_radec = get_sun(date_obs)
+    m['CRVAL1A'] = sun_radec.ra.to(u.deg).value
+    m['CRVAL2A'] = sun_radec.dec.to(u.deg).value
+    h = m.to_fits_header()
+    d = PUNCHData(np.ones((4096, 4096), dtype=np.float32), WCS(h, key='A'), m)
+
+    # we're at the center of the Earth so let's try that
+    test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
+    test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
+
+    wcs_celestial = d.wcs
+
+    wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, d.data.shape)
+
+    npoints = 20
+    input_coords = np.stack([
+                             np.linspace(0, 4096, npoints).astype(int),
+                             np.linspace(0, 4096, npoints).astype(int)], axis=1)
+
+    points_celestial = wcs_celestial.all_pix2world(input_coords, 0)
+    points_helio = wcs_helio.all_pix2world(input_coords, 0)
+
+    output_coords = []
+
+    for c_pix, c_celestial, c_helio in zip(input_coords, points_celestial, points_helio):
+        # skycoord_helio = SkyCoord(c_helio[1] * u.deg, c_helio[2] * u.deg,
+        #                           frame=frames.Helioprojective,
+        #                           obstime=date_obs,
+        #                           observer=test_gcrs)
+        skycoord_celestial = SkyCoord(c_celestial[0] * u.deg, c_celestial[1] * u.deg,
+                                      frame=GCRS,
+                                      obstime=date_obs,
+                                      observer=test_gcrs,
+                                      obsgeoloc=test_gcrs.cartesian,
+                                      obsgeovel=test_gcrs.velocity.to_cartesian(),
+                                      distance=test_gcrs.hcrs.distance
+                                      )
+
+        intermediate = skycoord_celestial.transform_to(frames.Helioprojective)
+        output_coords.append(wcs_helio.all_world2pix(intermediate.data.lon.to(u.deg).value,
+                                                     intermediate.data.lat.to(u.deg).value, 0))
+
+    output_coords = np.array(output_coords)
+    distances = np.linalg.norm(input_coords - output_coords, axis=1)
+    assert np.mean(distances) < 0.1
+
+
+def test_wcs_many_point_3d_check():
+    m = NormalizedMetadata.load_template("PSN", "3")
+    date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
+    m['DATE-OBS'] = str(date_obs)
+    sun_radec = get_sun(date_obs)
+    m['CRVAL1A'] = sun_radec.ra.to(u.deg).value
+    m['CRVAL2A'] = sun_radec.dec.to(u.deg).value
+    h = m.to_fits_header()
+    d = PUNCHData(np.ones((2, 4096, 4096), dtype=np.float32), WCS(h, key='A'), m)
+
+    # we're at the center of the Earth so let's try that
+    test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
+    test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
+
+    wcs_celestial = d.wcs
+    wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, d.data.shape)
+
+    npoints = 20
+    input_coords = np.stack([
+                             np.linspace(0, 4096, npoints).astype(int),
+                             np.linspace(0, 4096, npoints).astype(int),
+                             np.ones(npoints, dtype=int),], axis=1)
+
+    points_celestial = wcs_celestial.all_pix2world(input_coords, 0)
+    points_helio = wcs_helio.all_pix2world(input_coords, 0)
+
+    output_coords = []
+    for c_pix, c_celestial, c_helio in zip(input_coords, points_celestial, points_helio):
+        skycoord_celestial = SkyCoord(c_celestial[0] * u.deg, c_celestial[1] * u.deg,
+                                      frame=GCRS,
+                                      obstime=date_obs,
+                                      observer=test_gcrs,
+                                      obsgeoloc=test_gcrs.cartesian,
+                                      obsgeovel=test_gcrs.velocity.to_cartesian(),
+                                      distance=test_gcrs.hcrs.distance
+                                      )
+
+        intermediate = skycoord_celestial.transform_to(frames.Helioprojective)
+        output_coords.append(wcs_helio.all_world2pix(intermediate.data.lon.to(u.deg).value,
+                                                     intermediate.data.lat.to(u.deg).value, 2, 0))
+
+    output_coords = np.array(output_coords)
+    distances = np.linalg.norm(input_coords - output_coords, axis=1)
+    assert np.nanmean(distances) < 0.1
+
+
+def test_axis_ordering():
+    data = np.random.random((2,256,256))
+    hdu_data = fits.ImageHDU(data=data)
+
+    assert hdu_data.header['NAXIS1'] == data.shape[2]
+    assert hdu_data.header['NAXIS2'] == data.shape[1]
+    assert hdu_data.header['NAXIS3'] == data.shape[0]
 
 
 def test_empty_history_from_fits_header():
@@ -465,3 +697,9 @@ def test_load_trefoil_wcs():
     trefoil_wcs, trefoil_shape = load_trefoil_wcs()
     assert trefoil_shape == (4096, 4096)
     assert isinstance(trefoil_wcs, WCS)
+
+
+def test_has_typecode():
+    meta = NormalizedMetadata.load_template("CFM", "3")
+    meta["DATE-OBS"] = str(datetime.now())
+    assert "TYPECODE" in meta

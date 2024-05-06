@@ -15,6 +15,7 @@ from punchbowl.data import NormalizedMetadata, PUNCHData
 from punchbowl.level3.f_corona_model import (
     construct_f_corona_background,
     query_f_corona_model_source,
+    subtract_f_corona_background,
     subtract_f_corona_background_task,
 )
 
@@ -30,8 +31,8 @@ def sample_data():
 
 @pytest.fixture()
 def sample_data_list():
-    number_elements=25
-    data_list=[]
+    number_elements = 25
+    data_list = []
     for iStep in range(number_elements):
         data_list.append(SAMPLE_FITS_PATH)
     return data_list
@@ -104,16 +105,12 @@ def incorrect_shape_data(shape: tuple = (512, 512)) -> np.ndarray:
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-@pytest.mark.prefect_test()
 def test_basic_subtraction(one_data: PUNCHData, zero_data: PUNCHData) -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in
     """
-    with disable_run_logger():
-        subtraction_punchdata = subtract_f_corona_background_task.fn(one_data, zero_data)
-
+    subtraction_punchdata = subtract_f_corona_background(one_data, zero_data.data)
     assert isinstance(subtraction_punchdata, PUNCHData)
-
     assert np.all(subtraction_punchdata.data == 1)
 
 
@@ -123,7 +120,7 @@ def test_empty_list() -> None:
     dataset of increasing values passed in, a bad pixel map is passed in
     """
     with pytest.raises(ValueError):
-        input_list = glob('./data/*.fits')
+        input_list = []
         with disable_run_logger():
             f_corona_model = construct_f_corona_background.fn(input_list)
 

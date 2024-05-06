@@ -11,9 +11,9 @@ def streak_correction_matrix(
     """Computes a matrix used in correcting streaks in PUNCH images
 
     Computes the inverse of a matrix of size n where the major diagonal
-        contains the value exposure_time, the lower triangle contains readout_line_time
-        and the upper triangle contains the reset_line_time.
-            i.e. X[i,i]=diag, X[0:i-1,i]=below, X[0,i+1:n-1]=above
+    contains the value exposure_time, the lower triangle contains readout_line_time
+    and the upper triangle contains the reset_line_time.
+    i.e. X[i,i]=diag, X[0:i-1,i]=below, X[0,i+1:n-1]=above
 
     Adapted from solarsoft sc_inverse
 
@@ -98,9 +98,7 @@ def correct_streaks(
 
     """
     validate_image_is_square(image)
-    correction_matrix = streak_correction_matrix(
-        image.shape[0], exposure_time, readout_line_time, reset_line_time
-    )
+    correction_matrix = streak_correction_matrix(image.shape[0], exposure_time, readout_line_time, reset_line_time)
     return correction_matrix @ image
 
 

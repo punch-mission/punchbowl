@@ -13,9 +13,11 @@ Level:
     Temporal Information:
     Instrument and Spacecraft State:
     World Coordinate System:
-    Camera and Readout State:
-    Onboard Image Processing:
-    Calibration Data:
+        overrides:
+            CRPIX3: 0.0
+            CDELT3: 1.0
+            CRPIX3A: 0.0
+            CDELT3A: 1.0
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
@@ -29,9 +31,9 @@ Kinds:
     Polarized:
         overrides:
             NAXIS: 3
-            NAXIS1: 2
+            NAXIS1: 4096
             NAXIS2: 4096
-            NAXIS3: 4096
+            NAXIS3: 2
             OBS-MODE: Polar_BpB
             OBSLAYR1: Polar_B
             OBSLAYR2: Polar_pB
@@ -69,8 +71,8 @@ Products:
     PFN:
         kinds: [Polarized]
         overrides:
+            NAXIS1: 2048
             NAXIS2: 2048
-            NAXIS3: 2048
             TITLE: PUNCH Level-3 Polarized NFI F-Corona Model
             OBSTYPE: Polarized NFI F-corona model
             TYPECODE: PF
@@ -91,8 +93,8 @@ Products:
     CFN:
         kinds: [Unpolarized, Calibration]
         overrides:
+            NAXIS1: 2048
             NAXIS2: 2048
-            NAXIS3: 2048
             TITLE: PUNCH Level-3 Unpolarized NFI F-Corona Model
             OBSTYPE: Unpolarized NFI F-corona model
             TYPECODE: CF
@@ -113,8 +115,8 @@ Products:
     PSN:
         kinds: [Polarized]
         overrides:
+            NAXIS1: 2048
             NAXIS2: 2048
-            NAXIS3: 2048
             TITLE: PUNCH Level-3 Polarized NFI Stellar Model
             OBSTYPE: Polarized NFI stellar model
             TYPECODE: PS
@@ -135,8 +137,8 @@ Products:
     CSN:
         kinds: [Unpolarized, Calibration]
         overrides:
+            NAXIS1: 2048
             NAXIS2: 2048
-            NAXIS3: 2048
             TITLE: PUNCH Level-3 Unpolarized NFI Stellar Model
             OBSTYPE: Unpolarized NFI stellar model
             TYPECODE: CS
@@ -157,8 +159,8 @@ Products:
     PNN:
         kinds: [Polarized]
         overrides:
+            NAXIS1: 2048
             NAXIS2: 2048
-            NAXIS3: 2048
             TITLE: PUNCH Level-3 Polarized NFI Image
             OBSTYPE: Polarized NFI image
             TYPECODE: PN
@@ -219,8 +221,8 @@ Products:
     PAN:
         kinds: [Polarized]
         overrides:
+            NAXIS1: 2048
             NAXIS2: 2048
-            NAXIS3: 2048
             TITLE: PUNCH Level-3 Polarized Low Noise NFI Image
             OBSTYPE: Polarized low noise NFI image
             TYPECODE: PA
@@ -241,8 +243,8 @@ Products:
     CAN:
         kinds: [Unpolarized]
         overrides:
+            NAXIS1: 2048
             NAXIS2: 2048
-            NAXIS3: 2048
             TITLE: PUNCH Level-3 Unpolarized Low Noise NFI Image
             OBSTYPE: Unpolarized low noise NFI image
             TYPECODE: CA

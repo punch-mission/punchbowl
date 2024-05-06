@@ -71,14 +71,14 @@ Repository = "https://github.com/punch-mission/punchbowl.git"
 "Bug Tracker" = "https://github.com/punch-mission/punchbowl/issues"
 #Changelog = "https://github.com/punch-mission/thuban/blob/main/CHANGELOG.md"
 
-[tool.setuptools]
-packages = ["punchbowl"]
+[tool.setuptools.packages]
+find = {}  # Scan the project directory with the default parameters
 
 [tool.codespell]
 skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
 
 [tool.ruff]
-target-version = 'py39'
+target-version = 'py310'
 exclude = ['tests', 'scripts', 'docs']
 line-length=120
 

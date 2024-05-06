@@ -59,6 +59,10 @@ def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> PUNCHData:
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
+
+
+
+
 @pytest.fixture()
 def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> PUNCHData:
     """
@@ -87,9 +91,6 @@ def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> PUNCHData:
 
     data = np.zeros(shape)
     uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
-
-    print('min',np.min(data))
-    print('max',np.max(data))
 
     wcs = WCS(naxis=2)
     wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
@@ -199,6 +200,16 @@ def test_different_parameters(sample_punchdata: PUNCHData):
     # You might need to generate expected results based on the parameters
     assert result.shape == np.shape(sample_punchdata.data[0,:,:])
 
+#####
+def test_raise_error_insufficient_frames(sample_bad_pixel_map: PUNCHData):
+    # creates a raise error as only a 2d array is passed in
+
+    with pytest.raises(ValueError):
+        #sample_data.write(SAMPLE_WRITE_PATH)
+        find_spikes(sample_bad_pixel_map.data,
+                    sample_bad_pixel_map.uncertainty.array)
+
+
 def test_raise_error(even_sample_punchdata: PUNCHData):
     # creates a raise error as an even array is passed in
 
@@ -231,7 +242,6 @@ def test_single_bright_point(sample_punchdata: PUNCHData):
     assert isinstance(result, np.ndarray)
 
 def test_single_bright_point_2(one_bright_point_sample_punchdata: PUNCHData):
-
 
     x_interest = 200
     y_interest = 200
@@ -267,12 +277,185 @@ def test_veto(two_bright_point_sample_punchdata: PUNCHData):
 
     two_bright_point_sample_punchdata.uncertainty.array[:, :, :] = 0
 
+
     result_3 = find_spikes(two_bright_point_sample_punchdata.data,
                            two_bright_point_sample_punchdata.uncertainty.array,
                            diff_method='abs',
                            threshold=3,
                            required_yes=1,
-                           veto_limit=0)
+                           veto_limit=0,
+                           index_of_interest=-1)
 
     # test cell of interest is set to 'False' with veto
     assert result_3[x_interest, y_interest] == False
+
+
+def test_uncertainty(sample_punchdata: PUNCHData):
+    # create an uncertainty array of 0's
+    sample_punchdata.uncertainty.array[:, :, :] = 0
+
+    # choose a pixel of interest
+    x_test_px=210
+    y_test_px=355
+    index_of_interest=-1
+
+   # initial test to see pixel of interest is normal
+    result_0 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='abs',
+                           threshold=3,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+
+    # test cell of interest is set to 'True'
+    assert result_0[y_test_px, x_test_px] == False
+
+    # set pixel of interest to high value
+    sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=1000
+    
+    result_1 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='abs',
+                           threshold=3,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+
+    # test cell of interest is set to 'True'
+    assert result_1[y_test_px, x_test_px] == True
+
+    # make bad pixels adjacent to cell of interest also high
+    # set pixel of interest to high value
+    sample_punchdata.data[:, y_test_px, x_test_px]=1000
+
+    result_2 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='abs',
+                           threshold=3,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+
+    # test cell of interest is set to 'False'
+    assert result_2[y_test_px, x_test_px] == False
+
+    # set surrounding values to uncertain
+    
+    sample_punchdata.uncertainty.array[index_of_interest, y_test_px, x_test_px] = 1
+    result_3 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='abs',
+                           threshold=3,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+    # test cell of interest is set to 'True' due to uncertainty flag set on the surrounding pixels
+    assert result_3[y_test_px, x_test_px] == True
+
+
+
+
+def test_threshold_abs(sample_punchdata: PUNCHData):
+    # create an uncertainty array of 0's
+    sample_punchdata.uncertainty.array[:, :, :] = 0
+
+    # choose a pixel of interest
+    x_test_px=210
+    y_test_px=355
+    index_of_interest=-1
+
+   # initial test to see pixel of interest is normal
+    result_0 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='abs',
+                           threshold=3,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+
+
+    assert result_0[y_test_px, x_test_px] == False   
+
+    # set pixel of interest to high value
+    sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
+    
+    result_1 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='abs',
+                           threshold=3,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+
+    assert result_1[y_test_px, x_test_px] == True
+
+    # make bad pixel threshold high
+
+    result_2 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='abs',
+                           threshold=300,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+
+    # test cell of interest is set to 'False'
+    assert result_2[y_test_px, x_test_px] == False
+
+
+def test_threshold_sigma(sample_punchdata: PUNCHData):
+    # create an uncertainty array of 0's
+    sample_punchdata.uncertainty.array[:, :, :] = 0
+
+    # choose a pixel of interest
+    x_test_px=210
+    y_test_px=355
+    index_of_interest=-1
+
+   # initial test to see pixel of interest is normal
+    result_0 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='sigma',
+                           threshold=3,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+
+
+    assert result_0[y_test_px, x_test_px] == False   
+
+    # set pixel of interest to high value
+    sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
+    
+    result_1 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='sigma',
+                           threshold=3,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+
+    assert result_1[y_test_px, x_test_px] == True
+
+
+    # make bad pixel threshold high
+
+    result_2 = find_spikes(sample_punchdata.data,
+                           sample_punchdata.uncertainty.array,
+                           diff_method='sigma',
+                           threshold=300,
+                           required_yes=1,
+                           veto_limit=1,
+                           index_of_interest=index_of_interest)
+
+    # test cell of interest is set to 'False'
+    assert result_2[y_test_px, x_test_px] == False
+
+
+def test_required_yes(two_bright_point_sample_punchdata: PUNCHData):
+    pass
+
+def test_dilation(two_bright_point_sample_punchdata: PUNCHData):
+    pass
+

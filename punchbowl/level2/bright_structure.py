@@ -74,10 +74,6 @@ def find_spikes(
     threshold : float
         This is the threshold over which a pixel is voted as a spike.
 
-    nvotes: int
-        (default is 3) - number of 'voting' frames on either side of the
-        central frame; actual number of votes is twice this.
-
     required_yes: int
         (default is 4) - number of 'voting' frames that must vote the central
         value is a spike, for it to be marked as such.

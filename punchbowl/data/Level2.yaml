@@ -50,8 +50,8 @@ Kinds:
             NAXIS2: 4096
             OBS-MODE: Unpolarized
             POLAR: -999
-            CTYPE1: 'HPLN-ARC'
-            CTYPE2: 'HPLT-ARC'
+            CTYPE1: HPLN-ARC
+            CTYPE2: HPLT-ARC
             WCSAXES: 2
             WCSAXESA: 2
             CDELT1: 0.0225
@@ -62,8 +62,8 @@ Kinds:
             CDELT2A: 0.025
             CRPIX1A: 2047.5
             CRPIX2A: 2047.5
-            CTYPE1A: "RA---ARC"
-            CTYPE2A: "DEC--ARC"
+            CTYPE1A: RA---ARC
+            CTYPE2A: DEC--ARC
         omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3 ,CRPIX3,
                 PC1_3, PC2_3, PC3_1, PC3_2, PC3_3, CDELT3, CUNIT3, CTYPE3, CRVAL3, CNAME3,
                 CRPIX3A, PC1_3A, PC2_3A, PC3_1A, PC3_2A, PC3_3A, CDELT3A, CUNIT3A, CTYPE3A, CRVAL3A, CNAME3A ]

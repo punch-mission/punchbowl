@@ -18,8 +18,8 @@ Level:
             CTYPE1: HPLN-ARC
             CTYPE2: HPLT-ARC
             WCSAXESA: 2
-            CTYPE1A: "RA---ARC"
-            CTYPE2A: "DEC--ARC"
+            CTYPE1A: RA---ARC
+            CTYPE2A: DEC--ARC
         omits: [CRPIX3, PC1_3, PC2_3, PC3_1, PC3_2, PC3_3, CDELT3, CUNIT3, CTYPE3, CRVAL3, CNAME1,
                 CRPIX3A, PC1_3A, PC2_3A, PC3_1A, PC3_2A, PC3_3A, CDELT3A, CUNIT3A, CTYPE3A, CRVAL3A, CNAME1A]
     Camera and Readout State:
@@ -97,8 +97,8 @@ Products:
     PM?:
         kinds: [Polarized, PM]
         overrides:
-            TITLE: "PUNCH Level-0 {craftname} Polarized Image"
-            OBSTYPE: "Polarized {crafttype} image"
+            TITLE: PUNCH Level-0 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"

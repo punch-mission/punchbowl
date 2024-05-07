@@ -175,7 +175,6 @@ def remove_deficient_pixels_task(
         deficient_pixel_map = PUNCHData.from_fits(deficient_pixel_map_path)
 
     deficient_pixel_array = deficient_pixel_map.data
-
     output_object = remove_deficient_pixels(data, deficient_pixel_array,
                                             required_good_count=required_good_count,
                                             max_window_size=max_window_size,

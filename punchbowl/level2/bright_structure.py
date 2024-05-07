@@ -74,12 +74,8 @@ def find_spikes(
     threshold : float
         This is the threshold over which a pixel is voted as a spike.
 
-    nvotes: int
-        (default is 3) - number of 'voting' frames on either side of the
-        central frame; actual number of votes is twice this.
-
     required_yes: int
-        (default is 4) - number of 'voting' frames that must vote the central
+        (default is 4) - number of 'voting' frames that must vote the 
         value is a spike, for it to be marked as such.
 
     veto_limit: int
@@ -112,6 +108,7 @@ def find_spikes(
 
     # test if odd number of frames, or if a frame of interest has been included
     z_shape = np.shape(data[:, 0, 0])
+
     if z_shape[0] % 2 == 0:
         if index_of_interest is None:
             raise ValueError("Number of frames in `data` must be odd or have `frame_of_interest` set.")
@@ -142,6 +139,7 @@ def find_spikes(
 
     # if the number of no votes exceeds a veto limit, then veto
     veto_mask = no_vote_count > veto_limit
+
     flagged_features_array[veto_mask] = False
 
     # if input data already has an uncertainty of 1, create a True flag
@@ -199,14 +197,13 @@ def identify_bright_structures_task(
         veto_limit=veto_limit,
         diff_method=diff_method,
         dilation=dilation,
-        index_of_interest=-1,
-    )
+        index_of_interest=-1)
 
     # add the uncertainty to the output punch data object
-    data.uncertainty = np.max([data.uncertainty, spike_mask], axis=0)
+    data.uncertainty.arrray = np.max([data.uncertainty, spike_mask], axis=0)
 
     logger.info("identify_bright_structures_task ended")
-
-    data.meta.history.add_now("LEVEL2-bright_structures", "bright structure identification completed")
+    data.meta.history.add_now("LEVEL2-bright_structures",
+                              "bright structure identification completed")
 
     return data

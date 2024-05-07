@@ -55,7 +55,7 @@ Kinds:
             NAXIS2: 2048
         omits: [NAXIS3]
 
-    CalibrationQuarticCoefficients:
+    QuarticCalibration:
         overrides:
             NAXIS: 3
             NAXIS1: 2048
@@ -145,7 +145,7 @@ Products:
         omits: [FILTER, OBS-MODE, POLAR]
 
     FQ?:
-        kinds: [Calibration]
+        kinds: [QuarticCalibration]
         overrides:
             NAXIS: 3
             NAXIS1: 2048
@@ -253,17 +253,6 @@ Products:
             TITLE: PUNCH Level-1 {craftname} Point Spread Function Model
             OBSTYPE: '{crafttype} point spread function model'
             TYPECODE: RG
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR]
-
-    CF?:
-        kinds: [CalibrationQuarticCoefficients]
-        overrides:
-            TITLE: PUNCH Level-1 {craftname} Quartic Fit Coefficients
-            OBSTYPE: '{crafttype} quartic fit coefficients'
-            TYPECODE: CF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"

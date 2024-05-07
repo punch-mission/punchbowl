@@ -49,7 +49,7 @@ def create_header_validation_test_data(path="../punchbowl/tests/"):
 
 
 def create_quartic_coefficients_test_data(path="../punchbowl/level1/tests/data/"):
-    meta = NormalizedMetadata.load_template("CF1", "1")
+    meta = NormalizedMetadata.load_template("FQ1", "1")
     meta['DATE-OBS'] = str(datetime.now())
     wcs = WCS(naxis=3)
     data = create_constant_quartic_coefficients((10, 10))

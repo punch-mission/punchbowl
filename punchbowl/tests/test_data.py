@@ -619,7 +619,7 @@ def test_wcs_many_point_2d_check():
 
 
 def test_wcs_many_point_3d_check():
-    m = NormalizedMetadata.load_template("PSN", "3")
+    m = NormalizedMetadata.load_template("PSM", "3")
     date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
     m['DATE-OBS'] = str(date_obs)
     sun_radec = get_sun(date_obs)

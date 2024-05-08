@@ -112,18 +112,6 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: M
 
-    PSN:
-        kinds: [Polarized]
-        overrides:
-            NAXIS1: 2048
-            NAXIS2: 2048
-            TITLE: PUNCH Level-3 Polarized NFI Stellar Model
-            OBSTYPE: Polarized NFI stellar model
-            TYPECODE: PS
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: N
-
     CSM:
         kinds: [Unpolarized, Calibration]
         overrides:
@@ -133,18 +121,6 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M
-
-    CSN:
-        kinds: [Unpolarized, Calibration]
-        overrides:
-            NAXIS1: 2048
-            NAXIS2: 2048
-            TITLE: PUNCH Level-3 Unpolarized NFI Stellar Model
-            OBSTYPE: Unpolarized NFI stellar model
-            TYPECODE: CS
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: N
 
     PTM:
         kinds: [Polarized]

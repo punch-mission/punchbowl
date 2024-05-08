@@ -159,7 +159,7 @@ Products:
         kinds: [Calibration]
         overrides:
             TITLE: PUNCH Level-0 {craftname} Dark Image
-            OBSTYPE: "{crafttype} dark image image (lamp off)"
+            OBSTYPE: "{crafttype} dark image (lamp off)"
             TYPECODE: DK
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
@@ -170,7 +170,7 @@ Products:
         kinds: [Calibration]
         overrides:
             TITLE: PUNCH Level-0 {craftname} Dark Image
-            OBSTYPE: "{crafttype} dark image image (lamp on)"
+            OBSTYPE: "{crafttype} dark image (lamp on)"
             TYPECODE: DY
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"

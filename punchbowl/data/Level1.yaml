@@ -151,7 +151,7 @@ Products:
             NAXIS1: 2048
             NAXIS2: 2048
             NAXIS3: 5
-            TITLE: PUNCH Level-1 {craftname} Flat-field Parameter map (quartic polynomial coefficients)
+            TITLE: PUNCH Level-1 {craftname} Flat-field Parameter Map (quartic polynomial coefficients)
             OBSTYPE: "{crafttype} flat-field parameter map (quartic polynomial coefficients)"
             TYPECODE: FQ
             INSTRUME: "{craftname}"

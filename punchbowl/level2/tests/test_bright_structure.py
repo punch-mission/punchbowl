@@ -407,7 +407,7 @@ def test_threshold_abs(sample_punchdata: PUNCHData):
 def test_threshold_sigma(sample_punchdata: PUNCHData):
     # create an uncertainty array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
-    sample_punchdata.data[:, :, :]=0
+    sample_punchdata.data[:, :, :] = 0
 
     # choose a pixel of interest
     x_test_px=210

@@ -50,8 +50,8 @@ def level1_core_flow(
     data = correct_vignetting_task(data, vignetting_function_path)
     data = remove_deficient_pixels_task(data, deficient_pixel_map_path)
     data = remove_stray_light_task(data, stray_light_path)
-    data = align_task(data)
     data = correct_psf_task(data)
+    data = align_task(data)
     logger.info("ending level 1 core flow")
 
     if output_filename is not None:

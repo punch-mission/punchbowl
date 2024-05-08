@@ -13,7 +13,7 @@ import numpy as np
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData, NormalizedMetadata
-from punchbowl.exceptions import InvalidDataError
+# from punchbowl.exceptions import InvalidDataError
 
 
 def generate_starfield_background(
@@ -81,7 +81,7 @@ def subtract_starfield_background(data_object: PUNCHData, starfield_background_m
     starfield_subtracted_data = Starfield.subtract_from_image(starfield_background_model, data_object,
                                                               processor=remove_starfield.ImageProcessor())
 
-    starfield_subtracted_data.subtracted = np.nan_to_num(starfield_subtracted_data.subtracted, nan=-999.0)
+    # starfield_subtracted_data.subtracted = np.nan_to_num(starfield_subtracted_data.subtracted, nan=-999.0)
     return data_object.duplicate_with_updates(data=starfield_subtracted_data.subtracted)
 
 

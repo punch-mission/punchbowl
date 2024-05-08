@@ -7,9 +7,7 @@ from pkg_resources import iter_entry_points
 # Third party imports
 import numpy as np
 import pytest
-from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from prefect.logging import disable_run_logger
 from remove_starfield import Starfield
 
 # punchbowl imports

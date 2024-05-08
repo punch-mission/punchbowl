@@ -1,5 +1,5 @@
-Quartic Fit
-=============
+Quartic Fit Correction
+=======================
 
 Concept
 ---------

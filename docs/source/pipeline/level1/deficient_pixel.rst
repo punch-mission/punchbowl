@@ -1,5 +1,5 @@
-Deficient Pixel
-=================
+Deficient Pixel Replacement
+=============================
 
 Concept
 ---------

@@ -1,0 +1,8 @@
+Despike
+==========
+
+Concept
+---------
+
+Applying correction
+---------------------

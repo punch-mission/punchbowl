@@ -9,5 +9,4 @@ Data
    :caption: Contents:
 
    access
-   level0
    data_object

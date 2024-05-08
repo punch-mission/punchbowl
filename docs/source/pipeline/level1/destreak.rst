@@ -1,0 +1,8 @@
+Destreaking
+=======================
+
+Concept
+---------
+
+Applying correction
+---------------------

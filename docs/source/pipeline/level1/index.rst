@@ -2,8 +2,12 @@ Level 1
 ========
 
 .. toctree::
-    test1
-    test2
+    initial_uncertainty
     quartic_fit
-    deficient_pixel
+    despike
+    destreak
     vignetting_correction
+    deficient_pixel
+    stray_light
+    psf_correction
+    pointing

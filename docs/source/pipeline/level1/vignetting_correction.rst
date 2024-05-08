@@ -1,4 +1,4 @@
-Vignetting correction
+Vignetting Correction
 =======================
 
 Concept

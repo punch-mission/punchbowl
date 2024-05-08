@@ -1,13 +1,8 @@
 import remove_starfield
-from remove_starfield.reducers import SkewGaussianReducer, GaussianReducer
+from remove_starfield.reducers import GaussianReducer
 from remove_starfield import Starfield
-import glob
-import matplotlib.pyplot as plt
-import os
 
-import warnings
-from typing import List, Optional
-from datetime import datetime
+from typing import Optional
 
 import numpy as np
 from prefect import get_run_logger, task

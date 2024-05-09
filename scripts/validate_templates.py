@@ -10,7 +10,7 @@ LEVELS = ["0", "1", "2", "3", "L", "Q"]
 
 def parse_args():
     args = argparse.ArgumentParser()
-    args.add_argument("-d", "--dir", help="path to the data", required=True)
+    args.add_argument("-d", "--dir", help="path to the header yaml folder", required=True)
     return args.parse_args()
 
 

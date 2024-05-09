@@ -4,9 +4,14 @@ Vignetting Correction
 Concept
 ---------
 
-Optical vignetting describes the drop in brightness towards the edge of images captured through an optical path. The vignetting correction module applies measured calibration maps to undo the effects of optical vignetting. Vignetting calibration maps are spacecraft and polarizer-state dependent, and are measured pre-flight and updated using starfield measurements during commissioning and during the life of the mission.
+Optical vignetting describes the drop in brightness towards the edge of images captured through an optical path.
+The vignetting correction module applies measured calibration maps to undo the effects of optical vignetting.
+Vignetting calibration maps are spacecraft and polarizer-state dependent,
+and are measured pre-flight and updated using starfield measurements during commissioning
+and during the life of the mission.
 
-For an input data array (I) and corresponding vignetting correction array (VG), the corrected data array (I') for each corresponding pixel i,j is computed via:
+For an input data array (I) and corresponding vignetting correction array (VG),
+the corrected data array (I') for each corresponding pixel i,j is computed via:
 
 .. math::
 
@@ -26,4 +31,5 @@ using something like the ``punchbowl.level1.vignette.correct_vignetting_task`` i
 Deriving correction
 ----------------------
 
-Vignetting correction calibration files are derived pre-flight from measurements, and will be updated during commissioning using starfield brightness data, via a separate module.
+Vignetting correction calibration files are derived pre-flight from measurements,
+and will be updated during commissioning using starfield brightness data, via a separate module.

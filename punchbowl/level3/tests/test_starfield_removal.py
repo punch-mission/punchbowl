@@ -29,7 +29,7 @@ def one_data(shape: tuple = (128, 128)) -> PUNCHData:
     wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
     wcs.wcs.cunit = "deg", "deg"
     wcs.wcs.cdelt = 0.02, 0.02
-    wcs.wcs.crpix = 1024, 1024
+    wcs.wcs.crpix = 64, 64
     wcs.wcs.crval = 0, 24.75
 
     meta = NormalizedMetadata(
@@ -48,7 +48,7 @@ def zero_starfield_data(shape: tuple = (256, 256)) -> Starfield:
     wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
     wcs.wcs.cunit = "deg", "deg"
     wcs.wcs.cdelt = 0.02, 0.02
-    wcs.wcs.crpix = 1024, 1024
+    wcs.wcs.crpix = 128, 128
     wcs.wcs.crval = 0, 24.75
 
     # meta = NormalizedMetadata(

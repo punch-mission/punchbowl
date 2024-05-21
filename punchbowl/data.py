@@ -1177,6 +1177,9 @@ class PUNCHData(NDCube):
         unit: t.Optional[astropy.units.Unit] = None,
     ) -> PUNCHData:
         """Copies a PUNCHData. Any field specified in the call is modified. All others are a direct copy."""
+        if uncertainty is not None:
+            if uncertainty.array.max() > 1 or uncertainty.array.min() < 0:
+                raise ValueError("Uncertainty array outside of expected range (0-1).")
         return PUNCHData(
             data=data if data is not None else self.data,
             wcs=wcs if wcs is not None else self.wcs,

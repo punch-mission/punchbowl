@@ -33,7 +33,7 @@ def layer_mask(radius: float, img_shape) -> np.ndarray:
     return distance < radius
 
 
-def gen_filter(fftcube, cutoff_vel):
+def generate_hourglass_filter(fftcube, cutoff_vel):
     """Creates an hourglass filter mask
 
     Parameters
@@ -50,7 +50,7 @@ def gen_filter(fftcube, cutoff_vel):
     """
     fft_shape = fftcube.shape
     img_shape = (fft_shape[1], fft_shape[2])
-    cutoff = cutoff_vel  # (*some factor to be estimated next)
+    cutoff = cutoff_vel  # TODO: cutoff_vel multiplied by some factor to be estimated for proper units
 
     mask1 = np.stack(
         [layer_mask(radius, img_shape) for radius in np.linspace(int(fft_shape[1] / 2), cutoff, int(fft_shape[0] / 2))],
@@ -63,7 +63,7 @@ def gen_filter(fftcube, cutoff_vel):
     return filt_mask
 
 
-def motion_filter(stacked_data:np.ndarray,
+def apply_motion_filter(stacked_data:np.ndarray,
                   apod_margin,
                   use_gpu=True):
     """Performs a Fourier motion filter on input datacube
@@ -94,7 +94,7 @@ def motion_filter(stacked_data:np.ndarray,
 
     # Performing 3D FFT
     fwfft = fftshift(fftn(wimage))
-    filt_mask = gen_filter(fwfft, 100)
+    filt_mask = generate_hourglass_filter(fwfft, 100)
     filt_fft = filt_mask * fwfft  # Adding hourglass mask to Forward FFT
 
     # Performing inverse FFT

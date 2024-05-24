@@ -8,8 +8,6 @@ import numpy as np
 from prefect import get_run_logger, task
 
 from punchbowl.data import PUNCHData, NormalizedMetadata
-# from punchbowl.exceptions import InvalidDataError
-
 
 def generate_starfield_background(
         data_object: PUNCHData,
@@ -44,10 +42,6 @@ def generate_starfield_background(
     if len(data_object.data) == 0:
         raise ValueError("data_list cannot be empty")
 
-    # todo: replace in favor of using object directly
-    # Creates starfield map for complete sky
-    # output = PUNCHData.from_fits(data_list[0])
-
     starfield_bg = remove_starfield.build_starfield_estimate(
         data_object, attribution=True, frame_count=True,
         reducer=GaussianReducer(n_sigma=n_sigma), map_scale=map_scale,
@@ -65,25 +59,12 @@ def generate_starfield_background(
 
 
 def subtract_starfield_background(data_object: PUNCHData, starfield_background_model: Starfield) -> PUNCHData:
-    # check dimensions match
-    # if data_object.data.shape != starfield_background_model.starfield.shape:
-    #     raise InvalidDataError(
-    #         "starfield_background_subtraction expects the data_object and"
-    #         "starfield_background arrays to have the same dimensions."
-    #         f"data_array dims: {data_object.data.shape} and starfield_background_model dims: {starfield_background_model.starfield.shape}"
-    #     )
 
     starfield_subtracted_data = Starfield.subtract_from_image(starfield_background_model, data_object,
                                                               processor=remove_starfield.ImageProcessor())
 
-    # starfield_subtracted_data.subtracted = np.nan_to_num(starfield_subtracted_data.subtracted, nan=-999.0)
     return data_object.duplicate_with_updates(data=starfield_subtracted_data.subtracted)
 
-
-# # Here we use different options for WISPRImageProcessor---this is the second use case our processor supports
-# for ifile in [ifiles[500]]:
-#     subtracted = starfield.subtract_from_image(ifile, processor=remove_starfield.ImageProcessor())
-#     subtracted.save(outpath+f'{os.path.splitext(os.path.basename(ifile))[0]}_starfield_removed.fits', overwrite=True)
 
 @task
 def subtract_starfield_background_task(data_object: PUNCHData,

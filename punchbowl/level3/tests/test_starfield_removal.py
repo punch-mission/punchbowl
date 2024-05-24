@@ -1,9 +1,3 @@
-import unittest
-import os
-import pathlib
-from glob import glob
-from pkg_resources import iter_entry_points
-
 # Third party imports
 import numpy as np
 import pytest
@@ -51,8 +45,6 @@ def zero_starfield_data(shape: tuple = (256, 256)) -> Starfield:
     wcs.wcs.crpix = 128, 128
     wcs.wcs.crval = 0, 24.75
 
-    # meta = NormalizedMetadata(
-    #     {"TYPECODE": "CS", "OBSCODE": "M", "LEVEL": "3", "OBSRVTRY": "0", "DATE-OBS": "2024-04-08T18:40:00"})
     return Starfield(starfield=starfield, wcs=wcs)
 
 

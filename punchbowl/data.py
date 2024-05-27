@@ -463,7 +463,7 @@ class NormalizedMetadata(Mapping):
         m = NormalizedMetadata.load_template(type_code + obs_code, level)
 
         for k, v in h.items():
-            if k not in ("COMMENT", "HISTORY"):
+            if k not in ("COMMENT", "HISTORY", ""):
                 if k not in m:
                     raise RuntimeError(
                         f"Unexpected key of {k} found in header for Level" f"{level} {type_code + obs_code} type meta."

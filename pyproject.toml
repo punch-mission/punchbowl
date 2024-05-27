@@ -23,7 +23,8 @@ dependencies = [
         "setuptools",
         "reproject",
         "pylibjpeg",
-        "python-dateutil"
+        "python-dateutil",
+        "remove_starfield@git+https://github.com/svank/remove_starfield"
 ]
 requires-python = ">=3.10"
 authors = [
@@ -63,6 +64,7 @@ docs = ["sphinx",
             "nbsphinx",
             "ipython",
             "sphinxcontrib-mermaid"]
+gpu = ["cupy"]
 
 [project.urls]
 #Homepage = "https://example.com"

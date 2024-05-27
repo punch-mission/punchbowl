@@ -703,3 +703,22 @@ def test_has_typecode():
     meta = NormalizedMetadata.load_template("CFM", "3")
     meta["DATE-OBS"] = str(datetime.now())
     assert "TYPECODE" in meta
+
+
+def test_load_punchdata_with_history():
+    data = np.ones((10, 10), dtype=np.uint16)
+    meta = NormalizedMetadata.load_template("CR4", "1")
+    meta['DATE-OBS'] = str(datetime.now())
+    meta.history.add_now("test", "this is a test!")
+    meta.history.add_now("test", "this is a second test!")
+    wcs = WCS(naxis=2)
+    obj = PUNCHData(data, wcs, meta)
+
+    file_path = obj.filename_base + ".fits"
+    obj.write(file_path, overwrite=True, skip_wcs_conversion=True)
+    reloaded = PUNCHData.from_fits(file_path)
+    assert isinstance(reloaded, PUNCHData)
+    assert len(reloaded.meta.history) == 2
+    assert reloaded.data.shape == (10, 10)
+    assert np.all(reloaded.data == 1)
+    os.remove(file_path)

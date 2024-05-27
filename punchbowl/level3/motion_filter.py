@@ -1,17 +1,16 @@
 import numpy as np
+from scipy.fftpack import fftn, fftshift, ifftn, ifftshift
 from skimage.filters import window
-from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 from sunpy import log
 
 try:
     import cupy
-
     HAS_CUPY = True
 except ImportError:
     HAS_CUPY = False
 
 
-def layer_mask(radius: float, img_shape) -> np.ndarray:
+def layer_mask(radius: float, img_shape: (int, int)) -> np.ndarray:
     """Defines a circular mask
 
     Parameters
@@ -33,14 +32,14 @@ def layer_mask(radius: float, img_shape) -> np.ndarray:
     return distance < radius
 
 
-def generate_hourglass_filter(fftcube, cutoff_vel):
+def generate_hourglass_filter(fft_cube, cutoff_velocity):
     """Creates an hourglass filter mask
 
     Parameters
     ----------
-    fftcube : np.ndarray
+    fft_cube : np.ndarray
         The 3D Fourier space cube.
-    cutoff_vel : float
+    cutoff_velocity : float
         The cutoff velocity.
 
     Returns
@@ -48,24 +47,24 @@ def generate_hourglass_filter(fftcube, cutoff_vel):
     np.ndarray
         Hourglass filter mask.
     """
-    fft_shape = fftcube.shape
+    fft_shape = fft_cube.shape
     img_shape = (fft_shape[1], fft_shape[2])
-    cutoff = cutoff_vel  # TODO: cutoff_vel multiplied by some factor to be estimated for proper units
 
     mask1 = np.stack(
-        [layer_mask(radius, img_shape) for radius in np.linspace(int(fft_shape[1] / 2), cutoff, int(fft_shape[0] / 2))],
+        [layer_mask(radius, img_shape)
+         for radius in np.linspace(int(fft_shape[1] / 2), cutoff_velocity, int(fft_shape[0] / 2))],
         axis=0)
     mask2 = np.stack(
-        [layer_mask(radius, img_shape) for radius in np.linspace(cutoff, int(fft_shape[1] / 2), int(fft_shape[0] / 2))],
+        [layer_mask(radius, img_shape)
+         for radius in np.linspace(cutoff_velocity, int(fft_shape[1] / 2), int(fft_shape[0] / 2))],
         axis=0)
 
-    filt_mask = np.concatenate((mask1, mask2), axis=0)
-    return filt_mask
+    return np.concatenate((mask1, mask2), axis=0)
 
 
 def apply_motion_filter(stacked_data:np.ndarray,
-                  apod_margin,
-                  use_gpu=True):
+                  apod_margin: int,
+                  use_gpu: bool = True) -> np.ndarray:
     """Performs a Fourier motion filter on input datacube
     Parameters
     ----------

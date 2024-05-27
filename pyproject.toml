@@ -64,6 +64,7 @@ docs = ["sphinx",
             "nbsphinx",
             "ipython",
             "sphinxcontrib-mermaid"]
+gpu = ["cupy"]
 
 [project.urls]
 #Homepage = "https://example.com"

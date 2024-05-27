@@ -1,13 +1,13 @@
-import remove_starfield
-from remove_starfield.reducers import GaussianReducer
-from remove_starfield import Starfield
-
 from typing import Optional
 
 import numpy as np
+import remove_starfield
 from prefect import get_run_logger, task
+from remove_starfield import Starfield
+from remove_starfield.reducers import GaussianReducer
 
-from punchbowl.data import PUNCHData, NormalizedMetadata
+from punchbowl.data import NormalizedMetadata, PUNCHData
+
 
 def generate_starfield_background(
         data_object: PUNCHData,
@@ -30,9 +30,8 @@ def generate_starfield_background(
 
     Returns
     -------
-    return output_PUNCHobject : ['punchbowl.data.PUNCHData']
-        returns an array of the same dimensions as the x and y dimensions of
-        the input array
+    return 'punchbowl.data.PUNCHData'
+        an array of the same dimensions as the x and y dimensions of the input array
     """
     logger = get_run_logger()
     logger.info("construct_starfield_background started")
@@ -43,10 +42,13 @@ def generate_starfield_background(
         raise ValueError("data_list cannot be empty")
 
     starfield_bg = remove_starfield.build_starfield_estimate(
-        data_object, attribution=True, frame_count=True,
-        reducer=GaussianReducer(n_sigma=n_sigma), map_scale=map_scale,
+        data_object,
+        attribution=True,
+        frame_count=True,
+        reducer=GaussianReducer(n_sigma=n_sigma),
+        map_scale=map_scale,
         processor=remove_starfield.ImageProcessor(),
-        target_mem_usage=target_mem_usage)  # dec_bounds=(0, 35), ra_bounds=(100, 160), # wcs_key='A'),
+        target_mem_usage=target_mem_usage)
 
     # create an output PUNCHdata object
     meta_norm = NormalizedMetadata.from_fits_header(starfield_bg['meta'])
@@ -59,8 +61,8 @@ def generate_starfield_background(
 
 
 def subtract_starfield_background(data_object: PUNCHData, starfield_background_model: Starfield) -> PUNCHData:
-
-    starfield_subtracted_data = Starfield.subtract_from_image(starfield_background_model, data_object,
+    starfield_subtracted_data = Starfield.subtract_from_image(starfield_background_model,
+                                                              data_object,
                                                               processor=remove_starfield.ImageProcessor())
 
     return data_object.duplicate_with_updates(data=starfield_subtracted_data.subtracted)
@@ -77,15 +79,14 @@ def subtract_starfield_background_task(data_object: PUNCHData,
     Parameters
     ----------
     data_object : punchbowl.data.PUNCHData
-        A PUNCHobject data frame to be background subtracted
+        A PUNCHData data frame to be background subtracted
 
     starfield_background_path : str
-        path to a PUNCHobject background starfield map
+        path to a PUNCHData background starfield map
 
     Returns
     -------
-
-    star_subtracted_data : ['punchbowl.data.PUNCHData']
+    'punchbowl.data.PUNCHData'
         A background starfield subtracted data frame
     """
 

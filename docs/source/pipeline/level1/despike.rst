@@ -3,8 +3,6 @@ Despike
 
 The goal of despiking is to remove cosmic ray hits from images.
 
-
-
 Concept
 ---------
 

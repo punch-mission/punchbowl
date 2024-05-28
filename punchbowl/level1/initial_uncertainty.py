@@ -1,4 +1,3 @@
-
 import numpy as np
 from prefect import get_run_logger, task
 
@@ -17,12 +16,12 @@ def dn_to_photons(data_array: np.ndarray, gain: float = 4.3) -> np.ndarray:
 
 
 def compute_noise(
-    data: np.ndarray,
-    bias_level: float = 100,
-    dark_level: float = 55.81,
-    gain: float = 4.3,
-    read_noise_level: float = 17,
-    bitrate_signal: int = 16) -> np.ndarray:
+        data: np.ndarray,
+        bias_level: float = 100,
+        dark_level: float = 55.81,
+        gain: float = 4.3,
+        read_noise_level: float = 17,
+        bitrate_signal: int = 16) -> np.ndarray:
     """
     Generates noise based on an input data array, with specified noise parameters
 
@@ -48,7 +47,7 @@ def compute_noise(
 
     """
 
-    if (data.max() > 2**bitrate_signal - 1) or (data.min() < 0):
+    if (data.max() > 2 ** bitrate_signal - 1) or (data.min() < 0):
         raise InvalidDataError(r"Specified input data is outside of expected range (between 0 and 2**bitrate_signal-1)")
     else:
         data = data.astype("long")
@@ -60,7 +59,7 @@ def compute_noise(
         noise_photon = np.random.normal(scale=sigma)
 
         # Add bias level and clip pixels to avoid overflow
-        data = np.clip(data + bias_level, 0, 2**bitrate_signal - 1)
+        data = np.clip(data + bias_level, 0, 2 ** bitrate_signal - 1)
 
         # Dark noise generation
         noise_level = dark_level * gain

@@ -6,3 +6,6 @@ Concept
 
 Applying correction
 ---------------------
+
+Deriving starfield model
+-------------------------

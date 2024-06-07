@@ -1,2 +1,2 @@
-Polarization resolution
+Polarization Resolution
 =========================

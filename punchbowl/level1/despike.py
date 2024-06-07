@@ -23,6 +23,28 @@ def radial_array(shape, center=None):
 def spikejones(
     image: np.ndarray, unsharp_size: int = 3, method: str = "convolve", alpha: float = 1, dilation: int = 0
 ) -> np.ndarray:
+    """Removes cosmic ray spikes from an image using spikejones algorithm
+
+    This code is based on https://github.com/drzowie/solarpdl-tools/blob/master/image/spikejones.pdl
+
+    Parameters
+    ----------
+    image : np.ndarray
+        an array representing an image
+    unsharp_size : int
+        half window size in pixels for unsharp mask
+    method : str (either "convolve" or "median")
+        method for applying the unsharp mask
+    alpha : float
+        threshold for deciding a pixel is a cosmic ray spike, i.e. difference between unsharp and smoothed image
+    dilation : int
+        how many times to dilate pixels identified as spikes, allows for identifying a larger spike region
+
+    Returns
+    -------
+    np.ndarray
+        an image with spikes replaced by the average of their neighbors
+    """
     image = image.copy()  # copy to avoid mutating the existing data
     # compute the sizes and smoothing kernel to be used
     kernel_size = unsharp_size * 2 + 1
@@ -33,7 +55,6 @@ def spikejones(
     # depending on the method, perform unsharping
     if method == "median":
         normalized_image = image / medfilt2d(image, kernel_size=smoothing_size)
-        # unsharp_kernel = radial_array((kernel_size, kernel_size)) <= (kernel_size / 2)
         unsharped_image = normalized_image - medfilt2d(normalized_image, kernel_size=kernel_size) > alpha
     elif method == "convolve":
         normalized_image = image / convolve2d(image, smoothing_kernel, mode="same")
@@ -69,6 +90,14 @@ def despike_task(data_object: PUNCHData, unsharp_size=3, method="convolve", alph
     ----------
     data_object : PUNCHData
         data to operate on
+    unsharp_size : int
+        half window size in pixels for unsharp mask
+    method : str (either "convolve" or "median")
+        method for applying the unsharp mask
+    alpha : float
+        threshold for deciding a pixel is a cosmic ray spike, i.e. difference between unsharp and smoothed image
+    dilation : int
+        how many times to dilate pixels identified as spikes, allows for identifying a larger spike region
 
     Returns
     -------

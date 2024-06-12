@@ -15,7 +15,7 @@ the corrected data array (I') for each corresponding pixel i,j is computed via:
 
 .. math::
 
-    $I'_{i,j} = I_{i,j} /  VG_{i,j}$
+    I'_{i,j} = I_{i,j} /  VG_{i,j}
 
 Applying correction
 ---------------------

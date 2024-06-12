@@ -65,6 +65,8 @@ Products:
     CFM:
         kinds: [Unpolarized, Calibration]
         overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
             TITLE: PUNCH Level-2 Unpolarized QuickPUNCH Mosaic F-Corona Model
             OBSTYPE: Unpolarized quicklook mosaic F-corona model
             TYPECODE: CF
@@ -74,8 +76,8 @@ Products:
     CFN:
         kinds: [Unpolarized, Calibration]
         overrides:
-            NAXIS1: 2048
-            NAXIS2: 2048
+            NAXIS1: 1024
+            NAXIS2: 1024
             TITLE: PUNCH Level-2 Unpolarized QuickPUNCH NFI F-Corona Model
             OBSTYPE: Unpolarized NFI quicklook F-corona model
             TYPECODE: CF
@@ -86,6 +88,8 @@ Products:
     CTM:
         kinds: [Unpolarized]
         overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
             TITLE: PUNCH Level-2 Unpolarized QuickPUNCH Mosaic
             OBSTYPE: Unpolarized quicklook mosaic
             TYPECODE: CT
@@ -95,8 +99,8 @@ Products:
     CNN:
         kinds: [Unpolarized]
         overrides:
-            NAXIS1: 2048
-            NAXIS2: 2048
+            NAXIS1: 1024
+            NAXIS2: 1024
             TITLE: PUNCH Level-2 Unpolarized QuickPUNCH NFI Image
             OBSTYPE: Unpolarized NFI quicklook image
             TYPECODE: CN

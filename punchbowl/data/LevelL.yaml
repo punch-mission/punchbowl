@@ -61,28 +61,6 @@ Kinds:
 
 # Product specifications
 Products:
-    CFM:
-        kinds: [Unpolarized, Calibration]
-        overrides:
-            TITLE: PUNCH Level-2 Unpolarized Quicklook Mosaic F-Corona Model
-            OBSTYPE: Unpolarized quicklook mosaic F-corona model
-            TYPECODE: CF
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: M
-
-    CFN:
-        kinds: [Unpolarized, Calibration]
-        overrides:
-            NAXIS1: 2048
-            NAXIS2: 2048
-            TITLE: PUNCH Level-2 Unpolarized Quicklook NFI F-Corona Model
-            OBSTYPE: Unpolarized NFI quicklook F-corona model
-            TYPECODE: CF
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: N
-
     CTM:
         kinds: [Unpolarized]
         overrides:
@@ -101,28 +79,6 @@ Products:
             TITLE: PUNCH Level-2 Unpolarized Quicklook NFI Image
             OBSTYPE: Unpolarized NFI quicklook image
             TYPECODE: CN
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: N
-
-    PFM:
-        kinds: [Polarized]
-        overrides:
-            TITLE: PUNCH Level-2 Polarized Quicklook Mosaic F-Corona Model
-            OBSTYPE: Polarized quicklook mosaic F-corona model
-            TYPECODE: PF
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: M
-
-    PFN:
-        kinds: [Polarized]
-        overrides:
-            NAXIS1: 2048
-            NAXIS2: 2048
-            TITLE: PUNCH Level-2 Polarized Quicklook NFI F-Corona Model
-            OBSTYPE: Polarized NFI quicklook F-corona model
-            TYPECODE: PF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N

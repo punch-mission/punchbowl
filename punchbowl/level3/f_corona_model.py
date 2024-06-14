@@ -14,11 +14,11 @@ def query_f_corona_model_source(
     polarizer: str, product: str, start_datetime: datetime, end_datetime: datetime
 ) -> List[str]:
     """Creates a list of files based between a start date/time (start_datetime)
-    and an end date/time (end_datetime) for a specifed polarizer and product
+    and an end date/time (end_datetime) for a specified polarizer and product
     type.
 
     Creates a list of files based between a start date/time (start_datetime)
-    and an end date/time (end_datetime) for a specifed polarizer and
+    and an end date/time (end_datetime) for a specified polarizer and
     PUNCH_product. The start and end times can both be input explicitly,
     individually, or derived from a mid time.
 

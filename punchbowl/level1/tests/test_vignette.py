@@ -46,7 +46,7 @@ def test_invalid_vignetting_file(sample_punchdata_clear: PUNCHData) -> None:
 @pytest.mark.prefect_test()
 def test_invalid_polarization_state(sample_punchdata: PUNCHData) -> None:
     """
-    Check that a mismatch bewteen polarization states in the vignetting function and data raises an error.
+    Check that a mismatch between polarization states in the vignetting function and data raises an error.
     """
 
     sample_data = sample_punchdata(shape=(10, 10))
@@ -61,7 +61,7 @@ def test_invalid_polarization_state(sample_punchdata: PUNCHData) -> None:
 @pytest.mark.prefect_test()
 def test_invalid_telescope(sample_punchdata: PUNCHData) -> None:
     """
-    Check that a mismatch bewteen telescopes in the vignetting function and data raises an error.
+    Check that a mismatch between telescopes in the vignetting function and data raises an error.
     """
 
     sample_data = sample_punchdata(shape=(10, 10))

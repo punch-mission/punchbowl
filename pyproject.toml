@@ -49,6 +49,7 @@ classifiers = [
 
 [project.optional-dependencies]
 test = ["pytest",
+        "codespell",
             "coverage",
             "pytest-cov",
             "flake8",
@@ -58,6 +59,7 @@ test = ["pytest",
             "ruff",
             "hypothesis"]
 docs = ["sphinx",
+        "codespell",
             "pydata-sphinx-theme",
             "sphinx-autoapi",
             "sphinx-favicon",
@@ -65,6 +67,7 @@ docs = ["sphinx",
             "ipython",
             "sphinxcontrib-mermaid"]
 gpu = ["cupy"]
+dev = ["punchbowl[docs,test]"]
 
 [project.urls]
 #Homepage = "https://example.com"

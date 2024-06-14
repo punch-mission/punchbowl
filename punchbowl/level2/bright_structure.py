@@ -75,7 +75,7 @@ def find_spikes(
         This is the threshold over which a pixel is voted as a spike.
 
     required_yes: int
-        (default is 4) - number of 'voting' frames that must vote the 
+        (default is 4) - number of 'voting' frames that must vote the
         value is a spike, for it to be marked as such.
 
     veto_limit: int
@@ -84,7 +84,7 @@ def find_spikes(
 
     diff_method: str
         This is the method by which the threshold is set. 'abs' treats each pixel
-        independently and finds the absolute diffference, and 'sigma' treats each
+        independently and finds the absolute difference, and 'sigma' treats each
         corresponding pixel as a time series and the calculated RMS variation
         from the mean of the timeseries is used to calculate a difference at each
         location.
@@ -200,7 +200,7 @@ def identify_bright_structures_task(
         index_of_interest=-1)
 
     # add the uncertainty to the output punch data object
-    data.uncertainty.arrray = np.max([data.uncertainty, spike_mask], axis=0)
+    data.uncertainty.array = np.max([data.uncertainty, spike_mask], axis=0)
 
     logger.info("identify_bright_structures_task ended")
     data.meta.history.add_now("LEVEL2-bright_structures",

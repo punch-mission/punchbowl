@@ -331,7 +331,7 @@ class MetaField:
 
     @value.setter
     def value(self, value: ValueType) -> None:
-        """sets value withing MetaField object"""
+        """sets value within MetaField object"""
         if not self._mutable:
             raise RuntimeError("Cannot mutate this value because it is set to immutable.")
         if isinstance(value, self._datatype) or value is None:

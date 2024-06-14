@@ -16,7 +16,7 @@ repos:
     hooks:
       - id: codespell
         files: ^.*\.(py|c|h|md|rst|yml)$
-        args: [--skip", "*.fits", "--ignore-words-file", ".codespellignore" ]
+        args: ["--ignore-words", ".codespellignore" ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:

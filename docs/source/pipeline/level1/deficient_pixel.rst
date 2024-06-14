@@ -32,3 +32,4 @@ using something like the ``punchbowl.level1.deficient_pixel.remove_deficient_pix
 
 Deriving the pixel mask
 -------------------------
+TODO

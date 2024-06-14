@@ -55,7 +55,7 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
     coefficient_image : np.ndarray
         Frame containing uncertainty values.
         The first two dimensions are the spatial dimensions of the image.
-        The last dimension iterates over the powers of the coefficients. Starting with index 0 being the highest power
+        The last dimension iterates over the powers of the coefficients, starting with index 0 being the highest power
         and counting down.
 
     Returns
@@ -68,19 +68,19 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
     Each instrument is subject to an independent non-linear photometric response,
     which needs to be corrected. The module converts from raw camera digitizer
     number (DN) to photometric units at each pixel. Each pixel is replaced with
-    the corresponding value of the quartic polynomial in the current CF data
+    the corresponding value of the quartic polynomial in the current calibration file data
     product for that particular camera.
 
     A quartic polynomial is applied as follows:
 
     .. math:: X_{i,j} = a_{i,j}+b_{i,j}*DN_{i,j}+c_{i,j}*DN_{i,j}^2+d_{i,j}*DN_{i,j}^3+e_{i,j}*DN_{i,j}^4
 
-    for each pixel in the detector. Where each quantity (a, b, c, d, e) is a function
+    for each pixel in the detector. Each quantity (a, b, c, d, e) is a function
     of pixel location (i,j), and is generated using dark current and Stim lamp
-    maps. a = offset (dark and the bias). b, b, c, d, e = higher order terms.
+    maps. a = offset (dark and the bias). b, c, d, e = higher order terms.
     Specifically ``coefficient_image[i,j,:] = [e, d, c, b, a]`` (highest order terms first)
 
-    As each pixel is independent, a quartic fit calibration file (CF) of
+    As each pixel is independent, a quartic fit calibration file of
     dimensions 2k*2k*5 is constructed, with each layer containing one of the five
     polynomial coefficients for each pixel.
 

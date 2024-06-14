@@ -8,7 +8,7 @@ Concept
 
 Despiking is carried out by our implementation
 of `DeForest's spikejones algorithm <https://github.com/drzowie/solarpdl-tools/blob/79d431d937bab6178eb68bec229eee59614233b3/image/spikejones.pdl#L12>`_.
-The algoirthm works on a single image at a time. It applies an unsharp mask
+The algorithm works on a single image at a time. It applies an unsharp mask
 to an image and compares that to a smoothed copy. Pixels with a significant difference
 are considered spikes.
 

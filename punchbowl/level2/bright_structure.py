@@ -84,7 +84,7 @@ def find_spikes(
 
     diff_method: str
         This is the method by which the threshold is set. 'abs' treats each pixel
-        independently and finds the absolute diffference, and 'sigma' treats each
+        independently and finds the absolute difference, and 'sigma' treats each
         corresponding pixel as a time series and the calculated RMS variation
         from the mean of the timeseries is used to calculate a difference at each
         location.

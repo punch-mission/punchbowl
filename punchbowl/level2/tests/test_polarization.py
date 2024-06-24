@@ -3,10 +3,8 @@ from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 
 from punchbowl.data import PUNCHData
-from punchbowl.level2.polarization import (resolve_polarization,
-                                           resolve_polarization_task)
-from punchbowl.tests.test_data import (sample_punchdata,
-                                       sample_punchdata_triplet)
+from punchbowl.level2.polarization import resolve_polarization, resolve_polarization_task
+from punchbowl.tests.test_data import sample_punchdata, sample_punchdata_triplet
 
 
 def test_resolve_polarization(sample_punchdata_triplet):

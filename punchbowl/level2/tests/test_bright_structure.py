@@ -313,7 +313,7 @@ def test_uncertainty(sample_punchdata: PUNCHData):
 
     # set pixel of interest to high value
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=1000
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -341,7 +341,7 @@ def test_uncertainty(sample_punchdata: PUNCHData):
     assert result_2[y_test_px, x_test_px] == False
 
     # set surrounding values to uncertain
-    
+
     sample_punchdata.uncertainty.array[index_of_interest, y_test_px, x_test_px] = 1
     result_3 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
@@ -375,11 +375,11 @@ def test_threshold_abs(sample_punchdata: PUNCHData):
                            index_of_interest=index_of_interest)
 
 
-    assert result_0[y_test_px, x_test_px] == False   
+    assert result_0[y_test_px, x_test_px] == False
 
     # set pixel of interest to high value
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -424,7 +424,7 @@ def test_threshold_sigma(sample_punchdata: PUNCHData):
                            index_of_interest=index_of_interest)
 
 
-    assert result_0[y_test_px, x_test_px] == False   
+    assert result_0[y_test_px, x_test_px] == False
 
     # set pixel of interest to high value
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
@@ -439,7 +439,7 @@ def test_threshold_sigma(sample_punchdata: PUNCHData):
                            index_of_interest=index_of_interest)
 
     assert result_1[y_test_px, x_test_px] == True
-    
+
     # make bad pixel threshold high
 
     result_2 = find_spikes(sample_punchdata.data,
@@ -466,7 +466,7 @@ def test_required_yes_abs(sample_punchdata: PUNCHData):
 
 
     # set pixel of interest to high value
-    
+
     result = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -481,7 +481,7 @@ def test_required_yes_abs(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
 
     # set pixel of interest to high value
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -492,14 +492,14 @@ def test_required_yes_abs(sample_punchdata: PUNCHData):
 
     assert result_1[y_test_px, x_test_px] == True
 
-    # change the number adjacent elements that have high values, this 
-    # reduces the number of available yes voters, making the cell of 
+    # change the number adjacent elements that have high values, this
+    # reduces the number of available yes voters, making the cell of
     # interest 'false'
     sample_punchdata.data[0:1, y_test_px, x_test_px]=100
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
 
     # set pixel of interest to high value
-    
+
     result_2 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -515,7 +515,7 @@ def test_required_yes_abs(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
 
     # set pixel of interest to high value
-    
+
     result_3 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -536,7 +536,7 @@ def test_required_yes_sigma(sample_punchdata: PUNCHData):
     y_test_px=355
     index_of_interest=-1
 
-    
+
     result = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -551,7 +551,7 @@ def test_required_yes_sigma(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -562,14 +562,14 @@ def test_required_yes_sigma(sample_punchdata: PUNCHData):
 
     assert result_1[y_test_px, x_test_px] == True
 
-    # change the number adjacent elements that have high values, this 
-    # reduces the number of available yes voters, making the cell of 
+    # change the number adjacent elements that have high values, this
+    # reduces the number of available yes voters, making the cell of
     # interest 'false'
     sample_punchdata.data[0:1, y_test_px, x_test_px]=10
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_2 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -585,7 +585,7 @@ def test_required_yes_sigma(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_3 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -605,7 +605,7 @@ def test_dilation_abs(sample_punchdata: PUNCHData):
     y_test_px=355
     index_of_interest=-1
 
-    
+
     result = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -620,7 +620,7 @@ def test_dilation_abs(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -631,14 +631,14 @@ def test_dilation_abs(sample_punchdata: PUNCHData):
 
     assert result_1[y_test_px, x_test_px] == True
 
-    # change the number adjacent elements that have high values, this 
-    # reduces the number of available yes voters, making the cell of 
+    # change the number adjacent elements that have high values, this
+    # reduces the number of available yes voters, making the cell of
     # interest 'false'
     sample_punchdata.data[0:1, y_test_px, x_test_px]=100
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
 
     # set pixel of interest to high value
-    
+
     result_2 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -647,7 +647,7 @@ def test_dilation_abs(sample_punchdata: PUNCHData):
                            veto_limit=1,
                            index_of_interest=index_of_interest)
 
- 
+
     assert result_2[y_test_px, x_test_px] == True
     # with no dilation a an adjacent pixel is false
     assert result_2[y_test_px+1, x_test_px] == False
@@ -683,7 +683,7 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
     y_test_px=355
     index_of_interest=-1
 
-    
+
     result = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -698,7 +698,7 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -709,14 +709,14 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
 
     assert result_1[y_test_px, x_test_px] == True
 
-    # change the number adjacent elements that have high values, this 
-    # reduces the number of available yes voters, making the cell of 
+    # change the number adjacent elements that have high values, this
+    # reduces the number of available yes voters, making the cell of
     # interest 'false'
     sample_punchdata.data[0:1, y_test_px, x_test_px]=10
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_2 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -725,7 +725,7 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
                            veto_limit=1,
                            index_of_interest=index_of_interest)
 
- 
+
     assert result_2[y_test_px, x_test_px] == True
     # with no dilation a an adjacent pixel is false
     assert result_2[y_test_px+1, x_test_px] == False
@@ -749,4 +749,3 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
     # change the number adjacent elements that have high values
     sample_punchdata.data[0:1, y_test_px, x_test_px]=10
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
-

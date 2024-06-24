@@ -9,7 +9,8 @@ from punchbowl.data import NormalizedMetadata, PUNCHData
 from punchbowl.level3.starfield_remove import (
     generate_starfield_background,
     subtract_starfield_background,
-    subtract_starfield_background_task)
+    subtract_starfield_background_task,
+)
 
 
 @pytest.fixture()

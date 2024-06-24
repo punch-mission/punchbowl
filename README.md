@@ -4,7 +4,7 @@
 
 ## Accessing the data
 
-To come. 
+To come.
 
 ## Installing `punchbowl`
 
@@ -12,15 +12,15 @@ To come.
 2. Change to cloned repo
 3. `pip install .`
 
-It's recommended to work in a clean virtual environment. 
+It's recommended to work in a clean virtual environment.
 
 ## Running `punchbowl`
 
-To come. 
+To come.
 
 ## Getting help
 
-Please open an issue or discussion on this repo. 
+Please open an issue or discussion on this repo.
 
 ## Contributing
 

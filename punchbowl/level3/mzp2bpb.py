@@ -2,7 +2,7 @@ import solpolpy as spp
 import numpy as np
 
 from prefect import get_run_logger, task
-from ndcube import NDCollection, NDCube
+from ndcube import NDCollection
 from punchbowl.data import PUNCHData, NormalizedMetadata
 
 

@@ -1,6 +1,8 @@
 from typing import List, Union, Optional
 
+import numpy as np
 from prefect import flow, get_run_logger
+from regularizepsf import CoordinatePatchCollection, simple_psf
 
 from punchbowl.data import PUNCHData
 from punchbowl.level1.alignment import align_task
@@ -13,6 +15,30 @@ from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.util import load_image_task, output_image_task
+
+
+@flow(validate_parameters=False)
+def generate_psf_model_core_flow(input_filepaths: []) -> PUNCHData:
+    # Define the parameters and image to use
+    psf_size = 32
+    patch_size = 256
+    target_fwhm = 3.25
+    image_fn = "data/DASH.fits"
+
+    # Define the target PSF
+    center = patch_size / 2
+    sigma = target_fwhm / 2.355
+
+    @simple_psf
+    def target(x, y, x0=center, y0=center, sigma_x=sigma, sigma_y=sigma):
+        return np.exp(-(np.square(x - x0) / (2 * np.square(sigma_x)) + np.square(y - y0) / (2 * np.square(sigma_y))))
+
+    target_evaluation = target(*np.meshgrid(np.arange(patch_size), np.arange(patch_size)))
+    coordinate_patch_collection = CoordinatePatchCollection.find_stars_and_average(
+        [image_fn], psf_size, patch_size)
+    array_corrector = coordinate_patch_collection.to_array_corrector(target_evaluation)  # noqa F841
+
+    return PUNCHData(data=None, wcs=None, meta=None)  # TODO: convert array_corrector into PUNCHData
 
 
 @flow(validate_parameters=False)

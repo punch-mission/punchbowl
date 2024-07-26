@@ -1,11 +1,11 @@
+from ndcube import NDCube
 from prefect import get_run_logger, task
-
-from punchbowl.data import PUNCHData
 
 
 @task
-def align_task(data_object: PUNCHData) -> PUNCHData:
-    """Determines the pointing of the image and updates the metadata appropriately
+def align_task(data_object: NDCube) -> NDCube:
+    """
+    Determine the pointing of the image and updates the metadata appropriately.
 
     Parameters
     ----------
@@ -16,6 +16,7 @@ def align_task(data_object: PUNCHData) -> PUNCHData:
     -------
     PUNCHData
         a modified version of the input with the WCS more accurately determined
+
     """
     logger = get_run_logger()
     logger.info("alignment started")

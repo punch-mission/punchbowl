@@ -1,14 +1,15 @@
 import numpy as np
+from ndcube import NDCube
 from prefect import get_run_logger, task
 
-from punchbowl.data import PUNCHData
 from punchbowl.util import validate_image_is_square
 
 
 def streak_correction_matrix(
-    n: int, exposure_time: float, readout_line_time: float, reset_line_time: float
+    n: int, exposure_time: float, readout_line_time: float, reset_line_time: float,
 ) -> np.ndarray:
-    """Computes a matrix used in correcting streaks in PUNCH images
+    """
+    Compute a matrix used in correcting streaks in PUNCH images.
 
     Computes the inverse of a matrix of size n where the major diagonal
     contains the value exposure_time, the lower triangle contains readout_line_time
@@ -48,6 +49,7 @@ def streak_correction_matrix(
     array([[-0.38461538,  0.23076923,  0.46153846],
            [ 0.30769231, -0.38461538,  0.23076923],
            [ 0.15384615,  0.30769231, -0.38461538]])
+
     """
     lower = np.tril(np.ones((n, n)) * readout_line_time, -1)
     upper = np.triu(np.ones((n, n)) * reset_line_time, 1)
@@ -62,7 +64,8 @@ def correct_streaks(
     readout_line_time: float,
     reset_line_time: float,
 ) -> np.ndarray:
-    """Corrects an image for streaks
+    """
+    Corrects an image for streaks.
 
     Parameters
     ----------
@@ -103,8 +106,9 @@ def correct_streaks(
 
 
 @task
-def destreak_task(data_object: PUNCHData) -> PUNCHData:
-    """Prefect task to destreak an image
+def destreak_task(data_object: NDCube) -> NDCube:
+    """
+    Prefect task to destreak an image.
 
     Parameters
     ----------
@@ -115,16 +119,17 @@ def destreak_task(data_object: PUNCHData) -> PUNCHData:
     -------
     PUNCHData
         modified version of the input with streaks removed
+
     """
     logger = get_run_logger()
     logger.info("destreak started")
 
-    # todo: extract from metadata
+    # TODO: extract from metadata
     exposure_time = 1
     readout_line_time = 0.1
     reset_line_time = 0.1
     new_data = correct_streaks(data_object.data, exposure_time, readout_line_time, reset_line_time)
-    data_object = data_object.duplicate_with_updates(data=new_data)
+    data_object.data[...] = new_data[...]
     logger.info("destreak finished")
     data_object.meta.history.add_now("LEVEL1-destreak", "image destreaked")
     return data_object

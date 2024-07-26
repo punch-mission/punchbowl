@@ -11,9 +11,7 @@ from astropy.nddata import StdDevUncertainty
 from astropy.time import Time
 from astropy.wcs import WCS
 from ndcube import NDCube
-from numpy.linalg import inv
 from pytest import fixture
-from sunpy import sun
 from sunpy.coordinates import frames
 
 from punchbowl.data import (
@@ -21,10 +19,14 @@ from punchbowl.data import (
     HistoryEntry,
     MetaField,
     NormalizedMetadata,
-    PUNCHData,
+    _update_statistics,
     calculate_helio_wcs_from_celestial,
+    construct_wcs_header_fields,
+    get_base_file_name,
+    load_ndcube_from_fits,
     load_spacecraft_def,
     load_trefoil_wcs,
+    write_ndcube_to_fits,
 )
 from punchbowl.level1.initial_uncertainty import update_initial_uncertainty
 
@@ -185,7 +187,7 @@ def sample_wcs() -> WCS:
 
 @fixture
 def sample_data():
-    return PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
+    return load_ndcube_from_fits(SAMPLE_FITS_PATH_COMPRESSED)
 
 
 @fixture
@@ -231,7 +233,7 @@ def sample_punchdata():
 
         meta = NormalizedMetadata.load_template("PM1", "0")
         meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
-        return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+        return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
     return _sample_punchdata
 
@@ -255,7 +257,7 @@ def sample_punchdata_clear():
 
         meta = NormalizedMetadata.load_template("CR1", "0")
         meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
-        return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+        return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
     return _sample_punchdata_clear
 
@@ -281,13 +283,9 @@ def sample_punchdata_triplet(sample_punchdata):
     return [sample_pd1, sample_pd2, sample_pd3]
 
 
-def test_sample_data_creation(sample_data):
-    assert isinstance(sample_data, PUNCHData)
-
-
 def test_generate_from_filename_compressed():
-    pd = PUNCHData.from_fits(SAMPLE_FITS_PATH_COMPRESSED)
-    assert isinstance(pd, PUNCHData)
+    pd = load_ndcube_from_fits(SAMPLE_FITS_PATH_COMPRESSED)
+    assert isinstance(pd, NDCube)
     assert isinstance(pd.data, np.ndarray)
 
 
@@ -300,7 +298,7 @@ def test_write_data(sample_punchdata):
     sample_data.meta["DATE-OBS"] = str(datetime.now())
     sample_data.meta["DATE-END"] = str(datetime.now())
 
-    sample_data.write(SAMPLE_WRITE_PATH)
+    write_ndcube_to_fits(sample_data, SAMPLE_WRITE_PATH)
     assert os.path.isfile(SAMPLE_WRITE_PATH)
 
 
@@ -313,9 +311,9 @@ def test_generate_data_statistics_from_zeros(sample_punchdata):
     m['DATASUM'] = ''
     h = m.to_fits_header()
 
-    sample_data = PUNCHData(data=np.zeros((2048,2048),dtype=np.int16), wcs=WCS(h), meta=m)
+    sample_data = NDCube(data=np.zeros((2048,2048),dtype=np.int16), wcs=WCS(h), meta=m)
 
-    sample_data._update_statistics()
+    _update_statistics(sample_data)
 
     assert sample_data.meta['DATAZER'].value == 2048*2048
 
@@ -338,7 +336,7 @@ def test_generate_data_statistics_from_zeros(sample_punchdata):
 def test_generate_data_statistics(sample_punchdata):
     sample_data = sample_punchdata()
 
-    sample_data._update_statistics()
+    _update_statistics(sample_data)
 
     nonzero_sample_data = sample_data.data[np.where(sample_data.data != 0)].flatten()
 
@@ -375,9 +373,9 @@ def test_initial_uncertainty_calculation(sample_punchdata):
 def test_read_write_uncertainty_data(sample_punchdata):
     sample_data = sample_punchdata()
 
-    sample_data.write(SAMPLE_WRITE_PATH)
+    write_ndcube_to_fits(sample_data, SAMPLE_WRITE_PATH)
 
-    pdata_read_data = PUNCHData.from_fits(SAMPLE_WRITE_PATH)
+    pdata_read_data = load_ndcube_from_fits(SAMPLE_WRITE_PATH)
 
     with fits.open(SAMPLE_WRITE_PATH) as hdul:
         fitsio_read_uncertainty = hdul[2].data
@@ -394,9 +392,9 @@ def test_read_write_uncertainty_data(sample_punchdata):
 def test_uncertainty_bounds(sample_punchdata):
     sample_data_certain = sample_punchdata()
     sample_data_certain.uncertainty.array[:, :] = 0
-    sample_data_certain.write(SAMPLE_WRITE_PATH)
+    write_ndcube_to_fits(sample_data_certain, SAMPLE_WRITE_PATH)
 
-    punchdata_read_data_certain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
+    punchdata_read_data_certain = load_ndcube_from_fits(SAMPLE_WRITE_PATH).uncertainty.array
     with fits.open(SAMPLE_WRITE_PATH) as hdul:
         manual_read_data_certain = hdul[2].data
 
@@ -405,9 +403,9 @@ def test_uncertainty_bounds(sample_punchdata):
 
     sample_data_uncertain = sample_punchdata()
     sample_data_uncertain.uncertainty.array[:, :] = 1
-    sample_data_uncertain.write(SAMPLE_WRITE_PATH)
+    write_ndcube_to_fits(sample_data_uncertain, SAMPLE_WRITE_PATH)
 
-    punchdata_read_data_uncertain = PUNCHData.from_fits(SAMPLE_WRITE_PATH).uncertainty.array
+    punchdata_read_data_uncertain = load_ndcube_from_fits(SAMPLE_WRITE_PATH).uncertainty.array
     with fits.open(SAMPLE_WRITE_PATH) as hdul:
         manual_read_data_uncertain = hdul[2].data
 
@@ -418,22 +416,23 @@ def test_uncertainty_bounds(sample_punchdata):
 def test_invalid_uncertainty_range_error(sample_punchdata):
     sample_data = sample_punchdata()
     sqrt_data_array = np.sqrt(np.abs(sample_data.data))
-    uncertainty = StdDevUncertainty(np.interp(sqrt_data_array, (sqrt_data_array.min(), sqrt_data_array.max()), (0,1.1)).astype('float'))
+    uncertainty = StdDevUncertainty(np.interp(sqrt_data_array, (sqrt_data_array.min(),
+                                                                sqrt_data_array.max()), (0,1.1)).astype('float'))
     sample_data.uncertainty = uncertainty
 
     with pytest.raises(ValueError):
-        sample_data.write(SAMPLE_WRITE_PATH)
+        write_ndcube_to_fits(sample_data, SAMPLE_WRITE_PATH)
 
 
 def test_generate_wcs_metadata(sample_punchdata):
     sample_data = sample_punchdata()
-    sample_header = sample_data.construct_wcs_header_fields()
+    sample_header = construct_wcs_header_fields(sample_data)
 
     assert isinstance(sample_header, astropy.io.fits.Header)
 
 
 def test_filename_base_generation(sample_punchdata):
-    actual = sample_punchdata().filename_base
+    actual = get_base_file_name(sample_punchdata())
     expected = "PUNCH_L0_PM1_20230101000001"
     assert actual == expected
 
@@ -567,15 +566,14 @@ def test_sun_location():
 
 def test_wcs_many_point_2d_check():
     m = NormalizedMetadata.load_template("CTM", "2")
-    # m['DATE-OBS'] = str(datetime.utcnow().isoformat())
     date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
     m['DATE-OBS'] = str(date_obs)
-    # date_obs = Time(m['DATE-OBS'].value, format='isot', scale='utc')
+
     sun_radec = get_sun(date_obs)
     m['CRVAL1A'] = sun_radec.ra.to(u.deg).value
     m['CRVAL2A'] = sun_radec.dec.to(u.deg).value
     h = m.to_fits_header()
-    d = PUNCHData(np.ones((4096, 4096), dtype=np.float32), WCS(h, key='A'), m)
+    d = NDCube(np.ones((4096, 4096), dtype=np.float32), WCS(h, key='A'), m)
 
     # we're at the center of the Earth so let's try that
     test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
@@ -596,10 +594,6 @@ def test_wcs_many_point_2d_check():
     output_coords = []
 
     for c_pix, c_celestial, c_helio in zip(input_coords, points_celestial, points_helio):
-        # skycoord_helio = SkyCoord(c_helio[1] * u.deg, c_helio[2] * u.deg,
-        #                           frame=frames.Helioprojective,
-        #                           obstime=date_obs,
-        #                           observer=test_gcrs)
         skycoord_celestial = SkyCoord(c_celestial[0] * u.deg, c_celestial[1] * u.deg,
                                       frame=GCRS,
                                       obstime=date_obs,
@@ -626,7 +620,7 @@ def test_wcs_many_point_3d_check():
     m['CRVAL1A'] = sun_radec.ra.to(u.deg).value
     m['CRVAL2A'] = sun_radec.dec.to(u.deg).value
     h = m.to_fits_header()
-    d = PUNCHData(np.ones((2, 4096, 4096), dtype=np.float32), WCS(h, key='A'), m)
+    d = NDCube(np.ones((2, 4096, 4096), dtype=np.float32), WCS(h, key='A'), m)
 
     # we're at the center of the Earth so let's try that
     test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
@@ -712,12 +706,13 @@ def test_load_punchdata_with_history():
     meta.history.add_now("test", "this is a test!")
     meta.history.add_now("test", "this is a second test!")
     wcs = WCS(naxis=2)
-    obj = PUNCHData(data, wcs, meta)
+    obj = NDCube(data=data, wcs=wcs, meta=meta)
 
-    file_path = obj.filename_base + ".fits"
-    obj.write(file_path, overwrite=True, skip_wcs_conversion=True)
-    reloaded = PUNCHData.from_fits(file_path)
-    assert isinstance(reloaded, PUNCHData)
+    assert "OBSCODE" in obj.meta.fits_keys
+    file_path = get_base_file_name(obj) + ".fits"
+    write_ndcube_to_fits(obj, file_path, overwrite=True, skip_wcs_conversion=True)
+    reloaded = load_ndcube_from_fits(file_path)
+    assert isinstance(reloaded, NDCube)
     assert len(reloaded.meta.history) == 2
     assert reloaded.data.shape == (10, 10)
     assert np.all(reloaded.data == 1)

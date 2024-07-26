@@ -2,10 +2,10 @@
 # Third party imports
 import pytest
 from astropy.wcs import WCS
+from ndcube import NDCube
 from prefect.testing.utilities import prefect_test_harness
 
 # punchbowl imports
-from punchbowl.data import PUNCHData
 from punchbowl.level2.merge import merge_many_task
 from punchbowl.tests.test_data import sample_data_random, sample_punchdata, sample_punchdata_list, sample_wcs
 
@@ -20,5 +20,5 @@ def test_merge_many_task(sample_punchdata_list):
 
     pd_list = sample_punchdata_list
     output_punchdata = merge_many_task.fn(pd_list, trefoil_wcs)
-    assert isinstance(output_punchdata, PUNCHData)
+    assert isinstance(output_punchdata, NDCube)
     assert output_punchdata.data.shape == (50, 50)

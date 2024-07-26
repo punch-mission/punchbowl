@@ -1,18 +1,14 @@
 import numpy as np
+from ndcube import NDCube
 from prefect import get_run_logger, task
 
-from punchbowl.data import PUNCHData
 from punchbowl.exceptions import InvalidDataError
 
 
 def dn_to_photons(data_array: np.ndarray, gain: float = 4.3) -> np.ndarray:
-    """
-    Converts an input array from DN to photon count
-    """
+    """Convert an input array from DN to photon count."""
+    return data_array * gain
 
-    photon_array = data_array * gain
-
-    return photon_array
 
 
 def compute_noise(
@@ -23,7 +19,7 @@ def compute_noise(
         read_noise_level: float = 17,
         bitrate_signal: int = 16) -> np.ndarray:
     """
-    Generates noise based on an input data array, with specified noise parameters
+    Generate noise based on an input data array, with specified noise parameters.
 
     Parameters
     ----------
@@ -46,40 +42,35 @@ def compute_noise(
         computed noise array corresponding to input data and ccd/noise parameters
 
     """
-
     if (data.max() > 2 ** bitrate_signal - 1) or (data.min() < 0):
-        raise InvalidDataError(r"Specified input data is outside of expected range (between 0 and 2**bitrate_signal-1)")
-    else:
-        data = data.astype("long")
+        msg = r"Specified input data is outside of expected range (between 0 and 2**bitrate_signal-1)"
+        raise InvalidDataError(msg)
 
-        # Photon / shot noise generation
-        data_photon = data * gain  # DN to photoelectrons
-        sigma_photon = np.sqrt(data_photon)  # Converting sigma of this
-        sigma = sigma_photon / gain  # Converting back to DN
-        noise_photon = np.random.normal(scale=sigma)
+    data = data.astype("long")
 
-        # Add bias level and clip pixels to avoid overflow
-        data = np.clip(data + bias_level, 0, 2 ** bitrate_signal - 1)
+    # Photon / shot noise generation
+    data_photon = data * gain  # DN to photoelectrons
+    sigma_photon = np.sqrt(data_photon)  # Converting sigma of this
+    sigma = sigma_photon / gain  # Converting back to DN
+    noise_photon = np.random.normal(scale=sigma)
 
-        # Dark noise generation
-        noise_level = dark_level * gain
-        noise_dark = np.random.poisson(lam=noise_level, size=data.shape) / gain
+    # Add bias level and clip pixels to avoid overflow
+    data = np.clip(data + bias_level, 0, 2 ** bitrate_signal - 1)
 
-        # Read noise generation
-        noise_read = np.random.normal(scale=read_noise_level, size=data.shape)
-        noise_read = noise_read / gain  # Convert back to DN
+    # Dark noise generation
+    noise_level = dark_level * gain
+    noise_dark = np.random.poisson(lam=noise_level, size=data.shape) / gain
 
-        # And then add noise terms directly
-        noise_sum = noise_photon + noise_dark + noise_read
+    # Read noise generation
+    noise_read = np.random.normal(scale=read_noise_level, size=data.shape)
+    noise_read = noise_read / gain  # Convert back to DN
 
-    return noise_sum
+    # And then add noise terms directly
+    return noise_photon + noise_dark + noise_read
 
 
 def compute_uncertainty(data_array: np.ndarray) -> np.ndarray:
-    """
-    With an input data array compute a corresponding uncertainty array
-    """
-
+    """With an input data array compute a corresponding uncertainty array."""
     # Convert the input array to photon counts
     photon_array = dn_to_photons(data_array)
 
@@ -87,15 +78,14 @@ def compute_uncertainty(data_array: np.ndarray) -> np.ndarray:
     noise_array = compute_noise(photon_array)
 
     # Compute the resulting uncertainty
-    uncertainty_array = photon_array / noise_array
+    return photon_array / noise_array
 
     # Fold in any other sources of initial uncertainty (CCD?)
 
-    return uncertainty_array
 
-
-def update_initial_uncertainty(data_object: PUNCHData) -> PUNCHData:
-    """Function to compute initial uncertainty
+def update_initial_uncertainty(data_object: NDCube) -> NDCube:
+    """
+    Compute initial uncertainty.
 
     Parameters
     ----------
@@ -106,6 +96,7 @@ def update_initial_uncertainty(data_object: PUNCHData) -> PUNCHData:
     -------
     PUNCHData
         modified version of the input with initial uncertainty computed
+
     """
     uncertainty_array = compute_uncertainty(data_object.data)
     data_object.uncertainty.array = uncertainty_array
@@ -114,8 +105,9 @@ def update_initial_uncertainty(data_object: PUNCHData) -> PUNCHData:
 
 
 @task
-def update_initial_uncertainty_task(data_object: PUNCHData) -> PUNCHData:
-    """Prefect task to compute initial uncertainty
+def update_initial_uncertainty_task(data_object: NDCube) -> NDCube:
+    """
+    Prefect task to compute initial uncertainty.
 
     Parameters
     ----------
@@ -126,6 +118,7 @@ def update_initial_uncertainty_task(data_object: PUNCHData) -> PUNCHData:
     -------
     PUNCHData
         modified version of the input with initial uncertainty computed
+
     """
     logger = get_run_logger()
     logger.info("initial uncertainty computation started")

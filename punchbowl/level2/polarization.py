@@ -1,15 +1,12 @@
-from typing import List
 
 import solpolpy
-from ndcube import NDCollection
+from ndcube import NDCollection, NDCube
 from prefect import get_run_logger, task
 
-from punchbowl.data import PUNCHData
 
-
-def resolve_polarization(data_list: List[PUNCHData]) -> List[PUNCHData]:
+def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
     """
-    Takes a set of input data in the camera MZP frame and converts to the solar MZP frame.
+    Take a set of input data in the camera MZP frame and convert to the solar MZP frame.
 
     Parameters
     ----------
@@ -22,9 +19,8 @@ def resolve_polarization(data_list: List[PUNCHData]) -> List[PUNCHData]:
         modified version of the input with polarization resolved
 
     """
-
     # Unpack data into a NDCollection object
-    data_dictionary = dict(zip(["Bm", "Bz", "Bp"], data_list))
+    data_dictionary = dict(zip(["Bm", "Bz", "Bp"], data_list, strict=False))
     data_collection = NDCollection(data_dictionary)
 
     resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=True)
@@ -38,8 +34,9 @@ def resolve_polarization(data_list: List[PUNCHData]) -> List[PUNCHData]:
 
 
 @task
-def resolve_polarization_task(data_list: List[PUNCHData]) -> List[PUNCHData]:
-    """Prefect task for polarization resolving
+def resolve_polarization_task(data_list: list[NDCube]) -> list[NDCube]:
+    """
+    Prefect task for polarization resolving.
 
     Parameters
     ----------
@@ -50,8 +47,8 @@ def resolve_polarization_task(data_list: List[PUNCHData]) -> List[PUNCHData]:
     -------
     List[PUNCHData]
         modified version of the input with polarization resolved
-    """
 
+    """
     logger = get_run_logger()
     logger.info("resolve_polarization started")
 

@@ -25,7 +25,7 @@ from sunpy.coordinates import frames, sun
 from sunpy.coordinates.sun import _sun_north_angle_to_z
 from sunpy.map import solar_angular_radius
 
-from punchbowl.errors import MissingMetadataError
+from punchbowl.exceptions import MissingMetadataError
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -34,47 +34,50 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
 
 
 def get_data_path(path: str) -> str:
-    """Returns root data path given the filename requested"""
+    """Return root data path given the filename requested."""
     return os.path.join(_ROOT, "data", path)
 
 
-def load_omniheader(path: t.Optional[str] = None) -> pd.DataFrame:
-    """Loads full metadata specifications"""
+def load_omniheader(path: str | None = None) -> pd.DataFrame:
+    """Load full metadata specifications."""
     if path is None:
         path = get_data_path("omniheader.csv")
     return pd.read_csv(path, na_filter=False)
 
 
 def load_level_spec(path: str) -> dict[str, t.Any]:
-    """Loads data product metadata specifications"""
-    with open(path, "r") as f:
+    """Load data product metadata specifications."""
+    with open(path) as f:
         return yaml.safe_load(f)
 
 
 def load_trefoil_wcs() -> astropy.wcs.WCS:
-    """Loads Level 2 trefoil world coordinate system and shape"""
+    """Load Level 2 trefoil world coordinate system and shape."""
     trefoil_wcs = WCS(get_data_path("trefoil_hdr.fits"))
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
     trefoil_shape = (4096, 4096)
     return trefoil_wcs, trefoil_shape
 
 
-def load_spacecraft_def(path: t.Optional[str] = None) -> dict[str, t.Any]:
-    """Loads spacecraft metadata specifications
+def load_spacecraft_def(path: str | None = None) -> dict[str, t.Any]:
+    """
+    Load spacecraft metadata specifications.
 
     If path is None, then it loads a default from the package.
     """
     if path is None:
         path = get_data_path("spacecraft.yaml")
-    with open(path, "r") as f:
+    with open(path) as f:
         return yaml.safe_load(f)
 
 
-def extract_crota_from_wcs(wcs):
+def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
+    """Extract CROTA from a WCS."""
     return np.arctan2(wcs.wcs.pc[1, 0], wcs.wcs.pc[0, 0]) * u.rad
 
 
-def calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, data_shape):
+def calculate_helio_wcs_from_celestial(wcs_celestial: WCS, date_obs: datetime, data_shape: tuple[int]) -> WCS:
+    """Calculate the helio WCS from a celestial WCS."""
     is_3d = len(data_shape) == 3
 
     # we're at the center of the Earth
@@ -107,7 +110,7 @@ def calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, data_shape):
         data_shape[1:] if is_3d else data_shape,
         reference_coord_arcsec,
         reference_pixel=u.Quantity(
-            [wcs_celestial.wcs.crpix[0] - 1, wcs_celestial.wcs.crpix[1] - 1] * u.pixel
+            [wcs_celestial.wcs.crpix[0] - 1, wcs_celestial.wcs.crpix[1] - 1] * u.pixel,
         ),
         scale=u.Quantity([cdelt1, cdelt2] * u.arcsec / u.pix),
         rotation_angle=-p_angle - crota,
@@ -127,15 +130,15 @@ HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
 
 
 class History:
-    """Representation of the history of edits done to a PUNCHData object"""
+    """Representation of the history of edits done to a PUNCHData object."""
 
     def __init__(self) -> None:
-        """Create blank history"""
-        self._entries: t.List[HistoryEntry] = []
+        """Create blank history."""
+        self._entries: list[HistoryEntry] = []
 
     def add_entry(self, entry: HistoryEntry) -> None:
         """
-        Add an entry to the History log
+        Add an entry to the History log.
 
         Parameters
         ----------
@@ -150,7 +153,8 @@ class History:
         self._entries.append(entry)
 
     def add_now(self, source: str, comment: str) -> None:
-        """Adds a new history entry at the current time.
+        """
+        Add a new history entry at the current time.
 
         Parameters
         ----------
@@ -162,22 +166,24 @@ class History:
         Returns
         -------
         None
+
         """
         self._entries.append(HistoryEntry(datetime.now(), source, comment))
 
     def clear(self) -> None:
         """
-        Clears all the history entries so the History is blank
+        Clear all the history entries so the History is blank.
 
         Returns
         -------
         None
+
         """
         self._entries = []
 
     def __getitem__(self, index: int) -> HistoryEntry:
         """
-        Given an index, returns the requested HistoryEntry
+        Given an index, return the requested HistoryEntry.
 
         Parameters
         ----------
@@ -188,45 +194,45 @@ class History:
         -------
         HistoryEntry
             history at specified `index`
+
         """
         return self._entries[index]
 
     def most_recent(self) -> HistoryEntry:
         """
-        Gets the most recent HistoryEntry, i.e. the youngest
+        Get the most recent HistoryEntry, i.e. the youngest.
 
         Returns
         -------
         HistoryEntry
             returns HistoryEntry that is the youngest
+
         """
         return self._entries[-1]
 
     def __len__(self) -> int:
-        """
-        Returns
-        -------
-        int
-            the number of history entries
-        """
+        """Get length."""
         return len(self._entries)
 
     def __str__(self) -> str:
         """
-        Formats a string combining all the history entries
+        Format a string combining all the history entries.
 
         Returns
         -------
         str
             a combined record of the history entries
+
         """
         return "\n".join([f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries])
 
     def __iter__(self) -> History:
+        """Iterate."""
         self.current_index = 0
         return self
 
     def __next__(self) -> HistoryEntry:
+        """Get next."""
         if self.current_index >= len(self):
             raise StopIteration
         entry = self._entries[self.current_index]
@@ -234,13 +240,16 @@ class History:
         return entry
 
     def __eq__(self, other: History) -> bool:
+        """Check equality of two History objects."""
         if not isinstance(other, History):
-            raise TypeError(f"Can only check equality between two history objects, found History and {type(other)}")
+            msg = f"Can only check equality between two history objects, found History and {type(other)}"
+            raise TypeError(msg)
         return self._entries == other._entries
 
     @classmethod
     def from_fits_header(cls, head: Header) -> History:
-        """Constructs a history from a FITS header
+        """
+        Construct a history from a FITS header.
 
         Parameters
         ----------
@@ -251,6 +260,7 @@ class History:
         -------
         History
             the history derived from a given FITS header
+
         """
         if "HISTORY" not in head:
             out = cls()
@@ -263,23 +273,24 @@ class History:
         return out
 
 
-ValueType = t.Union[int, str, float]
+ValueType = int | str | float
 
 
 class MetaField:
-    """The MetaField object describes a single field within the NormalizedMetadata object"""
+    """The MetaField object describes a single field within the NormalizedMetadata object."""
 
     def __init__(
         self,
         keyword: str,
         comment: str,
-        value: t.Optional[t.Union[int, str, float]],
+        value: ValueType | None,
         datatype: t.Any,
         nullable: bool,
         mutable: bool,
-        default: t.Optional[t.Union[int, str, float]],
+        default: ValueType | None,
     ) -> None:
-        """Create a MetaField
+        """
+        Create a MetaField.
 
         Parameters
         ----------
@@ -297,15 +308,19 @@ class MetaField:
             if false, the value can never be changed after creation
         default : int, str, or float
             the default value to use if value is None and nullable is True
+
         """
         if value is not None and not isinstance(value, datatype):
-            raise TypeError(f"MetaField value and kind must match. Found kind={datatype} and value={type(value)}.")
+            msg = f"MetaField value and kind must match. Found kind={datatype} and value={type(value)}."
+            raise TypeError(msg)
         if default is not None and not isinstance(default, datatype):
+            msg = f"MetaField default and kind must match. Found kind={datatype} and default={type(default)}."
             raise TypeError(
-                "MetaField default and kind must match." f"Found kind={datatype} and default={type(default)}."
+                msg,
             )
         if len(keyword) > 8:
-            raise ValueError("Keywords must be 8 characters or shorter to comply with FITS")
+            msg = "Keywords must be 8 characters or shorter to comply with FITS"
+            raise ValueError(msg)
         self._keyword = keyword
         self._comment = comment
         self._value = value
@@ -315,32 +330,40 @@ class MetaField:
         self._default = default
 
     @property
+    def datatype(self) -> t.Any:
+        """Get the data type."""
+        return self._datatype
+
+    @property
     def keyword(self) -> str:
-        """returns MetaField keyword"""
+        """Returns MetaField keyword."""
         return self._keyword
 
     @property
     def comment(self) -> str:
-        """returns MetaField comment"""
+        """Returns MetaField comment."""
         return self._comment
 
     @property
     def value(self) -> ValueType:
-        """returns MetaField value"""
+        """Returns MetaField value."""
         return self._value
 
     @value.setter
     def value(self, value: ValueType) -> None:
-        """sets value within MetaField object"""
+        """Set value within MetaField object."""
         if not self._mutable:
-            raise RuntimeError("Cannot mutate this value because it is set to immutable.")
+            msg = "Cannot mutate this value because it is set to immutable."
+            raise RuntimeError(msg)
         if isinstance(value, self._datatype) or value is None:
             self._value = value
         else:
-            raise TypeError(f"Value of {self.keyword} was {type(value)} but must be {self._datatype}.")
+            msg = f"Value of {self.keyword} was {type(value)} but must be {self._datatype}."
+            raise TypeError(msg)
 
     @property
     def default(self) -> ValueType:
+        """Get the default value."""
         return self._default
 
     @default.setter
@@ -348,11 +371,14 @@ class MetaField:
         if isinstance(default, self._datatype) or default is None:
             self._default = default
         else:
-            raise TypeError(f"Value was {type(default)} but must be {self._default}.")
+            msg = f"Value was {type(default)} but must be {self._default}."
+            raise TypeError(msg)
 
     def __eq__(self, other: MetaField) -> bool:
+        """Check equality."""
         if not isinstance(other, MetaField):
-            raise TypeError(f"MetaFields can only be compared to their own type, found {type(other)}.")
+            msg = f"MetaFields can only be compared to their own type, found {type(other)}."
+            raise TypeError(msg)
         return (
             self._keyword == other._keyword
             and self._comment == other._comment
@@ -366,6 +392,8 @@ class MetaField:
 
 class NormalizedMetadata(Mapping):
     """
+    Represent Metadata consistently.
+
     The NormalizedMetadata object standardizes metadata and metadata access in the PUNCH pipeline. It does so by
     uniting the history and header fields while providing helpful accessors for commonly used formats of the metadata.
 
@@ -375,13 +403,14 @@ class NormalizedMetadata(Mapping):
     """
 
     def __len__(self) -> int:
-        """returns number of entry cards in NormalizedMetadata object"""
+        """Return number of entry cards in NormalizedMetadata object."""
         return sum([len(section) for section in self._contents.values()])
 
     def __init__(
-        self, contents: t.OrderedDict[str, t.OrderedDict[str, MetaField]], history: t.Optional[History] = None
+        self, contents: t.OrderedDict[str, t.OrderedDict[str, MetaField]], history: History | None = None,
     ) -> None:
-        """Create a Normalized Metadata. Also see `from_template` as that is often more helpful.
+        """
+        Create a Normalized Metadata. Also see `from_template` as that is often more helpful.
 
         Parameters
         ----------
@@ -389,22 +418,25 @@ class NormalizedMetadata(Mapping):
             contents of the meta information
         history: History
             history contents for this meta field
-        """
 
+        """
         self._contents = contents
         self._history = history if history is not None else History()
 
     def __iter__(self) -> t.Iterator[t.Any]:
+        """Iterate."""
         return self._contents.__iter__()
 
     def __eq__(self, other: NormalizedMetadata) -> bool:
+        """Check equality."""
         if not isinstance(other, NormalizedMetadata):
-            raise TypeError(f"Can only check equality between two NormalizedMetadata, found {type(other)}.")
+            msg = f"Can only check equality between two NormalizedMetadata, found {type(other)}."
+            raise TypeError(msg)
         return self._contents == other._contents and self._history == other._history
 
     def to_fits_header(self) -> Header:
         """
-        Converts a constructed NormalizedMetdata object to an Astropy FITS compliant header object
+        Convert a constructed NormalizedMetdata object to an Astropy FITS compliant header object.
 
         Returns
         -------
@@ -424,7 +456,8 @@ class NormalizedMetadata(Mapping):
                 elif field.value is None and field.nullable:
                     value = field.default
                 else:
-                    raise RuntimeError(f"Value is null for {field.keyword} and no default is allowed.")
+                    msg = f"Value is null for {field.keyword} and no default is allowed."
+                    raise RuntimeError(msg)
                 hdr.append(
                     (
                         field.keyword,
@@ -439,7 +472,8 @@ class NormalizedMetadata(Mapping):
 
     @classmethod
     def from_fits_header(cls, h: Header) -> NormalizedMetadata:
-        """Construct a normalized Metadata from a PUNCH FITS header
+        """
+        Construct a normalized Metadata from a PUNCH FITS header.
 
         Parameters
         ----------
@@ -450,13 +484,17 @@ class NormalizedMetadata(Mapping):
         -------
         NormalizedMetadata
             the corresponding NormalizedMetadata
+
         """
         if "TYPECODE" not in h:
-            raise RuntimeError("TYPECODE must a field of the header")
+            msg = "TYPECODE must a field of the header"
+            raise RuntimeError(msg)
         if "OBSCODE" not in h:
-            raise RuntimeError("OBSCODE must be a field of the header")
+            msg = "OBSCODE must be a field of the header"
+            raise RuntimeError(msg)
         if "LEVEL" not in h:
-            raise RuntimeError("LEVEL must be a field of the header")
+            msg = "LEVEL must be a field of the header"
+            raise RuntimeError(msg)
 
         type_code, obs_code, level = h["TYPECODE"], h["OBSCODE"], h["LEVEL"]
 
@@ -465,8 +503,9 @@ class NormalizedMetadata(Mapping):
         for k, v in h.items():
             if k not in ("COMMENT", "HISTORY", ""):
                 if k not in m:
+                    msg = f"Unexpected key of {k} found in header for Level{level} {type_code + obs_code} type meta."
                     raise RuntimeError(
-                        f"Unexpected key of {k} found in header for Level" f"{level} {type_code + obs_code} type meta."
+                        msg,
                     )
                 m[k] = v
         m.history = History.from_fits_header(h)
@@ -476,7 +515,7 @@ class NormalizedMetadata(Mapping):
     @staticmethod
     def _match_product_code_in_level_spec(product_code: str, level_spec: dict) -> dict:
         """
-        Parses the specified product code and level specification to find a corresponding set
+        Parse the specified product code and level specification to find a corresponding set.
 
         Parameters
         ----------
@@ -489,6 +528,7 @@ class NormalizedMetadata(Mapping):
         -------
         Dict
             Product code specification parsed from file
+
         """
         if product_code in level_spec["Products"]:
             return level_spec["Products"][product_code]
@@ -498,14 +538,15 @@ class NormalizedMetadata(Mapping):
             if type_code in found_type_codes:
                 return level_spec["Products"][type_code + "?"]
             else:  # noqa: RET505, okay structure
-                raise RuntimeError(f"Product code {product_code} not found in level_spec")
+                msg = f"Product code {product_code} not found in level_spec"
+                raise RuntimeError(msg)
 
     @staticmethod
     def _load_template_files(
-        omniheader_path: str, level: str, level_spec_path: str, spacecraft: str, spacecraft_def_path: str
-    ) -> t.Tuple[dict, dict, dict]:
+        omniheader_path: str, level: str, level_spec_path: str, spacecraft: str, spacecraft_def_path: str,
+    ) -> tuple[dict, dict, dict]:
         """
-        Loads template files from specified locations
+        Load template files from specified locations.
 
         Parameters
         ----------
@@ -524,30 +565,34 @@ class NormalizedMetadata(Mapping):
         -------
         Tuple
             Header specification entries
+
         """
         omniheader = load_omniheader(omniheader_path)
         spacecraft_def = load_spacecraft_def(spacecraft_def_path)
         if spacecraft not in spacecraft_def:
-            raise RuntimeError(f"Spacecraft {spacecraft} not in spacecraft_def.")
+            msg = f"Spacecraft {spacecraft} not in spacecraft_def."
+            raise RuntimeError(msg)
 
         if level is not None and level_spec_path is not None:
-            raise RuntimeError("Only specify the level or level_spec_path, not both.")
+            msg = "Only specify the level or level_spec_path, not both."
+            raise RuntimeError(msg)
         elif level is not None:  # noqa: RET506, fine structure
             level_spec_path = get_data_path(f"Level{level}.yaml")
             level_spec = load_level_spec(level_spec_path)
         elif level_spec_path is not None:
             level_spec = load_level_spec(level_spec_path)
         else:
-            raise RuntimeError("Either level or level_spec_path must be defined. Found None for both.")
+            msg = "Either level or level_spec_path must be defined. Found None for both."
+            raise RuntimeError(msg)
         return omniheader, level_spec, spacecraft_def
 
     @staticmethod
-    def _determine_omits_and_overrides(
-        level_spec: dict,  # noqa: C901, not too complex
+    def _determine_omits_and_overrides(  # noqa: C901
+        level_spec: dict,  # , not too complex
         product_def: dict,
-    ) -> t.Tuple[t.List[str], t.Dict[str, str]]:
+    ) -> tuple[list[str], dict[str, str]]:
         """
-        Reads level specifications and product definitions and determines keywords to omit or overwrite
+        Read level specifications and product definitions and determines keywords to omit or overwrite.
 
         Parameters
         ----------
@@ -560,6 +605,7 @@ class NormalizedMetadata(Mapping):
         -------
         Tuple
             Keywords and values to omit and override
+
         """
         this_kinds = product_def["kinds"]
         omits, overrides = [], {}
@@ -573,7 +619,8 @@ class NormalizedMetadata(Mapping):
 
         for kind in this_kinds:
             if kind not in level_spec["Kinds"]:
-                raise RuntimeError(f"{kind} not found in level_spec.")
+                msg = f"{kind} not found in level_spec."
+                raise RuntimeError(msg)
             if "omits" in level_spec["Kinds"][kind]:
                 omits += level_spec["Kinds"][kind]["omits"]
             if "overrides" in level_spec["Kinds"][kind]:
@@ -590,16 +637,16 @@ class NormalizedMetadata(Mapping):
         return omits, overrides
 
     @classmethod
-    def load_template(
-        cls,  # noqa: C901, not too complex
+    def load_template(  # noqa: C901
+        cls,
         product_code: str,
-        level: t.Optional[str] = None,
-        level_spec_path: t.Optional[str] = None,
-        omniheader_path: t.Optional[str] = None,
-        spacecraft_def_path: t.Optional[str] = None,
+        level: str | None = None,
+        level_spec_path: str | None = None,
+        omniheader_path: str | None = None,
+        spacecraft_def_path: str | None = None,
     ) -> NormalizedMetadata:
         """
-        Given data product specification, loads relevant template files and constructs a NormalizedMetadata object
+        Given data product specification, loads relevant template files and constructs a NormalizedMetadata object.
 
         Parameters
         ----------
@@ -623,7 +670,7 @@ class NormalizedMetadata(Mapping):
         # load all needed files
         spacecraft = product_code[-1]
         omniheader, level_spec, spacecraft_def = NormalizedMetadata._load_template_files(
-            omniheader_path, level, level_spec_path, spacecraft, spacecraft_def_path
+            omniheader_path, level, level_spec_path, spacecraft, spacecraft_def_path,
         )
 
         product_def = NormalizedMetadata._match_product_code_in_level_spec(product_code, level_spec)
@@ -639,7 +686,7 @@ class NormalizedMetadata(Mapping):
 
         # parse each section
         dtypes = {"str": str, "int": int, "float": float}
-        for section_id, section_title in zip(section_ids, section_titles):
+        for section_id, section_title in zip(section_ids, section_titles, strict=False):
             if section_title in level_spec["Level"]:
                 contents[section_title] = OrderedDict()
                 for i in np.where(omniheader["SECTION"] == section_id)[0][1:]:
@@ -656,7 +703,8 @@ class NormalizedMetadata(Mapping):
                             elif (datatype is int) or (datatype is float):
                                 value = datatype(value) if value != "" else None
                         except ValueError as err:
-                            raise RuntimeError(f"Value was of the wrong type to parse for {e['KEYWORD']}") from err
+                            msg = f"Value was of the wrong type to parse for {e['KEYWORD']}"
+                            raise RuntimeError(msg) from err
 
                         try:
                             if datatype is str:
@@ -665,7 +713,8 @@ class NormalizedMetadata(Mapping):
                             elif (datatype is int) or (datatype is float):
                                 default = datatype(default) if default != "" else None
                         except ValueError as err:
-                            raise RuntimeError(f"Default was of the wrong type to parse for {e['KEYWORD']}") from err
+                            msg = f"Default was of the wrong type to parse for {e['KEYWORD']}"
+                            raise RuntimeError(msg) from err
 
                         contents[section_title][e["KEYWORD"]] = MetaField(
                             e["KEYWORD"],
@@ -679,22 +728,22 @@ class NormalizedMetadata(Mapping):
         return cls(contents, history)
 
     @property
-    def sections(self) -> t.List[str]:
-        """returns header sections"""
+    def sections(self) -> list[str]:
+        """Returns header sections."""
         return list(self._contents.keys())
 
     @property
-    def fits_keys(self) -> t.List[str]:
-        """returns fits keys in header template"""
+    def fits_keys(self) -> list[str]:
+        """Returns fits keys in header template."""
 
-        def flatten(xss):
+        def flatten(xss: list) -> list:
             return [x for xs in xss for x in xs]
 
-        return flatten([list(self._contents[section_name].keys()) for section_name in self._contents.keys()])
+        return flatten([list(self._contents[section_name].keys()) for section_name in self._contents])
 
     @property
     def history(self) -> History:
-        """returns header history"""
+        """Returns header history."""
         return self._history
 
     @history.setter
@@ -704,7 +753,7 @@ class NormalizedMetadata(Mapping):
     @staticmethod
     def _validate_key_is_str(key: str) -> None:
         """
-        Validates that the provided key is a valid header keyword string
+        Validate that the provided key is a valid header keyword string.
 
         Parameters
         ----------
@@ -717,13 +766,15 @@ class NormalizedMetadata(Mapping):
 
         """
         if not isinstance(key, str):
-            raise TypeError(f"Keys for NormalizedMetadata must be strings. You provided {type(key)}.")
+            msg = f"Keys for NormalizedMetadata must be strings. You provided {type(key)}."
+            raise TypeError(msg)
         if len(key) > 8:
-            raise ValueError(f"Keys must be <= 8 characters long, received {key}")
+            msg = f"Keys must be <= 8 characters long, received {key}"
+            raise ValueError(msg)
 
     def __setitem__(self, key: str, value: t.Any) -> None:
         """
-        Sets specified pair of keyword and value in the NormalizedMetadata object
+        Set specified pair of keyword and value in the NormalizedMetadata object.
 
         Parameters
         ----------
@@ -744,11 +795,12 @@ class NormalizedMetadata(Mapping):
                 return
 
         # reaching here means we haven't returned
-        raise RuntimeError(f"MetaField with key={key} not found.")
+        msg = f"MetaField with key={key} not found."
+        raise RuntimeError(msg)
 
     def __getitem__(self, key: str) -> t.Any:
         """
-        Gets specified keyword from NormalizedMetadata object
+        Get specified keyword from NormalizedMetadata object.
 
         Parameters
         ----------
@@ -767,11 +819,12 @@ class NormalizedMetadata(Mapping):
                 return self._contents[section_name][key.upper()]
 
         # reaching here means we haven't returned
-        raise RuntimeError(f"MetaField with key={key} not found.")
+        msg = f"MetaField with key={key} not found."
+        raise RuntimeError(msg)
 
     def __delitem__(self, key: str) -> None:
         """
-        Deletes specified keyword entry from the NormalizedMetadata object
+        Delete specified keyword entry from the NormalizedMetadata object.
 
         Parameters
         ----------
@@ -790,11 +843,12 @@ class NormalizedMetadata(Mapping):
                 return
 
         # reaching here means we haven't returned
-        raise RuntimeError(f"MetaField with key={key} not found.")
+        msg = f"MetaField with key={key} not found."
+        raise RuntimeError(msg)
 
     def __contains__(self, key: str) -> bool:
         """
-        Determines if the specified keyword is contained within the NormalizedMetadata object
+        Determine if the specified keyword is contained within the NormalizedMetadata object.
 
         Parameters
         ----------
@@ -812,375 +866,224 @@ class NormalizedMetadata(Mapping):
 
     @property
     def product_level(self) -> int:
-        """returns data product level if indicated in metadata"""
+        """Returns data product level if indicated in metadata."""
         if "LEVEL" not in self:
-            raise MissingMetadataError("LEVEL is missing from the metadata.")
+            msg = "LEVEL is missing from the metadata."
+            raise MissingMetadataError(msg)
         return self["LEVEL"].value
 
     @property
     def datetime(self) -> datetime:
-        """returns a datetime representation of the 'DATE-OBS' header keyword if indicated in metadata"""
+        """Returns a datetime representation of the 'DATE-OBS' header keyword if indicated in metadata."""
         if "DATE-OBS" not in self:
-            raise MissingMetadataError("DATE-OBS is missing from the metadata.")
+            msg = "DATE-OBS is missing from the metadata."
+            raise MissingMetadataError(msg)
         return parse_datetime(self["DATE-OBS"].value)
 
 
-class PUNCHData(NDCube):
-    """PUNCH data object
+def load_ndcube_from_fits(path: str, key: str = " ") -> NDCube:
+    """Load an NDCube from a FITS file."""
+    with fits.open(path) as hdul:
+        hdu_index = next((i for i, hdu in enumerate(hdul) if hdu.data is not None), 0)
+        primary_hdu = hdul[hdu_index]
+        data = primary_hdu.data
+        header = primary_hdu.header
+        # Reset checksum and datasum to match astropy.io.fits behavior
+        header["CHECKSUM"] = ""
+        header["DATASUM"] = ""
+        meta = NormalizedMetadata.from_fits_header(header)
+        wcs = WCS(header, hdul, key=key)
+        unit = u.ct
 
-    PUNCHData is essentially a normal ndcube with a NormalizedMetadata and some helpful methods.
+        if len(hdul) > hdu_index + 1:
+            secondary_hdu = hdul[hdu_index+1]
+            uncertainty = (secondary_hdu.data / 255).astype(np.float32)
+            if (uncertainty.min() < 0) or (uncertainty.max() > 1):
+                msg = "Uncertainty array in file outside of expected range (0-1)."
+                raise ValueError(msg)
+            uncertainty = StdDevUncertainty(uncertainty)
+        else:
+            uncertainty = None
 
-    See Also
-    --------
-    NDCube : Base container for the PUNCHData object
+    return NDCube(
+        data.newbyteorder().byteswap(inplace=False),
+        wcs=wcs,
+        uncertainty=uncertainty,
+        meta=meta,
+        unit=unit,
+    )
+
+
+def get_base_file_name(cube: NDCube) -> str:
+    """Determine the base file name without file type extension."""
+    obscode = cube.meta["OBSCODE"].value
+    file_level = cube.meta["LEVEL"].value
+    type_code = cube.meta["TYPECODE"].value
+    date_string = cube.meta.datetime.strftime("%Y%m%d%H%M%S")
+    # TODO: include version number
+    return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string
+
+
+def write_ndcube_to_fits(cube: NDCube,
+                         filename: str,
+                         overwrite: bool = True,
+                         skip_wcs_conversion: bool = False) -> None:
+    """Write an NDCube as a FITS file."""
+    if filename.endswith(".fits"):
+        _write_fits(cube, filename, overwrite=overwrite, skip_wcs_conversion=skip_wcs_conversion)
+    elif filename.endswith((".png", ".jpg", ".jpeg")):
+        _write_ql(cube, filename, overwrite=overwrite)
+    else:
+        msg = (
+            "Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). "
+            f"Found: {os.path.splitext(filename)[1]}"
+        )
+        raise ValueError(
+            msg,
+        )
+
+
+def construct_wcs_header_fields(cube: NDCube) -> Header:
     """
+    Compute primary and secondary WCS header cards to add to a data object.
 
-    def __init__(
-        self,
-        data: np.ndarray,
-        wcs: astropy.wcs.wcsapi.BaseLowLevelWCS | astropy.wcs.wcsapi.BaseHighLevelWCS,
-        meta: NormalizedMetadata,
-        uncertainty: t.Any | None = None,
-        mask: t.Any | None = None,
-        unit: astropy.units.Unit = None,
-        copy: bool = False,
-        wcs_radec: astropy.wcs.wcsapi.BaseLowLevelWCS | astropy.wcs.wcsapi.BaseHighLevelWCS | None = None,
-        **kwargs,
-    ) -> None:
-        """Initialize PUNCH Data
+    Returns
+    -------
+    Header
 
-        Parameters
-        ----------
-        data
-            Primary observation data (2D or multidimensional ndarray)
-        wcs
-            World coordinate system object describing observation data axes, should be in helio coordinates
-        uncertainty
-            Measure of pixel uncertainty mapping from the primary data array
-            Characterized as 0-1 within the data object, and stored as 8-bit unsigned integers when written to file
+    """
+    date_obs = Time(cube.meta.datetime)
 
-        mask
-            Boolean mapping of invalid pixels mapping from the primary data array (True = masked out invalid pixels)
-        meta
-            Observation metadata, comprised of keywords and values as an astropy FITS header object
-        unit
-            Units for the measurements in the primary data array
-        copy
-            Create arguments as a copy (True), or as a reference where possible (False, default)
-        wcs_radec
-            World coordinate system object describing observation data axes, should be in RA/DEC coordinates
-        kwargs
-            Additional keyword arguments
+    celestial_wcs_header = cube.wcs.to_header()
+    output_header = astropy.io.fits.Header()
 
-        Notes
-        -----
-        As the PUNCHData object is a subclass of NDCube, the constructor follows much of the same form.
+    unused_keys = [
+        "DATE-OBS",
+        "DATE-BEG",
+        "DATE-AVG",
+        "DATE-END",
+        "DATE",
+        "MJD-OBS",
+        "TELAPSE",
+        "RSUN_REF",
+        "TIMESYS",
+    ]
 
-        PUNCHData objects also contain history information and have special functionality for manipulating PUNCH data.
-        """
-        super().__init__(
-            data,
-            wcs=wcs,
-            uncertainty=uncertainty,
-            mask=mask,
-            meta=meta,
-            unit=unit,
-            copy=copy,
-            **kwargs,
-        )
-        self._wcs_radec = wcs_radec
+    helio_wcs, p_angle = calculate_helio_wcs_from_celestial(
+        wcs_celestial=cube.wcs, date_obs=date_obs, data_shape=cube.data.shape,
+    )
 
-    @classmethod
-    def from_fits(cls, path: str, key: str = ' ') -> PUNCHData:
-        """Populates a PUNCHData object from specified FITS file.
+    helio_wcs_header = helio_wcs.to_header()
 
-        Parameters
-        ----------
-        path
-            filename from which to generate a PUNCHData object
-        key: str
-            the WCS key from the header to use
+    for key in unused_keys:
+        if key in celestial_wcs_header:
+            del celestial_wcs_header[key]
+        if key in helio_wcs_header:
+            del helio_wcs_header[key]
 
-        Returns
-        -------
-        PUNCHData
-            loaded object
-        """
+    if cube.meta["CTYPE1"] is not None:
+        for key, value in helio_wcs.to_header().items():
+            output_header[key] = value
+    if cube.meta["CTYPE1A"] is not None:
+        for key, value in celestial_wcs_header.items():
+            output_header[key + "A"] = value
 
-        with fits.open(path) as hdul:
-            hdu_index = next((i for i, hdu in enumerate(hdul) if hdu.data is not None), 0)
-            primary_hdu = hdul[hdu_index]
-            data = primary_hdu.data
-            header = primary_hdu.header
-            # Reset checksum and datasum to match astropy.io.fits behavior
-            header["CHECKSUM"] = ""
-            header["DATASUM"] = ""
-            meta = NormalizedMetadata.from_fits_header(header)
-            wcs = WCS(header, hdul, key=key)
-            unit = u.ct
+    center_helio_coord = SkyCoord(
+        helio_wcs.wcs.crval[0] * u.deg,
+        helio_wcs.wcs.crval[1] * u.deg,
+        frame=frames.Helioprojective,
+        obstime=date_obs,
+        observer="earth",
+    )
 
-            if len(hdul) > hdu_index + 1:
-                secondary_hdu = hdul[hdu_index+1]
-                uncertainty = (secondary_hdu.data / 255).astype(np.float32)
-                if (uncertainty.min() < 0) or (uncertainty.max() > 1):
-                    raise ValueError("Uncertainty array in file outside of expected range (0-1).")
-                else:
-                    uncertainty = StdDevUncertainty(uncertainty)
-            else:
-                uncertainty = None
+    output_header["RSUN_ARC"] = solar_angular_radius(center_helio_coord).value
+    output_header["SOLAR_EP"] = p_angle.value
+    output_header["CAR_ROT"] = float(sun.carrington_rotation_number(t=date_obs))
 
-        return cls(
-            data.newbyteorder().byteswap(inplace=True),
-            wcs=wcs,
-            uncertainty=uncertainty,
-            meta=meta,
-            unit=unit,
-        )
+    return output_header
 
-    @property
-    def weight(self) -> np.ndarray:
-        """Generate a corresponding weight map from the uncertainty array
 
-        Returns
-        -------
-        np.ndarray
-            weight map computed from uncertainty array
-        """
+def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, skip_wcs_conversion: bool = False) -> None:
+    _update_statistics(cube)
 
-        return 1.0 / self.uncertainty.array
+    header = cube.meta.to_fits_header()
 
-    @property
-    def filename_base(self) -> str:
-        """Dynamically generate an id string for the given data product, using the format 'Ln_ttO_yyyymmddhhmmss'
+    # update the header with the WCS
+    # TODO: explain the skip_wcs_conversion step
+    wcs_header = cube.wcs.to_header() if skip_wcs_conversion else construct_wcs_header_fields(cube)
+    for key, value in wcs_header.items():
+        if key in header:
+            header[key] = (cube.meta[key].datatype)(value)
+            cube.meta[key] = (cube.meta[key].datatype)(value)
 
-        Returns
-        -------
-        str
-            output identification string
-        """
-        obscode = self.meta["OBSCODE"].value
-        file_level = self.meta["LEVEL"].value
-        type_code = self.meta["TYPECODE"].value
-        date_string = self.meta.datetime.strftime("%Y%m%d%H%M%S")
-        # TODO: include version number
-        return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string
+    hdul_list = []
+    hdu_dummy = fits.PrimaryHDU()
+    hdul_list.append(hdu_dummy)
 
-    def write(self, filename: str, overwrite: bool = True, skip_wcs_conversion: bool = False) -> None:
-        """Write PUNCHData elements to file
+    hdu_data = fits.CompImageHDU(data=cube.data, header=header, name="Primary data array")
+    hdul_list.append(hdu_data)
 
-        Parameters
-        ----------
-        filename
-            output filename (including path and file extension), extension must be .fits, .png, .jpg, or .jpeg
-        overwrite
-            True will overwrite an exiting file, False will create an exception if a file exists
-
-        Returns
-        -------
-        None
-
-        Raises
-        -----
-        ValueError
-            If `filename` does not end in .fits, .png, .jpg, or .jpeg
-
-        """
-
-        if filename.endswith(".fits"):
-            self._write_fits(filename, overwrite=overwrite, skip_wcs_conversion=skip_wcs_conversion)
-        elif filename.endswith((".png", ".jpg", ".jpeg")):
-            self._write_ql(filename, overwrite=overwrite)
-        else:
-            raise ValueError(
-                "Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). "
-                f"Found: {os.path.splitext(filename)[1]}"
-            )
-
-    def construct_wcs_header_fields(self) -> Header:
-        """Computes primary and secondary WCS header cards to add to a data object
-
-        Returns
-        -------
-        Header
-
-        """
-        date_obs = Time(self.meta.datetime)
-
-        celestial_wcs_header = self.wcs.to_header()
-        output_header = astropy.io.fits.Header()
-
-        unused_keys = [
-            "DATE-OBS",
-            "DATE-BEG",
-            "DATE-AVG",
-            "DATE-END",
-            "DATE",
-            "MJD-OBS",
-            "TELAPSE",
-            "RSUN_REF",
-            "TIMESYS",
-        ]
-
-        helio_wcs, p_angle = calculate_helio_wcs_from_celestial(
-            wcs_celestial=self.wcs, date_obs=date_obs, data_shape=self.data.shape
-        )
-
-        helio_wcs_header = helio_wcs.to_header()
-
-        for key in unused_keys:
-            if key in celestial_wcs_header:
-                del celestial_wcs_header[key]
-            if key in helio_wcs_header:
-                del helio_wcs_header[key]
-
-        if self.meta["CTYPE1"] is not None:
-            for key, value in helio_wcs.to_header().items():
-                output_header[key] = value
-        if self.meta["CTYPE1A"] is not None:
-            for key, value in celestial_wcs_header.items():
-                output_header[key + "A"] = value
-
-        center_helio_coord = SkyCoord(
-            helio_wcs.wcs.crval[0] * u.deg,
-            helio_wcs.wcs.crval[1] * u.deg,
-            frame=frames.Helioprojective,
-            obstime=date_obs,
-            observer="earth",
-        )
-
-        output_header["RSUN_ARC"] = solar_angular_radius(center_helio_coord).value
-        output_header["SOLAR_EP"] = p_angle.value
-        output_header["CAR_ROT"] = float(sun.carrington_rotation_number(t=date_obs))
-
-        return output_header
-
-    def _write_fits(self, filename: str, overwrite: bool = True, skip_wcs_conversion: bool = False) -> None:
-        """Write PUNCHData elements to FITS files
-
-        Parameters
-        ----------
-        filename
-            output filename (including path and file extension)
-        overwrite
-            True will overwrite an exiting file, False will throw an exception in that scenario
-
-        Returns
-        -------
-        None
-        """
-
-        self._update_statistics()
-
-        header = self.meta.to_fits_header()
-
-        # update the header with the WCS
-        if skip_wcs_conversion:
-            wcs_header = self.wcs.to_header()
-        else:
-            wcs_header = self.construct_wcs_header_fields()
+    if cube.uncertainty is not None:
+        if (cube.uncertainty.array.min() < 0) or (cube.uncertainty.array.max() > 1):
+            msg = "Uncertainty array outside of expected range (0-1)."
+            raise ValueError(msg)
+        scaled_uncertainty = (cube.uncertainty.array * 255).astype(np.uint8)
+        hdu_uncertainty = fits.CompImageHDU(data=scaled_uncertainty, name="Uncertainty array")
+        # write WCS to uncertainty header
         for key, value in wcs_header.items():
-            if key in header:
-                header[key] = (self.meta[key]._datatype)(value)
-                self.meta[key] = (self.meta[key]._datatype)(value)
+            hdu_uncertainty.header[key] = value
+        # Save as an 8-bit unsigned integer
+        hdul_list.append(hdu_uncertainty)
 
-        hdul_list = []
-        hdu_dummy = fits.PrimaryHDU()
-        hdul_list.append(hdu_dummy)
+    hdul = fits.HDUList(hdul_list)
 
-        hdu_data = fits.CompImageHDU(data=self.data, header=header, name="Primary data array")
-        hdul_list.append(hdu_data)
+    hdul.writeto(filename, overwrite=overwrite, checksum=True)
 
-        if self.uncertainty is not None:
-            if (self.uncertainty.array.min() < 0) or (self.uncertainty.array.max() > 1):
-                raise ValueError("Uncertainty array outside of expected range (0-1).")
-            else:
-                scaled_uncertainty = (self.uncertainty.array * 255).astype(np.uint8)
-                hdu_uncertainty = fits.CompImageHDU(data=scaled_uncertainty, name='Uncertainty array')
-                # write WCS to uncertainty header
-                for key, value in wcs_header.items():
-                    hdu_uncertainty.header[key] = value
-                # Save as an 8-bit unsigned integer
-                hdul_list.append(hdu_uncertainty)
 
-        hdul = fits.HDUList(hdul_list)
-
-        hdul.writeto(filename, overwrite=overwrite, checksum=True)
-
-    def _write_ql(self, filename: str, overwrite: bool = True) -> None:
-        """Write an 8-bit scaled version of the specified data array to a PNG file
-
-        Parameters
-        ----------
-        filename
-            output filename (including path and file extension)
-        overwrite
-            True will overwrite an exiting file, False will throw an exception in that scenario
-
-        Returns
-        -------
-        None
-        """
-        if os.path.isfile(filename) and not overwrite:
-            raise OSError(
-                f"File {filename} already exists." "If you mean to replace it then use the argument 'overwrite=True'."
-            )
-
-        if self.data.ndim != 2:
-            raise ValueError("Specified output data should have two-dimensions.")
-
-        # Scale data array to 8-bit values
-        output_data = int(np.fix(np.interp(self.data, (self.data.min(), self.data.max()), (0, 2**8 - 1))))
-
-        # Write image to file
-        mpl.image.saveim(filename, output_data)
-
-    def _update_statistics(self) -> None:
-        """Updates image statistics in metadata before writing to file"""
-
-        # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
-
-        # if not np.any(self.data) or np.all(np.isnan(self.data)) or np.all(np.isinf(self.data)):
-        #     raise InvalidDataError("Input data array expected to contain real, non-zero data.")
-
-        self.meta["DATAZER"] = len(np.where(self.data == 0)[0])
-
-        self.meta["DATASAT"] = len(np.where(self.data >= self.meta["DSATVAL"].value)[0])
-
-        nonzero_data = self.data[np.where(self.data != 0)].flatten()
-
-        if len(nonzero_data) > 0:
-            self.meta["DATAAVG"] = np.nanmean(nonzero_data).item()
-            self.meta["DATAMDN"] = np.nanmedian(nonzero_data).item()
-            self.meta["DATASIG"] = np.nanstd(nonzero_data).item()
-        else:
-            self.meta["DATAAVG"] = -999.0
-            self.meta["DATAMDN"] = -999.0
-            self.meta["DATASIG"] = -999.0
-
-        percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
-        percentile_values = np.nanpercentile(nonzero_data, percentile_percentages)
-        if np.any(np.isnan(percentile_values)):  # report nan if any of the values are nan
-            percentile_values = [-999.0 for _ in percentile_percentages]
-
-        for percent, value in zip(percentile_percentages, percentile_values):
-            self.meta[f"DATAP{percent:02d}"] = value
-
-        self.meta["DATAMIN"] = float(np.nanmin(self.data))
-        self.meta["DATAMAX"] = float(np.nanmax(self.data))
-
-    def duplicate_with_updates(
-        self,
-        data: t.Optional[np.ndarray] = None,
-        wcs: t.Optional[astropy.wcs.WCS] = None,
-        uncertainty: t.Optional[np.ndarray] = None,
-        meta: t.Optional[NormalizedMetadata] = None,
-        unit: t.Optional[astropy.units.Unit] = None,
-    ) -> PUNCHData:
-        """Copies a PUNCHData. Any field specified in the call is modified. All others are a direct copy."""
-        return PUNCHData(
-            data=data if data is not None else self.data,
-            wcs=wcs if wcs is not None else self.wcs,
-            uncertainty=uncertainty if uncertainty is not None else self.uncertainty,
-            meta=meta if meta is not None else self.meta,
-            unit=unit if unit is not None else self.unit,
+def _write_ql(cube: NDCube, filename: str, overwrite: bool = True) -> None:
+    if os.path.isfile(filename) and not overwrite:
+        msg = f"File {filename} already exists. If you mean to replace it then use the argument 'overwrite=True'."
+        raise OSError(
+            msg,
         )
+
+    if cube.data.ndim != 2:
+        msg = "Specified output data should have two-dimensions."
+        raise ValueError(msg)
+
+    # Scale data array to 8-bit values
+    output_data = int(np.fix(np.interp(cube.data, (cube.data.min(), cube.data.max()), (0, 2**8 - 1))))
+
+    # Write image to file
+    mpl.image.saveim(filename, output_data)
+
+
+def _update_statistics(cube: NDCube) -> None:
+    """Update image statistics in metadata before writing to file."""
+    # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
+
+    cube.meta["DATAZER"] = len(np.where(cube.data == 0)[0])
+
+    cube.meta["DATASAT"] = len(np.where(cube.data >= cube.meta["DSATVAL"].value)[0])
+
+    nonzero_data = cube.data[np.where(cube.data != 0)].flatten()
+
+    if len(nonzero_data) > 0:
+        cube.meta["DATAAVG"] = np.nanmean(nonzero_data).item()
+        cube.meta["DATAMDN"] = np.nanmedian(nonzero_data).item()
+        cube.meta["DATASIG"] = np.nanstd(nonzero_data).item()
+    else:
+        cube.meta["DATAAVG"] = -999.0
+        cube.meta["DATAMDN"] = -999.0
+        cube.meta["DATASIG"] = -999.0
+
+    percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
+    percentile_values = np.nanpercentile(nonzero_data, percentile_percentages)
+    if np.any(np.isnan(percentile_values)):  # report nan if any of the values are nan
+        percentile_values = [-999.0 for _ in percentile_percentages]
+
+    for percent, value in zip(percentile_percentages, percentile_values, strict=False):
+        cube.meta[f"DATAP{percent:02d}"] = value
+
+    cube.meta["DATAMIN"] = float(np.nanmin(cube.data))
+    cube.meta["DATAMAX"] = float(np.nanmax(cube.data))

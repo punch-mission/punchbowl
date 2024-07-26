@@ -1,17 +1,17 @@
-from typing import List, Union, Optional
 
+from ndcube import NDCube
 from prefect import flow, get_run_logger
 
-from punchbowl.data import PUNCHData
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
-from punchbowl.level3.starfield_remove import subtract_starfield_background_task
+from punchbowl.level3.stellar import subtract_starfield_background_task
 from punchbowl.util import load_image_task
 
 
 @flow(validate_parameters=False)
-def level3_core_flow(data_list: Union[List[str], List[PUNCHData]],
-                     f_corona_model_path: Optional[str],
-                     starfield_background_path: Optional[str]) -> List[PUNCHData]:
+def level3_core_flow(data_list: list[str] | list[NDCube],
+                     f_corona_model_path: str | None,
+                     starfield_background_path: str | None) -> list[NDCube]:
+    """Level 3 core flow."""
     logger = get_run_logger()
 
     logger.info("beginning level 3 core flow")

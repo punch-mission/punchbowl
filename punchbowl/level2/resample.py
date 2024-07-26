@@ -1,20 +1,15 @@
-# Core Python imports
-from typing import List
 
-# Third party imports
 import numpy as np
 import reproject
-from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 from prefect import flow, task
-
-# Punchbowl imports
-from punchbowl.data import PUNCHData
 
 
 @task
 def reproject_array(input_array: np.ndarray, input_wcs: WCS, output_wcs: WCS, output_shape: tuple) -> np.ndarray:
-    """Core reprojection function
+    """
+    Core reprojection function.
 
     Core reprojection function of the PUNCH mosaic generation module.
         With an input data array and corresponding WCS object, the function
@@ -43,6 +38,7 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, output_wcs: WCS, ou
     Example Call
     ------------
     >>> reprojected_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
+
     """
     reconstructed_wcs = WCS(naxis=2)
     reconstructed_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
@@ -53,19 +49,17 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, output_wcs: WCS, ou
     reconstructed_wcs.wcs.cname = "HPC lon", "HPC lat"
 
     return reproject.reproject_adaptive(
-        (input_array, reconstructed_wcs), output_wcs, output_shape, roundtrip_coords=False, return_footprint=False
+        (input_array, reconstructed_wcs), output_wcs, output_shape, roundtrip_coords=False, return_footprint=False,
     )
 
 
 @flow(validate_parameters=False)
-def reproject_many_flow(data: List[PUNCHData], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> List[PUNCHData]:
-    # TODO: add docstring
+def reproject_many_flow(data: list[NDCube], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube]:
+    """Reproject many flow."""
     data_result = [reproject_array.submit(d.data, d.wcs, trefoil_wcs, trefoil_shape) for d in data]
     uncertainty_result = [reproject_array.submit(d.uncertainty.array, d.wcs, trefoil_wcs, trefoil_shape) for d in data]
 
-    return [
-        d.duplicate_with_updates(
-            data=data_result[i].result(), uncertainty=StdDevUncertainty(uncertainty_result[i].result()), wcs=trefoil_wcs
-        )
-        for i, d in enumerate(data)
-    ]
+    return [NDCube(data=data_result[i].result(),
+                   uncertainty=uncertainty_result[i].result(),
+                   wcs=trefoil_wcs,
+                   meta=d.meta) for i, d in enumerate(data)]

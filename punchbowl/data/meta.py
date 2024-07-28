@@ -1,47 +1,29 @@
 from __future__ import annotations
 
+import os
 import typing as t
-import os.path
 from datetime import datetime
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 from collections.abc import Mapping
 
-import astropy.units as u
-import astropy.wcs.wcsapi
-import matplotlib as mpl
 import numpy as np
 import pandas as pd
-import sunpy.map
 import yaml
-from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping
 from astropy.io import fits
 from astropy.io.fits import Header
-from astropy.nddata import StdDevUncertainty
-from astropy.time import Time
-from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
-from ndcube import NDCube
-from sunpy.coordinates import frames, sun
-from sunpy.coordinates.sun import _sun_north_angle_to_z
-from sunpy.map import solar_angular_radius
 
+from punchbowl.data.history import History
 from punchbowl.exceptions import MissingMetadataError
 
+ValueType = int | str | float
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-
-PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
-                                                     11: StokesSymbol("B", "total brightness")})
-
-
-def get_data_path(path: str) -> str:
-    """Return root data path given the filename requested."""
-    return os.path.join(_ROOT, "data", path)
 
 
 def load_omniheader(path: str | None = None) -> pd.DataFrame:
     """Load full metadata specifications."""
     if path is None:
-        path = get_data_path("omniheader.csv")
+        path = os.path.join(_ROOT, "data", "omniheader.csv")
     return pd.read_csv(path, na_filter=False)
 
 
@@ -51,14 +33,6 @@ def load_level_spec(path: str) -> dict[str, t.Any]:
         return yaml.safe_load(f)
 
 
-def load_trefoil_wcs() -> astropy.wcs.WCS:
-    """Load Level 2 trefoil world coordinate system and shape."""
-    trefoil_wcs = WCS(get_data_path("trefoil_hdr.fits"))
-    trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
-    trefoil_shape = (4096, 4096)
-    return trefoil_wcs, trefoil_shape
-
-
 def load_spacecraft_def(path: str | None = None) -> dict[str, t.Any]:
     """
     Load spacecraft metadata specifications.
@@ -66,214 +40,9 @@ def load_spacecraft_def(path: str | None = None) -> dict[str, t.Any]:
     If path is None, then it loads a default from the package.
     """
     if path is None:
-        path = get_data_path("spacecraft.yaml")
+        path = os.path.join(_ROOT, "data", "spacecraft.yaml")
     with open(path) as f:
         return yaml.safe_load(f)
-
-
-def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
-    """Extract CROTA from a WCS."""
-    return np.arctan2(wcs.wcs.pc[1, 0], wcs.wcs.pc[0, 0]) * u.rad
-
-
-def calculate_helio_wcs_from_celestial(wcs_celestial: WCS, date_obs: datetime, data_shape: tuple[int]) -> WCS:
-    """Calculate the helio WCS from a celestial WCS."""
-    is_3d = len(data_shape) == 3
-
-    # we're at the center of the Earth
-    test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
-    test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
-
-    # follow the SunPy tutorial from here
-    # https://docs.sunpy.org/en/stable/generated/gallery/units_and_coordinates/radec_to_hpc_map.html#sphx-glr-generated-gallery-units-and-coordinates-radec-to-hpc-map-py
-    reference_coord = SkyCoord(
-        wcs_celestial.wcs.crval[0] * u.Unit(wcs_celestial.wcs.cunit[0]),
-        wcs_celestial.wcs.crval[1] * u.Unit(wcs_celestial.wcs.cunit[1]),
-        frame="gcrs",
-        obstime=date_obs,
-        obsgeoloc=test_gcrs.cartesian,
-        obsgeovel=test_gcrs.velocity.to_cartesian(),
-        distance=test_gcrs.hcrs.distance,
-    )
-
-    reference_coord_arcsec = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
-
-    cdelt1 = (np.abs(wcs_celestial.wcs.cdelt[0]) * u.deg).to(u.arcsec)
-    cdelt2 = (np.abs(wcs_celestial.wcs.cdelt[1]) * u.deg).to(u.arcsec)
-
-    geocentric = GCRS(obstime=date_obs)
-    p_angle = _sun_north_angle_to_z(geocentric)
-
-    crota = extract_crota_from_wcs(wcs_celestial)
-
-    new_header = sunpy.map.make_fitswcs_header(
-        data_shape[1:] if is_3d else data_shape,
-        reference_coord_arcsec,
-        reference_pixel=u.Quantity(
-            [wcs_celestial.wcs.crpix[0] - 1, wcs_celestial.wcs.crpix[1] - 1] * u.pixel,
-        ),
-        scale=u.Quantity([cdelt1, cdelt2] * u.arcsec / u.pix),
-        rotation_angle=-p_angle - crota,
-        observatory="PUNCH",
-        projection_code=wcs_celestial.wcs.ctype[0][-3:],
-    )
-
-    wcs_helio = WCS(new_header)
-
-    if is_3d:
-        wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 2)
-
-    return wcs_helio, p_angle
-
-
-HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
-
-
-class History:
-    """Representation of the history of edits done to a PUNCHData object."""
-
-    def __init__(self) -> None:
-        """Create blank history."""
-        self._entries: list[HistoryEntry] = []
-
-    def add_entry(self, entry: HistoryEntry) -> None:
-        """
-        Add an entry to the History log.
-
-        Parameters
-        ----------
-        entry : HistoryEntry
-            A HistoryEntry object to add to the History log
-
-        Returns
-        -------
-        None
-
-        """
-        self._entries.append(entry)
-
-    def add_now(self, source: str, comment: str) -> None:
-        """
-        Add a new history entry at the current time.
-
-        Parameters
-        ----------
-        source : str
-            what module of the code the history entry originates from
-        comment : str
-            a note of what the history comment means
-
-        Returns
-        -------
-        None
-
-        """
-        self._entries.append(HistoryEntry(datetime.now(), source, comment))
-
-    def clear(self) -> None:
-        """
-        Clear all the history entries so the History is blank.
-
-        Returns
-        -------
-        None
-
-        """
-        self._entries = []
-
-    def __getitem__(self, index: int) -> HistoryEntry:
-        """
-        Given an index, return the requested HistoryEntry.
-
-        Parameters
-        ----------
-        index : int
-            numerical index of the history entry, increasing number typically indicates an older entry
-
-        Returns
-        -------
-        HistoryEntry
-            history at specified `index`
-
-        """
-        return self._entries[index]
-
-    def most_recent(self) -> HistoryEntry:
-        """
-        Get the most recent HistoryEntry, i.e. the youngest.
-
-        Returns
-        -------
-        HistoryEntry
-            returns HistoryEntry that is the youngest
-
-        """
-        return self._entries[-1]
-
-    def __len__(self) -> int:
-        """Get length."""
-        return len(self._entries)
-
-    def __str__(self) -> str:
-        """
-        Format a string combining all the history entries.
-
-        Returns
-        -------
-        str
-            a combined record of the history entries
-
-        """
-        return "\n".join([f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries])
-
-    def __iter__(self) -> History:
-        """Iterate."""
-        self.current_index = 0
-        return self
-
-    def __next__(self) -> HistoryEntry:
-        """Get next."""
-        if self.current_index >= len(self):
-            raise StopIteration
-        entry = self._entries[self.current_index]
-        self.current_index += 1
-        return entry
-
-    def __eq__(self, other: History) -> bool:
-        """Check equality of two History objects."""
-        if not isinstance(other, History):
-            msg = f"Can only check equality between two history objects, found History and {type(other)}"
-            raise TypeError(msg)
-        return self._entries == other._entries
-
-    @classmethod
-    def from_fits_header(cls, head: Header) -> History:
-        """
-        Construct a history from a FITS header.
-
-        Parameters
-        ----------
-        head : Header
-            a FITS header to read from
-
-        Returns
-        -------
-        History
-            the history derived from a given FITS header
-
-        """
-        if "HISTORY" not in head:
-            out = cls()
-        else:
-            out = cls()
-            for row in head["HISTORY"][1:]:
-                dt, source, comment = row.split(" => ")
-                dt = parse_datetime(dt)
-                out.add_entry(HistoryEntry(dt, source, comment))
-        return out
-
-
-ValueType = int | str | float
 
 
 class MetaField:
@@ -577,7 +346,7 @@ class NormalizedMetadata(Mapping):
             msg = "Only specify the level or level_spec_path, not both."
             raise RuntimeError(msg)
         elif level is not None:  # noqa: RET506, fine structure
-            level_spec_path = get_data_path(f"Level{level}.yaml")
+            level_spec_path = os.path.join(_ROOT, "data", f"Level{level}.yaml")
             level_spec = load_level_spec(level_spec_path)
         elif level_spec_path is not None:
             level_spec = load_level_spec(level_spec_path)
@@ -879,211 +648,3 @@ class NormalizedMetadata(Mapping):
             msg = "DATE-OBS is missing from the metadata."
             raise MissingMetadataError(msg)
         return parse_datetime(self["DATE-OBS"].value)
-
-
-def load_ndcube_from_fits(path: str, key: str = " ") -> NDCube:
-    """Load an NDCube from a FITS file."""
-    with fits.open(path) as hdul:
-        hdu_index = next((i for i, hdu in enumerate(hdul) if hdu.data is not None), 0)
-        primary_hdu = hdul[hdu_index]
-        data = primary_hdu.data
-        header = primary_hdu.header
-        # Reset checksum and datasum to match astropy.io.fits behavior
-        header["CHECKSUM"] = ""
-        header["DATASUM"] = ""
-        meta = NormalizedMetadata.from_fits_header(header)
-        wcs = WCS(header, hdul, key=key)
-        unit = u.ct
-
-        if len(hdul) > hdu_index + 1:
-            secondary_hdu = hdul[hdu_index+1]
-            uncertainty = (secondary_hdu.data / 255).astype(np.float32)
-            if (uncertainty.min() < 0) or (uncertainty.max() > 1):
-                msg = "Uncertainty array in file outside of expected range (0-1)."
-                raise ValueError(msg)
-            uncertainty = StdDevUncertainty(uncertainty)
-        else:
-            uncertainty = None
-
-    return NDCube(
-        data.newbyteorder().byteswap(inplace=False),
-        wcs=wcs,
-        uncertainty=uncertainty,
-        meta=meta,
-        unit=unit,
-    )
-
-
-def get_base_file_name(cube: NDCube) -> str:
-    """Determine the base file name without file type extension."""
-    obscode = cube.meta["OBSCODE"].value
-    file_level = cube.meta["LEVEL"].value
-    type_code = cube.meta["TYPECODE"].value
-    date_string = cube.meta.datetime.strftime("%Y%m%d%H%M%S")
-    # TODO: include version number
-    return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string
-
-
-def write_ndcube_to_fits(cube: NDCube,
-                         filename: str,
-                         overwrite: bool = True,
-                         skip_wcs_conversion: bool = False) -> None:
-    """Write an NDCube as a FITS file."""
-    if filename.endswith(".fits"):
-        _write_fits(cube, filename, overwrite=overwrite, skip_wcs_conversion=skip_wcs_conversion)
-    elif filename.endswith((".png", ".jpg", ".jpeg")):
-        _write_ql(cube, filename, overwrite=overwrite)
-    else:
-        msg = (
-            "Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). "
-            f"Found: {os.path.splitext(filename)[1]}"
-        )
-        raise ValueError(
-            msg,
-        )
-
-
-def construct_wcs_header_fields(cube: NDCube) -> Header:
-    """
-    Compute primary and secondary WCS header cards to add to a data object.
-
-    Returns
-    -------
-    Header
-
-    """
-    date_obs = Time(cube.meta.datetime)
-
-    celestial_wcs_header = cube.wcs.to_header()
-    output_header = astropy.io.fits.Header()
-
-    unused_keys = [
-        "DATE-OBS",
-        "DATE-BEG",
-        "DATE-AVG",
-        "DATE-END",
-        "DATE",
-        "MJD-OBS",
-        "TELAPSE",
-        "RSUN_REF",
-        "TIMESYS",
-    ]
-
-    helio_wcs, p_angle = calculate_helio_wcs_from_celestial(
-        wcs_celestial=cube.wcs, date_obs=date_obs, data_shape=cube.data.shape,
-    )
-
-    helio_wcs_header = helio_wcs.to_header()
-
-    for key in unused_keys:
-        if key in celestial_wcs_header:
-            del celestial_wcs_header[key]
-        if key in helio_wcs_header:
-            del helio_wcs_header[key]
-
-    if cube.meta["CTYPE1"] is not None:
-        for key, value in helio_wcs.to_header().items():
-            output_header[key] = value
-    if cube.meta["CTYPE1A"] is not None:
-        for key, value in celestial_wcs_header.items():
-            output_header[key + "A"] = value
-
-    center_helio_coord = SkyCoord(
-        helio_wcs.wcs.crval[0] * u.deg,
-        helio_wcs.wcs.crval[1] * u.deg,
-        frame=frames.Helioprojective,
-        obstime=date_obs,
-        observer="earth",
-    )
-
-    output_header["RSUN_ARC"] = solar_angular_radius(center_helio_coord).value
-    output_header["SOLAR_EP"] = p_angle.value
-    output_header["CAR_ROT"] = float(sun.carrington_rotation_number(t=date_obs))
-
-    return output_header
-
-
-def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, skip_wcs_conversion: bool = False) -> None:
-    _update_statistics(cube)
-
-    header = cube.meta.to_fits_header()
-
-    # update the header with the WCS
-    # TODO: explain the skip_wcs_conversion step
-    wcs_header = cube.wcs.to_header() if skip_wcs_conversion else construct_wcs_header_fields(cube)
-    for key, value in wcs_header.items():
-        if key in header:
-            header[key] = (cube.meta[key].datatype)(value)
-            cube.meta[key] = (cube.meta[key].datatype)(value)
-
-    hdul_list = []
-    hdu_dummy = fits.PrimaryHDU()
-    hdul_list.append(hdu_dummy)
-
-    hdu_data = fits.CompImageHDU(data=cube.data, header=header, name="Primary data array")
-    hdul_list.append(hdu_data)
-
-    if cube.uncertainty is not None:
-        if (cube.uncertainty.array.min() < 0) or (cube.uncertainty.array.max() > 1):
-            msg = "Uncertainty array outside of expected range (0-1)."
-            raise ValueError(msg)
-        scaled_uncertainty = (cube.uncertainty.array * 255).astype(np.uint8)
-        hdu_uncertainty = fits.CompImageHDU(data=scaled_uncertainty, name="Uncertainty array")
-        # write WCS to uncertainty header
-        for key, value in wcs_header.items():
-            hdu_uncertainty.header[key] = value
-        # Save as an 8-bit unsigned integer
-        hdul_list.append(hdu_uncertainty)
-
-    hdul = fits.HDUList(hdul_list)
-
-    hdul.writeto(filename, overwrite=overwrite, checksum=True)
-
-
-def _write_ql(cube: NDCube, filename: str, overwrite: bool = True) -> None:
-    if os.path.isfile(filename) and not overwrite:
-        msg = f"File {filename} already exists. If you mean to replace it then use the argument 'overwrite=True'."
-        raise OSError(
-            msg,
-        )
-
-    if cube.data.ndim != 2:
-        msg = "Specified output data should have two-dimensions."
-        raise ValueError(msg)
-
-    # Scale data array to 8-bit values
-    output_data = int(np.fix(np.interp(cube.data, (cube.data.min(), cube.data.max()), (0, 2**8 - 1))))
-
-    # Write image to file
-    mpl.image.saveim(filename, output_data)
-
-
-def _update_statistics(cube: NDCube) -> None:
-    """Update image statistics in metadata before writing to file."""
-    # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
-
-    cube.meta["DATAZER"] = len(np.where(cube.data == 0)[0])
-
-    cube.meta["DATASAT"] = len(np.where(cube.data >= cube.meta["DSATVAL"].value)[0])
-
-    nonzero_data = cube.data[np.where(cube.data != 0)].flatten()
-
-    if len(nonzero_data) > 0:
-        cube.meta["DATAAVG"] = np.nanmean(nonzero_data).item()
-        cube.meta["DATAMDN"] = np.nanmedian(nonzero_data).item()
-        cube.meta["DATASIG"] = np.nanstd(nonzero_data).item()
-    else:
-        cube.meta["DATAAVG"] = -999.0
-        cube.meta["DATAMDN"] = -999.0
-        cube.meta["DATASIG"] = -999.0
-
-    percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
-    percentile_values = np.nanpercentile(nonzero_data, percentile_percentages)
-    if np.any(np.isnan(percentile_values)):  # report nan if any of the values are nan
-        percentile_values = [-999.0 for _ in percentile_percentages]
-
-    for percent, value in zip(percentile_percentages, percentile_values, strict=False):
-        cube.meta[f"DATAP{percent:02d}"] = value
-
-    cube.meta["DATAMIN"] = float(np.nanmin(cube.data))
-    cube.meta["DATAMAX"] = float(np.nanmax(cube.data))

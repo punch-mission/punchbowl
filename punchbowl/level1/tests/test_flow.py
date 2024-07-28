@@ -3,8 +3,8 @@ import pathlib
 from ndcube import NDCube
 from prefect.testing.utilities import prefect_test_harness
 
+from punchbowl.data.tests.test_io import sample_ndcube
 from punchbowl.level1.flow import level1_core_flow
-from punchbowl.tests.test_data import sample_data_random, sample_punchdata, sample_punchdata_clear
 
 # def test_core_flow_runs_with_filenames(sample_punchdata):
 #     with tempfile.TemporaryDirectory() as tmpdirname:
@@ -19,19 +19,21 @@ from punchbowl.tests.test_data import sample_data_random, sample_punchdata, samp
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
-def test_core_flow_runs_with_objects(sample_punchdata):
+def test_core_flow_runs_with_objects(sample_ndcube):
     """Simply tests that the core flow runs with objects"""
+    cube = sample_ndcube(shape=(2048, 2048))
     with prefect_test_harness():
-        output = level1_core_flow(sample_punchdata(shape=(2048, 2048)))
+        output = level1_core_flow(cube)
     assert isinstance(output[0], NDCube)
 
 
-def test_core_flow_runs_with_objects_and_calibration_files(sample_punchdata_clear):
+def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
+    cube = sample_ndcube(shape=(10, 10), code="CR1", level="0")
     quartic_coefficient_path = THIS_DIRECTORY / "data" / "test_quartic_coeffs.fits"
     vignetting_path = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
 
     with prefect_test_harness():
-        output = level1_core_flow(sample_punchdata_clear(shape=(10, 10)),
+        output = level1_core_flow(cube,
                                   quartic_coefficient_path=quartic_coefficient_path,
                                   vignetting_function_path=vignetting_path)
     assert isinstance(output[0], NDCube)

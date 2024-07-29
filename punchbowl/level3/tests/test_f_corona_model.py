@@ -8,10 +8,11 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 from prefect.logging import disable_run_logger
 
 # punchbowl imports
-from punchbowl.data import NormalizedMetadata, PUNCHData
+from punchbowl.data import NormalizedMetadata
 from punchbowl.level3.f_corona_model import (
     construct_f_corona_background,
     query_f_corona_model_source,
@@ -26,7 +27,7 @@ SAMPLE_FITS_PATH = os.path.join(TESTDATA_DIR, "L0_CL1_20211111070246_PUNCHData.f
 
 @pytest.fixture()
 def sample_data():
-    return PUNCHData.from_fits(SAMPLE_FITS_PATH)
+    return PUNCHData.from_fits(SAMPLE_FITS_PATH)  # TODO: fix import
 
 
 @pytest.fixture()
@@ -61,7 +62,7 @@ def one_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.crval = 0, 24.75
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03T08:57:00"})
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
@@ -81,7 +82,7 @@ def zero_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.crval = 0, 24.75
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03T08:57:00"})
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
@@ -102,15 +103,15 @@ def incorrect_shape_data(shape: tuple = (512, 512)) -> np.ndarray:
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03T08:57:00"})
 
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-def test_basic_subtraction(one_data: PUNCHData, zero_data: PUNCHData) -> None:
+def test_basic_subtraction(one_data: NDCube, zero_data: NDCube) -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in
     """
     subtraction_punchdata = subtract_f_corona_background(one_data, zero_data.data)
-    assert isinstance(subtraction_punchdata, PUNCHData)
+    assert isinstance(subtraction_punchdata, NDCube)
     assert np.all(subtraction_punchdata.data == 1)
 
 
@@ -134,7 +135,7 @@ def test_create_simple_bkg() -> None:
     with disable_run_logger():
         f_corona_model = construct_f_corona_background.fn(input_list)
 
-    assert isinstance(f_corona_model, PUNCHData)
+    assert isinstance(f_corona_model, NDCube)
 
 
 @pytest.mark.prefect_test()
@@ -197,7 +198,7 @@ def test_typo_method_bkg() -> None:
 
 
 @pytest.mark.prefect_test()
-def test_different_array_size_subtraction(incorrect_shape_data: PUNCHData, zero_data: PUNCHData) -> None:
+def test_different_array_size_subtraction(incorrect_shape_data: NDCube, zero_data: NDCube) -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in
     """

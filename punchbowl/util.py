@@ -1,23 +1,29 @@
 import os
 
 import numpy as np
+from ndcube import NDCube
 from prefect import task
 
-from punchbowl.data import PUNCHData
+from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
 
 
 def validate_image_is_square(image: np.ndarray) -> None:
+    """Check that the input array is square."""
     if not isinstance(image, np.ndarray):
-        raise TypeError(f"Image must be of type np.ndarray. Found: {type(image)}.")
+        msg = f"Image must be of type np.ndarray. Found: {type(image)}."
+        raise TypeError(msg)
     if len(image.shape) != 2:
-        raise ValueError(f"Image must be a 2-D array. Input has {len(image.shape)} dimensions.")
+        msg = f"Image must be a 2-D array. Input has {len(image.shape)} dimensions."
+        raise ValueError(msg)
     if not np.equal(*image.shape):
-        raise ValueError(f"Image must be square, i.e. same size in both dimensions. Found: {image.shape}.")
+        msg = f"Image must be square. Found: {image.shape}."
+        raise ValueError(msg)
 
 
 @task
-def output_image_task(data: PUNCHData, output_filename: str) -> None:
-    """Prefect task to write an image to disk
+def output_image_task(data: NDCube, output_filename: str) -> None:
+    """
+    Prefect task to write an image to disk.
 
     Parameters
     ----------
@@ -29,16 +35,18 @@ def output_image_task(data: PUNCHData, output_filename: str) -> None:
     Returns
     -------
     None
+
     """
     output_dir = os.path.dirname(output_filename)
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
-    data.write(output_filename)
+    write_ndcube_to_fits(data, output_filename)
 
 
 @task
-def load_image_task(input_filename: str) -> PUNCHData:
-    """Prefect task to load data for processing
+def load_image_task(input_filename: str) -> NDCube:
+    """
+    Prefect task to load data for processing.
 
     Parameters
     ----------
@@ -49,5 +57,6 @@ def load_image_task(input_filename: str) -> PUNCHData:
     -------
     PUNCHData
         loaded version of the image
+
     """
-    return PUNCHData.from_fits(input_filename)
+    return load_ndcube_from_fits(input_filename)

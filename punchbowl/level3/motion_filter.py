@@ -11,7 +11,8 @@ except ImportError:
 
 
 def layer_mask(radius: float, img_shape: (int, int)) -> np.ndarray:
-    """Defines a circular mask
+    """
+    Define a circular mask.
 
     Parameters
     ----------
@@ -24,6 +25,7 @@ def layer_mask(radius: float, img_shape: (int, int)) -> np.ndarray:
     -------
     np.ndarray
         Circular mask.
+
     """
     xs = np.arange(0, img_shape[0])
     ys = np.arange(0, img_shape[1])
@@ -32,8 +34,9 @@ def layer_mask(radius: float, img_shape: (int, int)) -> np.ndarray:
     return distance < radius
 
 
-def generate_hourglass_filter(fft_cube, cutoff_velocity):
-    """Creates an hourglass filter mask
+def generate_hourglass_filter(fft_cube: np.ndarray, cutoff_velocity: float) -> np.ndarray:
+    """
+    Create an hourglass filter mask.
 
     Parameters
     ----------
@@ -46,6 +49,7 @@ def generate_hourglass_filter(fft_cube, cutoff_velocity):
     -------
     np.ndarray
         Hourglass filter mask.
+
     """
     fft_shape = fft_cube.shape
     img_shape = (fft_shape[1], fft_shape[2])
@@ -65,7 +69,9 @@ def generate_hourglass_filter(fft_cube, cutoff_velocity):
 def apply_motion_filter(stacked_data:np.ndarray,
                   apod_margin: int,
                   use_gpu: bool = True) -> np.ndarray:
-    """Performs a Fourier motion filter on input datacube
+    """
+    Perform a Fourier motion filter on input datacube.
+
     Parameters
     ----------
     stacked_data : np.ndarray
@@ -79,11 +85,12 @@ def apply_motion_filter(stacked_data:np.ndarray,
     -------
     np.ndarray
         Fourier motion filtered datacube.
+
     """
     padded_data = np.pad(stacked_data, ((apod_margin * 2, apod_margin * 2), (apod_margin, apod_margin),
-                                        (apod_margin, apod_margin)), mode='constant', constant_values=0)
+                                        (apod_margin, apod_margin)), mode="constant", constant_values=0)
 
-    h = window(('tukey', 0.1), padded_data[0].shape)  # Creating a 2D window
+    h = window(("tukey", 0.1), padded_data[0].shape)  # Creating a 2D window
     wimage = padded_data * h
 
     if use_gpu and not HAS_CUPY:

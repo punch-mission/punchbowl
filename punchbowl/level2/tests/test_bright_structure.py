@@ -6,16 +6,17 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 from prefect.logging import disable_run_logger
 
 # punchbowl imports
-from punchbowl.data import NormalizedMetadata, PUNCHData
+from punchbowl.data import NormalizedMetadata
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 from punchbowl.level2.bright_structure import find_spikes, identify_bright_structures_task
 
 
 @pytest.fixture()
-def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> PUNCHData:
+def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> NDCube:
     """
     Generate some random data for testing
     """
@@ -38,10 +39,10 @@ def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) ->
     wcs.wcs.crval = 0, 24.75
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return PUNCHData(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return NDCube(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 @pytest.fixture()
-def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> PUNCHData:
+def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
     """
     Generate a sample PUNCHData object for testing
     """
@@ -57,14 +58,11 @@ def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> PUNCHData:
     wcs.wcs.crval = 0, 24.75
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
-
-
-
+    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
-def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> PUNCHData:
+def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> NDCube:
     """
     Generate a sample PUNCHData object for testing
     """
@@ -80,11 +78,11 @@ def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> PUNCHData:
     wcs.wcs.crval = 0, 24.75
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
-def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> PUNCHData:
+def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
     """
     Generate a sample PUNCHData object for testing
     """
@@ -100,11 +98,11 @@ def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> PUNCHData:
     wcs.wcs.crval = 0, 24.75
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
-def one_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> PUNCHData:
+def one_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
     """
     Generate a sample PUNCHData object for testing
     """
@@ -125,10 +123,10 @@ def one_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> PUNCHDa
     wcs.wcs.crval = 0, 24.75
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 @pytest.fixture()
-def two_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> PUNCHData:
+def two_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
     """
     Generate a sample PUNCHData object for testing
     """
@@ -150,10 +148,10 @@ def two_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> PUNCHDa
     wcs.wcs.crval = 0, 24.75
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return PUNCHData(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-def test_valid_data_and_uncertainty(sample_punchdata: PUNCHData):
+def test_valid_data_and_uncertainty(sample_punchdata: NDCube):
     with pytest.raises(Exception):
         # Call find_spikes with valid data and uncertainty
         result = find_spikes(sample_punchdata.data, sample_punchdata.uncertainty.array)
@@ -162,7 +160,7 @@ def test_valid_data_and_uncertainty(sample_punchdata: PUNCHData):
         assert isinstance(result, np.ndarray)
         assert result.shape == sample_punchdata.data.shape
 
-def test_zero_threshold(sample_punchdata: PUNCHData):
+def test_zero_threshold(sample_punchdata: NDCube):
     # test the thresholds are zero
     threshold = 0
     result = find_spikes(sample_punchdata.data,
@@ -179,29 +177,21 @@ def test_zero_threshold(sample_punchdata: PUNCHData):
     #assert np.array_equal(result_abs, result_sigma)
 
 
-def test_diff_methods(sample_zero_punchdata: PUNCHData):
-    # Test with 'abs' method
+def test_diff_methods(sample_zero_punchdata: NDCube):
     result_abs = find_spikes(sample_zero_punchdata.data, sample_zero_punchdata.uncertainty.array, diff_method='abs')
-    # Test with 'sigma' method
     result_sigma = find_spikes(sample_zero_punchdata.data, sample_zero_punchdata.uncertainty.array, diff_method='sigma')
-    # Perform assertions
-    # For example, check if the results are different for different diff methods
     assert np.array_equal(result_abs, result_sigma)
 
 
-def test_different_parameters(sample_punchdata: PUNCHData):
-    # Test with different parameter values
+def test_different_parameters(sample_punchdata: NDCube):
     required_yes = 1
     veto_limit = 1
     dilation = 0
     result = find_spikes(sample_punchdata.data, sample_punchdata.uncertainty.array, required_yes=required_yes, veto_limit=veto_limit, dilation=dilation)
-    # Perform assertions
-    # For example, check if the result matches the expected behavior with different parameters
-    # You might need to generate expected results based on the parameters
     assert result.shape == np.shape(sample_punchdata.data[0,:,:])
 
 #####
-def test_raise_error_insufficient_frames(sample_bad_pixel_map: PUNCHData):
+def test_raise_error_insufficient_frames(sample_bad_pixel_map: NDCube):
     # creates a raise error as only a 2d array is passed in
 
     with pytest.raises(ValueError):
@@ -210,7 +200,7 @@ def test_raise_error_insufficient_frames(sample_bad_pixel_map: PUNCHData):
                     sample_bad_pixel_map.uncertainty.array)
 
 
-def test_raise_error(even_sample_punchdata: PUNCHData):
+def test_raise_error(even_sample_punchdata: NDCube):
     # creates a raise error as an even array is passed in
 
     with pytest.raises(ValueError):
@@ -219,7 +209,7 @@ def test_raise_error(even_sample_punchdata: PUNCHData):
                     even_sample_punchdata.uncertainty.array)
 
 
-def test_raise_no_error(even_sample_punchdata: PUNCHData):
+def test_raise_no_error(even_sample_punchdata: NDCube):
     # does not create a raise error as an even array is passed in and an index of interest
 
     result=find_spikes(even_sample_punchdata.data,
@@ -229,7 +219,7 @@ def test_raise_no_error(even_sample_punchdata: PUNCHData):
     assert isinstance(result, np.ndarray)
     assert result.shape == np.shape(even_sample_punchdata.data[0,:,:])
 
-def test_single_bright_point(sample_punchdata: PUNCHData):
+def test_single_bright_point(sample_punchdata: NDCube):
     # test passes with single bright point
     test_data=sample_punchdata.data
     test_uncertainty=sample_punchdata.uncertainty.array
@@ -241,7 +231,7 @@ def test_single_bright_point(sample_punchdata: PUNCHData):
     assert result.shape == np.shape(sample_punchdata.data[0,:,:])
     assert isinstance(result, np.ndarray)
 
-def test_single_bright_point_2(one_bright_point_sample_punchdata: PUNCHData):
+def test_single_bright_point_2(one_bright_point_sample_punchdata: NDCube):
 
     x_interest = 200
     y_interest = 200
@@ -260,7 +250,7 @@ def test_single_bright_point_2(one_bright_point_sample_punchdata: PUNCHData):
     assert result_2[x_interest+1, y_interest] == False
 
 
-def test_veto(two_bright_point_sample_punchdata: PUNCHData):
+def test_veto(two_bright_point_sample_punchdata: NDCube):
     # test works with one vote
     x_interest = 200
     y_interest = 200
@@ -290,7 +280,7 @@ def test_veto(two_bright_point_sample_punchdata: PUNCHData):
     assert result_3[x_interest, y_interest] == False
 
 
-def test_uncertainty(sample_punchdata: PUNCHData):
+def test_uncertainty(sample_punchdata: NDCube):
     # create an uncertainty array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
 
@@ -313,7 +303,7 @@ def test_uncertainty(sample_punchdata: PUNCHData):
 
     # set pixel of interest to high value
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=1000
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -341,7 +331,7 @@ def test_uncertainty(sample_punchdata: PUNCHData):
     assert result_2[y_test_px, x_test_px] == False
 
     # set surrounding values to uncertain
-    
+
     sample_punchdata.uncertainty.array[index_of_interest, y_test_px, x_test_px] = 1
     result_3 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
@@ -356,7 +346,7 @@ def test_uncertainty(sample_punchdata: PUNCHData):
 
 
 
-def test_threshold_abs(sample_punchdata: PUNCHData):
+def test_threshold_abs(sample_punchdata: NDCube):
     # create an uncertainty array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
 
@@ -375,11 +365,11 @@ def test_threshold_abs(sample_punchdata: PUNCHData):
                            index_of_interest=index_of_interest)
 
 
-    assert result_0[y_test_px, x_test_px] == False   
+    assert result_0[y_test_px, x_test_px] == False
 
     # set pixel of interest to high value
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -404,7 +394,7 @@ def test_threshold_abs(sample_punchdata: PUNCHData):
     assert result_2[y_test_px, x_test_px] == False
 
 
-def test_threshold_sigma(sample_punchdata: PUNCHData):
+def test_threshold_sigma(sample_punchdata: NDCube):
     # create an uncertainty array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
     sample_punchdata.data[:, :, :] = 0
@@ -424,7 +414,7 @@ def test_threshold_sigma(sample_punchdata: PUNCHData):
                            index_of_interest=index_of_interest)
 
 
-    assert result_0[y_test_px, x_test_px] == False   
+    assert result_0[y_test_px, x_test_px] == False
 
     # set pixel of interest to high value
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
@@ -439,7 +429,7 @@ def test_threshold_sigma(sample_punchdata: PUNCHData):
                            index_of_interest=index_of_interest)
 
     assert result_1[y_test_px, x_test_px] == True
-    
+
     # make bad pixel threshold high
 
     result_2 = find_spikes(sample_punchdata.data,
@@ -455,7 +445,7 @@ def test_threshold_sigma(sample_punchdata: PUNCHData):
 
 
 
-def test_required_yes_abs(sample_punchdata: PUNCHData):
+def test_required_yes_abs(sample_punchdata: NDCube):
     # create an uncertainty array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
 
@@ -466,7 +456,7 @@ def test_required_yes_abs(sample_punchdata: PUNCHData):
 
 
     # set pixel of interest to high value
-    
+
     result = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -481,7 +471,7 @@ def test_required_yes_abs(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
 
     # set pixel of interest to high value
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -492,14 +482,14 @@ def test_required_yes_abs(sample_punchdata: PUNCHData):
 
     assert result_1[y_test_px, x_test_px] == True
 
-    # change the number adjacent elements that have high values, this 
-    # reduces the number of available yes voters, making the cell of 
+    # change the number adjacent elements that have high values, this
+    # reduces the number of available yes voters, making the cell of
     # interest 'false'
     sample_punchdata.data[0:1, y_test_px, x_test_px]=100
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
 
     # set pixel of interest to high value
-    
+
     result_2 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -515,7 +505,7 @@ def test_required_yes_abs(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
 
     # set pixel of interest to high value
-    
+
     result_3 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -527,7 +517,7 @@ def test_required_yes_abs(sample_punchdata: PUNCHData):
     assert result_3[y_test_px, x_test_px] == False
 
 
-def test_required_yes_sigma(sample_punchdata: PUNCHData):
+def test_required_yes_sigma(sample_punchdata: NDCube):
     # create an uncertainty and data array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
     sample_punchdata.data[:, :, :] = 0
@@ -536,7 +526,7 @@ def test_required_yes_sigma(sample_punchdata: PUNCHData):
     y_test_px=355
     index_of_interest=-1
 
-    
+
     result = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -551,7 +541,7 @@ def test_required_yes_sigma(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -562,14 +552,14 @@ def test_required_yes_sigma(sample_punchdata: PUNCHData):
 
     assert result_1[y_test_px, x_test_px] == True
 
-    # change the number adjacent elements that have high values, this 
-    # reduces the number of available yes voters, making the cell of 
+    # change the number adjacent elements that have high values, this
+    # reduces the number of available yes voters, making the cell of
     # interest 'false'
     sample_punchdata.data[0:1, y_test_px, x_test_px]=10
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_2 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -585,7 +575,7 @@ def test_required_yes_sigma(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_3 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -596,7 +586,7 @@ def test_required_yes_sigma(sample_punchdata: PUNCHData):
 
     assert result_3[y_test_px, x_test_px] == False
 
-def test_dilation_abs(sample_punchdata: PUNCHData):
+def test_dilation_abs(sample_punchdata: NDCube):
         # create an uncertainty and data array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
     #sample_punchdata.data[:, :, :] = 0
@@ -605,7 +595,7 @@ def test_dilation_abs(sample_punchdata: PUNCHData):
     y_test_px=355
     index_of_interest=-1
 
-    
+
     result = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -620,7 +610,7 @@ def test_dilation_abs(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -631,14 +621,14 @@ def test_dilation_abs(sample_punchdata: PUNCHData):
 
     assert result_1[y_test_px, x_test_px] == True
 
-    # change the number adjacent elements that have high values, this 
-    # reduces the number of available yes voters, making the cell of 
+    # change the number adjacent elements that have high values, this
+    # reduces the number of available yes voters, making the cell of
     # interest 'false'
     sample_punchdata.data[0:1, y_test_px, x_test_px]=100
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
 
     # set pixel of interest to high value
-    
+
     result_2 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',
@@ -647,7 +637,7 @@ def test_dilation_abs(sample_punchdata: PUNCHData):
                            veto_limit=1,
                            index_of_interest=index_of_interest)
 
- 
+
     assert result_2[y_test_px, x_test_px] == True
     # with no dilation a an adjacent pixel is false
     assert result_2[y_test_px+1, x_test_px] == False
@@ -674,7 +664,7 @@ def test_dilation_abs(sample_punchdata: PUNCHData):
 
 
 
-def test_dilation_sigma(sample_punchdata: PUNCHData):
+def test_dilation_sigma(sample_punchdata: NDCube):
         # create an uncertainty and data array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
     sample_punchdata.data[:, :, :] = 0
@@ -683,7 +673,7 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
     y_test_px=355
     index_of_interest=-1
 
-    
+
     result = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -698,7 +688,7 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -709,14 +699,14 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
 
     assert result_1[y_test_px, x_test_px] == True
 
-    # change the number adjacent elements that have high values, this 
-    # reduces the number of available yes voters, making the cell of 
+    # change the number adjacent elements that have high values, this
+    # reduces the number of available yes voters, making the cell of
     # interest 'false'
     sample_punchdata.data[0:1, y_test_px, x_test_px]=10
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
 
     # set pixel of interest to high value
-    
+
     result_2 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='sigma',
@@ -725,7 +715,7 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
                            veto_limit=1,
                            index_of_interest=index_of_interest)
 
- 
+
     assert result_2[y_test_px, x_test_px] == True
     # with no dilation a an adjacent pixel is false
     assert result_2[y_test_px+1, x_test_px] == False
@@ -749,4 +739,3 @@ def test_dilation_sigma(sample_punchdata: PUNCHData):
     # change the number adjacent elements that have high values
     sample_punchdata.data[0:1, y_test_px, x_test_px]=10
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
-

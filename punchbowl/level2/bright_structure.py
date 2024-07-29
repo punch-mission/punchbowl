@@ -1,10 +1,10 @@
-import typing as t
 
 import numpy as np
+from ndcube import NDCube
 from prefect import get_run_logger, task
 from skimage.morphology import binary_dilation
 
-from punchbowl.data import PUNCHData
+from punchbowl.data import load_ndcube_from_fits
 
 
 def find_spikes(
@@ -15,9 +15,11 @@ def find_spikes(
     veto_limit: int = 2,
     diff_method: str = "sigma",
     dilation: int = 0,
-    index_of_interest: t.Optional[int] = None,
-):
-    """Identifies bright structures in temporal series of images
+    index_of_interest: int | None = None,
+) -> np.ndarray:
+    """
+    Identify bright structures in temporal series of images.
+
     Given a time sequence of images, identify "spikes" that exceed a
     threshold in a single frame.
 
@@ -63,7 +65,7 @@ def find_spikes(
 
     Parameters
     ----------
-    data_object : np.ndarray
+    data : np.ndarray
         data to operate on - this is expected to have an odd number of frames, or
         a frame_of_interest should be inserted.
 
@@ -102,19 +104,21 @@ def find_spikes(
     np.ndarray
         a frame matching the dimensions of the frame of interest with True flagging
         bad pixels, and False flagging good data points
+
     """
     if len(data.shape) != 3:
-        raise ValueError("`data` must be a 3-D array")
+        msg = "`data` must be a 3-D array"
+        raise ValueError(msg)
 
     # test if odd number of frames, or if a frame of interest has been included
     z_shape = np.shape(data[:, 0, 0])
 
     if z_shape[0] % 2 == 0:
         if index_of_interest is None:
-            raise ValueError("Number of frames in `data` must be odd or have `frame_of_interest` set.")
-    else:
-        if index_of_interest is None:
-            index_of_interest = z_shape[0] // 2
+            msg = "Number of frames in `data` must be odd or have `frame_of_interest` set."
+            raise ValueError(msg)
+    elif index_of_interest is None:
+        index_of_interest = z_shape[0] // 2
 
     frame_of_interest = data[index_of_interest, :, :]
     frame_of_interest_uncertainty = uncertainty[index_of_interest, :, :]
@@ -131,7 +135,8 @@ def find_spikes(
     elif diff_method == "sigma":
         threshold_array = threshold * np.nanstd(voters_array, axis=0, where=voters_array_uncertainty < 1.0)
     else:
-        raise ValueError(f"A `diff_method` of `sigma` or `abs` is expected. Found diff_method={diff_method}.")
+        msg = f"A `diff_method` of `sigma` or `abs` is expected. Found diff_method={diff_method}."
+        raise ValueError(msg)
 
     yes_vote_count = np.sum(difference_array > threshold_array, axis=0)
     no_vote_count = np.full(frame_of_interest.shape, voters_array.shape[0]) - yes_vote_count
@@ -154,33 +159,22 @@ def find_spikes(
 
 @task
 def identify_bright_structures_task(
-    data: PUNCHData,
+    data: NDCube,
     voter_filenames: list[str],
     threshold: float = 4,
     required_yes: int = 6,
     veto_limit: int = 2,
     diff_method: str = "sigma",
     dilation: int = 0,
-) -> PUNCHData:
-    """Prefect task to perform bright structure identification
-
-    Parameters
-    ----------
-    data : PUNCHData
-        data to operate on
-
-    Returns
-    -------
-    PUNCHData
-        modified version of the input data with the bright structures identified
-    """
+) -> NDCube:
+    """Prefect task to perform bright structure identification."""
     logger = get_run_logger()
     logger.info("identify_bright_structures_task started")
 
     # construct voter cube
     voters, voters_uncertainty = [], []
     for voter_filename in voter_filenames:
-        this_punchdata = PUNCHData.from_fits(voter_filename)
+        this_punchdata = load_ndcube_from_fits(voter_filename)
         voters.append(this_punchdata.data)
         voters_uncertainty.append(this_punchdata.uncertainty)
 

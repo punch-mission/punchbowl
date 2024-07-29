@@ -1,14 +1,14 @@
-import typing as t
 
 import numpy as np
+from ndcube import NDCube
 from prefect import get_run_logger, task
 
-from punchbowl.data import PUNCHData
+from punchbowl.data import load_ndcube_from_fits
 
 
 def create_coefficient_image(flat_coefficients: np.ndarray, image_shape: tuple) -> np.ndarray:
-    """Given a set of coefficients that should apply for every pixel,
-        converts them to the required coefficient_image format.
+    """
+    Given a set of coefficients that should apply for every pixel, convert them to the required format.
 
     Parameters
     ----------
@@ -23,13 +23,14 @@ def create_coefficient_image(flat_coefficients: np.ndarray, image_shape: tuple) 
     -------
     np.ndarray
         An image of coefficients that apply to every pixel as expected by `photometric_calibration`
+
     """
     return np.stack([np.ones(image_shape) * coeff for coeff in flat_coefficients], axis=2)
 
 
 def create_constant_quartic_coefficients(img_shape: tuple) -> np.ndarray:
-    """Creates a constant coefficients image that preserves the original values,
-    i.e. b = 1 and all other coefficients are 0
+    """
+    Create a constant coefficients image that preserves the original values, b = 1 and all other coefficients are 0.
 
     Parameters
     ----------
@@ -40,12 +41,14 @@ def create_constant_quartic_coefficients(img_shape: tuple) -> np.ndarray:
     -------
     np.ndarray
         An image of coefficients that apply to every pixel as expected by `photometric_calibration`
+
     """
     return create_coefficient_image(np.array([0, 0, 0, 1, 0]), img_shape)
 
 
 def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) -> np.ndarray:
-    """Computes a non-linear photometric calibration of PUNCH images
+    """
+    Compute a non-linear photometric calibration of PUNCH images.
 
     Parameters
     ----------
@@ -64,7 +67,7 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
         a photometrically corrected frame
 
     Notes
-    ------
+    -----
     Each instrument is subject to an independent non-linear photometric response,
     which needs to be corrected. The module converts from raw camera digitizer
     number (DN) to photometric units at each pixel. Each pixel is replaced with
@@ -89,17 +92,20 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
     >>> punch_image = np.ones((100,100))
     >>> coefficient_image = create_coefficient_image(np.array([0, 0, 0, 1, 0]), punch_image.shape)
     >>> data = photometric_calibration(punch_image, coefficient_image)
-    """
 
+    """
     # inspect dimensions
     if len(image.shape) != 2:
-        raise ValueError("`image` must be a 2-D image")
+        msg = "`image` must be a 2-D image"
+        raise ValueError(msg)
 
     if len(coefficient_image.shape) != 3:
-        raise ValueError("`coefficient_image` must be a 3-D image")
+        msg = "`coefficient_image` must be a 3-D image"
+        raise ValueError(msg)
 
     if coefficient_image.shape[:-1] != image.shape:
-        raise ValueError("`coefficient_image` and `image` must have the same shape`")
+        msg = "`coefficient_image` and `image` must have the same shape`"
+        raise ValueError(msg)
 
     # find the number of quartic fit coefficients
     num_coefficients = coefficient_image.shape[2]
@@ -110,8 +116,9 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
 
 
 @task
-def perform_quartic_fit_task(data_object: PUNCHData, quartic_coefficients_path: t.Optional[str] = None) -> PUNCHData:
-    """Prefect task to perform the quartic fit calibration on the data
+def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str | None = None) -> NDCube:
+    """
+    Prefect task to perform the quartic fit calibration on the data.
 
     Parameters
     ----------
@@ -135,11 +142,11 @@ def perform_quartic_fit_task(data_object: PUNCHData, quartic_coefficients_path: 
     logger.info("perform_quartic_fit started")
 
     if quartic_coefficients_path is not None:
-        quartic_coefficients = PUNCHData.from_fits(quartic_coefficients_path)
+        quartic_coefficients = load_ndcube_from_fits(quartic_coefficients_path)
         new_data = photometric_calibration(data_object.data, quartic_coefficients.data)
-        data_object = data_object.duplicate_with_updates(data=new_data)
+        data_object.data[...] = new_data[...]
         data_object.meta.history.add_now(
-            "LEVEL1-quartic_fit", f"Quartic fit correction completed with {quartic_coefficients_path}"
+            "LEVEL1-quartic_fit", f"Quartic fit correction completed with {quartic_coefficients_path}",
         )
     else:
         data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction skipped since path is empty")

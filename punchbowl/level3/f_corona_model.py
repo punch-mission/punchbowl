@@ -1,21 +1,20 @@
 import warnings
-from typing import List, Optional
 from datetime import datetime
 
 import numpy as np
+from ndcube import NDCube
 from prefect import get_run_logger, task
 
-from punchbowl.data import PUNCHData
+from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import InvalidDataError
 
 
 @task
 def query_f_corona_model_source(
-    polarizer: str, product: str, start_datetime: datetime, end_datetime: datetime
-) -> List[str]:
-    """Creates a list of files based between a start date/time (start_datetime)
-    and an end date/time (end_datetime) for a specified polarizer and product
-    type.
+    polarizer: str, product: str, start_datetime: datetime, end_datetime: datetime,
+) -> list[str]:
+    """
+    Create a list of files for later F corona model generation.
 
     Creates a list of files based between a start date/time (start_datetime)
     and an end date/time (end_datetime) for a specified polarizer and
@@ -33,6 +32,7 @@ def query_f_corona_model_source(
         input a string specifying the type of polarizer to search for
 
     product : string [= 'mosaic', 'nfi']
+        product code to analyze
 
     start_datetime : datetime
         input a start_datetime of interest.
@@ -45,6 +45,7 @@ def query_f_corona_model_source(
     file_list : [list]
         returns a list of files over the specified period for the specified
         polarizer.
+
     """
     # TODO: Improve Query database code
     # TODO: Change placeholder output list
@@ -55,11 +56,13 @@ def query_f_corona_model_source(
 
     # Check for polarizer input, and if valid
     if polarizer not in ["clear", "-60", "60", "0"]:
-        raise ValueError(f"input polarizer expected as string: 'clear', '-60', '60', '0'. Found {polarizer}.")
+        msg = f"input polarizer expected as string: 'clear', '-60', '60', '0'. Found {polarizer}."
+        raise ValueError(msg)
 
     # Check for PUNCH input, and if valid
     if product not in ["nfi", "mosaic"]:
-        raise ValueError(f"input PUNCH_product expected as string:  'nfi', 'mosaic'. Found {product}")
+        msg = f"input PUNCH_product expected as string:  'nfi', 'mosaic'. Found {product}"
+        raise ValueError(msg)
 
     # TODO - this place holder has to be removed
     file_list = []
@@ -77,13 +80,14 @@ def query_f_corona_model_source(
 
 @task
 def construct_f_corona_background(
-    data_list: List[str],
+    data_list: list[str],
     method: str = "percentile",
     apply_threshold_mask: bool = True,
     threshold_mask_cutoff: float = 1.5,
     percentile_value: float = 5,
-) -> PUNCHData:
-    """Creates a background f corona map from a series of different models.
+) -> NDCube:
+    """
+    Create a background f corona map from a series of different models.
 
     Creates a background f corona map (method) using a series of different
     averaging and minimization methods, values calculated across an input
@@ -138,8 +142,8 @@ def construct_f_corona_background(
     return output_PUNCHobject : ['punchbowl.data.PUNCHData']
         returns an array of the same dimensions as the x and y dimensions of
         the input array
-    """
 
+    """
     # TODO: exclude data if flagged in weight array
     # TODO: pass through REAL meta data and WCS
     # TODO: create 2nd hdu with list of input files
@@ -149,19 +153,16 @@ def construct_f_corona_background(
     logger = get_run_logger()
     logger.info("construct_f_corona_background started")
 
-    # create punch data cube from input list
-    # data_cube = np.stack([PUNCHData(PUNCHData.from_fits(address_out)).data for address_out in data_list])
-
     # create an empty array to fill with data
     #   open the first file in the list to ge the shape of the file
     if len(data_list) == 0:
-        raise ValueError("data_list cannot be empty")
+        msg = "data_list cannot be empty"
+        raise ValueError(msg)
 
-    # todo: replace in favor of using object directly
-    output = PUNCHData.from_fits(data_list[0])
+    # TODO: replace in favor of using object directly
+    output = load_ndcube_from_fits(data_list[0])
     output_wcs = output.wcs
     output_meta = output.meta
-    # output_uncertainty=shape_PUNCHobject.uncertainty
     output_mask = output.mask
 
     data_shape = np.shape(output.data)
@@ -173,7 +174,7 @@ def construct_f_corona_background(
     meta_list = []
 
     for i, address_out in enumerate(data_list):
-        data_object = PUNCHData.from_fits(address_out)
+        data_object = load_ndcube_from_fits(address_out)  # TODO : fix data loading
         data_cube[i, :, :] = data_object.data
         meta_list.append(data_object.meta)
 
@@ -202,27 +203,21 @@ def construct_f_corona_background(
         data_cube *= data_mask
 
     # calculate the background model
-
-    # 'percentile' model
     if method == "percentile":
         f_background = np.percentile(data_cube, percentile_value, axis=0)
-
-    # 'min' model
     elif method == "min":
         f_background = np.min(data_cube, axis=0)
-
-    # 'mean' model
     elif method == "mean":
         f_background = np.mean(data_cube, axis=0)
-
     else:
+        msg = f"Invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. Found {method}"
         raise ValueError(
-            "invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. " f"Found {method}"
+            msg,
         )
 
     # create an output PUNCHdata object
     # TODO: the weight and wcs should come from all of the input files, not just one
-    output = PUNCHData(f_background, wcs=output_wcs, meta=output_meta, mask=output_mask)
+    output = NDCube(f_background, wcs=output_wcs, meta=output_meta, mask=output_mask)
 
     logger.info("construct_f_corona_background finished")
     output.meta.history.add_now("LEVEL3-construct_f_corona_background", "constructed f corona model")
@@ -230,23 +225,29 @@ def construct_f_corona_background(
     return output
 
 
-def subtract_f_corona_background(data_object: PUNCHData, f_background_model_array: np.ndarray) -> PUNCHData:
+def subtract_f_corona_background(data_object: NDCube, f_background_model_array: np.ndarray) -> NDCube:
+    """Subtract f corona background."""
     # check dimensions match
     if data_object.data.shape != f_background_model_array.shape:
-        raise InvalidDataError(
+        msg = (
             "f_background_subtraction expects the data_object and"
             "f_background arrays to have the same dimensions."
             f"data_array dims: {data_object.data.shape} and f_background_model dims: {f_background_model_array.shape}"
         )
+        raise InvalidDataError(
+            msg,
+        )
 
     bkg_subtracted_data = data_object.data - f_background_model_array
 
-    return data_object.duplicate_with_updates(data=bkg_subtracted_data)
+    data_object.data[...] = bkg_subtracted_data
+    return data_object
 
 @task
-def subtract_f_corona_background_task(data_object: PUNCHData,
-                                      f_background_model_path: Optional[str]) -> PUNCHData:
-    """subtracts a background f corona model from an input data frame.
+def subtract_f_corona_background_task(data_object: NDCube,
+                                      f_background_model_path: str | None) -> NDCube:
+    """
+    Subtracts a background f corona model from an input data frame.
 
     checks the dimensions of input data frame and background model match and
     subtracts the background model from the data frame of interest.
@@ -261,9 +262,9 @@ def subtract_f_corona_background_task(data_object: PUNCHData,
 
     Returns
     -------
-
     bkg_subtracted_data : ['punchbowl.data.PUNCHData']
         A background subtracted data frame
+
     """
     # TODO: exclude data if flagged in weight array
     # TODO: pass through REAL meta data and WCS
@@ -276,7 +277,7 @@ def subtract_f_corona_background_task(data_object: PUNCHData,
     if f_background_model_path is None:
         f_data_array = create_empty_f_background_model(data_object)
     else:
-        f_data_array = PUNCHData.from_fits(f_background_model_path).data
+        f_data_array = load_ndcube_from_fits(f_background_model_path).data
 
     output = subtract_f_corona_background(data_object, f_data_array)
 
@@ -286,5 +287,6 @@ def subtract_f_corona_background_task(data_object: PUNCHData,
     return output
 
 
-def create_empty_f_background_model(data_object: PUNCHData) -> np.ndarray:
+def create_empty_f_background_model(data_object: NDCube) -> np.ndarray:
+    """Create an empty background model."""
     return np.zeros_like(data_object.data)

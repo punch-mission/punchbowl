@@ -1,29 +1,31 @@
 import numpy as np
+from ndcube import NDCube
 from prefect import get_run_logger, task
 from scipy.signal import convolve2d, medfilt2d
 
-from punchbowl.data import PUNCHData
 from punchbowl.level1.deficient_pixel import cell_neighbors
 
 
-def radial_array(shape, center=None):
+def radial_array(shape: tuple[int], center: tuple[int] | None = None) -> np.ndarray:
+    """Create radial array."""
     if len(shape) != 2:
-        raise ValueError(f"Shape must be 2D, received {shape} with {len(shape)} dimensions")
+        msg = f"Shape must be 2D, received {shape} with {len(shape)} dimensions"
+        raise ValueError(msg)
 
     x = np.arange(shape[0])
     y = np.arange(shape[1])
-    X, Y = np.meshgrid(x, y)
+    X, Y = np.meshgrid(x, y)  # noqa: N806
 
     center = [s // 2 for s in shape] if center is None else center
-    distance = np.floor(np.sqrt(np.square(X - center[0]) + np.square(Y - center[1])))
+    return np.floor(np.sqrt(np.square(X - center[0]) + np.square(Y - center[1])))
 
-    return distance
 
 
 def spikejones(
-    image: np.ndarray, unsharp_size: int = 3, method: str = "convolve", alpha: float = 1, dilation: int = 0
+    image: np.ndarray, unsharp_size: int = 3, method: str = "convolve", alpha: float = 1, dilation: int = 0,
 ) -> np.ndarray:
-    """Removes cosmic ray spikes from an image using spikejones algorithm
+    """
+    Remove cosmic ray spikes from an image using spikejones algorithm.
 
     This code is based on https://github.com/drzowie/solarpdl-tools/blob/master/image/spikejones.pdl
 
@@ -44,6 +46,7 @@ def spikejones(
     -------
     np.ndarray
         an image with spikes replaced by the average of their neighbors
+
     """
     image = image.copy()  # copy to avoid mutating the existing data
     # compute the sizes and smoothing kernel to be used
@@ -65,7 +68,8 @@ def spikejones(
         )
         unsharped_image = convolve2d(normalized_image, unsharp_kernel, mode="same") > alpha
     else:
-        raise NotImplementedError(f"Unsupported method. Method must be 'median' or 'convolve' but received {method}")
+        msg = f"Unsupported method. Method must be 'median' or 'convolve' but received {method}"
+        raise NotImplementedError(msg)
 
     # optional dilation
     if dilation != 0:
@@ -76,15 +80,20 @@ def spikejones(
     spikes = np.where(unsharped_image != 0)
     output = np.copy(image)
     image[spikes] = np.nan
-    for x, y in zip(*spikes):
+    for x, y in zip(*spikes, strict=False):
         output[x, y] = np.nanmean(cell_neighbors(image, x, y, kernel_size - 1))
 
     return output
 
 
 @task
-def despike_task(data_object: PUNCHData, unsharp_size=3, method="convolve", alpha=1, dilation=0) -> PUNCHData:
-    """Prefect task to perform despiking
+def despike_task(data_object: NDCube,
+                 unsharp_size: int = 3,
+                 method: str = "convolve",
+                 alpha: float = 1,
+                 dilation: int = 0) -> NDCube:
+    """
+    Prefect task to perform despiking.
 
     Parameters
     ----------
@@ -103,11 +112,12 @@ def despike_task(data_object: PUNCHData, unsharp_size=3, method="convolve", alph
     -------
     PUNCHData
         a modified version of the input with spikes removed
+
     """
     logger = get_run_logger()
     logger.info("despike started")
     data_object.data[...] = spikejones(
-        data_object.data[...], unsharp_size=unsharp_size, method=method, alpha=alpha, dilation=dilation
+        data_object.data[...], unsharp_size=unsharp_size, method=method, alpha=alpha, dilation=dilation,
     )
     # TODO: update uncertainty properly
     logger.info("despike finished")

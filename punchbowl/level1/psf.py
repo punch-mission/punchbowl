@@ -1,28 +1,28 @@
-import typing as t
 
+from ndcube import NDCube
 from prefect import get_run_logger, task
 from regularizepsf.corrector import ArrayCorrector
 
-from punchbowl.data import PUNCHData
-
 
 def correct_psf(
-    data: PUNCHData,
+    data: NDCube,
     corrector: ArrayCorrector,
     alpha: float = 0,
     epsilon: float = 0.035,
-) -> PUNCHData:
+) -> NDCube:
+    """Correct PSF."""
     new_data = corrector.correct_image(data.data, alpha=alpha, epsilon=epsilon)
 
-    return data.duplicate_with_updates(data=new_data)
-
+    data.data[...] = new_data[...]
+    return data
 
 @task
 def correct_psf_task(
-    data_object: PUNCHData,
-    model_path: t.Optional[str] = None,
-) -> PUNCHData:
-    """Prefect Task to correct the PSF of an image
+    data_object: NDCube,
+    model_path: str | None = None,
+) -> NDCube:
+    """
+    Prefect Task to correct the PSF of an image.
 
     Parameters
     ----------
@@ -35,6 +35,7 @@ def correct_psf_task(
     -------
     PUNCHData
         modified version of the input with the PSF corrected
+
     """
     logger = get_run_logger()
     logger.info("correct_psf started")

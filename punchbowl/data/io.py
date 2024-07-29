@@ -134,10 +134,8 @@ def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, skip_wcs_co
     if cube.uncertainty is not None:
         scaled_uncertainty = _pack_uncertainty(cube)
         hdu_uncertainty = fits.CompImageHDU(data=scaled_uncertainty, name="Uncertainty array")
-        # write WCS to uncertainty header
         for key, value in wcs_header.items():
             hdu_uncertainty.header[key] = value
-        # Save as an 8-bit unsigned integer
         hdul_list.append(hdu_uncertainty)
 
     hdul = fits.HDUList(hdul_list)
@@ -147,14 +145,12 @@ def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, skip_wcs_co
 
 def _pack_uncertainty(cube: NDCube) -> np.ndarray:
     """Compress the uncertainty for writing to file."""
-    # return 1/(cube.uncertainty.array/cube.data)  # noqa: ERA001
-    return cube.uncertainty.array
+    return 1/(cube.uncertainty.array/cube.data)
 
 
-def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -> np.ndarray:  # noqa: ARG001
+def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -> np.ndarray:
     """Uncompress the uncertainty when reading from a file."""
-    # return (1/cube.uncertainty.array) * cube.data  # noqa: ERA001
-    return uncertainty_array
+    return (1/uncertainty_array) * data_array
 
 
 def _write_ql(cube: NDCube, filename: str, overwrite: bool = True) -> None:

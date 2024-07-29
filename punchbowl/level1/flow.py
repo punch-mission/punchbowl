@@ -16,7 +16,7 @@ from punchbowl.util import load_image_task, output_image_task
 
 
 @flow(validate_parameters=False)
-def generate_psf_model_core_flow(input_filepaths: [],
+def generate_psf_model_core_flow(input_filepaths: [str],
                                  psf_size: int = 32,
                                  patch_size: int = 256,
                                  target_fwhm: float = 3.25) -> ArrayCorrector:

@@ -26,7 +26,7 @@ def test_spikejones_with_one_spike():
     image[49, 50] = 10
 
     image[30, 70] = 5
-    output = spikejones(image)
+    output, spikes = spikejones(image)
 
     assert output.shape == image.shape
     assert output[50, 50]

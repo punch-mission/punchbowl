@@ -23,7 +23,7 @@ def radial_array(shape: tuple[int], center: tuple[int] | None = None) -> np.ndar
 
 def spikejones(
     image: np.ndarray, unsharp_size: int = 3, method: str = "convolve", alpha: float = 1, dilation: int = 0,
-) -> np.ndarray:
+) -> (np.ndarray, np.ndarray):
     """
     Remove cosmic ray spikes from an image using spikejones algorithm.
 
@@ -44,8 +44,8 @@ def spikejones(
 
     Returns
     -------
-    np.ndarray
-        an image with spikes replaced by the average of their neighbors
+    (np.ndarray, np.ndarray)
+        an image with spikes replaced by the average of their neighbors and the locations of all spikes
 
     """
     image = image.copy()  # copy to avoid mutating the existing data

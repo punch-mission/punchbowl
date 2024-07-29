@@ -83,7 +83,7 @@ def spikejones(
     for x, y in zip(*spikes, strict=False):
         output[x, y] = np.nanmean(cell_neighbors(image, x, y, kernel_size - 1))
 
-    return output
+    return output, spikes
 
 
 @task
@@ -116,10 +116,15 @@ def despike_task(data_object: NDCube,
     """
     logger = get_run_logger()
     logger.info("despike started")
-    data_object.data[...] = spikejones(
+    data_object.data[...], spikes = spikejones(
         data_object.data[...], unsharp_size=unsharp_size, method=method, alpha=alpha, dilation=dilation,
     )
-    # TODO: update uncertainty properly
+    data_object.uncertainty.array[spikes] = np.inf  # TODO: how should we handle uncertainty
     logger.info("despike finished")
     data_object.meta.history.add_now("LEVEL1-despike", "image despiked")
+    data_object.meta.history.add_now("LEVEL1-despike", f"method={method}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"unsharp_size={unsharp_size}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"alpha={alpha}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"dilation={dilation}")
+
     return data_object

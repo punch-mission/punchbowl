@@ -106,30 +106,18 @@ def correct_streaks(
 
 
 @task
-def destreak_task(data_object: NDCube) -> NDCube:
-    """
-    Prefect task to destreak an image.
-
-    Parameters
-    ----------
-    data_object : PUNCHData
-        data to operate on
-
-    Returns
-    -------
-    PUNCHData
-        modified version of the input with streaks removed
-
-    """
+def destreak_task(data_object: NDCube,
+                  exposure_time: float = 1.0,
+                  readout_line_time: float = 0.1,
+                  reset_line_time: float = 0.1) -> NDCube:
+    """Prefect task to destreak an image."""
     logger = get_run_logger()
     logger.info("destreak started")
-
-    # TODO: extract from metadata
-    exposure_time = 1
-    readout_line_time = 0.1
-    reset_line_time = 0.1
     new_data = correct_streaks(data_object.data, exposure_time, readout_line_time, reset_line_time)
     data_object.data[...] = new_data[...]
     logger.info("destreak finished")
     data_object.meta.history.add_now("LEVEL1-destreak", "image destreaked")
+    data_object.meta.history.add_now("LEVEL1-destreak", f"exposure_time={exposure_time}")
+    data_object.meta.history.add_now("LEVEL1-destreak", f"readout_line_time={readout_line_time}")
+    data_object.meta.history.add_now("LEVEL1-destreak", f"reset_line_time={reset_line_time}")
     return data_object

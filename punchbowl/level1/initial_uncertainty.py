@@ -10,7 +10,6 @@ def dn_to_photons(data_array: np.ndarray, gain: float = 4.3) -> np.ndarray:
     return data_array * gain
 
 
-
 def compute_noise(
         data: np.ndarray,
         bias_level: float = 100,
@@ -69,63 +68,55 @@ def compute_noise(
     return noise_photon + noise_dark + noise_read
 
 
-def compute_uncertainty(data_array: np.ndarray) -> np.ndarray:
+def compute_uncertainty(data_array: np.ndarray,
+                        bias_level: float = 100,
+                        dark_level: float = 55.81,
+                        gain: float = 4.3,
+                        read_noise_level: float = 17,
+                        bitrate_signal: int = 16,
+                        ) -> np.ndarray:
     """With an input data array compute a corresponding uncertainty array."""
     # Convert the input array to photon counts
-    photon_array = dn_to_photons(data_array)
+    photon_array = dn_to_photons(data_array, gain=gain)
 
     # Convert this photon count to a shot noise
-    noise_array = compute_noise(photon_array)
+    noise_array = compute_noise(photon_array,
+                                bias_level=bias_level,
+    dark_level=dark_level,
+    gain=gain,
+    read_noise_level=read_noise_level,
+    bitrate_signal=bitrate_signal,
+    )
 
-    # Compute the resulting uncertainty
-    return photon_array / noise_array
-
-    # Fold in any other sources of initial uncertainty (CCD?)
-
-
-def update_initial_uncertainty(data_object: NDCube) -> NDCube:
-    """
-    Compute initial uncertainty.
-
-    Parameters
-    ----------
-    data_object : PUNCHData
-        data on which to operate
-
-    Returns
-    -------
-    PUNCHData
-        modified version of the input with initial uncertainty computed
-
-    """
-    uncertainty_array = compute_uncertainty(data_object.data)
-    data_object.uncertainty.array = uncertainty_array
-
-    return data_object
+    return photon_array / noise_array  # TODO: check that this is correct
 
 
 @task
-def update_initial_uncertainty_task(data_object: NDCube) -> NDCube:
-    """
-    Prefect task to compute initial uncertainty.
-
-    Parameters
-    ----------
-    data_object : PUNCHData
-        data on which to operate
-
-    Returns
-    -------
-    PUNCHData
-        modified version of the input with initial uncertainty computed
-
-    """
+def update_initial_uncertainty_task(data_object: NDCube,
+                                    bias_level: float = 100,
+        dark_level: float = 55.81,
+        gain: float = 4.3,
+        read_noise_level: float = 17,
+        bitrate_signal: int = 16) -> NDCube:
+    """Prefect task to compute initial uncertainty."""
     logger = get_run_logger()
     logger.info("initial uncertainty computation started")
 
-    data_object = update_initial_uncertainty(data_object)
+    uncertainty_array = compute_uncertainty(data_object.data,
+                                            bias_level=bias_level,
+                                            dark_level=dark_level,
+                                            gain=gain,
+                                            read_noise_level=read_noise_level,
+                                            bitrate_signal=bitrate_signal,
+                                            )
+    data_object.uncertainty.array = uncertainty_array
 
-    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed with:")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"bias_level={bias_level}")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"dark_level={dark_level}")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain={gain}")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"read_noise_level={read_noise_level}")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"bitrate_signal={bitrate_signal}")
 
     logger.info("initial uncertainty computed")
     return data_object

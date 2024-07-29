@@ -13,11 +13,9 @@ def merge_many_task(data: list[NDCube], trefoil_wcs: WCS) -> NDCube:
     reprojected_uncertainty = np.stack([d.uncertainty.array for d in data], axis=-1)
 
     # Merge these data
-    # Carefully deal with missing data (NaN) by only ignoring a pixel missing from all observations
-    trefoil_data = np.nansum(reprojected_data * reprojected_uncertainty, axis=2) / np.nansum(
-        reprojected_uncertainty, axis=2,
-    )
-    trefoil_uncertainty = np.amax(reprojected_uncertainty, axis=-1)  # TODO: fix uncertainty propagation
+    w = np.nansum(1/np.square(reprojected_data), axis=-1)
+    trefoil_data = np.nansum(reprojected_data / np.square(reprojected_uncertainty), axis=2) / w
+    trefoil_uncertainty = np.sqrt(1 / w)
 
     # Pack up an output data object
     data_object = NDCube(

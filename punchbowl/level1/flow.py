@@ -1,8 +1,7 @@
-
 import numpy as np
 from ndcube import NDCube
 from prefect import flow, get_run_logger
-from regularizepsf import CoordinatePatchCollection, simple_psf
+from regularizepsf import ArrayCorrector, CoordinatePatchCollection, simple_psf
 
 from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
@@ -17,15 +16,12 @@ from punchbowl.util import load_image_task, output_image_task
 
 
 @flow(validate_parameters=False)
-def generate_psf_model_core_flow(input_filepaths: []) -> NDCube:  # noqa: ARG001
+def generate_psf_model_core_flow(input_filepaths: [],
+                                 psf_size: int = 32,
+                                 patch_size: int = 256,
+                                 target_fwhm: float = 3.25) -> ArrayCorrector:
     """Generate PSF model."""
-    # Define the parameters and image to use
-    psf_size = 32
-    patch_size = 256
-    target_fwhm = 3.25
-    image_fn = "data/DASH.fits"
-
-    # Define the target PSF
+    # Define the target PSF as a symmetric Gaussian
     center = patch_size / 2
     sigma = target_fwhm / 2.355
 
@@ -34,11 +30,12 @@ def generate_psf_model_core_flow(input_filepaths: []) -> NDCube:  # noqa: ARG001
         return np.exp(-(np.square(x - x0) / (2 * np.square(sigma_x)) + np.square(y - y0) / (2 * np.square(sigma_y))))
 
     target_evaluation = target(*np.meshgrid(np.arange(patch_size), np.arange(patch_size)))
-    coordinate_patch_collection = CoordinatePatchCollection.find_stars_and_average(
-        [image_fn], psf_size, patch_size)
-    array_corrector = coordinate_patch_collection.to_array_corrector(target_evaluation)  # noqa: F841
 
-    return NDCube(data=None, wcs=None, meta=None)  # TODO: convert array_corrector into PUNCHData
+    # Build the PSF model using the target PSF
+    coordinate_patch_collection = CoordinatePatchCollection.find_stars_and_average(input_filepaths,
+                                                                                   psf_size,
+                                                                                   patch_size)
+    return coordinate_patch_collection.to_array_corrector(target_evaluation)
 
 
 @flow(validate_parameters=False)

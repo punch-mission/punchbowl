@@ -147,8 +147,8 @@ def find_spikes(
 
     flagged_features_array[veto_mask] = False
 
-    # if input data already has an uncertainty of 1, create a True flag
-    flagged_features_array = np.where(frame_of_interest_uncertainty >= 1.0, True, flagged_features_array)
+    # if input data already has an unbounded uncertainty, create a True flag
+    flagged_features_array = np.where(np.isinf(frame_of_interest_uncertainty), True, flagged_features_array)
 
     # expand flags by dilating to remove holes or fuzzy edges
     for _ in range(dilation):

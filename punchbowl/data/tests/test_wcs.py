@@ -175,7 +175,7 @@ def test_helio_celestial_wcs():
     assert np.nanmean(distances) < 0.1
 
 
-def test_back_and_forth_wcs():
+def test_back_and_forth_wcs_from_celestial():
     m = NormalizedMetadata.load_template("CTM", "2")
     date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
     m['DATE-OBS'] = str(date_obs)
@@ -193,3 +193,21 @@ def test_back_and_forth_wcs():
     assert np.allclose(wcs_celestial.wcs.crpix, wcs_celestial_recovered.wcs.crpix)
     assert np.allclose(wcs_celestial.wcs.pc, wcs_celestial_recovered.wcs.pc)
     assert np.allclose(wcs_celestial.wcs.cdelt, wcs_celestial_recovered.wcs.cdelt)
+
+
+def test_back_and_forth_wcs_from_helio():
+    m = NormalizedMetadata.load_template("CTM", "2")
+    date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
+    m['DATE-OBS'] = str(date_obs)
+    m['CRVAL1'] = 0.0
+    m['CRVAL2'] = 0.0
+    h = m.to_fits_header()
+
+    wec_helio = WCS(h, key=' ')
+    wcs_celestial = calculate_celestial_wcs_from_helio(wec_helio, date_obs, (10, 10))
+    wcs_helio_recovered, p_angle = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, (10, 10))
+
+    assert np.allclose(wec_helio.wcs.crval, wcs_helio_recovered.wcs.crval)
+    assert np.allclose(wec_helio.wcs.crpix, wcs_helio_recovered.wcs.crpix)
+    assert np.allclose(wec_helio.wcs.pc, wcs_helio_recovered.wcs.pc)
+    assert np.allclose(wec_helio.wcs.cdelt, wcs_helio_recovered.wcs.cdelt)

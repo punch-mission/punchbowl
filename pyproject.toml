@@ -92,7 +92,6 @@ lint.ignore = ["I001", 'D100', 'D104', "PTH", "FBT", "TD", "FIX", "PLR", "B028",
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]
 "*/tests/*" = ['S101']
-"data.py" = ["I001"]
 
 [tool.isort]
 balanced_wrapping = true

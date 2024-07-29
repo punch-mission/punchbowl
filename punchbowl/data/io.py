@@ -28,8 +28,8 @@ def get_base_file_name(cube: NDCube) -> str:
     file_level = cube.meta["LEVEL"].value
     type_code = cube.meta["TYPECODE"].value
     date_string = cube.meta.datetime.strftime("%Y%m%d%H%M%S")
-    # TODO: include version number
-    return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string
+    file_version = cube.meta["FILEVRSN"].value
+    return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string + "_v" + file_version
 
 
 def write_ndcube_to_fits(cube: NDCube,

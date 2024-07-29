@@ -23,7 +23,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 2,keyword,OBSTYPE,,Plain text observation,str,TRUE,TRUE,
 2,keyword,TYPECODE,,Observation product type code,str,TRUE,TRUE,
 2,keyword,OBSCODE,,Observatory spacecraft code,str,TRUE,TRUE,
-2,keyword,PIPEVRSN,,PUNCHPipe software version number,str,TRUE,TRUE,
+2,keyword,PIPEVRSN,,punchbowl software version number,str,TRUE,TRUE,
+2,keyword,FILEVRSN,,File version number,str,TRUE,TRUE,0
 2,keyword,FILE_RAW,,Raw telemetry filename,str,TRUE,TRUE,
 2,keyword,ORIGIN,SwRI,Institution responsible for creating the file,str,TRUE,TRUE,SwRI
 3,section,COMMENT,Temporal Information,,str,TRUE,TRUE,Temporal Information

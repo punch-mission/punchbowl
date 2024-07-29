@@ -39,11 +39,9 @@ def write_ndcube_to_fits(cube: NDCube,
     """Write an NDCube as a FITS file."""
     if filename.endswith(".fits"):
         _write_fits(cube, filename, overwrite=overwrite, skip_wcs_conversion=skip_wcs_conversion)
-    elif filename.endswith((".png", ".jpg", ".jpeg")):
-        _write_ql(cube, filename, overwrite=overwrite)
     else:
         msg = (
-            "Filename must have a valid file extension (.fits, .png, .jpg, .jpeg). "
+            "Filename must have a valid file extension `.fits`"
             f"Found: {os.path.splitext(filename)[1]}"
         )
         raise ValueError(

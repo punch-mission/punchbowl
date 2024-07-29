@@ -131,7 +131,7 @@ def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, skip_wcs_co
 
     if cube.uncertainty is not None:
         scaled_uncertainty = _pack_uncertainty(cube)
-        hdu_uncertainty = fits.CompImageHDU(data=scaled_uncertainty, name="Uncertainty array")
+        hdu_uncertainty = fits.CompImageHDU(data=scaled_uncertainty, name="Uncertainty array", quantize_level=-2.0)
         for key, value in wcs_header.items():
             hdu_uncertainty.header[key] = value
         hdul_list.append(hdu_uncertainty)

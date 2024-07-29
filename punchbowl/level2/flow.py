@@ -6,7 +6,6 @@ from punchbowl.data import load_trefoil_wcs
 from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.merge import merge_many_task
 from punchbowl.level2.polarization import resolve_polarization_task
-from punchbowl.level2.quality import quality_flag_task
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.util import load_image_task
 
@@ -26,7 +25,6 @@ def level2_core_flow(data_list: list[str] | list[NDCube]) -> list[NDCube]:
         data_list,
     )
     # TODO: make sure we have the same polarization states going into each run
-    data_list = quality_flag_task(data_list)
     # TODO: merge only similar polarizations together
     data_list = [merge_many_task(data_list, trefoil_wcs)]
     logger.info("ending level 2 core flow")

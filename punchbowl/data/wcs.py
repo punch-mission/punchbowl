@@ -7,10 +7,13 @@ import astropy.units as u
 import astropy.wcs.wcsapi
 import numpy as np
 import sunpy.map
-from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping
+from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping, get_sun
+from astropy.time import Time
 from astropy.wcs import WCS
+from astropy.wcs.utils import add_stokes_axis_to_wcs
 from sunpy.coordinates import frames
 from sunpy.coordinates.sun import _sun_north_angle_to_z
+from sunpy.map import make_fitswcs_header
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
@@ -22,7 +25,9 @@ def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
     return np.arctan2(wcs.wcs.pc[1, 0], wcs.wcs.pc[0, 0]) * u.rad
 
 
-def calculate_helio_wcs_from_celestial(wcs_celestial: WCS, date_obs: datetime, data_shape: tuple[int]) -> WCS:
+def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
+                                       date_obs: datetime,
+                                       data_shape: tuple[int, int]) -> (WCS, float):
     """Calculate the helio WCS from a celestial WCS."""
     is_3d = len(data_shape) == 3
 
@@ -72,7 +77,66 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS, date_obs: datetime, d
     return wcs_helio, p_angle
 
 
-def load_trefoil_wcs() -> astropy.wcs.WCS:
+def get_sun_ra_dec(dt: datetime) -> (float, float):
+    """Get the position of the Sun in right ascension and declination."""
+    position = get_sun(Time(str(dt), scale="utc"))
+    return position.ra.value, position.dec.value
+
+
+def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_shape: tuple[int, int]) -> WCS:
+    """Calculate the celestial WCS from a helio WCS."""
+    is_3d = len(data_shape) == 3
+
+    # we're at the center of the Earth
+    test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
+    test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
+
+    reference_coord = SkyCoord(
+        wcs_helio.wcs.crval[0] * u.Unit(wcs_helio.wcs.cunit[0]),
+        wcs_helio.wcs.crval[1] * u.Unit(wcs_helio.wcs.cunit[1]),
+        frame="gcrs",
+        obstime=date_obs,
+        obsgeoloc=test_gcrs.cartesian,
+        obsgeovel=test_gcrs.velocity.to_cartesian(),
+        distance=test_gcrs.hcrs.distance,
+    )
+
+    reference_coord_arcsec = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
+
+    cdelt1 = (np.abs(wcs_helio.wcs.cdelt[0]) * u.deg).to(u.arcsec)
+    cdelt2 = (np.abs(wcs_helio.wcs.cdelt[1]) * u.deg).to(u.arcsec)
+
+    geocentric = GCRS(obstime=date_obs)
+    p_angle = _sun_north_angle_to_z(geocentric)
+
+    crota = extract_crota_from_wcs(wcs_helio)
+
+    new_header = make_fitswcs_header(
+        data_shape[1:] if is_3d else data_shape,
+        reference_coord_arcsec,
+        reference_pixel=u.Quantity(
+            [wcs_helio.wcs.crpix[0] - 1, wcs_helio.wcs.crpix[1] - 1] * u.pixel,
+        ),
+        scale=u.Quantity([cdelt1, cdelt2] * u.arcsec / u.pix),
+        rotation_angle=-p_angle - crota,
+        observatory="PUNCH",
+        projection_code=wcs_helio.wcs.ctype[0][-3:],
+    )
+
+    wcs_celestial = WCS(new_header)
+    wcs_celestial.wcs.ctype = "RA---ARC", "DEC--ARC"
+    sun_location = get_sun_ra_dec(date_obs)
+    wcs_celestial.wcs.crval = sun_location[0], sun_location[1]
+    wcs_celestial.wcs.cdelt = wcs_celestial.wcs.cdelt * (-1, 1)
+
+    if is_3d:
+        wcs_celestial = add_stokes_axis_to_wcs(wcs_celestial, 2)
+        wcs_celestial.array_shape = data_shape
+
+    return wcs_celestial
+
+
+def load_trefoil_wcs() -> (astropy.wcs.WCS, (int, int)):
     """Load Level 2 trefoil world coordinate system and shape."""
     trefoil_wcs = WCS(os.path.join(_ROOT, "data", "trefoil_hdr.fits"))
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug

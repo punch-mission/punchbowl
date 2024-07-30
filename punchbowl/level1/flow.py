@@ -41,10 +41,26 @@ def generate_psf_model_core_flow(input_filepaths: [str],
 @flow(validate_parameters=False)
 def level1_core_flow(
     input_data: str | NDCube,
+    gain: float = 4.3,
+    bias_level: float = 100,
+    dark_level: float = 55.81,
+    read_noise_level: float = 17,
+    bitrate_signal: int = 16,
     quartic_coefficient_path: str | None = None,
+    despike_unsharp_size: int = 3,
+    despike_method: str = "convolve",
+    despike_alpha: float = 1.0,
+    despike_dilation: int = 0,
+    exposure_time: float = 1.0,
+    readout_line_time: float = 0.1,
+    reset_line_time: float = 0.1,
     vignetting_function_path: str | None = None,
     stray_light_path: str | None = None,
     deficient_pixel_map_path: str | None = None,
+    deficient_pixel_method: str = "median",
+    deficient_pixel_required_good_count: int = 3,
+    deficient_pixel_max_window_size: int = 10,
+    psf_model_path: str | None = None,
     output_filename: str | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1."""
@@ -54,14 +70,31 @@ def level1_core_flow(
 
     data = load_image_task(input_data) if isinstance(input_data, str) else input_data
 
-    data = update_initial_uncertainty_task(data)
+    data = update_initial_uncertainty_task(data,
+                                           bias_level=bias_level,
+                                           dark_level=dark_level,
+                                           gain=gain,
+                                           read_noise_level=read_noise_level,
+                                           bitrate_signal=bitrate_signal,
+                                           )
     data = perform_quartic_fit_task(data, quartic_coefficient_path)
-    data = despike_task(data)  # TODO: allow configuration of the run with different despike options
-    data = destreak_task(data)
+    data = despike_task(data,
+                        unsharp_size=despike_unsharp_size,
+                        method=despike_method,
+                        alpha=despike_alpha,
+                        dilation=despike_dilation)
+    data = destreak_task(data,
+                         exposure_time=exposure_time,
+                         reset_line_time=reset_line_time,
+                         readout_line_time=readout_line_time)
     data = correct_vignetting_task(data, vignetting_function_path)
-    data = remove_deficient_pixels_task(data, deficient_pixel_map_path)
+    data = remove_deficient_pixels_task(data,
+                                        deficient_pixel_map_path,
+                                        required_good_count=deficient_pixel_required_good_count,
+                                        max_window_size=deficient_pixel_max_window_size,
+                                        method=deficient_pixel_method)
     data = remove_stray_light_task(data, stray_light_path)
-    data = correct_psf_task(data)
+    data = correct_psf_task(data, psf_model_path)
     data = align_task(data)
     logger.info("ending level 1 core flow")
 

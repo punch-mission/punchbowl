@@ -1,3 +1,5 @@
+from punchbowl import __version__
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -18,11 +20,11 @@
 # -- Project information -----------------------------------------------------
 
 project = "punchbowl"
-copyright = "2023, PUNCH Science Operations Center"
+copyright = "2024, PUNCH Science Operations Center"
 author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags
-release = "0.0.1"
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------

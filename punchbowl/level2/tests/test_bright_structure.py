@@ -282,7 +282,7 @@ def test_veto(two_bright_point_sample_punchdata: NDCube):
 
 def test_uncertainty(sample_punchdata: NDCube):
     # create an uncertainty array of 0's
-    sample_punchdata.uncertainty.array[:, :, :] = 0
+    sample_punchdata.uncertainty.array[...] = 0
 
     # choose a pixel of interest
     x_test_px=210
@@ -302,7 +302,7 @@ def test_uncertainty(sample_punchdata: NDCube):
     assert result_0[y_test_px, x_test_px] == False
 
     # set pixel of interest to high value
-    sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=1000
+    sample_punchdata.data[index_of_interest, y_test_px, x_test_px] = 1000
 
     result_1 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
@@ -332,7 +332,7 @@ def test_uncertainty(sample_punchdata: NDCube):
 
     # set surrounding values to uncertain
 
-    sample_punchdata.uncertainty.array[index_of_interest, y_test_px, x_test_px] = 1
+    sample_punchdata.uncertainty.array[index_of_interest, y_test_px, x_test_px] = np.inf
     result_3 = find_spikes(sample_punchdata.data,
                            sample_punchdata.uncertainty.array,
                            diff_method='abs',

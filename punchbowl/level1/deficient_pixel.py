@@ -127,7 +127,7 @@ def remove_deficient_pixels(data: NDCube,
 
     # Set deficient pixels to complete uncertainty
     output_uncertainty = data.uncertainty.array.copy()
-    output_uncertainty[deficient_pixels == 0] = 1
+    output_uncertainty[deficient_pixels == 0] = np.inf
 
     data.data[...] = data_array[...]
     data.uncertainty.array = output_uncertainty
@@ -171,11 +171,6 @@ def remove_deficient_pixels_task(
     -------
     PUNCHData
         A background subtracted data frame
-
-    # TODO: exclude data if flagged in weight array
-    # TODO: update meta data with input file and version of deficient pixel map
-    # TODO: output weight - update weights
-    # TODO: if uncertainty object in PUNCH object is updated, then this should be updated here
 
     """
     logger = get_run_logger()

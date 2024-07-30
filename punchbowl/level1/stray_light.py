@@ -46,7 +46,8 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> N
             raise InvalidDataError(msg)
         else:
             data_object.data[:, :] -= stray_light_model.data[:, :]
-            data_object.meta.history.add_now("LEVEL1-remove_stray_light", "stray light removed")
+            data_object.meta.history.add_now("LEVEL1-remove_stray_light",
+                                             f"stray light removed with {stray_light_model}")
 
     logger.info("remove_stray_light finished")
     return data_object

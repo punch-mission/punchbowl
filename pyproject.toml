@@ -33,6 +33,7 @@ authors = [
     {name = "Matthew West", email = "matthew.west@swri.org"},
     {name = "Sarak Kovac", email = "sarah.kovac@swri.org"},
     {name = "Ritesh Patel", email = "ritesh.patel@swri.org"},
+    {name = "Derek Lamb", email = "derek.lamb@swri.org"},
     {name = "Dan Seaton", email = "daniel.seaton@swri.org"}
 ]
 maintainers = [
@@ -87,7 +88,28 @@ target-version = 'py310'
 exclude = ['tests', 'scripts', 'docs']
 line-length=120
 lint.select = ["ALL"]
-lint.ignore = ["I001", 'D100', 'D104', "PTH", "FBT", "TD", "FIX", "PLR", "B028", "NPY002", "PERF403", "PYI041", "ANN401", "PYI024", "DTZ005", "ANN101", "ANN102", "D203", "D212", "TCH002", "TCH003"]
+lint.ignore = [
+    "I001",
+    'D100',
+    'D104',
+    "PTH",
+    "FBT",
+    "TD",
+    "FIX",
+    "PLR",
+    "B028",
+    "NPY002",
+    "PERF403",
+    "PYI041",
+    "ANN401",
+    "PYI024",
+    "DTZ005",
+    "ANN101",
+    "ANN102",
+    "D203",
+    "D212",
+    "TCH002",
+    "TCH003"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]

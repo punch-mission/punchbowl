@@ -18,5 +18,6 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
     data_list = [subtract_f_corona_background_task(d, f_corona_model_path) for d in data_list]
     data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
+    # TODO: build low noise products
     logger.info("ending level 3 core flow")
     return data_list

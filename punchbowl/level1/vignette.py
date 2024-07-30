@@ -46,7 +46,8 @@ def correct_vignetting_task(data_object: NDCube, vignetting_file: pathlib) -> ND
             raise InvalidDataError(msg)
         else:
             data_object.data[:, :] /= vignetting_function.data[:, :]
-            data_object.meta.history.add_now("LEVEL1-correct_vignetting", "Vignetting corrected")
+            data_object.meta.history.add_now("LEVEL1-correct_vignetting",
+                                             f"Vignetting corrected using {vignetting_file}")
 
     logger.info("correct_vignetting finished")
     return data_object

@@ -193,10 +193,7 @@ def construct_f_corona_background(
 
         # Mask outliers in the cube
         for n in range(data_size[0]):
-            temp_data_cube[n, :, :] = np.abs(data_cube[n, :, :].astype(int) - mean_image[:, :]) / sd_image[:, :]
-
-        # make int
-        temp_data_cube = temp_data_cube.astype(int)
+            temp_data_cube[n, :, :] = np.abs(data_cube[n, :, :] - mean_image[:, :]) / sd_image[:, :]
 
         # mask the data
         data_mask[temp_data_cube > threshold_mask_cutoff] = np.nan
@@ -204,11 +201,11 @@ def construct_f_corona_background(
 
     # calculate the background model
     if method == "percentile":
-        f_background = np.percentile(data_cube, percentile_value, axis=0)
+        f_background = np.nanpercentile(data_cube, percentile_value, axis=0)
     elif method == "min":
-        f_background = np.min(data_cube, axis=0)
+        f_background = np.nanmin(data_cube, axis=0)
     elif method == "mean":
-        f_background = np.mean(data_cube, axis=0)
+        f_background = np.nanmean(data_cube, axis=0)
     else:
         msg = f"Invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. Found {method}"
         raise ValueError(

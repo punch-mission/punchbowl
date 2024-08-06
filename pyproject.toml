@@ -26,7 +26,7 @@ dependencies = [
         "python-dateutil",
         "remove_starfield@git+https://github.com/svank/remove_starfield"
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     {name = "J. Marcus Hughes", email = "marcus.hughes@swri.org"},
     {name = "Chris Lowder", email = "chris.lowder@swri.org"},

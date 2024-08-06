@@ -20,7 +20,7 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
 
     """
     # Unpack data into a NDCollection object
-    data_dictionary = dict(zip(["Bm", "Bz", "Bp"], data_list, strict=False))
+    data_dictionary = dict(zip(["M", "Z", "P"], data_list, strict=False))
     data_collection = NDCollection(data_dictionary)
 
     resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=True)

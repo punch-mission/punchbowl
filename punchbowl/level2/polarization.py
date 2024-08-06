@@ -1,4 +1,5 @@
 
+import astropy.units as u
 import solpolpy
 from ndcube import NDCollection, NDCube
 from prefect import get_run_logger, task
@@ -20,17 +21,20 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
 
     """
     # Unpack data into a NDCollection object
-    data_dictionary = dict(zip(["Bm", "Bz", "Bp"], data_list, strict=False))
-    data_collection = NDCollection(data_dictionary)
+    data_dictionary = dict(zip(["M", "Z", "P"], data_list, strict=False))
+    input_collection = NDCollection(data_dictionary)
+    data_collection = NDCollection({k: NDCube(data=input_collection[k].data,
+                                 wcs=input_collection[k].wcs,
+                                 meta={"POLAR": input_collection[k].meta["POLAR"].value * u.degree})
+                       for k in ["M", "Z", "P"]})
 
+    out = []
     resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=True)
-
-    # Repack data
-    data_list = []
     for key in resolved_data_collection:
-        data_list.append(resolved_data_collection[key])
+        resolved_data_collection[key].meta = input_collection[key].meta
+        out.append(resolved_data_collection[key])
 
-    return data_list
+    return out
 
 
 @task

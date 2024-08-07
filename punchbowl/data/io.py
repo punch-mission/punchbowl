@@ -29,6 +29,7 @@ def get_base_file_name(cube: NDCube) -> str:
     type_code = cube.meta["TYPECODE"].value
     date_string = cube.meta.datetime.strftime("%Y%m%d%H%M%S")
     file_version = cube.meta["FILEVRSN"].value
+    file_version = "1" if file_version == "" else file_version  # file version should never be empty!
     return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string + "_v" + file_version
 
 

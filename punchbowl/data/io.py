@@ -112,7 +112,6 @@ def construct_wcs_header_fields(cube: NDCube) -> Header:
 def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, uncertainty_quantize_level: float = -2.0) -> None:
     _update_statistics(cube)
 
-    hdul = cube.wcs.to_fits()
     full_header = cube.meta.to_fits_header(wcs=cube.wcs)
 
     hdu_data = fits.CompImageHDU(data=cube.data,
@@ -123,10 +122,10 @@ def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, uncertainty
                                         name="Uncertainty array",
                                         quantize_level=uncertainty_quantize_level)
 
+    hdul = cube.wcs.to_fits()
     hdul[0] = fits.PrimaryHDU()
     hdul.insert(1, hdu_data)
     hdul.insert(2, hdu_uncertainty)
-
     hdul.writeto(filename, overwrite=overwrite, checksum=True)
 
 

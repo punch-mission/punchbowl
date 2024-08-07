@@ -6,7 +6,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 0,keyword,NAXIS1,2408,Length of the first axis,int,TRUE,TRUE,2048
 0,keyword,NAXIS2,2048,Length of the second axis,int,TRUE,TRUE,2048
 0,keyword,NAXIS3,3,Length of the third axis,int,TRUE,TRUE,3
-0,keyword,EXTNAME,PRIMARY DATA ARRAY,Name of this binary table extension,str,TRUE,TRUE
+0,keyword,EXTNAME,PRIMARY DATA ARRAY,Name of this binary table extension,str,TRUE,TRUE,
 0,keyword,LONGSTRN,OGIP 1.0,The OGIP long string convention may be used,str,TRUE,TRUE,OGIP 1.0
 1,section,COMMENT,"Documentation, Contact, and Collection Metadata",,str,TRUE,TRUE," Documentation, Contact, and Collection Metadata"
 1,keyword,DOI,https://doi.org/TBD,Data reference DOI,str,TRUE,TRUE,https://doi.org/TBD

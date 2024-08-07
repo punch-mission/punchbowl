@@ -7,14 +7,19 @@ from datetime import datetime
 from collections import OrderedDict
 from collections.abc import Mapping
 
+import astropy.units as u
 import numpy as np
 import pandas as pd
 import yaml
+from astropy.coordinates import GCRS, SkyCoord
 from astropy.io import fits
 from astropy.io.fits import Header
 from astropy.time import Time
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
+from sunpy.coordinates import frames, sun
+from sunpy.coordinates.sun import _sun_north_angle_to_z
+from sunpy.map import solar_angular_radius
 
 from punchbowl.data.history import History
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
@@ -258,13 +263,13 @@ class NormalizedMetadata(Mapping):
                     wcses = {"": wcs, "A": calculate_celestial_wcs_from_helio(wcs, self.astropy_time, self.shape)}
                 else:
                     wcses = {"": wcs}
-                for key, wcs in wcses.items():
-                    if wcs.has_distortion:
-                        wcs_header = wcs.to_fits()[0].header
+                for key, this_wcs in wcses.items():
+                    if this_wcs.has_distortion:
+                        wcs_header = this_wcs.to_fits()[0].header
                         for required_key in REQUIRED_HEADER_KEYWORDS:
                             del wcs_header[required_key]
                     else:
-                        wcs_header = wcs.to_header()
+                        wcs_header = this_wcs.to_header()
                     for card in wcs_header.cards:
                         if key == "" or (key != "" and card[0][-1].isnumeric() and card[0] not in DISTORTION_KEYWORDS):
                             hdr.append(
@@ -279,6 +284,22 @@ class NormalizedMetadata(Mapping):
         # add the history section
         for entry in self.history:
             hdr["HISTORY"] = f"{entry.datetime} => {entry.source} => {entry.comment}"
+
+        # fill in dynamic values
+        if wcs is not None:
+            geocentric = GCRS(obstime=self.astropy_time)
+            p_angle = _sun_north_angle_to_z(geocentric)
+            center_helio_coord = SkyCoord(
+                wcs.wcs.crval[0] * u.deg,
+                wcs.wcs.crval[1] * u.deg,
+                frame=frames.Helioprojective,
+                obstime=self.astropy_time,
+                observer="earth",
+            )
+            hdr["RSUN_ARC"] = solar_angular_radius(center_helio_coord).value
+            hdr["SOLAR_EP"] = p_angle.value
+            hdr["CAR_ROT"] = float(sun.carrington_rotation_number(t=self.astropy_time))
+
         return hdr
 
     def delete_section(self, section_name: str) -> None:

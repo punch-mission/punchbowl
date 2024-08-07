@@ -12,3 +12,11 @@ class InvalidHeaderError(PUNCHBowlError):
 
 class MissingMetadataError(PUNCHBowlError):
     """Metadata missing for processing."""
+
+
+class PUNCHBowlWarning(Warning):
+    """Base class for warnings in punchbowl."""
+
+
+class ExtraMetadataWarning(PUNCHBowlWarning):
+    """Extra metadata found but ignored."""

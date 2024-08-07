@@ -153,7 +153,6 @@ def test_normalizedmetadata_get_keys():
     assert len(keys) == 5
 
 
-
 def test_create_level0_normalized_metadata():
     m = NormalizedMetadata.load_template("PM1", "0")
     assert 'DATE-OBS' in m
@@ -171,6 +170,7 @@ def test_normalized_metadata_to_fits_writes_history():
     m = NormalizedMetadata.load_template("PM1", "0")
     m.history.add_now("Test", "does it write?")
     m.history.add_now("Test", "how about twice?")
+    m.delete_section("World Coordinate System")
     h = m.to_fits_header()
     assert "HISTORY" in h
     assert "does it write?" in str(h['HISTORY'])
@@ -182,9 +182,11 @@ def test_normalizedmetadata_from_fits_header():
     m['DESCRPTN'] = 'This is a test!'
     m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment"))
     m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test2", "test comment"))
+    m.delete_section("World Coordinate System")
     h = m.to_fits_header()
 
     recovered = NormalizedMetadata.from_fits_header(h)
+    recovered.delete_section("World Coordinate System")
 
     assert recovered == m
 

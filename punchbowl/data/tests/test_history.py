@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytest
+from astropy.wcs import WCS
 from pytest import fixture
 
 from punchbowl.data.history import History, HistoryEntry
@@ -68,7 +69,9 @@ def test_history_cannot_compare_to_nonhistory_type():
 
 def test_empty_history_from_fits_header():
     m = NormalizedMetadata.load_template("PM1", "0")
-    h = m.to_fits_header()
+    m['DATE-OBS'] = "2024-01-01T00:00:00"
+    m.delete_section("World Coordinate System")
+    h = m.to_fits_header(wcs=None)
 
     assert History.from_fits_header(h) == History()
 
@@ -81,6 +84,7 @@ def test_filled_history_from_fits_header(tmpdir):
     m = NormalizedMetadata.load_template("PM1", "0")
     m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test", "test comment"))
     m.history.add_entry(HistoryEntry(datetime(2023, 10, 30, 12, 20), "test2", "test comment"))
+    m.delete_section("World Coordinate System")
     h = m.to_fits_header()
 
     assert History.from_fits_header(h) == constructed_history

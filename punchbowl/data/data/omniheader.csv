@@ -6,7 +6,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 0,keyword,NAXIS1,2408,Length of the first axis,int,TRUE,TRUE,2048
 0,keyword,NAXIS2,2048,Length of the second axis,int,TRUE,TRUE,2048
 0,keyword,NAXIS3,3,Length of the third axis,int,TRUE,TRUE,3
-0,keyword,EXTNAME,PRIMARY DATA ARRAY,Name of this binary table extension,str,TRUE,TRUE
+0,keyword,EXTNAME,PRIMARY DATA ARRAY,Name of this binary table extension,str,TRUE,TRUE,
 0,keyword,LONGSTRN,OGIP 1.0,The OGIP long string convention may be used,str,TRUE,TRUE,OGIP 1.0
 1,section,COMMENT,"Documentation, Contact, and Collection Metadata",,str,TRUE,TRUE," Documentation, Contact, and Collection Metadata"
 1,keyword,DOI,https://doi.org/TBD,Data reference DOI,str,TRUE,TRUE,https://doi.org/TBD
@@ -48,64 +48,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,OBSRVTRY,PUNCH,Observatory name,str,TRUE,TRUE,PUNCH
 4,keyword,OBJECT,Heliosphere white light,Object observed,str,TRUE,TRUE,Heliosphere white light
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
-5,keyword,WCSAXES,3,Number of coordinate axes,int,TRUE,TRUE,
-5,keyword,CRPIX1,2047.5,Pixel coordinate of reference point,float,TRUE,TRUE,
-5,keyword,CRPIX2,2047.5,Pixel coordinate of reference point,float,TRUE,TRUE,
-5,keyword,CRPIX3,2047.5,Pixel coordinate of reference point,float,TRUE,TRUE,
-5,keyword,PC1_1,1.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC1_2,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC1_3,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC2_1,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC2_2,1.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC2_3,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC3_1,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC3_2,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC3_3,1.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,CDELT1,0.0225,[deg] Coordinate increment at reference point,float,TRUE,TRUE,
-5,keyword,CDELT2,0.0225,[deg] Coordinate increment at reference point,float,TRUE,TRUE,
-5,keyword,CDELT3,1.0,Coordinate increment at reference point,float,TRUE,TRUE,
-5,keyword,CUNIT1,deg,Units of coordinate increment and value,str,TRUE,TRUE,
-5,keyword,CUNIT2,deg,Units of coordinate increment and value,str,TRUE,TRUE,
-5,keyword,CUNIT3,,Units of coordinate increment and value,str,TRUE,TRUE,
-5,keyword,CTYPE1,HPLN-ARC,Coordinate type codezenithal/azimuthal equidist,str,TRUE,TRUE,
-5,keyword,CTYPE2,HPLT-ARC,Coordinate type codezenithal/azimuthal equidist,str,TRUE,TRUE,
-5,keyword,CTYPE3,STOKES,Coordinate type,str,TRUE,TRUE,
-5,keyword,CRVAL1,0.0,[deg] Coordinate value at reference point,float,TRUE,TRUE,
-5,keyword,CRVAL2,0.0,[deg] Coordinate value at reference point,float,TRUE,TRUE,
-5,keyword,CRVAL3,0.0,Coordinate value at reference point,float,TRUE,TRUE,
-5,keyword,LONPOLE,180.0,[deg] Native longitude of celestial pole,float,TRUE,TRUE,
-5,keyword,LATPOLE,0.0,[deg] Native latitude of celestial pole,float,TRUE,TRUE,
-5,keyword,CNAME3,STOKES,Axis name for labelling purposes,str,TRUE,TRUE
-5,keyword,MJDREF,0.0,[d] MJD of fiducial time,float,TRUE,TRUE,
-5,keyword,WCSAXESA,3,Number of coordinate axes,int,TRUE,TRUE,
-5,keyword,CRPIX1A,2047.5,Pixel coordinate of reference point,float,TRUE,TRUE,
-5,keyword,CRPIX2A,2047.5,Pixel coordinate of reference point,float,TRUE,TRUE,
-5,keyword,CRPIX3A,2047.5,Pixel coordinate of reference point,float,TRUE,TRUE,
-5,keyword,PC1_1A,1.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC1_2A,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC1_3A,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC2_1A,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC2_2A,1.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC2_3A,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC3_1A,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC3_2A,0.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,PC3_3A,1.0,Coordinate transformation matrix element,float,TRUE,TRUE,
-5,keyword,CDELT1A,-0.0225,[deg] Coordinate increment at reference point,float,TRUE,TRUE,
-5,keyword,CDELT2A,0.0225,[deg] Coordinate increment at reference point,float,TRUE,TRUE,
-5,keyword,CDELT3A,1.0,Coordinate increment at reference point,float,TRUE,TRUE,
-5,keyword,CUNIT1A,deg,Units of coordinate increment and value,str,TRUE,TRUE,
-5,keyword,CUNIT2A,deg,Units of coordinate increment and value,str,TRUE,TRUE,
-5,keyword,CUNIT3A, ,Units of coordinate increment and value,str,TRUE,TRUE,
-5,keyword,CTYPE1A,RA---ARC,Coordinate type codezenithal/azimuthal equidist,str,TRUE,TRUE,
-5,keyword,CTYPE2A,DEC--ARC,Coordinate type codezenithal/azimuthal equidist,str,TRUE,TRUE,
-5,keyword,CTYPE3A,STOKES,Coordinate type,str,TRUE,TRUE,
-5,keyword,CRVAL1A,0.0,[deg] Coordinate value at reference point,float,TRUE,TRUE,
-5,keyword,CRVAL2A,0.0,[deg] Coordinate value at reference point,float,TRUE,TRUE,
-5,keyword,CRVAL3A,0.0,Coordinate value at reference point,float,TRUE,TRUE,
-5,keyword,LONPOLEA,180.0,[deg] Native longitude of celestial pole,float,TRUE,TRUE,
-5,keyword,LATPOLEA,0.0,[deg] Native latitude of celestial pole,float,TRUE,TRUE,
-5,keyword,CNAME3A,STOKES,Axis name for labelling purposes,str,TRUE,TRUE
-5,keyword,MJDREFA,0.0,[d] MJD of fiducial time,float,TRUE,TRUE,
 6,section,COMMENT,Camera and Readout State,,str,TRUE,TRUE,Camera and Readout State
 6,keyword,DETECTOR,CCD 2Kx2K,CCD detector 2048x2048 pixels,str,TRUE,TRUE,CCD 2Kx2K
 6,keyword,EXPTIME,3,[s] commanded exposure time,float,TRUE,TRUE,3

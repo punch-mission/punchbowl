@@ -13,11 +13,6 @@ Level:
     Temporal Information:
     Instrument and Spacecraft State:
     World Coordinate System:
-        overrides:
-            CRPIX1: 0.0
-            CDELT1: 1.0
-            CRPIX1A: 0.0
-            CDELT1A: 1.0
     Camera and Readout State:
     Onboard Image Processing:
     Calibration Data:

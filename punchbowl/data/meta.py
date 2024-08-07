@@ -293,6 +293,7 @@ class NormalizedMetadata(Mapping):
         Returns
         -------
         None
+
         """
         if section_name in self._contents:
             del self._contents[section_name]

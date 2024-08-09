@@ -4,12 +4,31 @@ import numpy as np
 import pytest
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
+from datetime import datetime
 
 from punchbowl.data.tests.test_io import sample_ndcube
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.level1.vignette import correct_vignetting_task
+from punchbowl.exceptions import LargeTimeDeltaWarning
+
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
+
+
+@pytest.mark.prefect_test()
+def test_check_calibration_time_delta_warning(sample_ndcube) -> None:
+    """
+    If the time between the data of interest and the calibration file is too great, then a warning is raised.
+    """
+
+    sample_data = sample_ndcube(shape=(10, 10))
+    sample_data.meta['DATE-OBS'].value = str(datetime(2022, 2, 22, 16, 0, 1))
+    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
+
+    with disable_run_logger():
+        with pytest.warns(LargeTimeDeltaWarning):
+            corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
+            assert isinstance(corrected_punchdata, NDCube)
 
 
 @pytest.mark.prefect_test()

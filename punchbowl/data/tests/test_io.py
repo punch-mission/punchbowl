@@ -42,7 +42,9 @@ def sample_ndcube():
         wcs.wcs.cname = "HPC lon", "HPC lat"
 
         meta = NormalizedMetadata.load_template(code, level)
-        meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
+        #meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
+        meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1))
+        #20240222163425
         meta['FILEVRSN'] = "1"
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
@@ -181,7 +183,7 @@ def test_generate_wcs_metadata(sample_ndcube):
 def test_filename_base_generation(sample_ndcube):
     cube = sample_ndcube((50, 50))
     actual = get_base_file_name(cube)
-    expected = "PUNCH_L0_PM1_20230101000001_v1"
+    expected = "PUNCH_L0_PM1_20240222160001_v1"
     assert actual == expected
 
 

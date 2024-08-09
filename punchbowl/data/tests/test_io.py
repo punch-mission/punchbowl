@@ -6,16 +6,10 @@ import numpy as np
 import pytest
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
-from astropy.wcs import WCS
+from astropy.wcs import WCS, DistortionLookupTable
 from ndcube import NDCube
 
-from punchbowl.data.io import (
-    _update_statistics,
-    construct_wcs_header_fields,
-    get_base_file_name,
-    load_ndcube_from_fits,
-    write_ndcube_to_fits,
-)
+from punchbowl.data.io import _update_statistics, get_base_file_name, load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.data.meta import NormalizedMetadata
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -64,15 +58,16 @@ def test_write_data(sample_ndcube):
 
 
 def test_generate_data_statistics_from_zeros():
+    w = WCS(naxis=2)
     m = NormalizedMetadata.load_template("PM1", "0")
     m.history.add_now("Test", "does it write?")
     m.history.add_now("Test", "how about twice?")
     m['DESCRPTN'] = 'This is a test!'
     m['CHECKSUM'] = ''
     m['DATASUM'] = ''
-    h = m.to_fits_header()
+    m.delete_section("World Coordinate System")
 
-    sample_data = NDCube(data=np.zeros((2048,2048),dtype=np.int16), wcs=WCS(h), meta=m)
+    sample_data = NDCube(data=np.zeros((2048, 2048),dtype=np.int16), wcs=w, meta=m)
 
     _update_statistics(sample_data)
 
@@ -118,68 +113,6 @@ def test_generate_data_statistics(sample_ndcube):
     assert cube.meta['DATAMAX'].value == float(cube.data.max())
 
 
-# def test_initial_uncertainty_calculation(sample_punchdata):
-#     sample_data = sample_punchdata()
-#
-#     # Manually call update of uncertainty
-#     sample_data = update_initial_uncertainty(sample_data)
-#
-#     # Check that uncertainty exists and is within range
-#     assert sample_data.uncertainty.array.shape == sample_data.data.shape
-#     assert sample_data.uncertainty.array.min() >= 0
-#     assert sample_data.uncertainty.array.max() <= 1
-
-
-# def test_read_write_uncertainty_data(sample_punchdata):
-#     sample_data = sample_punchdata()
-#
-#     write_ndcube_to_fits(sample_data, SAMPLE_WRITE_PATH)
-#
-#     pdata_read_data = load_ndcube_from_fits(SAMPLE_WRITE_PATH)
-#
-#     with fits.open(SAMPLE_WRITE_PATH) as hdul:
-#         fitsio_read_uncertainty = hdul[2].data
-#
-#     assert sample_data.uncertainty.array.dtype == 'float32'
-#     assert pdata_read_data.uncertainty.array.dtype == 'float32'
-#     assert fitsio_read_uncertainty.dtype == 'uint8'
-#
-#     assert (sample_data.uncertainty.array.min() >= 0) and (sample_data.uncertainty.array.max() <= 1)
-#     assert (pdata_read_data.uncertainty.array.min() >= 0) and (pdata_read_data.uncertainty.array.max() <= 1)
-#     assert (fitsio_read_uncertainty.min() >= 0) and (fitsio_read_uncertainty.max() <= 255)
-
-
-# def test_uncertainty_bounds(sample_punchdata):
-#     sample_data_certain = sample_punchdata()
-#     sample_data_certain.uncertainty.array[:, :] = 0
-#     write_ndcube_to_fits(sample_data_certain, SAMPLE_WRITE_PATH)
-#
-#     punchdata_read_data_certain = load_ndcube_from_fits(SAMPLE_WRITE_PATH).uncertainty.array
-#     with fits.open(SAMPLE_WRITE_PATH) as hdul:
-#         manual_read_data_certain = hdul[2].data
-#
-#     assert np.all(punchdata_read_data_certain == 0)
-#     assert np.all(manual_read_data_certain == 0)
-#
-#     sample_data_uncertain = sample_punchdata()
-#     sample_data_uncertain.uncertainty.array[:, :] = 1
-#     write_ndcube_to_fits(sample_data_uncertain, SAMPLE_WRITE_PATH)
-#
-#     punchdata_read_data_uncertain = load_ndcube_from_fits(SAMPLE_WRITE_PATH).uncertainty.array
-#     with fits.open(SAMPLE_WRITE_PATH) as hdul:
-#         manual_read_data_uncertain = hdul[2].data
-#
-#     assert np.all(punchdata_read_data_uncertain == 1)
-#     assert np.all(manual_read_data_uncertain == 255)
-
-
-def test_generate_wcs_metadata(sample_ndcube):
-    cube = sample_ndcube((50, 50))
-    sample_header = construct_wcs_header_fields(cube)
-
-    assert isinstance(sample_header, astropy.io.fits.Header)
-
-
 def test_filename_base_generation(sample_ndcube):
     cube = sample_ndcube((50, 50))
     actual = get_base_file_name(cube)
@@ -195,19 +128,92 @@ def test_has_typecode():
 
 def test_load_punchdata_with_history():
     data = np.ones((10, 10), dtype=np.uint16)
-    meta = NormalizedMetadata.load_template("CR4", "1")
+    meta = NormalizedMetadata.load_template("CR4", "0")
     meta['DATE-OBS'] = str(datetime.now())
     meta.history.add_now("test", "this is a test!")
     meta.history.add_now("test", "this is a second test!")
-    wcs = WCS(naxis=2)
+    wcs = WCS({"CRVAL1": 0.0,
+                     "CRVAL2": 0.0,
+                     "CRPIX1": 2047.5,
+                     "CRPIX2": 2047.5,
+                     "CDELT1": 0.0225,
+                     "CDELT2": 0.0225,
+                     "CUNIT1": "deg",
+                     "CUNIT2": "deg",
+                     "CTYPE1": "HPLN-ARC",
+                     "CTYPE2": "HPLT-ARC"})
     obj = NDCube(data=data, wcs=wcs, meta=meta)
 
     assert "OBSCODE" in obj.meta.fits_keys
     file_path = get_base_file_name(obj) + ".fits"
-    write_ndcube_to_fits(obj, file_path, overwrite=True, skip_wcs_conversion=True)
+    write_ndcube_to_fits(obj, file_path, overwrite=True)
     reloaded = load_ndcube_from_fits(file_path)
     assert isinstance(reloaded, NDCube)
     assert len(reloaded.meta.history) == 2
     assert reloaded.data.shape == (10, 10)
     assert np.all(reloaded.data == 1)
     os.remove(file_path)
+
+
+def make_empty_distortion_model(num_bins: int, image: np.ndarray) -> (DistortionLookupTable, DistortionLookupTable):
+    """ Create an empty distortion table
+
+    Parameters
+    ----------
+    num_bins : int
+        number of histogram bins in the distortion model, i.e. the size of the distortion model is (num_bins, num_bins)
+    image : np.ndarray
+        image to create a distortion model for
+
+    Returns
+    -------
+    (DistortionLookupTable, DistortionLookupTable)
+        x and y distortion models
+    """
+    # make an initial empty distortion model
+    r = np.linspace(0, image.shape[0], num_bins + 1)
+    c = np.linspace(0, image.shape[1], num_bins + 1)
+    r = (r[1:] + r[:-1]) / 2
+    c = (c[1:] + c[:-1]) / 2
+
+    err_px, err_py = r, c
+    err_x = np.zeros((num_bins, num_bins))
+    err_y = np.zeros((num_bins, num_bins))
+
+    cpdis1 = DistortionLookupTable(
+        -err_x.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0]))
+    )
+    cpdis2 = DistortionLookupTable(
+        -err_y.astype(np.float32), (0, 0), (err_px[0], err_py[0]), ((err_px[1] - err_px[0]), (err_py[1] - err_py[0]))
+    )
+    return cpdis1, cpdis2
+
+
+def test_write_punchdata_with_distortion():
+    data = np.ones((2048, 2048), dtype=np.uint16)
+    meta = NormalizedMetadata.load_template("CR4", "1")
+    meta['DATE-OBS'] = str(datetime.now())
+    meta.history.add_now("test", "this is a test!")
+    meta.history.add_now("test", "this is a second test!")
+    wcs = WCS({"CRVAL1": 0.0,
+                     "CRVAL2": 0.0,
+                     "CRPIX1": 2047.5,
+                     "CRPIX2": 2047.5,
+                     "CDELT1": 0.0225,
+                     "CDELT2": 0.0225,
+                     "CUNIT1": "deg",
+                     "CUNIT2": "deg",
+                     "CTYPE1": "HPLN-ARC",
+                     "CTYPE2": "HPLT-ARC"})
+    cpdis1, cpdis2 = make_empty_distortion_model(100, data)
+    wcs.cpdis1 = cpdis1
+    wcs.cpdis2 = cpdis2
+    obj = NDCube(data=data, wcs=wcs, meta=meta)
+    file_path = get_base_file_name(obj) + ".fits"
+    write_ndcube_to_fits(obj, file_path, overwrite=True)
+
+    with fits.open(file_path) as hdul:
+        assert len(hdul) == 5
+
+    loaded_cube = load_ndcube_from_fits(file_path)
+    assert loaded_cube.wcs.has_distortion

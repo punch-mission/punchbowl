@@ -29,16 +29,16 @@ def get_base_file_name(cube: NDCube) -> str:
     type_code = cube.meta["TYPECODE"].value
     date_string = cube.meta.datetime.strftime("%Y%m%d%H%M%S")
     file_version = cube.meta["FILEVRSN"].value
+    file_version = "1" if file_version == "" else file_version  # file version should never be empty!
     return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string + "_v" + file_version
 
 
 def write_ndcube_to_fits(cube: NDCube,
                          filename: str,
-                         overwrite: bool = True,
-                         skip_wcs_conversion: bool = False) -> None:
+                         overwrite: bool = True) -> None:
     """Write an NDCube as a FITS file."""
     if filename.endswith(".fits"):
-        _write_fits(cube, filename, overwrite=overwrite, skip_wcs_conversion=skip_wcs_conversion)
+        _write_fits(cube, filename, overwrite=overwrite)
     else:
         msg = (
             "Filename must have a valid file extension `.fits`"
@@ -79,7 +79,8 @@ def construct_wcs_header_fields(cube: NDCube) -> Header:
         wcs_celestial=cube.wcs, date_obs=date_obs, data_shape=cube.data.shape,
     )
 
-    helio_wcs_header = helio_wcs.to_header()
+    helio_wcs_hdul_reference = helio_wcs.to_fits()
+    helio_wcs_header = helio_wcs_hdul_reference[0].header
 
     for key in unused_keys:
         if key in celestial_wcs_header:
@@ -109,41 +110,29 @@ def construct_wcs_header_fields(cube: NDCube) -> Header:
     return output_header
 
 
-def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, skip_wcs_conversion: bool = False) -> None:
+def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, uncertainty_quantize_level: float = -2.0) -> None:
     _update_statistics(cube)
 
-    header = cube.meta.to_fits_header()
+    full_header = cube.meta.to_fits_header(wcs=cube.wcs)
 
-    # update the header with the WCS
-    # TODO: explain the skip_wcs_conversion step
-    wcs_header = cube.wcs.to_header() if skip_wcs_conversion else construct_wcs_header_fields(cube)
-    for key, value in wcs_header.items():
-        if key in header:
-            header[key] = (cube.meta[key].datatype)(value)
-            cube.meta[key] = (cube.meta[key].datatype)(value)
+    hdu_data = fits.CompImageHDU(data=cube.data,
+                                 header=full_header,
+                                 name="Primary data array")
+    hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
+                                        header=full_header,
+                                        name="Uncertainty array",
+                                        quantize_level=uncertainty_quantize_level)
 
-    hdul_list = []
-    hdu_dummy = fits.PrimaryHDU()
-    hdul_list.append(hdu_dummy)
-
-    hdu_data = fits.CompImageHDU(data=cube.data, header=header, name="Primary data array")
-    hdul_list.append(hdu_data)
-
-    if cube.uncertainty is not None:
-        scaled_uncertainty = _pack_uncertainty(cube)
-        hdu_uncertainty = fits.CompImageHDU(data=scaled_uncertainty, name="Uncertainty array", quantize_level=-2.0)
-        for key, value in wcs_header.items():
-            hdu_uncertainty.header[key] = value
-        hdul_list.append(hdu_uncertainty)
-
-    hdul = fits.HDUList(hdul_list)
-
+    hdul = cube.wcs.to_fits()
+    hdul[0] = fits.PrimaryHDU()
+    hdul.insert(1, hdu_data)
+    hdul.insert(2, hdu_uncertainty)
     hdul.writeto(filename, overwrite=overwrite, checksum=True)
 
 
 def _pack_uncertainty(cube: NDCube) -> np.ndarray:
     """Compress the uncertainty for writing to file."""
-    return 1/(cube.uncertainty.array/cube.data)
+    return np.zeros_like(cube.data) - 999 if cube.uncertainty is None else 1 / (cube.uncertainty.array / cube.data)
 
 
 def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -> np.ndarray:
@@ -198,6 +187,7 @@ def _update_statistics(cube: NDCube) -> None:
 
     cube.meta["DATAMIN"] = float(np.nanmin(cube.data))
     cube.meta["DATAMAX"] = float(np.nanmax(cube.data))
+
 
 def load_ndcube_from_fits(path: str, key: str = " ") -> NDCube:
     """Load an NDCube from a FITS file."""

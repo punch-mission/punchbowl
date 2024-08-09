@@ -84,7 +84,7 @@ find = {}  # Scan the project directory with the default parameters
 skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
 
 [tool.ruff]
-target-version = 'py310'
+target-version = 'py311'
 exclude = ['tests', 'scripts', 'docs']
 line-length=120
 lint.select = ["ALL"]

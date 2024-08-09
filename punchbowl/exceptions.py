@@ -21,3 +21,6 @@ class LargeTimeDeltaWarning(PUNCHBowlWarning):
 
 class NoCalibrationDataWarning(PUNCHBowlWarning):
     """Calibration skipped no valid calibration data available."""
+
+class ExtraMetadataWarning(PUNCHBowlWarning):
+    """Extra metadata found but ignored."""

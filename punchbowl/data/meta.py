@@ -2,22 +2,33 @@ from __future__ import annotations
 
 import os
 import typing as t
+import warnings
 from datetime import datetime
 from collections import OrderedDict
 from collections.abc import Mapping
 
+import astropy.units as u
 import numpy as np
 import pandas as pd
 import yaml
+from astropy.coordinates import GCRS, SkyCoord
 from astropy.io import fits
 from astropy.io.fits import Header
+from astropy.time import Time
+from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
+from sunpy.coordinates import frames, sun
+from sunpy.coordinates.sun import _sun_north_angle_to_z
+from sunpy.map import solar_angular_radius
 
 from punchbowl.data.history import History
-from punchbowl.exceptions import MissingMetadataError
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
+from punchbowl.exceptions import ExtraMetadataWarning, MissingMetadataError
 
 ValueType = int | str | float
 _ROOT = os.path.abspath(os.path.dirname(__file__))
+REQUIRED_HEADER_KEYWORDS = ["SIMPLE", "BITPIX", "NAXIS", "EXTEND"]
+DISTORTION_KEYWORDS = ["CPDIS1", "CPDIS2", "DP1", "DP2"]
 
 
 def load_omniheader(path: str | None = None) -> pd.DataFrame:
@@ -176,7 +187,10 @@ class NormalizedMetadata(Mapping):
         return sum([len(section) for section in self._contents.values()])
 
     def __init__(
-        self, contents: t.OrderedDict[str, t.OrderedDict[str, MetaField]], history: History | None = None,
+            self,
+            contents: t.OrderedDict[str, t.OrderedDict[str, MetaField]],
+            history: History | None = None,
+            wcs_section_name: str = "World Coordinate System",
     ) -> None:
         """
         Create a Normalized Metadata. Also see `from_template` as that is often more helpful.
@@ -187,10 +201,13 @@ class NormalizedMetadata(Mapping):
             contents of the meta information
         history: History
             history contents for this meta field
+        wcs_section_name: str
+            the section title for the WCS section to specially fill
 
         """
         self._contents = contents
         self._history = history if history is not None else History()
+        self._wcs_section_name = wcs_section_name
 
     def __iter__(self) -> t.Iterator[t.Any]:
         """Iterate."""
@@ -203,7 +220,7 @@ class NormalizedMetadata(Mapping):
             raise TypeError(msg)
         return self._contents == other._contents and self._history == other._history
 
-    def to_fits_header(self) -> Header:
+    def to_fits_header(self, wcs: WCS | None = None, write_celestial_wcs: bool = True) -> Header:  # noqa: C901
         """
         Convert a constructed NormalizedMetdata object to an Astropy FITS compliant header object.
 
@@ -219,6 +236,7 @@ class NormalizedMetadata(Mapping):
                 ("COMMENT", ("----- " + section + " ").ljust(72, "-")),
                 end=True,
             )
+            # for normal sections
             for field in self._contents[section].values():
                 if field.value is not None:
                     value = field.value
@@ -235,9 +253,75 @@ class NormalizedMetadata(Mapping):
                     ),
                     end=True,
                 )
+
+            # add the special WCS section
+            if section == self._wcs_section_name:
+                if wcs is None:
+                    msg = "WCS was expected but not provided."
+                    raise MissingMetadataError(msg)
+                if write_celestial_wcs:
+                    wcses = {"": wcs, "A": calculate_celestial_wcs_from_helio(wcs, self.astropy_time, self.shape)}
+                else:
+                    wcses = {"": wcs}
+                for key, this_wcs in wcses.items():
+                    if this_wcs.has_distortion:
+                        wcs_header = this_wcs.to_fits()[0].header
+                        for required_key in REQUIRED_HEADER_KEYWORDS:
+                            del wcs_header[required_key]
+                    else:
+                        wcs_header = this_wcs.to_header()
+                    for card in wcs_header.cards:
+                        if key == "" or (key != "" and card[0][-1].isnumeric() and card[0] not in DISTORTION_KEYWORDS):
+                            hdr.append(
+                                (
+                                card[0] + key,
+                                card[1],
+                                card[2],
+                                ),
+                                end=True,
+                            )
+
+        # add the history section
         for entry in self.history:
             hdr["HISTORY"] = f"{entry.datetime} => {entry.source} => {entry.comment}"
+
+        # fill in dynamic values
+        if wcs is not None:
+            geocentric = GCRS(obstime=self.astropy_time)
+            p_angle = _sun_north_angle_to_z(geocentric)
+            center_helio_coord = SkyCoord(
+                wcs.wcs.crval[0] * u.deg,
+                wcs.wcs.crval[1] * u.deg,
+                frame=frames.Helioprojective,
+                obstime=self.astropy_time,
+                observer="earth",
+            )
+            hdr["RSUN_ARC"] = solar_angular_radius(center_helio_coord).value
+            hdr["SOLAR_EP"] = p_angle.value
+            hdr["CAR_ROT"] = float(sun.carrington_rotation_number(t=self.astropy_time))
+
         return hdr
+
+    def delete_section(self, section_name: str) -> None:
+        """
+        Delete a section of NormalizedMetadata.
+
+        Parameters
+        ----------
+        section_name : str
+            the section to delete
+
+        Returns
+        -------
+        None
+
+        """
+        if section_name in self._contents:
+            del self._contents[section_name]
+        else:
+            msg = f"Section {section_name} was not found."
+            raise MissingMetadataError(msg)
+
 
     @classmethod
     def from_fits_header(cls, h: Header) -> NormalizedMetadata:
@@ -257,13 +341,13 @@ class NormalizedMetadata(Mapping):
         """
         if "TYPECODE" not in h:
             msg = "TYPECODE must a field of the header"
-            raise RuntimeError(msg)
+            raise MissingMetadataError(msg)
         if "OBSCODE" not in h:
             msg = "OBSCODE must be a field of the header"
-            raise RuntimeError(msg)
+            raise MissingMetadataError(msg)
         if "LEVEL" not in h:
             msg = "LEVEL must be a field of the header"
-            raise RuntimeError(msg)
+            raise MissingMetadataError(msg)
 
         type_code, obs_code, level = h["TYPECODE"], h["OBSCODE"], h["LEVEL"]
 
@@ -272,11 +356,10 @@ class NormalizedMetadata(Mapping):
         for k, v in h.items():
             if k not in ("COMMENT", "HISTORY", ""):
                 if k not in m:
-                    msg = f"Unexpected key of {k} found in header for Level{level} {type_code + obs_code} type meta."
-                    raise RuntimeError(
-                        msg,
-                    )
-                m[k] = v
+                    msg = f"Skipping unexpected key of {k} found in header for Level{level} {type_code + obs_code}."
+                    warnings.warn(msg, ExtraMetadataWarning)
+                else:
+                    m[k] = v
         m.history = History.from_fits_header(h)
 
         return m
@@ -557,7 +640,6 @@ class NormalizedMetadata(Mapping):
         None
 
         """
-        self._validate_key_is_str(key)
         for section_name, section in self._contents.items():
             if key in section:
                 self._contents[section_name][key.upper()].value = value
@@ -567,13 +649,13 @@ class NormalizedMetadata(Mapping):
         msg = f"MetaField with key={key} not found."
         raise RuntimeError(msg)
 
-    def __getitem__(self, key: str) -> t.Any:
+    def __getitem__(self, key: str | tuple[str, int]) -> t.Any:
         """
         Get specified keyword from NormalizedMetadata object.
 
         Parameters
         ----------
-        key
+        key : str | tuple
             Header key string
 
         Returns
@@ -582,7 +664,10 @@ class NormalizedMetadata(Mapping):
             Returned header value
 
         """
+        if isinstance(key, tuple):
+            key, i = key
         self._validate_key_is_str(key)
+
         for section_name, section in self._contents.items():
             if key in section:
                 return self._contents[section_name][key.upper()]
@@ -630,7 +715,6 @@ class NormalizedMetadata(Mapping):
             Value indicating if the specified keyword is contained within the NormalizedMetadata object
 
         """
-        self._validate_key_is_str(key)
         return any(key in section for section in self._contents.values())
 
     @property
@@ -648,3 +732,13 @@ class NormalizedMetadata(Mapping):
             msg = "DATE-OBS is missing from the metadata."
             raise MissingMetadataError(msg)
         return parse_datetime(self["DATE-OBS"].value)
+
+    @property
+    def shape(self) -> tuple:
+        """Get the data shape in array order."""
+        return tuple([self[f"NAXIS{i}"].value for i in range(self["NAXIS"].value, 0, -1)])
+
+    @property
+    def astropy_time(self) -> Time:
+        """Get the date-obs as an astropy Time object."""
+        return Time(self.datetime)

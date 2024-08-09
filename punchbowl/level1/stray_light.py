@@ -3,9 +3,13 @@ import warnings
 
 from ndcube import NDCube
 from prefect import get_run_logger, task
+from astropy.time import Time
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import InvalidDataError
+from punchbowl.exceptions import NoCalibrationDataWarning
+from punchbowl.exceptions import LargeTimeDeltaWarning
+
 
 
 @task
@@ -13,10 +17,28 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> N
     """
     Prefect task to remove stray light from an image.
 
+    Stray light is light in an optical system which was not intended in the 
+    design.
+
+    The PUNCH instrument stray light will be mapped periodically as part of the
+    ongoing in-flight calibration effort. The stray light maps will be 
+    generated directly from the L0 and L1 science data. Separating instrumental
+    stray light from the F-corona. This has been demonstrated with SOHO/LASCO 
+    and with STEREO/COR2 observations. It requires an instrumental roll to hold 
+    the stray light pattern fixed while the F-corona rotates in the field of 
+    view. PUNCH orbital rolls will be used to create similar effects.
+
+    Uncertainty across the image plane is calculated using a known stray light
+    model and the difference between the calculated stray light and the ground
+    truth. The uncertainty is convolved with the input uncertainty layer to 
+    produce the output uncertainty layer.
+
+
     Parameters
     ----------
     data_object : PUNCHData
         data to operate on
+    
     stray_light_path: pathlib
         path to stray light model to apply to data
 
@@ -37,12 +59,17 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> N
     else:
         stray_light_model = load_ndcube_from_fits(stray_light_path)
 
+        stray_light_function_date = Time(stray_light_function.meta["DATE-OBS"].value)
+        observation_date = Time(data_object.meta["DATE-OBS"].value)
+        if abs((stray_light_function_date - observation_date).to('day').value) > 14:
+            warnings.warn(f"Calibration file {stray_light_file} contains data created greater than 2 weeks from the obsveration", LargeTimeDeltaWarning)
+
         if stray_light_model.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
             warnings.warn(f"Incorrect TELESCOP value within {stray_light_path}", UserWarning)
         elif stray_light_model.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
             warnings.warn(f"Incorrect polarization state within {stray_light_path}", UserWarning)
         elif stray_light_model.data.shape != data_object.data.shape:
-            msg = f"Incorrect vignetting function shape within {stray_light_path}"
+            msg = f"Incorrect stray light function shape within {stray_light_path}"
             raise InvalidDataError(msg)
         else:
             data_object.data[:, :] -= stray_light_model.data[:, :]

@@ -1,19 +1,22 @@
 import pathlib
 import warnings
 
+from astropy.time import Time
 from ndcube import NDCube
 from prefect import get_run_logger, task
-from astropy.time import Time
 
 from punchbowl.data import load_ndcube_from_fits
-from punchbowl.exceptions import InvalidDataError
-from punchbowl.exceptions import NoCalibrationDataWarning
-from punchbowl.exceptions import LargeTimeDeltaWarning
-from punchbowl.exceptions import IncorrectPolarizationState
-from punchbowl.exceptions import IncorrectTelescope
+from punchbowl.exceptions import (
+    IncorrectPolarizationStateWarning,
+    IncorrectTelescopeWarning,
+    InvalidDataError,
+    LargeTimeDeltaWarning,
+    NoCalibrationDataWarning,
+)
+
 
 @task
-def correct_vignetting_task(data_object: NDCube, vignetting_file: pathlib) -> NDCube:
+def correct_vignetting_task(data_object: NDCube, vignetting_path: pathlib) -> NDCube:
     """
     Prefect task to correct the vignetting of an image.
 
@@ -46,7 +49,7 @@ def correct_vignetting_task(data_object: NDCube, vignetting_file: pathlib) -> ND
     data_object : PUNCHData
         data on which to operate
 
-    vignetting_file : pathlib
+    vignetting_path : pathlib
         path to vignetting function to apply to input data
 
     Returns
@@ -58,35 +61,35 @@ def correct_vignetting_task(data_object: NDCube, vignetting_file: pathlib) -> ND
     logger = get_run_logger()
     logger.info("correct_vignetting started")
 
-    if vignetting_file is None:
+    if vignetting_path is None:
         data_object.meta.history.add_now("LEVEL1-correct_vignetting", "Vignetting skipped")
-        msg=f"Calibration file {vignetting_file} is unavailable, vignetting correction not applied"
+        msg=f"Calibration file {vignetting_path} is unavailable, vignetting correction not applied"
         warnings.warn(msg, NoCalibrationDataWarning)
 
-    elif not vignetting_file.exists():
-        msg = f"File {vignetting_file} does not exist."
+    elif not vignetting_path.exists():
+        msg = f"File {vignetting_path} does not exist."
         raise InvalidDataError(msg)
     else:
-        vignetting_function = load_ndcube_from_fits(vignetting_file)
+        vignetting_function = load_ndcube_from_fits(vignetting_path)
         vignetting_function_date = Time(vignetting_function.meta["DATE-OBS"].value)
         observation_date = Time(data_object.meta["DATE-OBS"].value)
         if abs((vignetting_function_date - observation_date).to("day").value) > 14:
-            msg=f"Calibration file {vignetting_file} contains data created greater than 2 weeks from the obsveration"
+            msg=f"Calibration file {vignetting_path} contains data created greater than 2 weeks from the obsveration"
             warnings.warn(msg, LargeTimeDeltaWarning)
 
         if vignetting_function.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
-            msg=f"Incorrect TELESCOP value within {vignetting_file}"
-            warnings.warn(msg, IncorrectTelescope)
+            msg=f"Incorrect TELESCOP value within {vignetting_path}"
+            warnings.warn(msg, IncorrectTelescopeWarning)
         elif vignetting_function.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
-            msg=f"Incorrect polarization state within {vignetting_file}"
-            warnings.warn(msg, IncorrectPolarizationState)
+            msg=f"Incorrect polarization state within {vignetting_path}"
+            warnings.warn(msg, IncorrectPolarizationStateWarning)
         elif vignetting_function.data.shape != data_object.data.shape:
-            msg=f"Incorrect vignetting function shape within {vignetting_file}"
+            msg=f"Incorrect vignetting function shape within {vignetting_path}"
             raise InvalidDataError(msg)
         else:
             data_object.data[:, :] /= vignetting_function.data[:, :]
             data_object.meta.history.add_now("LEVEL1-correct_vignetting",
-                                             f"Vignetting corrected using {vignetting_file}")
+                                             f"Vignetting corrected using {vignetting_path}")
 
     logger.info("correct_vignetting finished")
     return data_object

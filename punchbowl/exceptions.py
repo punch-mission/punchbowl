@@ -22,8 +22,8 @@ class NoCalibrationDataWarning(PUNCHBowlWarning):
 class ExtraMetadataWarning(PUNCHBowlWarning):
     """Extra metadata found but ignored."""
 
-class IncorrectPolarizationState(PUNCHBowlWarning):
+class IncorrectPolarizationStateWarning(PUNCHBowlWarning):
     """Mismatched polarization state detected but ignored."""
 
-class IncorrectTelescope(PUNCHBowlWarning):
+class IncorrectTelescopeWarning(PUNCHBowlWarning):
     """Mismatched telescope detected but ignored."""

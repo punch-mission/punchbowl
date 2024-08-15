@@ -100,6 +100,7 @@ def calculate_pc_matrix(crota: float, cdelt: (float, float)) -> np.ndarray:
     -------
     np.ndarray
         PC matrix
+
     """
     return np.array(
         [
@@ -138,6 +139,7 @@ def get_p_angle(time: str="now") -> u.deg:
     -------
     out : `~astropy.coordinates.Angle`
         The position angle
+
     """
     obstime = sunpy.coordinates.sun.parse_time(time)
 

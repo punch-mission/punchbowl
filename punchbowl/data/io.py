@@ -3,21 +3,14 @@ from __future__ import annotations
 import os.path
 
 import astropy.units as u
-import astropy.wcs.wcsapi
 import matplotlib as mpl
 import numpy as np
-from astropy.coordinates import SkyCoord
 from astropy.io import fits
-from astropy.io.fits import Header
 from astropy.nddata import StdDevUncertainty
-from astropy.time import Time
 from astropy.wcs import WCS
 from ndcube import NDCube
-from sunpy.coordinates import frames, sun
-from sunpy.map import solar_angular_radius
 
 from punchbowl.data.meta import NormalizedMetadata
-from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -47,67 +40,6 @@ def write_ndcube_to_fits(cube: NDCube,
         raise ValueError(
             msg,
         )
-
-
-def construct_wcs_header_fields(cube: NDCube) -> Header:
-    """
-    Compute primary and secondary WCS header cards to add to a data object.
-
-    Returns
-    -------
-    Header
-
-    """
-    date_obs = Time(cube.meta.datetime)
-
-    celestial_wcs_header = cube.wcs.to_header()
-    output_header = astropy.io.fits.Header()
-
-    unused_keys = [
-        "DATE-OBS",
-        "DATE-BEG",
-        "DATE-AVG",
-        "DATE-END",
-        "DATE",
-        "MJD-OBS",
-        "TELAPSE",
-        "RSUN_REF",
-        "TIMESYS",
-    ]
-
-    helio_wcs, p_angle = calculate_helio_wcs_from_celestial(
-        wcs_celestial=cube.wcs, date_obs=date_obs, data_shape=cube.data.shape,
-    )
-
-    helio_wcs_hdul_reference = helio_wcs.to_fits()
-    helio_wcs_header = helio_wcs_hdul_reference[0].header
-
-    for key in unused_keys:
-        if key in celestial_wcs_header:
-            del celestial_wcs_header[key]
-        if key in helio_wcs_header:
-            del helio_wcs_header[key]
-
-    if cube.meta["CTYPE1"] is not None:
-        for key, value in helio_wcs.to_header().items():
-            output_header[key] = value
-    if cube.meta["CTYPE1A"] is not None:
-        for key, value in celestial_wcs_header.items():
-            output_header[key + "A"] = value
-
-    center_helio_coord = SkyCoord(
-        helio_wcs.wcs.crval[0] * u.deg,
-        helio_wcs.wcs.crval[1] * u.deg,
-        frame=frames.Helioprojective,
-        obstime=date_obs,
-        observer="earth",
-    )
-
-    output_header["RSUN_ARC"] = solar_angular_radius(center_helio_coord).value
-    output_header["SOLAR_EP"] = p_angle.value
-    output_header["CAR_ROT"] = float(sun.carrington_rotation_number(t=date_obs))
-
-    return output_header
 
 
 def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, uncertainty_quantize_level: float = -2.0) -> None:

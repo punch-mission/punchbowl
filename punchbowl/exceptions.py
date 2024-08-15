@@ -4,14 +4,11 @@ class PUNCHBowlError(Exception):
 class InvalidDataError(PUNCHBowlError):
     """Invalid data error."""
 
-
 class InvalidHeaderError(PUNCHBowlError):
     """Header is not properly formatted."""
 
-
 class MissingMetadataError(PUNCHBowlError):
     """Metadata missing for processing."""
-
 
 class PUNCHBowlWarning(Warning):
     """Base class for warnings in punchbowl."""
@@ -24,3 +21,9 @@ class NoCalibrationDataWarning(PUNCHBowlWarning):
 
 class ExtraMetadataWarning(PUNCHBowlWarning):
     """Extra metadata found but ignored."""
+
+class IncorrectPolarizationStateWarning(PUNCHBowlWarning):
+    """Mismatched polarization state detected but ignored."""
+
+class IncorrectTelescopeWarning(PUNCHBowlWarning):
+    """Mismatched telescope detected but ignored."""

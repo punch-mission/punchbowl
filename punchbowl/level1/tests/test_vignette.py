@@ -1,16 +1,19 @@
 import pathlib
+from datetime import datetime
 
 import numpy as np
 import pytest
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
-from datetime import datetime
 
 from punchbowl.data.tests.test_io import sample_ndcube
-from punchbowl.exceptions import InvalidDataError
+from punchbowl.exceptions import (
+    IncorrectPolarizationStateWarning,
+    IncorrectTelescopeWarning,
+    InvalidDataError,
+    LargeTimeDeltaWarning,
+)
 from punchbowl.level1.vignette import correct_vignetting_task
-from punchbowl.exceptions import LargeTimeDeltaWarning
-
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -70,7 +73,7 @@ def test_invalid_polarization_state(sample_ndcube) -> None:
     vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
 
     with disable_run_logger():
-        with pytest.warns(UserWarning):
+        with pytest.warns(IncorrectPolarizationStateWarning):
             corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
             assert isinstance(corrected_punchdata, NDCube)
 
@@ -86,7 +89,7 @@ def test_invalid_telescope(sample_ndcube) -> None:
     vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
 
     with disable_run_logger():
-        with pytest.warns(UserWarning):
+        with pytest.warns(IncorrectTelescopeWarning):
             corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
             assert isinstance(corrected_punchdata, NDCube)
 

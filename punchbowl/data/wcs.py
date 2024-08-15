@@ -56,7 +56,7 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
     geocentric = GCRS(obstime=date_obs)
     p_angle = _sun_north_angle_to_z(geocentric)
 
-    rotation_angle = extract_crota_from_wcs(wcs_celestial).to(u.rad).value - get_p_angle(date_obs).rad
+    rotation_angle = extract_crota_from_wcs(wcs_celestial).to(u.rad).value + get_p_angle(date_obs).rad
 
     new_header = sunpy.map.make_fitswcs_header(
         data_shape[1:] if is_3d else data_shape,
@@ -206,6 +206,71 @@ def hpc_to_gcrs(HPcoord, GCRSframe):  # noqa: ANN201, N803, ANN001
     # Put the computed coordinates into the output frame
     return GCRSframe.realize_frame(rep)
 
+@astropy.coordinates.frame_transform_graph.transform(
+    astropy.coordinates.FunctionTransform,
+    astropy.coordinates.GCRS,
+    sunpy.coordinates.Helioprojective)
+def gcrs_to_hpc(GCRScoord, Helioprojective): # noqa: ANN201, N803, ANN001
+    """Convert GCRS to HPC."""
+    if not _times_are_equal(GCRScoord.obstime, Helioprojective.obstime):
+        raise ValueError("Obstimes are not equal")  # noqa: TRY003, EM101
+    obstime = GCRScoord.obstime or Helioprojective.obstime
+
+    # Compute the three angles we need
+    position = astropy.coordinates.get_sun(obstime)
+    ra, dec = position.ra.rad, position.dec.rad
+    p = get_p_angle(obstime).rad
+
+    # Prepare rotation matrices for each
+    p_matrix = np.array([
+        [1, 0, 0],
+        [0, np.cos(p), -np.sin(p)],
+        [0, np.sin(p), np.cos(p)],
+    ])
+
+    ra_matrix = np.array([
+        [np.cos(ra), -np.sin(ra), 0],
+        [np.sin(ra), np.cos(ra), 0],
+        [0, 0, 1],
+    ])
+
+    dec_matrix = np.array([
+        [np.cos(-dec), 0, np.sin(-dec)],
+        [0, 1, 0],
+        [-np.sin(-dec), 0, np.cos(-dec)],
+    ])
+
+    # Compose the matrices
+    old_matrix = ra_matrix @ dec_matrix @ p_matrix
+    matrix = np.linalg.inv(old_matrix)
+
+    # Extract the input coordinates and negate the HP latitude,
+    # since it increases in the opposite direction from RA.
+    if isinstance(GCRScoord.data, astropy.coordinates.UnitSphericalRepresentation):
+        rep = astropy.coordinates.UnitSphericalRepresentation(
+            GCRScoord.ra, GCRScoord.dec)  # , earth_distance(obstime))
+    else:
+        rep = astropy.coordinates.SphericalRepresentation(
+            GCRScoord.ra, GCRScoord.dec, GCRScoord.distance)
+
+    # Apply the transformation
+    rep = rep.to_cartesian()
+    rep = rep.transform(matrix)
+
+    # Match the input representation. (If the input was UnitSpherical, meaning there's no
+    # distance coordinate, this drops the distance coordinate.)
+    rep = rep.represent_as(type(GCRScoord.data))
+
+    if isinstance(rep, astropy.coordinates.UnitSphericalRepresentation):
+        rep = astropy.coordinates.UnitSphericalRepresentation(
+            -rep.lon, rep.lat)  # , earth_distance(obstime))
+    else:
+        rep = astropy.coordinates.SphericalRepresentation(
+            -rep.lon, rep.lat, rep.distance)
+
+    # Put the computed coordinates into the output frame
+    return Helioprojective.realize_frame(rep)
+
 
 def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_shape: tuple[int, int]) -> WCS:
     """Calculate the celestial WCS from a helio WCS."""
@@ -215,8 +280,7 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
                          frame="helioprojective", observer="earth", obstime=date_obs)
     new_crval = old_crval.transform_to(GCRS)
 
-    rotation_angle = -(extract_crota_from_wcs(wcs_helio).to(u.rad).value + get_p_angle(date_obs).rad)
-    rotation_angle = extract_crota_from_wcs(wcs_helio).to(u.rad).value + get_p_angle(date_obs).rad
+    rotation_angle = extract_crota_from_wcs(wcs_helio).to(u.rad).value - get_p_angle(date_obs).rad
     new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
 
     cdelt1 = np.abs(wcs_helio.wcs.cdelt[0]) * u.deg

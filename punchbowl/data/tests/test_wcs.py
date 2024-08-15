@@ -12,7 +12,12 @@ from ndcube import NDCube
 from sunpy.coordinates import frames
 
 from punchbowl.data.meta import NormalizedMetadata
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial, load_trefoil_wcs
+from punchbowl.data.wcs import (
+    calculate_celestial_wcs_from_helio,
+    calculate_helio_wcs_from_celestial,
+    calculate_pc_matrix,
+    load_trefoil_wcs,
+)
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -34,6 +39,25 @@ def test_sun_location():
         assert skycoord_origin_celestial.separation(skycoord_sun) < 1 * u.arcsec
         assert skycoord_origin.separation(skycoord_sun) < 1 * u.arcsec
 
+
+def test_extract_crota():
+    pc = calculate_pc_matrix(10*u.deg, [1, 1])
+    wcs_celestial = WCS({"CRVAL1": 0,
+                         "CRVAL2": 0,
+                         "CRPIX1": 2047.5,
+                         "CRPIX2": 2047.5,
+                         "CDELT1": -0.0225,
+                         "CDELT2": 0.0225,
+                         "CUNIT1": "deg",
+                         "CUNIT2": "deg",
+                         "CTYPE1": "RA---AZP",
+                         "CTYPE2": "DEC--AZP",
+                         "PC1_1": pc[0, 0],
+                         "PC1_2": pc[1, 0],
+                         "PC2_1": pc[0, 1],
+                         "PC2_2": pc[1, 1]
+                         })
+    assert extract_crota_from_wcs(wcs_celestial) == 10 * u.deg
 
 def test_wcs_many_point_2d_check():
     m = NormalizedMetadata.load_template("CTM", "2")
@@ -152,11 +176,13 @@ def test_load_trefoil_wcs():
 
 def test_helio_celestial_wcs():
     header = fits.Header.fromtextfile(os.path.join(_ROOT, "example_header.txt"))
+    date_obs = Time(header['DATE-OBS'], format='isot', scale='utc')
 
     wcs_helio = WCS(header)
-    wcs_celestial = WCS(header, key='A')
+    wcs_celestial = calculate_celestial_wcs_from_helio(wcs_helio, date_obs, (3, 4096, 4096))
 
-    date_obs = Time(header['DATE-OBS'], format='isot', scale='utc')
+    wcs_celestial2 = WCS(header, key='A')
+
     test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
     test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
 
@@ -189,10 +215,13 @@ def test_helio_celestial_wcs():
 
     assert np.nanmean(distances) < 0.1
 
+from punchbowl.data.wcs import extract_crota_from_wcs, get_p_angle
+
 
 def test_back_and_forth_wcs_from_celestial():
     date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
     sun_radec = get_sun(date_obs)
+    pc = calculate_pc_matrix(0, [0.0225, 0.0225])
     wcs_celestial = WCS({"CRVAL1": sun_radec.ra.to(u.deg).value,
                          "CRVAL2": sun_radec.dec.to(u.deg).value,
                          "CRPIX1": 2047.5,
@@ -201,11 +230,19 @@ def test_back_and_forth_wcs_from_celestial():
                          "CDELT2": 0.0225,
                          "CUNIT1": "deg",
                          "CUNIT2": "deg",
-                         "CTYPE1": "RA---ARC",
-                         "CTYPE2": "DEC--ARC"})
+                         "CTYPE1": "RA---AZP",
+                         "CTYPE2": "DEC--AZP",
+                         "PC1_1": pc[0, 0],
+                         "PC1_2": pc[1, 0],
+                         "PC2_1": pc[0, 1],
+                         "PC2_2": pc[1, 1]
+                         })
 
+    print(extract_crota_from_wcs(wcs_celestial))
     wcs_helio, p_angle = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, (10, 10))
+    print(extract_crota_from_wcs(wcs_helio))
     wcs_celestial_recovered = calculate_celestial_wcs_from_helio(wcs_helio, date_obs, (10, 10))
+    print(extract_crota_from_wcs(wcs_celestial_recovered))
 
     assert np.allclose(wcs_celestial.wcs.crval, wcs_celestial_recovered.wcs.crval)
     assert np.allclose(wcs_celestial.wcs.crpix, wcs_celestial_recovered.wcs.crpix)
@@ -227,8 +264,11 @@ def test_back_and_forth_wcs_from_helio():
                      "CTYPE1": "HPLN-ARC",
                      "CTYPE2": "HPLT-ARC"})
 
-    wcs_celestial = calculate_celestial_wcs_from_helio(wcs_helio, date_obs, (10, 10))
-    wcs_helio_recovered, p_angle = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, (10, 10))
+    print(extract_crota_from_wcs(wcs_helio))
+    wcs_celestial = calculate_celestial_wcs_from_helio(wcs_helio.copy(), date_obs, (10, 10))
+    print(extract_crota_from_wcs(wcs_celestial))
+    wcs_helio_recovered, p_angle = calculate_helio_wcs_from_celestial(wcs_celestial.copy(), date_obs, (10, 10))
+    print(extract_crota_from_wcs(wcs_helio_recovered))
 
     assert np.allclose(wcs_helio.wcs.crval, wcs_helio_recovered.wcs.crval)
     assert np.allclose(wcs_helio.wcs.crpix, wcs_helio_recovered.wcs.crpix)

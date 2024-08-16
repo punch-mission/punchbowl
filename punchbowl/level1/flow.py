@@ -51,9 +51,9 @@ def level1_core_flow(
     despike_method: str = "convolve",
     despike_alpha: float = 1.0,
     despike_dilation: int = 0,
-    exposure_time: float = 1.0,
-    readout_line_time: float = 0.1,
-    reset_line_time: float = 0.1,
+    exposure_time: float = 49 * 1000,
+    readout_line_time: float = 163/2148,
+    reset_line_time: float = 163/2148,
     vignetting_function_path: str | None = None,
     stray_light_path: str | None = None,
     deficient_pixel_map_path: str | None = None,
@@ -101,3 +101,8 @@ def level1_core_flow(
     if output_filename is not None:
         output_image_task(data, output_filename)
     return [data]
+
+
+if __name__ == "__main__":
+    level1_core_flow("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_l0/PUNCH_L0_PM1_20240620001200_v1.fits",
+                     output_filename="./test_out4.fits")

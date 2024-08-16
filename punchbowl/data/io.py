@@ -143,7 +143,7 @@ def load_ndcube_from_fits(path: str, key: str = " ") -> NDCube:
             uncertainty = None
 
     return NDCube(
-        data.newbyteorder().byteswap(inplace=False),
+        data.newbyteorder().byteswap(inplace=False).astype(float),
         wcs=wcs,
         uncertainty=uncertainty,
         meta=meta,

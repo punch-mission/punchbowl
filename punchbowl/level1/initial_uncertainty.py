@@ -2,8 +2,6 @@ import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger, task
 
-from punchbowl.exceptions import InvalidDataError
-
 
 def dn_to_photons(data_array: np.ndarray, gain: float = 4.3) -> np.ndarray:
     """Convert an input array from DN to photon count."""
@@ -41,10 +39,6 @@ def compute_noise(
         computed noise array corresponding to input data and ccd/noise parameters
 
     """
-    if (data.max() > 2 ** bitrate_signal - 1) or (data.min() < 0):
-        msg = r"Specified input data is outside of expected range (between 0 and 2**bitrate_signal-1)"
-        raise InvalidDataError(msg)
-
     data = data.astype("long")
 
     # Photon / shot noise generation

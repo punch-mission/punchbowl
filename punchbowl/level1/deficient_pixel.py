@@ -177,18 +177,21 @@ def remove_deficient_pixels_task(
     logger.info("remove_deficient_pixels started")
 
     if deficient_pixel_map_path is None:
-        deficient_pixel_map = create_all_valid_deficient_pixel_map(data)
+        output_object = data
+        output_object.meta.history.add_now("LEVEL1-remove_deficient_pixels",
+                                           "Remove deficient pixels skipped since path is empty")
+
     else:
         deficient_pixel_map = load_ndcube_from_fits(deficient_pixel_map_path)
 
-    deficient_pixel_array = deficient_pixel_map.data
-    output_object = remove_deficient_pixels(data, deficient_pixel_array,
-                                            required_good_count=required_good_count,
-                                            max_window_size=max_window_size,
-                                            method=method)
+        deficient_pixel_array = deficient_pixel_map.data
+        output_object = remove_deficient_pixels(data, deficient_pixel_array,
+                                                required_good_count=required_good_count,
+                                                max_window_size=max_window_size,
+                                                method=method)
 
-    logger.info("remove_deficient_pixels finished")
-    output_object.meta.history.add_now("LEVEL1-remove_deficient_pixels", "deficient pixels removed")
+        logger.info("remove_deficient_pixels finished")
+        output_object.meta.history.add_now("LEVEL1-remove_deficient_pixels", "deficient pixels removed")
 
     return output_object
 

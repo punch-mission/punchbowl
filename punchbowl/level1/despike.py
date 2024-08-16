@@ -63,7 +63,7 @@ def spikejones(
         normalized_image = image / convolve2d(image, smoothing_kernel, mode="same")
         unsharp_kernel = -np.ones((kernel_size, kernel_size)) / kernel_size / kernel_size
         unsharp_kernel[kernel_size // 2, kernel_size // 2] += 0.75
-        unsharp_kernel[kernel_size // 2 - 1 : kernel_size // 2 + 1, kernel_size // 2 - 1 : kernel_size // 2 + 1] += (
+        unsharp_kernel[kernel_size // 2 - 1: kernel_size // 2 + 1, kernel_size // 2 - 1: kernel_size // 2 + 1] += (
             0.25 / 9
         )
         unsharped_image = convolve2d(normalized_image, unsharp_kernel, mode="same") > alpha

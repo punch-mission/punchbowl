@@ -104,5 +104,11 @@ def level1_core_flow(
 
 
 if __name__ == "__main__":
+    from pathlib import Path
     level1_core_flow("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_l0/PUNCH_L0_PM1_20240620001200_v1.fits",
-                     output_filename="./test_out4.fits")
+                     vignetting_function_path=Path("/Users/jhughes/Desktop/repos/punchbowl/test_run/PUNCH_L1_GM1_20240817174727_v1.fits"),
+                     despike_unsharp_size=1,
+                     despike_alpha=3,
+                     despike_method="median",
+                     psf_model_path="/Users/jhughes/Desktop/repos/punchbowl/test_run/synthetic_forward_psf.h5",
+                     output_filename="/Users/jhughes/Desktop/repos/punchbowl/test_run/test_out4.fits")

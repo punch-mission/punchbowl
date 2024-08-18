@@ -14,7 +14,6 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from sunpy.coordinates import frames
-from sunpy.coordinates.sun import _sun_north_angle_to_z
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
@@ -23,7 +22,8 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
 
 def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
     """Extract CROTA from a WCS."""
-    return np.arctan2(wcs.wcs.pc[1, 0], wcs.wcs.pc[0, 0]) * u.rad
+    delta_ratio = wcs.wcs.cdelt[0] / wcs.wcs.cdelt[1]
+    return np.arctan2(wcs.wcs.pc[0, 1]/delta_ratio, wcs.wcs.pc[0, 0]) * u.rad
 
 
 def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
@@ -53,8 +53,7 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
     cdelt1 = (np.abs(wcs_celestial.wcs.cdelt[0]) * u.deg).to(u.arcsec)
     cdelt2 = (np.abs(wcs_celestial.wcs.cdelt[1]) * u.deg).to(u.arcsec)
 
-    geocentric = GCRS(obstime=date_obs)
-    p_angle = _sun_north_angle_to_z(geocentric)
+    p_angle = get_p_angle(date_obs)
 
     rotation_angle = extract_crota_from_wcs(wcs_celestial).to(u.rad).value + get_p_angle(date_obs).rad
 
@@ -104,8 +103,8 @@ def calculate_pc_matrix(crota: float, cdelt: (float, float)) -> np.ndarray:
     """
     return np.array(
         [
-            [np.cos(crota), np.sin(crota) * (cdelt[1] / cdelt[0])],
-            [-np.sin(crota) * (cdelt[0] / cdelt[1]), np.cos(crota)],
+            [np.cos(crota), np.sin(crota) * (cdelt[0] / cdelt[1])],
+            [-np.sin(crota) * (cdelt[1] / cdelt[0]), np.cos(crota)],
         ],
     )
 
@@ -280,7 +279,7 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
                          frame="helioprojective", observer="earth", obstime=date_obs)
     new_crval = old_crval.transform_to(GCRS)
 
-    rotation_angle = extract_crota_from_wcs(wcs_helio).to(u.rad).value - get_p_angle(date_obs).rad
+    rotation_angle = extract_crota_from_wcs(wcs_helio).to(u.rad).value + get_p_angle(date_obs).rad
     new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
 
     cdelt1 = np.abs(wcs_helio.wcs.cdelt[0]) * u.deg
@@ -299,8 +298,8 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
                          "CTYPE1": f"RA---{projection_code}",
                          "CTYPE2": f"DEC--{projection_code}",
                          "PC1_1": new_pc_matrix[0, 0],
-                         "PC1_2": new_pc_matrix[1, 0],
-                         "PC2_1": new_pc_matrix[0, 1],
+                         "PC1_2": new_pc_matrix[0, 1],
+                         "PC2_1": new_pc_matrix[1, 0],
                          "PC2_2": new_pc_matrix[1, 1]},
                         )
 

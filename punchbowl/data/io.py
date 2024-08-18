@@ -98,7 +98,8 @@ def _update_statistics(cube: NDCube) -> None:
 
     cube.meta["DATASAT"] = len(np.where(cube.data >= cube.meta["DSATVAL"].value)[0])
 
-    nonzero_data = cube.data[np.where(cube.data != 0)].flatten()
+    cube.data[np.logical_not(np.isfinite(cube.data))] = 0
+    nonzero_data = cube.data[np.isfinite(cube.data) * (cube.data != 0)].flatten()
 
     if len(nonzero_data) > 0:
         cube.meta["DATAAVG"] = np.nanmean(nonzero_data).item()

@@ -58,23 +58,40 @@ def test_sun_location_gcrs():
     assert skycoord_origin.separation(skycoord_sun) < 1 * u.arcsec
 
 def test_extract_crota():
-    pc = calculate_pc_matrix(10*u.deg, [1, 1])
+    pc = calculate_pc_matrix(-10*u.deg, [-1, 2])
     wcs_celestial = WCS({"CRVAL1": 0,
                          "CRVAL2": 0,
                          "CRPIX1": 2047.5,
                          "CRPIX2": 2047.5,
-                         "CDELT1": -0.0225,
-                         "CDELT2": 0.0225,
+                         "CDELT1": -1,
+                         "CDELT2": 2,
                          "CUNIT1": "deg",
                          "CUNIT2": "deg",
                          "CTYPE1": "RA---AZP",
                          "CTYPE2": "DEC--AZP",
                          "PC1_1": pc[0, 0],
-                         "PC1_2": pc[1, 0],
-                         "PC2_1": pc[0, 1],
+                         "PC1_2": pc[0, 1],
+                         "PC2_1": pc[1, 0],
                          "PC2_2": pc[1, 1]
                          })
-    assert extract_crota_from_wcs(wcs_celestial) == 10 * u.deg
+    assert np.allclose(extract_crota_from_wcs(wcs_celestial), -10 * u.deg)
+
+def test_extract_crota_helio():
+    pc = calculate_pc_matrix(10*u.deg, [0.0225, 0.0225])
+    wcs_helio = WCS({"CRVAL1": 0,
+                         "CRVAL2": 0,
+                         "CRPIX1": 2047.5,
+                         "CRPIX2": 2047.5,
+                         "CDELT1": 0.0225,
+                         "CDELT2": 0.0225,
+                         "CUNIT1": "deg",
+                         "CUNIT2": "deg",
+                         "PC1_1": pc[0, 0],
+                         "PC1_2": pc[0, 1],
+                         "PC2_1": pc[1, 0],
+                         "PC2_2": pc[1, 1]
+                         })
+    assert np.allclose(extract_crota_from_wcs(wcs_helio), 10 * u.deg)
 
 def test_wcs_many_point_2d_check():
     m = NormalizedMetadata.load_template("CTM", "2")
@@ -194,25 +211,28 @@ def test_load_trefoil_wcs():
 
 
 def test_helio_celestial_wcs():
-    header = fits.Header.fromtextfile(os.path.join(_ROOT, "example_header.txt"))
-
-    date_obs = Time(header['DATE-OBS'])
-    # date_obs = Time("2021-06-20T00:00:00.000", format='isot', scale='utc')
+    # header = fits.Header.fromtextfile(os.path.join(_ROOT, "example_header.txt"))
     #
-    # wcs_helio = WCS({"CRVAL1": 0.0,
-    #                  "CRVAL2": 0.0,
-    #                  "CRPIX1": 2047.5,
-    #                  "CRPIX2": 2047.5,
-    #                  "CDELT1": 0.0225,
-    #                  "CDELT2": 0.0225,
-    #                  "CUNIT1": "deg",
-    #                  "CUNIT2": "deg",
-    #                  "CTYPE1": "HPLN-ARC",
-    #                  "CTYPE2": "HPLT-ARC"})
-    wcs_helio = WCS(header)
+    # date_obs = Time(header['DATE-OBS'])
+    date_obs = Time("2021-06-20T00:00:00.000", format='isot', scale='utc')
+    #
+    wcs_helio = WCS({"CRVAL1": 0.0,
+                     "CRVAL2": 0.0,
+                     "CRPIX1": 2047.5,
+                     "CRPIX2": 2047.5,
+                     "CRPIX3": 0.0,
+                     "CDELT1": 0.0225,
+                     "CDELT2": 0.0225,
+                     "CDELT3": 1.0,
+                     "CUNIT1": "deg",
+                     "CUNIT2": "deg",
+                     "CTYPE1": "HPLN-ARC",
+                     "CTYPE2": "HPLT-ARC",
+                     "CTYPE3": "STOKES"})
+    # wcs_helio = WCS(header)
     wcs_celestial = calculate_celestial_wcs_from_helio(wcs_helio, date_obs, (3, 4096, 4096))
 
-    wcs_celestial2 = WCS(header, key='A')
+    # wcs_celestial2 = WCS(header, key='A')
 
     test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
     test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
@@ -269,8 +289,8 @@ def test_back_and_forth_wcs_from_celestial():
                          "CTYPE1": "RA---AZP",
                          "CTYPE2": "DEC--AZP",
                          "PC1_1": pc[0, 0],
-                         "PC1_2": pc[1, 0],
-                         "PC2_1": pc[0, 1],
+                         "PC1_2": pc[0, 1],
+                         "PC2_1": pc[1, 0],
                          "PC2_2": pc[1, 1]
                          })
 

@@ -24,6 +24,7 @@ dependencies = [
         "reproject",
         "pylibjpeg",
         "python-dateutil",
+        "thuban",
         "remove_starfield@git+https://github.com/svank/remove_starfield"
 ]
 requires-python = ">=3.11"

@@ -2,6 +2,7 @@ import pathlib
 
 import numpy as np
 import pytest
+
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
 from datetime import datetime

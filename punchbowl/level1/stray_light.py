@@ -10,7 +10,7 @@ from punchbowl.exceptions import InvalidDataError
 from punchbowl.exceptions import LargeTimeDeltaWarning
 from punchbowl.exceptions import IncorrectPolarizationState
 from punchbowl.exceptions import IncorrectTelescope
-
+from punchbowl.exceptions import NoCalibrationDataWarning
 
 @task
 def remove_stray_light_task(data_object: NDCube, stray_light_file: pathlib) -> NDCube:
@@ -53,7 +53,8 @@ def remove_stray_light_task(data_object: NDCube, stray_light_file: pathlib) -> N
 
     if stray_light_file is None:
         data_object.meta.history.add_now("LEVEL1-remove_stray_light", "Stray light correction skipped")
-
+        msg=f"Calibration file {stray_light_file} is unavailable, stray light correction not applied"
+        warnings.warn(msg, NoCalibrationDataWarning)
 
     elif not stray_light_file.exists():
         msg = f"File {stray_light_file} does not exist."

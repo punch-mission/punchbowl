@@ -272,14 +272,15 @@ def subtract_f_corona_background_task(data_object: NDCube,
     logger.info("subtract_f_corona_background started")
 
     if f_background_model_path is None:
-        f_data_array = create_empty_f_background_model(data_object)
+        output = data_object
+        output.meta.history.add_now("LEVEL3-fcorona-subtraction",
+                                           "F corona subtraction skipped since path is empty")
     else:
         f_data_array = load_ndcube_from_fits(f_background_model_path).data
-
-    output = subtract_f_corona_background(data_object, f_data_array)
+        output = subtract_f_corona_background(data_object, f_data_array)
+        output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
     logger.info("subtract_f_corona_background finished")
-    output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
     return output
 

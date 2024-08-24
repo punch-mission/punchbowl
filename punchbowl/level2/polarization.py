@@ -21,6 +21,7 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
 
     """
     # Unpack data into a NDCollection object
+    # TODO: don't assume the order and that there are only 3... that is not the case
     data_dictionary = dict(zip(["M", "Z", "P"], data_list, strict=False))
     input_collection = NDCollection(data_dictionary)
     data_collection = NDCollection({k: NDCube(data=input_collection[k].data,
@@ -32,6 +33,7 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
     resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=True)
     for key in resolved_data_collection:
         resolved_data_collection[key].meta = input_collection[key].meta
+        resolved_data_collection[key].uncertainty = input_collection[key].uncertainty
         out.append(resolved_data_collection[key])
 
     return out

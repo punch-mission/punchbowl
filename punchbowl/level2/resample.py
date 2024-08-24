@@ -4,10 +4,12 @@ import reproject
 from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import flow, task
+from sunpy.coordinates import sun
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 
 
 @task
-def reproject_array(input_array: np.ndarray, input_wcs: WCS, output_wcs: WCS, output_shape: tuple) -> np.ndarray:
+def reproject_array(input_array: np.ndarray, input_wcs: WCS, time, output_wcs: WCS, output_shape: tuple) -> np.ndarray:
     """
     Core reprojection function.
 
@@ -40,24 +42,40 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, output_wcs: WCS, ou
     >>> reprojected_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
 
     """
-    reconstructed_wcs = WCS(naxis=2)
-    reconstructed_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
-    reconstructed_wcs.wcs.cunit = "deg", "deg"
-    reconstructed_wcs.wcs.cdelt = input_wcs.wcs.cdelt
-    reconstructed_wcs.wcs.crpix = input_wcs.wcs.crpix
-    reconstructed_wcs.wcs.crval = input_wcs.wcs.crval
-    reconstructed_wcs.wcs.cname = "HPC lon", "HPC lat"
+    # reconstructed_wcs = WCS(naxis=2)
+    # reconstructed_wcs.wcs.ctype = input_wcs.wcs.ctype
+    # reconstructed_wcs.wcs.cunit = "deg", "deg"
+    # reconstructed_wcs.wcs.cdelt = input_wcs.wcs.cdelt
+    # reconstructed_wcs.wcs.crpix = input_wcs.wcs.crpix
+    # reconstructed_wcs.wcs.crval = input_wcs.wcs.crval
+    # reconstructed_wcs.wcs.cname = "HPC lon", "HPC lat"
+    # reconstructed_wcs.wcs.pc = input_wcs.wcs.pc
+    #
+    # return reproject.reproject_adaptive(
+    #     (input_array, reconstructed_wcs), output_wcs, output_shape, roundtrip_coords=False, return_footprint=False,
+    # )
+
+    # return reproject.reproject_adaptive(
+    #     (input_array, input_wcs), output_wcs, output_shape, roundtrip_coords=False, return_footprint=False,
+    # )
+
+    celestial_source = calculate_celestial_wcs_from_helio(input_wcs, time, output_shape)
+    celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape)
+
+    # celestial_target.wcs.set_pv([(2, 1, (-sun.earth_distance(time) / sun.constants.radius).decompose().value)])
+    celestial_source.wcs.set_pv([(2, 1, (-sun.earth_distance(time) / sun.constants.radius).decompose().value)])
 
     return reproject.reproject_adaptive(
-        (input_array, reconstructed_wcs), output_wcs, output_shape, roundtrip_coords=False, return_footprint=False,
+        (input_array, celestial_source), celestial_target, output_shape,
+        roundtrip_coords=False, return_footprint=False
     )
 
 
 @flow(validate_parameters=False)
 def reproject_many_flow(data: list[NDCube], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube]:
     """Reproject many flow."""
-    data_result = [reproject_array.submit(d.data, d.wcs, trefoil_wcs, trefoil_shape) for d in data]
-    uncertainty_result = [reproject_array.submit(d.uncertainty.array, d.wcs, trefoil_wcs, trefoil_shape) for d in data]
+    data_result = [reproject_array.submit(d.data, d.wcs, d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]
+    uncertainty_result = [reproject_array.submit(d.uncertainty.array, d.wcs, d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]
 
     return [NDCube(data=data_result[i].result(),
                    uncertainty=uncertainty_result[i].result(),

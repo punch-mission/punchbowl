@@ -79,14 +79,15 @@ def subtract_starfield_background_task(data_object: NDCube,
     logger.info("subtract_starfield_background started")
 
     if starfield_background_path is None:
-        star_data_array = create_empty_starfield_background(data_object)
+        output = data_object
+        output.meta.history.add_now("LEVEL3-fcorona-subtraction",
+                                           "F corona subtraction skipped since path is empty")
     else:
         star_data_array = load_ndcube_from_fits(starfield_background_path).data
-
-    output = subtract_starfield_background(data_object, star_data_array)
+        output = subtract_starfield_background(data_object, star_data_array)
+        output.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
 
     logger.info("subtract_f_corona_background finished")
-    output.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
 
     return output
 

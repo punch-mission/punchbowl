@@ -162,3 +162,4 @@ cython_debug/
 docs/_build/
 *.DS_Store
 *.npy
+test_run/

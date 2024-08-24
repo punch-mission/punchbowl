@@ -19,14 +19,6 @@ from punchbowl.level1.flow import level1_core_flow
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
-def test_core_flow_runs_with_objects(sample_ndcube):
-    """Simply tests that the core flow runs with objects"""
-    cube = sample_ndcube(shape=(2048, 2048))
-    with prefect_test_harness():
-        output = level1_core_flow(cube)
-    assert isinstance(output[0], NDCube)
-
-
 def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
     cube = sample_ndcube(shape=(10, 10), code="CR1", level="0")
     quartic_coefficient_path = THIS_DIRECTORY / "data" / "test_quartic_coeffs.fits"

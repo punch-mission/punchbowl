@@ -283,7 +283,7 @@ class NormalizedMetadata(Mapping):
 
         # add the history section
         for entry in self.history:
-            hdr["HISTORY"] = f"{entry.datetime} => {entry.source} => {entry.comment}"
+            hdr["HISTORY"] = f"{entry.datetime: %Y-%m-%dT%H:%M:%S} => {entry.source} => {entry.comment}|"
 
         # fill in dynamic values
         if wcs is not None:

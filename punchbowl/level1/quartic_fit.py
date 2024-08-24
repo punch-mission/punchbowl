@@ -144,6 +144,7 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
     if quartic_coefficients_path is not None:
         quartic_coefficients = load_ndcube_from_fits(quartic_coefficients_path)
         new_data = photometric_calibration(data_object.data, quartic_coefficients.data)
+        # TODO : propagate uncertainty
         data_object.data[...] = new_data[...]
         data_object.meta.history.add_now(
             "LEVEL1-quartic_fit", f"Quartic fit correction completed with {quartic_coefficients_path}",

@@ -104,7 +104,7 @@ class History:
             a combined record of the history entries
 
         """
-        return "\n".join([f"{e.datetime}: {e.source}: {e.comment}" for e in self._entries])
+        return "\n".join([f"{e.datetime:%Y-%m-%dT%H:%M:%S} => {e.source} => {e.comment}|" for e in self._entries])
 
     def __iter__(self) -> History:
         """Iterate."""
@@ -146,8 +146,9 @@ class History:
             out = cls()
         else:
             out = cls()
-            for row in head["HISTORY"][1:]:
-                dt, source, comment = row.split(" => ")
+            entries = "".join([h for h in head["HISTORY"][1:]]).split("|")[:-1]
+            for entry in entries:
+                dt, source, comment = entry.split(" => ")
                 dt = parse_datetime(dt)
                 out.add_entry(HistoryEntry(dt, source, comment))
         return out

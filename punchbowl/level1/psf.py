@@ -7,13 +7,14 @@ from regularizepsf.corrector import ArrayCorrector
 def correct_psf(
     data: NDCube,
     corrector: ArrayCorrector,
-    alpha: float = 0,
-    epsilon: float = 0.035,
+    alpha: float = 1.0,
+    epsilon: float = 0.2,
 ) -> NDCube:
     """Correct PSF."""
     new_data = corrector.correct_image(data.data, alpha=alpha, epsilon=epsilon)
 
     data.data[...] = new_data[...]
+    # TODO: uncertainty propagation
     return data
 
 @task

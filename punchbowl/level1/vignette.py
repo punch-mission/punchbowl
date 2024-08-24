@@ -1,7 +1,6 @@
 import pathlib
 import warnings
 
-from astropy.time import Time
 from ndcube import NDCube
 from prefect import get_run_logger, task
 
@@ -65,29 +64,29 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: pathlib) -> ND
         data_object.meta.history.add_now("LEVEL1-correct_vignetting", "Vignetting skipped")
         msg=f"Calibration file {vignetting_path} is unavailable, vignetting correction not applied"
         warnings.warn(msg, NoCalibrationDataWarning)
-
     elif not vignetting_path.exists():
         msg = f"File {vignetting_path} does not exist."
         raise InvalidDataError(msg)
     else:
         vignetting_function = load_ndcube_from_fits(vignetting_path)
-        vignetting_function_date = Time(vignetting_function.meta["DATE-OBS"].value)
-        observation_date = Time(data_object.meta["DATE-OBS"].value)
+        vignetting_function_date = vignetting_function.meta.astropy_time
+        observation_date = data_object.meta.astropy_time
         if abs((vignetting_function_date - observation_date).to("day").value) > 14:
-            msg=f"Calibration file {vignetting_path} contains data created greater than 2 weeks from the obsveration"
+            msg = f"Calibration file {vignetting_path} contains data created greater than 2 weeks from the obsveration"
             warnings.warn(msg, LargeTimeDeltaWarning)
-
         if vignetting_function.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
-            msg=f"Incorrect TELESCOP value within {vignetting_path}"
+            msg = f"Incorrect TELESCOP value within {vignetting_path}"
             warnings.warn(msg, IncorrectTelescopeWarning)
-        elif vignetting_function.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
-            msg=f"Incorrect polarization state within {vignetting_path}"
+        if vignetting_function.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
+            msg = f"Incorrect polarization state within {vignetting_path}"
             warnings.warn(msg, IncorrectPolarizationStateWarning)
-        elif vignetting_function.data.shape != data_object.data.shape:
-            msg=f"Incorrect vignetting function shape within {vignetting_path}"
+        if vignetting_function.data.shape != data_object.data.shape:
+            msg = f"Incorrect vignetting function shape within {vignetting_path}"
             raise InvalidDataError(msg)
         else:
+            # TODO: vignetting should update uncertainty
             data_object.data[:, :] /= vignetting_function.data[:, :]
+            data_object.uncertainty.array[:, :] /= vignetting_function.data[:, :]
             data_object.meta.history.add_now("LEVEL1-correct_vignetting",
                                              f"Vignetting corrected using {vignetting_path}")
 

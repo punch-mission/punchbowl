@@ -5,13 +5,14 @@ from prefect import flow, get_run_logger
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.polarization import convert_polarization
 from punchbowl.level3.stellar import subtract_starfield_background_task
-from punchbowl.util import load_image_task
+from punchbowl.util import load_image_task, output_image_task
 
 
 @flow(validate_parameters=False)
 def level3_core_flow(data_list: list[str] | list[NDCube],
                      f_corona_model_path: str | None,
-                     starfield_background_path: str | None) -> list[NDCube]:
+                     starfield_background_path: str | None,
+                     output_filename: str | None = None) -> list[NDCube]:
     """Level 3 core flow."""
     logger = get_run_logger()
 
@@ -22,4 +23,15 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     data_list = [convert_polarization(d) for d in data_list]
     # TODO: build low noise products
     logger.info("ending level 3 core flow")
+
+    if output_filename is not None:
+        output_image_task(data_list[0], output_filename)
+
     return data_list
+
+
+if __name__ == "__main__":
+    level3_core_flow(["/Users/jhughes/Desktop/repos/punchbowl/test_run/test_l2_v3.fits"],
+                     None,
+                     None,
+                     output_filename="/Users/jhughes/Desktop/repos/punchbowl/test_run/test_l3_v1.fits")

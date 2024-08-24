@@ -14,6 +14,7 @@ def correct_psf(
     new_data = corrector.correct_image(data.data, alpha=alpha, epsilon=epsilon)
 
     data.data[...] = new_data[...]
+    # TODO: uncertainty propagation
     return data
 
 @task

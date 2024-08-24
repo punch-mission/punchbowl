@@ -7,7 +7,7 @@ from skimage.morphology import binary_dilation
 from punchbowl.data import load_ndcube_from_fits
 
 
-def find_spikes(
+def run_zspike(
     data: np.ndarray,
     uncertainty: np.ndarray,
     threshold: float = 4,
@@ -23,7 +23,7 @@ def find_spikes(
     Given a time sequence of images, identify "spikes" that exceed a
     threshold in a single frame.
 
-    Diffuse bright structures over1he background F-corona are
+    Diffuse bright structures over the background F-corona are
     identified and marked in the data using in-band "bad value" marking
     (which is supported by the FITS standard). Data marking follows the
     existing ZSPIKE temporal despiking algorithm to identify auroral
@@ -171,6 +171,11 @@ def identify_bright_structures_task(
     logger = get_run_logger()
     logger.info("identify_bright_structures_task started")
 
+    if len(voter_filenames) == 0:
+        data.meta.history.add_now("LEVEL2-bright_structure",
+                                  "Identify bright structures skipped since no voters provided")
+        return data
+
     # construct voter cube
     voters, voters_uncertainty = [], []
     for voter_filename in voter_filenames:
@@ -183,7 +188,7 @@ def identify_bright_structures_task(
     voters_uncertainty.append(data.uncertainty)
 
     # apply find spikes
-    spike_mask = find_spikes(
+    spike_mask = run_zspike(
         data=np.array(voters),
         uncertainty=np.array(voters_uncertainty),
         threshold=threshold,
@@ -194,7 +199,9 @@ def identify_bright_structures_task(
         index_of_interest=-1)
 
     # add the uncertainty to the output punch data object
-    data.uncertainty.array = np.max([data.uncertainty, spike_mask], axis=0)
+    # TODO: check uncertainty
+    data.uncertainty.array[spike_mask] = np.inf
+    # data.uncertainty.array = np.max([data.uncertainty, spike_mask], axis=0)
 
     logger.info("identify_bright_structures_task ended")
     data.meta.history.add_now("LEVEL2-bright_structures",

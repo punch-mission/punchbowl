@@ -22,8 +22,8 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
 
 def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
     """Extract CROTA from a WCS."""
-    delta_ratio = wcs.wcs.cdelt[0] / wcs.wcs.cdelt[1]
-    return np.arctan2(wcs.wcs.pc[0, 1]/delta_ratio, wcs.wcs.pc[0, 0]) * u.rad
+    delta_ratio = wcs.wcs.cdelt[1] / wcs.wcs.cdelt[0]
+    return np.arctan2(wcs.wcs.pc[1, 0]/delta_ratio, wcs.wcs.pc[0, 0]) * u.rad
 
 
 def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
@@ -55,22 +55,23 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
 
     p_angle = get_p_angle(date_obs)
 
-    rotation_angle = extract_crota_from_wcs(wcs_celestial).to(u.rad).value + get_p_angle(date_obs).rad
+    rotation_angle = extract_crota_from_wcs(wcs_celestial).to(u.rad).value - get_p_angle(date_obs).rad
+    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_celestial.wcs.cdelt)
 
-    new_header = sunpy.map.make_fitswcs_header(
-        data_shape[1:] if is_3d else data_shape,
-        reference_coord_arcsec,
-        reference_pixel=u.Quantity(
-            [wcs_celestial.wcs.crpix[0] - 1, wcs_celestial.wcs.crpix[1] - 1] * u.pixel,
-        ),
-        scale=u.Quantity([cdelt1, cdelt2] * u.arcsec / u.pix),
-        rotation_angle=rotation_angle*u.rad,#-crota - P(date_obs),#-(P(date_obs) + crota),
-        observatory="PUNCH",
-        projection_code=wcs_celestial.wcs.ctype[0][-3:],
-        unit=u.deg,
-    )
+    projection_code = wcs_celestial.wcs.ctype[0][-3:] if "-" in wcs_celestial.wcs.ctype[0] else ""
+    if projection_code:
+        new_ctypes = (f"HPLN-{projection_code}", f"HPLT-{projection_code}")
+    else:
+        new_ctypes = "HPLN", "HPLT"
 
-    wcs_helio = WCS(new_header)
+    wcs_helio = WCS(naxis=2)
+    wcs_helio.wcs.ctype = new_ctypes
+    wcs_helio.wcs.cunit = ("deg", "deg")
+    wcs_helio.wcs.cdelt = (cdelt1.to(u.deg).value, cdelt2.to(u.deg).value)
+    wcs_helio.wcs.crpix = (wcs_celestial.wcs.crpix[0], wcs_celestial.wcs.crpix[1])
+    wcs_helio.wcs.crval = (reference_coord_arcsec.Tx.to(u.deg).value,  reference_coord_arcsec.Ty.to(u.deg).value)
+    wcs_helio.wcs.pc = new_pc_matrix
+    wcs_helio.wcs.set_pv(wcs_celestial.wcs.get_pv())
 
     if is_3d:
         wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 2)
@@ -103,8 +104,8 @@ def calculate_pc_matrix(crota: float, cdelt: (float, float)) -> np.ndarray:
     """
     return np.array(
         [
-            [np.cos(crota), np.sin(crota) * (cdelt[0] / cdelt[1])],
-            [-np.sin(crota) * (cdelt[1] / cdelt[0]), np.cos(crota)],
+            [np.cos(crota), -np.sin(crota) * (cdelt[0] / cdelt[1])],
+            [np.sin(crota) * (cdelt[1] / cdelt[0]), np.cos(crota)],
         ],
     )
 
@@ -205,6 +206,7 @@ def hpc_to_gcrs(HPcoord, GCRSframe):  # noqa: ANN201, N803, ANN001
     # Put the computed coordinates into the output frame
     return GCRSframe.realize_frame(rep)
 
+
 @astropy.coordinates.frame_transform_graph.transform(
     astropy.coordinates.FunctionTransform,
     astropy.coordinates.GCRS,
@@ -279,29 +281,27 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
                          frame="helioprojective", observer="earth", obstime=date_obs)
     new_crval = old_crval.transform_to(GCRS)
 
-    rotation_angle = extract_crota_from_wcs(wcs_helio).to(u.rad).value + get_p_angle(date_obs).rad
+    rotation_angle = extract_crota_from_wcs(wcs_helio).to(u.rad).value - get_p_angle(date_obs).rad
     new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
 
     cdelt1 = np.abs(wcs_helio.wcs.cdelt[0]) * u.deg
     cdelt2 = np.abs(wcs_helio.wcs.cdelt[1]) * u.deg
 
-    projection_code = wcs_helio.wcs.ctype[0][-3:]
+    projection_code = wcs_helio.wcs.ctype[0][-3:] if "-" in wcs_helio.wcs.ctype[0] else ""
+    if projection_code:
+        new_ctypes = (f"RA---{projection_code}", f"DEC--{projection_code}")
+    else:
+        new_ctypes = "RA", "DEC"
 
-    wcs_celestial = WCS({"CRVAL1": new_crval.ra.to(u.deg).value,
-                         "CRVAL2": new_crval.dec.to(u.deg).value,
-                         "CUNIT1": "deg",
-                         "CUNIT2": "deg",
-                         "CRPIX1": wcs_helio.wcs.crpix[0],
-                         "CRPIX2": wcs_helio.wcs.crpix[1],
-                         "CDELT1": -cdelt1.to(u.deg).value,
-                         "CDELT2": cdelt2.to(u.deg).value,
-                         "CTYPE1": f"RA---{projection_code}",
-                         "CTYPE2": f"DEC--{projection_code}",
-                         "PC1_1": new_pc_matrix[0, 0],
-                         "PC1_2": new_pc_matrix[0, 1],
-                         "PC2_1": new_pc_matrix[1, 0],
-                         "PC2_2": new_pc_matrix[1, 1]},
-                        )
+
+    wcs_celestial = WCS(naxis=2)
+    wcs_celestial.wcs.ctype = new_ctypes
+    wcs_celestial.wcs.cunit = ("deg", "deg")
+    wcs_celestial.wcs.cdelt = (-cdelt1.to(u.deg).value, cdelt2.to(u.deg).value)
+    wcs_celestial.wcs.crpix = (wcs_helio.wcs.crpix[0], wcs_helio.wcs.crpix[1])
+    wcs_celestial.wcs.crval = (new_crval.ra.to(u.deg).value,  new_crval.dec.to(u.deg).value)
+    wcs_celestial.wcs.pc = new_pc_matrix
+    wcs_celestial.wcs.set_pv(wcs_helio.wcs.get_pv())
 
     if is_3d:
         wcs_celestial = add_stokes_axis_to_wcs(wcs_celestial, 2)
@@ -311,7 +311,7 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
 
 def load_trefoil_wcs() -> (astropy.wcs.WCS, (int, int)):
     """Load Level 2 trefoil world coordinate system and shape."""
-    trefoil_wcs = WCS(os.path.join(_ROOT, "data", "trefoil_hdr.fits"))
+    trefoil_wcs = WCS(os.path.join(_ROOT, "data", "trefoil_wcs.fits"))
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
     trefoil_shape = (4096, 4096)
     return trefoil_wcs, trefoil_shape

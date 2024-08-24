@@ -1,7 +1,10 @@
+from typing import Callable
+
 import numpy as np
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 from regularizepsf import ArrayCorrector, CoordinatePatchCollection, simple_psf
+import astropy.units as u
 
 from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
@@ -13,7 +16,8 @@ from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.util import load_image_task, output_image_task
-
+from punchbowl.data import NormalizedMetadata
+from punchbowl.data.units import dn_to_msb
 
 @flow(validate_parameters=False)
 def generate_psf_model_core_flow(input_filepaths: [str],
@@ -40,7 +44,7 @@ def generate_psf_model_core_flow(input_filepaths: [str],
 
 @flow(validate_parameters=False)
 def level1_core_flow(
-    input_data: str | NDCube,
+    input_data: list[str] | list[NDCube],
     gain: float = 4.3,
     bias_level: float = 100,
     dark_level: float = 55.81,
@@ -61,6 +65,7 @@ def level1_core_flow(
     deficient_pixel_required_good_count: int = 3,
     deficient_pixel_max_window_size: int = 10,
     psf_model_path: str | None = None,
+    alignment_mask: Callable | None = None,
     output_filename: str | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1."""
@@ -68,47 +73,94 @@ def level1_core_flow(
 
     logger.info("beginning level 1 core flow")
 
-    data = load_image_task(input_data) if isinstance(input_data, str) else input_data
+    output_data = []
+    for i, this_data in enumerate(input_data):
+        data = load_image_task(this_data) if isinstance(this_data, str) else this_data
+        saved_date = data.meta['DATE-OBS'].value
 
-    data = update_initial_uncertainty_task(data,
-                                           bias_level=bias_level,
-                                           dark_level=dark_level,
-                                           gain=gain,
-                                           read_noise_level=read_noise_level,
-                                           bitrate_signal=bitrate_signal,
-                                           )
-    data = perform_quartic_fit_task(data, quartic_coefficient_path)
-    data = despike_task(data,
-                        unsharp_size=despike_unsharp_size,
-                        method=despike_method,
-                        alpha=despike_alpha,
-                        dilation=despike_dilation)
-    data = destreak_task(data,
-                         exposure_time=exposure_time,
-                         reset_line_time=reset_line_time,
-                         readout_line_time=readout_line_time)
-    data = correct_vignetting_task(data, vignetting_function_path)
-    data = remove_deficient_pixels_task(data,
-                                        deficient_pixel_map_path,
-                                        required_good_count=deficient_pixel_required_good_count,
-                                        max_window_size=deficient_pixel_max_window_size,
-                                        method=deficient_pixel_method)
-    data = remove_stray_light_task(data, stray_light_path)
-    data = correct_psf_task(data, psf_model_path)
-    data = align_task(data)
-    logger.info("ending level 1 core flow")
+        data = update_initial_uncertainty_task(data,
+                                               bias_level=bias_level,
+                                               dark_level=dark_level,
+                                               gain=gain,
+                                               read_noise_level=read_noise_level,
+                                               bitrate_signal=bitrate_signal,
+                                               )
+        data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
-    if output_filename is not None:
-        output_image_task(data, output_filename)
-    return [data]
+        if data.meta['OBSCODE'].value == "4":
+            scaling = {"gain": 4.9 * u.photon / u.DN,
+                       "wavelength": 530. * u.nm,
+                       "exposure": 49 * u.s,
+                       "aperture": 49.57 * u.mm ** 2}
+        else:
+            scaling = {"gain": 4.9 * u.photon / u.DN,
+                       "wavelength": 530. * u.nm,
+                       "exposure": 49 * u.s,
+                       "aperture": 34 * u.mm ** 2}
+        data.data[:, :] = dn_to_msb(data.data[:, :], data.wcs, **scaling)
+
+        data = despike_task(data,
+                            unsharp_size=despike_unsharp_size,
+                            method=despike_method,
+                            alpha=despike_alpha,
+                            dilation=despike_dilation)
+        data = destreak_task(data,
+                             exposure_time=exposure_time,
+                             reset_line_time=reset_line_time,
+                             readout_line_time=readout_line_time)
+        data = correct_vignetting_task(data, vignetting_function_path)
+        data = remove_deficient_pixels_task(data,
+                                            deficient_pixel_map_path,
+                                            required_good_count=deficient_pixel_required_good_count,
+                                            max_window_size=deficient_pixel_max_window_size,
+                                            method=deficient_pixel_method)
+        data = remove_stray_light_task(data, stray_light_path)
+        data = correct_psf_task(data, psf_model_path)
+        data = align_task(data, mask=alignment_mask)
+        # data.meta['DATE-OBS'] = saved_date
+
+        # Repackage data with proper metdata
+        product_code = data.meta['TYPECODE'].value + data.meta['OBSCODE'].value
+        new_meta = NormalizedMetadata.load_template(product_code, "1")
+        new_meta['DATE-OBS'] = data.meta['DATE-OBS'].value  # TODO: do this better and fill rest of meta
+        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+
+        if i < len(output_filename) and output_filename[i] is not None:
+            output_image_task(data, output_filename[i])
+        output_data.append(data)
+        logger.info("ending level 1 core flow")
+    return output_data
 
 
 if __name__ == "__main__":
     from pathlib import Path
-    level1_core_flow("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_l0/PUNCH_L0_PM1_20240620001200_v1.fits",
-                     vignetting_function_path=Path("/Users/jhughes/Desktop/repos/punchbowl/test_run/PUNCH_L1_GM1_20240817174727_v1.fits"),
-                     despike_unsharp_size=1,
-                     despike_alpha=3,
-                     despike_method="median",
-                     psf_model_path="/Users/jhughes/Desktop/repos/punchbowl/test_run/synthetic_forward_psf.h5",
-                     output_filename="/Users/jhughes/Desktop/repos/punchbowl/test_run/test_out4.fits")
+    import glob
+    import os
+
+    filenames = glob.glob("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_l0/*.fits")
+    for filepath in filenames:
+        filename = os.path.basename(filepath)
+        observatory = int(filename.split("_")[2][-1])
+        polarization = filename.split("_")[2][1]
+
+        if observatory < 4:
+            vignetting_function_path = Path("/Users/jhughes/Desktop/repos/simpunch/PUNCH_L1_GM1_20240817174727_v2.fits")
+        else:
+            vignetting_function_path = Path("/Users/jhughes/Desktop/repos/simpunch/PUNCH_L1_GM4_20240819045110_v1.fits")
+
+
+        if observatory < 4:
+            mask_fn = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
+        else:
+            mask_fn = lambda x, y: ((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224)) * (x > 100) * (x < 1900) * (
+                        y > 100) * (y < 1900)
+
+        print("filepath", filepath)
+        level1_core_flow([filepath],
+                         vignetting_function_path=vignetting_function_path,
+                         despike_unsharp_size=1,
+                         despike_alpha=3,
+                         despike_method="median",
+                         psf_model_path="/Users/jhughes/Desktop/repos/punchbowl/test_run/synthetic_forward_psf.h5",
+                         alignment_mask=mask_fn,
+                         output_filename=[f"/Users/jhughes/Desktop/repos/punchbowl/test_run/test_P{polarization}{observatory}.fits"])

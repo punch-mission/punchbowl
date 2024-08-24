@@ -42,7 +42,7 @@ def write_ndcube_to_fits(cube: NDCube,
         )
 
 
-def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, uncertainty_quantize_level: float = -2.0) -> None:
+def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, uncertainty_quantize_level: float = 16.0) -> None:
     _update_statistics(cube)
 
     full_header = cube.meta.to_fits_header(wcs=cube.wcs)
@@ -125,8 +125,7 @@ def _update_statistics(cube: NDCube) -> None:
 def load_ndcube_from_fits(path: str, key: str = " ") -> NDCube:
     """Load an NDCube from a FITS file."""
     with fits.open(path) as hdul:
-        hdu_index = next((i for i, hdu in enumerate(hdul) if hdu.data is not None), 0)
-        primary_hdu = hdul[hdu_index]
+        primary_hdu = hdul[1]
         data = primary_hdu.data
         header = primary_hdu.header
         # Reset checksum and datasum to match astropy.io.fits behavior
@@ -136,12 +135,9 @@ def load_ndcube_from_fits(path: str, key: str = " ") -> NDCube:
         wcs = WCS(header, hdul, key=key)
         unit = u.ct
 
-        if len(hdul) > hdu_index + 1:
-            secondary_hdu = hdul[hdu_index+1]
-            uncertainty = _unpack_uncertainty(secondary_hdu.data, data)
-            uncertainty = StdDevUncertainty(uncertainty)
-        else:
-            uncertainty = None
+        secondary_hdu = hdul[2]
+        uncertainty = _unpack_uncertainty(secondary_hdu.data, data)
+        uncertainty = StdDevUncertainty(uncertainty)
 
     return NDCube(
         data.newbyteorder().byteswap(inplace=False).astype(float),

@@ -136,7 +136,7 @@ def load_ndcube_from_fits(path: str, key: str = " ") -> NDCube:
         unit = u.ct
 
         secondary_hdu = hdul[2]
-        uncertainty = _unpack_uncertainty(secondary_hdu.data, data)
+        uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data)
         uncertainty = StdDevUncertainty(uncertainty)
 
     return NDCube(

@@ -23,7 +23,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     logger = get_run_logger()
     logger.info("beginning level 2 core flow")
     if len(data_list) != 12:
-        raise IncorrectFileCountError(f"Received {len(data_list)} files when need 12.")
+        msg = f"Received {len(data_list)} files when need 12."
+        raise IncorrectFileCountError(msg)
 
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
 
@@ -38,12 +39,15 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
                 ordered_data_list.append(data_element)
                 found = True
         if not found:
-            raise IncorrectFileCountError(f"Did not receive {order_element} file.")
+            msg = f"Did not receive {order_element} file."
+            raise IncorrectFileCountError(msg)
     logger.info(f"Ordered files are {[get_base_file_name(cube) for cube in ordered_data_list]}")
 
     trefoil_wcs, trefoil_shape = load_trefoil_wcs()
 
-    data_list = resolve_polarization_task(ordered_data_list[:3]) + resolve_polarization_task(ordered_data_list[3:6]) + resolve_polarization_task(ordered_data_list[6:9]) + resolve_polarization_task(ordered_data_list[9:])
+    # TODO make more robust
+    data_list = (resolve_polarization_task(ordered_data_list[:3]) + resolve_polarization_task(ordered_data_list[3:6])
+                 + resolve_polarization_task(ordered_data_list[6:9]) + resolve_polarization_task(ordered_data_list[9:]))
     data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape)
     # data_list = [identify_bright_structures_task(cube, voter_filenames)
     #              for cube, voter_filenames in zip(data_list, voter_filenames)]
@@ -58,21 +62,11 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
 
 
 if __name__ == "__main__":
-    level2_core_flow(["/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PZ1.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PM1.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PP1.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PM2.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PZ2.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PP2.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PM3.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PZ3.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PP3.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PM4.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PZ4.fits",
-                                  "/Users/jhughes/Desktop/repos/punchbowl/test_run/test_PP4.fits",
-                      ],
-                               voter_filenames=[[], [], [],
-                                                [], [], [],
-                                                [], [], [],
-                                                [], [], []],
-                               output_filename="/Users/jhughes/Desktop/repos/punchbowl/test_run/test_l2_v12.fits")
+    import os
+    import glob
+
+    filenames = sorted(glob.glob("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/forward_l1/*.fits"),
+                       key=lambda s: os.path.basename(s).split("_")[3])
+
+    level2_core_flow(filenames,
+                     output_filename="/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/forward_l2/test_l2.fits")

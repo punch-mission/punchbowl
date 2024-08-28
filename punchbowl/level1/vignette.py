@@ -1,3 +1,4 @@
+import os
 import pathlib
 import warnings
 
@@ -83,12 +84,11 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: pathlib) -> ND
         if vignetting_function.data.shape != data_object.data.shape:
             msg = f"Incorrect vignetting function shape within {vignetting_path}"
             raise InvalidDataError(msg)
-        else:
-            # TODO: vignetting should update uncertainty
-            data_object.data[:, :] /= vignetting_function.data[:, :]
-            data_object.uncertainty.array[:, :] /= vignetting_function.data[:, :]
-            data_object.meta.history.add_now("LEVEL1-correct_vignetting",
-                                             f"Vignetting corrected using {vignetting_path}")
-
+        # TODO: vignetting should update uncertainty
+        data_object.data[:, :] = data_object.data[:, :] / vignetting_function.data[:, :]
+        data_object.uncertainty.array[:, :] /= vignetting_function.data[:, :]
+        data_object.meta.history.add_now("LEVEL1-correct_vignetting",
+                                         f"Vignetting corrected using {os.path.basename(str(vignetting_path))}")
+        data_object.meta["CALVI"] = os.path.basename(str(vignetting_path))
     logger.info("correct_vignetting finished")
     return data_object

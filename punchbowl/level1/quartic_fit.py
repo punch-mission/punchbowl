@@ -1,3 +1,4 @@
+import os
 
 import numpy as np
 from ndcube import NDCube
@@ -147,8 +148,10 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
         # TODO : propagate uncertainty
         data_object.data[...] = new_data[...]
         data_object.meta.history.add_now(
-            "LEVEL1-quartic_fit", f"Quartic fit correction completed with {quartic_coefficients_path}",
+            "LEVEL1-quartic_fit",
+            f"Quartic fit correction completed with {os.path.basename(quartic_coefficients_path)}",
         )
+        data_object.meta["CALCF"] = os.path.basename(quartic_coefficients_path)
     else:
         data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction skipped since path is empty")
 

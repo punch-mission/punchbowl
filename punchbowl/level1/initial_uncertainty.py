@@ -12,7 +12,7 @@ def compute_noise(
         data: np.ndarray,
         bias_level: float = 100,
         dark_level: float = 55.81,
-        gain: float = 4.3,
+        gain: float = 4.9,
         read_noise_level: float = 17,
         bitrate_signal: int = 16) -> np.ndarray:
     """
@@ -65,31 +65,25 @@ def compute_noise(
 def compute_uncertainty(data_array: np.ndarray,
                         bias_level: float = 100,
                         dark_level: float = 55.81,
-                        gain: float = 4.3,
+                        gain: float = 4.9,
                         read_noise_level: float = 17,
                         bitrate_signal: int = 16,
                         ) -> np.ndarray:
     """With an input data array compute a corresponding uncertainty array."""
-    # # Convert the input array to photon counts
-    # photon_array = dn_to_photons(data_array, gain=gain)
-
     # Convert this photon count to a shot noise
-    noise_array = compute_noise(data_array,
+    return compute_noise(data_array,
                                 bias_level=bias_level,
                                 dark_level=dark_level,
                                 gain=gain,
                                 read_noise_level=read_noise_level,
-                                bitrate_signal=bitrate_signal,
-    )
-
-    return noise_array  # TODO: check that this is correct
+                                bitrate_signal=bitrate_signal)
 
 
 @task
 def update_initial_uncertainty_task(data_object: NDCube,
                                     bias_level: float = 100,
         dark_level: float = 55.81,
-        gain: float = 4.3,
+        gain: float = 4.9,
         read_noise_level: float = 17,
         bitrate_signal: int = 16) -> NDCube:
     """Prefect task to compute initial uncertainty."""

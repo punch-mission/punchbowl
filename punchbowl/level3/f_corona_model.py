@@ -78,9 +78,73 @@ def query_f_corona_model_source(
     return file_list
 
 
+def _zvalue_from_index(arr, ind):  # noqa: ANN202, ANN001
+    """
+    Do math.
+
+    Private helper function to work around the limitation of np.choose() by employing np.take().
+    arr has to be a 3D array
+    ind has to be a 2D array containing values for z-indicies to take from arr
+    See: http://stackoverflow.com/a/32091712/4169585
+    This is faster and more memory efficient than using the ogrid based solution with fancy indexing.
+    """
+    # get number of columns and rows
+    _, n_cols, n_rows = arr.shape
+
+    # get linear indices and extract elements with np.take()
+    idx = n_cols*n_rows*ind + n_rows*np.arange(n_rows)[:,None] + np.arange(n_cols)
+    return np.take(arr, idx)
+
+
+def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
+    """Calculate the nan percentile faster of a 3D cube."""
+    # np.nanpercentile is slow so use this: https://krstn.eu/np.nanpercentile()-there-has-to-be-a-faster-way/
+
+    # valid (non NaN) observations along the first axis
+    valid_obs = np.sum(np.isfinite(arr), axis=0)
+    # replace NaN with maximum
+    max_val = np.nanmax(arr)
+    arr[np.isnan(arr)] = max_val
+    # sort - former NaNs will move to the end
+    arr = np.sort(arr, axis=0)
+
+    # loop over requested quantiles
+    if isinstance(q, list):
+        qs = []
+        qs.extend(q)
+    else:
+        qs = [q]
+    if len(qs) < 2:
+        quant_arr = np.zeros(shape=(arr.shape[1], arr.shape[2]))
+    else:
+        quant_arr = np.zeros(shape=(len(qs), arr.shape[1], arr.shape[2]))
+
+    result = []
+    for i in range(len(qs)):
+        quant = qs[i]
+        # desired position as well as floor and ceiling of it
+        k_arr = (valid_obs - 1) * (quant / 100.0)
+        f_arr = np.floor(k_arr).astype(np.int32)
+        c_arr = np.ceil(k_arr).astype(np.int32)
+        fc_equal_k_mask = f_arr == c_arr
+
+        # linear interpolation (like numpy percentile) takes the fractional part of desired position
+        floor_val = _zvalue_from_index(arr=arr, ind=f_arr) * (c_arr - k_arr)
+        ceil_val = _zvalue_from_index(arr=arr, ind=c_arr) * (k_arr - f_arr)
+
+        quant_arr = floor_val + ceil_val
+        # if floor == ceiling take floor value
+        quant_arr[fc_equal_k_mask] = _zvalue_from_index(arr=arr, ind=k_arr.astype(np.int32))[fc_equal_k_mask]
+
+        result.append(quant_arr)
+
+    return result
+
+
 @task
 def construct_f_corona_background(
     data_list: list[str],
+    layer: int,
     method: str = "percentile",
     apply_threshold_mask: bool = True,
     threshold_mask_cutoff: float = 1.5,
@@ -121,6 +185,9 @@ def construct_f_corona_background(
     ----------
     data_list :
         list of filenames to use
+
+    layer: int
+        which layer of the cube to use
 
     method : [string = 'percentile', 'mean', min,]
         defines the type of background model to build. Options include
@@ -165,7 +232,7 @@ def construct_f_corona_background(
     output_meta = output.meta
     output_mask = output.mask
 
-    data_shape = np.shape(output.data)
+    data_shape = np.shape(output.data[layer])
 
     number_of_data_frames = len(data_list)
     data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
@@ -174,8 +241,8 @@ def construct_f_corona_background(
     meta_list = []
 
     for i, address_out in enumerate(data_list):
-        data_object = load_ndcube_from_fits(address_out)  # TODO : fix data loading
-        data_cube[i, :, :] = data_object.data
+        data_object = load_ndcube_from_fits(address_out)
+        data_cube[i, :, :] = data_object.data[layer]
         meta_list.append(data_object.meta)
 
     if apply_threshold_mask:
@@ -201,7 +268,7 @@ def construct_f_corona_background(
 
     # calculate the background model
     if method == "percentile":
-        f_background = np.nanpercentile(data_cube, percentile_value, axis=0)
+        f_background = nan_percentile(data_cube, percentile_value)
     elif method == "min":
         f_background = np.nanmin(data_cube, axis=0)
     elif method == "mean":

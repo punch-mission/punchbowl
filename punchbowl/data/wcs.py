@@ -59,10 +59,7 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
     new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_celestial.wcs.cdelt)
 
     projection_code = wcs_celestial.wcs.ctype[0][-3:] if "-" in wcs_celestial.wcs.ctype[0] else ""
-    if projection_code:
-        new_ctypes = (f"HPLN-{projection_code}", f"HPLT-{projection_code}")
-    else:
-        new_ctypes = "HPLN", "HPLT"
+    new_ctypes = (f"HPLN-{projection_code}", f"HPLT-{projection_code}") if projection_code else ("HPLN", "HPLT")
 
     wcs_helio = WCS(naxis=2)
     wcs_helio.wcs.ctype = new_ctypes
@@ -288,10 +285,7 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
     cdelt2 = np.abs(wcs_helio.wcs.cdelt[1]) * u.deg
 
     projection_code = wcs_helio.wcs.ctype[0][-3:] if "-" in wcs_helio.wcs.ctype[0] else ""
-    if projection_code:
-        new_ctypes = (f"RA---{projection_code}", f"DEC--{projection_code}")
-    else:
-        new_ctypes = "RA", "DEC"
+    new_ctypes = (f"RA---{projection_code}", f"DEC--{projection_code}") if projection_code else ("RA", "DEC")
 
 
     wcs_celestial = WCS(naxis=2)
@@ -315,3 +309,29 @@ def load_trefoil_wcs() -> (astropy.wcs.WCS, (int, int)):
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
     trefoil_shape = (4096, 4096)
     return trefoil_wcs, trefoil_shape
+
+
+def load_quickpunch_mosaic_wcs() -> (astropy.wcs.WCS, (int, int)):
+    """Load Level quickPUNCH mosaic world coordinate system and shape."""
+    quickpunch_mosaic_shape = (1024, 1024)
+    quickpunch_mosaic_wcs = WCS(naxis=2)
+
+    quickpunch_mosaic_wcs.wcs.crpix = quickpunch_mosaic_shape[1] / 2 + 0.5, quickpunch_mosaic_shape[0] / 2 + 0.5
+    quickpunch_mosaic_wcs.wcs.crval = 0, 0
+    quickpunch_mosaic_wcs.wcs.cdelt = 0.045, 0.045
+    quickpunch_mosaic_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+
+    return quickpunch_mosaic_wcs, quickpunch_mosaic_shape
+
+
+def load_quickpunch_nfi_wcs() -> (astropy.wcs.WCS, (int, int)):
+    """Load Level quickPUNCH NFI world coordinate system and shape."""
+    quickpunch_nfi_shape = (1024, 1024)
+    quickpunch_nfi_wcs = WCS(naxis=2)
+
+    quickpunch_nfi_wcs.wcs.crpix = quickpunch_nfi_shape[1] / 2 + 0.5, quickpunch_nfi_shape[0] / 2 + 0.5
+    quickpunch_nfi_wcs.wcs.crval = 0, 0
+    quickpunch_nfi_wcs.wcs.cdelt = 0.026, 0.026
+    quickpunch_nfi_wcs.wcs.ctype = "HPLN-TAN", "HPLT-TAN"
+
+    return quickpunch_nfi_wcs, quickpunch_nfi_shape

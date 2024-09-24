@@ -1,16 +1,15 @@
 import pathlib
+from datetime import datetime
 
 import numpy as np
 import pytest
-
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
-from datetime import datetime
 
 from punchbowl.data.tests.test_io import sample_ndcube
+from punchbowl.exceptions import LargeTimeDeltaWarning
 #from punchbowl.exceptions import InvalidDataError
 from punchbowl.level1.stray_light import remove_stray_light_task
-from punchbowl.exceptions import LargeTimeDeltaWarning
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -22,7 +21,7 @@ def test_check_calibration_time_delta_warning(sample_ndcube) -> None:
 
     sample_data = sample_ndcube(shape=(10, 10))
     sample_data.meta['DATE-OBS'].value = str(datetime(2022, 2, 22, 16, 0, 1))
-    stray_light_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_SM1_20240222163425.fits"
+    stray_light_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_SM1_20240222163425_v1.fits"
 
     with disable_run_logger():
         with pytest.warns(LargeTimeDeltaWarning):

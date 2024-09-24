@@ -199,9 +199,7 @@ def identify_bright_structures_task(
         index_of_interest=-1)
 
     # add the uncertainty to the output punch data object
-    # TODO: check uncertainty
     data.uncertainty.array[spike_mask] = np.inf
-    # data.uncertainty.array = np.max([data.uncertainty, spike_mask], axis=0)
 
     logger.info("identify_bright_structures_task ended")
     data.meta.history.add_now("LEVEL2-bright_structures",

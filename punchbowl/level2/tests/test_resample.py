@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from astropy.time import Time
 from astropy.wcs import WCS
 from prefect.testing.utilities import prefect_test_harness
 
@@ -44,7 +45,8 @@ def test_reproject_array(sample_wcs, crpix, crval, cdelt, output_shape=(50, 50))
     shape = (50, 50)
     test_wcs = sample_wcs(crpix=crpix, crval=crval, cdelt=cdelt)
     expected = np.random.random(shape)
-    actual = reproject_array.fn(expected, test_wcs, test_wcs, output_shape)
+    now = Time.now()
+    actual = reproject_array.fn(expected, test_wcs, now, test_wcs, output_shape)
 
     assert actual.shape == expected.shape
 

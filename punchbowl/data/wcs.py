@@ -59,7 +59,10 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
     new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_celestial.wcs.cdelt)
 
     projection_code = wcs_celestial.wcs.ctype[0][-3:] if "-" in wcs_celestial.wcs.ctype[0] else ""
-    new_ctypes = (f"HPLN-{projection_code}", f"HPLT-{projection_code}") if projection_code else ("HPLN", "HPLT")
+    if projection_code:  # noqa: SIM108
+        new_ctypes = (f"HPLN-{projection_code}", f"HPLT-{projection_code}")
+    else:
+        new_ctypes = "HPLN", "HPLT"
 
     wcs_helio = WCS(naxis=2)
     wcs_helio.wcs.ctype = new_ctypes
@@ -285,7 +288,10 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
     cdelt2 = np.abs(wcs_helio.wcs.cdelt[1]) * u.deg
 
     projection_code = wcs_helio.wcs.ctype[0][-3:] if "-" in wcs_helio.wcs.ctype[0] else ""
-    new_ctypes = (f"RA---{projection_code}", f"DEC--{projection_code}") if projection_code else ("RA", "DEC")
+    if projection_code:  # noqa: SIM108
+        new_ctypes = (f"RA---{projection_code}", f"DEC--{projection_code}")
+    else:
+        new_ctypes = "RA", "DEC"
 
 
     wcs_celestial = WCS(naxis=2)

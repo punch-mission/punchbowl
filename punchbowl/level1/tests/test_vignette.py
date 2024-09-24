@@ -26,7 +26,7 @@ def test_check_calibration_time_delta_warning(sample_ndcube) -> None:
 
     sample_data = sample_ndcube(shape=(10, 10))
     sample_data.meta['DATE-OBS'].value = str(datetime(2022, 2, 22, 16, 0, 1))
-    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
+    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425_v1.fits"
 
     with disable_run_logger():
         with pytest.warns(LargeTimeDeltaWarning):
@@ -70,7 +70,7 @@ def test_invalid_polarization_state(sample_ndcube) -> None:
     """
 
     sample_data = sample_ndcube(shape=(10, 10))
-    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
+    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425_v1.fits"
 
     with disable_run_logger():
         with pytest.warns(IncorrectPolarizationStateWarning):
@@ -86,7 +86,7 @@ def test_invalid_telescope(sample_ndcube) -> None:
 
     sample_data = sample_ndcube(shape=(10, 10))
     sample_data.meta['TELESCOP'].value = 'PUNCH-2'
-    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
+    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425_v1.fits"
 
     with disable_run_logger():
         with pytest.warns(IncorrectTelescopeWarning):
@@ -115,7 +115,7 @@ def test_vignetting_correction(sample_ndcube) -> None:
     """
 
     sample_data = sample_ndcube(shape=(10, 10), code="CR1", level="0")
-    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425.fits"
+    vignetting_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425_v1.fits"
 
     with disable_run_logger():
         corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)

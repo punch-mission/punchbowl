@@ -61,6 +61,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     logger.info("ending level 2 core flow")
     return [output_data]
 
+
 # TODO - Split this into multiple flows?
 # TODO - Generate quickPUNCH f-corona products?
 @flow(validate_parameters=False)
@@ -103,6 +104,7 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
     output_data_nfi = merge_many_task(data_list_nfi, quickpunch_nfi_wcs)
 
     # TODO - Separate filenames needed / split into two flows?
+    # TODO - Generate filename automatically for correct format?
     if output_filename is not None:
         output_image_task(output_data_mosaic, output_filename)
         output_image_task(output_data_nfi, output_filename)
@@ -115,7 +117,7 @@ if __name__ == "__main__":
     import os
     import glob
 
-    filenames = sorted(glob.glob("/Users/clowder/data/punch/gamera_mosaic_jan2024/forward_l1/*.fits"),
+    filenames = sorted(glob.glob("/Users/clowder/data/punch/synthetic_l1/*.fits"),
                        key=lambda s: os.path.basename(s).split("_")[3])
 
     levelq_core_flow(filenames,

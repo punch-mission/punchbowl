@@ -60,7 +60,7 @@ def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, uncertainty
     hdul.insert(1, hdu_data)
     hdul.insert(2, hdu_uncertainty)
     hdul.writeto(filename, overwrite=overwrite, checksum=True)
-
+    hdul.close()
 
 def _pack_uncertainty(cube: NDCube) -> np.ndarray:
     """Compress the uncertainty for writing to file."""

@@ -147,6 +147,84 @@ def level1_core_flow(
     return output_data
 
 
+@flow(validate_parameters=False)
+def level05_core_flow(
+    input_data: list[str] | list[NDCube],
+    gain: float = 4.9,
+    bias_level: float = 100,
+    dark_level: float = 55.81,
+    read_noise_level: float = 17,
+    bitrate_signal: int = 16,
+    quartic_coefficient_path: str | None = None,
+    exposure_time: float = 49 * 1000,
+    readout_line_time: float = 163/2148,
+    reset_line_time: float = 163/2148,
+    output_filename: str | None = None,
+) -> list[NDCube]:
+    """Core flow for level 1."""
+    logger = get_run_logger()
+
+    logger.info("beginning level 1 core flow")
+
+    output_data = []
+    for i, this_data in enumerate(input_data):
+        data = load_image_task(this_data) if isinstance(this_data, str) else this_data
+
+        data = update_initial_uncertainty_task(data,
+                                               bias_level=bias_level,
+                                               dark_level=dark_level,
+                                               gain=gain,
+                                               read_noise_level=read_noise_level,
+                                               bitrate_signal=bitrate_signal,
+                                               )
+        data = perform_quartic_fit_task(data, quartic_coefficient_path)
+
+        if data.meta["OBSCODE"].value == "4":
+            scaling = {"gain": 4.9 * u.photon / u.DN,
+                       "wavelength": 530. * u.nm,
+                       "exposure": 49 * u.s,
+                       "aperture": 49.57 * u.mm ** 2}
+        else:
+            scaling = {"gain": 4.9 * u.photon / u.DN,
+                       "wavelength": 530. * u.nm,
+                       "exposure": 49 * u.s,
+                       "aperture": 34 * u.mm ** 2}
+        data.data[:, :] = dn_to_msb(data.data[:, :], data.wcs, **scaling)
+        data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
+
+        data = destreak_task(data,
+                             exposure_time=exposure_time,
+                             reset_line_time=reset_line_time,
+                             readout_line_time=readout_line_time)
+
+        # set up alignment mask
+        observatory = int(data.meta["OBSCODE"].value)
+        if observatory < 4:
+            alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)  # noqa: E731
+        else:
+            alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
+                                           * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
+        data = align_task(data, mask=alignment_mask)
+
+        # Repackage data with proper metadata
+        product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
+        new_meta = NormalizedMetadata.load_template(product_code, "1")
+        new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
+
+        output_header = new_meta.to_fits_header(data.wcs)
+        for key in output_header:
+            if (key in data.meta) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"):
+                new_meta[key].value = data.meta[key].value
+
+        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+
+        if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
+            output_image_task(data, output_filename[i])
+        output_data.append(data)
+        logger.info("ending level 1 core flow")
+    return output_data
+
+
 if __name__ == "__main__":
     import os
     import glob

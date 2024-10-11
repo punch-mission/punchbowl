@@ -98,7 +98,7 @@ def level1_core_flow(
                        "wavelength": 530. * u.nm,
                        "exposure": 49 * u.s,
                        "aperture": 34 * u.mm ** 2}
-        data.data[:, :] = dn_to_msb(data.data[:, :], data.wcs, **scaling)
+        data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 
         data = despike_task(data,
@@ -126,7 +126,8 @@ def level1_core_flow(
         else:
             alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
                                            * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        data = align_task(data, mask=alignment_mask)
+        # TODO - Skipped for now in simpunch and punchbowl to move the pipeline along
+        # data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -161,10 +162,10 @@ def level05_core_flow(
     reset_line_time: float = 163/2148,
     output_filename: str | None = None,
 ) -> list[NDCube]:
-    """Core flow for level 1."""
+    """Core flow for level 0.5."""
     logger = get_run_logger()
 
-    logger.info("beginning level 1 core flow")
+    logger.info("beginning level 0.5 core flow")
 
     output_data = []
     for i, this_data in enumerate(input_data):
@@ -189,7 +190,7 @@ def level05_core_flow(
                        "wavelength": 530. * u.nm,
                        "exposure": 49 * u.s,
                        "aperture": 34 * u.mm ** 2}
-        data.data[:, :] = dn_to_msb(data.data[:, :], data.wcs, **scaling)
+        data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 
         data = destreak_task(data,
@@ -204,7 +205,9 @@ def level05_core_flow(
         else:
             alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
                                            * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        data = align_task(data, mask=alignment_mask)
+      
+        # TODO - Skipped for now in simpunch and punchbowl to move the pipeline along
+        # data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -221,7 +224,7 @@ def level05_core_flow(
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
         output_data.append(data)
-        logger.info("ending level 1 core flow")
+        logger.info("ending level 0.5 core flow")
     return output_data
 
 
@@ -229,7 +232,7 @@ if __name__ == "__main__":
     import os
     import glob
 
-    filenames = sorted(glob.glob("/Users/jhughes/Desktop/data/gamera_mosaic_jan2024/synthetic_l0/*.fits"),
+    filenames = sorted(glob.glob("/d0/punchsoc/gamera_data/synthetic_l0/*.fits"),
                        key=lambda s: os.path.basename(s).split("_")[3])
     for filepath in filenames:
         filename = os.path.basename(filepath)
@@ -237,9 +240,9 @@ if __name__ == "__main__":
         polarization = filename.split("_")[2][1]
 
         if observatory < 4:
-            vignetting_function_path = "/Users/jhughes/Desktop/repos/simpunch/PUNCH_L1_GM1_20240817174727_v2.fits"
+            vignetting_function_path = "/d0/punchsoc/build_3_review_files/PUNCH_L1_GM1_20240817174727_v2.fits"
         else:
-            vignetting_function_path = "/Users/jhughes/Desktop/repos/simpunch/PUNCH_L1_GM4_20240819045110_v1.fits"
+            vignetting_function_path = "/d0/punchsoc/build_3_review_files/PUNCH_L1_GM4_20240819045110_v1.fits"
 
         if observatory < 4:
             mask_fn = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)  # noqa: E731
@@ -247,12 +250,17 @@ if __name__ == "__main__":
             mask_fn = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224)) # noqa: E731
                                     * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
 
+        level05_core_flow([filepath],
+                         output_filename=[filepath.replace("synthetic_l0",
+                                                           "forward_l05").replace("L0", "L1")])
+
+
         level1_core_flow([filepath],
                          vignetting_function_path=vignetting_function_path,
                          despike_unsharp_size=1,
                          despike_alpha=3,
                          despike_method="median",
-                         psf_model_path="/Users/jhughes/Desktop/repos/punchbowl/test_run/synthetic_forward_psf.h5",
+                         psf_model_path="/d0/punchsoc/build_3_review_files/synthetic_forward_psf.h5",
                          alignment_mask=mask_fn,
                          output_filename=[filepath.replace("synthetic_l0",
                                                            "forward_l1").replace("L0", "L1")])

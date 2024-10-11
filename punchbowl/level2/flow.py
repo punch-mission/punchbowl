@@ -116,9 +116,20 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
 if __name__ == "__main__":
     import os
     import glob
+    import re
 
-    filenames = sorted(glob.glob("/Users/clowder/data/punch/synthetic_l1/*.fits"),
+    filenames = sorted(glob.glob("/d0/punchsoc/gamera_data/forward_l1/*.fits"),
                        key=lambda s: os.path.basename(s).split("_")[3])
 
+
+    # TODO - Running with punchpipe should fix all this
+    times = []
+    for filename in filenames:
+        times.append(filename.split('_')[-2])
+    times = set(times)
+
+    for time in times:
+        input_files = [filename for filename in filenames if time in filename]
+
     levelq_core_flow(filenames,
-                     output_filename="/Users/clowder/data/punch/gamera_mosaic_jan2024/forward_l2/test_l2.fits")
+                     output_filename="/d0/punchsoc/gamera_data/forward_lq/file.fits")

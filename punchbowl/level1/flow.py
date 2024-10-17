@@ -16,6 +16,7 @@ from punchbowl.level1.destreak import destreak_task
 from punchbowl.level1.initial_uncertainty import update_initial_uncertainty_task
 from punchbowl.level1.psf import correct_psf_task
 from punchbowl.level1.quartic_fit import perform_quartic_fit_task
+from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.util import load_image_task, output_image_task
@@ -79,6 +80,7 @@ def level1_core_flow(
     for i, this_data in enumerate(input_data):
         data = load_image_task(this_data) if isinstance(this_data, str) else this_data
 
+        data = decode_sqrt_data(data)
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,

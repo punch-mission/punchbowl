@@ -289,63 +289,91 @@ def construct_f_corona_background(
     return output
 
 
-def subtract_f_corona_background(data_object: NDCube, f_background_model_array: np.ndarray) -> NDCube:
+def subtract_f_corona_background(data_object: NDCube,
+                                 before_f_background_model: NDCube,
+                                 after_f_background_model: NDCube ) -> NDCube:
     """Subtract f corona background."""
     # check dimensions match
-    if data_object.data.shape != f_background_model_array.shape:
+    if data_object.data.shape != before_f_background_model.data.shape:
         msg = (
             "f_background_subtraction expects the data_object and"
             "f_background arrays to have the same dimensions."
-            f"data_array dims: {data_object.data.shape} and f_background_model dims: {f_background_model_array.shape}"
+            f"data_array dims: {data_object.data.shape} "
+            f"and before_f_background_model dims: {before_f_background_model.data.shape}"
         )
         raise InvalidDataError(
             msg,
         )
 
-    bkg_subtracted_data = data_object.data - f_background_model_array
+    if data_object.data.shape != after_f_background_model.data.shape:
+        msg = (
+            "f_background_subtraction expects the data_object and"
+            "f_background arrays to have the same dimensions."
+            f"data_array dims: {data_object.data.shape} "
+            f"and after_f_background_model dims: {after_f_background_model.data.shape}"
+        )
+        raise InvalidDataError(
+            msg,
+        )
+
+    before_date = before_f_background_model.meta.datetime.timestamp()
+    after_date = after_f_background_model.meta.datetime.timestamp()
+    observation_date = data_object.meta.datetime.timestamp()
+
+    if before_date > observation_date:
+        msg = "Before F corona model was after the observation date"
+        raise InvalidDataError(msg)
+
+    if after_date < observation_date:
+        msg = "After F corona model was before the observation date"
+        raise InvalidDataError(msg)
+
+    interpolated_model = ((after_f_background_model.data - before_f_background_model.data)
+                          * (observation_date - before_date) / (after_date - before_date)
+                          + before_f_background_model.data)
+    interpolated_model[np.isinf(data_object.uncertainty.array)] = 0
+
+    bkg_subtracted_data = data_object.data - interpolated_model
 
     data_object.data[...] = bkg_subtracted_data
+    data_object.uncertainty.array[:, :] -= interpolated_model
     return data_object
 
 @task
-def subtract_f_corona_background_task(data_object: NDCube,
-                                      f_background_model_path: str | None) -> NDCube:
+def subtract_f_corona_background_task(observation: NDCube,
+                                      before_f_background_model_path: str,
+                                      after_f_background_model_path: str) -> NDCube:
     """
-    Subtracts a background f corona model from an input data frame.
+    Subtracts a background f corona model from an observation.
 
-    checks the dimensions of input data frame and background model match and
-    subtracts the background model from the data frame of interest.
+    This algorithm linearly interpolates between the before and after models.
 
     Parameters
     ----------
-    data_object : punchbowl.data.PUNCHData
-        A PUNCHobject data frame to be background subtracted
+    observation : NDCube
+        an observation to subtract an f corona model from
 
-    f_background_model_path : str
-        path to a PUNCHobject background map
+    before_f_background_model_path : str
+        path to a NDCube f corona background map before the observation
+
+    after_f_background_model_path : str
+        path to a NDCube f corona background map after the observation
 
     Returns
     -------
-    bkg_subtracted_data : ['punchbowl.data.PUNCHData']
+    NDCube
         A background subtracted data frame
 
     """
-    # TODO: exclude data if flagged in weight array
-    # TODO: pass through REAL meta data and WCS
-    # TODO: create 2nd hdu with list of input files
-    # TODO: needs to look at the weights (uncertainties) for trefoil images, so we don't average
-    # TODO: output weight - combine weights
     logger = get_run_logger()
     logger.info("subtract_f_corona_background started")
 
-    if f_background_model_path is None:
-        output = data_object
-        output.meta.history.add_now("LEVEL3-fcorona-subtraction",
-                                           "F corona subtraction skipped since path is empty")
-    else:
-        f_data_array = load_ndcube_from_fits(f_background_model_path).data
-        output = subtract_f_corona_background(data_object, f_data_array)
-        output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
+
+    before_f_corona_model = load_ndcube_from_fits(before_f_background_model_path)
+    after_f_corona_model = load_ndcube_from_fits(after_f_background_model_path)
+
+    output = subtract_f_corona_background(observation, before_f_corona_model, after_f_corona_model)
+    output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
     logger.info("subtract_f_corona_background finished")
 

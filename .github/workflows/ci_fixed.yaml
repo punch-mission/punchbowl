@@ -1,0 +1,57 @@
+name: CI fixed requirements
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * MON'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[test]"
+    - name: Lint with ruff
+      run: |
+        ruff check .
+    - name: Run codespell on source code
+      uses: codespell-project/actions-codespell@v2
+      with:
+          skip: '*.fits'
+          ignore_words_file: .codespellignore
+          path: punchbowl
+    - name: Run codespell on documentation
+      uses: codespell-project/actions-codespell@v2
+      with:
+        skip: '*.fits'
+        ignore_words_file: .codespellignore
+        path: docs/source
+    - name: Test with pytest
+      run: |
+        pip install .
+        coverage run -m pytest
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      with:
+        fail_ci_if_error: true
+        verbose: true

@@ -315,3 +315,29 @@ def load_trefoil_wcs() -> (astropy.wcs.WCS, (int, int)):
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
     trefoil_shape = (4096, 4096)
     return trefoil_wcs, trefoil_shape
+
+
+def load_quickpunch_mosaic_wcs() -> (astropy.wcs.WCS, (int, int)):
+    """Load Level quickPUNCH mosaic world coordinate system and shape."""
+    quickpunch_mosaic_shape = (1024, 1024)
+    quickpunch_mosaic_wcs = WCS(naxis=2)
+
+    quickpunch_mosaic_wcs.wcs.crpix = quickpunch_mosaic_shape[1] / 2 + 0.5, quickpunch_mosaic_shape[0] / 2 + 0.5
+    quickpunch_mosaic_wcs.wcs.crval = 0, 0
+    quickpunch_mosaic_wcs.wcs.cdelt = 0.045, 0.045
+    quickpunch_mosaic_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+
+    return quickpunch_mosaic_wcs, quickpunch_mosaic_shape
+
+
+def load_quickpunch_nfi_wcs() -> (astropy.wcs.WCS, (int, int)):
+    """Load Level quickPUNCH NFI world coordinate system and shape."""
+    quickpunch_nfi_shape = (1024, 1024)
+    quickpunch_nfi_wcs = WCS(naxis=2)
+
+    quickpunch_nfi_wcs.wcs.crpix = quickpunch_nfi_shape[1] / 2 + 0.5, quickpunch_nfi_shape[0] / 2 + 0.5
+    quickpunch_nfi_wcs.wcs.crval = 0, 0
+    quickpunch_nfi_wcs.wcs.cdelt = 0.026, 0.026
+    quickpunch_nfi_wcs.wcs.ctype = "HPLN-TAN", "HPLT-TAN"
+
+    return quickpunch_nfi_wcs, quickpunch_nfi_shape

@@ -1,7 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
-name: CI
+name: CI pinned server environment
 
 on:
   push:
@@ -12,6 +9,7 @@ on:
       - main
   schedule:
     - cron: '0 0 * * MON'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11"]
 
     steps:
     - uses: actions/checkout@v3
@@ -28,9 +26,13 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Grab requirements.txt
+      run: |
+        wget https://raw.githubusercontent.com/punch-mission/punch-mission/refs/heads/main/requirements.txt
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install -r requirements.txt
         pip install ".[test]"
     - name: Lint with ruff
       run: |
@@ -49,7 +51,6 @@ jobs:
         path: docs/source
     - name: Test with pytest
       run: |
-        pip install .
         coverage run -m pytest
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

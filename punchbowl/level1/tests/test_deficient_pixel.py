@@ -165,7 +165,7 @@ def test_remove_deficient_pixels(sample_punchdata: NDCube, sample_bad_pixel_map:
     """
     flagged_punchdata = remove_deficient_pixels(sample_punchdata, sample_bad_pixel_map.data)
     assert isinstance(flagged_punchdata, NDCube)
-    assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 0)].array == 1)
+    assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map.data == 0)].array == np.inf)
 
 
 def test_nan_input(sample_punchdata: NDCube, sample_bad_pixel_map: NDCube) -> None:
@@ -179,7 +179,7 @@ def test_nan_input(sample_punchdata: NDCube, sample_bad_pixel_map: NDCube) -> No
     flagged_punchdata = remove_deficient_pixels(input_data, sample_bad_pixel_map.data)
 
     assert isinstance(flagged_punchdata, NDCube)
-    assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 0)].array == 1.0)
+    assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map.data == 0)].array == np.inf)
 
 
 def test_data_loading(sample_punchdata: NDCube, perfect_pixel_map: NDCube) -> None:
@@ -201,7 +201,7 @@ def test_artificial_pixel_map(sample_punchdata: NDCube, sample_bad_pixel_map: ND
 
     flagged_punchdata = remove_deficient_pixels(sample_punchdata, sample_bad_pixel_map.data)
     assert isinstance(flagged_punchdata, NDCube)
-    assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map == 0)].array == 1.0)
+    assert np.all(flagged_punchdata.uncertainty[np.where(sample_bad_pixel_map.data == 0)].array == np.inf)
 
 
 def test_data_window_1(increasing_pixel_data: NDCube, one_bad_pixel_map: NDCube) -> None:

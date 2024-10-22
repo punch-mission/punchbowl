@@ -67,7 +67,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
 # TODO - Generate quickPUNCH f-corona products
 @flow(validate_parameters=False)
 def levelq_core_flow(data_list: list[str] | list[NDCube],
-                     output_filename: str | None = None) -> list[NDCube]:
+                     output_filename: list[str] | None = None) -> list[NDCube]:
     """Level quickPUNCH core flow."""
     logger = get_run_logger()
     logger.info("beginning level quickPUNCH core flow")
@@ -102,8 +102,8 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
     output_data_nfi = merge_many_task(data_list_nfi, quickpunch_nfi_wcs)
 
     if output_filename is not None:
-        output_image_task(output_data_mosaic, output_filename)
-        output_image_task(output_data_nfi, output_filename)
+        output_image_task(output_data_mosaic, output_filename[0])
+        output_image_task(output_data_nfi, output_filename[1])
 
     logger.info("ending level quickPUNCH core flow")
     return [output_data_mosaic, output_data_nfi]
@@ -117,4 +117,5 @@ if __name__ == "__main__":
                        key=lambda s: os.path.basename(s).split("_")[3])
 
     levelq_core_flow(filenames,
-                     output_filename="/d0/punchsoc/gamera_data/forward_lq/file.fits")
+                     output_filename=["/d0/punchsoc/gamera_data/forward_lq/sample_quickpunch_wfi.fits",
+                                      "/d0/punchsoc/gamera_data/forward_lq/sample_quickpunch_nfi.fits"])

@@ -3,7 +3,7 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data.tests.test_io import sample_ndcube
-from punchbowl.level2.merge import merge_many_task
+from punchbowl.level2.merge import merge_many_polarized_task
 
 
 @pytest.fixture
@@ -25,6 +25,6 @@ def test_merge_many_task(sample_data_list):
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
 
     pd_list = sample_data_list
-    output_punchdata = merge_many_task.fn(pd_list, trefoil_wcs)
+    output_punchdata = merge_many_polarized_task.fn(pd_list, trefoil_wcs)
     assert isinstance(output_punchdata, NDCube)
     assert output_punchdata.data.shape == (3, 4096, 4096)

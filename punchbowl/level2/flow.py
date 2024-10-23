@@ -1,10 +1,12 @@
+from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
+from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_wcs
 from punchbowl.exceptions import IncorrectFileCountError
-from punchbowl.level2.merge import merge_many_task
+from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.util import load_image_task, output_image_task
@@ -14,7 +16,7 @@ ORDER = ["PM1", "PZ1", "PP1",
          "PM3", "PZ3", "PP3",
          "PM4", "PZ4", "PP4"]
 
-ORDER_QP = ["CR0", "CR1", "CR2", "CR3"]
+ORDER_QP = ["CR1", "CR2", "CR3", "CR4"]
 
 
 @flow(validate_parameters=False)
@@ -54,7 +56,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     # data_list = [identify_bright_structures_task(cube, voter_filenames)
     #              for cube, voter_filenames in zip(data_list, voter_filenames)]
     # TODO: merge only similar polarizations together
-    output_data = merge_many_task(data_list, trefoil_wcs)
+    output_data = merge_many_polarized_task(data_list, trefoil_wcs)
 
     if output_filename is not None:
         output_image_task(output_data, output_filename)
@@ -95,11 +97,19 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
     quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_quickpunch_mosaic_wcs()
     quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
 
-    data_list_mosaic = reproject_many_flow(data_list, quickpunch_mosaic_wcs, quickpunch_mosaic_shape)
-    data_list_nfi = reproject_many_flow(data_list, quickpunch_nfi_wcs, quickpunch_nfi_shape)
+    data_list_mosaic = reproject_many_flow(ordered_data_list, quickpunch_mosaic_wcs, quickpunch_mosaic_shape)
+    data_list_nfi = reproject_many_flow(ordered_data_list[-1:], quickpunch_nfi_wcs, quickpunch_nfi_shape)
 
-    output_data_mosaic = merge_many_task(data_list_mosaic, quickpunch_mosaic_wcs)
-    output_data_nfi = merge_many_task(data_list_nfi, quickpunch_nfi_wcs)
+    output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs)
+
+    output_meta_nfi = NormalizedMetadata.load_template("CNN", "Q")
+    output_meta_nfi["DATE-OBS"] = data_list_nfi[0].meta["DATE-OBS"].value
+    output_data_nfi =  NDCube(
+        data=data_list_nfi[0].data,
+        uncertainty=StdDevUncertainty(data_list_nfi[0].uncertainty.array),
+        wcs=quickpunch_nfi_wcs,
+        meta=output_meta_nfi,
+        )
 
     if output_filename is not None:
         output_image_task(output_data_mosaic, output_filename[0])

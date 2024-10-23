@@ -128,7 +128,7 @@ def level1_core_flow(
         else:
             alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
                                            * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        data = align_task(data, mask=alignment_mask)
+        # data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -171,7 +171,7 @@ def level05_core_flow(
     output_data = []
     for i, this_data in enumerate(input_data):
         data = load_image_task(this_data) if isinstance(this_data, str) else this_data
-
+        data = decode_sqrt_data(data)
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,

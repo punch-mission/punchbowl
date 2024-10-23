@@ -337,7 +337,7 @@ def load_quickpunch_nfi_wcs() -> (astropy.wcs.WCS, (int, int)):
 
     quickpunch_nfi_wcs.wcs.crpix = quickpunch_nfi_shape[1] / 2 + 0.5, quickpunch_nfi_shape[0] / 2 + 0.5
     quickpunch_nfi_wcs.wcs.crval = 0, 0
-    quickpunch_nfi_wcs.wcs.cdelt = 30 / 3600 * 4, 30 / 3600 * 4
+    quickpunch_nfi_wcs.wcs.cdelt = 30 / 3600 * 2, 30 / 3600 * 2
     quickpunch_nfi_wcs.wcs.ctype = "HPLN-TAN", "HPLT-TAN"
 
     return quickpunch_nfi_wcs, quickpunch_nfi_shape

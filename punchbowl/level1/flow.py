@@ -128,7 +128,7 @@ def level1_core_flow(
         else:
             alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
                                            * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        # data = align_task(data, mask=alignment_mask)
+        data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value

@@ -33,6 +33,7 @@ Kinds:
             OBSLAYR1: Polar_M
             OBSLAYR2: Polar_Z
             OBSLAYR3: Polar_P
+            POLARREF: 'Solar'
         omits: [FILTER, POLAR]
 
     Unpolarized:

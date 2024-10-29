@@ -34,6 +34,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
+            POLARREF: 'Instrument'
         omits: [NAXIS3]
 
     Unpolarized:

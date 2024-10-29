@@ -32,6 +32,7 @@ Kinds:
             OBS-MODE: Polar_BpB
             OBSLAYR1: Polar_B
             OBSLAYR2: Polar_pB
+            POLARREF: 'Solar'
         omits: [FILTER, POLAR, OBSLAYR3]
 
     Unpolarized:

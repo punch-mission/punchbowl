@@ -79,7 +79,7 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> N
             raise InvalidDataError(msg)
         else:
             data_object.data[:, :] -= stray_light_model.data[:, :]
-            # TODO : update uncertainty
+            data_object.uncertainty.array[...] -= stray_light_model.data[:, :]
             data_object.meta["CALSL"] = os.path.basename(str(stray_light_path))
             data_object.meta.history.add_now("LEVEL1-remove_stray_light",
                                              f"stray light removed with {os.path.basename(str(stray_light_model))}")

@@ -28,10 +28,3 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
         output_image_task(data_list[0], output_filename)
 
     return data_list
-
-
-if __name__ == "__main__":
-    level3_core_flow(["/Users/jhughes/Desktop/repos/punchbowl/test_run/test_l2_v3.fits"],
-                     None,
-                     None,
-                     output_filename="/Users/jhughes/Desktop/repos/punchbowl/test_run/test_l3_v1.fits")

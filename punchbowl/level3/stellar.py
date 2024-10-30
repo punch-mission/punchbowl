@@ -48,7 +48,16 @@ def subtract_starfield_background(data_object: NDCube, starfield_background_mode
     starfield_subtracted_data = Starfield.subtract_from_image(starfield_background_model,
                                                               data_object,
                                                               processor=remove_starfield.ImageProcessor())
+
+    starfield_subtracted_uncertainty = Starfield.subtract_from_image(starfield_background_model,
+                                                              NDCube(data=data_object.uncertainty.array,
+                                                                     wcs=data_object.wcs,
+                                                                     meta=data_object.meta),
+                                                              processor=remove_starfield.ImageProcessor())
+
     data_object.data[...] = starfield_subtracted_data.subtracted
+    data_object.uncertainty.array[...] = starfield_subtracted_uncertainty.subtracted
+
     return data_object
 
 

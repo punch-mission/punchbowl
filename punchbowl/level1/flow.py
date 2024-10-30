@@ -207,7 +207,6 @@ def level05_core_flow(
             alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
                                            * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
 
-        # TODO - Skipped for now in simpunch and punchbowl to move the pipeline along
         data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
@@ -227,41 +226,3 @@ def level05_core_flow(
         output_data.append(data)
         logger.info("ending level 0.5 core flow")
     return output_data
-
-
-if __name__ == "__main__":
-    import os
-    import glob
-
-    filenames = sorted(glob.glob("/d0/punchsoc/gamera_data/synthetic_l0/*.fits"),
-                       key=lambda s: os.path.basename(s).split("_")[3])
-    for filepath in filenames:
-        filename = os.path.basename(filepath)
-        observatory = int(filename.split("_")[2][-1])
-        polarization = filename.split("_")[2][1]
-
-        if observatory < 4:
-            vignetting_function_path = "/d0/punchsoc/build_3_review_files/PUNCH_L1_GM1_20240817174727_v2.fits"
-        else:
-            vignetting_function_path = "/d0/punchsoc/build_3_review_files/PUNCH_L1_GM4_20240819045110_v1.fits"
-
-        if observatory < 4:
-            mask_fn = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)  # noqa: E731
-        else:
-            mask_fn = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224)) # noqa: E731
-                                    * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-
-        level05_core_flow([filepath],
-                         output_filename=[filepath.replace("synthetic_l0",
-                                                           "forward_l05").replace("L0", "L1")])
-
-
-        level1_core_flow([filepath],
-                         vignetting_function_path=vignetting_function_path,
-                         despike_unsharp_size=1,
-                         despike_alpha=3,
-                         despike_method="median",
-                         psf_model_path="/d0/punchsoc/build_3_review_files/synthetic_forward_psf.h5",
-                         alignment_mask=mask_fn,
-                         output_filename=[filepath.replace("synthetic_l0",
-                                                           "forward_l1").replace("L0", "L1")])

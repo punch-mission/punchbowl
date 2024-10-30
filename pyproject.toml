@@ -9,7 +9,7 @@ version = "0.0.1"
 dependencies = [
         "numpy",
         "astropy",
-        "sunpy",
+        "sunpy[all]",
         "pandas",
         "ndcube",
         "matplotlib",

@@ -115,10 +115,10 @@ def destreak_task(data_object: NDCube,
     logger.info("destreak started")
     new_data = correct_streaks(data_object.data, exposure_time, readout_line_time, reset_line_time)
     data_object.data[...] = new_data[...] * exposure_time
-    data_object.uncertainty.array = data_object.uncertainty.array
-    # TODO: is this the right way to uncertainty?
-    # data_object.uncertainty.array = correct_streaks(data_object.uncertainty.array,
-    #                                                 exposure_time, readout_line_time, reset_line_time)
+
+    data_object.uncertainty.array[...] = correct_streaks(data_object.uncertainty.array,
+                                                    exposure_time, readout_line_time, reset_line_time) * exposure_time
+
     logger.info("destreak finished")
     data_object.meta.history.add_now("LEVEL1-destreak", "image destreaked")
     data_object.meta.history.add_now("LEVEL1-destreak", f"exposure_time={exposure_time}")

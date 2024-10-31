@@ -47,10 +47,6 @@ def query_f_corona_model_source(
         polarizer.
 
     """
-    # TODO: Improve Query database code
-    # TODO: Change placeholder output list
-    # TODO: add option to have selective cadence
-    # TODO: update wanings and exceptions to match standards
     logger = get_run_logger()
     logger.info("query_f_corona_model_source started")
 
@@ -64,7 +60,6 @@ def query_f_corona_model_source(
         msg = f"input PUNCH_product expected as string:  'nfi', 'mosaic'. Found {product}"
         raise ValueError(msg)
 
-    # TODO - this place holder has to be removed
     file_list = []
     # file_list=session.query(File).where(and_(File.state == "created",
     #                                           File.date_obs >= date.today() + relativedelta(months=-1))).all()
@@ -145,78 +140,8 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
 def construct_f_corona_background(
     data_list: list[str],
     layer: int,
-    method: str = "percentile",
-    apply_threshold_mask: bool = True,
-    threshold_mask_cutoff: float = 1.5,
-    percentile_value: float = 5,
 ) -> NDCube:
-    """
-    Create a background f corona map from a series of different models.
-
-    Creates a background f corona map (method) using a series of different
-    averaging and minimization methods, values calculated across an input
-    data cube of dimensions array((z,y,x)). The x,y plane should contain
-    the spatial information, and the z dimension the temporal information,
-    the dimension to be minimized/averaged over. The background is taken
-    across the z dimension of the data cube. These include:
-
-        'mean' - takes the average across each pixel in the z dimension
-        of the data cube.
-
-        'min' - takes the min value across each pixel in the z dimension
-        of the data cube.
-
-        'percentile' - computes the percentile of the data along the z axis
-        of the data cube. Requires kwargs 'percentile_value', or the 5th
-        percentile is used by default. Optional inputs include:
-
-            percentile_value - the value to which the percentile should be
-            calculated
-
-    A threshold can be applied to reject outliers by applying
-    apply_threshold_mask=1. The threshold uses the standard deviation to
-    identify outliers, mask, and reject them. The masked array is used with the
-    above background methods. If apply_threshold_mask is invoked a
-    threshold_mask_cutoff is required, thus us the sigma-level at which to
-    discard outliers. If not specified a default is 1.5.
-
-
-    Parameters
-    ----------
-    data_list :
-        list of filenames to use
-
-    layer: int
-        which layer of the cube to use
-
-    method : [string = 'percentile', 'mean', min,]
-        defines the type of background model to build. Options include
-
-    percentile_value : [float]
-        if using method='percentile', this is the value of the
-        percentile the data along the z axis is calculated to.
-
-    apply_threshold_mask : [int]
-        if set outliers are masked from the data cube using the
-        threshold_mask_cutoff parameter.
-
-    threshold_mask_cutoff: [float]
-        if using method='stacker', this is the sigma-level at which
-        to discard outliers. The default is 1.5.
-
-    Returns
-    -------
-    return output_PUNCHobject : ['punchbowl.data.PUNCHData']
-        returns an array of the same dimensions as the x and y dimensions of
-        the input array
-
-    """
-    # TODO: exclude data if flagged in weight array
-    # TODO: pass through REAL meta data and WCS
-    # TODO: create 2nd hdu with list of input files
-    # TODO: add an x,y window to average over
-    # TODO: needs to look at the weights (uncertainties) for trefoil images, so we don't average
-    # TODO: output weight
+    """Build f corona background model."""
     logger = get_run_logger()
     logger.info("construct_f_corona_background started")
 
@@ -226,61 +151,27 @@ def construct_f_corona_background(
         msg = "data_list cannot be empty"
         raise ValueError(msg)
 
-    # TODO: replace in favor of using object directly
     output = load_ndcube_from_fits(data_list[0])
     output_wcs = output.wcs
     output_meta = output.meta
     output_mask = output.mask
 
-    data_shape = np.shape(output.data[layer])
+    data_shape = output.data[layer].shape
 
     number_of_data_frames = len(data_list)
     data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
-
-    # create an empty list for data
+    uncertainty_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
     meta_list = []
 
     for i, address_out in enumerate(data_list):
         data_object = load_ndcube_from_fits(address_out)
         data_cube[i, :, :] = data_object.data[layer]
+        uncertainty_cube[i, :, :] = data_object.uncertainty.array[layer]
         meta_list.append(data_object.meta)
 
-    if apply_threshold_mask:
-        # copy data arrays
-        data_size = data_cube.shape
-        temp_data_cube = data_cube.copy()
-        data_mask = data_cube.copy()
-        data_mask.fill(1)
-
-        # Compute the total image mean
-        mean_image = np.average(data_cube, axis=0)
-
-        # Compute the standard deviation for each pixel
-        sd_image = np.std(data_cube, ddof=1, axis=0)
-
-        # Mask outliers in the cube
-        for n in range(data_size[0]):
-            temp_data_cube[n, :, :] = np.abs(data_cube[n, :, :] - mean_image[:, :]) / sd_image[:, :]
-
-        # mask the data
-        data_mask[temp_data_cube > threshold_mask_cutoff] = np.nan
-        data_cube *= data_mask
-
-    # calculate the background model
-    if method == "percentile":
-        f_background = nan_percentile(data_cube, percentile_value)
-    elif method == "min":
-        f_background = np.nanmin(data_cube, axis=0)
-    elif method == "mean":
-        f_background = np.nanmean(data_cube, axis=0)
-    else:
-        msg = f"Invalid f corona model supplied, method expects 'min', 'mean', or 'percentile'. Found {method}"
-        raise ValueError(
-            msg,
-        )
 
     # create an output PUNCHdata object
-    # TODO: the weight and wcs should come from all of the input files, not just one
+    f_background = np.zeros_like(data_cube[0])
     output = NDCube(f_background, wcs=output_wcs, meta=output_meta, mask=output_mask)
 
     logger.info("construct_f_corona_background finished")

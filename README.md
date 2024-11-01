@@ -2,26 +2,28 @@
 
 `punchbowl` is the science calibration code for [the PUNCH mission](https://punch.space.swri.edu/).
 
+> [!CAUTION]
+> This package is still being developed. There will be breaking code changes until v1.
+> We advise you to wait until then to use it.
+
 ## Accessing the data
 
-To come. 
+Coming soon.
 
 ## Installing `punchbowl`
 
-1. Clone repo
-2. Change to cloned repo
-3. `pip install .`
-
-It's recommended to work in a clean virtual environment. 
+Coming soon.
 
 ## Running `punchbowl`
 
-To come. 
+Coming soon.
 
 ## Getting help
 
-Please open an issue or discussion on this repo. 
+Please open an issue or discussion on this repo.
 
 ## Contributing
 
-We encourage all contributions. If you have a problem with the code or would like to see a new feature, please open an issue. Or you can submit a pull request.
+We encourage all contributions.
+If you have a problem with the code or would like to see a new feature, please open an issue.
+Or you can submit a pull request.

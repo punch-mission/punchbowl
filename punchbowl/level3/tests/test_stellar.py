@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
 from remove_starfield import Starfield
@@ -28,7 +29,7 @@ def one_data(shape: tuple = (128, 128)) -> NDCube:
 
     meta = NormalizedMetadata(
         {"TYPECODE": "CS", "OBSCODE": "M", "LEVEL": "3", "OBSRVTRY": "0", "DATE-OBS": "2024-04-08T18:40:00"})
-    return NDCube(data=data, wcs=wcs, meta=meta)
+    return NDCube(data=data, wcs=wcs, meta=meta, uncertainty=StdDevUncertainty(np.zeros_like(data)))
 
 
 @pytest.fixture()

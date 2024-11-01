@@ -1,11 +1,10 @@
 [build-system]
-
-requires = ["setuptools",
-            "wheel"]
+requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "punchbowl"
-version = "0.0.1"
+dynamic = ["version"]
 dependencies = [
         "numpy",
         "astropy",
@@ -25,7 +24,7 @@ dependencies = [
         "pylibjpeg",
         "python-dateutil",
         "thuban",
-        "remove_starfield@git+https://github.com/svank/remove_starfield"
+        "remove_starfield"
 ]
 requires-python = ">=3.11"
 authors = [
@@ -41,9 +40,9 @@ maintainers = [
   {name = "J. Marcus Hughes", email = "marcus.hughes@swri.org"}
 ]
 description = "PUNCH science calibration code"
-readme = "TODO"
-license = {file = "TODO"}
-keywords = ["TODO"]
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["solar physics", "PUNCH", "NASA", "science", "calibration"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python"
@@ -73,10 +72,12 @@ dev = ["punchbowl[docs,test]"]
 
 [project.urls]
 #Homepage = "https://example.com"
-#Documentation = "https://readthedocs.org"
+Documentation = "https://punchbowl.readthedocs.io/en/latest/"
 Repository = "https://github.com/punch-mission/punchbowl.git"
 "Bug Tracker" = "https://github.com/punch-mission/punchbowl/issues"
 #Changelog = "https://github.com/punch-mission/thuban/blob/main/CHANGELOG.md"
+
+[tool.setuptools_scm]
 
 [tool.setuptools.packages]
 find = {}  # Scan the project directory with the default parameters

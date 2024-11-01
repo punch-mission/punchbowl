@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Hughes"
+  given-names: "J. Marcus"
+  orcid: "https://orcid.org/0000-0003-3410-7650"
+- family-names: "Lowder"
+  given-names: "Chris"
+  orcid: "https://orcid.org/0000-0001-8318-8229"
+- family-names: "West"
+  given-names: "Matthew"
+  orcid: "https://orcid.org/0000-0002-0631-2393"
+- family-names: "Seaton"
+  given-names: "Daniel"
+  orcid: "https://orcid.org/0000-0002-0494-2025"
+- family-names: "Patel"
+  given-names: "Ritesh"
+  orcid: "https://orcid.org/0000-0001-8504-2725"
+- family-names: "Lamb"
+  given-names: "Derek"
+  orcid: "https://orcid.org/0000-0002-6061-6443"
+- family-names: "Kovak"
+  given-names: "Sarah"
+  orcid: "https://orcid.org/0000-0003-1714-5970"
+- family-names: "DeForest"
+  given-names: "Craig"
+  orcid: "https://orcid.org/0000-0002-7164-2786"
+
+title: "punchbowl"
+version: 0.0.1
+# doi: 10.5281/zenodo.10076326
+date-released: 2024-11-01
+url: "https://github.com/punch-mission/punchbowl"

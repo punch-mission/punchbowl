@@ -25,7 +25,7 @@ author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags
 release: str = get_version("punchbowl")
-version: str = ".".join(release.split('.')[:2])
+version: str = get_version("punchbowl")
 
 # -- General configuration ---------------------------------------------------
 

@@ -1,0 +1,8 @@
+sphinx
+codespell
+pydata-sphinx-theme
+sphinx-autoapi
+sphinx-favicon
+nbsphinx
+ipython
+sphinxcontrib-mermaid

@@ -13,7 +13,7 @@ Where does `punchbowl` fit in?
 ``punchbowl`` is the data reduction pipeline code for the PUNCH mission. The pipeline, as shown below,
 consists of several segments of processing.
 
-.. figure:: ./images/FO4.png
+.. figure:: ./images/PUNCH_data_flow.pdf
     :alt: PUNCH pipeline schematic
     :width: 800px
     :align: center

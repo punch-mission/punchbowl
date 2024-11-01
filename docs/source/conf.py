@@ -1,4 +1,4 @@
-from punchbowl import __version__
+from importlib.metadata import version as get_version
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -24,8 +24,8 @@ copyright = "2024, PUNCH Science Operations Center"
 author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags
-release = __version__
-
+release: str = get_version("punchbowl")
+version: str = ".".join(release.split('.')[:2])
 
 # -- General configuration ---------------------------------------------------
 

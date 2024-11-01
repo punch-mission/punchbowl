@@ -1,11 +1,10 @@
 [build-system]
-
-requires = ["setuptools",
-            "wheel"]
+requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "punchbowl"
-version = "0.0.1"
+dynamic = ["version"]
 dependencies = [
         "numpy",
         "astropy",
@@ -41,9 +40,9 @@ maintainers = [
   {name = "J. Marcus Hughes", email = "marcus.hughes@swri.org"}
 ]
 description = "PUNCH science calibration code"
-readme = "TODO"
-license = {file = "TODO"}
-keywords = ["TODO"]
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["solar physics", "PUNCH", "NASA", "science", "calibration"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python"

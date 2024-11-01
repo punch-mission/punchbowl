@@ -1,4 +1,5 @@
 from importlib.metadata import version as get_version
+from packaging.version import Version
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -25,7 +26,10 @@ author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags
 release: str = get_version("punchbowl")
-version: str = get_version("punchbowl")
+version: str = release
+_version = Version(release)
+if _version.is_devrelease:
+    version = release = f"{_version.base_version}.dev{_version.dev}"
 
 # -- General configuration ---------------------------------------------------
 

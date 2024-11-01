@@ -61,6 +61,7 @@ test = ["pytest",
             "hypothesis"]
 docs = ["sphinx",
         "codespell",
+        "packaging",
             "pydata-sphinx-theme",
             "sphinx-autoapi",
             "sphinx-favicon",

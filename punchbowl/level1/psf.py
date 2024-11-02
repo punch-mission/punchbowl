@@ -1,18 +1,17 @@
 import os
+from pathlib import Path
 
 from ndcube import NDCube
 from prefect import get_run_logger, task
-from regularizepsf.corrector import ArrayCorrector
+from regularizepsf.transform import ArrayPSFTransform
 
 
 def correct_psf(
     data: NDCube,
-    corrector: ArrayCorrector,
-    alpha: float = 2.0,
-    epsilon: float = 0.3,
+    psf_transform: ArrayPSFTransform,
 ) -> NDCube:
     """Correct PSF."""
-    new_data = corrector.correct_image(data.data.copy(), alpha=alpha, epsilon=epsilon)
+    new_data = psf_transform.apply(data.data)
 
     data.data[...] = new_data[...]
     # TODO: uncertainty propagation
@@ -43,7 +42,7 @@ def correct_psf_task(
     logger.info("correct_psf started")
 
     if model_path is not None:
-        corrector = ArrayCorrector.load(model_path)
+        corrector = ArrayPSFTransform.load(Path(model_path))
         data_object = correct_psf(data_object, corrector)
         data_object.meta.history.add_now("LEVEL1-correct_psf",
                                          f"PSF corrected with {os.path.basename(model_path)} model")

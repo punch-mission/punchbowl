@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os.path
 
 import astropy.units as u
@@ -13,6 +14,16 @@ from ndcube import NDCube
 from punchbowl.data.meta import NormalizedMetadata
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
+
+def write_file_hash(path: str) -> None:
+    """Create a SHA-256 hash for a file."""
+    file_hash = hashlib.sha256()
+    with open(path, "rb") as f:
+        fb = f.read()
+        file_hash.update(fb)
+
+    with open(path + ".sha", "w") as f:
+        f.write(file_hash.hexdigest())
 
 
 def get_base_file_name(cube: NDCube) -> str:
@@ -28,10 +39,31 @@ def get_base_file_name(cube: NDCube) -> str:
 
 def write_ndcube_to_fits(cube: NDCube,
                          filename: str,
-                         overwrite: bool = True) -> None:
+                         overwrite: bool = True,
+                         write_hash: bool = True,
+                         uncertainty_quantize_level: float = 16) -> None:
     """Write an NDCube as a FITS file."""
     if filename.endswith(".fits"):
-        _write_fits(cube, filename, overwrite=overwrite)
+        _update_statistics(cube)
+
+        full_header = cube.meta.to_fits_header(wcs=cube.wcs)
+
+        hdu_data = fits.CompImageHDU(data=cube.data,
+                                     header=full_header,
+                                     name="Primary data array")
+        hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
+                                            header=full_header,
+                                            name="Uncertainty array",
+                                            quantize_level=uncertainty_quantize_level)
+
+        hdul = cube.wcs.to_fits()
+        hdul[0] = fits.PrimaryHDU()
+        hdul.insert(1, hdu_data)
+        hdul.insert(2, hdu_uncertainty)
+        hdul.writeto(filename, overwrite=overwrite, checksum=True)
+        hdul.close()
+        if write_hash:
+            write_file_hash(filename)
     else:
         msg = (
             "Filename must have a valid file extension `.fits`"
@@ -41,26 +73,6 @@ def write_ndcube_to_fits(cube: NDCube,
             msg,
         )
 
-
-def _write_fits(cube: NDCube, filename: str, overwrite: bool = True, uncertainty_quantize_level: float = 16.0) -> None:
-    _update_statistics(cube)
-
-    full_header = cube.meta.to_fits_header(wcs=cube.wcs)
-
-    hdu_data = fits.CompImageHDU(data=cube.data,
-                                 header=full_header,
-                                 name="Primary data array")
-    hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
-                                        header=full_header,
-                                        name="Uncertainty array",
-                                        quantize_level=uncertainty_quantize_level)
-
-    hdul = cube.wcs.to_fits()
-    hdul[0] = fits.PrimaryHDU()
-    hdul.insert(1, hdu_data)
-    hdul.insert(2, hdu_uncertainty)
-    hdul.writeto(filename, overwrite=overwrite, checksum=True)
-    hdul.close()
 
 def _pack_uncertainty(cube: NDCube) -> np.ndarray:
     """Compress the uncertainty for writing to file."""

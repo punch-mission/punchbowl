@@ -6,6 +6,7 @@ from punchbowl.data import get_base_file_name, load_trefoil_wcs
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_wcs
 from punchbowl.exceptions import IncorrectFileCountError
+from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.resample import reproject_many_flow
@@ -21,7 +22,7 @@ ORDER_QP = ["CR1", "CR2", "CR3", "CR4"]
 
 @flow(validate_parameters=False)
 def level2_core_flow(data_list: list[str] | list[NDCube],
-                     # voter_filenames: list[list[str]],
+                     voter_filenames: list[list[str]],
                      output_filename: str | None = None) -> list[NDCube]:
     """Level 2 core flow."""
     logger = get_run_logger()
@@ -49,13 +50,12 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
 
     trefoil_wcs, trefoil_shape = load_trefoil_wcs()
 
-    # TODO make more robust
+    # TODO make more robust... fails if a file is missing or out of order right now
     data_list = (resolve_polarization_task(ordered_data_list[:3]) + resolve_polarization_task(ordered_data_list[3:6])
                  + resolve_polarization_task(ordered_data_list[6:9]) + resolve_polarization_task(ordered_data_list[9:]))
     data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape)
-    # data_list = [identify_bright_structures_task(cube, voter_filenames)
-    #              for cube, voter_filenames in zip(data_list, voter_filenames)]
-    # TODO: merge only similar polarizations together
+    data_list = [identify_bright_structures_task(cube, voter_filenames)
+                 for cube, voter_filenames in zip(data_list, voter_filenames, strict=True)]
     output_data = merge_many_polarized_task(data_list, trefoil_wcs)
 
     if output_filename is not None:
@@ -65,8 +65,6 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     return [output_data]
 
 
-# TODO - Split this into multiple flows?
-# TODO - Generate quickPUNCH f-corona products
 @flow(validate_parameters=False)
 def levelq_core_flow(data_list: list[str] | list[NDCube],
                      output_filename: list[str] | None = None) -> list[NDCube]:
@@ -117,15 +115,3 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
 
     logger.info("ending level quickPUNCH core flow")
     return [output_data_mosaic, output_data_nfi]
-
-
-if __name__ == "__main__":
-    import os
-    import glob
-
-    filenames = sorted(glob.glob("/d0/punchsoc/gamera_data/forward_l1/*CR*.fits"),
-                       key=lambda s: os.path.basename(s).split("_")[3])
-
-    levelq_core_flow(filenames,
-                     output_filename=["/d0/punchsoc/gamera_data/forward_lq/sample_quickpunch_wfi.fits",
-                                      "/d0/punchsoc/gamera_data/forward_lq/sample_quickpunch_nfi.fits"])

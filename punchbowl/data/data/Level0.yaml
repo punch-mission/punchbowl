@@ -5,7 +5,7 @@ Level:
             BITPIX: 16
     Documentation, Contact, and Collection Metadata:
         overrides:
-            DESCRPTN: PUNCH Level-0 data, DN values in camera coordinates
+            DESCRPTN: PUNCH Level-0 data, square-root encoded DN values in camera coordinates
     File Type and Provenance:
         overrides:
             LEVEL: 0
@@ -19,7 +19,7 @@ Level:
     Image Statistics and Properties:
         overrides:
             DSATVAL: 65535
-            BUNIT: DN
+            BUNIT: sqrt(DN)
         omits: [BSUN_DEF]
     Solar Reference Data:
     Spacecraft Location & Environment:

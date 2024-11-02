@@ -24,7 +24,8 @@ dependencies = [
         "pylibjpeg",
         "python-dateutil",
         "thuban",
-        "remove_starfield"
+        "remove_starfield",
+        "quadprog"
 ]
 requires-python = ">=3.11"
 authors = [

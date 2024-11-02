@@ -17,7 +17,6 @@ from punchbowl.data.meta import MetaField
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.level3.f_corona_model import (
     construct_f_corona_background,
-    query_f_corona_model_source,
     subtract_f_corona_background,
     subtract_f_corona_background_task,
 )

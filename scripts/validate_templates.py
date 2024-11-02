@@ -3,7 +3,8 @@ import argparse
 
 import pandas as pd
 
-from punchbowl.data import NormalizedMetadata, load_level_spec, load_spacecraft_def
+from punchbowl.data import NormalizedMetadata
+from punchbowl.data.meta import load_level_spec, load_spacecraft_def
 
 LEVELS = ["0", "1", "2", "3", "L", "Q"]
 

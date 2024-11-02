@@ -5,7 +5,8 @@ import astropy.units as u
 import numpy as np
 from ndcube import NDCube
 from prefect import flow, get_run_logger
-from regularizepsf import ArrayCorrector, CoordinatePatchCollection, simple_psf
+from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
+from regularizepsf.util import calculate_covering
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.units import dn_to_msb
@@ -24,25 +25,22 @@ from punchbowl.util import load_image_task, output_image_task
 
 @flow(validate_parameters=False)
 def generate_psf_model_core_flow(input_filepaths: [str],
+                                 alpha: float = 2.0,
+                                 epsilon: float = 0.3,
+                                 image_shape: (int, int) = (2048, 2048),
                                  psf_size: int = 32,
-                                 patch_size: int = 256,
-                                 target_fwhm: float = 3.25) -> ArrayCorrector:
+                                 target_fwhm: float = 3.25) -> ArrayPSFTransform:
     """Generate PSF model."""
     # Define the target PSF as a symmetric Gaussian
-    center = patch_size / 2
+    center = psf_size / 2
     sigma = target_fwhm / 2.355
-
-    @simple_psf
+    @simple_functional_psf
     def target(x, y, x0=center, y0=center, sigma_x=sigma, sigma_y=sigma) -> np.ndarray:  # noqa: ANN001
         return np.exp(-(np.square(x - x0) / (2 * np.square(sigma_x)) + np.square(y - y0) / (2 * np.square(sigma_y))))
 
-    target_evaluation = target(*np.meshgrid(np.arange(patch_size), np.arange(patch_size)))
-
-    # Build the PSF model using the target PSF
-    coordinate_patch_collection = CoordinatePatchCollection.find_stars_and_average(input_filepaths,
-                                                                                   psf_size,
-                                                                                   patch_size)
-    return coordinate_patch_collection.to_array_corrector(target_evaluation)
+    image_psf = ArrayPSFBuilder(psf_size).build(input_filepaths)
+    coords = calculate_covering(image_shape, psf_size)
+    return ArrayPSFTransform.construct(image_psf, target.as_array_psf(coords, psf_size), alpha, epsilon)
 
 
 @flow(validate_parameters=False)

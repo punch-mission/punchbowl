@@ -1,9 +1,10 @@
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 from scipy.signal import convolve2d, medfilt2d
 
 from punchbowl.level1.deficient_pixel import cell_neighbors
+from punchbowl.prefect import punch_task
 
 
 def radial_array(shape: tuple[int], center: tuple[int] | None = None) -> np.ndarray:
@@ -86,7 +87,7 @@ def spikejones(
     return output, spikes
 
 
-@task
+@punch_task
 def despike_task(data_object: NDCube,
                  unsharp_size: int = 3,
                  method: str = "convolve",

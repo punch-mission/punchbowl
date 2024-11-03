@@ -1,6 +1,8 @@
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
+
+from punchbowl.prefect import punch_task
 
 
 def dn_to_photons(data_array: np.ndarray, gain: float = 4.3) -> np.ndarray:
@@ -79,7 +81,7 @@ def compute_uncertainty(data_array: np.ndarray,
                                 bitrate_signal=bitrate_signal)
 
 
-@task
+@punch_task
 def update_initial_uncertainty_task(data_object: NDCube,
                                     bias_level: float = 100,
         dark_level: float = 55.81,

@@ -1,10 +1,11 @@
 
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 from skimage.morphology import binary_dilation
 
 from punchbowl.data import load_ndcube_from_fits
+from punchbowl.prefect import punch_task
 
 
 def run_zspike(
@@ -157,7 +158,7 @@ def run_zspike(
     return flagged_features_array
 
 
-@task
+@punch_task
 def identify_bright_structures_task(
     data: NDCube,
     voter_filenames: list[str],

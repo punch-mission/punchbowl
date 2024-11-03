@@ -2,11 +2,12 @@
 import numpy as np
 import remove_starfield
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 from remove_starfield import Starfield
 from remove_starfield.reducers import GaussianReducer
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.prefect import punch_task
 
 
 def generate_starfield_background(
@@ -61,7 +62,7 @@ def subtract_starfield_background(data_object: NDCube, starfield_background_mode
     return data_object
 
 
-@task
+@punch_task
 def subtract_starfield_background_task(data_object: NDCube,
                                        starfield_background_path: str | None) -> NDCube:
     """

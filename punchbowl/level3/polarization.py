@@ -1,13 +1,14 @@
 import astropy.units as u
 import numpy as np
 from ndcube import NDCollection, NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 from solpolpy import resolve
 
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.prefect import punch_task
 
 
-@task
+@punch_task
 def convert_polarization(
         input_data: NDCube) -> NDCube:
     """Convert polarization from MZP to BpB."""

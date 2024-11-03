@@ -10,8 +10,9 @@ from punchbowl.data.io import get_base_file_name, write_ndcube_to_fits
 def completion_debugger(task, task_run, state):
     """Run on task completion during debug mode."""
     if Variable.get("debug", False):
-        new_filename = f"{get_base_file_name(state)}_{task.name}.fits"
-        write_ndcube_to_fits(state, new_filename, overwrite=True)
+        cube = state.result()
+        new_filename = f"{get_base_file_name(cube)}_{task.name}.fits"
+        write_ndcube_to_fits(cube, new_filename, overwrite=True, write_hash=False)
 
 def failure_hook(task, task_run, state):
     """Run if a punch_task fails."""

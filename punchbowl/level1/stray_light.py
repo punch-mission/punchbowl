@@ -4,7 +4,7 @@ import warnings
 
 from astropy.time import Time
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import (
@@ -13,9 +13,10 @@ from punchbowl.exceptions import (
     InvalidDataError,
     LargeTimeDeltaWarning,
 )
+from punchbowl.prefect import punch_task
 
 
-@task
+@punch_task
 def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> NDCube:
     """
     Prefect task to remove stray light from an image.

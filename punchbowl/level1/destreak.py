@@ -1,7 +1,8 @@
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 
+from punchbowl.prefect import punch_task
 from punchbowl.util import validate_image_is_square
 
 
@@ -105,7 +106,7 @@ def correct_streaks(
     return correction_matrix @ image
 
 
-@task
+@punch_task
 def destreak_task(data_object: NDCube,
                   exposure_time: float = 1.0,
                   readout_line_time: float = 0.1,

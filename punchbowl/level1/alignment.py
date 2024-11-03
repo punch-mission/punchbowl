@@ -4,13 +4,14 @@ from collections.abc import Callable
 import numpy as np
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 from thuban.pointing import refine_pointing
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
+from punchbowl.prefect import punch_task
 
 
-@task
+@punch_task
 def align_task(data_object: NDCube, mask: Callable | None = None) -> NDCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.

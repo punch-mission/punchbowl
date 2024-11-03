@@ -2,7 +2,9 @@
 import astropy.units as u
 import solpolpy
 from ndcube import NDCollection, NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
+
+from punchbowl.prefect import punch_task
 
 
 def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
@@ -39,7 +41,7 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
     return out
 
 
-@task
+@punch_task
 def resolve_polarization_task(data_list: list[NDCube]) -> list[NDCube]:
     """
     Prefect task for polarization resolving.

@@ -2,9 +2,10 @@ import os
 
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 
 from punchbowl.data import load_ndcube_from_fits
+from punchbowl.prefect import punch_task
 
 
 def create_coefficient_image(flat_coefficients: np.ndarray, image_shape: tuple) -> np.ndarray:
@@ -116,7 +117,7 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
     )
 
 
-@task
+@punch_task
 def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str | None = None) -> NDCube:
     """
     Prefect task to perform the quartic fit calibration on the data.

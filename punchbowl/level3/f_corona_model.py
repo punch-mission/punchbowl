@@ -1,11 +1,12 @@
 import numpy as np
 from ndcube import NDCube
 from numpy.polynomial import polynomial
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 from quadprog import solve_qp
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import InvalidDataError
+from punchbowl.prefect import punch_task
 
 
 def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray) -> np.ndarray:
@@ -76,7 +77,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
     out = -solve_qp_cube(input_array, -cube)
     return polynomial.polyval(xt[len(xt)//2], out[::-1, :, :])
 
-@task
+@punch_task
 def construct_f_corona_background(
     data_list: list[str],
     layer: int,
@@ -172,7 +173,7 @@ def subtract_f_corona_background(data_object: NDCube,
     data_object.uncertainty.array[:, :] -= interpolated_model
     return data_object
 
-@task
+@punch_task
 def subtract_f_corona_background_task(observation: NDCube,
                                       before_f_background_model_path: str,
                                       after_f_background_model_path: str) -> NDCube:

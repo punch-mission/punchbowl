@@ -3,7 +3,7 @@ import pathlib
 import warnings
 
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import (
@@ -13,9 +13,10 @@ from punchbowl.exceptions import (
     LargeTimeDeltaWarning,
     NoCalibrationDataWarning,
 )
+from punchbowl.prefect import punch_task
 
 
-@task
+@punch_task
 def correct_vignetting_task(data_object: NDCube, vignetting_path: pathlib) -> NDCube:
     """
     Prefect task to correct the vignetting of an image.

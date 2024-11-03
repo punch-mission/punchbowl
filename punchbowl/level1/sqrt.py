@@ -2,7 +2,9 @@ import os.path
 
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
+
+from punchbowl.prefect import punch_task
 
 TABLE_PATH = os.path.dirname(__file__) + "/decoding_tables/"
 
@@ -337,7 +339,7 @@ def decode_sqrt_by_table(data: np.ndarray | float, table: np.ndarray) -> np.ndar
     return table[data]
 
 
-@task
+@punch_task
 def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCube:
     """
     Prefect task in the pipeline to decode square root encoded data.

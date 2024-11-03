@@ -2,8 +2,10 @@ import os
 from pathlib import Path
 
 from ndcube import NDCube
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 from regularizepsf.transform import ArrayPSFTransform
+
+from punchbowl.prefect import punch_task
 
 
 def correct_psf(
@@ -17,7 +19,7 @@ def correct_psf(
     # TODO: uncertainty propagation
     return data
 
-@task
+@punch_task
 def correct_psf_task(
     data_object: NDCube,
     model_path: str | None = None,

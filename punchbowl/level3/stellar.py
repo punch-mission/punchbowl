@@ -46,11 +46,11 @@ def generate_starfield_background(
 
 def subtract_starfield_background(data_object: NDCube, starfield_background_model: Starfield) -> NDCube:
     """Subtract starfield background."""
-    starfield_subtracted_data = Starfield.subtract_from_image(starfield_background_model,
+    starfield_subtracted_data = starfield_background_model.subtract_from_image(
                                                               data_object,
                                                               processor=remove_starfield.ImageProcessor())
 
-    starfield_subtracted_uncertainty = Starfield.subtract_from_image(starfield_background_model,
+    starfield_subtracted_uncertainty = starfield_background_model.subtract_from_image(
                                                               NDCube(data=data_object.uncertainty.array,
                                                                      wcs=data_object.wcs,
                                                                      meta=data_object.meta),

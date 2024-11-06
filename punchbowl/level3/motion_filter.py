@@ -27,10 +27,10 @@ def layer_mask(radius: float, img_shape: (int, int)) -> np.ndarray:
         Circular mask.
 
     """
-    xs = np.arange(0, img_shape[0])
-    ys = np.arange(0, img_shape[1])
+    xs = np.arange(0, img_shape[1])
+    ys = np.arange(0, img_shape[0])
     xs, ys = np.meshgrid(xs, ys)
-    distance = np.sqrt((xs - img_shape[0] / 2) ** 2 + (ys - img_shape[1] / 2) ** 2)
+    distance = np.sqrt((xs - img_shape[1] / 2) ** 2 + (ys - img_shape[0] / 2) ** 2)
     return distance < radius
 
 

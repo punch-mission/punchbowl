@@ -54,8 +54,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     data_list = (resolve_polarization_task(ordered_data_list[:3]) + resolve_polarization_task(ordered_data_list[3:6])
                  + resolve_polarization_task(ordered_data_list[6:9]) + resolve_polarization_task(ordered_data_list[9:]))
     data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape)
-    data_list = [identify_bright_structures_task(cube, voter_filenames)
-                 for cube, voter_filenames in zip(data_list, voter_filenames, strict=True)]
+    data_list = [identify_bright_structures_task(cube, this_voter_filenames)
+                 for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
     output_data = merge_many_polarized_task(data_list, trefoil_wcs)
 
     if output_filename is not None:
@@ -65,6 +65,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     return [output_data]
 
 
+# TODO add bright structure id
 @flow(validate_parameters=False)
 def levelq_core_flow(data_list: list[str] | list[NDCube],
                      output_filename: list[str] | None = None) -> list[NDCube]:

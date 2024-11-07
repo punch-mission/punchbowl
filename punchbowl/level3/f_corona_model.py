@@ -1,7 +1,7 @@
 import numpy as np
 from ndcube import NDCube
 from numpy.polynomial import polynomial
-from prefect import get_run_logger
+from prefect import flow, get_run_logger
 from quadprog import solve_qp
 
 from punchbowl.data import load_ndcube_from_fits
@@ -77,7 +77,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
     out = -solve_qp_cube(input_array, -cube)
     return polynomial.polyval(xt[len(xt)//2], out[::-1, :, :])
 
-@punch_task
+@flow
 def construct_f_corona_background(
     data_list: list[str],
     layer: int,

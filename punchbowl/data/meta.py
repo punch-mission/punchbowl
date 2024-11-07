@@ -742,3 +742,14 @@ class NormalizedMetadata(Mapping):
     def astropy_time(self) -> Time:
         """Get the date-obs as an astropy Time object."""
         return Time(self.datetime)
+
+    @property
+    def product_code(self) -> str:
+        """"Retrieve the product code."""
+        if "OBSCODE" not in self:
+            msg = "OBSCODE is missing from the metadata."
+            raise MissingMetadataError(msg)
+        if "TYPECODE" not in self:
+            msg = "TYPECODE is missing from the metadata."
+            raise MissingMetadataError(msg)
+        return self["TYPECODE"].value + self["OBSCODE"].value

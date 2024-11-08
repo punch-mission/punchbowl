@@ -44,7 +44,9 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray) -> np.ndarray:
 
 def model_fcorona_for_cube(xt: np.ndarray,
                           cube: np.ndarray,
-                          smooth_level: float | None =4) -> np.ndarray:
+                          smooth_level: float | None =4,
+                          return_full_curves: bool=False
+                          ) -> np.ndarray | (np.ndarray, np.ndarray):
     """
     Model the F corona given a list of times and a corresponding data cube, .
 
@@ -57,16 +59,23 @@ def model_fcorona_for_cube(xt: np.ndarray,
     smooth_level : float | None
         If None, no smoothing is applied.
         Otherwise, the top and bottom `smooth_level` standard deviations of data are rejected.
+    return_full_curves: bool
+        If True, this function returns the full curve fitted to the time series at each pixel
+        and the smoothed data cube. If False (default), only the curve's value at the central
+        frame is returned, producing a model at one instant in time.
 
     Returns
     -------
     np.ndarray
+        The F-corona model at the central point in time. If return_full_curves is True, this is
+        instead the F-corona model at all points in time covered by the data cube
+    np.ndarray
+        The smoothed data cube. Returned only if return_full_curves is True.
 
     """
     if smooth_level is not None:
         average = np.nanmean(cube, axis=0)
         std = np.nanstd(cube, axis=0)
-        
         a, b, c = np.where(cube[:, ...] > (average - (smooth_level * std)))
         cube[a, b, c] = average[b, c]
 
@@ -75,7 +84,11 @@ def model_fcorona_for_cube(xt: np.ndarray,
 
     input_array = np.c_[np.power(xt, 3), np.square(xt), xt, np.ones(len(xt))]
     out = -solve_qp_cube(input_array, -cube)
-    return polynomial.polyval(xt[len(xt)//2], out[::-1, :, :])
+    if return_full_curves:
+        return polynomial.polyval(xt, out[::-1, :, :]).transpose((2, 0, 1)), cube
+    else:
+        return polynomial.polyval(xt[len(xt)//2], out[::-1, :, :])
+
 
 @flow
 def construct_f_corona_background(

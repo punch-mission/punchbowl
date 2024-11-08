@@ -76,7 +76,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
     if smooth_level is not None:
         average = np.nanmean(cube, axis=0)
         std = np.nanstd(cube, axis=0)
-        a, b, c = np.where(cube[:, ...] > (average - (smooth_level * std)))
+        a, b, c = np.where(cube[:, ...] > (average + (smooth_level * std)))
         cube[a, b, c] = average[b, c]
 
         a, b, c = np.where(cube[:, ...] < (average - (smooth_level * std)))

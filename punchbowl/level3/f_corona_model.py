@@ -35,7 +35,7 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray) -> np.ndarray:
         for j in range(cube.shape[2]):
             a = np.matmul(c, cube[:, i, j])
             try:
-                this_sol = solve_qp(g, a, c, cube[:, i, j])
+                this_sol = solve_qp(g, a, c, cube[:, i, j])[0]
             except ValueError:
                 this_sol = np.zeros(input_vals.shape[1])
             for k in range(sol.shape[0]):

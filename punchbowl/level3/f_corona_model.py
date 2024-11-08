@@ -9,7 +9,8 @@ from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task
 
 
-def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray) -> np.ndarray:
+def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
+                  n_nonnan_required: int=7) -> np.ndarray:
     """
     Fast solver for the quadratic programming problem.
 
@@ -19,6 +20,9 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray) -> np.ndarray:
         array of times
     cube : np.ndarray
         array of data
+    n_nonnan_required : int
+        The number of non-nan values that must be present in each pixel's time series.
+        Any pixels with fewer will not be fit, with zeros returned instead.
 
     Returns
     -------
@@ -33,11 +37,18 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray) -> np.ndarray:
 
     for i in range(cube.shape[1]):
         for j in range(cube.shape[2]):
-            a = np.matmul(c, cube[:, i, j])
-            try:
-                this_sol = solve_qp(g, a, c, cube[:, i, j])[0]
-            except ValueError:
+            time_series = cube[:, i, j]
+            is_good = np.isfinite(time_series)
+            time_series = time_series[is_good]
+            c_iter = c[:, is_good]
+            if time_series.size < n_nonnan_required:
                 this_sol = np.zeros(input_vals.shape[1])
+            else:
+                a = np.matmul(c_iter, time_series)
+                try:
+                    this_sol = solve_qp(g, a, c_iter, time_series)[0]
+                except ValueError:
+                    this_sol = np.zeros(input_vals.shape[1])
             sol[:, i, j] = this_sol
 
     return np.asarray(sol)

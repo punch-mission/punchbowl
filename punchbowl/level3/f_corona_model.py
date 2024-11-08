@@ -46,7 +46,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
                           cube: np.ndarray,
                           smooth_level: float | None =4,
                           return_full_curves: bool=False
-                          ) -> np.ndarray | (np.ndarray, np.ndarray):
+                          ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """
     Model the F corona given a list of times and a corresponding data cube, .
 

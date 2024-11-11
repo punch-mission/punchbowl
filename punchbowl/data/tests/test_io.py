@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 
-import astropy
 import numpy as np
 import pytest
 from astropy.io import fits
@@ -64,7 +63,7 @@ def test_write_data(sample_ndcube):
     assert os.path.isfile(SAMPLE_WRITE_PATH)
 
 
-def test_write_data(sample_ndcube):
+def test_write_data_jp2(sample_ndcube):
     cube = sample_ndcube((50, 50))
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
@@ -75,6 +74,31 @@ def test_write_data(sample_ndcube):
 
     write_ndcube_to_jp2(cube, SAMPLE_WRITE_JP2_PATH)
     assert os.path.isfile(SAMPLE_WRITE_JP2_PATH)
+
+
+def test_write_data_jp2_wrong_filename(sample_ndcube):
+    cube = sample_ndcube((50, 50))
+    cube.meta["LEVEL"] = "1"
+    cube.meta["TYPECODE"] = "CL"
+    cube.meta["OBSRVTRY"] = "1"
+    cube.meta["PIPEVRSN"] = "0.1"
+    cube.meta["DATE-OBS"] = str(datetime.now())
+    cube.meta["DATE-END"] = str(datetime.now())
+
+    with pytest.raises(ValueError):
+        write_ndcube_to_jp2(cube, SAMPLE_WRITE_PATH)
+
+
+def test_write_data_jp2_wrong_dimensions(sample_ndcube):
+    cube = sample_ndcube((2, 50, 50))
+    cube.meta["LEVEL"] = "3"
+    cube.meta["TYPECODE"] = "PAM"
+    cube.meta["PIPEVRSN"] = "0.1"
+    cube.meta["DATE-OBS"] = str(datetime.now())
+    cube.meta["DATE-END"] = str(datetime.now())
+
+    with pytest.raises(ValueError):
+        write_ndcube_to_jp2(cube, SAMPLE_WRITE_JP2_PATH)
 
 
 def test_generate_data_statistics_from_zeros():

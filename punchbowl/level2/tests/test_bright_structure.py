@@ -12,7 +12,7 @@ from prefect.logging import disable_run_logger
 # punchbowl imports
 from punchbowl.data import NormalizedMetadata
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
-from punchbowl.level2.bright_structure import run_zspike, identify_bright_structures_task
+from punchbowl.level2.bright_structure import identify_bright_structures_task, run_zspike
 
 
 @pytest.fixture()

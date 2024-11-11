@@ -39,13 +39,14 @@ def get_base_file_name(cube: NDCube) -> str:
     return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string + "_v" + file_version
 
 
-# TODO - Export metadata using EXIF?
-# TODO - Make adjustable parameters for scaling?
 def write_ndcube_to_jp2(cube: NDCube,
-                        filename: str) -> None:
+                        filename: str,
+                        layer: int | None = None,
+                        vmin: float = 1e-15,
+                        vmax: float = 8e-13) -> None:
     """Write an NDCube as a JPEG2000 file."""
-    if len(cube.data.shape) != 2:
-        msg = ("Output data must be two-dimensional")
+    if (len(cube.data.shape) != 2) and layer is None:
+        msg = ("Output data must be two-dimensional, or a layer must be specified")
         raise ValueError(msg)
 
     if not filename.endswith((".jp2", ".j2k")):
@@ -54,7 +55,10 @@ def write_ndcube_to_jp2(cube: NDCube,
         raise ValueError(msg)
 
     cmap = cmap_punch()
-    norm = LogNorm(vmin=1E-15, vmax=8e-13)
+    norm = LogNorm(vmin=vmin, vmax=vmax)
+
+    if layer is not None:
+        cube = cube[layer, :, :]
 
     scaled_arr = (cmap(norm(cube.data))*255).astype(np.uint8)
     encoded_arr = encode_array(scaled_arr)
@@ -172,4 +176,4 @@ if __name__ == "__main__":
     datacube = load_ndcube_from_fits(path)
 
     outpath = "/Users/clowder/Desktop/test.jp2"
-    write_ndcube_to_jp2(datacube[0], outpath)
+    write_ndcube_to_jp2(datacube, outpath, layer=0)

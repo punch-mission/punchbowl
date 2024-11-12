@@ -1,4 +1,3 @@
-from pathlib import Path
 from collections.abc import Callable
 
 import astropy.units as u
@@ -19,7 +18,6 @@ from punchbowl.level1.psf import correct_psf_task
 from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.level1.stray_light import remove_stray_light_task
-from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.util import load_image_task, output_image_task
 
 
@@ -59,7 +57,6 @@ def level1_core_flow(
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
-    vignetting_function_path: str | None = None,
     stray_light_path: str | None = None,
     deficient_pixel_map_path: str | None = None,
     deficient_pixel_method: str = "median",
@@ -110,7 +107,6 @@ def level1_core_flow(
                              exposure_time=exposure_time,
                              reset_line_time=reset_line_time,
                              readout_line_time=readout_line_time)
-        data = correct_vignetting_task(data, Path(vignetting_function_path))
         data = remove_deficient_pixels_task(data,
                                             deficient_pixel_map_path,
                                             required_good_count=deficient_pixel_required_good_count,

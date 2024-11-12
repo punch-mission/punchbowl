@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import typing as t
-import warnings
 from datetime import datetime
 from collections import OrderedDict
 from collections.abc import Mapping
@@ -23,7 +22,7 @@ from sunpy.map import solar_angular_radius
 
 from punchbowl.data.history import History
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
-from punchbowl.exceptions import ExtraMetadataWarning, MissingMetadataError
+from punchbowl.exceptions import MissingMetadataError
 
 ValueType = int | str | float
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -354,12 +353,8 @@ class NormalizedMetadata(Mapping):
         m = NormalizedMetadata.load_template(type_code + obs_code, level)
 
         for k, v in h.items():
-            if k not in ("COMMENT", "HISTORY", ""):
-                if k not in m:
-                    msg = f"Skipping unexpected key of {k} found in header for Level{level} {type_code + obs_code}."
-                    warnings.warn(msg, ExtraMetadataWarning)
-                else:
-                    m[k] = v
+            if k not in ("COMMENT", "HISTORY", "") and k in m:
+                m[k] = v
         m.history = History.from_fits_header(h)
 
         return m

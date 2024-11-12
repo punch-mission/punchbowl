@@ -4,14 +4,16 @@ import hashlib
 import os.path
 
 import astropy.units as u
-import matplotlib as mpl
 import numpy as np
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from matplotlib.colors import LogNorm
 from ndcube import NDCube
+from openjpeg.utils import encode_array
 
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.visualize import cmap_punch
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -35,6 +37,34 @@ def get_base_file_name(cube: NDCube) -> str:
     file_version = cube.meta["FILEVRSN"].value
     file_version = "1" if file_version == "" else file_version  # file version should never be empty!
     return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string + "_v" + file_version
+
+
+def write_ndcube_to_jp2(cube: NDCube,
+                        filename: str,
+                        layer: int | None = None,
+                        vmin: float = 1e-15,
+                        vmax: float = 8e-13) -> None:
+    """Write an NDCube as a JPEG2000 file."""
+    if (len(cube.data.shape) != 2) and layer is None:
+        msg = ("Output data must be two-dimensional, or a layer must be specified")
+        raise ValueError(msg)
+
+    if not filename.endswith((".jp2", ".j2k")):
+        msg = ("Filename must have a valid file extension `.jp2` or `.j2k`"
+               f"Found: {os.path.splitext(filename)[1]}")
+        raise ValueError(msg)
+
+    cmap = cmap_punch()
+    norm = LogNorm(vmin=vmin, vmax=vmax)
+
+    if layer is not None:
+        cube = cube[layer, :, :]
+
+    scaled_arr = (cmap(norm(cube.data))*255).astype(np.uint8)
+    encoded_arr = encode_array(scaled_arr)
+
+    with open(filename, "wb") as f:
+        f.write(encoded_arr)
 
 
 def write_ndcube_to_fits(cube: NDCube,
@@ -82,24 +112,6 @@ def _pack_uncertainty(cube: NDCube) -> np.ndarray:
 def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -> np.ndarray:
     """Uncompress the uncertainty when reading from a file."""
     return (1/uncertainty_array) * data_array
-
-
-def _write_ql(cube: NDCube, filename: str, overwrite: bool = True) -> None:
-    if os.path.isfile(filename) and not overwrite:
-        msg = f"File {filename} already exists. If you mean to replace it then use the argument 'overwrite=True'."
-        raise OSError(
-            msg,
-        )
-
-    if cube.data.ndim != 2:
-        msg = "Specified output data should have two-dimensions."
-        raise ValueError(msg)
-
-    # Scale data array to 8-bit values
-    output_data = int(np.fix(np.interp(cube.data, (cube.data.min(), cube.data.max()), (0, 2**8 - 1))))
-
-    # Write image to file
-    mpl.image.saveim(filename, output_data)
 
 
 def _update_statistics(cube: NDCube) -> None:

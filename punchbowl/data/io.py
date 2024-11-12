@@ -41,10 +41,12 @@ def write_ndcube_to_fits(cube: NDCube,
                          filename: str,
                          overwrite: bool = True,
                          write_hash: bool = True,
+                         skip_stats: bool = False,
                          uncertainty_quantize_level: float = 16) -> None:
     """Write an NDCube as a FITS file."""
     if filename.endswith(".fits"):
-        _update_statistics(cube)
+        if not skip_stats:
+            _update_statistics(cube)
 
         full_header = cube.meta.to_fits_header(wcs=cube.wcs)
 

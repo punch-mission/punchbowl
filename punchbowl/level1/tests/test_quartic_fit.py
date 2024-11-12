@@ -40,40 +40,40 @@ def quartic_coefficients_image():
 def test_create_constant_coefficient_image():
     image_shape = (10, 20)
     coeffs = create_constant_quartic_coefficients(image_shape)
-    assert coeffs.shape[:-1] == image_shape
-    assert coeffs.shape[-1] == 5
+    assert coeffs.shape[1:] == image_shape
+    assert coeffs.shape[0] == 5
     for i in [0, 1, 2, 4]:
-        assert np.all(coeffs[:, :, i] == 0)
-    assert np.all(coeffs[:, :, 3] == 1)
+        assert np.all(coeffs[i, :, :] == 0)
+    assert np.all(coeffs[3, :, :] == 1)
 
 
 def test_create_coeff_image_with_only_one_coeff():
     coeffs_image = create_coefficient_image(np.array([5]), (10, 10))
     assert coeffs_image.shape == (
-        10,
-        10,
         1,
+        10,
+        10,
     ), "Failed to make a coefficients image with only one coefficient"
 
 
 def test_create_coeff_image_with_two_coeff():
     coeffs_image = create_coefficient_image(np.array([5, 6]), (10, 10))
     assert coeffs_image.shape == (
-        10,
-        10,
         2,
+        10,
+        10,
     ), "Failed to make a coefficients image with two coefficients"
 
 
 def test_create_coefficient_image(quartic_coefficients_image):
     assert quartic_coefficients_image.shape == (
-        10,
-        10,
         5,
+        10,
+        10,
     ), "Quartic coefficient image shape is wrong."
-    for i in range(quartic_coefficients_image.shape[-1]):
+    for i in range(quartic_coefficients_image.shape[0]):
         assert np.all(
-            quartic_coefficients_image[:, :, i] == i
+            quartic_coefficients_image[i, :, :] == i
         ), "Quartic coefficient image coefficients were not constructed properly."
 
 

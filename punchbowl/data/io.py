@@ -170,10 +170,3 @@ def load_ndcube_from_fits(path: str, key: str = " ") -> NDCube:
         meta=meta,
         unit=unit,
     )
-
-if __name__ == "__main__":
-    path = "/Users/clowder/Desktop/PUNCH_L3_PAM_20240620114400.fits"
-    datacube = load_ndcube_from_fits(path)
-
-    outpath = "/Users/clowder/Desktop/test.jp2"
-    write_ndcube_to_jp2(datacube, outpath, layer=0)

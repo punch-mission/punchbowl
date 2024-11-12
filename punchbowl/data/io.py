@@ -60,7 +60,7 @@ def write_ndcube_to_jp2(cube: NDCube,
     if layer is not None:
         cube = cube[layer, :, :]
 
-    scaled_arr = (cmap(norm(cube.data))*255).astype(np.uint8)
+    scaled_arr = (cmap(norm(np.flipud(cube.data)))*255).astype(np.uint8)
     encoded_arr = encode_array(scaled_arr)
 
     with open(filename, "wb") as f:

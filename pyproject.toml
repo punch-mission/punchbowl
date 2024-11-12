@@ -81,7 +81,7 @@ Repository = "https://github.com/punch-mission/punchbowl.git"
 
 [tool.setuptools_scm]
 
-[tool.setuptools.packages]
+[tool.setuptools]
 packages = ["punchbowl"]
 
 [tool.codespell]

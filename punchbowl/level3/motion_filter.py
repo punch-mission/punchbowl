@@ -12,7 +12,7 @@ except ImportError:
 
 def layer_mask(radius: float, img_shape: (int, int)) -> np.ndarray:
     """
-    Generates a circular mask centered in the output array.
+    Generate a circular mask centered in the output array.
 
     Parameters
     ----------

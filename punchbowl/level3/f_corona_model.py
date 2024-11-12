@@ -56,7 +56,7 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
 def model_fcorona_for_cube(xt: np.ndarray,
                           cube: np.ndarray,
                           smooth_level: float | None =4,
-                          return_full_curves: bool=False
+                          return_full_curves: bool=False,
                           ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """
     Model the F corona given a list of times and a corresponding data cube, .
@@ -97,8 +97,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
     out = -solve_qp_cube(input_array, -cube)
     if return_full_curves:
         return polynomial.polyval(xt, out[::-1, :, :]).transpose((2, 0, 1)), cube
-    else:
-        return polynomial.polyval(xt[len(xt)//2], out[::-1, :, :])
+    return polynomial.polyval(xt[len(xt)//2], out[::-1, :, :])
 
 
 @flow

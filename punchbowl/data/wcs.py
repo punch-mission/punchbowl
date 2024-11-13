@@ -156,7 +156,7 @@ def get_p_angle(time: str="now") -> u.deg:
 def hpc_to_gcrs(HPcoord, GCRSframe):  # noqa: ANN201, N803, ANN001
     """Convert helioprojective to GCRS."""
     if not _times_are_equal(HPcoord.obstime, GCRSframe.obstime):
-        raise ValueError("Obstimes are not equal")  # noqa: TRY003, EM101
+        raise ValueError("Obstimes are not equal")  # noqa: EM101
     obstime = HPcoord.obstime or GCRSframe.obstime
 
     # Compute the three angles we need
@@ -214,7 +214,7 @@ def hpc_to_gcrs(HPcoord, GCRSframe):  # noqa: ANN201, N803, ANN001
 def gcrs_to_hpc(GCRScoord, Helioprojective): # noqa: ANN201, N803, ANN001
     """Convert GCRS to HPC."""
     if not _times_are_equal(GCRScoord.obstime, Helioprojective.obstime):
-        raise ValueError("Obstimes are not equal")  # noqa: TRY003, EM101
+        raise ValueError("Obstimes are not equal")  # noqa: EM101
     obstime = GCRScoord.obstime or Helioprojective.obstime
 
     # Compute the three angles we need

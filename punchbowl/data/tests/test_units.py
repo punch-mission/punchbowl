@@ -1,6 +1,6 @@
 import astropy.units as u
-from astropy.wcs import WCS
 import numpy as np
+from astropy.wcs import WCS
 
 from punchbowl.data import units
 

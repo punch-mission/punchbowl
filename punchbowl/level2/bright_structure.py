@@ -173,6 +173,7 @@ def identify_bright_structures_task(
     logger.info("identify_bright_structures_task started")
 
     if len(voter_filenames) == 0:
+        logger.info("Identify bright structures skipped since no voters provided")
         data.meta.history.add_now("LEVEL2-bright_structure",
                                   "Identify bright structures skipped since no voters provided")
         return data

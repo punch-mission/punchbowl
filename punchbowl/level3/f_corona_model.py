@@ -9,7 +9,8 @@ from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task
 
 
-def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray) -> np.ndarray:
+def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
+                  n_nonnan_required: int=7) -> np.ndarray:
     """
     Fast solver for the quadratic programming problem.
 
@@ -19,6 +20,9 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray) -> np.ndarray:
         array of times
     cube : np.ndarray
         array of data
+    n_nonnan_required : int
+        The number of non-nan values that must be present in each pixel's time series.
+        Any pixels with fewer will not be fit, with zeros returned instead.
 
     Returns
     -------
@@ -33,19 +37,27 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray) -> np.ndarray:
 
     for i in range(cube.shape[1]):
         for j in range(cube.shape[2]):
-            a = np.matmul(c, cube[:, i, j])
-            try:
-                this_sol = solve_qp(g, a, c, cube[:, i, j])
-            except ValueError:
+            time_series = cube[:, i, j]
+            is_good = np.isfinite(time_series)
+            time_series = time_series[is_good]
+            c_iter = c[:, is_good]
+            if time_series.size < n_nonnan_required:
                 this_sol = np.zeros(input_vals.shape[1])
-            for k in range(sol.shape[0]):
-                sol[k, i, j] = this_sol[k]
+            else:
+                a = np.matmul(c_iter, time_series)
+                try:
+                    this_sol = solve_qp(g, a, c_iter, time_series)[0]
+                except ValueError:
+                    this_sol = np.zeros(input_vals.shape[1])
+            sol[:, i, j] = this_sol
 
     return np.asarray(sol)
 
 def model_fcorona_for_cube(xt: np.ndarray,
                           cube: np.ndarray,
-                          smooth_level: float | None =4) -> np.ndarray:
+                          smooth_level: float | None =4,
+                          return_full_curves: bool=False,
+                          ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """
     Model the F corona given a list of times and a corresponding data cube, .
 
@@ -58,16 +70,24 @@ def model_fcorona_for_cube(xt: np.ndarray,
     smooth_level : float | None
         If None, no smoothing is applied.
         Otherwise, the top and bottom `smooth_level` standard deviations of data are rejected.
+    return_full_curves: bool
+        If True, this function returns the full curve fitted to the time series at each pixel
+        and the smoothed data cube. If False (default), only the curve's value at the central
+        frame is returned, producing a model at one instant in time.
 
     Returns
     -------
     np.ndarray
+        The F-corona model at the central point in time. If return_full_curves is True, this is
+        instead the F-corona model at all points in time covered by the data cube
+    np.ndarray
+        The smoothed data cube. Returned only if return_full_curves is True.
 
     """
-    average = np.mean(cube, axis=0)
-    std = np.nanstd(cube, axis=0)
     if smooth_level is not None:
-        a, b, c = np.where(cube[:, ...] > (average - (smooth_level * std)))
+        average = np.nanmean(cube, axis=0)
+        std = np.nanstd(cube, axis=0)
+        a, b, c = np.where(cube[:, ...] > (average + (smooth_level * std)))
         cube[a, b, c] = average[b, c]
 
         a, b, c = np.where(cube[:, ...] < (average - (smooth_level * std)))
@@ -75,7 +95,10 @@ def model_fcorona_for_cube(xt: np.ndarray,
 
     input_array = np.c_[np.power(xt, 3), np.square(xt), xt, np.ones(len(xt))]
     out = -solve_qp_cube(input_array, -cube)
+    if return_full_curves:
+        return polynomial.polyval(xt, out[::-1, :, :]).transpose((2, 0, 1)), cube
     return polynomial.polyval(xt[len(xt)//2], out[::-1, :, :])
+
 
 @flow
 def construct_f_corona_background(

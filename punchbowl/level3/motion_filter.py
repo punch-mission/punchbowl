@@ -12,25 +12,25 @@ except ImportError:
 
 def layer_mask(radius: float, img_shape: (int, int)) -> np.ndarray:
     """
-    Define a circular mask.
+    Generate a circular mask centered in the output array.
 
     Parameters
     ----------
     radius : float
-        The radius of the circular mask.
+        The radius of the masked circular region
     img_shape : tuple
-        The shape of the input image.
+        The shape of the output mask
 
     Returns
     -------
     np.ndarray
-        Circular mask.
+        Circular mask
 
     """
-    xs = np.arange(0, img_shape[0])
-    ys = np.arange(0, img_shape[1])
-    xs, ys = np.meshgrid(xs, ys)
-    distance = np.sqrt((xs - img_shape[0] / 2) ** 2 + (ys - img_shape[1] / 2) ** 2)
+    xs = np.arange(0, img_shape[1]) - img_shape[1]/2 + .5
+    ys = np.arange(0, img_shape[0]) - img_shape[0]/2 + .5
+    x2s, y2s = np.meshgrid(xs**2, ys**2)
+    distance = np.sqrt(x2s + y2s)
     return distance < radius
 
 

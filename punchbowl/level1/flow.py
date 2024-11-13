@@ -64,6 +64,7 @@ def level1_core_flow(
     deficient_pixel_max_window_size: int = 10,
     psf_model_path: str | None = None,
     alignment_mask: Callable | None = None,
+    current_distortion_path: str | None = None,
     output_filename: str | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1."""
@@ -122,7 +123,7 @@ def level1_core_flow(
         else:
             alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
                                            * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        data = align_task(data, mask=alignment_mask)
+        # data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value

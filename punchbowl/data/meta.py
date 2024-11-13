@@ -644,6 +644,14 @@ class NormalizedMetadata(Mapping):
         msg = f"MetaField with key={key} not found."
         raise RuntimeError(msg)
 
+    def get(self, key: str | tuple[str, int], default: t.Any | None = None) -> t.Any:
+        """Get a value given a key or use a default value."""
+        try:
+            out = self[key]
+        except KeyError:
+            out = default
+        return out
+
     def __getitem__(self, key: str | tuple[str, int]) -> t.Any:
         """
         Get specified keyword from NormalizedMetadata object.

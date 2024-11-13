@@ -13,7 +13,7 @@ def calculate_image_pixel_area(wcs: WCS, data_shape: tuple[int, int]) -> u.sr:
     coords = wcs.pixel_to_world(xx, yy)
     dx = coords[:, 1:].separation(coords[:, :-1]).to(u.deg)[:2048, :2048]
     dy = coords[1:, :].separation(coords[:-1, :]).to(u.deg)[:2048, :2048]
-    return dx * dy * u.degree * u.degree
+    return dx * dy
 
 
 def msb_to_dn(data: ndarray,

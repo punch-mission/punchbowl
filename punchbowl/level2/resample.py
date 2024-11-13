@@ -4,13 +4,14 @@ import numpy as np
 import reproject
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect import flow, task
+from prefect import flow
 from sunpy.coordinates import sun
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
+from punchbowl.prefect import punch_task
 
 
-@task
+@punch_task
 def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
                     output_wcs: WCS, output_shape: tuple, preprocess: bool = True) -> np.ndarray:
     """
@@ -67,9 +68,10 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
 @flow(validate_parameters=False)
 def reproject_many_flow(data: list[NDCube], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube]:
     """Reproject many flow."""
-    data_result = [reproject_array.submit(d.data, d.wcs, d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]
+    data_result = [reproject_array.submit(d.data, d.wcs, d.meta.astropy_time, trefoil_wcs, trefoil_shape, False)
+                   for d in data]
     uncertainty_result = [reproject_array.submit(d.uncertainty.array, d.wcs,
-                                                 d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]
+                                                 d.meta.astropy_time, trefoil_wcs, trefoil_shape, True) for d in data]
 
     return [NDCube(data=data_result[i].result(),
                    uncertainty=uncertainty_result[i].result(),

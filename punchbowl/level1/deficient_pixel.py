@@ -128,7 +128,7 @@ def remove_deficient_pixels(data: NDCube,
 
     # Set deficient pixels to complete uncertainty
     output_uncertainty = data.uncertainty.array.copy()
-    output_uncertainty[deficient_pixels == 0] = np.inf
+    output_uncertainty[deficient_pixels == 0] = 1 # np.inf
 
     data.data[...] = data_array[...]
     data.uncertainty.array = output_uncertainty

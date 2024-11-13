@@ -61,6 +61,8 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
 @flow(validate_parameters=False)
 def reproject_many_flow(data: list[NDCube], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube]:
     """Reproject many flow."""
+    for d in data:
+        d.uncertainty.array[np.isclose(d.uncertainty.array, 0)] = 1  # force uncertainty to always be nonzero
     data_result = [reproject_array.submit(d.data, d.wcs, d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]
     uncertainty_result = [reproject_array.submit(d.uncertainty.array, d.wcs,
                                                  d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]

@@ -21,6 +21,7 @@ def merge_many_polarized_task(data: list[NDCube], trefoil_wcs: WCS) -> NDCube:
                                             for d in data if d.meta["POLAR"].value == polarization],
                                                axis=-1)
             reprojected_weights[reprojected_weights <= 0] = 1E-8
+            reprojected_weights[np.isinf(reprojected_weights)] = 1E-8
 
             trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=2) /
                                        np.nansum(reprojected_weights, axis=2))
@@ -49,6 +50,7 @@ def merge_many_clear_task(data: list[NDCube], trefoil_wcs: WCS) -> NDCube:
         reprojected_data = np.stack(selected_images, axis=-1)
         reprojected_weights = np.stack([1/np.square(d.uncertainty.array) for d in data], axis=-1)
         reprojected_weights[reprojected_weights <= 0] = 1E-8
+        reprojected_weights[np.isinf(reprojected_weights)] = 1E-8
 
         trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=2) /
                                    np.nansum(reprojected_weights, axis=2))

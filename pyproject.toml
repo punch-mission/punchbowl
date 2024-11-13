@@ -81,8 +81,8 @@ Repository = "https://github.com/punch-mission/punchbowl.git"
 
 [tool.setuptools_scm]
 
-#[tool.setuptools]
-#packages = ["punchbowl"]
+[tool.setuptools]
+packages = ["punchbowl"]
 
 [tool.codespell]
 skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"

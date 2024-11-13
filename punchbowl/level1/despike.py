@@ -120,7 +120,7 @@ def despike_task(data_object: NDCube,
     data_object.data[...], spikes = spikejones(
         data_object.data[...], unsharp_size=unsharp_size, method=method, alpha=alpha, dilation=dilation,
     )
-    data_object.uncertainty.array[spikes] = np.inf
+    data_object.uncertainty.array[spikes] = 1 # np.inf
     logger.info("despike finished")
     data_object.meta.history.add_now("LEVEL1-despike", "image despiked")
     data_object.meta.history.add_now("LEVEL1-despike", f"method={method}")

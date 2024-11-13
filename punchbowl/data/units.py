@@ -9,12 +9,11 @@ MSB = u.def_unit("MSB", 2.0090000E7 * u.W / u.m ** 2 / u.sr)
 
 def calculate_image_pixel_area(wcs: WCS, data_shape: tuple[int, int]) -> u.sr:
     """Calculate the sky area of every pixel in an image according to its WCS."""
-    xx, yy = np.meshgrid(np.arange(data_shape[0]+1), np.arange(data_shape[1]+1))
+    xx, yy = np.meshgrid(np.arange(data_shape[0]+1)-0.5, np.arange(data_shape[1]+1)-0.5)
     coords = wcs.pixel_to_world(xx, yy)
-    tx = coords.Tx.to(u.deg).value
-    ty = coords.Ty.to(u.deg).value
-    pixel_area = abs(tx[:, 1:] - tx[:, :-1])[1:, :] * abs(ty[1:] - ty[:-1])[:, 1:]
-    return pixel_area * u.degree * u.degree
+    dx = coords[:, 1:].separation(coords[:, :-1]).to(u.deg)[:2048, :2048]
+    dy = coords[1:, :].separation(coords[:-1, :]).to(u.deg)[:2048, :2048]
+    return dx * dy * u.degree * u.degree
 
 
 def msb_to_dn(data: ndarray,

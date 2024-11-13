@@ -12,7 +12,7 @@ from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 
 @task
 def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
-                    output_wcs: WCS, output_shape: tuple) -> np.ndarray:
+                    output_wcs: WCS, output_shape: tuple, preprocess: bool = True) -> np.ndarray:
     """
     Core reprojection function.
 
@@ -34,6 +34,8 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
         astropy WCS object describing the coordinate system to transform to
     output_shape
         pixel shape of the reprojected output array
+    preprocess
+        clean up the array to avoid nans and infs
 
 
     Returns
@@ -52,6 +54,10 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
 
     celestial_source.wcs.set_pv([(2, 1, (-sun.earth_distance(time) / sun.constants.radius).decompose().value)])
 
+    if preprocess:
+        input_array[np.isnan(input_array)] = 1E16
+        input_array[np.isinf(input_array)] = 1E16
+
     return reproject.reproject_adaptive(
         (input_array, celestial_source), celestial_target, output_shape,
         roundtrip_coords=False, return_footprint=False,
@@ -61,11 +67,6 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
 @flow(validate_parameters=False)
 def reproject_many_flow(data: list[NDCube], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube]:
     """Reproject many flow."""
-    for d in data:
-        d.uncertainty.array[d.uncertainty.array == 0] = 1E16  # force uncertainty to always be nonzero
-        d.uncertainty.array[np.isnan(d.uncertainty.array)] = 1E16  # force uncertainty to always be nonzero
-        d.uncertainty.array[np.isinf(d.uncertainty.array)] = 1E16  # force uncertainty to always be nonzero
-
     data_result = [reproject_array.submit(d.data, d.wcs, d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]
     uncertainty_result = [reproject_array.submit(d.uncertainty.array, d.wcs,
                                                  d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]

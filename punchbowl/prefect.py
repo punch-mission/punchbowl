@@ -17,7 +17,7 @@ def completion_debugger(task, task_run, state):
             write_ndcube_to_fits(cube, new_filename, overwrite=True, write_hash=False)
         elif isinstance(cube, list):
             for i, c in enumerate(cube):
-                new_filename = f"{get_base_file_name(cube)}_{task.name}_{i}.fits"
+                new_filename = f"{get_base_file_name(c)}_{task.name}_{i}.fits"
                 write_ndcube_to_fits(c, new_filename, overwrite=True, write_hash=False)
         else:
             print("Cannot write output.")

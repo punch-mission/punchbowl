@@ -27,7 +27,7 @@ def create_coefficient_image(flat_coefficients: np.ndarray, image_shape: tuple) 
         An image of coefficients that apply to every pixel as expected by `photometric_calibration`
 
     """
-    return np.stack([np.ones(image_shape) * coeff for coeff in flat_coefficients], axis=2)
+    return np.stack([np.ones(image_shape) * coeff for coeff in flat_coefficients], axis=0)
 
 
 def create_constant_quartic_coefficients(img_shape: tuple) -> np.ndarray:
@@ -83,7 +83,7 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
     for each pixel in the detector. Each quantity (a, b, c, d, e) is a function
     of pixel location (i,j), and is generated using dark current and Stim lamp
     maps. a = offset (dark and the bias). b, c, d, e = higher order terms.
-    Specifically ``coefficient_image[i,j,:] = [e, d, c, b, a]`` (highest order terms first)
+    Specifically ``coefficient_image[:,i,j] = [e, d, c, b, a]`` (highest order terms first)
 
     As each pixel is independent, a quartic fit calibration file of
     dimensions 2k*2k*5 is constructed, with each layer containing one of the five
@@ -105,14 +105,14 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
         msg = "`coefficient_image` must be a 3-D image"
         raise ValueError(msg)
 
-    if coefficient_image.shape[:-1] != image.shape:
+    if coefficient_image.shape[1:] != image.shape:
         msg = "`coefficient_image` and `image` must have the same shape`"
         raise ValueError(msg)
 
     # find the number of quartic fit coefficients
-    num_coefficients = coefficient_image.shape[2]
+    num_coefficients = coefficient_image.shape[0]
     return np.sum(
-        [coefficient_image[..., i] * np.power(image, num_coefficients - i - 1) for i in range(num_coefficients)],
+        [coefficient_image[i, ...] * np.power(image, num_coefficients - i - 1) for i in range(num_coefficients)],
         axis=0,
     )
 

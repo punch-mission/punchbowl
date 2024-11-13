@@ -82,8 +82,8 @@ Repository = "https://github.com/punch-mission/punchbowl.git"
 
 [tool.setuptools_scm]
 
-[tool.setuptools.packages]
-find = {}  # Scan the project directory with the default parameters
+[tool.setuptools]
+packages = ["punchbowl"]
 
 [tool.codespell]
 skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"

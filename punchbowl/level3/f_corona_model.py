@@ -126,13 +126,16 @@ def construct_f_corona_background(
     meta_list = []
     obs_times = []
 
+    logger.info("beginning data loading")
     for i, address_out in enumerate(data_list):
         data_object = load_ndcube_from_fits(address_out)
         data_cube[i, :, :] = data_object.data[layer]
         uncertainty_cube[i, :, :] = data_object.uncertainty.array[layer]
         obs_times.append(data_object.meta.datetime.timestamp())
         meta_list.append(data_object.meta)
+    logger.info("ending data loading")
 
+    logger.info("building model")
     f_background = model_fcorona_for_cube(obs_times, data_cube)
     output = NDCube(f_background, wcs=output_wcs, meta=output_meta, mask=output_mask)
 

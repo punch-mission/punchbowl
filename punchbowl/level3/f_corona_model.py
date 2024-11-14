@@ -93,6 +93,9 @@ def model_fcorona_for_cube(xt: np.ndarray,
         a, b, c = np.where(cube[:, ...] < (average - (smooth_level * std)))
         cube[a, b, c] = average[b, c]
 
+    xt = np.array(xt)
+    xt -= xt[0]
+
     input_array = np.c_[np.power(xt, 3), np.square(xt), xt, np.ones(len(xt))]
     out = -solve_qp_cube(input_array, -cube)
     if return_full_curves:

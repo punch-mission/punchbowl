@@ -1,21 +1,89 @@
+import os
+
 import numpy as np
 import pytest
+from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
-from remove_starfield import Starfield
 
-from punchbowl.data import NormalizedMetadata
-from punchbowl.level3.velocity import track_flow
+from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
+from punchbowl.level3.velocity import track_velocity
 
 
-@pytest.fixture()
-def one_data(shape: tuple = (128, 128)) -> NDCube:
+@pytest.fixture
+def synthetic_fits_data(tmpdir):
     """
-    Generate some random data for testing
-    """
-    data = np.ones(shape)
+    Create synthetic compressed FITS data from NDCube instances for testing.
 
+    This fixture generates a list of file paths for FITS files containing random
+    NDCube data. These files are written to a temporary directory and removed
+    after the test session. Each file includes:
+    - A 128x128 array of random data.
+    - WCS metadata specifying helioprojective coordinates.
+    - Normalized metadata according to the specified schema.
+    - Uncertainty data initialized to zero.
+
+    Returns:
+        list of str: Paths to the generated FITS files.
+    """
+    files = []
+    num_files = 5  # You can parameterize this if needed
+
+    for i in range(num_files):
+        # Generate random data
+        data = np.random.rand(128, 128)
+
+        # Define WCS for the NDCube
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = ("HPLN-AZP", "HPLT-AZP")
+        wcs.wcs.cunit = ("deg", "deg")
+        wcs.wcs.cdelt = (0.02, 0.02)
+        wcs.wcs.crpix = (64, 64)
+        wcs.wcs.crval = (0, 24.75)
+
+        # Define metadata for the NDCube
+        meta = NormalizedMetadata.load_template('PTM', '3')
+        meta['DATE-OBS'] = "2024-01-01T00:00:00"
+        meta['DATE-BEG'] = "2024-01-01T00:00:00"
+        meta['DATE-END'] = "2024-01-01T00:00:00"
+        meta['DATE-AVG'] = "2024-01-01T00:00:00"
+
+        # Create NDCube
+        uncertainty = StdDevUncertainty(np.zeros_like(data))
+        cube = NDCube(data=data, wcs=wcs, meta=meta, uncertainty=uncertainty)
+
+        # Write NDCube to a compressed FITS file
+        file_path = os.path.join(str(tmpdir), f"file_{i}.fits")
+        write_ndcube_to_fits(cube, str(file_path))
+        files.append(str(file_path))
+
+    return files
+
+
+def test_shape_matching(synthetic_fits_data):
+    """Test that the output shape matches the expected configuration."""
+    files = synthetic_fits_data
+    ycens = np.arange(7, 14.5, 0.5)
+    result = track_velocity(files, ycens=ycens)
+
+    assert isinstance(result, NDCube)
+    assert result.data.shape[0] == len(ycens)
+
+def test_no_nans_or_negatives(synthetic_fits_data):
+    """Test that the output does not contain NaNs or negative values."""
+    files = synthetic_fits_data
+    result = track_velocity(files)
+
+    assert not np.isnan(result.data).any(), "Data contains NaNs"
+    assert (result.data >= 0).all(), "Data contains negative values"
+
+def test_with_bad_data(tmpdir):
+    """Test the function with intentionally bad data."""
+    # Generate bad data (all NaNs)
+    data = np.full((128, 128), np.nan)
+
+    # Define WCS for the NDCube
     wcs = WCS(naxis=2)
     wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
     wcs.wcs.cunit = "deg", "deg"
@@ -23,11 +91,58 @@ def one_data(shape: tuple = (128, 128)) -> NDCube:
     wcs.wcs.crpix = 64, 64
     wcs.wcs.crval = 0, 24.75
 
-    meta = NormalizedMetadata(
-        {"TYPECODE": "PT", "OBSCODE": "M", "LEVEL": "3", "OBSRVTRY": "0", "DATE-OBS": "2024-04-08T18:40:00"})
-    return NDCube(data=data, wcs=wcs, meta=meta, uncertainty=StdDevUncertainty(np.zeros_like(data)))
+    # Define metadata for the NDCube
+    meta = NormalizedMetadata.load_template('PTM', '3')
+    meta['DATE-OBS'] = "2024-01-01T00:00:00"
+    meta['DATE-BEG'] = "2024-01-01T00:00:00"
+    meta['DATE-END'] = "2024-01-01T00:00:00"
+    meta['DATE-AVG'] = "2024-01-01T00:00:00"
+
+    # Create NDCube
+    uncertainty = StdDevUncertainty(np.zeros_like(data))
+    cube = NDCube(data=data, wcs=wcs, meta=meta, uncertainty=uncertainty)
+
+    # Write NDCube to a compressed FITS file using your custom function
+    file_path = os.path.join(str(tmpdir), f"bad_file.fits")
+    write_ndcube_to_fits(cube, file_path)
+
+    with pytest.raises(ValueError):
+        output = track_velocity([str(file_path)])
+
+    # TODO - Add test for the badness of data itself?
 
 
-# TODO - What kind of data can be tested on here? Would this work with two identical frames -> zero velocity?
-def test_flow_tracking(one_data: NDCube) -> None:
-    assert True
+def test_sample_radial_outflows(tmpdir):
+    """Test the function with sample radial outflows."""
+    files = []
+    for i in range(5):
+        radial_outflow_data = np.linspace(0, 1, 128)[:, None] * np.linspace(1, 0, 128)
+
+        # Define WCS for the NDCube
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+        wcs.wcs.cunit = "deg", "deg"
+        wcs.wcs.cdelt = 0.02, 0.02
+        wcs.wcs.crpix = 64, 64
+        wcs.wcs.crval = 0, 24.75
+
+        # Define metadata for the NDCube
+        meta = NormalizedMetadata.load_template('PTM', '3')
+        meta['DATE-OBS'] = "2024-01-01T00:00:00"
+        meta['DATE-BEG'] = "2024-01-01T00:00:00"
+        meta['DATE-END'] = "2024-01-01T00:00:00"
+        meta['DATE-AVG'] = "2024-01-01T00:00:00"
+
+        # Create NDCube
+        uncertainty = StdDevUncertainty(np.zeros_like(radial_outflow_data))
+        cube = NDCube(data=radial_outflow_data, wcs=wcs, meta=meta, uncertainty=uncertainty)
+
+        # Write NDCube to a compressed FITS file using your custom function
+        file_path = os.path.join(str(tmpdir), f"radial_outflow_file_{i}.fits")
+        write_ndcube_to_fits(cube, file_path)
+        files.append(str(file_path))
+
+    result = track_velocity(files)
+
+    assert isinstance(result, NDCube)
+    assert result.data.mean() > 0  # Verify that there is a positive outflow signal

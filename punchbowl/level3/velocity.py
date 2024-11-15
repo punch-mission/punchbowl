@@ -498,6 +498,10 @@ def track_velocity(files: list[str],
 
     files.sort()
 
+    if len(files) < 2:
+        msg = "At least to input files must be provided for flow tracking"
+        raise ValueError(msg)
+
     # Data preprocessing
     data0 = load_ndcube_from_fits(files[0])
     header1 = data0.meta.to_fits_header(wcs=data0.wcs)

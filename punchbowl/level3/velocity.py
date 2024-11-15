@@ -1,4 +1,5 @@
 import glob
+from datetime import datetime
 
 import astropy.units as u
 import cv2 as cv
@@ -7,15 +8,13 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
+from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
 from ndcube import NDCube
 from sunpy.sun import constants
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.meta import NormalizedMetadata
-from punchbowl.prefect import punch_task
-
-cv.setNumThreads(0)  # Disable OpenCV multithreading with 0
-cv.ocl.setUseOpenCL(False)
 
 
 def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: float) -> tuple[int, int]:
@@ -126,7 +125,7 @@ def calculate_cross_correlation(image1: np.ndarray, image2: np.ndarray,
         First image array for correlation
 
     image2 : np.ndarray
-        Second, time-offseted image array for correlation
+        Second, time-offset image array for correlation
 
     offsets : np.ndarray
         Array of pixel offsets to iterate over for cross-correlation
@@ -169,7 +168,6 @@ def calculate_cross_correlation(image1: np.ndarray, image2: np.ndarray,
         acc[jj, :, :] += padded_image1 * padded_image2
 
     return acc
-
 
 
 def accumulate_cross_correlation_across_frames(files: list, delta_t: int, sparsity: int, n_ofs: int,
@@ -495,12 +493,9 @@ def track_velocity(files: list[str],
     """
     # Set defaults for missing input parameters
     if ycens is None:
-        ycens = np.array([7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14])
+        ycens = np.arange(7, 14.5, 0.5)
     if rbands is None:
         rbands = [0, 4, 8, 14]
-
-    # TODO - Remove after testing
-    outpath = "/Users/clowder/Desktop/"
 
     # Data preprocessing
     data0 = load_ndcube_from_fits(files[0])
@@ -511,31 +506,49 @@ def track_velocity(files: list[str],
                                       delta_t, sparsity, delta_px, ycens, r_band_half_width, n_ofs,
                                       max_radius_deg, num_azimuth_bins, az_bin, velocity_azimuth_bins)
 
-    # Save the speed and sigma data in a FITS file
-    data_cube = np.stack((avg_speeds, sigmas), axis=0)
-    hdu = fits.PrimaryHDU(data_cube)
-    hdu.writeto(outpath + "speeds_sigmas.fits", overwrite=True)
 
-    # Generate and save the radial flow map plot
-    filename = outpath + "Radial_Speed_Map.png"
-    plot_flow_map(filename, avg_speeds, sigmas, ycens, rbands, velocity_azimuth_bins)
+    # TODO - Output flow maps - plot_flow_map(filename, avg_speeds, sigmas, ycens, rbands, velocity_azimuth_bins)
 
-    # TODO - More complete metadata setting
     output_meta = NormalizedMetadata.load_template("VAM", "3")
 
-    # TODO - Remove temporary output
-    output_data = load_ndcube_from_fits(files[0])
+    # TODO - any missing metadata to fill?
+    with fits.open(files[0]) as hdul:
+        output_meta["DATE-BEG"] = hdul[1].header["DATE-BEG"]
 
-    output_data.meta = output_meta
+    with fits.open(files[-1]) as hdul:
+        output_meta["DATE-END"] = hdul[1].header["DATE-END"]
 
-    return output_data
+    date_beg = datetime.strptime(output_meta["DATE-BEG"].value, "%Y-%m-%dT%H:%M:%S").astimezone()
+    date_end = datetime.strptime(output_meta["DATE-END"].value, "%Y-%m-%dT%H:%M:%S").astimezone()
+    date_avg = (date_beg + (date_end - date_beg) / 2).strftime("%Y-%m-%dT%H:%M:%S")
+    output_meta["DATE-AVG"] = date_avg
+    output_meta["DATE-OBS"] = date_avg
 
+    output_meta["DELTAT"] = delta_t
+    output_meta["SPARSITY"] = sparsity
+    output_meta["N_OFS"] = n_ofs
+    output_meta["DELTA_PX"] = delta_px
+    output_meta["KPSEXP"] = expected_kps_windspeed
+    output_meta["BANDWDTH"] = r_band_half_width
+    output_meta["MAXRAD"] = max_radius_deg
+    output_meta["AZMBINS"] = num_azimuth_bins
+    output_meta["AZMBINF"] = az_bin
+    output_meta["PLTBINS"] = velocity_azimuth_bins
 
-@punch_task
-def track_velocity_task(files: list[str]) -> NDCube:
-    """Generate velocity map using flow tracking."""
-    # TODO - Logging.
-    return track_velocity(files)
+    # TODO - how to store ycens and rbands?
+
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "radius","azimuth"
+    wcs.wcs.cunit = "solRad","rad"
+    wcs.wcs.cdelt = 1, 0.5
+    wcs.wcs.crpix = 0, 0
+    wcs.wcs.crval = 0, 0
+    wcs.wcs.cname = "solar radii", "azimuth"
+
+    return NDCube(data = avg_speeds,
+                         uncertainty=StdDevUncertainty(sigmas),
+                         meta = output_meta,
+                         wcs = wcs)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import glob
 
+import astropy.units as u
 import cv2 as cv
 import matplotlib as mpl
 import matplotlib.cm as cm
@@ -7,21 +8,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits
 from ndcube import NDCube
+from sunpy.sun import constants
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.prefect import punch_task
 
 cv.setNumThreads(0)  # Disable OpenCV multithreading with 0
 cv.ocl.setUseOpenCL(False)
-
-# TODO - Convert to SunPy constants / astropy units
-# Solar radius in arcsec missing from PUNCH PTM header: RSUN_ARC=  / [arcsec] photospheric solar radius
-RS_ARCSEC = 959.90  # As seen from Earth
-ARCSEC_RAD = 4.85e-6  # rad
-AU_KM = 150e6  # Astronomical unit in km
-ARCSEC_KM = ARCSEC_RAD * AU_KM  # 1 arcsec in km at 1 a.u
-TIME_CADENCE_SEC = 4 * 60  # time cadence of punch images in seconds (4 minutes)
-
 
 def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: float) -> tuple[int, int]:
     """
@@ -47,8 +40,8 @@ def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: flo
     # Unless we have a cropped image, bottom axis of the polar transform should be at 0 Rs.
     origin_rs = 0
     origin_arcsec = origin_rs * arcsec_per_px
-    ycen_band_arcsec = ycen_band_rs * RS_ARCSEC   # center of the radial band in arcsec
-    rband_width_arcsec = r_band_width * RS_ARCSEC  # width of the radial band in arcsec
+    ycen_band_arcsec = ycen_band_rs * constants.average_angular_size.value   # center of the radial band in arcsec
+    rband_width_arcsec = r_band_width * constants.average_angular_size.value  # width of the radial band in arcsec
     ylo_band_idx = ((ycen_band_arcsec - rband_width_arcsec) - origin_arcsec) / arcsec_per_px   # lower index of the band
     yhi_band_idx = ((ycen_band_arcsec + rband_width_arcsec) - origin_arcsec) / arcsec_per_px   # upper index of the band
     return [ylo_band_idx, yhi_band_idx]
@@ -302,8 +295,8 @@ def compute_all_bands(acc: np.ndarray, ycen_band_rs: np.ndarray, r_band_half_wid
 
 
 def process_corr(files: list, arcsec_per_px:float, expected_kps_windspeed: float, delta_t: int, sparsity: int,
-                 delta_px: int, r_band_half_width: float, n_ofs: int, max_radius_deg: int, num_azimuth_bins: int,
-                 az_bin: int, velocity_azimuth_bins: int) -> tuple[np.ndarray, np.ndarray]:
+                 delta_px: int, ycens: np.ndarray, r_band_half_width: float, n_ofs: int, max_radius_deg: int,
+                 num_azimuth_bins: int, az_bin: int, velocity_azimuth_bins: int) -> tuple[np.ndarray, np.ndarray]:
     """
     Process the cross-correlation across frames  in a list of FITS files with associated average speeds.
 
@@ -326,6 +319,9 @@ def process_corr(files: list, arcsec_per_px:float, expected_kps_windspeed: float
 
     delta_px : int
         Pixel offset increment between samples.
+
+    ycens: np.ndarray
+        y-coordinates of center of bands in solar radii.
 
     r_band_half_width : float
         Half-width of each radial band in solar radii.
@@ -353,7 +349,9 @@ def process_corr(files: list, arcsec_per_px:float, expected_kps_windspeed: float
 
     """
     # Expected windspeed in pixels
-    expected_px_windspeed =  expected_kps_windspeed / (arcsec_per_px * ARCSEC_KM ) * TIME_CADENCE_SEC
+    time_cadence_sec = 4 * 60  # time cadence of punch images in seconds (4 minutes)
+    arcsec_km = (1*u.arcsec).to(u.rad).value * 1*u.au.to(u.km)
+    expected_px_windspeed =  expected_kps_windspeed / (arcsec_per_px * arcsec_km ) * time_cadence_sec
     # Central offset to start correlation from.
     central_offset = int(delta_t * expected_px_windspeed)
     # Calculate speed mapping for offsets in km/s
@@ -428,6 +426,9 @@ def track_velocity(files: list[str]) -> NDCube:
     """Generate velocity map using flow tracking."""
     # TODO - Insert test data from below here.
 
+
+
+
     # TODO - More complete metadata setting
     output_meta = NormalizedMetadata.load_template("VAM", "3")
 
@@ -476,8 +477,8 @@ def test_flow_tracking(datapath:str, outpath:str) -> None:
     _, polar_header1 = preprocess_image(data0, max_radius_deg/header1["CDELT1"], num_azimuth_bins, az_bin)
 
     avg_speeds, sigmas = process_corr(files, polar_header1["CDELT2"], expected_kps_windspeed,
-                                      delta_t, sparsity,delta_px, r_band_half_width, n_ofs, max_radius_deg,
-                                      num_azimuth_bins, az_bin, velocity_azimuth_bins)
+                                      delta_t, sparsity, delta_px, ycens, r_band_half_width, n_ofs,
+                                      max_radius_deg, num_azimuth_bins, az_bin, velocity_azimuth_bins)
 
     # Save the speed and sigma data in a FITS file
     data_cube = np.stack((avg_speeds, sigmas), axis=0)
@@ -493,5 +494,4 @@ if __name__ == "__main__":
     datapath = "/Users/clowder/data/punch/synthetic_l3"
     outpath = "/Users/clowder/Desktop/"
 
-    ycens = np.array([7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14])
     test_flow_tracking(datapath, outpath)

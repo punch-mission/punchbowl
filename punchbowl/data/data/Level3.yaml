@@ -21,8 +21,6 @@ Level:
     Fixity:
     History:
 
-# TODO - How to omit velocity section from non-velocity data products?
-
 # Kind specifications
 Kinds:
     Polarized:
@@ -35,7 +33,7 @@ Kinds:
             OBSLAYR1: Polar_B
             OBSLAYR2: Polar_pB
             POLARREF: 'Solar'
-        omits: [FILTER, POLAR, OBSLAYR3]
+        omits: [Velocity, FILTER, POLAR, OBSLAYR3]
 
     Unpolarized:
         overrides:
@@ -44,21 +42,21 @@ Kinds:
             NAXIS2: 4096
             OBS-MODE: Unpolarized
             POLAR: -999
-        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [Velocity, NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Calibration:
         overrides:
             NAXIS: 2
             NAXIS1: 4096
             NAXIS2: 4096
-        omits: [NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [Velocity, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Velocity:
         overrides:
             NAXIS: 2
             NAXIS1: 1440
             NAXIS2: 4
-        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, POLAR, FILTER]
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, POLAR]
 
 
 # Product specifications
@@ -172,7 +170,7 @@ Products:
             OBSCODE: N
 
     VAM:
-        kinds: [Unpolarized]
+        kinds: [Velocity]
         overrides:
             TITLE: PUNCH Level-3 Derived Wind Velocity
             TYPECODE: VA
@@ -181,7 +179,7 @@ Products:
             OBSCODE: M
 
     VAN:
-        kinds: [Unpolarized]
+        kinds: [Velocity]
         overrides:
             TITLE: PUNCH Level-3 Derived Wind Velocity
             TYPECODE: VA

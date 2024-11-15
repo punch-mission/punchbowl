@@ -84,7 +84,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 7,keyword,SQRTCODE,,square-root coding table name,str,TRUE,TRUE,
 7,keyword,COMPRESS,,image compression type,str,TRUE,TRUE,
 7,keyword,COMP_RAT,-1.0,compressed/uncompressed data ratio,float,TRUE,TRUE,
-8,section,COMMENT,Calibration Data,,str,TRUE,TRUE, Calibration Data
+8,section,COMMENT,Calibration Data,,str,TRUE,TRUE,Calibration Data
 8,keyword,CALCF,,quartic fit filename,str,TRUE,TRUE,
 8,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,
 8,keyword,CALPSF,,PSF filename,str,TRUE,TRUE,
@@ -115,7 +115,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 10,keyword,RSUN_REF,695700000,[m] assumed physical solar radius,float,TRUE,TRUE,
 10,keyword,SOLAR_EP,,[deg] S/C ecliptic North to solar North angle,float,TRUE,TRUE,
 10,keyword,CAR_ROT,0.0,Carrington Rotation number,float,TRUE,TRUE,
-11,section,COMMENT,Spacecraft Location & Environment,,str,TRUE,TRUE, Spacecraft Location & Environment
+11,section,COMMENT,Spacecraft Location & Environment,,str,TRUE,TRUE,Spacecraft Location & Environment
 11,keyword,GEOD_LAT,,[deg] S/C sub-point geodetic latitude,float,TRUE,TRUE,
 11,keyword,GEOD_LON,,[deg] S/C sub-point longitude,float,TRUE,TRUE,
 11,keyword,GEOD_ALT,,[m] S/C WGS84 altitude,float,TRUE,TRUE,

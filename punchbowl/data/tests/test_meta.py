@@ -106,6 +106,7 @@ def test_normalizedmetadata_from_template_abq():
     assert 'Section 3' in result.sections
     assert 'Section 4' in result.sections
     assert 'Section 5' not in result.sections
+    assert 'Section 6' not in result.sections
 
     assert 'KEYOMIT1' not in result
     assert 'KEYOMIT2' not in result

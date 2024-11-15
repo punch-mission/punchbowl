@@ -7,12 +7,15 @@ Level:
         omits: [KEYOMIT1, KEYOMIT2]
     Section 3:
     Section 4:
+    Section 6:
 
 # Kind specifications
 Kinds:
     Kind1:
         overrides:
             KEYALTER: 2
+        omits:
+            [Section 6]
 
     Kind2:
         overrides:

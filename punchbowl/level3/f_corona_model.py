@@ -41,16 +41,17 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
             is_good = np.isfinite(time_series)
             time_series = time_series[is_good]
             c_iter = c[:, is_good]
+            g_iter = np.matmul(c_iter, c_iter.T)
             num_inputs[i, j] = np.sum(is_good)
             if time_series.size < n_nonnan_required:
-                tnis_solution = np.zeros(input_vals.shape[1])
+                this_solution = np.zeros(input_vals.shape[1])
             else:
                 a = np.matmul(c_iter, time_series)
                 try:
-                    tnis_solution = solve_qp(g, a, c_iter, time_series)[0]
+                    this_solution = solve_qp(g_iter, a, c_iter, time_series)[0]
                 except ValueError:
-                    tnis_solution = np.zeros(input_vals.shape[1])
-            solution[:, i, j] = tnis_solution
+                    this_solution = np.zeros(input_vals.shape[1])
+            solution[:, i, j] = this_solution
 
     return np.asarray(solution), num_inputs
 

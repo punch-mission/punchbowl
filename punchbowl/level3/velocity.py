@@ -10,11 +10,13 @@ from astropy.io import fits
 from ndcube import NDCube
 from sunpy.sun import constants
 
-from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data import load_ndcube_from_fits
+from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.prefect import punch_task
 
 cv.setNumThreads(0)  # Disable OpenCV multithreading with 0
 cv.ocl.setUseOpenCL(False)
+
 
 def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: float) -> tuple[int, int]:
     """
@@ -23,10 +25,10 @@ def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: flo
     Parameters
     ----------
     ycen_band_rs : np.ndarray
-        y-coordinates of center of band in solar radii.
+        y-coordinates of center of band in solar radii
 
     r_band_width : float
-        Half-width of each radial band in solar radii.
+        Half-width of each radial band in solar radii
 
     arcsec_per_px : float
         Radial pixel scale in arcsec/px in the polar-remapped images
@@ -34,7 +36,7 @@ def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: flo
     Returns
     -------
     list
-        Lower and upper Numpy array indices of the radial band.
+        Lower and upper Numpy array indices of the radial band
 
     """
     # Unless we have a cropped image, bottom axis of the polar transform should be at 0 Rs.
@@ -121,24 +123,24 @@ def calculate_cross_correlation(image1: np.ndarray, image2: np.ndarray,
     Parameters
     ----------
     image1 : np.ndarray
-        First image array for correlation.
+        First image array for correlation
 
     image2 : np.ndarray
-        Second, time-offseted image array for correlation.
+        Second, time-offseted image array for correlation
 
     offsets : np.ndarray
-        Array of pixel offsets to iterate over for cross-correlation.
+        Array of pixel offsets to iterate over for cross-correlation
 
     delta_px : int
-        Pixel offset increment between samples.
+        Pixel offset increment between samples
 
     central_offset : int
-        Central offset to start correlation from.
+        Central offset from which to start correlation
 
     Returns
     -------
     np.ndarray
-        Accumulated cross-correlation array over all offsets.
+        Accumulated cross-correlation array over all offsets
 
     """
     # Initialize accumulator array
@@ -179,16 +181,16 @@ def accumulate_cross_correlation_across_frames(files: list, delta_t: int, sparsi
     Parameters
     ----------
     files : list
-        List of file paths to FITS files.
+        List of file paths to FITS files
 
     delta_t : int
-        Frame offset (in frames) between time-offset image pairs.
+        Frame offset (in frames) between time-offset image pairs
 
     sparsity : int
-        Interval between frames to skip when accumulating cross-correlation.
+        Interval between frames to skip when accumulating cross-correlation
 
     n_ofs : int
-        Number of pixel offsets to use in cross-correlation.
+        Number of pixel offsets to use in cross-correlation
 
     max_radius_deg : int
         Maximum radius in degrees to include for polar remapping
@@ -200,16 +202,16 @@ def accumulate_cross_correlation_across_frames(files: list, delta_t: int, sparsi
         Binning factor for binning the polar remapped image over the azimuth. The binning rule is currently numpy.mean()
 
     delta_px : int
-        Pixel offset increment between samples.
+        Pixel offset increment between samples
 
     central_offset : int
-        Central offset to start correlation from.
+        Central offset from which to start correlation
 
 
     Returns
     -------
     np.ndarray
-        Accumulated cross-correlation array over all frames and offsets.
+        Accumulated cross-correlation array over all frames and offsets
 
     """
     data = load_ndcube_from_fits(files[0])
@@ -247,13 +249,13 @@ def compute_all_bands(acc: np.ndarray, ycen_band_rs: np.ndarray, r_band_half_wid
     Parameters
     ----------
     acc : np.ndarray
-        Cross-correlation array accumulated across frames.
+        Cross-correlation array accumulated across frames
 
     ycen_band_rs : np.ndarray
-        y-coordinates of band centers in solar radii.
+        y-coordinates of band centers in solar radii
 
     r_band_half_width : float
-        Half-width of each radial band in solar radii.
+        Half-width of each radial band in solar radii
 
     arcsec_per_px : float
         Radial pixel scale in arcsec/px in the polar-remapped images
@@ -262,14 +264,14 @@ def compute_all_bands(acc: np.ndarray, ycen_band_rs: np.ndarray, r_band_half_wid
         Number of azimuthal bins in the output flow maps
 
     x_kps : np.ndarray
-        Array mapping pixel offsets to speed in km/s.
+        Array mapping pixel offsets to speed in km/s
 
     Returns
     -------
     tuple
         Tuple containing:
-        - np.ndarray : Average speed per angular bin for each radial band.
-        - np.ndarray : Sigma (standard deviation) of speed per angular bin for each radial band.
+        - np.ndarray : Average speed per angular bin for each radial band
+        - np.ndarray : Sigma (standard deviation) of speed per angular bin for each radial band
 
     """
     ylohi = calc_ylims(ycen_band_rs, r_band_half_width, arcsec_per_px)
@@ -303,7 +305,7 @@ def process_corr(files: list, arcsec_per_px:float, expected_kps_windspeed: float
     Parameters
     ----------
     files : list
-        List of file paths to FITS files.
+        List of file paths to FITS files
 
     arcsec_per_px: float
         pixel scale in arcsec over the radial axis in the polar-remapped image
@@ -315,19 +317,19 @@ def process_corr(files: list, arcsec_per_px:float, expected_kps_windspeed: float
         Time offset (in nb of frames) between for an image pair
 
     sparsity : int
-        Interval between frames to skip when accumulating cross-correlation.
+        Interval between frames to skip when accumulating cross-correlation
 
     delta_px : int
-        Pixel offset increment between samples.
+        Pixel offset increment between samples
 
     ycens: np.ndarray
-        y-coordinates of center of bands in solar radii.
+        y-coordinates of center of bands in solar radii
 
     r_band_half_width : float
-        Half-width of each radial band in solar radii.
+        Half-width of each radial band in solar radii
 
     n_ofs : int
-        Number of pixel offsets to use in cross-correlation.
+        Number of pixel offsets to use in cross-correlation
 
     max_radius_deg : int
         Maximum radius in degrees to include for polar remapping
@@ -374,19 +376,25 @@ def plot_flow_map(filename: str, speeds: np.ndarray, sigmas: np.ndarray, ycen_ba
     Parameters
     ----------
     filename: str
-        Output plot filename.
+        Output plot filename
+
     speeds : np.ndarray
-        Averaged speed over each radial band and latitudinal bin.
+        Averaged speed over each radial band and latitudinal bin
+
     sigmas : np.ndarray
-        1-sigma uncertainty associated with each binned speed.
+        1-sigma uncertainty associated with each binned speed
+
     ycen_band_rs : np.ndarray
-        y-coordinates of center of bands in solar radii.
+        y-coordinates of center of bands in solar radii
+
     rbands : list[int]
-        Indices of the radial bands to visualize.
+        Indices of the radial bands to visualize
+
     velocity_azimuth_bins : int
-        Number of angular bins in the velocity map.
+        Number of angular bins in the velocity map
+
     cmap : str, optional
-        Colormap for the plot (default is 'magma').
+        Colormap for the plot (default is 'magma')
 
     """
     thetas = np.linspace(0, 2 * np.pi, velocity_azimuth_bins + 1)
@@ -422,12 +430,95 @@ def plot_flow_map(filename: str, speeds: np.ndarray, sigmas: np.ndarray, ycen_ba
     plt.savefig(filename)
 
 
-def track_velocity(files: list[str]) -> NDCube:
-    """Generate velocity map using flow tracking."""
-    # TODO - Insert test data from below here.
+def track_velocity(files: list[str],
+                   delta_t: int = 12,
+                   sparsity: int = 2,
+                   n_ofs: int = 151,
+                   delta_px: int = 2,
+                   expected_kps_windspeed: int = 300,
+                   r_band_half_width: float = 0.5,
+                   max_radius_deg: int = 45,
+                   num_azimuth_bins: int = 1440*8,
+                   az_bin: int = 4,
+                   velocity_azimuth_bins: int = 36,
+                   ycens: np.ndarray | None = None,
+                   rbands: list[int] | None = None) -> NDCube:
+    """
+    Generate velocity map using flow tracking.
 
+    Parameters
+    ----------
+    files : list[str]
+        List of file paths for input data
 
+    delta_t : int, optional
+        Time offset in frames between images
 
+    sparsity : int, optional
+        Frame skip interval for averaging
+
+    n_ofs : int, optional
+        Number of spatial offsets for cross-correlation
+
+    delta_px : int, optional
+        Pixel offset increment per sample
+
+    expected_kps_windspeed : int, optional
+        Expected wind speed in km/s
+
+    r_band_half_width : float, optional
+        Half-width of each radial band in solar radii
+
+    max_radius_deg : int, optional
+        The maximum radius in degrees
+
+    num_azimuth_bins : int, optional
+        Number of azimuthal bins in the polar remapped images
+
+    az_bin : int, optional
+        Binning factor for binning the polar remapped image over the azimuth
+
+    velocity_azimuth_bins : int, optional
+        Number of azimuthal bins in the output flow maps
+
+    ycens : numpy.ndarray, optional
+        Radial band centers in solar radii
+
+    rbands : list[int], optional
+        Indices of radial bands to visualize
+
+    Returns
+    -------
+    ndcube.NDCube
+        The generated velocity map
+
+    """
+    # Set defaults for missing input parameters
+    if ycens is None:
+        ycens = np.array([7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14])
+    if rbands is None:
+        rbands = [0, 4, 8, 14]
+
+    # TODO - Remove after testing
+    outpath = "/Users/clowder/Desktop/"
+
+    # Data preprocessing
+    data0 = load_ndcube_from_fits(files[0])
+    header1 = data0.meta.to_fits_header(wcs=data0.wcs)
+    _, polar_header1 = preprocess_image(data0, max_radius_deg/header1["CDELT1"], num_azimuth_bins, az_bin)
+
+    avg_speeds, sigmas = process_corr(files, polar_header1["CDELT2"], expected_kps_windspeed,
+                                      delta_t, sparsity, delta_px, ycens, r_band_half_width, n_ofs,
+                                      max_radius_deg, num_azimuth_bins, az_bin, velocity_azimuth_bins)
+
+    # Save the speed and sigma data in a FITS file
+    data_cube = np.stack((avg_speeds, sigmas), axis=0)
+    hdu = fits.PrimaryHDU(data_cube)
+    hdu.writeto(outpath + "speeds_sigmas.fits", overwrite=True)
+
+    # Generate and save the radial flow map plot
+    filename = outpath + "Radial_Speed_Map.png"
+    plot_flow_map(filename, avg_speeds, sigmas, ycens, rbands, velocity_azimuth_bins)
 
     # TODO - More complete metadata setting
     output_meta = NormalizedMetadata.load_template("VAM", "3")
@@ -447,51 +538,13 @@ def track_velocity_task(files: list[str]) -> NDCube:
     return track_velocity(files)
 
 
-def test_flow_tracking(datapath:str, outpath:str) -> None:
-    """Tests flow tracking for fine tuning purposes outside punchpipe."""
+if __name__ == "__main__":
+    datapath = "/Users/clowder/data/punch/synthetic_l3"
+    outpath = "/Users/clowder/Desktop/"
+
     files = glob.glob(datapath + "/*PTM*.fits")
     files.sort()
 
     files = files[0:90]
 
-    # Input parameters and configuration
-    delta_t = 12  # Time offset in frames between images
-    sparsity = 2  # Frame skip interval for averaging
-    n_ofs = 151  # Number of spatial offsets for cross-correlation
-    delta_px = 2  # Pixel offset increment per sample
-    expected_kps_windspeed = 300  # Expected wind speed in km/s
-    r_band_half_width = 0.5  # Half-width of each radial band in solar radii
-    max_radius_deg = 45  # The maximum radius is 45 degrees
-    num_azimuth_bins = int(1440 * 8)  # Number of azimuthal bins in the polar remapped images
-    az_bin = 4  # Binning factor for binning the polar remapped image over the azimuth.
-    velocity_azimuth_bins = 36  # Number of azimuthal bins in the output flow maps
-    # Define radial band centers in solar radii
-    ycens = np.array([7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14])
-    rbands = [0, 4, 8, 14]  # Indices of radial bands to visualize
-    # End of user input
-
-
-    # Testing preprocessing
-    data0 = load_ndcube_from_fits(files[0])
-    header1 = data0.meta.to_fits_header(wcs=data0.wcs)
-    _, polar_header1 = preprocess_image(data0, max_radius_deg/header1["CDELT1"], num_azimuth_bins, az_bin)
-
-    avg_speeds, sigmas = process_corr(files, polar_header1["CDELT2"], expected_kps_windspeed,
-                                      delta_t, sparsity, delta_px, ycens, r_band_half_width, n_ofs,
-                                      max_radius_deg, num_azimuth_bins, az_bin, velocity_azimuth_bins)
-
-    # Save the speed and sigma data in a FITS file
-    data_cube = np.stack((avg_speeds, sigmas), axis=0)
-    hdu = fits.PrimaryHDU(data_cube)
-    hdu.writeto(outpath + "speeds_sigmas.fits", overwrite=True)
-
-    # Generate and save the radial flow map plot
-    filename = outpath + "Radial_Speed_Map.png"
-    plot_flow_map(filename, avg_speeds, sigmas, ycens, rbands, velocity_azimuth_bins)
-
-
-if __name__ == "__main__":
-    datapath = "/Users/clowder/data/punch/synthetic_l3"
-    outpath = "/Users/clowder/Desktop/"
-
-    test_flow_tracking(datapath, outpath)
+    track_velocity(files)

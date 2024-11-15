@@ -497,6 +497,8 @@ def track_velocity(files: list[str],
     if rbands is None:
         rbands = [0, 4, 8, 14]
 
+    files.sort()
+
     # Data preprocessing
     data0 = load_ndcube_from_fits(files[0])
     header1 = data0.meta.to_fits_header(wcs=data0.wcs)
@@ -511,7 +513,6 @@ def track_velocity(files: list[str],
 
     output_meta = NormalizedMetadata.load_template("VAM", "3")
 
-    # TODO - any missing metadata to fill?
     with fits.open(files[0]) as hdul:
         output_meta["DATE-BEG"] = hdul[1].header["DATE-BEG"]
 
@@ -535,8 +536,6 @@ def track_velocity(files: list[str],
     output_meta["AZMBINF"] = az_bin
     output_meta["PLTBINS"] = velocity_azimuth_bins
 
-    # TODO - how to store ycens and rbands?
-
     wcs = WCS(naxis=2)
     wcs.wcs.ctype = "radius","azimuth"
     wcs.wcs.cunit = "solRad","rad"
@@ -545,10 +544,16 @@ def track_velocity(files: list[str],
     wcs.wcs.crval = 0, 0
     wcs.wcs.cname = "solar radii", "azimuth"
 
-    return NDCube(data = avg_speeds,
+    flow_data = NDCube(data = avg_speeds,
                          uncertainty=StdDevUncertainty(sigmas),
                          meta = output_meta,
                          wcs = wcs)
+
+    # TODO - Output ycens and rbands to FITS metadata
+    flow_data.meta.history.add_now("LEVEL3-velocity", "ycens:" + str(ycens))
+    flow_data.meta.history.add_now("LEVEL3-velocity", "rbands:" + str(rbands))
+
+    return flow_data
 
 
 if __name__ == "__main__":

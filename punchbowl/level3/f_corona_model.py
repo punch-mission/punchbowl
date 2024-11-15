@@ -56,6 +56,7 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
 
 def model_fcorona_for_cube(xt: np.ndarray,
                           cube: np.ndarray,
+                          min_brightness: float = 1E-16,
                           smooth_level: float | None = 1,
                           return_full_curves: bool=False,
                           ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -87,6 +88,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
         The smoothed data cube. Returned only if return_full_curves is True.
 
     """
+    cube[cube < min_brightness] = np.nan
     if smooth_level is not None:
         average = np.nanmean(cube, axis=0)
         std = np.nanstd(cube, axis=0)

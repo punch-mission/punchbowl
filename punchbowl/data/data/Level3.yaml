@@ -17,9 +17,11 @@ Level:
     Solar Reference Data:
     Spacecraft Location & Environment:
         omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]
+    Velocity:
     Fixity:
     History:
 
+# TODO - How to omit velocity section from non-velocity data products?
 
 # Kind specifications
 Kinds:
@@ -50,6 +52,13 @@ Kinds:
             NAXIS1: 4096
             NAXIS2: 4096
         omits: [NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+
+    Velocity:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 1440
+            NAXIS2: 4
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, POLAR, FILTER]
 
 
 # Product specifications

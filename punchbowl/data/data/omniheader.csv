@@ -140,8 +140,21 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 11,keyword,HEQX_OBS,,[m] S/C Heliocentric Earth Equatorial X,float,TRUE,TRUE,
 11,keyword,HEQY_OBS,,[m] S/C Heliocentric Earth Equatorial Y,float,TRUE,TRUE,
 11,keyword,HEQZ_OBS,,[m] S/C Heliocentric Earth Equatorial Z,float,TRUE,TRUE,
-12,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
-12,keyword,CHECKSUM,,,str,TRUE,TRUE,
-12,keyword,DATASUM,,,str,TRUE,TRUE,0
-13,section,COMMENT,History,,str,TRUE,TRUE,History
-13,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline
+12,section,COMMENT,Velocity,,str,TRUE,TRUE,Velocity
+12,keyword,DELTAT,,Time offset in frames between images,int,TRUE,TRUE,
+12,keyword,SPARSITY,,Frame skip interval for averaging,int,TRUE,TRUE,
+12,keyword,N_OFS,,Number of spatial offsets for cross-correlation,int,TRUE,TRUE,
+12,keyword,DELTA_PX,,Pixel offset increment per sample,int,TRUE,TRUE,
+12,keyword,KPSEXP,,Expected wind speed in km/s,int,TRUE,TRUE,
+12,keyword,BANDWDTH,,Half-width of each radial band in solar radii,float,TRUE,TRUE,
+12,keyword,MAXRAD,,The maximum radius in degrees,int,TRUE,TRUE,
+12,keyword,AZMBINS,,Number of azimuthal bins in the polar remapped images,int,TRUE,TRUE,
+12,keyword,AZMBINF,,Binning factor for binning the polar remapped image over the azimuth,int,TRUE,TRUE,
+12,keyword,PLTBINS,,Number of azimuthal bins in the output flow maps,int,TRUE,TRUE,
+12,keyword,YCENS,,Radial band centers in solar radii,float,TRUE,TRUE,
+12,keyword,RBANDS,,Indices of radial bands to visualize,int,TRUE,TRUE,
+13,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
+13,keyword,CHECKSUM,,,str,TRUE,TRUE,
+13,keyword,DATASUM,,,str,TRUE,TRUE,0
+14,section,COMMENT,History,,str,TRUE,TRUE,History
+14,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline

@@ -1,4 +1,3 @@
-import glob
 from datetime import datetime
 
 import astropy.units as u
@@ -545,24 +544,12 @@ def track_velocity(files: list[str],
     wcs.wcs.cname = "solar radii", "azimuth"
 
     flow_data = NDCube(data = avg_speeds,
-                         uncertainty=StdDevUncertainty(sigmas),
-                         meta = output_meta,
-                         wcs = wcs)
+                       uncertainty=StdDevUncertainty(sigmas),
+                       meta = output_meta,
+                       wcs = wcs)
 
     # TODO - Output ycens and rbands to FITS metadata
     flow_data.meta.history.add_now("LEVEL3-velocity", "ycens:" + str(ycens))
     flow_data.meta.history.add_now("LEVEL3-velocity", "rbands:" + str(rbands))
 
     return flow_data
-
-
-if __name__ == "__main__":
-    datapath = "/Users/clowder/data/punch/synthetic_l3"
-    outpath = "/Users/clowder/Desktop/"
-
-    files = glob.glob(datapath + "/*PTM*.fits")
-    files.sort()
-
-    files = files[0:90]
-
-    track_velocity(files)

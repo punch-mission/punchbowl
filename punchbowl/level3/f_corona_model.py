@@ -100,7 +100,8 @@ def model_fcorona_for_cube(xt: np.ndarray,
     xt -= xt[0]
 
     input_array = np.c_[np.power(xt, 3), np.square(xt), xt, np.ones(len(xt))]
-    coefficients, counts = -solve_qp_cube(input_array, -cube)
+    coefficients, counts = solve_qp_cube(input_array, -cube)
+    coefficients *= -1
     if return_full_curves:
         return polynomial.polyval(xt, coefficients[::-1, :, :]).transpose((2, 0, 1)), counts, cube
     return polynomial.polyval(xt[len(xt)//2], coefficients[::-1, :, :]), counts

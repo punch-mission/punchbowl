@@ -55,7 +55,7 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
 
 def model_fcorona_for_cube(xt: np.ndarray,
                           cube: np.ndarray,
-                          smooth_level: float | None =4,
+                          smooth_level: float | None = 1,
                           return_full_curves: bool=False,
                           ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """
@@ -107,6 +107,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
 def construct_f_corona_background(
     data_list: list[str],
     layer: int,
+    smooth_level: float = 1.0,
 ) -> NDCube:
     """Build f corona background model."""
     logger = get_run_logger()
@@ -139,7 +140,7 @@ def construct_f_corona_background(
     logger.info("ending data loading")
 
     logger.info("building model")
-    f_background = model_fcorona_for_cube(obs_times, data_cube)
+    f_background = model_fcorona_for_cube(obs_times, data_cube, smooth_level=smooth_level)
     output = NDCube(f_background, wcs=output_wcs, meta=output_meta, mask=output_mask)
 
     logger.info("construct_f_corona_background finished")

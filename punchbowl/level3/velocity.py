@@ -90,6 +90,7 @@ def preprocess_image(data: NDCube, max_radius_px: int, num_azimuth_bins: int, az
 
     polar_image_binned = polar_image.T.reshape([polar_image.shape[1],
                                                 polar_image.shape[0] // az_bin, az_bin]).mean(axis=2)
+
     # Remove background radially by taking the mean over the radial axis (From Craig's original implementation)
     polar_image_binned_radial_bkg = polar_image_binned - np.mean(polar_image_binned, axis=0)
     # Flat-fielding further: dividing by RMS value along the radial axis
@@ -368,7 +369,7 @@ def process_corr(files: list, arcsec_per_px:float, expected_kps_windspeed: float
 
 
 def plot_flow_map(filename: str, speeds: np.ndarray, sigmas: np.ndarray, ycen_band_rs: np.ndarray,
-                  rbands: list[int], velocity_azimuth_bins: int, cmap: str = "inferno") -> None:
+                  rbands: list[int], velocity_azimuth_bins: int, cmap: str = "magma") -> None:
     """
     Plot polar maps of the radial flows.
 
@@ -387,7 +388,7 @@ def plot_flow_map(filename: str, speeds: np.ndarray, sigmas: np.ndarray, ycen_ba
     velocity_azimuth_bins : int
         Number of angular bins in the velocity map.
     cmap : str, optional
-        Colormap for the plot (default is 'inferno').
+        Colormap for the plot (default is 'magma').
 
     """
     thetas = np.linspace(0, 2 * np.pi, velocity_azimuth_bins + 1)
@@ -445,12 +446,14 @@ def track_velocity_task(files: list[str]) -> NDCube:
     return track_velocity(files)
 
 
-# TODO - Check for radial pixel values, check that band is wide enough
-
-if __name__ == "__main__":
-    files = glob.glob("/Users/clowder/data/punch/synthetic_l3/*PTM*.fits")
+def test_flow_tracking(datapath:str, outpath:str) -> None:
+    """Tests flow tracking for fine tuning purposes outside punchpipe."""
+    files = glob.glob(datapath + "/*PTM*.fits")
     files.sort()
 
+    files = files[0:90]
+
+    # Input parameters and configuration
     delta_t = 12  # Time offset in frames between images
     sparsity = 2  # Frame skip interval for averaging
     n_ofs = 151  # Number of spatial offsets for cross-correlation
@@ -464,22 +467,31 @@ if __name__ == "__main__":
     # Define radial band centers in solar radii
     ycens = np.array([7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14])
     rbands = [0, 4, 8, 14]  # Indices of radial bands to visualize
+    # End of user input
 
 
     # Testing preprocessing
     data0 = load_ndcube_from_fits(files[0])
     header1 = data0.meta.to_fits_header(wcs=data0.wcs)
-    prepped_image1, polar_header1 = preprocess_image(data0, max_radius_deg/header1["CDELT1"], num_azimuth_bins, az_bin)
+    _, polar_header1 = preprocess_image(data0, max_radius_deg/header1["CDELT1"], num_azimuth_bins, az_bin)
 
     avg_speeds, sigmas = process_corr(files, polar_header1["CDELT2"], expected_kps_windspeed,
                                       delta_t, sparsity,delta_px, r_band_half_width, n_ofs, max_radius_deg,
                                       num_azimuth_bins, az_bin, velocity_azimuth_bins)
-    #
-    # # Save the speed and sigma data in a FITS file
+
+    # Save the speed and sigma data in a FITS file
     data_cube = np.stack((avg_speeds, sigmas), axis=0)
     hdu = fits.PrimaryHDU(data_cube)
-    hdu.writeto("/Users/clowder/Desktop/speeds_sigmas.fits", overwrite=True)
+    hdu.writeto(outpath + "speeds_sigmas.fits", overwrite=True)
 
     # Generate and save the radial flow map plot
-    filename = "/Users/clowder/Desktop/Radial_Speed_Map.png"
+    filename = outpath + "Radial_Speed_Map.png"
     plot_flow_map(filename, avg_speeds, sigmas, ycens, rbands, velocity_azimuth_bins)
+
+
+if __name__ == "__main__":
+    datapath = "/Users/clowder/data/punch/synthetic_l3"
+    outpath = "/Users/clowder/Desktop/"
+
+    ycens = np.array([7, 7.5, 8, 8.5, 9, 9.5, 10, 10.5, 11, 11.5, 12, 12.5, 13, 13.5, 14])
+    test_flow_tracking(datapath, outpath)

@@ -50,8 +50,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
                 if typecode == order_element[:2] and obscode == order_element[2]:
                     ordered_data_list[i] = data_element
                     ordered_voters[i] = voter_filenames[j]
-        logger.info(f"Ordered files are {[get_base_file_name(cube) if cube is not None else None
-                                          for cube in ordered_data_list]}")
+        logger.info("Ordered files are "
+                    f"{[get_base_file_name(cube) if cube is not None else None for cube in ordered_data_list]}")
 
         if trefoil_wcs is None or trefoil_shape is None:
             trefoil_wcs, trefoil_shape = load_trefoil_wcs()

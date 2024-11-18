@@ -30,8 +30,7 @@ SAMPLE_SPACECRAFT_DEF_PATH = os.path.join(TESTDATA_DIR, "spacecraft.yaml")
 def sample_ndcube():
     def _sample_ndcube(shape, code="PM1", level="0"):
         data = np.random.random(shape).astype(np.float32)
-        sqrt_abs_data = np.sqrt(np.abs(data))
-        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()), (0,1)).astype(np.float32))
+        uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
         wcs.wcs.cunit = "deg", "deg"

@@ -7,20 +7,26 @@ from prefect import get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 
+from build.lib.punchbowl.level3.f_corona_model import subtract_f_corona_background
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.prefect import punch_task
 
 
 class PUNCHImageProcessor(ImageProcessor):
-    def __init__(self, layer):
+    def __init__(self, layer, before_f_corona_path, after_f_corona_path):
         self.layer = layer
+        self.before_f_corona = load_ndcube_from_fits(before_f_corona_path)
+        self.after_f_corona = load_ndcube_from_fits(after_f_corona_path)
 
     def load_image(self, filename: str) -> ImageHolder:
         cube = load_ndcube_from_fits(filename)
-        return ImageHolder(cube.data[self.layer], cube.wcs[self.layer], cube.meta)
+        subtracted = subtract_f_corona_background(cube, self.before_f_corona, self.after_f_corona)
+        return ImageHolder(subtracted.data[self.layer], cube.wcs[self.layer], cube.meta)
 
 def generate_starfield_background(
         filenames: list[str],
+        before_f_corona: str,
+        after_f_corona: str,
         n_sigma: float = 5,
         map_scale: float = 0.01,
         target_mem_usage: float = 1000) -> NDCube:
@@ -49,7 +55,7 @@ def generate_starfield_background(
         frame_count=True,
         reducer=GaussianReducer(n_sigma=n_sigma),
         map_scale=map_scale,
-        processor=PUNCHImageProcessor(1),
+        processor=PUNCHImageProcessor(1, before_f_corona, after_f_corona),
         target_mem_usage=target_mem_usage)
 
     starfield_p = remove_starfield.build_starfield_estimate(

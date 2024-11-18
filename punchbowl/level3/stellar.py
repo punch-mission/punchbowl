@@ -21,7 +21,7 @@ class PUNCHImageProcessor(ImageProcessor):
     def load_image(self, filename: str) -> ImageHolder:
         cube = load_ndcube_from_fits(filename)
         subtracted = subtract_f_corona_background(cube, self.before_f_corona, self.after_f_corona)
-        return ImageHolder(subtracted.data[self.layer], cube.wcs[self.layer], cube.meta)
+        return ImageHolder(subtracted.data[self.layer], cube.wcs.celestial, cube.meta)
 
 def generate_starfield_background(
         filenames: list[str],

@@ -57,11 +57,11 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
 
 
 @flow(validate_parameters=False)
-def reproject_many_flow(data: list[NDCube], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube]:
+def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube | None]:
     """Reproject many flow."""
-    out_layers = [reproject_cube.submit(d, trefoil_wcs, trefoil_shape) for d in data]
+    out_layers = [reproject_cube.submit(d, trefoil_wcs, trefoil_shape) if d is not None else None for d in data]
 
     return [NDCube(data=out_layers[i].result()[0],
                    uncertainty=out_layers[i].result()[1],
                    wcs=trefoil_wcs,
-                   meta=d.meta) for i, d in enumerate(data)]
+                   meta=d.meta) if d is not None else None for i, d in enumerate(data)]

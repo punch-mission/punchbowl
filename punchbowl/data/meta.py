@@ -553,7 +553,7 @@ class NormalizedMetadata(Mapping):
         # parse each section
         dtypes = {"str": str, "int": int, "float": float}
         for section_id, section_title in zip(section_ids, section_titles, strict=False):
-            if section_title in level_spec["Level"]:
+            if section_title in level_spec["Level"] and section_title not in omits:
                 contents[section_title] = OrderedDict()
                 for i in np.where(omniheader["SECTION"] == section_id)[0][1:]:
                     e = omniheader.iloc[i]

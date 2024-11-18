@@ -12,3 +12,4 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 3,keyword,TITLE,A default value,with a default comment,str,FALSE,FALSE,
 4,section,COMMENT,Section 5,,str,FALSE,FALSE
 4,keyword,IGNORE,ignored,ignored,str,FALSE,FALSE
+5,section,COMMENT,Section 6,,str,FALSE,FALSE

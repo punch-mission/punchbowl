@@ -85,7 +85,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 7,keyword,SQRTCODE,,square-root coding table name,str,TRUE,TRUE,
 7,keyword,COMPRESS,,image compression type,str,TRUE,TRUE,
 7,keyword,COMP_RAT,-1.0,compressed/uncompressed data ratio,float,TRUE,TRUE,
-8,section,COMMENT,Calibration Data,,str,TRUE,TRUE, Calibration Data
+8,section,COMMENT,Calibration Data,,str,TRUE,TRUE,Calibration Data
 8,keyword,CALCF,,quartic fit filename,str,TRUE,TRUE,
 8,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,
 8,keyword,CALPSF,,PSF filename,str,TRUE,TRUE,
@@ -116,7 +116,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 10,keyword,RSUN_REF,695700000,[m] assumed physical solar radius,float,TRUE,TRUE,
 10,keyword,SOLAR_EP,,[deg] S/C ecliptic North to solar North angle,float,TRUE,TRUE,
 10,keyword,CAR_ROT,0.0,Carrington Rotation number,float,TRUE,TRUE,
-11,section,COMMENT,Spacecraft Location & Environment,,str,TRUE,TRUE, Spacecraft Location & Environment
+11,section,COMMENT,Spacecraft Location & Environment,,str,TRUE,TRUE,Spacecraft Location & Environment
 11,keyword,GEOD_LAT,,[deg] S/C sub-point geodetic latitude,float,TRUE,TRUE,
 11,keyword,GEOD_LON,,[deg] S/C sub-point longitude,float,TRUE,TRUE,
 11,keyword,GEOD_ALT,,[m] S/C WGS84 altitude,float,TRUE,TRUE,
@@ -141,8 +141,21 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 11,keyword,HEQX_OBS,,[m] S/C Heliocentric Earth Equatorial X,float,TRUE,TRUE,
 11,keyword,HEQY_OBS,,[m] S/C Heliocentric Earth Equatorial Y,float,TRUE,TRUE,
 11,keyword,HEQZ_OBS,,[m] S/C Heliocentric Earth Equatorial Z,float,TRUE,TRUE,
-12,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
-12,keyword,CHECKSUM,,,str,TRUE,TRUE,
-12,keyword,DATASUM,,,str,TRUE,TRUE,0
-13,section,COMMENT,History,,str,TRUE,TRUE,History
-13,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline
+12,section,COMMENT,Velocity,,str,TRUE,TRUE,Velocity
+12,keyword,DELTAT,,Time offset in frames between images,int,TRUE,TRUE,
+12,keyword,SPARSITY,,Frame skip interval for averaging,int,TRUE,TRUE,
+12,keyword,N_OFS,,Number of spatial offsets for cross-correlation,int,TRUE,TRUE,
+12,keyword,DELTA_PX,,Pixel offset increment per sample,int,TRUE,TRUE,
+12,keyword,KPSEXP,,Expected wind speed in km/s,int,TRUE,TRUE,
+12,keyword,BANDWDTH,,Half-width of each radial band in solar radii,float,TRUE,TRUE,
+12,keyword,MAXRAD,,The maximum radius in degrees,int,TRUE,TRUE,
+12,keyword,AZMBINS,,Number of azimuthal bins in the polar remapped images,int,TRUE,TRUE,
+12,keyword,AZMBINF,,Binning factor for binning the polar remapped image over the azimuth,int,TRUE,TRUE,
+12,keyword,PLTBINS,,Number of azimuthal bins in the output flow maps,int,TRUE,TRUE,
+12,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
+12,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
+13,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
+13,keyword,CHECKSUM,,,str,TRUE,TRUE,
+13,keyword,DATASUM,,,str,TRUE,TRUE,0
+14,section,COMMENT,History,,str,TRUE,TRUE,History
+14,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline

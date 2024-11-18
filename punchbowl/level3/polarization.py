@@ -15,9 +15,10 @@ def convert_polarization(
     logger = get_run_logger()
     logger.info("convert2bpb started")
 
-    collection_contents = [(label, NDCube(data=input_data[i].data,
-                                 wcs=input_data.wcs.dropaxis(2),
-                                 meta={"POLAR": angle}))
+    collection_contents = [(label,
+                            NDCube(data=input_data[i].data,
+                                   wcs=input_data.wcs.dropaxis(2),
+                                   meta={"POLAR": angle}))
                        for (label, i, angle) in zip(["M", "Z", "P"],
                                                     [0, 1, 2],
                                                     [-60*u.deg, 0*u.deg, 60*u.deg], strict=False)]

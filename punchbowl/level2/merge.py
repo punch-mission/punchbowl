@@ -7,7 +7,6 @@ from prefect import task
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.prefect import punch_task
-from punchbowl.util import average_datetime
 
 
 @punch_task
@@ -32,15 +31,11 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
             trefoil_data_layers.append(np.zeros((4096, 4096)))
             trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
 
-    # TODO: fill in more metadata
-    output_meta = NormalizedMetadata.load_template("PTM", "2")
-    output_meta["DATE-OBS"] = str(average_datetime([d.meta.datetime for d in data if d is not None]))
-
     return NDCube(
         data=np.stack(trefoil_data_layers, axis=0),
         uncertainty=StdDevUncertainty(np.stack(trefoil_uncertainty_layers, axis=0)),
         wcs=trefoil_wcs,
-        meta=output_meta,
+        meta=NormalizedMetadata.load_template("PTM", "2"),
     )
 
 @task

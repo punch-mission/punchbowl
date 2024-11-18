@@ -22,10 +22,10 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
     voters = [[] for _ in data_list]
 
     with prefect_test_harness():
-        output = level2_core_flow(paths, voters)
+        output = level2_core_flow(paths, voters, trefoil_wcs=WCS(naxis=2), trefoil_shape=(20, 20))
     assert isinstance(output[0], NDCube)
 
-@pytest.mark.parametrize("drop_indices", [[1]])
+@pytest.mark.parametrize("drop_indices", [[], [1], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]])
 def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube, drop_indices):
     data_list = [sample_ndcube(shape=(10, 10), code=code, level="1")
                  for i, code in enumerate(ORDER) if i not in drop_indices]

@@ -168,6 +168,24 @@ class MetaField:
             and self._default == other._default
         )
 
+    def __int__(self) -> int:
+        """Get an int."""
+        if self.datatype is int:
+            return int(self._value)
+        raise TypeError(f"Cannot convert {self._datatype} to int.")
+
+    def __float__(self) -> float:
+        """Get a float."""
+        if self.datatype is float or self.datatype is int:
+            return float(self._value)
+        raise TypeError(f"Cannot convert {self._datatype} to float.")
+
+    def __str__(self) -> str:
+        """Get a string."""
+        if self.datatype is str:
+            return str(self._value)
+        raise TypeError(f"Cannot convert {self._datatype} to str.")
+
 
 class NormalizedMetadata(Mapping):
     """
@@ -643,6 +661,14 @@ class NormalizedMetadata(Mapping):
         # reaching here means we haven't returned
         msg = f"MetaField with key={key} not found."
         raise RuntimeError(msg)
+
+    def get(self, key: str | tuple[str, int], default: t.Any | None = None) -> t.Any:
+        """Get a value given a key or use a default value."""
+        try:
+            out = self[key]
+        except KeyError:
+            out = default
+        return out
 
     def __getitem__(self, key: str | tuple[str, int]) -> t.Any:
         """

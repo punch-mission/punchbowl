@@ -110,7 +110,10 @@ def test_normalizedmetadata_from_template_abq():
     assert 'KEYOMIT1' not in result
     assert 'KEYOMIT2' not in result
     assert result['KEYALTER'].value == 2
+    assert int(result['KEYALTER']) == 2
     assert result['OTHERKEY'].value == 'Test'
+    with pytest.raises(TypeError):
+        int(result['OTHERKEY'])
     assert result['TITLE'].value == 'My name is test-0'
 
 

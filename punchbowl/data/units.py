@@ -11,7 +11,7 @@ def calculate_image_pixel_area(wcs: WCS, data_shape: tuple[int, int]) -> u.sr:
     """Calculate the sky area of every pixel in an image according to its WCS."""
     xx, yy = np.meshgrid(np.arange(data_shape[1]+1)-0.5, np.arange(data_shape[0]+1)-0.5)
     coords = wcs.pixel_to_world(xx, yy)
-    dx = coords[:, 1:].separation(coords[:, :-1]).to(u.deg)[:-1,]
+    dx = coords[:, 1:].separation(coords[:, :-1]).to(u.deg)[:-1]
     dy = coords[1:, :].separation(coords[:-1, :]).to(u.deg)[:, :-1]
     return dx * dy
 

@@ -94,6 +94,8 @@ exclude = ['tests', 'scripts', 'docs']
 line-length=120
 lint.select = ["ALL"]
 lint.ignore = [
+    'EM102',
+    'TRY003',
     'G004',
     "I001",
     'D100',

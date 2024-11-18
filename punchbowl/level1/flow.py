@@ -1,3 +1,4 @@
+import pathlib
 from collections.abc import Callable
 
 import astropy.units as u
@@ -49,7 +50,7 @@ def level1_core_flow(
     dark_level: float = 55.81,
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
-    quartic_coefficient_path: str | None = None,
+    quartic_coefficient_path: str | pathlib.Path | None = None,
     despike_unsharp_size: int = 1,
     despike_method: str = "median",
     despike_alpha: float = 3.0,
@@ -64,7 +65,7 @@ def level1_core_flow(
     deficient_pixel_max_window_size: int = 10,
     psf_model_path: str | None = None,
     alignment_mask: Callable | None = None,
-    output_filename: str | None = None,
+    output_filename: list[str] | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1."""
     logger = get_run_logger()

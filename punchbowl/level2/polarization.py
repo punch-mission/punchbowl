@@ -45,7 +45,7 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
 
 
 @punch_task
-def resolve_polarization_task(data_list: list[NDCube]) -> list[NDCube]:
+def resolve_polarization_task(data_list: list[NDCube | None]) -> list[NDCube | None]:
     """
     Prefect task for polarization resolving.
 
@@ -61,11 +61,13 @@ def resolve_polarization_task(data_list: list[NDCube]) -> list[NDCube]:
 
     """
     logger = get_run_logger()
+
+    if None in data_list:
+        logger.info("Skipping polarization resolution because one of the images was None.")
+        return [None, None, None]
+
     logger.info("resolve_polarization started")
-
-    # Resolve polarization
     data_list = resolve_polarization(data_list)
-
     logger.info("resolve_polarization ended")
 
     for data_object in data_list:

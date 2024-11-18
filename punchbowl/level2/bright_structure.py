@@ -160,17 +160,21 @@ def run_zspike(
 
 @punch_task
 def identify_bright_structures_task(
-    data: NDCube,
+    data: NDCube | None,
     voter_filenames: list[str],
     threshold: float = 4,
     required_yes: int = 6,
     veto_limit: int = 2,
     diff_method: str = "sigma",
     dilation: int = 0,
-) -> NDCube:
+) -> NDCube | None:
     """Prefect task to perform bright structure identification."""
     logger = get_run_logger()
     logger.info("identify_bright_structures_task started")
+
+    if data is None:
+        logger.info("Identify bright structures skipped since data is None")
+        return data
 
     if len(voter_filenames) == 0:
         logger.info("Identify bright structures skipped since no voters provided")

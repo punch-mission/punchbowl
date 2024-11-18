@@ -16,12 +16,13 @@ from astropy.io.fits import Header
 from astropy.time import Time
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
-from sunpy.coordinates import frames, sun
+from ndcube import NDCube
+from sunpy.coordinates import frames, get_earth, sun
 from sunpy.coordinates.sun import _sun_north_angle_to_z
 from sunpy.map import solar_angular_radius
 
 from punchbowl.data.history import History
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, get_p_angle
 from punchbowl.exceptions import MissingMetadataError
 
 ValueType = int | str | float
@@ -774,3 +775,45 @@ class NormalizedMetadata(Mapping):
             msg = "TYPECODE is missing from the metadata."
             raise MissingMetadataError(msg)
         return self["TYPECODE"].value + self["OBSCODE"].value
+
+
+def set_spacecraft_location_to_earth(input_data: NDCube) -> NDCube:
+    """Update the spacecraft location metadata."""
+    time_obs = input_data.meta.astropy_time
+
+    input_data.meta["GEOD_LAT"] = 0.
+    input_data.meta["GEOD_LON"] = 0.
+    input_data.meta["GEOD_ALT"] = 0.
+
+    coord = get_earth(time_obs)
+    coord.observer = "earth"
+
+    # S/C Heliographic Stonyhurst
+    input_data.meta["HGLN_OBS"] = coord.heliographic_stonyhurst.lon.value
+    input_data.meta["HGLT_OBS"] = coord.heliographic_stonyhurst.lat.value
+
+    # S/C Heliographic Carrington
+    input_data.meta["CRLN_OBS"] = coord.heliographic_carrington.lon.value
+    input_data.meta["CRLT_OBS"] = coord.heliographic_carrington.lat.value
+
+    input_data.meta["DSUN_OBS"] = sun.earth_distance(time_obs).to(u.m).value
+
+    # S/C Heliocentric Earth Ecliptic
+    input_data.meta["HEEX_OBS"] = coord.heliocentricearthecliptic.cartesian.x.to(u.m).value
+    input_data.meta["HEEY_OBS"] = coord.heliocentricearthecliptic.cartesian.y.to(u.m).value
+    input_data.meta["HEEZ_OBS"] = coord.heliocentricearthecliptic.cartesian.z.to(u.m).value
+
+    # S/C Heliocentric Inertial
+    input_data.meta["HCIX_OBS"] = coord.heliocentricinertial.cartesian.x.to(u.m).value
+    input_data.meta["HCIY_OBS"] = coord.heliocentricinertial.cartesian.y.to(u.m).value
+    input_data.meta["HCIZ_OBS"] = coord.heliocentricinertial.cartesian.z.to(u.m).value
+
+    # S/C Heliocentric Earth Equatorial
+    input_data.meta["HEQX_OBS"] = (coord.heliographic_stonyhurst.cartesian.x.value * u.AU).to(u.m).value
+    input_data.meta["HEQY_OBS"] = (coord.heliographic_stonyhurst.cartesian.y.value * u.AU).to(u.m).value
+    input_data.meta["HEQZ_OBS"] = (coord.heliographic_stonyhurst.cartesian.z.value * u.AU).to(u.m).value
+
+    input_data.meta["SOLAR_EP"] = get_p_angle(time_obs).to(u.deg).value
+    input_data.meta["CAR_ROT"] = float(sun.carrington_rotation_number(time_obs))
+
+    return input_data

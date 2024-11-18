@@ -65,7 +65,7 @@ def test_shape_matching(synthetic_fits_data):
     """Test that the output shape matches the expected configuration."""
     files = synthetic_fits_data
     ycens = np.arange(7, 14.5, 0.5)
-    result = track_velocity(files, ycens=ycens)
+    result, _ = track_velocity(files, ycens=ycens)
 
     assert isinstance(result, NDCube)
     assert result.data.shape[0] == len(ycens)
@@ -73,7 +73,7 @@ def test_shape_matching(synthetic_fits_data):
 def test_no_nans_or_negatives(synthetic_fits_data):
     """Test that the output does not contain NaNs or negative values."""
     files = synthetic_fits_data
-    result = track_velocity(files)
+    result, _ = track_velocity(files)
 
     assert not np.isnan(result.data).any(), "Data contains NaNs"
     assert (result.data >= 0).all(), "Data contains negative values"
@@ -107,7 +107,7 @@ def test_with_bad_data(tmpdir):
     write_ndcube_to_fits(cube, file_path)
 
     with pytest.raises(ValueError):
-        output = track_velocity([str(file_path)])
+        _, _ = track_velocity([str(file_path)])
 
     # TODO - Add test for the badness of data itself?
 
@@ -142,7 +142,7 @@ def test_sample_radial_outflows(tmpdir):
         write_ndcube_to_fits(cube, file_path)
         files.append(str(file_path))
 
-    result = track_velocity(files)
+    result, _ = track_velocity(files)
 
     assert isinstance(result, NDCube)
     assert result.data.mean() > 0  # Verify that there is a positive outflow signal

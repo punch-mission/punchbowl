@@ -1,7 +1,9 @@
+import os
+
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
-from punchbowl.level3.velocity import track_velocity
+from punchbowl.level3.velocity import plot_flow_map, track_velocity
 from punchbowl.util import output_image_task
 
 
@@ -12,9 +14,11 @@ def generate_level3_velocity_flow(data_list: list[str],
     logger = get_run_logger()
 
     logger.info("Generating velocity data product")
-    velocity_data = track_velocity(data_list)
+    velocity_data, plot_parameters = track_velocity(data_list)
 
     if output_filename is not None:
         output_image_task(velocity_data, output_filename)
+        plot_filename = f"{os.path.splitext(output_filename)[0]}.{"pdf"}"
+        plot_flow_map(plot_filename, **plot_parameters)
 
     return [velocity_data]

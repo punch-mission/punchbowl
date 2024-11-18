@@ -511,9 +511,6 @@ def track_velocity(files: list[str],
                                       delta_t, sparsity, delta_px, ycens, r_band_half_width, n_ofs,
                                       max_radius_deg, num_azimuth_bins, az_bin, velocity_azimuth_bins)
 
-
-    # TODO - Output flow maps - plot_flow_map(filename, avg_speeds, sigmas, ycens, rbands, velocity_azimuth_bins)
-
     output_meta = NormalizedMetadata.load_template("VAM", "3")
 
     with fits.open(files[0]) as hdul:
@@ -552,8 +549,14 @@ def track_velocity(files: list[str],
                        meta = output_meta,
                        wcs = wcs)
 
-    # TODO - Output ycens and rbands to FITS metadata
+    # TODO - Output ycens and rbands to FITS metadata rather than history
     flow_data.meta.history.add_now("LEVEL3-velocity", "ycens:" + str(ycens))
     flow_data.meta.history.add_now("LEVEL3-velocity", "rbands:" + str(rbands))
 
-    return flow_data
+    plot_parameters = {"avg_speeds": avg_speeds,
+                       "sigmas": sigmas,
+                       "ycens": ycens,
+                       "rbands": rbands,
+                       "velocity_azimuth_bins": velocity_azimuth_bins}
+
+    return flow_data, plot_parameters

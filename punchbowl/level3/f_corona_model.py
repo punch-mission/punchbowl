@@ -10,7 +10,7 @@ from punchbowl.prefect import punch_task
 
 
 def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
-                  n_nonnan_required: int=7) -> np.ndarray:
+                  n_nonnan_required: int=7) -> (np.ndarray, np.ndarray):
     """
     Fast solver for the quadratic programming problem.
 
@@ -31,33 +31,35 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
 
     """
     c = np.transpose(input_vals)
-    g = np.matmul(c, input_vals)
 
-    sol = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
-
+    solution = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
+    num_inputs = np.zeros((cube.shape[1], cube.shape[2]))
     for i in range(cube.shape[1]):
         for j in range(cube.shape[2]):
             time_series = cube[:, i, j]
             is_good = np.isfinite(time_series)
             time_series = time_series[is_good]
             c_iter = c[:, is_good]
+            g_iter = np.matmul(c_iter, c_iter.T)
+            num_inputs[i, j] = np.sum(is_good)
             if time_series.size < n_nonnan_required:
-                this_sol = np.zeros(input_vals.shape[1])
+                this_solution = np.zeros(input_vals.shape[1])
             else:
                 a = np.matmul(c_iter, time_series)
                 try:
-                    this_sol = solve_qp(g, a, c_iter, time_series)[0]
+                    this_solution = solve_qp(g_iter, a, c_iter, time_series)[0]
                 except ValueError:
-                    this_sol = np.zeros(input_vals.shape[1])
-            sol[:, i, j] = this_sol
+                    this_solution = np.zeros(input_vals.shape[1])
+            solution[:, i, j] = this_solution
 
-    return np.asarray(sol)
+    return np.asarray(solution), num_inputs
 
 def model_fcorona_for_cube(xt: np.ndarray,
                           cube: np.ndarray,
-                          smooth_level: float | None =4,
+                          min_brightness: float = 1E-16,
+                          smooth_level: float | None = 1,
                           return_full_curves: bool=False,
-                          ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+                          ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Model the F corona given a list of times and a corresponding data cube, .
 
@@ -67,6 +69,8 @@ def model_fcorona_for_cube(xt: np.ndarray,
         time array
     cube : np.ndarray
         observation array
+    min_brightness: float
+        pixels dimmer than this value are set to nan and considered empty
     smooth_level : float | None
         If None, no smoothing is applied.
         Otherwise, the top and bottom `smooth_level` standard deviations of data are rejected.
@@ -81,9 +85,12 @@ def model_fcorona_for_cube(xt: np.ndarray,
         The F-corona model at the central point in time. If return_full_curves is True, this is
         instead the F-corona model at all points in time covered by the data cube
     np.ndarray
+        The number of data points used in solving the F-corona model for each pixel of the output
+    np.ndarray
         The smoothed data cube. Returned only if return_full_curves is True.
 
     """
+    cube[cube < min_brightness] = np.nan
     if smooth_level is not None:
         average = np.nanmean(cube, axis=0)
         std = np.nanstd(cube, axis=0)
@@ -93,18 +100,23 @@ def model_fcorona_for_cube(xt: np.ndarray,
         a, b, c = np.where(cube[:, ...] < (average - (smooth_level * std)))
         cube[a, b, c] = average[b, c]
 
+    xt = np.array(xt)
+    xt -= xt[0]
+
     input_array = np.c_[np.power(xt, 3), np.square(xt), xt, np.ones(len(xt))]
-    out = -solve_qp_cube(input_array, -cube)
+    coefficients, counts = solve_qp_cube(input_array, -cube)
+    coefficients *= -1
     if return_full_curves:
-        return polynomial.polyval(xt, out[::-1, :, :]).transpose((2, 0, 1)), cube
-    return polynomial.polyval(xt[len(xt)//2], out[::-1, :, :])
+        return polynomial.polyval(xt, coefficients[::-1, :, :]).transpose((2, 0, 1)), counts, cube
+    return polynomial.polyval(xt[len(xt)//2], coefficients[::-1, :, :]), counts
 
 
 @flow
 def construct_f_corona_background(
     data_list: list[str],
     layer: int,
-) -> NDCube:
+    smooth_level: float = 1.0,
+) -> tuple[NDCube, np.ndarray]:
     """Build f corona background model."""
     logger = get_run_logger()
     logger.info("construct_f_corona_background started")
@@ -126,20 +138,23 @@ def construct_f_corona_background(
     meta_list = []
     obs_times = []
 
+    logger.info("beginning data loading")
     for i, address_out in enumerate(data_list):
         data_object = load_ndcube_from_fits(address_out)
         data_cube[i, :, :] = data_object.data[layer]
         uncertainty_cube[i, :, :] = data_object.uncertainty.array[layer]
         obs_times.append(data_object.meta.datetime.timestamp())
         meta_list.append(data_object.meta)
+    logger.info("ending data loading")
 
-    f_background = model_fcorona_for_cube(obs_times, data_cube)
+    logger.info("building model")
+    f_background, counts = model_fcorona_for_cube(obs_times, data_cube, smooth_level=smooth_level)
     output = NDCube(f_background, wcs=output_wcs, meta=output_meta, mask=output_mask)
 
     logger.info("construct_f_corona_background finished")
     output.meta.history.add_now("LEVEL3-construct_f_corona_background", "constructed f corona model")
 
-    return output
+    return output, counts
 
 
 def subtract_f_corona_background(data_object: NDCube,

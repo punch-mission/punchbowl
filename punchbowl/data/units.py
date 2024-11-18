@@ -15,7 +15,6 @@ def calculate_image_pixel_area(wcs: WCS, data_shape: tuple[int, int]) -> u.sr:
     dy = coords[1:, :].separation(coords[:-1, :]).to(u.deg)[:, :-1]
     return dx * dy
 
-
 def msb_to_dn(data: ndarray,
               data_wcs: WCS,
               gain: float = 4.9 * u.photon / u.DN,

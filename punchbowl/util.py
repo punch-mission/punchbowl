@@ -2,9 +2,9 @@ import os
 
 import numpy as np
 from ndcube import NDCube
-from prefect import task
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.prefect import punch_task
 
 
 def validate_image_is_square(image: np.ndarray) -> None:
@@ -20,7 +20,7 @@ def validate_image_is_square(image: np.ndarray) -> None:
         raise ValueError(msg)
 
 
-@task
+@punch_task
 def output_image_task(data: NDCube, output_filename: str) -> None:
     """
     Prefect task to write an image to disk.
@@ -43,7 +43,7 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
     write_ndcube_to_fits(data, output_filename)
 
 
-@task
+@punch_task
 def load_image_task(input_filename: str) -> NDCube:
     """
     Prefect task to load data for processing.

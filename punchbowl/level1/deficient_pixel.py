@@ -3,9 +3,10 @@ import os
 import numpy as np
 from ndcube import NDCube
 from numpy.lib.stride_tricks import as_strided
-from prefect import get_run_logger, task
+from prefect import get_run_logger
 
 from punchbowl.data import load_ndcube_from_fits
+from punchbowl.prefect import punch_task
 
 
 def sliding_window(arr: np.ndarray, window_size: int) -> np.ndarray:
@@ -135,7 +136,7 @@ def remove_deficient_pixels(data: NDCube,
     return data
 
 
-@task
+@punch_task
 def remove_deficient_pixels_task(
     data: NDCube,
     deficient_pixel_map_path: str | None,

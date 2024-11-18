@@ -51,8 +51,10 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     trefoil_wcs, trefoil_shape = load_trefoil_wcs()
 
     # TODO make more robust... fails if a file is missing or out of order right now
-    data_list = (resolve_polarization_task(ordered_data_list[:3]) + resolve_polarization_task(ordered_data_list[3:6])
-                 + resolve_polarization_task(ordered_data_list[6:9]) + resolve_polarization_task(ordered_data_list[9:]))
+    data_list = (resolve_polarization_task(ordered_data_list[:3])
+                 + resolve_polarization_task(ordered_data_list[3:6])
+                 + resolve_polarization_task(ordered_data_list[6:9])
+                 + resolve_polarization_task(ordered_data_list[9:]))
     data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape)
     data_list = [identify_bright_structures_task(cube, this_voter_filenames)
                  for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]

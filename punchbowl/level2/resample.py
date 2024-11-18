@@ -1,18 +1,17 @@
-from datetime import datetime
 
 import numpy as np
 import reproject
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect import flow, task
+from prefect import flow
 from sunpy.coordinates import sun
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
+from punchbowl.prefect import punch_task
 
 
-@task
-def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
-                    output_wcs: WCS, output_shape: tuple) -> np.ndarray:
+@punch_task
+def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int, int]) -> np.ndarray:
     """
     Core reprojection function.
 
@@ -24,17 +23,12 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
 
     Parameters
     ----------
-    input_array
-        input array to be reprojected
-    input_wcs
-        astropy WCS object describing the input array
-    time
-        time of the observation to reproject
+    input_cube: NDCube
+        input cube to be reprojected
     output_wcs
         astropy WCS object describing the coordinate system to transform to
     output_shape
         pixel shape of the reprojected output array
-
 
     Returns
     -------
@@ -44,16 +38,20 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
 
     Example Call
     ------------
-    >>> reprojected_array = reproject_array(input_array, input_wcs, output_wcs, output_shape)
+    >>> reprojected_arrays = reproject_cube(input_cube, output_wcs, output_shape)
 
     """
+    input_wcs = input_cube.wcs
+    time = input_cube.meta.astropy_time
+
     celestial_source = calculate_celestial_wcs_from_helio(input_wcs, time, output_shape)
     celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape)
 
     celestial_source.wcs.set_pv([(2, 1, (-sun.earth_distance(time) / sun.constants.radius).decompose().value)])
 
     return reproject.reproject_adaptive(
-        (input_array, celestial_source), celestial_target, output_shape,
+        (np.stack([input_cube.data, input_cube.uncertainty.array]), celestial_source),
+        celestial_target, output_shape,
         roundtrip_coords=False, return_footprint=False,
     )
 
@@ -61,11 +59,9 @@ def reproject_array(input_array: np.ndarray, input_wcs: WCS, time: datetime,
 @flow(validate_parameters=False)
 def reproject_many_flow(data: list[NDCube], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube]:
     """Reproject many flow."""
-    data_result = [reproject_array.submit(d.data, d.wcs, d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]
-    uncertainty_result = [reproject_array.submit(d.uncertainty.array, d.wcs,
-                                                 d.meta.astropy_time, trefoil_wcs, trefoil_shape) for d in data]
+    out_layers = [reproject_cube.submit(d, trefoil_wcs, trefoil_shape) for d in data]
 
-    return [NDCube(data=data_result[i].result(),
-                   uncertainty=uncertainty_result[i].result(),
+    return [NDCube(data=out_layers[i].result()[0],
+                   uncertainty=out_layers[i].result()[1],
                    wcs=trefoil_wcs,
                    meta=d.meta) for i, d in enumerate(data)]

@@ -3,13 +3,12 @@ from datetime import datetime, timedelta
 import numpy as np
 import remove_starfield
 from ndcube import NDCube
-from prefect import get_run_logger
+from prefect import flow, get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 
 from build.lib.punchbowl.level3.f_corona_model import subtract_f_corona_background
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.level1 import flow
 from punchbowl.prefect import punch_task
 
 

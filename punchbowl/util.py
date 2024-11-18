@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 import numpy as np
 from ndcube import NDCube
@@ -60,3 +61,10 @@ def load_image_task(input_filename: str) -> NDCube:
 
     """
     return load_ndcube_from_fits(input_filename)
+
+
+def average_datetime(datetimes: list[datetime]) -> datetime:
+    """Compute average datetime from a list of datetimes."""
+    timestamps = [dt.timestamp() for dt in datetimes]
+    average_timestamp = sum(timestamps) / len(timestamps)
+    return datetime.fromtimestamp(average_timestamp)  # noqa: DTZ006

@@ -31,7 +31,6 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
 
     """
     c = np.transpose(input_vals)
-    g = np.matmul(c, input_vals)
 
     solution = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
     num_inputs = np.zeros((cube.shape[1], cube.shape[2]))
@@ -70,6 +69,8 @@ def model_fcorona_for_cube(xt: np.ndarray,
         time array
     cube : np.ndarray
         observation array
+    min_brightness: float
+        pixels dimmer than this value are set to nan and considered empty
     smooth_level : float | None
         If None, no smoothing is applied.
         Otherwise, the top and bottom `smooth_level` standard deviations of data are rejected.

@@ -20,8 +20,6 @@ from punchbowl.data.meta import NormalizedMetadata
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
 SAMPLE_FITS_PATH_COMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
-SAMPLE_WRITE_PATH = os.path.join(TESTDATA_DIR, "write_test.fits")
-SAMPLE_WRITE_JP2_PATH = os.path.join(TESTDATA_DIR, "write_test.jp2")
 SAMPLE_OMNIBUS_PATH = os.path.join(TESTDATA_DIR, "omniheader.csv")
 SAMPLE_LEVEL_PATH = os.path.join(TESTDATA_DIR, "LevelTest.yaml")
 SAMPLE_SPACECRAFT_DEF_PATH = os.path.join(TESTDATA_DIR, "spacecraft.yaml")
@@ -50,7 +48,7 @@ def sample_ndcube():
     return _sample_ndcube
 
 
-def test_write_data(sample_ndcube):
+def test_write_data(sample_ndcube, tmpdir):
     cube = sample_ndcube((50, 50))
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
@@ -59,11 +57,12 @@ def test_write_data(sample_ndcube):
     cube.meta["DATE-OBS"] = str(datetime.now())
     cube.meta["DATE-END"] = str(datetime.now())
 
-    write_ndcube_to_fits(cube, SAMPLE_WRITE_PATH)
-    assert os.path.isfile(SAMPLE_WRITE_PATH)
+    test_path = os.path.join(tmpdir, "test.fits")
+    write_ndcube_to_fits(cube, test_path)
+    assert os.path.isfile(test_path)
 
 
-def test_write_data_jp2(sample_ndcube):
+def test_write_data_jp2(sample_ndcube, tmpdir):
     cube = sample_ndcube((50, 50))
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
@@ -72,11 +71,12 @@ def test_write_data_jp2(sample_ndcube):
     cube.meta["DATE-OBS"] = str(datetime.now())
     cube.meta["DATE-END"] = str(datetime.now())
 
-    write_ndcube_to_jp2(cube, SAMPLE_WRITE_JP2_PATH)
-    assert os.path.isfile(SAMPLE_WRITE_JP2_PATH)
+    test_path = os.path.join(tmpdir, "test.jp2")
+    write_ndcube_to_jp2(cube, test_path)
+    assert os.path.isfile(test_path)
 
 
-def test_write_data_jp2_wrong_filename(sample_ndcube):
+def test_write_data_jp2_wrong_filename(sample_ndcube, tmpdir):
     cube = sample_ndcube((50, 50))
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
@@ -85,11 +85,12 @@ def test_write_data_jp2_wrong_filename(sample_ndcube):
     cube.meta["DATE-OBS"] = str(datetime.now())
     cube.meta["DATE-END"] = str(datetime.now())
 
+    test_path = os.path.join(tmpdir, "test.fits")
     with pytest.raises(ValueError):
-        write_ndcube_to_jp2(cube, SAMPLE_WRITE_PATH)
+        write_ndcube_to_jp2(cube, test_path)
 
 
-def test_write_data_jp2_wrong_dimensions(sample_ndcube):
+def test_write_data_jp2_wrong_dimensions(sample_ndcube, tmpdir):
     cube = sample_ndcube((2, 50, 50))
     cube.meta["LEVEL"] = "3"
     cube.meta["TYPECODE"] = "PAM"
@@ -97,8 +98,9 @@ def test_write_data_jp2_wrong_dimensions(sample_ndcube):
     cube.meta["DATE-OBS"] = str(datetime.now())
     cube.meta["DATE-END"] = str(datetime.now())
 
+    test_path = os.path.join(tmpdir, "test.jp2")
     with pytest.raises(ValueError):
-        write_ndcube_to_jp2(cube, SAMPLE_WRITE_JP2_PATH)
+        write_ndcube_to_jp2(cube, test_path)
 
 
 def test_generate_data_statistics_from_zeros():
@@ -170,7 +172,7 @@ def test_has_typecode():
     assert "TYPECODE" in meta
 
 
-def test_load_punchdata_with_history():
+def test_load_punchdata_with_history(tmpdir):
     data = np.ones((10, 10), dtype=np.uint16)
     meta = NormalizedMetadata.load_template("CR4", "0")
     meta['DATE-OBS'] = str(datetime.now())
@@ -189,7 +191,7 @@ def test_load_punchdata_with_history():
     obj = NDCube(data=data, wcs=wcs, meta=meta)
 
     assert "OBSCODE" in obj.meta.fits_keys
-    file_path = get_base_file_name(obj) + ".fits"
+    file_path = os.path.join(tmpdir, get_base_file_name(obj) + ".fits")
     write_ndcube_to_fits(obj, file_path, overwrite=True)
     reloaded = load_ndcube_from_fits(file_path)
     assert isinstance(reloaded, NDCube)
@@ -233,7 +235,7 @@ def make_empty_distortion_model(num_bins: int, image: np.ndarray) -> (Distortion
     return cpdis1, cpdis2
 
 
-def test_write_punchdata_with_distortion():
+def test_write_punchdata_with_distortion(tmpdir):
     data = np.ones((2048, 2048), dtype=np.uint16)
     meta = NormalizedMetadata.load_template("CR4", "1")
     meta['DATE-OBS'] = str(datetime.now())
@@ -253,7 +255,7 @@ def test_write_punchdata_with_distortion():
     wcs.cpdis1 = cpdis1
     wcs.cpdis2 = cpdis2
     obj = NDCube(data=data, wcs=wcs, meta=meta)
-    file_path = get_base_file_name(obj) + ".fits"
+    file_path = os.path.join(tmpdir, get_base_file_name(obj) + ".fits")
     write_ndcube_to_fits(obj, file_path, overwrite=True)
 
     with fits.open(file_path) as hdul:

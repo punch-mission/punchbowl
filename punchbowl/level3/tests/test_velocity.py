@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import numpy as np
 import pytest
@@ -8,11 +9,13 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
-from punchbowl.level3.velocity import track_velocity
+from punchbowl.level3.velocity import plot_flow_map, track_velocity
+
+THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
 @pytest.fixture
-def synthetic_fits_data(tmpdir):
+def synthetic_data(tmpdir):
     """
     Create synthetic compressed FITS data from NDCube instances for testing.
 
@@ -61,22 +64,35 @@ def synthetic_fits_data(tmpdir):
     return files
 
 
-def test_shape_matching(synthetic_fits_data):
+def test_shape_matching(synthetic_data):
     """Test that the output shape matches the expected configuration."""
-    files = synthetic_fits_data
+    files = synthetic_data
     ycens = np.arange(7, 14.5, 0.5)
-    result, _ = track_velocity(files, ycens=ycens)
+    result = track_velocity(files, ycens=ycens)
 
     assert isinstance(result, NDCube)
     assert result.data.shape[0] == len(ycens)
 
-def test_no_nans_or_negatives(synthetic_fits_data):
+
+def test_wind_plot(synthetic_data):
+    """Tests that wind plots are generated and  output to file."""
+    files = synthetic_data
+    ycens = np.arange(7, 14.5, 0.5)
+    result = track_velocity(files, ycens=ycens)
+
+    plot_flow_map(THIS_DIRECTORY / 'wind_map.png', result)
+
+    assert os.path.exists(THIS_DIRECTORY / 'wind_map.png')
+
+
+def test_no_nans_or_negatives(synthetic_data):
     """Test that the output does not contain NaNs or negative values."""
-    files = synthetic_fits_data
-    result, _ = track_velocity(files)
+    files = synthetic_data
+    result = track_velocity(files)
 
     assert not np.isnan(result.data).any(), "Data contains NaNs"
     assert (result.data >= 0).all(), "Data contains negative values"
+
 
 def test_with_bad_data(tmpdir):
     """Test the function with intentionally bad data."""
@@ -107,9 +123,7 @@ def test_with_bad_data(tmpdir):
     write_ndcube_to_fits(cube, file_path)
 
     with pytest.raises(ValueError):
-        _, _ = track_velocity([str(file_path)])
-
-    # TODO - Add test for the badness of data itself?
+        _ = track_velocity([str(file_path)])
 
 
 def test_sample_radial_outflows(tmpdir):
@@ -137,12 +151,12 @@ def test_sample_radial_outflows(tmpdir):
         uncertainty = StdDevUncertainty(np.zeros_like(radial_outflow_data))
         cube = NDCube(data=radial_outflow_data, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
-        # Write NDCube to a compressed FITS file using your custom function
+        # Write NDCube to a compressed FITS file
         file_path = os.path.join(str(tmpdir), f"radial_outflow_file_{i}.fits")
         write_ndcube_to_fits(cube, file_path)
         files.append(str(file_path))
 
-    result, _ = track_velocity(files)
+    result = track_velocity(files)
 
     assert isinstance(result, NDCube)
     assert result.data.mean() > 0  # Verify that there is a positive outflow signal

@@ -18,7 +18,7 @@ def generate_level3_velocity_flow(data_list: list[str],
 
     if output_filename is not None:
         output_image_task(velocity_data, output_filename)
-        plot_filename = f"{os.path.splitext(output_filename)[0]}.{"pdf"}"
+        plot_filename = f"{os.path.splitext(output_filename)[0]}.{"png"}"
         plot_flow_map(plot_filename, **plot_parameters)
 
     return [velocity_data]

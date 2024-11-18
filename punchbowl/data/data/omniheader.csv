@@ -151,8 +151,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,AZMBINS,,Number of azimuthal bins in the polar remapped images,int,TRUE,TRUE,
 12,keyword,AZMBINF,,Binning factor for binning the polar remapped image over the azimuth,int,TRUE,TRUE,
 12,keyword,PLTBINS,,Number of azimuthal bins in the output flow maps,int,TRUE,TRUE,
-12,keyword,YCENS,,Radial band centers in solar radii,float,TRUE,TRUE,
-12,keyword,RBANDS,,Indices of radial bands to visualize,int,TRUE,TRUE,
+12,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
+12,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
 13,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
 13,keyword,CHECKSUM,,,str,TRUE,TRUE,
 13,keyword,DATASUM,,,str,TRUE,TRUE,0

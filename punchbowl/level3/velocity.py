@@ -365,8 +365,7 @@ def process_corr(files: list, arcsec_per_px:float, expected_kps_windspeed: float
     return avg_speeds, sigmas
 
 
-def plot_flow_map(filename: str, speeds: np.ndarray, sigmas: np.ndarray, ycen_band_rs: np.ndarray,
-                  rbands: list[int], velocity_azimuth_bins: int, cmap: str = "magma") -> None:
+def plot_flow_map(filename: str, data: NDCube, cmap: str = "magma") -> None:
     """
     Plot polar maps of the radial flows.
 
@@ -375,25 +374,20 @@ def plot_flow_map(filename: str, speeds: np.ndarray, sigmas: np.ndarray, ycen_ba
     filename: str
         Output plot filename
 
-    speeds : np.ndarray
-        Averaged speed over each radial band and latitudinal bin
-
-    sigmas : np.ndarray
-        1-sigma uncertainty associated with each binned speed
-
-    ycen_band_rs : np.ndarray
-        y-coordinates of center of bands in solar radii
-
-    rbands : list[int]
-        Indices of the radial bands to visualize
-
-    velocity_azimuth_bins : int
-        Number of angular bins in the velocity map
+    data: NDCube
+        Flow tracking data NDCube
 
     cmap : str, optional
         Colormap for the plot (default is 'magma')
 
     """
+    speeds = data.data
+    sigmas = data.uncertainty.array
+
+    ycen_band_rs = np.fromstring(data.meta["YCENS"].value[1:-1], dtype=float, sep=",")
+    rbands = np.fromstring(data.meta["RBANDS"].value[1:-1], dtype=int, sep=",")
+    velocity_azimuth_bins = data.meta["PLTBINS"].value
+
     thetas = np.linspace(0, 2 * np.pi, velocity_azimuth_bins + 1)
 
     plt.close("all")
@@ -535,6 +529,8 @@ def track_velocity(files: list[str],
     output_meta["AZMBINS"] = num_azimuth_bins
     output_meta["AZMBINF"] = az_bin
     output_meta["PLTBINS"] = velocity_azimuth_bins
+    output_meta["YCENS"] = np.array2string(ycens, separator=",", max_line_width=10_000)
+    output_meta["RBANDS"] = np.array2string(np.array(rbands), separator=",", max_line_width=10_000)
 
     wcs = WCS(naxis=2)
     wcs.wcs.ctype = "radius","azimuth"
@@ -544,19 +540,7 @@ def track_velocity(files: list[str],
     wcs.wcs.crval = 0, 0
     wcs.wcs.cname = "solar radii", "azimuth"
 
-    flow_data = NDCube(data = avg_speeds,
-                       uncertainty=StdDevUncertainty(sigmas),
-                       meta = output_meta,
-                       wcs = wcs)
-
-    # TODO - Output ycens and rbands to FITS metadata rather than history
-    flow_data.meta.history.add_now("LEVEL3-velocity", "ycens:" + str(ycens))
-    flow_data.meta.history.add_now("LEVEL3-velocity", "rbands:" + str(rbands))
-
-    plot_parameters = {"avg_speeds": avg_speeds,
-                       "sigmas": sigmas,
-                       "ycens": ycens,
-                       "rbands": rbands,
-                       "velocity_azimuth_bins": velocity_azimuth_bins}
-
-    return flow_data, plot_parameters
+    return NDCube(data = avg_speeds,
+                  uncertainty=StdDevUncertainty(sigmas),
+                  meta = output_meta,
+                  wcs = wcs)

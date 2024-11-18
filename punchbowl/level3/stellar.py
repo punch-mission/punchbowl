@@ -9,6 +9,7 @@ from remove_starfield.reducers import GaussianReducer
 
 from build.lib.punchbowl.level3.f_corona_model import subtract_f_corona_background
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.level1 import flow
 from punchbowl.prefect import punch_task
 
 
@@ -23,6 +24,7 @@ class PUNCHImageProcessor(ImageProcessor):
         subtracted = subtract_f_corona_background(cube, self.before_f_corona, self.after_f_corona)
         return ImageHolder(subtracted.data[self.layer], cube.wcs[self.layer], cube.meta)
 
+@flow
 def generate_starfield_background(
         filenames: list[str],
         before_f_corona: str,

@@ -47,7 +47,7 @@ def generate_starfield_background(
         frame_count=True,
         reducer=GaussianReducer(n_sigma=n_sigma),
         map_scale=map_scale,
-        processor=PUNCHImageProcessor(0),
+        processor=PUNCHImageProcessor(0, before_f_corona, after_f_corona),
         target_mem_usage=target_mem_usage)
 
     starfield_z = remove_starfield.build_starfield_estimate(
@@ -65,7 +65,7 @@ def generate_starfield_background(
         frame_count=True,
         reducer=GaussianReducer(n_sigma=n_sigma),
         map_scale=map_scale,
-        processor=PUNCHImageProcessor(2),
+        processor=PUNCHImageProcessor(2, before_f_corona, after_f_corona),
         target_mem_usage=target_mem_usage)
 
     # create an output PUNCHdata object

@@ -6,6 +6,7 @@ import pytest
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, DistortionLookupTable
+from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCube
 
 from punchbowl.data.io import (
@@ -39,10 +40,11 @@ def sample_ndcube():
         wcs.wcs.crval = 1, 1
         wcs.wcs.cname = "HPC lon", "HPC lat"
 
+        if level in ["2", "3"] and code[0] == "P":
+            wcs = add_stokes_axis_to_wcs(wcs, 2)
+
         meta = NormalizedMetadata.load_template(code, level)
-        #meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
         meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1))
-        #20240222163425
         meta['FILEVRSN'] = "1"
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube

@@ -177,9 +177,10 @@ def test_create_simple_bkg() -> None:
     """
     input_list = glob(TESTDATA_DIR+'/data/*.fits')
     with disable_run_logger():
-        f_corona_model = construct_f_corona_background.fn(input_list, 0)
+        f_corona_model, counts = construct_f_corona_background.fn(input_list, 0)
 
     assert isinstance(f_corona_model, NDCube)
+    assert isinstance(counts, np.ndarray)
 
 
 @pytest.mark.prefect_test()

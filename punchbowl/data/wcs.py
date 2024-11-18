@@ -20,7 +20,7 @@ PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "pol
                                                      11: StokesSymbol("B", "total brightness")})
 
 
-def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
+def extract_crota_from_wcs(wcs: WCS) -> u.deg:
     """Extract CROTA from a WCS."""
     delta_ratio = wcs.wcs.cdelt[1] / wcs.wcs.cdelt[0]
     return np.arctan2(wcs.wcs.pc[1, 0]/delta_ratio, wcs.wcs.pc[0, 0]) * u.rad

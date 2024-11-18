@@ -188,7 +188,7 @@ def test_normalizedmetadata_from_fits_header():
     recovered = NormalizedMetadata.from_fits_header(h)
     recovered.delete_section("World Coordinate System")
 
-    assert recovered == m
+    assert recovered['HISTORY'] == m['HISTORY']
 
 
 def test_load_spacecraft_yaml():

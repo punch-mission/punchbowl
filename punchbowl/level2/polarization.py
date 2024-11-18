@@ -28,11 +28,14 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
     input_collection = NDCollection(data_dictionary)
     data_collection = NDCollection({k: NDCube(data=input_collection[k].data,
                                  wcs=input_collection[k].wcs,
-                                 meta={"POLAR": input_collection[k].meta["POLAR"].value * u.degree})
+                                 meta={"POLAR": input_collection[k].meta["POLAR"].value * u.degree,
+                                       "POLAROFF": input_collection[k].meta["POLAROFF"].value * u.degree})
                        for k in ["M", "Z", "P"]})
 
     out = []
-    resolved_data_collection = solpolpy.resolve(data_collection, "MZP", imax_effect=True)
+    resolved_data_collection = solpolpy.resolve(data_collection,
+                                                "MZP",
+                                                imax_effect=True)
     for key in resolved_data_collection:
         resolved_data_collection[key].meta = input_collection[key].meta
         resolved_data_collection[key].uncertainty = input_collection[key].uncertainty

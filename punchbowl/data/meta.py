@@ -125,8 +125,8 @@ class MetaField:
 
     @property
     def value(self) -> ValueType:
-        """Returns MetaField value."""
-        return self._value
+        """Returns MetaField value if set, otherwise get the default. Raise an error if no default is available."""
+        return self._value if self._value is not None else self.default
 
     @value.setter
     def value(self, value: ValueType) -> None:

@@ -103,8 +103,8 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
             obscode = data_element.meta["OBSCODE"].value
             if typecode == order_element[:2] and obscode == order_element[2]:
                 ordered_data_list[i] = data_element
-    logger.info(f"Ordered files are {[get_base_file_name(cube) if cube is not None else None
-                                      for cube in ordered_data_list]}")
+    logger.info("Ordered files are "
+                f"{[get_base_file_name(cube) if cube is not None else None for cube in ordered_data_list]}")
 
     quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_quickpunch_mosaic_wcs()
     quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()

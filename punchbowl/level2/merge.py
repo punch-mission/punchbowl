@@ -3,7 +3,6 @@ import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect import task
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.prefect import punch_task
@@ -37,7 +36,7 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
         meta=NormalizedMetadata.load_template("PTM", "2"),
     )
 
-@task
+@punch_task
 def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
     trefoil_data_layers, trefoil_uncertainty_layers = [], []

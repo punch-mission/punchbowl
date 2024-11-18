@@ -1,17 +1,26 @@
+from datetime import datetime, timedelta
 
 import numpy as np
 import remove_starfield
 from ndcube import NDCube
 from prefect import get_run_logger
-from remove_starfield import Starfield
+from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.prefect import punch_task
 
 
+class PUNCHImageProcessor(ImageProcessor):
+    def __init__(self, layer):
+        self.layer = layer
+
+    def load_image(self, filename: str) -> ImageHolder:
+        cube = load_ndcube_from_fits(filename)
+        return ImageHolder(cube.data[self.layer], cube.wcs[self.layer], cube.meta)
+
 def generate_starfield_background(
-        data_object: NDCube,
+        filenames: list[str],
         n_sigma: float = 5,
         map_scale: float = 0.01,
         target_mem_usage: float = 1000) -> NDCube:
@@ -21,28 +30,47 @@ def generate_starfield_background(
 
     # create an empty array to fill with data
     #   open the first file in the list to ge the shape of the file
-    if len(data_object.data) == 0:
-        msg = "data_list cannot be empty"
+    if len(filenames) == 0:
+        msg = "filenames cannot be empty"
         raise ValueError(msg)
 
-    starfield_bg = remove_starfield.build_starfield_estimate(
-        data_object,
+    starfield_m = remove_starfield.build_starfield_estimate(
+        filenames,
         attribution=True,
         frame_count=True,
         reducer=GaussianReducer(n_sigma=n_sigma),
         map_scale=map_scale,
-        processor=remove_starfield.ImageProcessor(),
+        processor=PUNCHImageProcessor(0),
+        target_mem_usage=target_mem_usage)
+
+    starfield_z = remove_starfield.build_starfield_estimate(
+        filenames,
+        attribution=True,
+        frame_count=True,
+        reducer=GaussianReducer(n_sigma=n_sigma),
+        map_scale=map_scale,
+        processor=PUNCHImageProcessor(1),
+        target_mem_usage=target_mem_usage)
+
+    starfield_p = remove_starfield.build_starfield_estimate(
+        filenames,
+        attribution=True,
+        frame_count=True,
+        reducer=GaussianReducer(n_sigma=n_sigma),
+        map_scale=map_scale,
+        processor=PUNCHImageProcessor(2),
         target_mem_usage=target_mem_usage)
 
     # create an output PUNCHdata object
-    meta_norm = NormalizedMetadata.from_fits_header(starfield_bg["meta"])
-    output = NDCube(starfield_bg.starfield, wcs=starfield_bg.wcs, meta=meta_norm)
+    meta = NormalizedMetadata.load_template("PSM", "3")
+    meta["DATE-OBS"] = str(datetime.now()-timedelta(days=60))
+    output = NDCube(np.stack([starfield_m, starfield_z, starfield_p], axis=0),
+                    wcs=starfield_m.wcs, meta=meta)
 
     logger.info("construct_starfield_background finished")
     output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     return output
-
 
 def subtract_starfield_background(data_object: NDCube, starfield_background_model: Starfield) -> NDCube:
     """Subtract starfield background."""

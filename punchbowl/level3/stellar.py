@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import numpy as np
 import remove_starfield
 from ndcube import NDCube
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 
@@ -23,7 +23,6 @@ class PUNCHImageProcessor(ImageProcessor):
         subtracted = subtract_f_corona_background(cube, self.before_f_corona, self.after_f_corona)
         return ImageHolder(subtracted.data[self.layer], cube.wcs[self.layer], cube.meta)
 
-@flow
 def generate_starfield_background(
         filenames: list[str],
         before_f_corona: str,
@@ -32,8 +31,8 @@ def generate_starfield_background(
         map_scale: float = 0.01,
         target_mem_usage: float = 1000) -> NDCube:
     """Create a background starfield_bg map from a series of PUNCH images over a long period of time."""
-    logger = get_run_logger()
-    logger.info("construct_starfield_background started")
+    # logger = get_run_logger()
+    # logger.info("construct_starfield_background started")
 
     # create an empty array to fill with data
     #   open the first file in the list to ge the shape of the file
@@ -74,7 +73,7 @@ def generate_starfield_background(
     output = NDCube(np.stack([starfield_m, starfield_z, starfield_p], axis=0),
                     wcs=starfield_m.wcs, meta=meta)
 
-    logger.info("construct_starfield_background finished")
+    # logger.info("construct_starfield_background finished")
     output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     return output

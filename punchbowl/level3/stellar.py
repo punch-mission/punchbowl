@@ -34,7 +34,7 @@ def generate_starfield_background(
         processor=remove_starfield.ImageProcessor(),
         target_mem_usage=target_mem_usage)
 
-    # create an output PUNCHdata object
+    # create an output PUNCH data object
     meta_norm = NormalizedMetadata.from_fits_header(starfield_bg["meta"])
     output = NDCube(starfield_bg.starfield, wcs=starfield_bg.wcs, meta=meta_norm)
 
@@ -73,15 +73,15 @@ def subtract_starfield_background_task(data_object: NDCube,
 
     Parameters
     ----------
-    data_object : punchbowl.data.PUNCHData
-        A PUNCHData data frame to be background subtracted
+    data_object : NDCube
+        A NDCube data frame to be background subtracted
 
     starfield_background_path : str
-        path to a PUNCHData background starfield map
+        path to a NDCube background starfield map
 
     Returns
     -------
-    'punchbowl.data.PUNCHData'
+    NDCube
         A background starfield subtracted data frame
 
     """

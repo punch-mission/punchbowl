@@ -10,7 +10,7 @@ HistoryEntry = namedtuple("HistoryEntry", "datetime, source, comment")
 
 
 class History:
-    """Representation of the history of edits done to a PUNCHData object."""
+    """Representation of the history of edits done to a PUNCH data object."""
 
     def __init__(self) -> None:
         """Create blank history."""

@@ -10,7 +10,7 @@ from punchbowl.level2.merge import merge_many_polarized_task
 @pytest.fixture
 def sample_data_list(sample_ndcube):
     """
-    Generate a list of sample PUNCHData objects for testing
+    Generate a list of sample PUNCH data objects for testing
     """
     sample_pd1 = sample_ndcube((4096, 4096), code="PM1", level="1")
     sample_pd1.data[100:300, 300:400] = 1

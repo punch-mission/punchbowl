@@ -36,7 +36,7 @@ def sample_data_list():
 
 def test_list_input_2(sample_data_list):
     #background = construct_f_corona_background.fn(sample_data)
-    #assert isinstance(background, PUNCHData)
+    #assert isinstance(background, NDCube)
     assert isinstance(sample_data_list, list)
 
 

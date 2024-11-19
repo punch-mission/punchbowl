@@ -16,7 +16,7 @@ from punchbowl.level1.sqrt import decode_sqrt, decode_sqrt_data, decode_sqrt_sim
 @fixture
 def sample_punchdata():
     """
-    Generate a sample PUNCHData object for testing
+    Generate a sample PUNCH data object for testing
     """
 
     data = np.random.random([2048, 2048])

@@ -111,7 +111,7 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> N
 
     Parameters
     ----------
-    data_object : PUNCHData
+    data_object : NDCube
         data to operate on
 
     stray_light_path: pathlib
@@ -119,7 +119,7 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> N
 
     Returns
     -------
-    PUNCHData
+    NDCube
         modified version of the input with the stray light removed
 
     """

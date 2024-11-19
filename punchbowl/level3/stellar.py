@@ -3,11 +3,10 @@ from datetime import datetime, timedelta
 import numpy as np
 import remove_starfield
 from ndcube import NDCube
-from prefect import get_run_logger
+from prefect import flow, get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 
-from build.lib.punchbowl.level3.f_corona_model import subtract_f_corona_background
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.prefect import punch_task
 
@@ -15,24 +14,21 @@ from punchbowl.prefect import punch_task
 class PUNCHImageProcessor(ImageProcessor):
     def __init__(self, layer, before_f_corona_path, after_f_corona_path):
         self.layer = layer
-        self.before_f_corona = load_ndcube_from_fits(before_f_corona_path)
-        self.after_f_corona = load_ndcube_from_fits(after_f_corona_path)
 
     def load_image(self, filename: str) -> ImageHolder:
         cube = load_ndcube_from_fits(filename)
-        subtracted = subtract_f_corona_background(cube, self.before_f_corona, self.after_f_corona)
-        return ImageHolder(subtracted.data[self.layer], cube.wcs.celestial, cube.meta)
+        return ImageHolder(cube.data[self.layer], cube.wcs.celestial, cube.meta)
 
+
+@flow
 def generate_starfield_background(
         filenames: list[str],
-        before_f_corona: str,
-        after_f_corona: str,
         n_sigma: float = 5,
         map_scale: float = 0.01,
-        target_mem_usage: float = 1000) -> NDCube:
+        target_mem_usage: float = 1000) -> [NDCube, NDCube]:
     """Create a background starfield_bg map from a series of PUNCH images over a long period of time."""
-    # logger = get_run_logger()
-    # logger.info("construct_starfield_background started")
+    logger = get_run_logger()
+    logger.info("construct_starfield_background started")
 
     # create an empty array to fill with data
     #   open the first file in the list to ge the shape of the file
@@ -46,7 +42,7 @@ def generate_starfield_background(
         frame_count=True,
         reducer=GaussianReducer(n_sigma=n_sigma),
         map_scale=map_scale,
-        processor=PUNCHImageProcessor(0, before_f_corona, after_f_corona),
+        processor=PUNCHImageProcessor(0),
         target_mem_usage=target_mem_usage)
 
     starfield_z = remove_starfield.build_starfield_estimate(
@@ -55,7 +51,7 @@ def generate_starfield_background(
         frame_count=True,
         reducer=GaussianReducer(n_sigma=n_sigma),
         map_scale=map_scale,
-        processor=PUNCHImageProcessor(1, before_f_corona, after_f_corona),
+        processor=PUNCHImageProcessor(1),
         target_mem_usage=target_mem_usage)
 
     starfield_p = remove_starfield.build_starfield_estimate(
@@ -64,19 +60,25 @@ def generate_starfield_background(
         frame_count=True,
         reducer=GaussianReducer(n_sigma=n_sigma),
         map_scale=map_scale,
-        processor=PUNCHImageProcessor(2, before_f_corona, after_f_corona),
+        processor=PUNCHImageProcessor(2),
         target_mem_usage=target_mem_usage)
 
     # create an output PUNCHdata object
     meta = NormalizedMetadata.load_template("PSM", "3")
     meta["DATE-OBS"] = str(datetime.now()-timedelta(days=60))
-    output = NDCube(np.stack([starfield_m, starfield_z, starfield_p], axis=0),
+    output_before = NDCube(np.stack([starfield_m, starfield_z, starfield_p], axis=0),
                     wcs=starfield_m.wcs, meta=meta)
+    output_before.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
+
+    meta = NormalizedMetadata.load_template("PSM", "3")
+    meta["DATE-OBS"] = str(datetime.now()+timedelta(days=60))
+    output_after = NDCube(np.stack([starfield_m, starfield_z, starfield_p], axis=0),
+                    wcs=starfield_m.wcs, meta=meta)
+    output_after.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     # logger.info("construct_starfield_background finished")
-    output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
-    return output
+    return [output_before, output_after]
 
 def subtract_starfield_background(data_object: NDCube, starfield_background_model: Starfield) -> NDCube:
     """Subtract starfield background."""

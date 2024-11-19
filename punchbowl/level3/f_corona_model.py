@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import numpy as np
 from ndcube import NDCube
@@ -192,7 +192,7 @@ def construct_full_f_corona_model(filenames: list[str]):
     print("Modeling complete")
 
     meta = NormalizedMetadata.load_template("PFM", "3")
-    meta["DATE-OBS"] = str(datetime.now()-timedelta(days=60))
+    meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0))#str(datetime.now()-timedelta(days=60))
     before_cube = NDCube(data=np.stack([m_model_fcorona,
                                                z_model_fcorona,
                                                p_model_fcorona], axis=0),
@@ -202,7 +202,7 @@ def construct_full_f_corona_model(filenames: list[str]):
     # write_ndcube_to_fits(cube, before_path)
 
     meta = NormalizedMetadata.load_template("PFM", "3")
-    meta["DATE-OBS"] = str(datetime.now()+timedelta(days=60))
+    meta["DATE-OBS"] =  str(datetime(2024, 12, 1, 12, 0, 0)) # str(datetime.now()+timedelta(days=60))
     after_cube = NDCube(data=np.stack([m_model_fcorona,
                                                z_model_fcorona,
                                                p_model_fcorona], axis=0),

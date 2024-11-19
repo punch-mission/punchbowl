@@ -1,8 +1,8 @@
 Deficient Pixel Replacement
-=============================
+===========================
 
 Concept
----------
+-------
 
 Out of the millions of pixels in an imaging sensor,
 there can be quite a number with a deviating behavior that can range from absolutely dead (zero output signal),
@@ -20,7 +20,7 @@ starts off as just the immediate neighbors, but if too many of them are also def
 
 
 Applying correction
----------------------
+-------------------
 
 The correction is carried out primarily in the ``punchbowl.level1.deficient_pixel.remove_deficient_pixels`` function:
 
@@ -31,5 +31,5 @@ If you wish to incorporate this as a Prefect task in a custom pipeline,
 using something like the ``punchbowl.level1.deficient_pixel.remove_deficient_pixels_task`` is recommended.
 
 Deriving the pixel mask
--------------------------
+-----------------------
 TODO

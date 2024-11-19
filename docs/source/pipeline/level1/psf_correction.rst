@@ -1,5 +1,5 @@
 PSF Correction
-=======================
+==============
 
 The point spread function (PSF) of the imagers varies across the field-of-view (FOV) of each imager.
 The PSFs have to be homogenized to be similar before creating mosaic images. Otherwise, the tails of the PSFs would
@@ -7,7 +7,7 @@ combine in messy ways and create artifacts. In addition, the `pointing refinemen
 uniform PSF across the FOV.
 
 Concept
----------
+-------
 
 The PSF correction is carried out by the `regularizepsf package <https://github.com/punch-mission/regularizepsf>`_.
 The description of the algorithm and code
@@ -17,7 +17,7 @@ There's also an
 
 
 Applying correction
----------------------
+-------------------
 
 The correction is carried out primarily in the ``punchbowl.level1.psf.correct_psf_task`` function:
 

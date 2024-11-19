@@ -6,7 +6,6 @@ Level 1
     quartic_fit
     despike
     destreak
-    vignetting_correction
     deficient_pixel
     stray_light
     psf_correction

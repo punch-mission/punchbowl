@@ -12,7 +12,7 @@ from punchbowl.prefect import punch_task
 
 
 class PUNCHImageProcessor(ImageProcessor):
-    def __init__(self, layer, before_f_corona_path, after_f_corona_path):
+    def __init__(self, layer):
         self.layer = layer
 
     def load_image(self, filename: str) -> ImageHolder:

@@ -129,6 +129,8 @@ def construct_f_corona_background(
         msg = "data_list cannot be empty"
         raise ValueError(msg)
 
+    data_list.sort()
+
     output = load_ndcube_from_fits(data_list[0])
     output_wcs = output.wcs
     output_meta = output.meta

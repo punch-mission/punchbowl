@@ -15,7 +15,7 @@ TEST_FILE = TESTDATA_DIR + '/data/downsampled_L2_PTM.fits'
 
 def test_to_celestial_frame_cutout():
     data_cube = io.load_ndcube_from_fits(TEST_FILE)
-    reprojected_cube = celestial_intermediary.to_celestial_frame_cutout(data_cube, cdelt=.2)
+    reprojected_cube = celestial_intermediary.to_celestial_frame_cutout(data_cube, cdelt=1)
     assert np.any(np.isfinite(reprojected_cube.data))
 
     assert 0 <= reprojected_cube.wcs.wcs.crval[0] < 360
@@ -57,8 +57,8 @@ def test_shift_image_onto(tmp_path, shift1, shift2, is_overlap):
             hdu.data = hdu.data[0]
         hdul.writeto(file2)
 
-    reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file1, key='A'), cdelt=.4)
-    reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file2, key='A'), cdelt=.4)
+    reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file1, key='A'), cdelt=.6)
+    reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file2, key='A'), cdelt=.6)
 
     # Just sanity-check that these are different images and different outputs, so we know the rest of the test is valid
     assert reproj_data_1.wcs.wcs.crval[0] != reproj_data_2.wcs.wcs.crval[0]
@@ -114,8 +114,8 @@ def test_shift_image_onto_3d_cube(tmp_path):
             hdu.header['CRVAL2A'] += 5
         hdul.writeto(file2)
 
-    reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file1, key='A'), cdelt=.4)
-    reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file2, key='A'), cdelt=.4)
+    reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file1, key='A'), cdelt=.6)
+    reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file2, key='A'), cdelt=.6)
 
     # Just sanity-check that these are different images and different outputs, so we know the rest of the test is valid
     assert reproj_data_1.wcs.wcs.crval[0] != reproj_data_2.wcs.wcs.crval[0]
@@ -172,8 +172,8 @@ def test_shift_image_onto_fill_value(tmp_path):
             hdu.data = hdul[1].data[0]
         hdul.writeto(file2)
 
-    reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file1, key='A'), cdelt=.4)
-    reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file2, key='A'), cdelt=.4)
+    reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file1, key='A'), cdelt=.6)
+    reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(io.load_ndcube_from_fits(file2, key='A'), cdelt=.6)
 
     d1_shifted_to_2 = celestial_intermediary.shift_image_onto(reproj_data_1, reproj_data_2)
     d2_shifted_to_1 = celestial_intermediary.shift_image_onto(reproj_data_2, reproj_data_1)
@@ -194,7 +194,7 @@ def test_shift_image_onto_fill_value(tmp_path):
 
 def test_shift_image_onto_different_cdelts():
     reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(
-        io.load_ndcube_from_fits(TEST_FILE, key='A'), cdelt=.8)
+        io.load_ndcube_from_fits(TEST_FILE, key='A'), cdelt=1.2)
     reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(
         io.load_ndcube_from_fits(TEST_FILE, key='A'), cdelt=1)
 

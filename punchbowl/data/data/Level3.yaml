@@ -128,6 +128,16 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: M
 
+    PIM:
+        kinds: [ Polarized ]
+        overrides:
+            TITLE: PUNCH Level-3 Intermediate F-corona Subtracted Polarized Mosaic
+            OBSTYPE: Polarized mosaic
+            TYPECODE: PT
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+
     PNN:
         kinds: [Polarized]
         overrides:

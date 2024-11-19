@@ -2,11 +2,38 @@
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
+from punchbowl.data import NormalizedMetadata
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization
 from punchbowl.level3.stellar import subtract_starfield_background_task
 from punchbowl.util import load_image_task, output_image_task
+
+
+@flow(validate_parameters=False)
+def level3_PIM_flow(data_list: list[str] | list[NDCube],
+                     before_f_corona_model_path: str,
+                     after_f_corona_model_path: str,
+                     output_filename: str | None = None) -> list[NDCube]:
+    """Level 3 PIM flow."""
+    logger = get_run_logger()
+
+    logger.info("beginning level 3 PIM flow")
+    data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+    data_list = [subtract_f_corona_background_task(d,
+                                                   before_f_corona_model_path,
+                                                   after_f_corona_model_path) for d in data_list]
+    output_meta = NormalizedMetadata.load_template("PIM", "3")
+    out_list = [NDCube(data=d.data, wcs=d.wcs, meta=output_meta) for d in data_list]
+    for o, d  in zip(out_list, data_list, strict=False):
+        o.meta["DATE-OBS"] = d.meta["DATE-OBS"].value
+
+    logger.info("ending level 3 PIM flow")
+
+    if output_filename is not None:
+        output_image_task(out_list[0], output_filename)
+
+    return out_list
 
 
 @flow(validate_parameters=False)

@@ -133,7 +133,7 @@ Products:
         overrides:
             TITLE: PUNCH Level-3 Intermediate F-corona Subtracted Polarized Mosaic
             OBSTYPE: Polarized mosaic
-            TYPECODE: PT
+            TYPECODE: PI
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M

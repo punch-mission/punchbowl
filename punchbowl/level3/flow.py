@@ -25,7 +25,7 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],
                                                    after_f_corona_model_path) for d in data_list]
     output_meta = NormalizedMetadata.load_template("PIM", "3")
     out_list = [NDCube(data=d.data, wcs=d.wcs, meta=output_meta) for d in data_list]
-    for o, d  in zip(out_list, data_list, strict=False):
+    for o, d  in zip(out_list, data_list, strict=True):
         o.meta["DATE-OBS"] = d.meta["DATE-OBS"].value
 
     logger.info("ending level 3 PIM flow")

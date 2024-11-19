@@ -36,6 +36,7 @@ def generate_starfield_background(
         msg = "filenames cannot be empty"
         raise ValueError(msg)
 
+    logger.info("Starting m starfield")
     starfield_m = remove_starfield.build_starfield_estimate(
         filenames,
         attribution=True,
@@ -44,7 +45,10 @@ def generate_starfield_background(
         map_scale=map_scale,
         processor=PUNCHImageProcessor(0),
         target_mem_usage=target_mem_usage)
+    logger.info("Ending m starfield")
 
+
+    logger.info("Starting z starfield")
     starfield_z = remove_starfield.build_starfield_estimate(
         filenames,
         attribution=True,
@@ -53,7 +57,10 @@ def generate_starfield_background(
         map_scale=map_scale,
         processor=PUNCHImageProcessor(1),
         target_mem_usage=target_mem_usage)
+    logger.info("Ending z starfield")
 
+
+    logger.info("Starting p starfield")
     starfield_p = remove_starfield.build_starfield_estimate(
         filenames,
         attribution=True,
@@ -62,8 +69,12 @@ def generate_starfield_background(
         map_scale=map_scale,
         processor=PUNCHImageProcessor(2),
         target_mem_usage=target_mem_usage)
+    logger.info("Ending p starfield")
+
 
     # create an output PUNCHdata object
+    logger.info("Preparing to create outputs")
+
     meta = NormalizedMetadata.load_template("PSM", "3")
     meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0)) # str(datetime.now()-timedelta(days=60))
     output_before = NDCube(np.stack([starfield_m, starfield_z, starfield_p], axis=0),
@@ -76,9 +87,9 @@ def generate_starfield_background(
                     wcs=starfield_m.wcs, meta=meta)
     output_after.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
-    # logger.info("construct_starfield_background finished")
-
+    logger.info("construct_starfield_background finished")
     return [output_before, output_after]
+
 
 def subtract_starfield_background(data_object: NDCube, starfield_background_model: Starfield) -> NDCube:
     """Subtract starfield background."""

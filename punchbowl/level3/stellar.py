@@ -77,13 +77,13 @@ def generate_starfield_background(
 
     meta = NormalizedMetadata.load_template("PSM", "3")
     meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0)) # str(datetime.now()-timedelta(days=60))
-    output_before = NDCube(np.stack([starfield_m, starfield_z, starfield_p], axis=0),
+    output_before = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
                     wcs=starfield_m.wcs, meta=meta)
     output_before.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     meta = NormalizedMetadata.load_template("PSM", "3")
     meta["DATE-OBS"] = str(datetime(2024, 12, 1, 12, 0, 0)) # str(datetime.now()+timedelta(days=60))
-    output_after = NDCube(np.stack([starfield_m, starfield_z, starfield_p], axis=0),
+    output_after = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
                     wcs=starfield_m.wcs, meta=meta)
     output_after.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 

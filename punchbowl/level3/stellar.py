@@ -143,7 +143,7 @@ def subtract_starfield_background_task(data_object: NDCube,
         star_datacube = load_ndcube_from_fits(starfield_background_path)
         data_wcs = calculate_celestial_wcs_from_helio(data_object.wcs.celestial,
                                                       data_object.meta.astropy_time,
-                                                      (4096, 4096))
+                                                      data_object.data.shape[-2:])
         for i in range(3):
             starfield_model = Starfield(star_datacube[i], star_datacube.wcs.celestial)
             starfield_subtracted_data = starfield_model.subtract_from_image(

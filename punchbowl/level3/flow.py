@@ -11,7 +11,7 @@ from punchbowl.util import load_image_task, output_image_task
 
 
 @flow(validate_parameters=False)
-def level3_PIM_flow(data_list: list[str] | list[NDCube],
+def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
                      before_f_corona_model_path: str,
                      after_f_corona_model_path: str,
                      output_filename: str | None = None) -> list[NDCube]:

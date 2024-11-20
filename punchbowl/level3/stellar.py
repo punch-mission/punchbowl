@@ -13,10 +13,14 @@ from punchbowl.prefect import punch_task
 
 
 class PUNCHImageProcessor(ImageProcessor):
-    def __init__(self, layer):
+    """Special loader for PUNCH data."""
+
+    def __init__(self, layer: int) -> None:
+        """Create PUNCHImageProcessor."""
         self.layer = layer
 
     def load_image(self, filename: str) -> ImageHolder:
+        """Load an image."""
         cube = load_ndcube_from_fits(filename, key="A")
         return ImageHolder(cube.data[self.layer], cube.wcs.celestial, cube.meta)
 
@@ -86,15 +90,17 @@ def generate_starfield_background(
     logger.info("Preparing to create outputs")
 
     meta = NormalizedMetadata.load_template("PSM", "3")
-    meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0)) # str(datetime.now()-timedelta(days=60))
-    out_wcs = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
+    meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0,
+                                    tzinfo=datetime.timezone.utc))
+    out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     output_before = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
                     wcs=out_wcs, meta=meta)
     output_before.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     meta = NormalizedMetadata.load_template("PSM", "3")
-    meta["DATE-OBS"] = str(datetime(2024, 12, 1, 12, 0, 0)) # str(datetime.now()+timedelta(days=60))
-    out_wcs = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
+    meta["DATE-OBS"] = str(datetime(2024, 12, 1, 12, 0, 0,
+                                    tzinfo=datetime.timezone.utc))
+    out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     output_after = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
                     wcs=out_wcs, meta=meta)
     output_after.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")

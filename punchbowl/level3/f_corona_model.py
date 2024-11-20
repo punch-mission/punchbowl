@@ -162,22 +162,20 @@ def construct_f_corona_background(
 
     return output, counts
 
-def fill_nans_with_interpolation(image):
-    """Fills NaN values in an image using interpolation."""
+def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
+    """Fill NaN values in an image using interpolation."""
     mask = np.isnan(image)
     x, y = np.where(~mask)
     known_values = image[~mask]
 
     grid_x, grid_y = np.mgrid[0:image.shape[0], 0:image.shape[1]]
-    interpolated_image = griddata((x, y), known_values, (grid_x, grid_y), method="cubic")
-
-    return interpolated_image
+    return griddata((x, y), known_values, (grid_x, grid_y), method="cubic")
 
 @flow(log_prints=True)
-def construct_full_f_corona_model(filenames: list[str]):
+def construct_full_f_corona_model(filenames: list[str]) -> list[NDCube]:
+    """Construct a full F corona model."""
     trefoil_wcs, trefoil_shape = load_trefoil_wcs()
 
-    print(f"Starting modeling F corona with {len(filenames)} files")
     m_model_fcorona, _ = construct_f_corona_background(filenames, 0, smooth_level=3.0)
     m_model_fcorona.data[m_model_fcorona.data==0] = np.nan
     m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona.data)
@@ -189,27 +187,24 @@ def construct_full_f_corona_model(filenames: list[str]):
     p_model_fcorona, _ = construct_f_corona_background(filenames, 2, smooth_level=3.0)
     p_model_fcorona.data[p_model_fcorona.data==0] = np.nan
     p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona.data)
-    print("Modeling complete")
 
     meta = NormalizedMetadata.load_template("PFM", "3")
-    meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0))#str(datetime.now()-timedelta(days=60))
+    meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0,
+                                    tzinfo=datetime.timezone.utc))
     before_cube = NDCube(data=np.stack([m_model_fcorona,
                                                z_model_fcorona,
                                                p_model_fcorona], axis=0),
                                 meta=meta,
                                 wcs=trefoil_wcs)
-    # before_path = get_base_file_name(cube) + ".fits"
-    # write_ndcube_to_fits(cube, before_path)
 
     meta = NormalizedMetadata.load_template("PFM", "3")
-    meta["DATE-OBS"] =  str(datetime(2024, 12, 1, 12, 0, 0)) # str(datetime.now()+timedelta(days=60))
+    meta["DATE-OBS"] =  str(datetime(2024, 12, 1, 12, 0, 0,
+                                     tzinfo=datetime.timezone.utc))
     after_cube = NDCube(data=np.stack([m_model_fcorona,
                                                z_model_fcorona,
                                                p_model_fcorona], axis=0),
                                 meta=meta,
                                 wcs=trefoil_wcs)
-    # after_path = get_base_file_name(cube) + ".fits"
-    # write_ndcube_to_fits(cube, after_path)
 
     return [before_cube, after_cube]
 

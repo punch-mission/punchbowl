@@ -8,6 +8,7 @@ from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
 from punchbowl.prefect import punch_task
 
 
@@ -16,7 +17,7 @@ class PUNCHImageProcessor(ImageProcessor):
         self.layer = layer
 
     def load_image(self, filename: str) -> ImageHolder:
-        cube = load_ndcube_from_fits(filename)
+        cube = load_ndcube_from_fits(filename, key="A")
         return ImageHolder(cube.data[self.layer], cube.wcs.celestial, cube.meta)
 
 
@@ -86,14 +87,16 @@ def generate_starfield_background(
 
     meta = NormalizedMetadata.load_template("PSM", "3")
     meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0)) # str(datetime.now()-timedelta(days=60))
+    out_wcs = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     output_before = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
-                    wcs=starfield_m.wcs, meta=meta)
+                    wcs=out_wcs, meta=meta)
     output_before.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     meta = NormalizedMetadata.load_template("PSM", "3")
     meta["DATE-OBS"] = str(datetime(2024, 12, 1, 12, 0, 0)) # str(datetime.now()+timedelta(days=60))
+    out_wcs = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     output_after = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
-                    wcs=starfield_m.wcs, meta=meta)
+                    wcs=out_wcs, meta=meta)
     output_after.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     logger.info("construct_starfield_background finished")
@@ -132,14 +135,20 @@ def subtract_starfield_background_task(data_object: NDCube,
                                            "F corona subtraction skipped since path is empty")
     else:
         star_datacube = load_ndcube_from_fits(starfield_background_path)
+        data_wcs = calculate_celestial_wcs_from_helio(data_object.wcs.celestial,
+                                                      data_object.meta.astropy_time,
+                                                      (4096, 4096))
         for i in range(3):
-            starfield_model = Starfield(starfield=star_datacube.data[i], wcs=star_datacube.wcs)
+            starfield_model = Starfield(star_datacube[i], star_datacube.wcs)
             starfield_subtracted_data = starfield_model.subtract_from_image(
-                data_object,
-                processor=PUNCHImageProcessor(i),)
+                NDCube(data=data_object.data[i],
+                       wcs=data_wcs,
+                       meta=data_object.meta),
+                processor=PUNCHImageProcessor(i))
+
             starfield_subtracted_uncertainty = starfield_model.subtract_from_image(
-                NDCube(data=data_object.uncertainty.array,
-                       wcs=data_object.wcs,
+                NDCube(data=data_object.uncertainty.array[i],
+                       wcs=data_wcs,
                        meta=data_object.meta),
                 processor=PUNCHImageProcessor(i))
 

@@ -3,7 +3,6 @@ import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect import task
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.prefect import punch_task
@@ -18,6 +17,8 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
         if len(selected_images) > 0:
             reprojected_data = np.stack([d.data for d in selected_images], axis=-1)
             reprojected_weights = np.stack([1/np.square(d.uncertainty.array) for d in selected_images], axis=-1)
+
+            reprojected_weights[reprojected_weights <= 0] = 1E-16
             reprojected_weights[np.isinf(reprojected_weights)] = 1E16
             reprojected_weights[np.isnan(reprojected_weights)] = 1E-16
 
@@ -35,7 +36,7 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
         meta=NormalizedMetadata.load_template("PTM", "2"),
     )
 
-@task
+@punch_task
 def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
     trefoil_data_layers, trefoil_uncertainty_layers = [], []
@@ -45,6 +46,7 @@ def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS) -> NDCube
         reprojected_data = np.stack(selected_images, axis=-1)
         reprojected_weights = np.stack([1/np.square(d.uncertainty.array) for d in data], axis=-1)
 
+        reprojected_weights[reprojected_weights <= 0] = 1E-16
         reprojected_weights[np.isinf(reprojected_weights)] = 1E16
         reprojected_weights[np.isnan(reprojected_weights)] = 1E-16
 

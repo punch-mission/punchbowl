@@ -1,10 +1,10 @@
 import os
 import pathlib
 
-from build.lib.punchbowl.data.io import write_ndcube_to_fits
 from ndcube import NDCube
 from prefect.testing.utilities import prefect_test_harness
 
+from punchbowl.data.io import write_ndcube_to_fits
 from punchbowl.data.tests.test_io import sample_ndcube
 from punchbowl.level1.flow import level1_core_flow
 

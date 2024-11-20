@@ -1,14 +1,32 @@
 """Creates test data with the appropriate metadata for punchbowl"""
 import os
+from io import BytesIO
 from datetime import datetime, timedelta
 
+import astropy.nddata
 import numpy as np
+import requests
+from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata, get_base_file_name, write_ndcube_to_fits
 from punchbowl.level1.quartic_fit import create_constant_quartic_coefficients
+
+
+def create_L2_PTM_test_file(path="../punchbowl/level3/tests/data/"):
+    src_file = "https://data.boulder.swri.edu/svankooten/PUNCH_L2_PTM_20241106032023_v1.fits"
+    r = requests.get(src_file)
+    with fits.open(BytesIO(r.content)) as hdul:
+        for hdu in hdul[1:]:
+            hdu.data = astropy.nddata.block_reduce(hdu.data, (1, 8, 8), np.nanmean)
+            for key in ' ', 'A':
+                wcs = WCS(hdu.header, key=key)
+                w = wcs[:, ::8, ::8]
+                hdu.header.update(w.to_header(key=key))
+        file_path = os.path.join(path, "downsampled_L2_PTM.fits")
+        hdul.writeto(file_path, overwrite=True)
 
 
 def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):

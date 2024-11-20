@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os.path
+from pathlib import Path
 
 import astropy.units as u
 import numpy as np
@@ -148,7 +149,7 @@ def _update_statistics(cube: NDCube) -> None:
     cube.meta["DATAMAX"] = float(np.nanmax(cube.data))
 
 
-def load_ndcube_from_fits(path: str, key: str = " ") -> NDCube:
+def load_ndcube_from_fits(path: str | Path, key: str = " ") -> NDCube:
     """Load an NDCube from a FITS file."""
     with fits.open(path) as hdul:
         primary_hdu = hdul[1]

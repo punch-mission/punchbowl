@@ -1,13 +1,13 @@
 from datetime import datetime
 
 import numpy as np
+from build.lib.punchbowl.data.wcs import load_trefoil_wcs
 from ndcube import NDCube
 from numpy.polynomial import polynomial
 from prefect import flow, get_run_logger
 from quadprog import solve_qp
 from scipy.interpolate import griddata
 
-from build.lib.punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task

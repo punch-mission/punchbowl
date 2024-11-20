@@ -145,7 +145,7 @@ def subtract_starfield_background_task(data_object: NDCube,
                                                       data_object.meta.astropy_time,
                                                       (4096, 4096))
         for i in range(3):
-            starfield_model = Starfield(star_datacube[i], star_datacube.wcs)
+            starfield_model = Starfield(star_datacube[i], star_datacube.wcs.celestial)
             starfield_subtracted_data = starfield_model.subtract_from_image(
                 NDCube(data=data_object.data[i],
                        wcs=data_wcs,

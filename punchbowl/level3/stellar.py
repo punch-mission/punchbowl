@@ -36,12 +36,17 @@ def generate_starfield_background(
         msg = "filenames cannot be empty"
         raise ValueError(msg)
 
+    ra_bounds = (0, 180)
+    dec_bounds = (-90, 90)
+
     logger.info("Starting m starfield")
     starfield_m = remove_starfield.build_starfield_estimate(
         filenames,
-        attribution=True,
-        frame_count=True,
+        attribution=False,
+        frame_count=False,
         reducer=GaussianReducer(n_sigma=n_sigma),
+        ra_bounds=ra_bounds,
+        dec_bounds=dec_bounds,
         map_scale=map_scale,
         processor=PUNCHImageProcessor(0),
         target_mem_usage=target_mem_usage)
@@ -51,8 +56,10 @@ def generate_starfield_background(
     logger.info("Starting z starfield")
     starfield_z = remove_starfield.build_starfield_estimate(
         filenames,
-        attribution=True,
-        frame_count=True,
+        attribution=False,
+        frame_count=False,
+        ra_bounds=ra_bounds,
+        dec_bounds=dec_bounds,
         reducer=GaussianReducer(n_sigma=n_sigma),
         map_scale=map_scale,
         processor=PUNCHImageProcessor(1),
@@ -63,8 +70,10 @@ def generate_starfield_background(
     logger.info("Starting p starfield")
     starfield_p = remove_starfield.build_starfield_estimate(
         filenames,
-        attribution=True,
-        frame_count=True,
+        attribution=False,
+        frame_count=False,
+        ra_bounds=ra_bounds,
+        dec_bounds=dec_bounds,
         reducer=GaussianReducer(n_sigma=n_sigma),
         map_scale=map_scale,
         processor=PUNCHImageProcessor(2),

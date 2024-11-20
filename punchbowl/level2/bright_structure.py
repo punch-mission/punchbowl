@@ -30,7 +30,7 @@ def run_zspike(
     existing ZSPIKE temporal despiking algorithm to identify auroral
     transients.
 
-    This is a voting algorithm based on my ZSPIKE.PRO from the 1990s,
+    This is a voting algorithm based on ZSPIKE.PRO from the 1990s,
     which is available in the solarsoft distribution from Lockheed Martin.
 
     ZSPIKE was originally used to identify cosmic rays, and

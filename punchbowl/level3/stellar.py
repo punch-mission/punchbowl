@@ -100,24 +100,6 @@ def generate_starfield_background(
     return [output_before, output_after]
 
 
-def subtract_starfield_background(data_object: NDCube, starfield_background_model: Starfield) -> NDCube:
-    """Subtract starfield background."""
-    starfield_subtracted_data = starfield_background_model.subtract_from_image(
-                                                              data_object,
-                                                              processor=remove_starfield.ImageProcessor())
-
-    starfield_subtracted_uncertainty = starfield_background_model.subtract_from_image(
-                                                              NDCube(data=data_object.uncertainty.array,
-                                                                     wcs=data_object.wcs,
-                                                                     meta=data_object.meta),
-                                                              processor=remove_starfield.ImageProcessor())
-
-    data_object.data[...] = starfield_subtracted_data.subtracted
-    data_object.uncertainty.array[...] = starfield_subtracted_uncertainty.subtracted
-
-    return data_object
-
-
 @punch_task
 def subtract_starfield_background_task(data_object: NDCube,
                                        starfield_background_path: str | None) -> NDCube:
@@ -149,10 +131,22 @@ def subtract_starfield_background_task(data_object: NDCube,
         output.meta.history.add_now("LEVEL3-fcorona-subtraction",
                                            "F corona subtraction skipped since path is empty")
     else:
-        star_data_array = load_ndcube_from_fits(starfield_background_path).data
-        output = subtract_starfield_background(data_object, star_data_array)
-        output.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
+        star_datacube = load_ndcube_from_fits(starfield_background_path)
+        for i in range(3):
+            starfield_model = Starfield(starfield=star_datacube.data[i], wcs=star_datacube.wcs)
+            starfield_subtracted_data = starfield_model.subtract_from_image(
+                data_object,
+                processor=PUNCHImageProcessor(i),)
+            starfield_subtracted_uncertainty = starfield_model.subtract_from_image(
+                NDCube(data=data_object.uncertainty.array,
+                       wcs=data_object.wcs,
+                       meta=data_object.meta),
+                processor=PUNCHImageProcessor(i))
 
+            data_object.data[i, ...] = starfield_subtracted_data.subtracted
+            data_object.uncertainty.array[i, ...] = starfield_subtracted_uncertainty.subtracted
+            data_object.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
+        output = data_object
     logger.info("subtract_f_corona_background finished")
 
     return output

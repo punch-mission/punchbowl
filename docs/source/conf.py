@@ -1,3 +1,5 @@
+import os
+import csv
 from importlib.metadata import version as get_version
 
 from packaging.version import Version
@@ -31,6 +33,37 @@ version: str = release
 _version = Version(release)
 if _version.is_devrelease:
     version = release = f"{_version.base_version}.dev{_version.dev}"
+
+
+# -- Metadata documentation ---------------------------------------------------
+
+def copy_and_truncate_csv(src_path, dest_path, columns, filter_column, filter_value, default_key):
+    with open(src_path, mode='r', newline='') as src_file:
+        reader = csv.DictReader(src_file)
+        filtered_rows = [
+            {
+                **{col: row[col] for col in columns},
+                'COMMENT': row['DEFAULT'] if not row['COMMENT'] else row['COMMENT']
+            } if row[filter_column] == filter_value else None
+            for row in reader
+        ]
+        filtered_rows = [row for row in filtered_rows if row]  # Remove None entries
+
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+    with open(dest_path, mode='w', newline='') as dest_file:
+        writer = csv.DictWriter(dest_file, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(filtered_rows)
+
+filter_column = 'TYPE'
+filter_value = 'keyword'
+
+src_csv_path = os.path.abspath(os.path.join('../../punchbowl/data/data/', 'omniheader.csv'))
+dest_csv_path = os.path.abspath(os.path.join('./data/', 'omniheader_select.csv'))
+columns_to_include = ['KEYWORD', 'COMMENT']
+
+copy_and_truncate_csv(src_csv_path, dest_csv_path, columns_to_include, filter_column, filter_value, 'DEFAULT')
+
 
 # -- General configuration ---------------------------------------------------
 

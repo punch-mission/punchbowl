@@ -175,7 +175,7 @@ def test_create_simple_bkg() -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in
     """
-    input_list = glob(TESTDATA_DIR+'/data/*.fits')
+    input_list = glob(TESTDATA_DIR+'/data/test_[0-9].fits')
     with disable_run_logger():
         f_corona_model, counts = construct_f_corona_background.fn(input_list, 0)
 

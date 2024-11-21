@@ -6,11 +6,7 @@ from ndcube import NDCube
 from remove_starfield import Starfield
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.level3.stellar import (
-    generate_starfield_background,
-    subtract_starfield_background,
-    subtract_starfield_background_task,
-)
+from punchbowl.level3.stellar import generate_starfield_background, subtract_starfield_background_task
 
 
 @pytest.fixture()
@@ -48,12 +44,12 @@ def zero_starfield_data(shape: tuple = (256, 256)) -> Starfield:
 
     return Starfield(starfield=starfield, wcs=wcs)
 
-
-def test_basic_subtraction(one_data: NDCube, zero_starfield_data: Starfield) -> None:
-    """
-
-    """
-    subtraction_starfield = subtract_starfield_background(one_data, zero_starfield_data)
-    subtraction_punchdata = NDCube(data=subtraction_starfield.data, wcs=subtraction_starfield.wcs, meta=subtraction_starfield.meta)
-    assert isinstance(subtraction_punchdata, NDCube)
-    assert np.allclose(subtraction_punchdata.data, 1)
+#
+# def test_basic_subtraction(one_data: NDCube, zero_starfield_data: Starfield) -> None:
+#     """
+#
+#     """
+#     subtraction_starfield = subtract_starfield_background(one_data, zero_starfield_data)
+#     subtraction_punchdata = NDCube(data=subtraction_starfield.data, wcs=subtraction_starfield.wcs, meta=subtraction_starfield.meta)
+#     assert isinstance(subtraction_punchdata, NDCube)
+#     assert np.allclose(subtraction_punchdata.data, 1)

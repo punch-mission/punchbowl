@@ -1,10 +1,14 @@
+from datetime import datetime
+
 import numpy as np
 from ndcube import NDCube
 from numpy.polynomial import polynomial
 from prefect import flow, get_run_logger
 from quadprog import solve_qp
+from scipy.interpolate import griddata
 
-from punchbowl.data import load_ndcube_from_fits
+from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task
 
@@ -125,6 +129,8 @@ def construct_f_corona_background(
         msg = "data_list cannot be empty"
         raise ValueError(msg)
 
+    data_list.sort()
+
     output = load_ndcube_from_fits(data_list[0])
     output_wcs = output.wcs
     output_meta = output.meta
@@ -156,6 +162,51 @@ def construct_f_corona_background(
 
     return output, counts
 
+def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
+    """Fill NaN values in an image using interpolation."""
+    mask = np.isnan(image)
+    x, y = np.where(~mask)
+    known_values = image[~mask]
+
+    grid_x, grid_y = np.mgrid[0:image.shape[0], 0:image.shape[1]]
+    return griddata((x, y), known_values, (grid_x, grid_y), method="cubic")
+
+@flow(log_prints=True)
+def construct_full_f_corona_model(filenames: list[str]) -> list[NDCube]:
+    """Construct a full F corona model."""
+    trefoil_wcs, trefoil_shape = load_trefoil_wcs()
+
+    m_model_fcorona, _ = construct_f_corona_background(filenames, 0, smooth_level=3.0)
+    m_model_fcorona.data[m_model_fcorona.data==0] = np.nan
+    m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona.data)
+
+    z_model_fcorona, _ = construct_f_corona_background(filenames, 1, smooth_level=3.0)
+    z_model_fcorona.data[z_model_fcorona.data==0] = np.nan
+    z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona.data)
+
+    p_model_fcorona, _ = construct_f_corona_background(filenames, 2, smooth_level=3.0)
+    p_model_fcorona.data[p_model_fcorona.data==0] = np.nan
+    p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona.data)
+
+    meta = NormalizedMetadata.load_template("PFM", "3")
+    meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0,
+                                    tzinfo=datetime.timezone.utc))
+    before_cube = NDCube(data=np.stack([m_model_fcorona,
+                                               z_model_fcorona,
+                                               p_model_fcorona], axis=0),
+                                meta=meta,
+                                wcs=trefoil_wcs)
+
+    meta = NormalizedMetadata.load_template("PFM", "3")
+    meta["DATE-OBS"] =  str(datetime(2024, 12, 1, 12, 0, 0,
+                                     tzinfo=datetime.timezone.utc))
+    after_cube = NDCube(data=np.stack([m_model_fcorona,
+                                               z_model_fcorona,
+                                               p_model_fcorona], axis=0),
+                                meta=meta,
+                                wcs=trefoil_wcs)
+
+    return [before_cube, after_cube]
 
 def subtract_f_corona_background(data_object: NDCube,
                                  before_f_background_model: NDCube,

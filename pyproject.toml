@@ -26,7 +26,8 @@ dependencies = [
         "thuban",
         "remove_starfield",
         "quadprog",
-        "pylibjpeg[openjpeg]"
+        "pylibjpeg[openjpeg]",
+        "requests",
 ]
 requires-python = ">=3.11"
 authors = [

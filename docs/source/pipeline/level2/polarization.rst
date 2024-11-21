@@ -1,7 +1,7 @@
 Polarization Resolution
 =========================
 
-Each PUNCH spacecraft observes polarized light in three polarizer wheel states, denoted M, Z, and P (minus 60 degrees, plus 60 degrees, and zero). These measurements are in the spacecraft frame, however. To merge these observations into a unified virtual field of view, these polarization data must be represented in a unified MZP frame with respect to the solar frame.
+Each PUNCH spacecraft observes polarized light in three polarizer wheel states, denoted M, Z, and P (minus 60 degrees, zero, and plus 60 degrees). These measurements are in the spacecraft frame, however. To merge these observations into a unified virtual field of view, these polarization data must be represented in a unified MZP frame with respect to the solar frame.
 
 Concept
 -------

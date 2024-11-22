@@ -11,9 +11,9 @@ By gathering observations and projecting the data into a common celestial frame,
 Applying correction
 -------------------
 
-Image resampling is carried out in the ``punchbowl.level3.stellar.subtract_starfield_background`` function:
+Image resampling is carried out in the ``punchbowl.level3.stellar.subtract_starfield_background_task`` function:
 
-.. autofunction:: punchbowl.level3.stellar.subtract_starfield_background
+.. autofunction:: punchbowl.level3.stellar.subtract_starfield_background_task
     :no-index:
 
 If you wish to incorporate this as a Prefect task in a custom pipeline,

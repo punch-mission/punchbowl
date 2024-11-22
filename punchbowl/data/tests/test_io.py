@@ -45,6 +45,7 @@ def sample_ndcube():
         meta = NormalizedMetadata.load_template(code, level)
         meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1))
         meta['FILEVRSN'] = "1"
+        meta['POLARREF'] = 'Instrument'
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 

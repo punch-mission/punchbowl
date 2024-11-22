@@ -13,10 +13,15 @@ def sample_data_triplet(sample_ndcube):
     Generate a list of sample PUNCHData objects for testing polarization resolving
     """
 
-    sample_pd1 = sample_ndcube(shape=(50, 50))
-    sample_pd2 = sample_ndcube(shape=(50, 50))
-    sample_pd3 = sample_ndcube(shape=(50, 50))
-    return [sample_pd1, sample_pd2, sample_pd3]
+    polar_angles = [-60, 0, 60]
+    sample_data = []
+
+    for angle in polar_angles:
+        sample_pd = sample_ndcube(shape=(50, 50))
+        sample_pd.meta['POLAR'] = angle
+        sample_data.append(sample_pd)
+
+    return sample_data
 
 
 def test_resolve_polarization(sample_data_triplet):

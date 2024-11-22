@@ -75,6 +75,7 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
 
     if is_3d:
         wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 2)
+    wcs_helio.array_shape = data_shape
 
     return wcs_helio, p_angle
 
@@ -305,6 +306,7 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
 
     if is_3d:
         wcs_celestial = add_stokes_axis_to_wcs(wcs_celestial, 2)
+    wcs_celestial.array_shape = data_shape
 
     return wcs_celestial
 

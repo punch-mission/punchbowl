@@ -144,22 +144,17 @@ def subtract_starfield_background_task(data_object: NDCube,
         data_wcs = calculate_celestial_wcs_from_helio(data_object.wcs.celestial,
                                                       data_object.meta.astropy_time,
                                                       data_object.data.shape[-2:])
-        starfield_model = Starfield(star_datacube.data, star_datacube.wcs.celestial)
+        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)),
+                                    star_datacube.wcs.celestial)
 
-        starfield_subtracted_data = starfield_model.subtract_from_image(
-            NDCube(data=data_object.data,
+        subtracted = starfield_model.subtract_from_image(
+            NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
                    wcs=data_wcs,
                    meta=data_object.meta),
             processor=PUNCHImageProcessor(0))
 
-        starfield_subtracted_uncertainty = starfield_model.subtract_from_image(
-            NDCube(data=data_object.uncertainty.array,
-                   wcs=data_wcs,
-                   meta=data_object.meta),
-            processor=PUNCHImageProcessor(0))
-
-        data_object.data[...] = starfield_subtracted_data.subtracted
-        data_object.uncertainty.array[...] -= starfield_subtracted_uncertainty.subtracted
+        data_object.data[...] = subtracted.subtracted[0]
+        data_object.uncertainty.array[...] -= subtracted.subtracted[1]
         data_object.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
         output = data_object
     logger.info("subtract_f_corona_background finished")

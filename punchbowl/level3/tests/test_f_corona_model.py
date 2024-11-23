@@ -15,11 +15,7 @@ from prefect.logging import disable_run_logger
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.meta import MetaField
 from punchbowl.exceptions import InvalidDataError
-from punchbowl.level3.f_corona_model import (
-    construct_f_corona_background,
-    subtract_f_corona_background,
-    subtract_f_corona_background_task,
-)
+from punchbowl.level3.f_corona_model import subtract_f_corona_background, subtract_f_corona_background_task
 
 TEST_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -158,29 +154,6 @@ def test_after_is_before_subtraction_fails(observation_data: NDCube, one_data: N
     """
     with pytest.raises(InvalidDataError):
         _ = subtract_f_corona_background(observation_data, one_data, one_data)
-
-@pytest.mark.prefect_test()
-def test_empty_list() -> None:
-    """
-    dataset of increasing values passed in, a bad pixel map is passed in
-    """
-    with pytest.raises(ValueError):
-        input_list = []
-        with disable_run_logger():
-            f_corona_model = construct_f_corona_background.fn(input_list, 0)
-
-
-@pytest.mark.prefect_test()
-def test_create_simple_bkg() -> None:
-    """
-    dataset of increasing values passed in, a bad pixel map is passed in
-    """
-    input_list = glob(TESTDATA_DIR+'/data/test_[0-9].fits')
-    with disable_run_logger():
-        f_corona_model, counts = construct_f_corona_background.fn(input_list, 0)
-
-    assert isinstance(f_corona_model, NDCube)
-    assert isinstance(counts, np.ndarray)
 
 
 @pytest.mark.prefect_test()

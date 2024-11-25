@@ -40,19 +40,25 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
 def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
     trefoil_data_layers, trefoil_uncertainty_layers = [], []
-    selected_images = [d.data for d in data if d is not None]
+    selected_images = [d for d in data if d is not None]
 
     if len(selected_images) > 0:
-        reprojected_data = np.stack(selected_images, axis=-1)
-        reprojected_weights = np.stack([1/np.square(d.uncertainty.array) for d in data], axis=-1)
+        reprojected_data = np.stack([d.data for d in selected_images], axis=-1)
+        reprojected_uncertainties = np.stack([d.uncertainty.array for d in selected_images], axis=-1)
+        reprojected_uncertainties[reprojected_uncertainties <= 0] = np.inf
+        reprojected_uncertainties[np.isinf(reprojected_uncertainties)] = 1E64
+        reprojected_uncertainties[reprojected_data <= 0] = np.inf
+        # reprojected_uncertainties[np.isnan(reprojected_uncertainties)] = 1E-32
 
-        reprojected_weights[reprojected_weights <= 0] = 1E-16
-        reprojected_weights[np.isinf(reprojected_weights)] = 1E16
-        reprojected_weights[np.isnan(reprojected_weights)] = 1E-16
+        reprojected_weights = 1/np.square(reprojected_uncertainties)
 
-        trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=2) /
-                                   np.nansum(reprojected_weights, axis=2))
-        trefoil_uncertainty_layers.append(1/np.nansum(np.sqrt(reprojected_weights), axis=2))
+        # reprojected_weights[reprojected_weights <= 0] = 1E-8
+        # reprojected_weights[np.isinf(reprojected_weights)] = 1E8
+        # reprojected_weights[np.isnan(reprojected_weights)] = 1E-8
+
+        trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=-1) /
+                                   np.nansum(reprojected_weights, axis=-1))
+        trefoil_uncertainty_layers.append(1/np.sqrt(np.nansum(reprojected_weights, axis=-1)))
     else:
         trefoil_data_layers.append(np.zeros((4096, 4096)))
         trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
@@ -61,8 +67,8 @@ def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS) -> NDCube
     output_meta["DATE-OBS"] = data[0].meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
 
     return NDCube(
-        data=np.stack(trefoil_data_layers, axis=0),
-        uncertainty=StdDevUncertainty(np.stack(trefoil_uncertainty_layers, axis=0)),
+        data=np.stack(trefoil_data_layers, axis=0).squeeze(),
+        uncertainty=StdDevUncertainty(np.stack(trefoil_uncertainty_layers, axis=0).squeeze()),
         wcs=trefoil_wcs,
         meta=output_meta,
     )

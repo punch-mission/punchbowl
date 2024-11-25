@@ -10,7 +10,6 @@ from regularizepsf.util import calculate_covering
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.units import dn_to_msb
-from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 from punchbowl.level1.despike import despike_task
 from punchbowl.level1.destreak import destreak_task
@@ -117,13 +116,13 @@ def level1_core_flow(
         data = correct_psf_task(data, psf_model_path)
 
         # set up alignment mask
-        observatory = int(data.meta["OBSCODE"].value)
-        if observatory < 4:
-            alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)  # noqa: E731
-        else:
-            alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
-                                           * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        data = align_task(data, mask=alignment_mask)
+        # observatory = int(data.meta["OBSCODE"].value)
+        # if observatory < 4:
+        #     alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
+        # else:
+        #     alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
+        #                                    * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
+        # data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -197,9 +196,9 @@ def level05_core_flow(
         # set up alignment mask
         # observatory = int(data.meta["OBSCODE"].value)
         # if observatory < 4:
-        #     alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)  # noqa: E731
+        #     alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
         # else:
-        #     alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
+        #     alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
         #                                    * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
         #
         # data = align_task(data, mask=alignment_mask)

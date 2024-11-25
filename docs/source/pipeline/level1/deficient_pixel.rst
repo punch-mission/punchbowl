@@ -32,4 +32,6 @@ using something like the ``punchbowl.level1.deficient_pixel.remove_deficient_pix
 
 Deriving the pixel mask
 -----------------------
-TODO
+
+The deficient pixel mask is generated during instrument calibration on the ground and on orbit from observations,
+and is stored as a calibration file that is then applied to the data.

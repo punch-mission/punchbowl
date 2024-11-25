@@ -7,4 +7,8 @@ PUNCH data is structured using the `NDCube <https://docs.sunpy.org/projects/ndcu
 
 Uncertainty
 -----------
-The uncertainty is stored within PUNCH NDCube data as a floating-point value from 0-1, describing the relative uncertainty of that pixel - 0 being complete certainty and 1 being complete uncertainty. When written to file, these are stored as 8-bit integer values using the HDU scaling feature. Most FITS readers (AstroPy tested) will reconstitute these to the original range of 0-1.
+
+The uncertainty is stored within the PUNCH NDCube data inside the pipeline as the absolute uncertainty in the data. When writing this data to a FITS file, the uncertainty is packed as the reciprocal of the ratio of the uncertainty to the data for each pixel. When unpacking these uncertainty values from a FITS file back into an NDCube object, this process is reversed, taking the inverse of the stored array and multiplying by the data array to restore the absolute uncertainty.
+
+.. note::
+    When reading data using the punchbowl framework, uncertainty is stored as the absolute uncertainty. When reading data using astropy FITS frameworks, uncertainty will appear as the reciprocal fractional uncertainty.

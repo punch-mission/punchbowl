@@ -29,14 +29,14 @@ def correct_psf_task(
 
     Parameters
     ----------
-    data_object : PUNCHData
+    data_object : NDCube
         data to operate on
     model_path : str
         path to the PSF model to use in the correction
 
     Returns
     -------
-    PUNCHData
+    NDCube
         modified version of the input with the PSF corrected
 
     """

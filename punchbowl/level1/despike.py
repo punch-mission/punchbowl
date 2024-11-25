@@ -98,7 +98,7 @@ def despike_task(data_object: NDCube,
 
     Parameters
     ----------
-    data_object : PUNCHData
+    data_object : NDCube
         data to operate on
     unsharp_size : int
         half window size in pixels for unsharp mask
@@ -111,7 +111,7 @@ def despike_task(data_object: NDCube,
 
     Returns
     -------
-    PUNCHData
+    NDCube
         a modified version of the input with spikes removed
 
     """

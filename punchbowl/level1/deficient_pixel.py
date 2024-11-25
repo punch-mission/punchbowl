@@ -152,7 +152,7 @@ def remove_deficient_pixels_task(
 
     Parameters
     ----------
-    data : PUNCHData
+    data : NDCube
         A PUNCHobject data frame to be background subtracted
 
     deficient_pixel_map_path : Optional[str]
@@ -171,7 +171,7 @@ def remove_deficient_pixels_task(
 
     Returns
     -------
-    PUNCHData
+    NDCube
         A background subtracted data frame
 
     """

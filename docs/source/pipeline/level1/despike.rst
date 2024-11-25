@@ -1,10 +1,10 @@
 Despike
-==========
+=======
 
 The goal of despiking is to remove cosmic ray hits from images.
 
 Concept
----------
+-------
 
 Despiking is carried out by our implementation
 of `DeForest's spikejones algorithm <https://github.com/drzowie/solarpdl-tools/blob/79d431d937bab6178eb68bec229eee59614233b3/image/spikejones.pdl#L12>`_.
@@ -13,7 +13,7 @@ to an image and compares that to a smoothed copy. Pixels with a significant diff
 are considered spikes.
 
 Applying correction
----------------------
+-------------------
 
 The correction is carried out primarily in the ``punchbowl.level1.despike.spikejones`` function:
 

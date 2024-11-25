@@ -120,15 +120,15 @@ def subtract_starfield_background_task(data_object: NDCube,
 
     Parameters
     ----------
-    data_object : punchbowl.data.PUNCHData
-        A PUNCHData data frame to be background subtracted
+    data_object : NDCube
+        A NDCube data frame to be background subtracted
 
     starfield_background_path : str
-        path to a PUNCHData background starfield map
+        path to a NDCube background starfield map
 
     Returns
     -------
-    'punchbowl.data.PUNCHData'
+    NDCube
         A background starfield subtracted data frame
 
     """
@@ -137,8 +137,8 @@ def subtract_starfield_background_task(data_object: NDCube,
 
     if starfield_background_path is None:
         output = data_object
-        output.meta.history.add_now("LEVEL3-fcorona-subtraction",
-                                           "F corona subtraction skipped since path is empty")
+        output.meta.history.add_now("LEVEL3-subtract_starfield_background",
+                                           "starfield subtraction skipped since path is empty")
     else:
         star_datacube = load_ndcube_from_fits(starfield_background_path)
         data_wcs = calculate_celestial_wcs_from_helio(data_object.wcs.celestial,
@@ -157,7 +157,8 @@ def subtract_starfield_background_task(data_object: NDCube,
         data_object.uncertainty.array[...] -= subtracted.subtracted[1]
         data_object.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
         output = data_object
-    logger.info("subtract_f_corona_background finished")
+    logger.info("subtract_starfield_background finished")
+
 
     return output
 

@@ -11,7 +11,7 @@ from punchbowl.level2.resample import reproject_cube, reproject_many_flow
 @pytest.fixture
 def sample_punchdata_list(sample_ndcube):
     """
-    Generate a list of sample PUNCHData objects for testing
+    Generate a list of sample PUNCH data objects for testing
     """
     sample_pd1 = sample_ndcube((50, 50))
     sample_pd2 = sample_ndcube((50, 50))

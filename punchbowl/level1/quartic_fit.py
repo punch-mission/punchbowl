@@ -124,7 +124,7 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
 
     Parameters
     ----------
-    data_object : PUNCHData
+    data_object : NDCube
         a data object that needs calibration
     quartic_coefficients_path: Optional[str]
         path to a  cube of coefficients as produced by `create_coefficients_image` or `create_ones_coefficients_image`,
@@ -132,7 +132,7 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
 
     Returns
     -------
-    PUNCHData
+    NDCube
         modified version of the input with the quartic fit correction applied
 
     See Also

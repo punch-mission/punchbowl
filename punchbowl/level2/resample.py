@@ -1,4 +1,4 @@
-
+import astropy.wcs.utils
 import numpy as np
 import reproject
 from astropy.wcs import WCS
@@ -49,11 +49,38 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
 
     celestial_source.wcs.set_pv([(2, 1, (-sun.earth_distance(time) / sun.constants.radius).decompose().value)])
 
-    return reproject.reproject_adaptive(
-        (np.stack([input_cube.data, input_cube.uncertainty.array]), celestial_source),
-        celestial_target, output_shape,
+    # When we build mosaics, each input image fills only a portion (less than half) of the output frame. When we
+    # reproject, we don't want it spending time looping over all those empty pixels, calculating coordinates,
+    # etc. So here we find a bounding box around the input in the output frame and crop to that before reprojecting.
+    # To start, here we make a grid of points along the edges of the input image.
+    xs = np.linspace(1, input_cube.data.shape[-1], 60)
+    ys = np.linspace(1, input_cube.data.shape[-2], 60)
+    edgex = np.concatenate((xs, np.full(len(ys), xs[-1]), xs, np.zeros(len(ys))))
+    edgey = np.concatenate((np.zeros(len(xs)), ys, np.full(len(xs), ys[-1]), ys))
+
+    # Now we transform them to the output frame
+    xs, ys = astropy.wcs.utils.pixel_to_pixel(celestial_source, celestial_target, edgex, edgey)
+    # And we find that bounding box
+    xmin, xmax = int(np.floor(xs.min())), int(np.ceil(xs.max()))
+    ymin, ymax = int(np.floor(ys.min())), int(np.ceil(ys.max()))
+    xmin = np.max((xmin, 0))
+    ymin = np.max((ymin, 0))
+    xmax = np.min((xmax, output_shape[1]))
+    ymax = np.min((ymax, output_shape[0]))
+
+    output_array = np.full((2, *output_shape), np.nan)
+    input_data = np.stack([input_cube.data, input_cube.uncertainty.array])
+    # Reproject will complain if the input and output arrays have different dtypes
+    input_data = np.asarray(input_data, dtype=float)
+
+    reproject.reproject_adaptive(
+        (input_data, celestial_source),
+        celestial_target[ymin:ymax, xmin:xmax],
         roundtrip_coords=False, return_footprint=False,
+        output_array=output_array[..., ymin:ymax, xmin:xmax],
     )
+
+    return output_array
 
 
 @flow(validate_parameters=False)

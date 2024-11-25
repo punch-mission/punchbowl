@@ -195,14 +195,14 @@ def level05_core_flow(
                              readout_line_time=readout_line_time)
 
         # set up alignment mask
-        observatory = int(data.meta["OBSCODE"].value)
-        if observatory < 4:
-            alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)  # noqa: E731
-        else:
-            alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
-                                           * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-
-        data = align_task(data, mask=alignment_mask)
+        # observatory = int(data.meta["OBSCODE"].value)
+        # if observatory < 4:
+        #     alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)  # noqa: E731
+        # else:
+        #     alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))  # noqa: E731
+        #                                    * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
+        #
+        # data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value

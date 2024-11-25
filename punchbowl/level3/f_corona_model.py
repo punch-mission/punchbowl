@@ -125,9 +125,13 @@ def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
     return griddata((x, y), known_values, (grid_x, grid_y), method="cubic")
 
 @flow(log_prints=True)
-def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float = 3.0) -> list[NDCube]:
+def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
+                                       reference_time: datetime = None) -> list[NDCube]:
     """Construct a full F corona model."""
     logger = get_run_logger()
+
+    if reference_time is None:
+        reference_time = datetime.now()
 
     trefoil_wcs, trefoil_shape = load_trefoil_wcs()
 
@@ -170,8 +174,7 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
     p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona.data)
 
     meta = NormalizedMetadata.load_template("PFM", "3")
-    meta["DATE-OBS"] =  str(datetime(2024, 12, 1, 12, 0, 0,
-                                     tzinfo=datetime.timezone.utc))
+    meta["DATE-OBS"] = str(reference_time)
     output_cube = NDCube(data=np.stack([m_model_fcorona,
                                                z_model_fcorona,
                                                p_model_fcorona], axis=0),

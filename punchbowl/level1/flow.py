@@ -51,7 +51,7 @@ def level1_core_flow(
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
     quartic_coefficient_path: str | pathlib.Path | None = None,
-    despike_unsharp_size: int = 1,
+    despike_unsharp_size: int = 3,
     despike_method: str = "median",
     despike_alpha: float = 3.0,
     despike_dilation: int = 0,

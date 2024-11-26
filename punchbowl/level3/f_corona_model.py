@@ -59,6 +59,7 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
     return np.asarray(solution), num_inputs
 
 def model_fcorona_for_cube(xt: np.ndarray,
+                           reference_xt: float,
                           cube: np.ndarray,
                           min_brightness: float = 1E-16,
                           smooth_level: float | None = 1,
@@ -112,7 +113,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
     coefficients *= -1
     if return_full_curves:
         return polynomial.polyval(xt, coefficients[::-1, :, :]).transpose((2, 0, 1)), counts, cube
-    return polynomial.polyval(xt[len(xt)//2], coefficients[::-1, :, :]), counts
+    return polynomial.polyval(reference_xt, coefficients[::-1, :, :]), counts
 
 
 def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
@@ -161,15 +162,16 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
         meta_list.append(data_object.meta)
     logger.info("ending data loading")
 
-    m_model_fcorona, _ = model_fcorona_for_cube(obs_times, data_cube[0], smooth_level=smooth_level)
+    reference_xt = reference_time.timestamp()
+    m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[0], smooth_level=smooth_level)
     m_model_fcorona.data[m_model_fcorona.data==0] = np.nan
     m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona.data)
 
-    z_model_fcorona, _ = model_fcorona_for_cube(obs_times, data_cube[1], smooth_level=smooth_level)
+    z_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[1], smooth_level=smooth_level)
     z_model_fcorona.data[z_model_fcorona.data==0] = np.nan
     z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona.data)
 
-    p_model_fcorona, _ = model_fcorona_for_cube(obs_times, data_cube[2], smooth_level=smooth_level)
+    p_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[2], smooth_level=smooth_level)
     p_model_fcorona.data[p_model_fcorona.data==0] = np.nan
     p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona.data)
 

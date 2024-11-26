@@ -28,10 +28,13 @@ def sample_ndcube(shape, code="PM1", level="0"):
         wcs = add_stokes_axis_to_wcs(wcs, 2)
 
     meta = NormalizedMetadata.load_template(code, level)
-    meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1))
+    meta['DATE-OBS'] = str(datetime(2024, 1, 1, 0, 0, 0))
+    meta['DATE-BEG'] = str(datetime(2024, 1, 1, 0, 0, 0))
+    meta['DATE-END'] = str(datetime(2024, 1, 1, 0, 0, 0))
+    meta['DATE-AVG'] = str(datetime(2024, 1, 1, 0, 0, 0))
     meta['FILEVRSN'] = "1"
     meta['POLARREF'] = "Instrument"
-    meta['POLAROFF'] = 1.0
+    meta['POLAROFF'] = 0.0
     return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
@@ -60,9 +63,9 @@ def construct_all_product_headers(directory, level, outpath):
 
         sample_data = sample_ndcube(shape=shape, code=pc, level=level)
 
-        header = meta.to_fits_header(sample_data.wcs)
-
         filename = outpath + get_base_file_name(sample_data) + '.fits'
+
+        print('Finished writing ' + filename)
 
         write_ndcube_to_fits(sample_data, filename=filename, write_hash=False)
 

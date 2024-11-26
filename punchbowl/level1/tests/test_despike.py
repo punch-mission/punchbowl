@@ -29,6 +29,6 @@ def test_spikejones_with_one_spike():
     output, spikes = spikejones(image)
 
     assert output.shape == image.shape
-    assert output[50, 50]
-    assert output[49, 50]
-    assert output[30, 70]
+    assert np.isclose(output[50, 50], 0.1)
+    assert np.isclose(output[49, 50], 0.1)
+    assert np.isclose(output[30, 70], 0.1)

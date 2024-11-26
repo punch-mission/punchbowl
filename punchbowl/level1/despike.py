@@ -24,7 +24,7 @@ def radial_array(shape: tuple[int], center: tuple[int] | None = None) -> np.ndar
 
 def spikejones(
     image: np.ndarray, unsharp_size: int = 3, method: str = "convolve", alpha: float = 1, dilation: int = 0,
-) -> (np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Remove cosmic ray spikes from an image using spikejones algorithm.
 
@@ -83,7 +83,7 @@ def spikejones(
     image[spikes] = np.nan
     for x, y in zip(*spikes, strict=False):
         neighbors = cell_neighbors(image, x, y, kernel_size - 1)
-        threshold = np.median(neighbors) + 3 * np.std(neighbors)
+        threshold = np.nanmedian(neighbors) + 3 * np.nanstd(neighbors)
         output[x, y] = np.nanmean(neighbors[np.abs(neighbors) < np.abs(threshold)])
 
     return output, spikes

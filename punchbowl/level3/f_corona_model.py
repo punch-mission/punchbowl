@@ -167,16 +167,16 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
 
     reference_xt = reference_time.timestamp()
     m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[:, 0, :, :], smooth_level=smooth_level)
-    m_model_fcorona.data[m_model_fcorona.data==0] = np.nan
-    m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona.data)
+    m_model_fcorona[m_model_fcorona==0] = np.nan
+    m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona)
 
     z_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[:, 1, :, :], smooth_level=smooth_level)
-    z_model_fcorona.data[z_model_fcorona.data==0] = np.nan
-    z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona.data)
+    z_model_fcorona[z_model_fcorona==0] = np.nan
+    z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona)
 
     p_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[:, 2, :, :], smooth_level=smooth_level)
-    p_model_fcorona.data[p_model_fcorona.data==0] = np.nan
-    p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona.data)
+    p_model_fcorona[p_model_fcorona==0] = np.nan
+    p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
 
     meta = NormalizedMetadata.load_template("PFM", "3")
     meta["DATE-OBS"] = str(reference_time)

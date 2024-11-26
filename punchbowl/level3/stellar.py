@@ -29,10 +29,10 @@ class PUNCHImageProcessor(ImageProcessor):
 def to_celestial(input_data: NDCube) -> NDCube:
     """
     Convert polarization from mzpsolar to Celestial frame.
+
     All images need their polarization converted to Celestial frame
     to generated the background starfield model.
     """
-
     # Create a data collection for M, Z, P components
     mzp_angles = [-60, 0, 60]*u.degree
 
@@ -45,7 +45,7 @@ def to_celestial(input_data: NDCube) -> NDCube:
          NDCube(data=input_data[i].data,
                 wcs=input_data.wcs.dropaxis(2),
                 meta={"POLAR": angle}))
-        for label, i, angle in zip(["M", "Z", "P"], [0, 1, 2], mzp_angles)
+        for label, i, angle in zip(["M", "Z", "P"], [0, 1, 2], mzp_angles, strict=False)
     ]
     data_collection = NDCollection(collection_contents, aligned_axes="all")
 
@@ -54,15 +54,12 @@ def to_celestial(input_data: NDCube) -> NDCube:
 
     valid_keys = [key for key in celestial_data_collection if key != "alpha"]
     new_data = [celestial_data_collection[key].data for key in valid_keys]
-
     new_wcs = input_data.wcs.copy()
-    # logger.info("Conversion to celestial frame finished.")
 
     output_meta = NormalizedMetadata.load_template("PTM", "3")
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
 
     output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
-    # logger.info("Conversion to celestial frame finished.")
     output.meta.history.add_now("LEVEL3-convert2celestial", "Convert mzpsolar to Celestial")
 
     return output
@@ -71,10 +68,10 @@ def to_celestial(input_data: NDCube) -> NDCube:
 def from_celestial(input_data: NDCube) -> NDCube:
     """
     Convert polarization from Celestial frame to mzpsolar.
+
     All images need their polarization converted back to Solar frame
     after removing the stellar polarization.
     """
-
     # Create a data collection for M, Z, P components
     mzp_angles = [-60, 0, 60]*u.degree
     # Compute new angles for celestial frame
@@ -94,15 +91,12 @@ def from_celestial(input_data: NDCube) -> NDCube:
 
     valid_keys = [key for key in solar_data_collection if key != "alpha"]
     new_data = [solar_data_collection[key].data for key in valid_keys]
-
     new_wcs = input_data.wcs.copy()
-    # logger.info("Conversion to celestial frame finished.")
 
     output_meta = NormalizedMetadata.load_template("PTM", "2")
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
 
     output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
-    # logger.info("Conversion from celestial frame finished.")
     output.meta.history.add_now("LEVEL3-convert2mzpsolar", "Convert Celestial to mzpsolar")
 
     return output

@@ -1,18 +1,18 @@
-from datetime import datetime
-from glob import glob
 import random
+from glob import glob
+from datetime import datetime
 
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from numpy.polynomial import polynomial
 from prefect import flow, get_run_logger
-from punchbowl.data.io import write_ndcube_to_fits
 from quadprog import solve_qp
 from scipy.interpolate import griddata
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.data.wcs import load_trefoil_wcs, load_quickpunch_mosaic_wcs
+from punchbowl.data.io import write_ndcube_to_fits
+from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task
 
@@ -39,20 +39,19 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
 
     """
     c = np.transpose(input_vals)
+    cube_is_good = np.isfinite(cube)
+    num_inputs = np.sum(cube_is_good, axis=0)
 
     solution = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
-    num_inputs = np.zeros((cube.shape[1], cube.shape[2]))
     for i in range(cube.shape[1]):
         for j in range(cube.shape[2]):
-            time_series = cube[:, i, j]
-            is_good = np.isfinite(time_series)
-            time_series = time_series[is_good]
-            c_iter = c[:, is_good]
-            g_iter = np.matmul(c_iter, c_iter.T)
-            num_inputs[i, j] = np.sum(is_good)
+            is_good = cube_is_good[:, i, j]
+            time_series = cube[:, i, j][is_good]
             if time_series.size < n_nonnan_required:
                 this_solution = np.zeros(input_vals.shape[1])
             else:
+                c_iter = c[:, is_good]
+                g_iter = np.matmul(c_iter, c_iter.T)
                 a = np.matmul(c_iter, time_series)
                 try:
                     this_solution = solve_qp(g_iter, a, c_iter, time_series)[0]

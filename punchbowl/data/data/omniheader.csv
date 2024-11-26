@@ -43,8 +43,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,OBSLAYR2,,Image Mode for second datacube layer,str,TRUE,TRUE,
 4,keyword,OBSLAYR3,,Image Mode for third datacube layer,str,TRUE,TRUE,
 4,keyword,POLAR,,[deg] Polarizer angle or fill value for clear,int,TRUE,TRUE,
-4,keyword,POLAROFF,,Offset in degrees of polarizer from POLAR,float,TRUE,TRUE,0.0
-4,keyword,POLARREF,,[deg] Polarizer reference frame,str,TRUE,TRUE,
+4,keyword,POLAROFF,,[deg] Offset in degrees of polarizer from POLAR,float,TRUE,TRUE,0.0
+4,keyword,POLARREF,,Polarizer reference frame (instrument or solar),str,TRUE,TRUE,
 4,keyword,INSTRUME,,Instrument name,str,TRUE,TRUE,
 4,keyword,TELESCOP,,Satellite name,str,TRUE,TRUE,
 4,keyword,OBSRVTRY,PUNCH,Observatory name,str,TRUE,TRUE,PUNCH
@@ -61,7 +61,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 6,keyword,TELAPSE,48.1296,[s] time between begin and end of exposure,float,TRUE,TRUE,48.1296
 6,keyword,REGION,1,region,int,TRUE,TRUE,1
 6,keyword,READOUT0,3,readout region if region=0,int,TRUE,TRUE,3
-6,keyword,CAMERA,FMCFMD,detector name (TBD),str,TRUE,TRUE,FMCFMD
+6,keyword,CAMERA,FMCFMD,detector name,str,TRUE,TRUE,FMCFMD
 6,keyword,PXBEG1,1,first read-out detector row,int,TRUE,TRUE,1
 6,keyword,PXEND1,2048,last read-out detector row,int,TRUE,TRUE,2048
 6,keyword,PXBEG2,1,first read-out detector column,int,TRUE,TRUE,1
@@ -74,7 +74,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 6,keyword,DSTART2,1,first row of image area on data array,int,TRUE,TRUE,1
 6,keyword,DSTOP2,2048,last row of image area on data array,int,TRUE,TRUE,2048
 6,keyword,IMGCTR,8370,image counter from IDPU,int,TRUE,TRUE,8370
-6,keyword,LEDSTATE,Off,state of LED (TBD),str,TRUE,TRUE,Off
+6,keyword,LEDSTATE,Off,state of LED,str,TRUE,TRUE,Off
 6,keyword,LEDDAC,0,last commanded setting of LED,int,TRUE,TRUE,0
 6,keyword,OFFSET,40,commanded offset value used in camera,int,TRUE,TRUE,40
 6,keyword,GAINCMD,12,commanded gain value,float,TRUE,TRUE,12
@@ -89,8 +89,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 8,keyword,CALCF,,quartic fit filename,str,TRUE,TRUE,
 8,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,
 8,keyword,CALPSF,,PSF filename,str,TRUE,TRUE,
-8,keyword,CALPM,,bad pixel map filename (TBC),str,TRUE,TRUE,
-8,keyword,CALSL,,stray light model filename(TBC),str,TRUE,TRUE,
+8,keyword,CALPM,,bad pixel map filename,str,TRUE,TRUE,
+8,keyword,CALSL,,stray light model filename,str,TRUE,TRUE,
 9,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
 9,keyword,BUNIT,Mean Solar Brightness,Units of observation,str,TRUE,TRUE,Mean Solar Brightness
 9,keyword,BSUN_DEF,2.0090000E7,[W/m2/sr] Mean Solar Brightness,float,TRUE,TRUE,2.0090000E7
@@ -150,7 +150,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,BANDWDTH,,Half-width of each radial band in solar radii,float,TRUE,TRUE,
 12,keyword,MAXRAD,,The maximum radius in degrees,int,TRUE,TRUE,
 12,keyword,AZMBINS,,Number of azimuthal bins in the polar remapped images,int,TRUE,TRUE,
-12,keyword,AZMBINF,,Binning factor for binning the polar remapped image over the azimuth,int,TRUE,TRUE,
+12,keyword,AZMBINF,,Azimuthal binning factor,int,TRUE,TRUE,
 12,keyword,PLTBINS,,Number of azimuthal bins in the output flow maps,int,TRUE,TRUE,
 12,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
 12,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,

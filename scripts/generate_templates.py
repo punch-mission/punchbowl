@@ -22,7 +22,6 @@ def sample_ndcube(shape, code="PM1", level="0"):
     wcs.wcs.cdelt = 0.1, 0.1
     wcs.wcs.crpix = 0, 0
     wcs.wcs.crval = 1, 1
-    wcs.wcs.cname = "HPC lon", "HPC lat"
 
     if level in ["2", "3"] and code[0] == "P":
         wcs = add_stokes_axis_to_wcs(wcs, 2)

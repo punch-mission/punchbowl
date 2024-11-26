@@ -82,7 +82,9 @@ def spikejones(
     output = np.copy(image)
     image[spikes] = np.nan
     for x, y in zip(*spikes, strict=False):
-        output[x, y] = np.nanmean(cell_neighbors(image, x, y, kernel_size - 1))
+        neighbors = cell_neighbors(image, x, y, kernel_size - 1)
+        threshold = np.median(neighbors) + 3 * np.std(neighbors)
+        output[x, y] = np.nanmean(neighbors[np.abs(neighbors) < np.abs(threshold)])
 
     return output, spikes
 

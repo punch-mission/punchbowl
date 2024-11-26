@@ -150,8 +150,8 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
     data_shape = (3, *trefoil_shape)
 
     number_of_data_frames = len(filenames)
-    data_cube = np.empty((number_of_data_frames, data_shape), dtype=float)
-    uncertainty_cube = np.empty((number_of_data_frames, data_shape), dtype=float)
+    data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
+    uncertainty_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
 
     meta_list = []
     obs_times = []
@@ -166,15 +166,15 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
     logger.info("ending data loading")
 
     reference_xt = reference_time.timestamp()
-    m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[0], smooth_level=smooth_level)
+    m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[:, 0, :, :], smooth_level=smooth_level)
     m_model_fcorona.data[m_model_fcorona.data==0] = np.nan
     m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona.data)
 
-    z_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[1], smooth_level=smooth_level)
+    z_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[:, 1, :, :], smooth_level=smooth_level)
     z_model_fcorona.data[z_model_fcorona.data==0] = np.nan
     z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona.data)
 
-    p_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[2], smooth_level=smooth_level)
+    p_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[:, 2, :, :], smooth_level=smooth_level)
     p_model_fcorona.data[p_model_fcorona.data==0] = np.nan
     p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona.data)
 

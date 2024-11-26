@@ -101,13 +101,13 @@ def model_fcorona_for_cube(xt: np.ndarray,
     """
     cube[cube < min_brightness] = np.nan
     if smooth_level is not None:
-        average = np.nanmean(cube, axis=0)
-        std = np.nanstd(cube, axis=0)
-        a, b, c = np.where(cube[:, ...] > (average + (smooth_level * std)))
-        cube[a, b, c] = average[b, c]
+        center = np.nanmedian(cube, axis=0)
+        range = np.diff(np.nanpercentile(cube, [25, 75], axis=0), axis=0).squeeze()
+        a, b, c = np.where(cube[:, ...] > (center + (smooth_level * range)))
+        cube[a, b, c] = center[b, c]
 
-        a, b, c = np.where(cube[:, ...] < (average - (smooth_level * std)))
-        cube[a, b, c] = average[b, c]
+        a, b, c = np.where(cube[:, ...] < (center - (smooth_level * range)))
+        cube[a, b, c] = center[b, c]
 
     xt = np.array(xt)
     xt -= xt[0]

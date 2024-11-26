@@ -2,6 +2,7 @@ from datetime import datetime
 
 import numpy as np
 import remove_starfield
+from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
@@ -37,6 +38,8 @@ def generate_starfield_background(
 
     if reference_time is None:
         reference_time = datetime.now()
+    elif isinstance(reference_time, str):
+        reference_time = parse_datetime_str(reference_time)
 
     logger.info("construct_starfield_background started")
 

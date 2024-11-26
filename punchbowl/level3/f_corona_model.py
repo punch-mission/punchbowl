@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import numpy as np
+from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from numpy.polynomial import polynomial
 from prefect import flow, get_run_logger
@@ -127,12 +128,14 @@ def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
 
 @flow(log_prints=True)
 def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
-                                       reference_time: datetime = None) -> list[NDCube]:
+                                       reference_time: str = None) -> list[NDCube]:
     """Construct a full F corona model."""
     logger = get_run_logger()
 
     if reference_time is None:
         reference_time = datetime.now()
+    elif isinstance(reference_time, str):
+        reference_time = parse_datetime_str(reference_time)
 
     trefoil_wcs, trefoil_shape = load_trefoil_wcs()
 

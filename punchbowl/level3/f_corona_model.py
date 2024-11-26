@@ -110,8 +110,8 @@ def model_fcorona_for_cube(xt: np.ndarray,
         cube[a, b, c] = center[b, c]
 
     xt = np.array(xt)
-    xt -= xt[0]
     reference_xt -= xt[0]
+    xt -= xt[0]
 
     input_array = np.c_[np.power(xt, 3), np.square(xt), xt, np.ones(len(xt))]
     coefficients, counts = solve_qp_cube(input_array, -cube)

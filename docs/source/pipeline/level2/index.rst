@@ -1,9 +1,7 @@
 Level 2
 ========
 
-The level 2 pipeline focuses on the steps to resolve polarization and merge images together. It consists of a
-few modules:
-
+The level 2 pipeline focuses on the steps to resolve polarization and merge images together.
 
 .. mermaid::
 
@@ -12,8 +10,8 @@ few modules:
     id2[image resampling] --> id3[bright structure identification];
     id3[bright structure identification] --> id4[image merging];
 
-
 .. toctree::
+    :maxdepth: 1
 
     polarization
     image_resample

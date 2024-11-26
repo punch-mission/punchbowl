@@ -1,12 +1,12 @@
 Initial Uncertainty Estimation
-===============================
+==============================
 
 We propagate uncertainty through the pipeline. This module initializes the
 uncertainty based on the bias level, the dark level, the gain, read noise level,
 bitrate, and signal levels.
 
 Concept
----------
+-------
 
 The initial uncertainty is characterized in level 1 data products by passing the input data file and associated
 metadata into a subroutine which computes and inserts these uncertainty values in place. Using CCD / instrument
@@ -20,7 +20,7 @@ from a subroutine. The initial uncertainty estimate is then folded into the data
 with the provided / computed data photon counts.
 
 Applying correction
----------------------
+-------------------
 
 The correction is carried out primarily in the ``punchbowl.level1.initial_uncertainty.compute_uncertainty`` function:
 

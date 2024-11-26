@@ -18,14 +18,14 @@ def align_task(data_object: NDCube, mask: Callable | None = None) -> NDCube:
 
     Parameters
     ----------
-    data_object : PUNCHData
+    data_object : NDCube
         data object to align
     mask : Callable | None
         function accepting coordinates and returning them only if they are not masked out
 
     Returns
     -------
-    PUNCHData
+    NDCube
         a modified version of the input with the WCS more accurately determined
 
     """

@@ -44,7 +44,7 @@ def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) ->
 @pytest.fixture()
 def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
     """
-    Generate a sample PUNCHData object for testing
+    Generate a sample PUNCH data object for testing
     """
 
     data = np.random.random(shape)
@@ -64,7 +64,7 @@ def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
 @pytest.fixture()
 def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> NDCube:
     """
-    Generate a sample PUNCHData object for testing
+    Generate a sample PUNCH data object for testing
     """
 
     data = np.random.random(shape)
@@ -84,7 +84,7 @@ def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> NDCube:
 @pytest.fixture()
 def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
     """
-    Generate a sample PUNCHData object for testing
+    Generate a sample PUNCH data object for testing
     """
 
     data = np.zeros(shape)
@@ -104,7 +104,7 @@ def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
 @pytest.fixture()
 def one_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
     """
-    Generate a sample PUNCHData object for testing
+    Generate a sample PUNCH data object for testing
     """
     x_interest = 200
     y_interest = 200
@@ -128,7 +128,7 @@ def one_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
 @pytest.fixture()
 def two_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
     """
-    Generate a sample PUNCHData object for testing
+    Generate a sample PUNCH data object for testing
     """
     x_interest = 200
     y_interest = 200

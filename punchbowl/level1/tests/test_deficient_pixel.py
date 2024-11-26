@@ -142,7 +142,7 @@ def increasing_pixel_data(shape: tuple = (2048, 2048)) -> NDCube:
 @pytest.fixture()
 def sample_punchdata(shape: tuple = (2048, 2048)) -> NDCube:
     """
-    Generate a sample PUNCHData object for testing
+    Generate a sample PUNCH data object for testing
     """
 
     data = np.random.random(shape)
@@ -170,7 +170,7 @@ def test_remove_deficient_pixels(sample_punchdata: NDCube, sample_bad_pixel_map:
 
 def test_nan_input(sample_punchdata: NDCube, sample_bad_pixel_map: NDCube) -> None:
     """
-    The module output is tested when NaN data points are included in the input PUNCHData object. Test for no errors.
+    The module output is tested when NaN data points are included in the input PUNCH data object. Test for no errors.
     """
 
     input_data = sample_punchdata
@@ -184,7 +184,7 @@ def test_nan_input(sample_punchdata: NDCube, sample_bad_pixel_map: NDCube) -> No
 
 def test_data_loading(sample_punchdata: NDCube, perfect_pixel_map: NDCube) -> None:
     """
-    A specific observation is provided. The module loads it as a PUNCHData object.
+    A specific observation is provided. The module loads it as a PUNCH data object.
     No bad data points, in same as out. uncertainty should be the same in and out.
     """
     deficient_punchdata = remove_deficient_pixels(sample_punchdata, perfect_pixel_map.data)

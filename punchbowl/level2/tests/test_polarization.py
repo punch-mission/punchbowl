@@ -10,7 +10,7 @@ from punchbowl.level2.polarization import resolve_polarization, resolve_polariza
 @pytest.fixture
 def sample_data_triplet(sample_ndcube):
     """
-    Generate a list of sample PUNCHData objects for testing polarization resolving
+    Generate a list of sample PUNCH data objects for testing polarization resolving
     """
 
     polar_angles = [-60, 0, 60]

@@ -13,12 +13,12 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
 
     Parameters
     ----------
-    data_list : List[PUNCHData]
-        List of PUNCHData objects on which to resolve polarization
+    data_list : List[NDCube]
+        List of NDCube objects on which to resolve polarization
 
     Returns
     -------
-    List[PUNCHData]
+    List[NDCube]
         modified version of the input with polarization resolved
 
     """
@@ -52,12 +52,12 @@ def resolve_polarization_task(data_list: list[NDCube | None]) -> list[NDCube | N
 
     Parameters
     ----------
-    data_list : List[PUNCHData]
-        List of PUNCHData objects on which to resolve polarization
+    data_list : List[NDCube]
+        List of NDCube objects on which to resolve polarization
 
     Returns
     -------
-    List[PUNCHData]
+    List[NDCube]
         modified version of the input with polarization resolved
 
     """

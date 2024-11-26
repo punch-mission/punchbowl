@@ -114,7 +114,10 @@ def _pack_uncertainty(cube: NDCube) -> np.ndarray:
 
 def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -> np.ndarray:
     """Uncompress the uncertainty when reading from a file."""
-    return (1/uncertainty_array) * data_array
+    # This is (1/uncertainty_array) * data_array, but this way we save time on memory allocation
+    np.divide(1, uncertainty_array, out=uncertainty_array)
+    np.multiply(data_array, uncertainty_array, out=uncertainty_array)
+    return uncertainty_array
 
 
 def _update_statistics(cube: NDCube) -> None:

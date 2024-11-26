@@ -174,8 +174,6 @@ def test_shift_image_onto_fill_value(tmp_path):
         for hdu in hdul[1:]:
             hdu.header['CRVAL1A'] += 10
             hdu.header['CRVAL2A'] += 10
-            # Cut down to one Stokes component to speed up the test
-            hdu.data = hdul[1].data[0]
         hdul.writeto(file2)
 
     cube1 = io.load_ndcube_from_fits(file1, key='A')

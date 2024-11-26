@@ -28,7 +28,7 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
 
     Parameters
     ----------
-    data : PUNCHData
+    data : NDCube
         data that is to be written
     output_filename : str
         where to write the file out
@@ -56,7 +56,7 @@ def load_image_task(input_filename: str) -> NDCube:
 
     Returns
     -------
-    PUNCHData
+    NDCube
         loaded version of the image
 
     """

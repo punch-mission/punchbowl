@@ -16,11 +16,12 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
         selected_images = [d for d in data if d is not None and d.meta["POLAR"].value == polarization]
         if len(selected_images) > 0:
             reprojected_data = np.stack([d.data for d in selected_images], axis=-1)
-            reprojected_weights = np.stack([1/np.square(d.uncertainty.array) for d in selected_images], axis=-1)
+            reprojected_uncertainties = np.stack([d.uncertainty.array for d in selected_images], axis=-1)
+            reprojected_uncertainties[reprojected_uncertainties <= 0] = np.inf
+            reprojected_uncertainties[np.isinf(reprojected_uncertainties)] = 1E64
+            reprojected_uncertainties[reprojected_data <= 0] = np.inf
 
-            reprojected_weights[reprojected_weights <= 0] = 1E-16
-            reprojected_weights[np.isinf(reprojected_weights)] = 1E16
-            reprojected_weights[np.isnan(reprojected_weights)] = 1E-16
+            reprojected_weights = 1 / np.square(reprojected_uncertainties)
 
             trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=2) /
                                        np.nansum(reprojected_weights, axis=2))
@@ -48,13 +49,8 @@ def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS) -> NDCube
         reprojected_uncertainties[reprojected_uncertainties <= 0] = np.inf
         reprojected_uncertainties[np.isinf(reprojected_uncertainties)] = 1E64
         reprojected_uncertainties[reprojected_data <= 0] = np.inf
-        # reprojected_uncertainties[np.isnan(reprojected_uncertainties)] = 1E-32
 
         reprojected_weights = 1/np.square(reprojected_uncertainties)
-
-        # reprojected_weights[reprojected_weights <= 0] = 1E-8
-        # reprojected_weights[np.isinf(reprojected_weights)] = 1E8
-        # reprojected_weights[np.isnan(reprojected_weights)] = 1E-8
 
         trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=-1) /
                                    np.nansum(reprojected_weights, axis=-1))

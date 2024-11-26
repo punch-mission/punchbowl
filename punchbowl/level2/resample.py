@@ -53,8 +53,8 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     # reproject, we don't want it spending time looping over all those empty pixels, calculating coordinates,
     # etc. So here we find a bounding box around the input in the output frame and crop to that before reprojecting.
     # To start, here we make a grid of points along the edges of the input image.
-    xs = np.linspace(1, input_cube.data.shape[-1], 60)
-    ys = np.linspace(1, input_cube.data.shape[-2], 60)
+    xs = np.linspace(-1, input_cube.data.shape[-1], 60)
+    ys = np.linspace(-1, input_cube.data.shape[-2], 60)
     edgex = np.concatenate((xs, np.full(len(ys), xs[-1]), xs, np.zeros(len(ys))))
     edgey = np.concatenate((np.zeros(len(xs)), ys, np.full(len(xs), ys[-1]), ys))
 

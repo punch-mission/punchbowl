@@ -228,7 +228,7 @@ class NormalizedMetadata(Mapping):
         """
         self._contents = contents
         self._history = history if history is not None else History()
-        self._provenance = provenance if history is not None else []
+        self._provenance = provenance if provenance is not None else []
         self._wcs_section_name = wcs_section_name
 
     def __iter__(self) -> t.Iterator[t.Any]:

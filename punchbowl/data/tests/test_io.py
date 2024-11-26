@@ -262,7 +262,7 @@ def test_write_punchdata_with_distortion(tmpdir):
     write_ndcube_to_fits(obj, file_path, overwrite=True)
 
     with fits.open(file_path) as hdul:
-        assert len(hdul) == 5
+        assert len(hdul) == 6
 
     loaded_cube = load_ndcube_from_fits(file_path)
     assert loaded_cube.wcs.has_distortion

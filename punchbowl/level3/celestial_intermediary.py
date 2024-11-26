@@ -58,8 +58,8 @@ def to_celestial_frame_cutout(data_cube: NDCube, cdelt: float = 0.02) -> NDCube:
     wcs_out.wcs.crval = ((crval[0] // cdelt) * cdelt) % 360, 0
 
     # Now find the exact bounds of the input image in this output frame, so we can set the output array size
-    xs = np.linspace(1, data.shape[-1], 30)
-    ys = np.linspace(1, data.shape[-2], 30)
+    xs = np.linspace(-1, data.shape[-1], 30)
+    ys = np.linspace(-1, data.shape[-2], 30)
     edgex = np.concatenate((xs, np.full(len(ys), xs[-1]), xs, np.zeros(len(ys))))
     edgey = np.concatenate((np.zeros(len(xs)), ys, np.full(len(xs), ys[-1]), ys))
 

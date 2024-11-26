@@ -1,12 +1,17 @@
 import numpy as np
 import pytest
+import astropy.units as u
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
 from remove_starfield import Starfield
-
+from prefect import flow, get_run_logger
 from punchbowl.data import NormalizedMetadata
-from punchbowl.level3.stellar import generate_starfield_background, subtract_starfield_background_task
+from datetime import datetime
+from punchbowl.level3.stellar import (generate_starfield_background,
+                                      subtract_starfield_background_task,
+                                      from_celestial, to_celestial)
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial, get_p_angle
 
 
 @pytest.fixture()
@@ -44,7 +49,48 @@ def zero_starfield_data(shape: tuple = (256, 256)) -> Starfield:
 
     return Starfield(starfield=starfield, wcs=wcs)
 
-#
+
+@pytest.fixture
+def sample_ndcube() -> NDCube:
+    def _sample_ndcube(shape: tuple, code: str = "PTM", level: str = "2") -> NDCube:
+        data = np.ones(shape).astype(np.float32)
+        sqrt_abs_data = np.sqrt(np.abs(data))
+        uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()),
+                                                  (0, 1)).astype(np.float32))
+        wcs = WCS(naxis=3)
+        wcs.ctype = "WAVE", "HPLT-TAN", "HPLN-TAN"
+        wcs.cdelt = 0.2, 0.1, 0.1
+        wcs.cunit = "Angstrom", "deg", "deg"
+        wcs.crpix = 0, 0, 0
+        wcs.crval = 5, 1, 1
+
+        meta = NormalizedMetadata.load_template(code, level)
+        meta["DATE-OBS"] = str(datetime(2024, 3, 21, 00, 00, 00))
+        meta["FILEVRSN"] = "1"
+        return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+    return _sample_ndcube
+
+
+def test_from_celestial(sample_ndcube) -> NDCube:
+    test_cube = sample_ndcube((3, 10, 10))
+    data_solar = from_celestial(test_cube)
+    expected_solar = np.full((3, 10, 10), 1.0, dtype=np.float32)
+    assert isinstance(data_solar, NDCube)
+    assert np.allclose(data_solar.data, expected_solar)
+
+def test_to_celestial(sample_ndcube) -> NDCube:
+    test_cube = sample_ndcube((3, 10, 10))
+    data_cel = to_celestial(test_cube)
+    expected_cel = np.full((3, 10, 10), 1.0, dtype=np.float32)
+    assert isinstance(data_cel, NDCube)
+    assert np.allclose(data_cel.data, expected_cel)
+
+
+    # for i in enumerate(angles):
+    #     assert np.allclose(angles[i], test_cube[i].meta["POLAR"]*u.degree)
+
+
 # def test_basic_subtraction(one_data: NDCube, zero_starfield_data: Starfield) -> None:
 #     """
 #

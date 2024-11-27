@@ -1,5 +1,7 @@
 # punchbowl
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14029123.svg)](https://doi.org/10.5281/zenodo.14029123)
+
 `punchbowl` is the science calibration code for [the PUNCH mission](https://punch.space.swri.edu/).
 
 > [!CAUTION]

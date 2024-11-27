@@ -2,6 +2,7 @@ from datetime import datetime
 
 import numpy as np
 import remove_starfield
+from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
@@ -30,9 +31,16 @@ def generate_starfield_background(
         filenames: list[str],
         n_sigma: float = 5,
         map_scale: float = 0.01,
-        target_mem_usage: float = 1000) -> [NDCube, NDCube]:
+        target_mem_usage: float = 1000,
+        reference_time: datetime | None = None) -> [NDCube, NDCube]:
     """Create a background starfield_bg map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
+
+    if reference_time is None:
+        reference_time = datetime.now()
+    elif isinstance(reference_time, str):
+        reference_time = parse_datetime_str(reference_time)
+
     logger.info("construct_starfield_background started")
 
     # create an empty array to fill with data
@@ -85,28 +93,18 @@ def generate_starfield_background(
         target_mem_usage=target_mem_usage)
     logger.info("Ending p starfield")
 
-
     # create an output PUNCHdata object
     logger.info("Preparing to create outputs")
 
     meta = NormalizedMetadata.load_template("PSM", "3")
-    meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0,
-                                    tzinfo=datetime.timezone.utc))
+    meta["DATE-OBS"] = reference_time
     out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
-    output_before = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
+    output = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
                     wcs=out_wcs, meta=meta)
-    output_before.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
-
-    meta = NormalizedMetadata.load_template("PSM", "3")
-    meta["DATE-OBS"] = str(datetime(2024, 12, 1, 12, 0, 0,
-                                    tzinfo=datetime.timezone.utc))
-    out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
-    output_after = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
-                    wcs=out_wcs, meta=meta)
-    output_after.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
+    output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     logger.info("construct_starfield_background finished")
-    return [output_before, output_after]
+    return [output]
 
 
 @punch_task

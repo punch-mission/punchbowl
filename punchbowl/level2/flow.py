@@ -1,3 +1,4 @@
+from glob import glob
 from datetime import datetime
 
 import numpy as np
@@ -131,3 +132,8 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
 
     logger.info("ending level quickPUNCH core flow")
     return [output_data_mosaic, output_data_nfi]
+
+
+if __name__ == "__main__":
+    filenames = glob("/Users/jhughes/new_results/nov25-1026/cr/*.fits")
+    out = levelq_core_flow(filenames)

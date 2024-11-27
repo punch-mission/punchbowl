@@ -113,12 +113,10 @@ lint.ignore = [
     "ANN401",
     "PYI024",
     "DTZ005",
-    "ANN101",
-    "ANN102",
     "D203",
     "D212",
-    "TCH002",
-    "TCH003"]
+    "TC002",
+    "TC003", "E731"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]

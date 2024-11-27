@@ -112,7 +112,7 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
     else:
         quant_arr = np.zeros(shape=(len(qs), arr.shape[1], arr.shape[2]))
 
-    result = []
+    result = np.empty((len(qs), *arr.shape[1:]))
     for i in range(len(qs)):
         quant = qs[i]
         # desired position as well as floor and ceiling of it
@@ -129,6 +129,6 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
         # if floor == ceiling take floor value
         quant_arr[fc_equal_k_mask] = _zvalue_from_index(arr=arr, ind=k_arr.astype(np.int32))[fc_equal_k_mask]
 
-        result.append(quant_arr)
+        result[i] = quant_arr
 
     return result

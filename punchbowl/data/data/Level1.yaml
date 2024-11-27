@@ -7,6 +7,7 @@ Level:
         overrides:
             DESCRPTN: PUNCH Level-1 data, Calibrated instrumental units in camera coordinates
     File Type and Provenance:
+        omits: [FILE_RAW]
         overrides:
             LEVEL: 1
     Temporal Information:
@@ -45,7 +46,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits: [NAXIS3]
+        omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment, NAXIS3]
 
     QuarticCalibration:
         overrides:
@@ -53,6 +54,7 @@ Kinds:
             NAXIS1: 2048
             NAXIS2: 2048
             NAXIS3: 5
+            omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment]
 
     PM:
         overrides:

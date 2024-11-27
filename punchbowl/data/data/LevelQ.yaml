@@ -7,15 +7,13 @@ Level:
         overrides:
             DESCRPTN: PUNCH QuickPUNCH data, Composite mosaic in output coordinates
     File Type and Provenance:
+        omits: [FILE_RAW]
         overrides:
             LEVEL: Q
             OBSRVTRY: PUNCH
     Temporal Information:
     Instrument and Spacecraft State:
     World Coordinate System:
-    Camera and Readout State:
-    Onboard Image Processing:
-    Calibration Data:
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
@@ -53,7 +51,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 4096
             NAXIS2: 4096
-        omits: [NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
 
 # Product specifications

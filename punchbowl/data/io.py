@@ -88,11 +88,14 @@ def write_ndcube_to_fits(cube: NDCube,
                                             header=full_header,
                                             name="Uncertainty array",
                                             quantize_level=uncertainty_quantize_level)
+        hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
+            name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
 
         hdul = cube.wcs.to_fits()
         hdul[0] = fits.PrimaryHDU()
         hdul.insert(1, hdu_data)
         hdul.insert(2, hdu_uncertainty)
+        hdul.insert(3, hdu_provenance)
         hdul.writeto(filename, overwrite=overwrite, checksum=True)
         hdul.close()
         if write_hash:
@@ -153,7 +156,7 @@ def _update_statistics(cube: NDCube) -> None:
     cube.meta["DATAMAX"] = float(np.nanmax(cube.data))
 
 
-def load_ndcube_from_fits(path: str | Path, key: str = " ") -> NDCube:
+def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True) -> NDCube:
     """Load an NDCube from a FITS file."""
     with fits.open(path) as hdul:
         primary_hdu = hdul[1]
@@ -163,6 +166,8 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ") -> NDCube:
         header["CHECKSUM"] = ""
         header["DATASUM"] = ""
         meta = NormalizedMetadata.from_fits_header(header)
+        if include_provenance:
+            meta._provenance = hdul[3].data["provenance"]  # noqa: SLF001
         wcs = WCS(header, hdul, key=key)
         unit = u.ct
 

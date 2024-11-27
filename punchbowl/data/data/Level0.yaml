@@ -49,7 +49,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits: [NAXIS3]
+        omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment, NAXIS3]
 
     PM:
         overrides:

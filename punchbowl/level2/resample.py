@@ -55,8 +55,14 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     # To start, here we make a grid of points along the edges of the input image.
     xs = np.linspace(-1, input_cube.data.shape[-1], 60)
     ys = np.linspace(-1, input_cube.data.shape[-2], 60)
-    edgex = np.concatenate((xs, np.full(len(ys), xs[-1]), xs, np.zeros(len(ys))))
-    edgey = np.concatenate((np.zeros(len(xs)), ys, np.full(len(xs), ys[-1]), ys))
+    edgex = np.concatenate((xs, # bottom edge
+                            np.full(len(ys), xs[-1]), # right edge
+                            xs, # top edge
+                            np.full(len(ys), xs[0]))) # left edge
+    edgey = np.concatenate((np.full(len(xs),ys[0]), # bottom edge
+                            ys, # right edge
+                            np.full(len(xs), ys[-1]), # top edge
+                            ys)) # left edge
 
     # Now we transform them to the output frame
     xs, ys = astropy.wcs.utils.pixel_to_pixel(celestial_source, celestial_target, edgex, edgey)

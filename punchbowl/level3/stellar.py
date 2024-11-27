@@ -32,7 +32,7 @@ def generate_starfield_background(
         n_sigma: float = 5,
         map_scale: float = 0.01,
         target_mem_usage: float = 1000,
-        reference_time: datetime = None) -> [NDCube, NDCube]:
+        reference_time: datetime | None = None) -> [NDCube, NDCube]:
     """Create a background starfield_bg map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
 

@@ -1,5 +1,3 @@
-import random
-from glob import glob
 from datetime import datetime
 
 import numpy as np
@@ -11,7 +9,6 @@ from quadprog import solve_qp
 from scipy.interpolate import griddata
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.data.io import write_ndcube_to_fits
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task
@@ -75,6 +72,8 @@ def model_fcorona_for_cube(xt: np.ndarray,
     ----------
     xt : np.ndarray
         time array
+    reference_xt: float
+        timestamp to evaluate the model for
     cube : np.ndarray
         observation array
     min_brightness: float
@@ -101,11 +100,11 @@ def model_fcorona_for_cube(xt: np.ndarray,
     cube[cube < min_brightness] = np.nan
     if smooth_level is not None:
         center = np.nanmedian(cube, axis=0)
-        range = np.diff(np.nanpercentile(cube, [25, 75], axis=0), axis=0).squeeze()
-        a, b, c = np.where(cube[:, ...] > (center + (smooth_level * range)))
+        width = np.diff(np.nanpercentile(cube, [25, 75], axis=0), axis=0).squeeze()
+        a, b, c = np.where(cube[:, ...] > (center + (smooth_level * width)))
         cube[a, b, c] = center[b, c]
 
-        a, b, c = np.where(cube[:, ...] < (center - (smooth_level * range)))
+        a, b, c = np.where(cube[:, ...] < (center - (smooth_level * width)))
         cube[a, b, c] = center[b, c]
 
     xt = np.array(xt)
@@ -131,7 +130,7 @@ def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
 
 @flow(log_prints=True)
 def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
-                                       reference_time: str = None) -> list[NDCube]:
+                                       reference_time: str | None = None) -> list[NDCube]:
     """Construct a full F corona model."""
     logger = get_run_logger()
 
@@ -169,15 +168,22 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
     logger.info("ending data loading")
 
     reference_xt = reference_time.timestamp()
-    m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[:, 0, :, :], smooth_level=smooth_level)
+    m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt,
+                                                data_cube[:, 0, :, :], smooth_level=smooth_level)
     m_model_fcorona[m_model_fcorona==0] = np.nan
     m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona)
 
-    z_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[:, 1, :, :], smooth_level=smooth_level)
+    z_model_fcorona, _ = model_fcorona_for_cube(obs_times,
+                                                reference_xt,
+                                                data_cube[:, 1, :, :],
+                                                smooth_level=smooth_level)
     z_model_fcorona[z_model_fcorona==0] = np.nan
     z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona)
 
-    p_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube[:, 2, :, :], smooth_level=smooth_level)
+    p_model_fcorona, _ = model_fcorona_for_cube(obs_times,
+                                                reference_xt,
+                                                data_cube[:, 2, :, :],
+                                                smooth_level=smooth_level)
     p_model_fcorona[p_model_fcorona==0] = np.nan
     p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
 
@@ -293,7 +299,7 @@ def create_empty_f_background_model(data_object: NDCube) -> np.ndarray:
 
 @flow(log_prints=True)
 def construct_qp_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
-                                       reference_time: str = None) -> list[NDCube]:
+                                       reference_time: str | None = None) -> list[NDCube]:
     """Construct QuickPUNCH F corona model."""
     logger = get_run_logger()
 
@@ -342,10 +348,3 @@ def construct_qp_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
                                 wcs=trefoil_wcs)
 
     return [output_cube]
-
-if __name__ == "__main__":
-    quickpunch_filenames = glob("/Users/jhughes/new_results/nov26-0301/q/*.fits")
-    random.shuffle(quickpunch_filenames)
-    target_obs_date = "2024-11-10T12:00:00"
-    model = construct_qp_f_corona_model(sorted(quickpunch_filenames[:250]), smooth_level=3.0, reference_time=target_obs_date)[0]
-    write_ndcube_to_fits(model, "qp_fcorona_model.fits")

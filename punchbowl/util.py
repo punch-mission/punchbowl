@@ -126,4 +126,6 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
 
         result[i] = quant_arr
 
+    result[:, valid_obs == 0] = np.nan
+
     return result

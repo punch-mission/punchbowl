@@ -93,25 +93,20 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
     # np.nanpercentile is slow so use this: https://krstn.eu/np.nanpercentile()-there-has-to-be-a-faster-way/
 
     # valid (non NaN) observations along the first axis
-    valid_obs = np.sum(np.isfinite(arr), axis=0)
+    is_good = np.isfinite(arr)
+    n_valid_obs = np.sum(is_good, axis=0)
     # replace NaN with maximum
-    max_val = np.nanmax(arr)
-    arr[np.isnan(arr)] = max_val
+    arr[~is_good] = np.nanmax(arr)
     # sort - former NaNs will move to the end
     arr = np.sort(arr, axis=0)
 
     # loop over requested quantiles
-    if isinstance(q, list):
-        qs = []
-        qs.extend(q)
-    else:
-        qs = [q]
+    qs = [q] if isinstance(q, float | int) else q
 
     result = np.empty((len(qs), *arr.shape[1:]))
-    for i in range(len(qs)):
-        quant = qs[i]
+    for i, quant in enumerate(qs):
         # desired position as well as floor and ceiling of it
-        k_arr = (valid_obs - 1) * (quant / 100.0)
+        k_arr = (n_valid_obs - 1) * (quant / 100)
         f_arr = np.floor(k_arr).astype(np.int32)
         c_arr = np.ceil(k_arr).astype(np.int32)
         fc_equal_k_mask = f_arr == c_arr
@@ -126,6 +121,6 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
 
         result[i] = quant_arr
 
-    result[:, valid_obs == 0] = np.nan
+    result[:, n_valid_obs == 0] = np.nan
 
     return result

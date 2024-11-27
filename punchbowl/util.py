@@ -107,11 +107,6 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
     else:
         qs = [q]
 
-    if len(qs) < 2:
-        quant_arr = np.zeros(shape=(arr.shape[1], arr.shape[2]))
-    else:
-        quant_arr = np.zeros(shape=(len(qs), arr.shape[1], arr.shape[2]))
-
     result = np.empty((len(qs), *arr.shape[1:]))
     for i in range(len(qs)):
         quant = qs[i]

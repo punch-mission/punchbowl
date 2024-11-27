@@ -103,10 +103,10 @@ def model_fcorona_for_cube(xt: np.ndarray,
         low, center, high = nan_percentile(cube, [25, 50, 75])
         width = high - low
         a, b, c = np.where(cube[:, ...] > (center + (smooth_level * width)))
-        cube[a, b, c] = center[b, c]
+        cube[a, b, c] = np.nan
 
         a, b, c = np.where(cube[:, ...] < (center - (smooth_level * width)))
-        cube[a, b, c] = center[b, c]
+        cube[a, b, c] = np.nan
 
     xt = np.array(xt)
     reference_xt -= xt[0]

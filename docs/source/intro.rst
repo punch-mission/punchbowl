@@ -35,6 +35,6 @@ organized in this manner.
 PUNCH and Python
 ----------------
 
-The PUNCH framework is built using Python - an object-oriented language with a large user / code base in astronomy and solar physics. The pipeline and tools for querying / loading PUNCH data use the Python language, along with the SunPy and astroPy software libraries. One useful tool to get started is the `Hitchhiker's Guide to Python <https://docs.python-guide.org>`_.
+The PUNCH framework is built using Python - an object-oriented language with a large user / code base in astronomy and solar physics. The pipeline and tools for querying / loading PUNCH data use the Python language, along with the SunPy and astroPy software libraries. A number of useful tutorials exist online, including the official `Python tutorial <https://docs.python.org/3/tutorial/index.html>`_ and the `Hitchhiker's Guide to Python <https://docs.python-guide.org>`_.
 
 In addition to scripts and modules, Python notebooks provide a great way to execute and document a sequence of code cells, with visualizations directly in-line. It's a sort of analogue of the classic research notebook. The `SunPy example gallery <https://docs.sunpy.org/en/stable/generated/gallery/index.html>`_ provides a great series of example notebooks, which are an additional great tool for learning Python.

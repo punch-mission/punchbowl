@@ -12,6 +12,7 @@ from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task
+from punchbowl.util import nan_percentile
 
 
 def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
@@ -60,13 +61,13 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
 
 def model_fcorona_for_cube(xt: np.ndarray,
                            reference_xt: float,
-                          cube: np.ndarray,
-                          min_brightness: float = 1E-18,
-                          smooth_level: float | None = 1,
-                          return_full_curves: bool=False,
+                           cube: np.ndarray,
+                           min_brightness: float = 1E-18,
+                           smooth_level: float | None = 1,
+                           return_full_curves: bool=False,
                           ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Model the F corona given a list of times and a corresponding data cube, .
+    Model the F corona given a list of times and a corresponding data cube.
 
     Parameters
     ----------
@@ -99,13 +100,13 @@ def model_fcorona_for_cube(xt: np.ndarray,
     """
     cube[cube < min_brightness] = np.nan
     if smooth_level is not None:
-        center = np.nanmedian(cube, axis=0)
-        width = np.diff(np.nanpercentile(cube, [25, 75], axis=0), axis=0).squeeze()
+        low, center, high = nan_percentile(cube, [25, 50, 75])
+        width = high - low
         a, b, c = np.where(cube[:, ...] > (center + (smooth_level * width)))
-        cube[a, b, c] = center[b, c]
+        cube[a, b, c] = np.nan
 
         a, b, c = np.where(cube[:, ...] < (center - (smooth_level * width)))
-        cube[a, b, c] = center[b, c]
+        cube[a, b, c] = np.nan
 
     xt = np.array(xt)
     reference_xt -= xt[0]

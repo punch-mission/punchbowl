@@ -1,18 +1,13 @@
-# Core Python imports
-import pathlib
-
 # Third party imports
 import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect.logging import disable_run_logger
 
 # punchbowl imports
 from punchbowl.data import NormalizedMetadata
-from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
-from punchbowl.level2.bright_structure import identify_bright_structures_task, run_zspike
+from punchbowl.level2.bright_structure import run_zspike
 
 
 @pytest.fixture()
@@ -37,6 +32,7 @@ def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) ->
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -56,6 +52,7 @@ def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -76,6 +73,7 @@ def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -96,6 +94,7 @@ def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -121,6 +120,7 @@ def one_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -146,6 +146,7 @@ def two_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -169,12 +170,7 @@ def test_zero_threshold(sample_punchdata: NDCube):
                         diff_method='abs')
     assert np.sum(result) == 0
 
-    result2 = run_zspike(sample_punchdata.data,
-                         sample_punchdata.uncertainty.array,
-                         threshold=threshold,
-                         diff_method='sigma')
     assert np.sum(result) == 0
-    #assert np.array_equal(result_abs, result_sigma)
 
 
 def test_diff_methods(sample_zero_punchdata: NDCube):
@@ -244,10 +240,10 @@ def test_single_bright_point_2(one_bright_point_sample_punchdata: NDCube):
                           veto_limit=1)
 
     # test cell of interest is set to 'True'
-    assert result_2[x_interest, y_interest] == True
+    assert bool(result_2[x_interest, y_interest]) is True
 
     # test other cells are set to 'False'
-    assert result_2[x_interest+1, y_interest] == False
+    assert bool(result_2[x_interest+1, y_interest]) is False
 
 
 def test_veto(two_bright_point_sample_punchdata: NDCube):
@@ -263,7 +259,7 @@ def test_veto(two_bright_point_sample_punchdata: NDCube):
                           veto_limit=1)
 
     # test cell of interest is set to 'False' with veto
-    assert result_2[x_interest, y_interest] == True
+    assert bool(result_2[x_interest, y_interest]) is True
 
     two_bright_point_sample_punchdata.uncertainty.array[:, :, :] = 0
 
@@ -277,7 +273,7 @@ def test_veto(two_bright_point_sample_punchdata: NDCube):
                           index_of_interest=-1)
 
     # test cell of interest is set to 'False' with veto
-    assert result_3[x_interest, y_interest] == False
+    assert bool(result_3[x_interest, y_interest]) is False
 
 
 def test_uncertainty(sample_punchdata: NDCube):
@@ -299,7 +295,7 @@ def test_uncertainty(sample_punchdata: NDCube):
                           index_of_interest=index_of_interest)
 
     # test cell of interest is set to 'True'
-    assert result_0[y_test_px, x_test_px] == False
+    assert bool(result_0[y_test_px, x_test_px]) is False
 
     # set pixel of interest to high value
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px] = 1000
@@ -313,7 +309,7 @@ def test_uncertainty(sample_punchdata: NDCube):
                           index_of_interest=index_of_interest)
 
     # test cell of interest is set to 'True'
-    assert result_1[y_test_px, x_test_px] == True
+    assert bool(result_1[y_test_px, x_test_px]) is True
 
     # make bad pixels adjacent to cell of interest also high
     # set pixel of interest to high value
@@ -328,7 +324,7 @@ def test_uncertainty(sample_punchdata: NDCube):
                           index_of_interest=index_of_interest)
 
     # test cell of interest is set to 'False'
-    assert result_2[y_test_px, x_test_px] == False
+    assert bool(result_2[y_test_px, x_test_px]) is False
 
     # set surrounding values to uncertain
 
@@ -341,7 +337,7 @@ def test_uncertainty(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
     # test cell of interest is set to 'True' due to uncertainty flag set on the surrounding pixels
-    assert result_3[y_test_px, x_test_px] == True
+    assert bool(result_3[y_test_px, x_test_px]) is True
 
 
 
@@ -365,7 +361,7 @@ def test_threshold_abs(sample_punchdata: NDCube):
                           index_of_interest=index_of_interest)
 
 
-    assert result_0[y_test_px, x_test_px] == False
+    assert bool(result_0[y_test_px, x_test_px]) is False
 
     # set pixel of interest to high value
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
@@ -378,7 +374,7 @@ def test_threshold_abs(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_1[y_test_px, x_test_px] == True
+    assert bool(result_1[y_test_px, x_test_px]) is True
 
     # make bad pixel threshold high
 
@@ -391,7 +387,7 @@ def test_threshold_abs(sample_punchdata: NDCube):
                           index_of_interest=index_of_interest)
 
     # test cell of interest is set to 'False'
-    assert result_2[y_test_px, x_test_px] == False
+    assert bool(result_2[y_test_px, x_test_px]) is False
 
 
 def test_threshold_sigma(sample_punchdata: NDCube):
@@ -414,7 +410,7 @@ def test_threshold_sigma(sample_punchdata: NDCube):
                           index_of_interest=index_of_interest)
 
 
-    assert result_0[y_test_px, x_test_px] == False
+    assert bool(result_0[y_test_px, x_test_px]) is False
 
     # set pixel of interest to high value
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
@@ -428,7 +424,7 @@ def test_threshold_sigma(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_1[y_test_px, x_test_px] == True
+    assert bool(result_1[y_test_px, x_test_px]) is True
 
     # make bad pixel threshold high
 
@@ -441,7 +437,7 @@ def test_threshold_sigma(sample_punchdata: NDCube):
                           index_of_interest=index_of_interest)
 
     # test cell of interest is set to 'False'
-    assert result_2[y_test_px, x_test_px] == False
+    assert bool(result_2[y_test_px, x_test_px]) is False
 
 
 
@@ -465,7 +461,7 @@ def test_required_yes_abs(sample_punchdata: NDCube):
                         veto_limit=1,
                         index_of_interest=index_of_interest)
 
-    assert result[y_test_px, x_test_px] == False
+    assert bool(result[y_test_px, x_test_px]) is False
 
     #sample_punchdata.data[0:3, y_test_px, x_test_px]=100
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=100
@@ -480,7 +476,7 @@ def test_required_yes_abs(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_1[y_test_px, x_test_px] == True
+    assert bool(result_1[y_test_px, x_test_px]) is True
 
     # change the number adjacent elements that have high values, this
     # reduces the number of available yes voters, making the cell of
@@ -498,7 +494,7 @@ def test_required_yes_abs(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_2[y_test_px, x_test_px] == True
+    assert bool(result_2[y_test_px, x_test_px]) is True
 
     # change the number adjacent elements that have high values
     sample_punchdata.data[0:1, y_test_px, x_test_px]=100
@@ -514,7 +510,7 @@ def test_required_yes_abs(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_3[y_test_px, x_test_px] == False
+    assert bool(result_3[y_test_px, x_test_px]) is False
 
 
 def test_required_yes_sigma(sample_punchdata: NDCube):
@@ -535,7 +531,7 @@ def test_required_yes_sigma(sample_punchdata: NDCube):
                         veto_limit=1,
                         index_of_interest=index_of_interest)
 
-    assert result[y_test_px, x_test_px] == False
+    assert bool(result[y_test_px, x_test_px]) is False
 
     #sample_punchdata.data[0:3, y_test_px, x_test_px]=100
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
@@ -550,7 +546,7 @@ def test_required_yes_sigma(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_1[y_test_px, x_test_px] == True
+    assert bool(result_1[y_test_px, x_test_px]) is True
 
     # change the number adjacent elements that have high values, this
     # reduces the number of available yes voters, making the cell of
@@ -568,7 +564,7 @@ def test_required_yes_sigma(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_2[y_test_px, x_test_px] == True
+    assert bool(result_2[y_test_px, x_test_px]) is True
 
     # change the number adjacent elements that have high values
     sample_punchdata.data[0:1, y_test_px, x_test_px]=10
@@ -584,7 +580,7 @@ def test_required_yes_sigma(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_3[y_test_px, x_test_px] == False
+    assert bool(result_3[y_test_px, x_test_px]) is False
 
 def test_dilation_abs(sample_punchdata: NDCube):
         # create an uncertainty and data array of 0's
@@ -604,7 +600,7 @@ def test_dilation_abs(sample_punchdata: NDCube):
                         veto_limit=1,
                         index_of_interest=index_of_interest)
 
-    assert result[y_test_px, x_test_px] == False
+    assert bool(result[y_test_px, x_test_px]) is False
 
     #sample_punchdata.data[0:3, y_test_px, x_test_px]=100
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
@@ -619,7 +615,7 @@ def test_dilation_abs(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_1[y_test_px, x_test_px] == True
+    assert bool(result_1[y_test_px, x_test_px]) is True
 
     # change the number adjacent elements that have high values, this
     # reduces the number of available yes voters, making the cell of
@@ -638,9 +634,9 @@ def test_dilation_abs(sample_punchdata: NDCube):
                           index_of_interest=index_of_interest)
 
 
-    assert result_2[y_test_px, x_test_px] == True
+    assert bool(result_2[y_test_px, x_test_px]) is True
     # with no dilation a an adjacent pixel is false
-    assert result_2[y_test_px+1, x_test_px] == False
+    assert bool(result_2[y_test_px+1, x_test_px]) is False
 
     result_3 = run_zspike(sample_punchdata.data,
                           sample_punchdata.uncertainty.array,
@@ -652,9 +648,9 @@ def test_dilation_abs(sample_punchdata: NDCube):
                           dilation=10)
 
 
-    assert result_3[y_test_px, x_test_px] == True
+    assert bool(result_3[y_test_px, x_test_px]) is True
     # with dilation an adjacent pixel is true
-    assert result_3[y_test_px+1, x_test_px] == True
+    assert bool(result_3[y_test_px+1, x_test_px]) is True
 
 
 
@@ -682,7 +678,7 @@ def test_dilation_sigma(sample_punchdata: NDCube):
                         veto_limit=1,
                         index_of_interest=index_of_interest)
 
-    assert result[y_test_px, x_test_px] == False
+    assert bool(result[y_test_px, x_test_px]) is False
 
     #sample_punchdata.data[0:3, y_test_px, x_test_px]=100
     sample_punchdata.data[index_of_interest, y_test_px, x_test_px]=10
@@ -697,7 +693,7 @@ def test_dilation_sigma(sample_punchdata: NDCube):
                           veto_limit=1,
                           index_of_interest=index_of_interest)
 
-    assert result_1[y_test_px, x_test_px] == True
+    assert bool(result_1[y_test_px, x_test_px]) is True
 
     # change the number adjacent elements that have high values, this
     # reduces the number of available yes voters, making the cell of
@@ -716,9 +712,9 @@ def test_dilation_sigma(sample_punchdata: NDCube):
                           index_of_interest=index_of_interest)
 
 
-    assert result_2[y_test_px, x_test_px] == True
+    assert bool(result_2[y_test_px, x_test_px]) is True
     # with no dilation a an adjacent pixel is false
-    assert result_2[y_test_px+1, x_test_px] == False
+    assert bool(result_2[y_test_px+1, x_test_px]) is False
 
     result_3 = run_zspike(sample_punchdata.data,
                           sample_punchdata.uncertainty.array,
@@ -730,9 +726,9 @@ def test_dilation_sigma(sample_punchdata: NDCube):
                           dilation=10)
 
 
-    assert result_3[y_test_px, x_test_px] == True
+    assert bool(result_3[y_test_px, x_test_px]) is True
     # with dilation an adjacent pixel is true
-    assert result_3[y_test_px+1, x_test_px] == True
+    assert bool(result_3[y_test_px+1, x_test_px]) is True
 
 
 

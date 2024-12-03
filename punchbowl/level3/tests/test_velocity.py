@@ -3,7 +3,6 @@ import pathlib
 
 import numpy as np
 import pytest
-from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
@@ -44,6 +43,7 @@ def synthetic_data(tmpdir):
         wcs.wcs.cdelt = (0.02, 0.02)
         wcs.wcs.crpix = (64, 64)
         wcs.wcs.crval = (0, 24.75)
+        wcs.array_shape = data.shape
 
         # Define metadata for the NDCube
         meta = NormalizedMetadata.load_template('PTM', '3')
@@ -118,7 +118,7 @@ def test_with_bad_data(tmpdir):
     cube = NDCube(data=data, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
     # Write NDCube to a compressed FITS file using your custom function
-    file_path = os.path.join(str(tmpdir), f"bad_file.fits")
+    file_path = os.path.join(str(tmpdir), "bad_file.fits")
     write_ndcube_to_fits(cube, file_path)
 
     with pytest.raises(ValueError):

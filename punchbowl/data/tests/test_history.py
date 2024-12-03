@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-from astropy.wcs import WCS
 from pytest import fixture
 
 from punchbowl.data.history import History, HistoryEntry

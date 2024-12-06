@@ -29,6 +29,7 @@ ValueType = int | str | float
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 REQUIRED_HEADER_KEYWORDS = ["SIMPLE", "BITPIX", "NAXIS", "EXTEND"]
 DISTORTION_KEYWORDS = ["CPDIS1", "CPDIS2", "DP1", "DP2"]
+WCS_OMITTED_KEYWORDS = ["TIMESYS", "DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END"]
 
 
 def load_omniheader(path: str | None = None) -> pd.DataFrame:
@@ -293,7 +294,9 @@ class NormalizedMetadata(Mapping):
                     else:
                         wcs_header = this_wcs.to_header()
                     for card in wcs_header.cards:
-                        if key == "" or (key != "" and card[0][-1].isnumeric() and card[0] not in DISTORTION_KEYWORDS):
+                        if key == "" or (key != "" and card[0][-1].isnumeric() and
+                                         card[0] not in DISTORTION_KEYWORDS and
+                                         card[0] not in WCS_OMITTED_KEYWORDS):
                             hdr.append(
                                 (
                                 card[0] + key,

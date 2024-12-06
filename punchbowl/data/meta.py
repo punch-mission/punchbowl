@@ -29,7 +29,8 @@ ValueType = int | str | float
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 REQUIRED_HEADER_KEYWORDS = ["SIMPLE", "BITPIX", "NAXIS", "EXTEND"]
 DISTORTION_KEYWORDS = ["CPDIS1", "CPDIS2", "DP1", "DP2"]
-WCS_OMITTED_KEYWORDS = ["TIMESYS", "DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END"]
+WCS_OMITTED_KEYWORDS = ["TIMESYS", "DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "TELAPSE",
+                        "RSUN_REF", "DSUN_OBS", "CRLN_OBS", "CRLT_OBS", "HGLN_OBS", "HGLT_OBS"]
 
 
 def load_omniheader(path: str | None = None) -> pd.DataFrame:

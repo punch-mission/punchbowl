@@ -1,20 +1,10 @@
 import os
 from datetime import datetime
 
-import astropy
-import astropy.units as u
-import numpy as np
 import pytest
-from astropy.coordinates import GCRS, ICRS, EarthLocation, SkyCoord, get_sun
 from astropy.io import fits
-from astropy.nddata import StdDevUncertainty
-from astropy.time import Time
-from astropy.wcs import WCS
-from ndcube import NDCube
-from pytest import fixture
-from sunpy.coordinates import frames
 
-from punchbowl.data.history import History, HistoryEntry
+from punchbowl.data.history import HistoryEntry
 from punchbowl.data.meta import MetaField, NormalizedMetadata, load_spacecraft_def
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -29,19 +19,19 @@ SAMPLE_SPACECRAFT_DEF_PATH = os.path.join(TESTDATA_DIR, "spacecraft.yaml")
 def test_metafield_creation_keyword_too_long():
     """ cannot create an invalid metafield"""
     with pytest.raises(ValueError):
-        mf = MetaField("TOO LONG KEYWORD",
-                       "What's up?", 3, int, False, True, -99)
+        MetaField("TOO LONG KEYWORD",
+                  "What's up?", 3, int, False, True, -99)
 
 
 def test_metafield_creation_kinds_do_not_match():
     """the value, default, and kind must all agree"""
     with pytest.raises(TypeError):
-        mf = MetaField("HI",
-                       "What's up?", 3, str, False, True, "hi there")
+        MetaField("HI",
+                  "What's up?", 3, str, False, True, "hi there")
 
     with pytest.raises(TypeError):
-        mf = MetaField("TOO LONG KEYWORD",
-                       "What's up?", "hi there", str, False, True, -99)
+        MetaField("TOO LONG KEYWORD",
+                  "What's up?", "hi there", str, False, True, -99)
 
 
 def test_metafield_update():
@@ -50,7 +40,7 @@ def test_metafield_update():
     assert mf.keyword == "HI"
     assert mf.comment == "What's up?"
     assert mf.value == 3
-    assert mf._datatype == int
+    assert mf._datatype is int
     assert not mf.nullable
     assert mf._mutable
     assert mf.default == -99
@@ -68,7 +58,7 @@ def test_metafield_not_mutable():
     assert mf.keyword == "HI"
     assert mf.comment == "What's up?"
     assert mf.value == 3
-    assert mf._datatype == int
+    assert mf._datatype is int
     assert not mf.nullable
     assert not mf._mutable
     assert mf.default == -99
@@ -83,7 +73,7 @@ def test_metafield_wrong_kind_for_update():
     assert mf.keyword == "HI"
     assert mf.comment == "What's up?"
     assert mf.value == 3
-    assert mf._datatype == int
+    assert mf._datatype is int
     assert not mf.nullable
     assert mf._mutable
     assert mf.default == -99

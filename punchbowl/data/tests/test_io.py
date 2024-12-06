@@ -204,7 +204,7 @@ def test_load_punchdata_with_history(tmpdir):
     os.remove(file_path)
 
 
-def make_empty_distortion_model(num_bins: int, image: np.ndarray) -> (DistortionLookupTable, DistortionLookupTable):
+def make_empty_distortion_model(num_bins: int, image: np.ndarray) -> tuple:
     """ Create an empty distortion table
 
     Parameters

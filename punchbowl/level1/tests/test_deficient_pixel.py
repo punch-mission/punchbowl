@@ -5,10 +5,9 @@ import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect.logging import disable_run_logger
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.level1.deficient_pixel import remove_deficient_pixels, remove_deficient_pixels_task
+from punchbowl.level1.deficient_pixel import remove_deficient_pixels
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -34,6 +33,7 @@ def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) ->
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -56,6 +56,7 @@ def perfect_pixel_map(shape: tuple = (2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -80,6 +81,7 @@ def one_bad_pixel_map(shape: tuple = (2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -112,6 +114,7 @@ def nine_bad_pixel_map(shape: tuple = (2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -134,6 +137,7 @@ def increasing_pixel_data(shape: tuple = (2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
@@ -154,6 +158,7 @@ def sample_punchdata(shape: tuple = (2048, 2048)) -> NDCube:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
     return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)

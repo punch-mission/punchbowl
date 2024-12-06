@@ -51,6 +51,7 @@ def one_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"SECTION": {
         "TYPECODE": MetaField("TYPECODE", "", "CL", str, True, True, ""),
@@ -74,6 +75,7 @@ def observation_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"SECTION": {
         "TYPECODE": MetaField("TYPECODE", "", "CL", str, True, True, ""),
@@ -98,6 +100,7 @@ def zero_data(shape: tuple = (2048, 2048)) -> np.ndarray:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"SECTION": {
         "TYPECODE": MetaField("TYPECODE", "", "CL", str, True, True, ""),
@@ -122,6 +125,7 @@ def incorrect_shape_data(shape: tuple = (512, 512)) -> np.ndarray:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 256, 256
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata({"SECTION": {
         "TYPECODE": MetaField("TYPECODE", "", "CL", str, True, True, ""),

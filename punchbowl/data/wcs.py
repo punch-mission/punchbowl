@@ -28,7 +28,7 @@ def extract_crota_from_wcs(wcs: WCS) -> u.deg:
 
 def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
                                        date_obs: datetime,
-                                       data_shape: tuple[int, int]) -> (WCS, float):
+                                       data_shape: tuple[int, int]) -> tuple[WCS, float]:
     """Calculate the helio WCS from a celestial WCS."""
     is_3d = len(data_shape) == 3
 
@@ -80,13 +80,13 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
     return wcs_helio, p_angle
 
 
-def get_sun_ra_dec(dt: datetime) -> (float, float):
+def get_sun_ra_dec(dt: datetime) -> tuple[float, float]:
     """Get the position of the Sun in right ascension and declination."""
     position = get_sun(Time(str(dt), scale="utc"))
     return position.ra.value, position.dec.value
 
 
-def calculate_pc_matrix(crota: float, cdelt: (float, float)) -> np.ndarray:
+def calculate_pc_matrix(crota: float, cdelt: tuple[float, float]) -> np.ndarray:
     """
     Calculate a PC matrix given CROTA and CDELT.
 
@@ -311,15 +311,18 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
     return wcs_celestial
 
 
-def load_trefoil_wcs() -> (astropy.wcs.WCS, (int, int)):
+def load_trefoil_wcs() -> tuple[astropy.wcs.WCS, tuple[int, int]]:
     """Load Level 2 trefoil world coordinate system and shape."""
     trefoil_wcs = WCS(os.path.join(_ROOT, "data", "trefoil_wcs.fits"))
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
     trefoil_shape = (4096, 4096)
+
+    trefoil_wcs.array_shape = trefoil_shape
+
     return trefoil_wcs, trefoil_shape
 
 
-def load_quickpunch_mosaic_wcs() -> (astropy.wcs.WCS, (int, int)):
+def load_quickpunch_mosaic_wcs() -> tuple[astropy.wcs.WCS, tuple[int, int]]:
     """Load Level quickPUNCH mosaic world coordinate system and shape."""
     quickpunch_mosaic_shape = (1024, 1024)
     quickpunch_mosaic_wcs = WCS(naxis=2)
@@ -329,10 +332,12 @@ def load_quickpunch_mosaic_wcs() -> (astropy.wcs.WCS, (int, int)):
     quickpunch_mosaic_wcs.wcs.cdelt = 0.045, 0.045
     quickpunch_mosaic_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
 
+    quickpunch_mosaic_wcs.array_shape = quickpunch_mosaic_shape
+
     return quickpunch_mosaic_wcs, quickpunch_mosaic_shape
 
 
-def load_quickpunch_nfi_wcs() -> (astropy.wcs.WCS, (int, int)):
+def load_quickpunch_nfi_wcs() -> tuple[astropy.wcs.WCS, tuple[int, int]]:
     """Load Level quickPUNCH NFI world coordinate system and shape."""
     quickpunch_nfi_shape = (1024, 1024)
     quickpunch_nfi_wcs = WCS(naxis=2)
@@ -341,5 +346,7 @@ def load_quickpunch_nfi_wcs() -> (astropy.wcs.WCS, (int, int)):
     quickpunch_nfi_wcs.wcs.crval = 0, 0
     quickpunch_nfi_wcs.wcs.cdelt = 30 / 3600 * 2, 30 / 3600 * 2
     quickpunch_nfi_wcs.wcs.ctype = "HPLN-TAN", "HPLT-TAN"
+
+    quickpunch_nfi_wcs.array_shape = quickpunch_nfi_shape
 
     return quickpunch_nfi_wcs, quickpunch_nfi_shape

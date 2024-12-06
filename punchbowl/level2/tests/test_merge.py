@@ -33,6 +33,8 @@ def test_merge_many_task(sample_data_list):
     """
     trefoil_wcs = WCS("level2/data/trefoil_hdr.fits")
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    trefoil_shape  = (4096, 4096)
+    trefoil_wcs.array_shape = trefoil_shape
 
     output_punchdata = merge_many_polarized_task.fn(sample_data_list, trefoil_wcs)
     assert isinstance(output_punchdata, NDCube)

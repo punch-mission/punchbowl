@@ -25,6 +25,7 @@ def sample_ndcube(shape, code="PM1", level="0"):
 
     if level in ["2", "3"] and code[0] == "P":
         wcs = add_stokes_axis_to_wcs(wcs, 2)
+    wcs.array_shape = shape
 
     meta = NormalizedMetadata.load_template(code, level)
     meta['DATE-OBS'] = str(datetime(2024, 1, 1, 0, 0, 0))

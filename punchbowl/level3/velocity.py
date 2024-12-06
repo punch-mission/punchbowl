@@ -546,6 +546,7 @@ def track_velocity(files: list[str],
     wcs.wcs.crpix = 0, 0
     wcs.wcs.crval = 0, 0
     wcs.wcs.cname = "solar radii", "azimuth"
+    wcs.array_shape = avg_speeds.shape
 
     return NDCube(data = avg_speeds,
                   uncertainty=StdDevUncertainty(sigmas),

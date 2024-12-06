@@ -28,6 +28,7 @@ def sample_punchdata():
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 0
     wcs.wcs.cname = "HPC lon", "HPC lat"
+    wcs.array_shape = data.shape
     meta = NormalizedMetadata.load_template("PM1", "0")
     meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
 

@@ -21,8 +21,8 @@ def sample_punchdata_list(sample_ndcube):
 def test_reproject_many_flow(sample_punchdata_list):
     trefoil_wcs = WCS("level2/data/trefoil_hdr.fits")
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
-
     trefoil_shape = (128, 128)
+    trefoil_wcs.array_shape = trefoil_shape
     with prefect_test_harness():
         output = reproject_many_flow(sample_punchdata_list, trefoil_wcs, trefoil_shape)
     for result in output:

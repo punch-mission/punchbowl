@@ -1,7 +1,9 @@
+from math import floor
 from datetime import datetime
 
 import numpy as np
 import remove_starfield
+from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from prefect import flow, get_run_logger
@@ -49,8 +51,17 @@ def generate_starfield_background(
         msg = "filenames cannot be empty"
         raise ValueError(msg)
 
-    ra_bounds = (0, 180)
-    dec_bounds = (-90, 90)
+    shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
+    starfield_wcs = WCS(naxis=2)
+    # n.b. it seems the RA wrap point is chosen so there's 180 degrees
+    # included on either side of crpix
+    crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
+    starfield_wcs.wcs.crpix = crpix
+    starfield_wcs.wcs.crval = 270, -23.5
+    starfield_wcs.wcs.cdelt = map_scale, map_scale
+    starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
+    starfield_wcs.wcs.cunit = "deg", "deg"
+    starfield_wcs.array_shape = shape
 
     logger.info("Starting m starfield")
     starfield_m = remove_starfield.build_starfield_estimate(
@@ -58,9 +69,7 @@ def generate_starfield_background(
         attribution=False,
         frame_count=False,
         reducer=GaussianReducer(n_sigma=n_sigma),
-        ra_bounds=ra_bounds,
-        dec_bounds=dec_bounds,
-        map_scale=map_scale,
+        starfield_wcs=starfield_wcs,
         processor=PUNCHImageProcessor(0),
         target_mem_usage=target_mem_usage)
     logger.info("Ending m starfield")
@@ -71,10 +80,8 @@ def generate_starfield_background(
         filenames,
         attribution=False,
         frame_count=False,
-        ra_bounds=ra_bounds,
-        dec_bounds=dec_bounds,
         reducer=GaussianReducer(n_sigma=n_sigma),
-        map_scale=map_scale,
+        starfield_wcs=starfield_wcs,
         processor=PUNCHImageProcessor(1),
         target_mem_usage=target_mem_usage)
     logger.info("Ending z starfield")
@@ -85,10 +92,8 @@ def generate_starfield_background(
         filenames,
         attribution=False,
         frame_count=False,
-        ra_bounds=ra_bounds,
-        dec_bounds=dec_bounds,
         reducer=GaussianReducer(n_sigma=n_sigma),
-        map_scale=map_scale,
+        starfield_wcs=starfield_wcs,
         processor=PUNCHImageProcessor(2),
         target_mem_usage=target_mem_usage)
     logger.info("Ending p starfield")

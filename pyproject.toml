@@ -24,7 +24,7 @@ dependencies = [
         "pylibjpeg",
         "python-dateutil",
         "thuban",
-        "remove_starfield",
+        "remove_starfield>=0.0.4",
         "quadprog",
         "pylibjpeg[openjpeg]",
         "requests",

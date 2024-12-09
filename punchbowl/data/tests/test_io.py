@@ -64,6 +64,11 @@ def test_write_data(sample_ndcube, tmpdir):
     write_ndcube_to_fits(cube, test_path)
     assert os.path.isfile(test_path)
 
+    with fits.open(test_path) as hdul:
+        assert hdul[1].header['EXTNAME'] == "PRIMARY DATA ARRAY"
+        assert hdul[2].header['EXTNAME'] == "UNCERTAINTY ARRAY"
+        assert hdul[3].header['EXTNAME'] == "FILE PROVENANCE"
+
 
 def test_write_data_jp2(sample_ndcube, tmpdir):
     cube = sample_ndcube((50, 50))

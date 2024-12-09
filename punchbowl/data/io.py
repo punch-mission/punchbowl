@@ -90,6 +90,7 @@ def write_ndcube_to_fits(cube: NDCube,
                                             quantize_level=uncertainty_quantize_level)
         hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
             name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
+        hdu_provenance.name = "File provenance"
 
         hdul = cube.wcs.to_fits()
         hdul[0] = fits.PrimaryHDU()

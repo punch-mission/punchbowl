@@ -31,7 +31,7 @@ def convert_polarization(
 
     output_meta = NormalizedMetadata.load_template("PTM", "3")
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
-    output = NDCube(data=new_data, wcs=new_wcs, meta=input_data.meta)
+    output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
 
     logger.info("convert2bpb finished")
     output.meta.history.add_now("LEVEL3-convert2bpb", "Convert MZP to BpB")

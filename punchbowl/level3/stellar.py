@@ -1,4 +1,3 @@
-from math import floor
 from datetime import datetime
 
 import numpy as np
@@ -34,6 +33,7 @@ def generate_starfield_background(
         n_sigma: float = 5,
         map_scale: float = 0.01,
         target_mem_usage: float = 1000,
+        min_images:int = 5,
         reference_time: datetime | None = None) -> [NDCube, NDCube]:
     """Create a background starfield_bg map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
@@ -51,7 +51,7 @@ def generate_starfield_background(
         msg = "filenames cannot be empty"
         raise ValueError(msg)
 
-    shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
+    shape = [int(np.floor(132 / map_scale)), int(np.floor(360 / map_scale))]
     starfield_wcs = WCS(naxis=2)
     # n.b. it seems the RA wrap point is chosen so there's 180 degrees
     # included on either side of crpix
@@ -68,7 +68,7 @@ def generate_starfield_background(
         filenames,
         attribution=False,
         frame_count=False,
-        reducer=GaussianReducer(n_sigma=n_sigma),
+        reducer=GaussianReducer(n_sigma=n_sigma, min_size=min_images),
         starfield_wcs=starfield_wcs,
         processor=PUNCHImageProcessor(0),
         target_mem_usage=target_mem_usage)
@@ -80,7 +80,7 @@ def generate_starfield_background(
         filenames,
         attribution=False,
         frame_count=False,
-        reducer=GaussianReducer(n_sigma=n_sigma),
+        reducer=GaussianReducer(n_sigma=n_sigma, min_size=min_images),
         starfield_wcs=starfield_wcs,
         processor=PUNCHImageProcessor(1),
         target_mem_usage=target_mem_usage)
@@ -92,7 +92,7 @@ def generate_starfield_background(
         filenames,
         attribution=False,
         frame_count=False,
-        reducer=GaussianReducer(n_sigma=n_sigma),
+        reducer=GaussianReducer(n_sigma=n_sigma, min_size=min_images),
         starfield_wcs=starfield_wcs,
         processor=PUNCHImageProcessor(2),
         target_mem_usage=target_mem_usage)
@@ -102,7 +102,7 @@ def generate_starfield_background(
     logger.info("Preparing to create outputs")
 
     meta = NormalizedMetadata.load_template("PSM", "3")
-    meta["DATE-OBS"] = reference_time
+    meta["DATE-OBS"] = str(reference_time)
     out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     output = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
                     wcs=out_wcs, meta=meta)

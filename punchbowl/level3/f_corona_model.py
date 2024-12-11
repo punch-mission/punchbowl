@@ -248,8 +248,11 @@ def subtract_f_corona_background(data_object: NDCube,
 
     interpolated_model[np.isinf(data_object.uncertainty.array)] = 0
 
+    original_mask = data_object.data[...] == 0
     data_object.data[...] = data_object.data[...] - interpolated_model
+    data_object.data[original_mask] = 0
     data_object.uncertainty.array[:, :] -= interpolated_model
+    data_object.uncertainty.array[original_mask] = 0
     return data_object
 
 @punch_task

@@ -189,7 +189,7 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
     p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
 
     meta = NormalizedMetadata.load_template("PFM", "3")
-    meta["DATE-OBS"] = str(reference_time)
+    meta["DATE-OBS"] = reference_time.isoformat()
     output_cube = NDCube(data=np.stack([m_model_fcorona,
                                                z_model_fcorona,
                                                p_model_fcorona], axis=0),

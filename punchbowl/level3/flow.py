@@ -1,3 +1,4 @@
+from datetime import datetime
 
 from ndcube import NDCube
 from prefect import flow, get_run_logger
@@ -14,7 +15,8 @@ from punchbowl.util import load_image_task, output_image_task
 def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
                      before_f_corona_model_path: str,
                      after_f_corona_model_path: str,
-                     output_filename: str | None = None) -> list[NDCube]:
+                     output_filename: str | None = None,
+                    reference_time: datetime | None = None) -> list[NDCube]:  # noqa: ARG001
     """Level 3 PIM flow."""
     logger = get_run_logger()
 

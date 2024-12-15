@@ -1,4 +1,4 @@
-
+import astropy
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
@@ -30,10 +30,11 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
             trefoil_data_layers.append(np.zeros((4096, 4096)))
             trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
 
+    trefoil_3d_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
     return NDCube(
         data=np.stack(trefoil_data_layers, axis=0),
         uncertainty=StdDevUncertainty(np.stack(trefoil_uncertainty_layers, axis=0)),
-        wcs=trefoil_wcs,
+        wcs=trefoil_3d_wcs,
         meta=NormalizedMetadata.load_template("PTM", "2"),
     )
 

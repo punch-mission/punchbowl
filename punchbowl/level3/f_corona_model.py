@@ -9,6 +9,7 @@ from quadprog import solve_qp
 from scipy.interpolate import griddata
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task
@@ -160,13 +161,17 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
     obs_times = []
 
     logger.info("beginning data loading")
+    dates = []
     for i, address_out in enumerate(filenames):
         data_object = load_ndcube_from_fits(address_out)
+        dates.append(data_object.meta.datetime)
         data_cube[i, ...] = data_object.data
         uncertainty_cube[i, ...] = data_object.uncertainty.array
         obs_times.append(data_object.meta.datetime.timestamp())
         meta_list.append(data_object.meta)
     logger.info("ending data loading")
+    output_datebeg = min(dates).isoformat()
+    output_dateend = max(dates).isoformat()
 
     reference_xt = reference_time.timestamp()
     m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt,
@@ -189,12 +194,18 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
     p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
 
     meta = NormalizedMetadata.load_template("PFM", "3")
+    meta["DATE"] = datetime.now().isoformat()
+    meta["DATE-AVG"] = reference_time.isoformat()
     meta["DATE-OBS"] = reference_time.isoformat()
+
+    meta["DATE-BEG"] = output_datebeg
+    meta["DATE-END"] = output_dateend
     output_cube = NDCube(data=np.stack([m_model_fcorona,
                                                z_model_fcorona,
                                                p_model_fcorona], axis=0),
                                 meta=meta,
                                 wcs=trefoil_wcs)
+    output_cube = set_spacecraft_location_to_earth(output_cube)
 
     return [output_cube]
 

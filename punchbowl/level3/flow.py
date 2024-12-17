@@ -4,6 +4,7 @@ from ndcube import NDCube
 from prefect import flow, get_run_logger
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization
@@ -26,9 +27,15 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
                                                    before_f_corona_model_path,
                                                    after_f_corona_model_path) for d in data_list]
     output_meta = NormalizedMetadata.load_template("PIM", "3")
+
     out_list = [NDCube(data=d.data, wcs=d.wcs, meta=output_meta) for d in data_list]
-    for o, d  in zip(out_list, data_list, strict=True):
+    for o, d in zip(out_list, data_list, strict=True):
+        o.meta["DATE"] = datetime.now().isoformat()
+        o.meta["DATE-AVG"] = d.meta["DATE-AVG"].value
         o.meta["DATE-OBS"] = d.meta["DATE-OBS"].value
+        o.meta["DATE-BEG"] = d.meta["DATE-BEG"].value
+        o.meta["DATE-END"] = d.meta["DATE-END"].value
+        o = set_spacecraft_location_to_earth(o)   # noqa: PLW2901
 
     logger.info("ending level 3 PIM flow")
 
@@ -55,6 +62,7 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
     data_list = [convert_polarization(d) for d in data_list]
     logger.info("ending level 3 core flow")
+
 
     if output_filename is not None:
         output_image_task(data_list[0], output_filename)

@@ -110,16 +110,26 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
         logger.info("Ordered files are "
                     f"{[get_base_file_name(cube) if cube is not None else None for cube in ordered_data_list]}")
 
-        output_dateobs = average_datetime([d.meta.datetime for d in data_list]).isoformat()
-        output_datebeg = min([d.meta.datetime for d in data_list]).isoformat()
-        output_dateend = max([d.meta.datetime for d in data_list]).isoformat()
-
         quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_quickpunch_mosaic_wcs()
         quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
 
         data_list_mosaic = reproject_many_flow(ordered_data_list, quickpunch_mosaic_wcs, quickpunch_mosaic_shape)
+        output_dateobs = average_datetime([d.meta.datetime for d in data_list_mosaic]).isoformat()
+        output_datebeg = min([d.meta.datetime for d in data_list_mosaic]).isoformat()
+        output_dateend = max([d.meta.datetime for d in data_list_mosaic]).isoformat()
+
         data_list_nfi = reproject_many_flow(ordered_data_list[-1:], quickpunch_nfi_wcs, quickpunch_nfi_shape)
+        output_dateobs_nfi = average_datetime([d.meta.datetime for d in data_list_nfi]).isoformat()
+        output_datebeg_nfi = min([d.meta.datetime for d in data_list_nfi]).isoformat()
+        output_dateend_nfi = max([d.meta.datetime for d in data_list_nfi]).isoformat()
+
         output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs)
+
+        output_data_mosaic.meta["DATE"] = datetime.now().isoformat()
+        output_data_mosaic.meta["DATE-AVG"] = output_dateobs
+        output_data_mosaic["DATE-OBS"] = output_dateobs
+        output_data_mosaic["DATE-BEG"] = output_datebeg
+        output_data_mosaic["DATE-END"] = output_dateend
         output_data_mosaic = set_spacecraft_location_to_earth(output_data_mosaic)
 
         output_meta_nfi = NormalizedMetadata.load_template("CNN", "Q")
@@ -130,9 +140,46 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
             wcs=quickpunch_nfi_wcs,
             meta=output_meta_nfi,
             )
+        output_data_nfi.meta["DATE"] = datetime.now().isoformat()
+        output_data_nfi.meta["DATE-AVG"] = output_dateobs_nfi
+        output_data_nfi.meta["DATE-OBS"] = output_dateobs_nfi
+        output_data_nfi.meta["DATE-BEG"] = output_datebeg_nfi
+        output_data_nfi.meta["DATE-END"] = output_dateend_nfi
         output_data_nfi = set_spacecraft_location_to_earth(output_data_nfi)
     else:
-        pass
+        output_dateobs = datetime.now().isoformat()
+        output_datebeg = output_dateobs
+        output_dateend = output_datebeg
+
+        quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_quickpunch_mosaic_wcs()
+        quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
+        output_data_mosaic = NDCube(
+            data=np.zeros(quickpunch_mosaic_shape),
+            uncertainty=StdDevUncertainty(np.zeros(quickpunch_mosaic_shape)),
+            wcs=quickpunch_mosaic_wcs,
+            meta=NormalizedMetadata.load_template("CTM", "Q"),
+        )
+        output_data_mosaic.meta["DATE"] = datetime.now().isoformat()
+        output_data_mosaic.meta["DATE-AVG"] = output_dateobs
+        output_data_mosaic["DATE-OBS"] = output_dateobs
+        output_data_mosaic["DATE-BEG"] = output_datebeg
+        output_data_mosaic["DATE-END"] = output_dateend
+        output_data_mosaic = set_spacecraft_location_to_earth(output_data_mosaic)
+
+        output_data_nfi = NDCube(
+            data=np.zeros(quickpunch_nfi_shape),
+            uncertainty=StdDevUncertainty(np.zeros(quickpunch_nfi_shape)),
+            wcs=quickpunch_nfi_wcs,
+            meta=NormalizedMetadata.load_template("CNN", "Q"),
+        )
+
+        output_data_nfi.meta["DATE"] = datetime.now().isoformat()
+        output_data_nfi.meta["DATE-AVG"] = output_dateobs
+        output_data_nfi.meta["DATE-OBS"] = output_dateobs
+        output_data_nfi.meta["DATE-BEG"] = output_dateobs
+        output_data_nfi.meta["DATE-END"] = output_dateobs
+        output_data_nfi = set_spacecraft_location_to_earth(output_data_nfi)
+
 
     if output_filename is not None:
         output_image_task(output_data_mosaic, output_filename[0])

@@ -127,9 +127,9 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
 
         output_data_mosaic.meta["DATE"] = datetime.now().isoformat()
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs
-        output_data_mosaic["DATE-OBS"] = output_dateobs
-        output_data_mosaic["DATE-BEG"] = output_datebeg
-        output_data_mosaic["DATE-END"] = output_dateend
+        output_data_mosaic.meta["DATE-OBS"] = output_dateobs
+        output_data_mosaic.meta["DATE-BEG"] = output_datebeg
+        output_data_mosaic.meta["DATE-END"] = output_dateend
         output_data_mosaic = set_spacecraft_location_to_earth(output_data_mosaic)
 
         output_meta_nfi = NormalizedMetadata.load_template("CNN", "Q")
@@ -161,9 +161,9 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
         )
         output_data_mosaic.meta["DATE"] = datetime.now().isoformat()
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs
-        output_data_mosaic["DATE-OBS"] = output_dateobs
-        output_data_mosaic["DATE-BEG"] = output_datebeg
-        output_data_mosaic["DATE-END"] = output_dateend
+        output_data_mosaic.meta["DATE-OBS"] = output_dateobs
+        output_data_mosaic.meta["DATE-BEG"] = output_datebeg
+        output_data_mosaic.meta["DATE-END"] = output_dateend
         output_data_mosaic = set_spacecraft_location_to_earth(output_data_mosaic)
 
         output_data_nfi = NDCube(

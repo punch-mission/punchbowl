@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import astropy
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
@@ -200,11 +201,13 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
 
     meta["DATE-BEG"] = output_datebeg
     meta["DATE-END"] = output_dateend
+    trefoil_3d_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
+
     output_cube = NDCube(data=np.stack([m_model_fcorona,
                                                z_model_fcorona,
                                                p_model_fcorona], axis=0),
                                 meta=meta,
-                                wcs=trefoil_wcs)
+                                wcs=trefoil_3d_wcs)
     output_cube = set_spacecraft_location_to_earth(output_cube)
 
     return [output_cube]

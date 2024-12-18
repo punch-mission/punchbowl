@@ -1,3 +1,4 @@
+from math import floor
 from datetime import datetime
 
 import numpy as np
@@ -7,8 +8,9 @@ from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
-from remove_starfield.reducers import GaussianReducer
+from remove_starfield.reducers import PercentileReducer
 
+from build.lib.punchbowl.data.io import write_ndcube_to_fits
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
 from punchbowl.prefect import punch_task
@@ -17,23 +19,26 @@ from punchbowl.prefect import punch_task
 class PUNCHImageProcessor(ImageProcessor):
     """Special loader for PUNCH data."""
 
-    def __init__(self, layer: int) -> None:
+    def __init__(self, layer: int, apply_mask: bool = True, key: str = " ") -> None:
         """Create PUNCHImageProcessor."""
         self.layer = layer
+        self.apply_mask = apply_mask
+        self.key = key
 
     def load_image(self, filename: str) -> ImageHolder:
         """Load an image."""
-        cube = load_ndcube_from_fits(filename, key="A")
-        return ImageHolder(cube.data[self.layer], cube.wcs.celestial, cube.meta)
+        cube = load_ndcube_from_fits(filename, key=self.key)
+        data = cube.data[self.layer]
+        if self.apply_mask:
+            data[np.isclose(cube.uncertainty.array[self.layer], 0, atol=1E-30)] = np.nan
+        return ImageHolder(data, cube.wcs.celestial, cube.meta)
 
 
 @flow(log_prints=True)
 def generate_starfield_background(
         filenames: list[str],
-        n_sigma: float = 5,
         map_scale: float = 0.01,
         target_mem_usage: float = 1000,
-        min_images:int = 5,
         reference_time: datetime | None = None) -> [NDCube, NDCube]:
     """Create a background starfield_bg map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
@@ -51,7 +56,7 @@ def generate_starfield_background(
         msg = "filenames cannot be empty"
         raise ValueError(msg)
 
-    shape = [int(np.floor(132 / map_scale)), int(np.floor(360 / map_scale))]
+    shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
     starfield_wcs = WCS(naxis=2)
     # n.b. it seems the RA wrap point is chosen so there's 180 degrees
     # included on either side of crpix
@@ -68,21 +73,20 @@ def generate_starfield_background(
         filenames,
         attribution=False,
         frame_count=False,
-        reducer=GaussianReducer(n_sigma=n_sigma, min_size=min_images),
+        reducer=PercentileReducer(10),
         starfield_wcs=starfield_wcs,
-        processor=PUNCHImageProcessor(0),
+        processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
         target_mem_usage=target_mem_usage)
     logger.info("Ending m starfield")
-
 
     logger.info("Starting z starfield")
     starfield_z = remove_starfield.build_starfield_estimate(
         filenames,
         attribution=False,
         frame_count=False,
-        reducer=GaussianReducer(n_sigma=n_sigma, min_size=min_images),
+        reducer=PercentileReducer(10),
         starfield_wcs=starfield_wcs,
-        processor=PUNCHImageProcessor(1),
+        processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
         target_mem_usage=target_mem_usage)
     logger.info("Ending z starfield")
 
@@ -92,9 +96,9 @@ def generate_starfield_background(
         filenames,
         attribution=False,
         frame_count=False,
-        reducer=GaussianReducer(n_sigma=n_sigma, min_size=min_images),
+        reducer=PercentileReducer(10),
         starfield_wcs=starfield_wcs,
-        processor=PUNCHImageProcessor(2),
+        processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
         target_mem_usage=target_mem_usage)
     logger.info("Ending p starfield")
 
@@ -102,7 +106,12 @@ def generate_starfield_background(
     logger.info("Preparing to create outputs")
 
     meta = NormalizedMetadata.load_template("PSM", "3")
-    meta["DATE-OBS"] = str(reference_time)
+    meta["DATE-OBS"] = reference_time.isoformat()
+    meta["DATE-BEG"] = reference_time.isoformat()
+    meta["DATE-END"] = reference_time.isoformat()
+    meta["DATE-AVG"] = reference_time.isoformat()
+    meta["DATE"] = datetime.now().isoformat()
+
     out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     output = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
                     wcs=out_wcs, meta=meta)
@@ -169,3 +178,13 @@ def subtract_starfield_background_task(data_object: NDCube,
 def create_empty_starfield_background(data_object: NDCube) -> np.ndarray:
     """Create an empty starfield background map."""
     return np.zeros_like(data_object.data)
+
+if __name__ == "__main__":
+    from glob import glob
+
+    from punchbowl.data.io import write_ndcube_to_fits
+    filenames = glob("/Users/jhughes/new_results/dec17-1226/*PIM*.fits")
+
+    starfield = generate_starfield_background(filenames=filenames,
+                                  target_mem_usage=32)[0]
+    write_ndcube_to_fits(starfield, "starfield_v4_rfr2.fits")

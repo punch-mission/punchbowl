@@ -10,7 +10,6 @@ from prefect import flow, get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import PercentileReducer
 
-from build.lib.punchbowl.data.io import write_ndcube_to_fits
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
 from punchbowl.prefect import punch_task

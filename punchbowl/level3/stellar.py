@@ -33,7 +33,7 @@ class PUNCHImageProcessor(ImageProcessor):
         return ImageHolder(data, cube.wcs.celestial, cube.meta)
 
 
-@flow(log_prints=True)
+@flow(log_prints=True, timeout_seconds=21_600)
 def generate_starfield_background(
         filenames: list[str],
         map_scale: float = 0.01,

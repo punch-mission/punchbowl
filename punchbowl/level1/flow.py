@@ -51,9 +51,9 @@ def level1_core_flow(
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
     quartic_coefficient_path: str | pathlib.Path | None = None,
-    despike_unsharp_size: int = 2,
+    despike_unsharp_size: int = 1,
     despike_method: str = "median",
-    despike_alpha: float = 50,
+    despike_alpha: float = 10,
     despike_dilation: int = 0,
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
@@ -64,7 +64,7 @@ def level1_core_flow(
     deficient_pixel_required_good_count: int = 3,
     deficient_pixel_max_window_size: int = 10,
     psf_model_path: str | None = None,
-    alignment_mask: Callable | None = None,
+    alignment_mask: Callable | None = None,  # noqa: ARG001
     output_filename: list[str] | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1."""
@@ -117,13 +117,13 @@ def level1_core_flow(
         data = correct_psf_task(data, psf_model_path)
 
         # set up alignment mask
-        observatory = int(data.meta["OBSCODE"].value)
-        if observatory < 4:
-            alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
-        else:
-            alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
-                                           * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        data = align_task(data, mask=alignment_mask)
+        # observatory = int(data.meta["OBSCODE"].value)   # noqa: ERA001
+        # if observatory < 4:
+        #     alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)   # noqa: ERA001
+        # else:   # noqa: ERA001
+        #     alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
+        #                                    * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
+        # data = align_task(data, mask=alignment_mask)   # noqa: ERA001
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value

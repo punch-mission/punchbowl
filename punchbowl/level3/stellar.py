@@ -38,6 +38,7 @@ def generate_starfield_background(
         filenames: list[str],
         map_scale: float = 0.01,
         target_mem_usage: float = 1000,
+        n_procs: int | None = None,
         reference_time: datetime | None = None) -> [NDCube, NDCube]:
     """Create a background starfield_bg map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
@@ -74,6 +75,7 @@ def generate_starfield_background(
         frame_count=False,
         reducer=PercentileReducer(10),
         starfield_wcs=starfield_wcs,
+        n_procs=n_procs,
         processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
         target_mem_usage=target_mem_usage)
     logger.info("Ending m starfield")
@@ -85,6 +87,7 @@ def generate_starfield_background(
         frame_count=False,
         reducer=PercentileReducer(10),
         starfield_wcs=starfield_wcs,
+        n_procs=n_procs,
         processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
         target_mem_usage=target_mem_usage)
     logger.info("Ending z starfield")
@@ -97,6 +100,7 @@ def generate_starfield_background(
         frame_count=False,
         reducer=PercentileReducer(10),
         starfield_wcs=starfield_wcs,
+        n_procs=n_procs,
         processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
         target_mem_usage=target_mem_usage)
     logger.info("Ending p starfield")
@@ -185,5 +189,5 @@ if __name__ == "__main__":
     filenames = glob("/Users/jhughes/new_results/dec17-1226/*PIM*.fits")
 
     starfield = generate_starfield_background(filenames=filenames,
-                                  target_mem_usage=32)[0]
+                                  target_mem_usage=32, n_procs=50)[0]
     write_ndcube_to_fits(starfield, "starfield_v4_rfr2.fits")

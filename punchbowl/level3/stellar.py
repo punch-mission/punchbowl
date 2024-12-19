@@ -11,7 +11,7 @@ from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import PercentileReducer
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
+from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from punchbowl.prefect import punch_task
 
 
@@ -155,18 +155,30 @@ def subtract_starfield_background_task(data_object: NDCube,
         output.meta.history.add_now("LEVEL3-subtract_starfield_background",
                                            "starfield subtraction skipped since path is empty")
     else:
-        star_datacube = load_ndcube_from_fits(starfield_background_path)
-        data_wcs = calculate_celestial_wcs_from_helio(data_object.wcs.celestial,
-                                                      data_object.meta.astropy_time,
-                                                      data_object.data.shape[-2:])
-        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)),
-                                    star_datacube.wcs.celestial)
+        star_datacube = load_ndcube_from_fits(starfield_background_path, key="A")
+        # data_wcs = calculate_celestial_wcs_from_helio(data_object.wcs.celestial,
+        #                                               data_object.meta.astropy_time,
+        #                                               data_object.data.shape[-2:])
+        map_scale = 0.01
+        shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
+        starfield_wcs = WCS(naxis=2)
+        # n.b. it seems the RA wrap point is chosen so there's 180 degrees
+        # included on either side of crpix
+        crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
+        starfield_wcs.wcs.crpix = crpix
+        starfield_wcs.wcs.crval = 270, -23.5
+        starfield_wcs.wcs.cdelt = map_scale, map_scale
+        starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
+        starfield_wcs.wcs.cunit = "deg", "deg"
+        starfield_wcs.array_shape = shape
+
+        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), starfield_wcs)
 
         subtracted = starfield_model.subtract_from_image(
             NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
-                   wcs=data_wcs,
+                   wcs=data_object.wcs.celestial,
                    meta=data_object.meta),
-            processor=PUNCHImageProcessor(0))
+            processor=PUNCHImageProcessor(0, key="A"))
 
         data_object.data[...] = subtracted.subtracted[0]
         data_object.uncertainty.array[...] -= subtracted.subtracted[1]
@@ -181,13 +193,3 @@ def subtract_starfield_background_task(data_object: NDCube,
 def create_empty_starfield_background(data_object: NDCube) -> np.ndarray:
     """Create an empty starfield background map."""
     return np.zeros_like(data_object.data)
-
-if __name__ == "__main__":
-    from glob import glob
-
-    from punchbowl.data.io import write_ndcube_to_fits
-    filenames = glob("/Users/jhughes/new_results/dec17-1226/*PIM*.fits")
-
-    starfield = generate_starfield_background(filenames=filenames,
-                                  target_mem_usage=32, n_procs=50)[0]
-    write_ndcube_to_fits(starfield, "starfield_v4_rfr2.fits")

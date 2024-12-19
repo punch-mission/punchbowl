@@ -1,10 +1,12 @@
+from datetime import datetime
+
 import astropy.units as u
 import numpy as np
 from ndcube import NDCollection, NDCube
 from prefect import get_run_logger
 from solpolpy import resolve
 
-from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
 from punchbowl.prefect import punch_task
 
 
@@ -30,8 +32,13 @@ def convert_polarization(
     new_wcs = input_data.wcs.copy()
 
     output_meta = NormalizedMetadata.load_template("PTM", "3")
+    output_meta["DATE"] = datetime.now().isoformat()
+    output_meta["DATE-AVG"] = input_data.meta["DATE-AVG"].value
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
+    output_meta["DATE-BEG"] = input_data.meta["DATE-BEG"].value
+    output_meta["DATE-END"] = input_data.meta["DATE-END"].value
     output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
+    output = set_spacecraft_location_to_earth(output)
 
     logger.info("convert2bpb finished")
     output.meta.history.add_now("LEVEL3-convert2bpb", "Convert MZP to BpB")

@@ -1,4 +1,4 @@
-
+import astropy
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
@@ -6,6 +6,7 @@ from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.prefect import punch_task
+from punchbowl.util import average_datetime
 
 
 @punch_task
@@ -30,11 +31,19 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
             trefoil_data_layers.append(np.zeros((4096, 4096)))
             trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
 
+    output_meta = NormalizedMetadata.load_template("PTM", "2")
+    output_dateobs = average_datetime([d.meta.datetime for d in data if d is not None]).isoformat()
+    output_datebeg = min([d.meta.datetime for d in data if d is not None]).isoformat()
+    output_dateend = max([d.meta.datetime for d in data if d is not None]).isoformat()
+    output_meta["DATE-OBS"] = output_dateobs
+    output_meta["DATE-BEG"] = output_datebeg
+    output_meta["DATE-END"] = output_dateend
+    trefoil_3d_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
     return NDCube(
         data=np.stack(trefoil_data_layers, axis=0),
         uncertainty=StdDevUncertainty(np.stack(trefoil_uncertainty_layers, axis=0)),
-        wcs=trefoil_wcs,
-        meta=NormalizedMetadata.load_template("PTM", "2"),
+        wcs=trefoil_3d_wcs,
+        meta=output_meta,
     )
 
 @punch_task
@@ -60,7 +69,6 @@ def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS) -> NDCube
         trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
 
     output_meta = NormalizedMetadata.load_template("CTM", "Q")
-    output_meta["DATE-OBS"] = data[0].meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
 
     return NDCube(
         data=np.stack(trefoil_data_layers, axis=0).squeeze(),

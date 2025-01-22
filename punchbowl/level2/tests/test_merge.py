@@ -3,7 +3,7 @@ import pytest
 from astropy.wcs import WCS
 from ndcube import NDCube
 
-from punchbowl.data.tests.test_io import sample_ndcube
+from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level2.merge import merge_many_polarized_task
 
 

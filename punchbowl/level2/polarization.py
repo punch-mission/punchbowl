@@ -23,15 +23,14 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
 
     """
     # Unpack data into a NDCollection object
-    # TODO: don't assume the order and that there are only 3... that is not the case
-    data_dictionary = dict(zip(["M", "Z", "P"], data_list, strict=False))
+    data_dictionary = list(zip(["M", "Z", "P"], data_list, strict=False))
     input_collection = NDCollection(data_dictionary)
-    data_collection = NDCollection({k: NDCube(data=input_collection[k].data,
+    data_collection = NDCollection([(k, NDCube(data=input_collection[k].data,
                                  wcs=input_collection[k].wcs,
                                  meta={"POLAR": input_collection[k].meta["POLAR"].value * u.degree,
                                        "POLAROFF": input_collection[k].meta["POLAROFF"].value * u.degree,
-                                       "POLARREF": str(input_collection[k].meta["POLARREF"])})
-                       for k in ["M", "Z", "P"]})
+                                       "POLARREF": str(input_collection[k].meta["POLARREF"])}))
+                       for k in ["M", "Z", "P"]])
 
     out = []
     resolved_data_collection = solpolpy.resolve(data_collection,

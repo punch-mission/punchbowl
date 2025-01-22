@@ -4,7 +4,7 @@ from astropy.time import Time
 from astropy.wcs import WCS
 from prefect.testing.utilities import prefect_test_harness
 
-from punchbowl.data.tests.test_io import sample_ndcube
+from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level2.resample import reproject_cube, reproject_many_flow
 
 

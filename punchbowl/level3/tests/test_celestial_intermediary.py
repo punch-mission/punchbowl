@@ -5,7 +5,7 @@ import pytest
 import reproject
 from astropy.io import fits
 
-from punchbowl.data import io
+from punchbowl.data import punch_io
 from punchbowl.level3 import celestial_intermediary
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -13,7 +13,7 @@ TEST_FILE = TESTDATA_DIR + '/data/downsampled_L2_PTM.fits'
 
 
 def test_to_celestial_frame_cutout():
-    data_cube = io.load_ndcube_from_fits(TEST_FILE, include_provenance=False)
+    data_cube = punch_io.load_ndcube_from_fits(TEST_FILE, include_provenance=False)
     reprojected_cube = celestial_intermediary.to_celestial_frame_cutout(data_cube, cdelt=1)
     assert np.any(np.isfinite(reprojected_cube.data))
     assert np.any(np.isfinite(reprojected_cube.uncertainty.array))
@@ -57,8 +57,8 @@ def test_shift_image_onto(tmp_path, shift1, shift2, is_overlap):
             hdu.data = hdu.data[0]
         hdul.writeto(file2)
 
-    cube1 = io.load_ndcube_from_fits(file1, key='A', include_provenance=False)
-    cube2 = io.load_ndcube_from_fits(file2, key='A', include_provenance=False)
+    cube1 = punch_io.load_ndcube_from_fits(file1, key='A', include_provenance=False)
+    cube2 = punch_io.load_ndcube_from_fits(file2, key='A', include_provenance=False)
     reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(cube1, cdelt=.6)
     reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(cube2, cdelt=.6)
 
@@ -117,8 +117,8 @@ def test_shift_image_onto_3d_cube(tmp_path):
             hdu.header['CRVAL2A'] += 5
         hdul.writeto(file2)
 
-    cube1 = io.load_ndcube_from_fits(file1, key='A', include_provenance=False)
-    cube2 = io.load_ndcube_from_fits(file2, key='A', include_provenance=False)
+    cube1 = punch_io.load_ndcube_from_fits(file1, key='A', include_provenance=False)
+    cube2 = punch_io.load_ndcube_from_fits(file2, key='A', include_provenance=False)
     reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(cube1, cdelt=.6)
     reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(cube2, cdelt=.6)
 
@@ -176,8 +176,8 @@ def test_shift_image_onto_fill_value(tmp_path):
             hdu.header['CRVAL2A'] += 10
         hdul.writeto(file2)
 
-    cube1 = io.load_ndcube_from_fits(file1, key='A', include_provenance=False)
-    cube2 = io.load_ndcube_from_fits(file2, key='A', include_provenance=False)
+    cube1 = punch_io.load_ndcube_from_fits(file1, key='A', include_provenance=False)
+    cube2 = punch_io.load_ndcube_from_fits(file2, key='A', include_provenance=False)
     reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(cube1, cdelt=.6)
     reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(cube2, cdelt=.6)
 
@@ -204,9 +204,9 @@ def test_shift_image_onto_fill_value(tmp_path):
 
 def test_shift_image_onto_different_cdelts():
     reproj_data_1 = celestial_intermediary.to_celestial_frame_cutout(
-        io.load_ndcube_from_fits(TEST_FILE, key='A', include_provenance=False), cdelt=1.2)
+        punch_io.load_ndcube_from_fits(TEST_FILE, key='A', include_provenance=False), cdelt=1.2)
     reproj_data_2 = celestial_intermediary.to_celestial_frame_cutout(
-        io.load_ndcube_from_fits(TEST_FILE, key='A', include_provenance=False), cdelt=1)
+        punch_io.load_ndcube_from_fits(TEST_FILE, key='A', include_provenance=False), cdelt=1)
 
     with pytest.raises(ValueError, match=".*WCSes must have identical CDELTs.*"):
         celestial_intermediary.shift_image_onto(reproj_data_1, reproj_data_2)

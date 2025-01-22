@@ -9,14 +9,14 @@ from astropy.wcs import WCS, DistortionLookupTable
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCube
 
-from punchbowl.data.io import (
+from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.punch_io import (
     _update_statistics,
     get_base_file_name,
     load_ndcube_from_fits,
     write_ndcube_to_fits,
     write_ndcube_to_jp2,
 )
-from punchbowl.data.meta import NormalizedMetadata
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")

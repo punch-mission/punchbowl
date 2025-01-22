@@ -1,4 +1,3 @@
-# Third party imports
 import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty

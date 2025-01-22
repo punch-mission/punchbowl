@@ -5,7 +5,7 @@ from ndcube import NDCube
 from prefect import task
 from prefect.variables import Variable
 
-from punchbowl.data.io import get_base_file_name, write_ndcube_to_fits
+from punchbowl.data.punch_io import get_base_file_name, write_ndcube_to_fits
 
 
 def completion_debugger(task, task_run, state):

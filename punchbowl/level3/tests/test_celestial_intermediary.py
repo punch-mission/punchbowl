@@ -13,7 +13,7 @@ TEST_FILE = TESTDATA_DIR + '/data/downsampled_L2_PTM.fits'
 
 
 def test_to_celestial_frame_cutout():
-    data_cube = io.load_ndcube_from_fits(TEST_FILE, include_provenance=False)
+    data_cube = punch_io.load_ndcube_from_fits(TEST_FILE, include_provenance=False)
     reprojected_cube = celestial_intermediary.to_celestial_frame_cutout(data_cube, cdelt=1)
     assert np.any(np.isfinite(reprojected_cube.data))
     assert np.any(np.isfinite(reprojected_cube.uncertainty.array))

@@ -64,7 +64,7 @@ def level1_core_flow(
     deficient_pixel_required_good_count: int = 3,
     deficient_pixel_max_window_size: int = 10,
     psf_model_path: str | None = None,
-    alignment_mask: Callable | None = None,  # noqa: ARG001
+    alignment_mask: Callable | None = None,
     output_filename: list[str] | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1."""
@@ -117,13 +117,13 @@ def level1_core_flow(
         data = correct_psf_task(data, psf_model_path)
 
         # set up alignment mask
-        # observatory = int(data.meta["OBSCODE"].value)   # noqa: ERA001
-        # if observatory < 4:
-        #     alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)   # noqa: ERA001
-        # else:   # noqa: ERA001
-        #     alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
-        #                                    * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        # data = align_task(data, mask=alignment_mask)   # noqa: ERA001
+        observatory = int(data.meta["OBSCODE"].value)
+        if observatory < 4:
+            alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
+        else:
+            alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
+                                           * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
+        data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -147,15 +147,6 @@ def level1_core_flow(
 @flow(validate_parameters=False)
 def level05_core_flow(
     input_data: list[str] | list[NDCube],
-    gain: float = 4.9,
-    bias_level: float = 100,
-    dark_level: float = 55.81,
-    read_noise_level: float = 17,
-    bitrate_signal: int = 16,
-    quartic_coefficient_path: str | None = None,
-    exposure_time: float = 49 * 1000,
-    readout_line_time: float = 163/2148,
-    reset_line_time: float = 163/2148,
     output_filename: str | None = None,
 ) -> list[NDCube]:
     """Core flow for level 0.5."""
@@ -167,32 +158,6 @@ def level05_core_flow(
     for i, this_data in enumerate(input_data):
         data = load_image_task(this_data) if isinstance(this_data, str) else this_data
         data = decode_sqrt_data(data)
-        data = update_initial_uncertainty_task(data,
-                                               bias_level=bias_level,
-                                               dark_level=dark_level,
-                                               gain=gain,
-                                               read_noise_level=read_noise_level,
-                                               bitrate_signal=bitrate_signal,
-                                               )
-        data = perform_quartic_fit_task(data, quartic_coefficient_path)
-
-        if data.meta["OBSCODE"].value == "4":
-            scaling = {"gain": 4.9 * u.photon / u.DN,
-                       "wavelength": 530. * u.nm,
-                       "exposure": 49 * u.s,
-                       "aperture": 49.57 * u.mm ** 2}
-        else:
-            scaling = {"gain": 4.9 * u.photon / u.DN,
-                       "wavelength": 530. * u.nm,
-                       "exposure": 49 * u.s,
-                       "aperture": 34 * u.mm ** 2}
-        data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
-        data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
-
-        data = destreak_task(data,
-                             exposure_time=exposure_time,
-                             reset_line_time=reset_line_time,
-                             readout_line_time=readout_line_time)
 
         # set up alignment mask
         observatory = int(data.meta["OBSCODE"].value)

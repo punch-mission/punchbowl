@@ -76,6 +76,7 @@ extensions = ["autoapi.extension",
               "sphinx.ext.napoleon",
               "sphinx_favicon",
               "nbsphinx",
+              'sphinx_gallery.gen_gallery',
               "sphinxcontrib.mermaid",
               "IPython.sphinxext.ipython_console_highlighting"]
 
@@ -130,3 +131,9 @@ autoapi_dirs = ["../../punchbowl"]
 favicons = ["favicon.ico"]
 
 mermaid_verbose = True
+
+sphinx_gallery_conf = {
+    'filename_pattern': '^((?!skip_).)*$',
+    'examples_dirs': os.path.join('..', 'examples'),
+    'gallery_dirs': 'examples'
+}

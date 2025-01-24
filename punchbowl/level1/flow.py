@@ -19,6 +19,7 @@ from punchbowl.level1.psf import correct_psf_task
 from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.level1.stray_light import remove_stray_light_task
+from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.util import load_image_task, output_image_task
 
 
@@ -58,6 +59,7 @@ def level1_core_flow(
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
+    vignetting_function_path: str | None = None,
     stray_light_path: str | None = None,
     deficient_pixel_map_path: str | None = None,
     deficient_pixel_method: str = "median",
@@ -108,6 +110,7 @@ def level1_core_flow(
                              exposure_time=exposure_time,
                              reset_line_time=reset_line_time,
                              readout_line_time=readout_line_time)
+        data = correct_vignetting_task(data, vignetting_function_path)
         data = remove_deficient_pixels_task(data,
                                             deficient_pixel_map_path,
                                             required_good_count=deficient_pixel_required_good_count,
@@ -156,6 +159,7 @@ def level05_core_flow(
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
+    vignetting_function_path: str | None = None,
     output_filename: str | None = None,
 ) -> list[NDCube]:
     """Core flow for level 0.5."""
@@ -194,13 +198,17 @@ def level05_core_flow(
                              reset_line_time=reset_line_time,
                              readout_line_time=readout_line_time)
 
+        data = correct_vignetting_task(data, vignetting_function_path)
+
         # set up alignment mask
         observatory = int(data.meta["OBSCODE"].value)
         if observatory < 4:
-            alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
+            def alignment_mask(x:float, y:float) -> float:
+                return (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
         else:
-            alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
-                                           * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
+            def alignment_mask(x:float, y:float) -> float:
+                return ((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224)) * \
+                    (x > 100) * (x < 1900) * (y > 100) * (y < 1900)
 
         data = align_task(data, mask=alignment_mask)
 

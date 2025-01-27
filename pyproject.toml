@@ -54,23 +54,25 @@ classifiers = [
 [project.optional-dependencies]
 test = ["pytest",
         "codespell",
-            "coverage",
-            "pytest-cov",
-            "flake8",
-            "pytest-runner",
-            "pytest-mpl",
-            "pre-commit",
-            "ruff",
-            "hypothesis"]
+        "coverage",
+        "pytest-cov",
+        "flake8",
+        "pytest-runner",
+        "pytest-mpl",
+        "pre-commit",
+        "ruff",
+        "hypothesis"]
 docs = ["sphinx",
+        "sphinx-gallery",
+        "sphinx_rtd_theme",
         "codespell",
         "packaging",
-            "pydata-sphinx-theme",
-            "sphinx-autoapi",
-            "sphinx-favicon",
-            "nbsphinx",
-            "ipython",
-            "sphinxcontrib-mermaid"]
+        "pydata-sphinx-theme",
+        "sphinx-autoapi",
+        "sphinx-favicon",
+        "nbsphinx",
+        "ipython",
+        "sphinxcontrib-mermaid"]
 gpu = ["cupy"]
 dev = ["punchbowl[docs,test]"]
 

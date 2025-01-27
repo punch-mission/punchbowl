@@ -1,12 +1,10 @@
 import pathlib
 from datetime import datetime
 
-import numpy as np
 import pytest
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
 
-from punchbowl.data.tests.test_io import sample_ndcube
 from punchbowl.exceptions import (
     IncorrectPolarizationStateWarning,
     IncorrectTelescopeWarning,

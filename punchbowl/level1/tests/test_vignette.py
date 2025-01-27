@@ -5,6 +5,7 @@ import pytest
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
 
+from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.exceptions import (
     IncorrectPolarizationStateWarning,
     IncorrectTelescopeWarning,

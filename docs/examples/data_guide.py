@@ -25,7 +25,7 @@ from matplotlib.colors import LogNorm
 from ndcube import NDCube
 from sunpy.map import Map
 
-import punchbowl
+from punchbowl.data.sample import PUNCH_PAM
 
 # %% [markdown]
 # ## Data loading
@@ -38,9 +38,7 @@ import punchbowl
 # The data are RICE compressed, so we'll have to look in the *second* at index 1 (since we're zero-indexed) HDU for the main data frame. There is also an uncertainty layer in the last HDU that we'll explore later.
 
 # %%
-filename = './data/PUNCH_L3_PAM_20240620000000.fits'
-
-with fits.open(filename) as hdul:
+with fits.open(PUNCH_PAM) as hdul:
     data = hdul[1].data
     header = hdul[1].header
     uncertainty = hdul[2].data
@@ -79,7 +77,7 @@ data_wcs_celestial
 # We can also use SunPy Maps to load the data. However, since Maps only support 2D images, it will warn us that it's truncating a dimension of the data and only showing the total brightness. We get a list of Maps where the first entry is the data and the second is the uncertainty.
 
 # %%
-data_map = Map(filename)
+data_map = Map(PUNCH_PAM)
 data_map[0]
 
 # %% [markdown]

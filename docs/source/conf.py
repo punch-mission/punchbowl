@@ -135,5 +135,5 @@ mermaid_verbose = True
 sphinx_gallery_conf = {
     'filename_pattern': '^((?!skip_).)*$',
     'examples_dirs': os.path.join('..', 'examples'),
-    'gallery_dirs': 'auto_examples'
+    'gallery_dirs': os.path.join('..', 'auto_examples')
 }

@@ -70,7 +70,7 @@ data_wcs
 # We can also access the celestial WCS by setting `key='A'`. "
 
 # %%
-data_wcs_celestial = WCS(header, key='A')
+data_wcs_celestial = WCS(header, key="A")
 data_wcs_celestial
 
 # %% [markdown]
@@ -94,29 +94,29 @@ data_map
 # There are many ways to plot the data. We are working on more visualization tools that will be available with the release of the `punchbowl` package. First, we can plot the SunPy map.
 
 # %%
-data_map.plot(norm='log')
+data_map.plot(norm="log")
 
 # %% [markdown]
 # We can also use Matplotlib directly to modify the plot however we want. Notice that we set the projection so it is coordinate aware. Remember we have to slice the WCS as `data_wcs[0]` instead of `data_wcs` because our data are 3D but we want to view only the spatial dimensions.
 
 # %%
 # Plot the data using matplotlib manually
-fig, ax = plt.subplots(figsize=(9.5, 7.5), subplot_kw={'projection':data_wcs[0]})
+fig, ax = plt.subplots(figsize=(9.5, 7.5), subplot_kw={"projection":data_wcs[0]})
 
-im = ax.imshow(data[1], cmap='Greys_r', norm=LogNorm(vmin=1.77e-15, vmax=3.7e-11))
+im = ax.imshow(data[1], cmap="Greys_r", norm=LogNorm(vmin=1.77e-15, vmax=3.7e-11))
 
 # set up the axis labels
 lon, lat = ax.coords
 lat.set_ticks(np.arange(-90, 90, 15) * u.degree)
 lon.set_ticks(np.arange(-180, 180, 15) * u.degree)
-lat.set_major_formatter('dd')
-lon.set_major_formatter('dd')
-ax.set_facecolor('black')
-ax.coords.grid(color='white', alpha=.25, ls='dotted')
+lat.set_major_formatter("dd")
+lon.set_major_formatter("dd")
+ax.set_facecolor("black")
+ax.coords.grid(color="white", alpha=.25, ls="dotted")
 ax.set_xlabel("Helioprojective longitude")
 ax.set_ylabel("Helioprojective latitude")
-ax.set_title('Synthetic PUNCH Polarized Brightness')
-fig.colorbar(im, ax=ax, label='Mean Solar Brightness')
+ax.set_title("Synthetic PUNCH Polarized Brightness")
+fig.colorbar(im, ax=ax, label="Mean Solar Brightness")
 
 # %% [markdown]
 # Since we set the projection, we could also use the celestial WCS instead.
@@ -124,23 +124,23 @@ fig.colorbar(im, ax=ax, label='Mean Solar Brightness')
 # %%
 # Plot the data using matplotlib manually, using the celestial frame
 
-fig, ax = plt.subplots(figsize=(9.5, 7.5), subplot_kw={'projection':data_wcs_celestial[0]})
+fig, ax = plt.subplots(figsize=(9.5, 7.5), subplot_kw={"projection":data_wcs_celestial[0]})
 
-im = ax.imshow(data[0], cmap='Greys_r', norm=LogNorm(vmin=1.77e-15, vmax=3.7e-11))
+im = ax.imshow(data[0], cmap="Greys_r", norm=LogNorm(vmin=1.77e-15, vmax=3.7e-11))
 
 
 # set up the axis labels
 lon, lat = ax.coords
 lat.set_ticks(np.arange(-90, 90, 15) * u.degree)
 lon.set_ticks(np.arange(-180, 180, 15) * u.degree)
-lat.set_major_formatter('dd')
-lon.set_major_formatter('dd')
-ax.set_facecolor('black')
-ax.coords.grid(color='white', alpha=.25, ls='dotted')
+lat.set_major_formatter("dd")
+lon.set_major_formatter("dd")
+ax.set_facecolor("black")
+ax.coords.grid(color="white", alpha=.25, ls="dotted")
 ax.set_xlabel("RA")
 ax.set_ylabel("DEC")
-ax.set_title('Synthetic PUNCH Polarized Brightness')
-fig.colorbar(im, ax=ax, label='Mean Solar Brightness')
+ax.set_title("Synthetic PUNCH Polarized Brightness")
+fig.colorbar(im, ax=ax, label="Mean Solar Brightness")
 
 # %% [markdown]
 # ## Reprojecting the data
@@ -152,8 +152,8 @@ fig.colorbar(im, ax=ax, label='Mean Solar Brightness')
 # What if we wanted to reproject the data to a new arbitrary coordinate frame?
 # First, define a new target WCS
 new_wcs = deepcopy(data_map.wcs)
-new_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
-new_wcs.wcs.cunit = 'deg', 'deg'
+new_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+new_wcs.wcs.cunit = "deg", "deg"
 new_wcs.array_shape = 1024, 1024
 new_wcs.wcs.crpix = 512, 512
 new_wcs.wcs.crval = 10, 10
@@ -179,8 +179,8 @@ data_ndcube
 # %%
 # make a target WCS
 new_wcs = deepcopy(data_wcs)
-new_wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC', 'STOKES'
-new_wcs.wcs.cunit = 'deg', 'deg', ''
+new_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC", "STOKES"
+new_wcs.wcs.cunit = "deg", "deg", ""
 new_wcs.array_shape = 2, 1024, 1024
 new_wcs.wcs.crpix = 0, 0, 0
 new_wcs.wcs.crval = 0, 0, 0
@@ -193,7 +193,7 @@ new_cube
 # NDCubes have a plotter on them too. Notice we even get an interactive slider to manipulate the polarization axis.
 
 # %%
-new_cube.plot(interpolation='None', norm=LogNorm(vmin=1.77E-15, vmax=3.7E-11), cmap='Greys_r')
+new_cube.plot(interpolation="None", norm=LogNorm(vmin=1.77E-15, vmax=3.7E-11), cmap="Greys_r")
 
 # %% [markdown]
 # We encourage you to explore NDCube more. There are other helpful things like [cropping](https://docs.sunpy.org/projects/ndcube/en/stable/generated/gallery/slicing_ndcube.html#cropping-cube-using-world-coordinate-values-using-ndcube-ndcube-crop) that you can do.
@@ -218,24 +218,24 @@ print(absolute_uncertainty.min(), absolute_uncertainty.max())  # now the uncerta
 # %%
 vmin, vmax = 1.77E-15, 3.7E-11
 
-fig, axs = plt.subplots(figsize=(14, 6), ncols=2, subplot_kw={'projection':data_wcs[0]})
+fig, axs = plt.subplots(figsize=(14, 6), ncols=2, subplot_kw={"projection":data_wcs[0]})
 
-im = axs[0].imshow(data[0], norm=LogNorm(vmin=vmin, vmax=vmax), interpolation='None', cmap='Greys_r')
+im = axs[0].imshow(data[0], norm=LogNorm(vmin=vmin, vmax=vmax), interpolation="None", cmap="Greys_r")
 axs[0].set_title("Data")
 
-axs[1].imshow(absolute_uncertainty[0], norm=LogNorm(vmin=vmin, vmax=vmax), interpolation='None', cmap='Greys_r')
+axs[1].imshow(absolute_uncertainty[0], norm=LogNorm(vmin=vmin, vmax=vmax), interpolation="None", cmap="Greys_r")
 axs[1].set_title("Uncertainty")
 
-fig.colorbar(im, ax=axs, label='Mean Solar Brightness')
+fig.colorbar(im, ax=axs, label="Mean Solar Brightness")
 
 # set up the axis labels
 for ax in axs:
     lon, lat = ax.coords
     lat.set_ticks(np.arange(-90, 90, 15) * u.degree)
     lon.set_ticks(np.arange(-180, 180, 15) * u.degree)
-    lat.set_major_formatter('dd')
-    lon.set_major_formatter('dd')
-    ax.set_facecolor('black')
-    ax.coords.grid(color='white', alpha=.25, ls='dotted')
+    lat.set_major_formatter("dd")
+    lon.set_major_formatter("dd")
+    ax.set_facecolor("black")
+    ax.coords.grid(color="white", alpha=.25, ls="dotted")
     ax.set_xlabel("Helioprojective longitude")
     ax.set_ylabel("Helioprojective latitude")

@@ -58,7 +58,7 @@ def copy_and_truncate_csv(src_path, dest_path, columns, filter_column, filter_va
 filter_column = 'TYPE'
 filter_value = 'keyword'
 
-src_csv_path = os.path.abspath(os.path.join('../../punchbowl/data/data/', 'omniheader.csv'))
+src_csv_path = os.path.abspath(os.path.join('../punchbowl/data/data/', 'omniheader.csv'))
 dest_csv_path = os.path.abspath(os.path.join('./data/', 'omniheader_select.csv'))
 columns_to_include = ['KEYWORD', 'COMMENT']
 
@@ -75,12 +75,12 @@ extensions = ["autoapi.extension",
               "sphinx.ext.autodoc",
               "sphinx.ext.napoleon",
               "sphinx_favicon",
-              "nbsphinx",
+              # "nbsphinx",
               'sphinx_gallery.gen_gallery',
               "sphinxcontrib.mermaid",
               "IPython.sphinxext.ipython_console_highlighting"]
 
-nbsphinx_requirejs_path = ""
+# nbsphinx_requirejs_path = ""
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -126,14 +126,14 @@ html_context = {
 }
 
 
-autoapi_dirs = ["../../punchbowl"]
+autoapi_dirs = ["../punchbowl"]
 
 favicons = ["favicon.ico"]
 
 mermaid_verbose = True
 
 sphinx_gallery_conf = {
-    'filename_pattern': '^((?!skip_).)*$',
+    # 'filename_pattern': '^((?!skip_).)*$',
     'examples_dirs': os.path.join('..', 'examples'),
-    'gallery_dirs': os.path.join('..', 'auto_examples')
+    'gallery_dirs': 'auto_examples'
 }

@@ -25,14 +25,14 @@ from punchbowl.data.sample import QUICKPUNCH_NQN, QUICKPUNCH_WQM
 # The third HDU contains a corresponding uncertainty array
 
 with fits.open(QUICKPUNCH_WQM) as hdul:
-    print('WFI QuickPUNCH HDU List:')
+    print("WFI QuickPUNCH HDU List:")
     hdul.info()
     wfi_qp_data = hdul[1].data
     wfi_qp_header = hdul[1].header
     wfi_qp_uncertainty = hdul[2].data
 
 with fits.open(QUICKPUNCH_NQN) as hdul:
-    print('NFI QuickPUNCH HDU List:')
+    print("NFI QuickPUNCH HDU List:")
     hdul.info()
     nfi_qp_data = hdul[1].data
     nfi_qp_header = hdul[1].header
@@ -43,13 +43,13 @@ with fits.open(QUICKPUNCH_NQN) as hdul:
 # The uncertainty data array has the dimensions as the primary data array
 # Both the primary and uncertainty data arrays share the same header, contained in the primary HDU
 
-print('WFI data array size:', wfi_qp_data.shape)
-print('WFI uncertainty array size:', wfi_qp_uncertainty.shape)
+print("WFI data array size:", wfi_qp_data.shape)
+print("WFI uncertainty array size:", wfi_qp_uncertainty.shape)
 
 # %%
 # The corresponding headers can be queried as AstroPy header objects
 
-wfi_qp_header['DATE-OBS']
+wfi_qp_header["DATE-OBS"]
 
 # %%
 # The header information can be converted into an AstroPy WCS object
@@ -89,36 +89,36 @@ wfi_qp_data_ndcube, nfi_qp_data_ndcube
 
 plt.figure(figsize=(7.5, 7.5))
 ax = plt.subplot(111, projection=wfi_qp_data_wcs)
-plt.imshow(np.log(wfi_qp_data), cmap='Greys_r', vmin=-16, vmax=0)
+plt.imshow(np.log(wfi_qp_data), cmap="Greys_r", vmin=-16, vmax=0)
 lon, lat = ax.coords
 lat.set_ticks(np.arange(-90, 90, 5) * u.degree)
 lon.set_ticks(np.arange(-180, 180, 5) * u.degree)
-lat.set_major_formatter('dd')
-lon.set_major_formatter('dd')
-ax.set_facecolor('black')
-ax.coords.grid(color='white', alpha=.1)
+lat.set_major_formatter("dd")
+lon.set_major_formatter("dd")
+ax.set_facecolor("black")
+ax.coords.grid(color="white", alpha=.1)
 plt.xlabel("Helioprojective longitude")
 plt.ylabel("Helioprojective latitude")
-plt.scatter(0, 0, s=240, color='k', transform=ax.get_transform('world'))
-plt.title('QuickPUNCH Mosaic total brightness - ' + wfi_qp_header['DATE-OBS'] + 'UT')
+plt.scatter(0, 0, s=240, color="k", transform=ax.get_transform("world"))
+plt.title("QuickPUNCH Mosaic total brightness - " + wfi_qp_header["DATE-OBS"] + "UT")
 
 # %%
 # Display this data in a regular plotting environment, using the associated WCS
 
 plt.figure(figsize=(7.5, 7.5))
 ax = plt.subplot(111, projection=nfi_qp_data_wcs)
-plt.imshow(np.log(nfi_qp_data), cmap='Greys_r', vmin=-16, vmax=0)
+plt.imshow(np.log(nfi_qp_data), cmap="Greys_r", vmin=-16, vmax=0)
 lon, lat = ax.coords
 lat.set_ticks(np.arange(-90, 90, 5) * u.degree)
 lon.set_ticks(np.arange(-180, 180, 5) * u.degree)
-lat.set_major_formatter('dd')
-lon.set_major_formatter('dd')
-ax.set_facecolor('black')
-ax.coords.grid(color='white', alpha=.1)
+lat.set_major_formatter("dd")
+lon.set_major_formatter("dd")
+ax.set_facecolor("black")
+ax.coords.grid(color="white", alpha=.1)
 plt.xlabel("Helioprojective longitude")
 plt.ylabel("Helioprojective latitude")
-plt.scatter(0, 0, s=240, color='k', transform=ax.get_transform('world'))
-plt.title('QuickPUNCH NFI total brightness - ' + nfi_qp_header['DATE-OBS'] + 'UT')
+plt.scatter(0, 0, s=240, color="k", transform=ax.get_transform("world"))
+plt.title("QuickPUNCH NFI total brightness - " + nfi_qp_header["DATE-OBS"] + "UT")
 
 # %%
 # Again noting that these files are compressed, additional keywords will be visible when viewing these FITS files outside of Python.

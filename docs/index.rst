@@ -18,7 +18,7 @@ Welcome to punchbowl's documentation!
    intro
    data/index
    pipeline/index
-   examples/index
+   auto_examples/index
    help
    contribute
 

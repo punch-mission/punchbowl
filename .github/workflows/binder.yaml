@@ -29,16 +29,10 @@ jobs:
       run: |
         cd ./docs; make html; cd ..
         mkdir notebooks
-        cp docs/auto_examples/*.ipynb notebooks
-        cp pyproject.toml notebooks
-        mkdir todelete
-        mv * todelete/
-        mv todelete/notebooks .
-        rm -rf todelete
-        mv notebooks/* .
-        rmdir notebooks
+        cp docs/auto_examples/*.ipynb .
     # Push the rendered notebooks to branch
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
         branch: binder
+        file_pattern: '*.ipynb pyproject.toml'
         create_branch: true

@@ -136,7 +136,7 @@ sphinx_gallery_conf = {
     'examples_dirs': os.path.join('..', 'examples'),
     'gallery_dirs': 'auto_examples',
     'jupyterlite': {
-        'use_jupyter_lab': False,
+        'use_jupyter_lab': True,
         'notebook_modification_function': None,
         'jupyterlite_contents': "jupyterlite_contents"
     }

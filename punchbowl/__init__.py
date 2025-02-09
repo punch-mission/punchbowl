@@ -1,5 +1,6 @@
 """punchbowl: data reduction and calibration pipeline for PUNCH."""
 import importlib.metadata
+from importlib.metadata import PackageNotFoundError
 
 try:
   __version__ = importlib.metadata.version("punchbowl")

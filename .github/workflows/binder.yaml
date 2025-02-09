@@ -36,6 +36,8 @@ jobs:
         cp pyproject.toml notebooks/auto_examples/
         cp docs/binder/requirements.txt notebooks/auto_examples/
         cp docs/binder/requirements.txt .
+        cp docs/binder/runtime.txt notebooks/auto_examples/
+        cp docs/binder/runtime.txt .
         cp docs/auto_examples/*.ipynb notebooks/auto_examples/
     # Push the rendered notebooks to branch
     - uses: stefanzweifel/git-auto-commit-action@v5

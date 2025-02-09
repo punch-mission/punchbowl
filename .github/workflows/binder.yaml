@@ -31,7 +31,10 @@ jobs:
         mkdir notebooks
         cp docs/auto_examples/*.ipynb notebooks
         cp pyproject.toml notebooks
-        rm -r !notebooks/
+        mkdir todelete
+        mv * todelete/
+        mv todelete/notebooks .
+        rm -rf todelete
         mv notebooks/* .
         rmdir notebooks
     # Push the rendered notebooks to branch

@@ -139,5 +139,14 @@ sphinx_gallery_conf = {
         'use_jupyter_lab': True,
         'notebook_modification_function': None,
         'jupyterlite_contents': "jupyterlite_contents"
-    }
+    },
+    "binder": {
+        "org": "punch-mission",
+        "repo": "punchbowl",
+        "branch": "binder",
+        "binderhub_url": "https://mybinder.org",
+        "dependencies": "pyproject.toml",
+        "notebooks_dir": ".",
+        "use_jupyter_lab": True,
+    },
 }

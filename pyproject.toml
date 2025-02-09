@@ -71,7 +71,7 @@ docs = ["astroid>=3",
         "pydata-sphinx-theme",
         "sphinx-autoapi",
         "sphinx-favicon",
-        "nbsphinx",
+        "jupyterlite-sphinx",
         "ipython",
         "ipykernel",
         "sphinxcontrib-mermaid"]

@@ -75,12 +75,11 @@ extensions = ["autoapi.extension",
               "sphinx.ext.autodoc",
               "sphinx.ext.napoleon",
               "sphinx_favicon",
-              # "nbsphinx",
               'sphinx_gallery.gen_gallery',
               "sphinxcontrib.mermaid",
+              'jupyterlite_sphinx',
               "IPython.sphinxext.ipython_console_highlighting"]
 
-# nbsphinx_requirejs_path = ""
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -133,7 +132,12 @@ favicons = ["favicon.ico"]
 mermaid_verbose = True
 
 sphinx_gallery_conf = {
-    # 'filename_pattern': '^((?!skip_).)*$',
+    'filename_pattern': '^((?!skip_).)*$',
     'examples_dirs': os.path.join('..', 'examples'),
-    'gallery_dirs': 'auto_examples'
+    'gallery_dirs': 'auto_examples',
+    'jupyterlite': {
+        'use_jupyter_lab': False,
+        'notebook_modification_function': None,
+        'jupyterlite_contents': "jupyterlite_contents"
+    }
 }

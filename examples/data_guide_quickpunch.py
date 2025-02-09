@@ -1,7 +1,7 @@
 """
-===================
+========================
 Guide to QuickPUNCH Data
-===================
+========================
 
 A notebook guide to working with QuickPUNCH data in Python
 """

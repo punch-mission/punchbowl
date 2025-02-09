@@ -74,10 +74,11 @@ copy_and_truncate_csv(src_csv_path, dest_csv_path, columns_to_include, filter_co
 extensions = ["autoapi.extension",
               "sphinx.ext.autodoc",
               "sphinx.ext.napoleon",
+              "sphinx_rtd_theme",
               "sphinx_favicon",
               'sphinx_gallery.gen_gallery',
               "sphinxcontrib.mermaid",
-              'jupyterlite_sphinx',
+              # 'jupyterlite_sphinx',
               "IPython.sphinxext.ipython_console_highlighting"]
 
 
@@ -135,18 +136,14 @@ sphinx_gallery_conf = {
     'filename_pattern': '^((?!skip_).)*$',
     'examples_dirs': os.path.join('..', 'examples'),
     'gallery_dirs': 'auto_examples',
-    'jupyterlite': {
-        'use_jupyter_lab': True,
-        'notebook_modification_function': None,
-        'jupyterlite_contents': "jupyterlite_contents"
-    },
+    # 'jupyterlite': {
+    # },
     "binder": {
         "org": "punch-mission",
         "repo": "punchbowl",
         "branch": "binder",
         "binderhub_url": "https://mybinder.org",
-        "dependencies": "pyproject.toml",
-        "notebooks_dir": ".",
+        "dependencies": "./binder/requirements.txt",
         "use_jupyter_lab": True,
     },
 }

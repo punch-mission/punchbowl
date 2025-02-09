@@ -54,23 +54,27 @@ classifiers = [
 [project.optional-dependencies]
 test = ["pytest",
         "codespell",
-            "coverage",
-            "pytest-cov",
-            "flake8",
-            "pytest-runner",
-            "pytest-mpl",
-            "pre-commit",
-            "ruff",
-            "hypothesis"]
-docs = ["sphinx",
+        "coverage",
+        "pytest-cov",
+        "flake8",
+        "pytest-runner",
+        "pytest-mpl",
+        "pre-commit",
+        "ruff",
+        "hypothesis"]
+docs = ["astroid>=3",
+        "sphinx",
+        "sphinx-gallery",
+        "sphinx_rtd_theme",
         "codespell",
         "packaging",
-            "pydata-sphinx-theme",
-            "sphinx-autoapi",
-            "sphinx-favicon",
-            "nbsphinx",
-            "ipython",
-            "sphinxcontrib-mermaid"]
+        "pydata-sphinx-theme",
+        "sphinx-autoapi",
+        "sphinx-favicon",
+        "jupyterlite-sphinx",
+        "ipython",
+        "ipykernel",
+        "sphinxcontrib-mermaid"]
 gpu = ["cupy"]
 dev = ["punchbowl[docs,test]"]
 
@@ -91,7 +95,7 @@ skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
 
 [tool.ruff]
 target-version = 'py311'
-exclude = ['tests', 'scripts', 'docs']
+exclude = ['tests', 'scripts', 'docs', 'examples']
 line-length=120
 lint.select = ["ALL"]
 lint.ignore = [

@@ -32,6 +32,7 @@ jobs:
         cd ./docs; make html; cd ..
         mkdir notebooks
         mkdir notebooks/auto_examples/
+        cp -r punchbowl/ notebooks/auto_examples/
         cp docs/binder/requirements.txt notebooks/auto_examples/
         cp docs/binder/requirements.txt .
         cp docs/auto_examples/*.ipynb notebooks/auto_examples/

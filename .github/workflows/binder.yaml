@@ -8,8 +8,10 @@ on:
 
 # This job installs dependencies, builds the book, and pushes it to `gh-pages`
 jobs:
-  deploy-docs:
+  deploy-binder:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   
     steps:
     - uses: actions/checkout@v2
 
@@ -38,3 +40,4 @@ jobs:
       with:
         branch: binder
         create_branch: true
+        push_options: '--force'

@@ -28,12 +28,12 @@ jobs:
     - name: Sphinx build
       run: |
         cd ./docs; make html; cd ..
-#        mkdir notebooks
-#        cp docs/notebooks/auto_examples/*.ipynb notebooks
-#        cp pyproject.toml notebooks
-#        rm -r !notebooks/
-#        mv notebooks/* .
-#        rmdir notebooks
+        mkdir notebooks
+        cp docs/auto_examples/*.ipynb notebooks
+        cp pyproject.toml notebooks
+        rm -r !notebooks/
+        mv notebooks/* .
+        rmdir notebooks
     # Push the rendered notebooks to branch
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:

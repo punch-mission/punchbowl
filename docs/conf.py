@@ -136,8 +136,11 @@ sphinx_gallery_conf = {
     'filename_pattern': '^((?!skip_).)*$',
     'examples_dirs': os.path.join('..', 'examples'),
     'gallery_dirs': 'auto_examples',
-    # 'jupyterlite': {
-    # },
+    'jupyterlite': {
+        'use_jupyter_lab': True,
+        'notebook_modification_function': None,
+        'jupyterlite_contents': "jupyterlite_contents"
+    },
     "binder": {
         "org": "punch-mission",
         "repo": "punchbowl",

@@ -29,10 +29,10 @@ jobs:
       run: |
         cd ./docs; make html; cd ..
         mkdir notebooks
-        cp docs/auto_examples/*.ipynb .
+        mkdir notebooks/auto_examples/
+        cp docs/auto_examples/*.ipynb notebooks/auto_examples/
     # Push the rendered notebooks to branch
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
         branch: binder
-        file_pattern: '*.ipynb pyproject.toml'
         create_branch: true

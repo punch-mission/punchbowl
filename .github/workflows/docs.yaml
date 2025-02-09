@@ -12,15 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: r-lib/actions/setup-pandoc@v2
-      with:
-        pandoc-version: '2.17.1' # The pandoc version to download (if necessary) and use.
 
     # Install dependencies
-    - name: Set up Python 3.11
+    - name: Set up Python 3.12
       uses: actions/setup-python@v3
       with:
-        python-version: "3.11"
+        python-version: "3.12"
 
     - name: Install dependencies
       run: |

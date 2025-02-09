@@ -46,7 +46,7 @@ jobs:
       with:
         skip: '*.fits'
         ignore_words_file: .codespellignore
-        path: docs/source
+        path: docs
     - name: Test with pytest
       run: |
         pip install .

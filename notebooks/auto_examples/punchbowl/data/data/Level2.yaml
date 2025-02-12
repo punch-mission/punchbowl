@@ -1,0 +1,117 @@
+# Level specification
+Level:
+    FITS Required:
+        overrides:
+            BITPIX: -32
+    Documentation, Contact, and Collection Metadata:
+        overrides:
+            DESCRPTN: PUNCH Level-2 data, Composite mosaic in output coordinates
+    File Type and Provenance:
+        omits: [FILE_RAW]
+        overrides:
+            LEVEL: 2
+            OBSRVTRY: PUNCH
+    Temporal Information:
+    Instrument and Spacecraft State:
+    World Coordinate System:
+    Image Statistics and Properties:
+    Solar Reference Data:
+    Spacecraft Location & Environment:
+        omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]
+    Fixity:
+    History:
+
+
+# Kind specifications
+Kinds:
+    Polarized:
+        overrides:
+            NAXIS: 3
+            NAXIS1: 4096
+            NAXIS2: 4096
+            NAXIS3: 3
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            OBSLAYR2: Polar_Z
+            OBSLAYR3: Polar_P
+            POLARREF: 'Solar'
+        omits: [FILTER, POLAR]
+
+    Unpolarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+            OBS-MODE: Unpolarized
+            POLAR: -999
+            CTYPE1: HPLN-ARC
+            CTYPE2: HPLT-ARC
+            WCSAXES: 2
+            WCSAXESA: 2
+            CDELT1: 0.0225
+            CDELT2: 0.0225
+            CRPIX1: 2047.5
+            CRPIX2: 2047.5
+            CDELT1A: -0.025
+            CDELT2A: 0.025
+            CRPIX1A: 2047.5
+            CRPIX2A: 2047.5
+            CTYPE1A: RA---ARC
+            CTYPE2A: DEC--ARC
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3,CRPIX3,
+                PC1_3, PC2_3, PC3_1, PC3_2, PC3_3, CDELT3, CUNIT3, CTYPE3, CRVAL3, CNAME3,
+                CRPIX3A, PC1_3A, PC2_3A, PC3_1A, PC3_2A, PC3_3A, CDELT3A, CUNIT3A, CTYPE3A, CRVAL3A, CNAME3A]
+
+    Calibration:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+        omits: [NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+
+
+# Product specifications
+Products:
+    PTM:
+        kinds: [Polarized]
+        overrides:
+            TITLE: PUNCH Level-2 Polarized Mosaic
+            OBSTYPE: Polarized mosaic
+            TYPECODE: PT
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+
+    PNN:
+        kinds: [Polarized]
+        overrides:
+            NAXIS1: 2048
+            NAXIS2: 2048
+            TITLE: PUNCH Level-2 Polarized NFI Image
+            OBSTYPE: Polarized NFI image
+            TYPECODE: PN
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: N
+
+    CTM:
+        kinds: [Unpolarized]
+        overrides:
+            TITLE: PUNCH Level-2 Unpolarized Mosaic
+            OBSTYPE: Unpolarized mosaic
+            TYPECODE: CT
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+
+    CNN:
+        kinds: [Unpolarized]
+        overrides:
+            NAXIS1: 2048
+            NAXIS2: 2048
+            TITLE: PUNCH Level-2 Unpolarized NFI Image
+            OBSTYPE: Unpolarized NFI image
+            TYPECODE: CN
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: N

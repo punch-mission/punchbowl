@@ -14,15 +14,15 @@ Data will be available via the Solar Data Analysis Center. More details will be 
 
 ## Installing `punchbowl`
 
-Install with `pip install punchbowl` to get the released version. 
+Install with `pip install punchbowl` to get the released version.
 
 To get the current latest version: clone the repo and install locally.
 
 ## Running `punchbowl`
 
-[The documentation](https://punchbowl.readthedocs.io/en/latest/index.html) provides details on how to run the various components. 
-It also provides a short explanation of each underlying algorithm. 
-If you want to process larger quantities of data, we suggest using [puncpipe](https://github.com/punch-mission/punchpipe). 
+[The documentation](https://punchbowl.readthedocs.io/en/latest/index.html) provides details on how to run the various components.
+It also provides a short explanation of each underlying algorithm.
+If you want to process larger quantities of data, we suggest using [puncpipe](https://github.com/punch-mission/punchpipe).
 Please reach out with a discussion for more help.
 
 ## Getting help

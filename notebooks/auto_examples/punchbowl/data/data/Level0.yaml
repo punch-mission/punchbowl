@@ -1,0 +1,192 @@
+# Level specification
+Level:
+    FITS Required:
+        overrides:
+            BITPIX: 16
+    Documentation, Contact, and Collection Metadata:
+        overrides:
+            DESCRPTN: PUNCH Level-0 data, square-root encoded DN values in camera coordinates
+    File Type and Provenance:
+        overrides:
+            LEVEL: 0
+    Temporal Information:
+    Instrument and Spacecraft State:
+        omits: [OBSLAYR2, OBSLAYR3]
+    World Coordinate System:
+    Camera and Readout State:
+    Onboard Image Processing:
+    Calibration Data:
+    Image Statistics and Properties:
+        overrides:
+            DSATVAL: 65535
+            BUNIT: sqrt(DN)
+        omits: [BSUN_DEF]
+    Solar Reference Data:
+    Spacecraft Location & Environment:
+    Fixity:
+    History:
+
+
+# Kind specifications
+Kinds:
+    Polarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+            POLARREF: 'Instrument'
+        omits: [NAXIS3]
+
+    Unpolarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+        omits: [NAXIS3]
+
+    Calibration:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+        omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment, NAXIS3]
+
+    PM:
+        overrides:
+            TYPECODE: PM
+            FILTER: P1
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            POLAR: -60
+
+    PZ:
+        overrides:
+            TYPECODE: PZ
+            FILTER: P2
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_Z
+            POLAR: 0
+
+    PP:
+        overrides:
+            TYPECODE: PP
+            FILTER: P3
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_P
+            POLAR: +60
+
+    CR:
+        overrides:
+            TYPECODE: CR
+            FILTER: Clear
+            OBS-MODE: Unpolarized
+            OBSLAYR1: Unpolarized
+            POLAR: -999
+
+
+# Product specifications
+Products:
+    PM?:
+        kinds: [Polarized, PM]
+        overrides:
+            TITLE: PUNCH Level-0 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    PZ?:
+        kinds: [Polarized, PZ]
+        overrides:
+            TITLE: PUNCH Level-0 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    PP?:
+        kinds: [Polarized, PP]
+        overrides:
+            TITLE: PUNCH Level-0 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    CR?:
+        kinds: [Unpolarized, CR]
+        overrides:
+            TITLE: PUNCH Level-0 {craftname} Clear Image
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    PX?:
+        kinds: [Polarized]
+        overrides:
+            TITLE: PUNCH Level-0 {craftname} Non-standard Polarized Image
+            OBSTYPE: Non-standard polarized {crafttype} image
+            TYPECODE: PX
+            FILTER: PX
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_X
+            POLAR: -999
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    ST4:
+        kinds: []
+        overrides:
+            TITLE: PUNCH Level-0 STEAM Image
+            OBSTYPE: STEAM Data
+            TYPECODE: ST
+            INSTRUME: NFI-0
+            TELESCOP: PUNCH-4
+            OBSCODE: "{craftid}"
+        omits: [OBS-MODE, OBSLAYR1, FILTER, POLAR]
+
+    DK?:
+        kinds: [Calibration]
+        overrides:
+            TITLE: PUNCH Level-0 {craftname} Dark Image
+            OBSTYPE: "{crafttype} dark image (lamp off)"
+            TYPECODE: DK
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    DY?:
+        kinds: [Calibration]
+        overrides:
+            TITLE: PUNCH Level-0 {craftname} Dark Image
+            OBSTYPE: "{crafttype} dark image (lamp on)"
+            TYPECODE: DY
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    OV?:
+        kinds: [Calibration]
+        overrides:
+            TITLE: PUNCH Level-0 {craftname} Overscan Image
+            OBSTYPE: "{crafttype} overscan image"
+            TYPECODE: OV
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    XI?:
+        kinds: [Calibration]
+        overrides:
+            TITLE: PUNCH Level-0 {craftname} Experimental Image
+            OBSTYPE: "{crafttype} experimental image"
+            TYPECODE: XI
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]

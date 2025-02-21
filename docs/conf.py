@@ -24,7 +24,7 @@ from packaging.version import Version
 # -- Project information -----------------------------------------------------
 
 project = "punchbowl"
-copyright = "2024, PUNCH Science Operations Center"
+copyright = "2025, PUNCH Science Operations Center"
 author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags

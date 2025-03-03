@@ -2,20 +2,25 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Latest: unreleased
+
+- 
+
 ## Version 0.0.9: Feb 28, 2025
 
-- adds zspike blurring and parameterization by @lowderchris in #345
-- rename PUNCH io module by @jmbhughes in #350
-- Adds sphinx gallery by @lowderchris in #352
-- make binder work by @jmbhughes in #356
-- Configure binder by @jmbhughes in #357
-- Rename example gallery by @jmbhughes in #358
-- Update binder.yaml by @jmbhughes in #360
-- Separate quick punch by @jmbhughes in #361
-- specify codecov path by @jmbhughes in #362
-- Update issue templates by @jmbhughes in #364
-- Update README.md by @jmbhughes in #365
-- update copyright year by @jmbhughes in #367
+* adds zspike blurring and parameterization by @lowderchris in https://github.com/punch-mission/punchbowl/pull/345
+* [pre-commit.ci] pre-commit autoupdate by @pre-commit-ci in https://github.com/punch-mission/punchbowl/pull/349
+* rename PUNCH io module by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/350
+* Adds sphinx gallery by @lowderchris in https://github.com/punch-mission/punchbowl/pull/352
+* make binder work by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/356
+* Configure binder by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/357
+* Rename example gallery by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/358
+* Update binder.yaml by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/360
+* Separate quick punch by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/361
+* specify codecov path by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/362
+* Update issue templates by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/364
+* Update README.md by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/365
+* update copyright year by @jmbhughes in https://github.com/punch-mission/punchbowl/pull/367
 
 ## Version 0.0.8: Dec 19, 2024
 

@@ -4,7 +4,7 @@
 
 ## Latest: unreleased
 
-- 
+-
 
 ## Version 0.0.9: Feb 28, 2025
 

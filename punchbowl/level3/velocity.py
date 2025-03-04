@@ -365,20 +365,25 @@ def process_corr(files: list, arcsec_per_px:float, expected_kps_windspeed: float
     return avg_speeds, sigmas
 
 
-def plot_flow_map(filename: str, data: NDCube, cmap: str = "magma") -> None:
+def plot_flow_map(filename: str | None, data: NDCube, cmap: str = "magma") -> None:
     """
     Plot polar maps of the radial flows.
 
     Parameters
     ----------
     filename: str
-        Output plot filename
+        Output plot filename. If None, the figure is not saved out.
 
     data: NDCube
         Flow tracking data NDCube
 
     cmap : str, optional
         Colormap for the plot (default is 'magma')
+
+    Returns
+    -------
+    fig
+        The generated Matplotlib Figure
 
     """
     speeds = data.data
@@ -418,7 +423,9 @@ def plot_flow_map(filename: str, data: NDCube, cmap: str = "magma") -> None:
 
     cbar_ax = fig.add_axes([0.11, 0.2, 0.8, 0.03])
     plt.colorbar(mapper, cax=cbar_ax, orientation="horizontal").ax.set_xlabel("Speed (km/s)")
-    plt.savefig(filename)
+    if filename is not None:
+        plt.savefig(filename)
+    return fig
 
 
 def track_velocity(files: list[str],
@@ -539,6 +546,7 @@ def track_velocity(files: list[str],
     wcs.wcs.crpix = 0, 0
     wcs.wcs.crval = 0, 0
     wcs.wcs.cname = "solar radii", "azimuth"
+    wcs.array_shape = avg_speeds.shape
 
     return NDCube(data = avg_speeds,
                   uncertainty=StdDevUncertainty(sigmas),

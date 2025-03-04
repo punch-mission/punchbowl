@@ -7,6 +7,7 @@ Level:
         overrides:
             DESCRPTN: PUNCH Level-2 data, Composite mosaic in output coordinates
     File Type and Provenance:
+        omits: [FILE_RAW]
         overrides:
             LEVEL: 2
             OBSRVTRY: PUNCH
@@ -57,9 +58,9 @@ Kinds:
             CRPIX2A: 2047.5
             CTYPE1A: RA---ARC
             CTYPE2A: DEC--ARC
-        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3 ,CRPIX3,
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3,CRPIX3,
                 PC1_3, PC2_3, PC3_1, PC3_2, PC3_3, CDELT3, CUNIT3, CTYPE3, CRVAL3, CNAME3,
-                CRPIX3A, PC1_3A, PC2_3A, PC3_1A, PC3_2A, PC3_3A, CDELT3A, CUNIT3A, CTYPE3A, CRVAL3A, CNAME3A ]
+                CRPIX3A, PC1_3A, PC2_3A, PC3_1A, PC3_2A, PC3_3A, CDELT3A, CUNIT3A, CTYPE3A, CRVAL3A, CNAME3A]
 
     Calibration:
         overrides:

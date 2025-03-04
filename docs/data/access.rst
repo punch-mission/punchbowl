@@ -9,7 +9,7 @@ PUNCH data will also be accessible using the helioviewer tool, where it can be q
 
 Reading Data
 ------------
-Standard PUNCH data is stored as a standards-compliant FITS file, which bundles the primary data along with secondary data and metadata fully describing the observation. Each file is named with a convention that uniquely identifies the product - a sample being 'PUNCH_L3_PAM_20230704000000_v1.fits' - where L3 defines the data level, PAM is an example of a particular data product code, 20230704000000 is a timestamp in the format yyyyhhmmhhmmss, and _v1 is the version of the data (used in reprocessing).
+Standard PUNCH data is stored as a standards-compliant FITS file, which bundles the primary data along with secondary data and metadata fully describing the observation. Each file is named with a convention that uniquely identifies the product - a sample being 'PUNCH_L3_PAM_20230704000000_v1.fits' - where L3 defines the data level, PAM is an example of a particular data product code, 20230704000000 is a timestamp in the format yyyymmddhhmmss, and _v1 is the version of the data (used in reprocessing).
 
 For most end-users the primary data of interest are PAM (low-noise full frame data gathered over one full spacecraft rotation cycle) and PTM (high-cadence trefoil mosaics).
 

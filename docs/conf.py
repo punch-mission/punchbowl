@@ -24,7 +24,7 @@ from packaging.version import Version
 # -- Project information -----------------------------------------------------
 
 project = "punchbowl"
-copyright = "2024, PUNCH Science Operations Center"
+copyright = "2025, PUNCH Science Operations Center"
 author = "PUNCH Science Operations Center"
 
 # The full version, including alpha/beta/rc tags
@@ -58,7 +58,7 @@ def copy_and_truncate_csv(src_path, dest_path, columns, filter_column, filter_va
 filter_column = 'TYPE'
 filter_value = 'keyword'
 
-src_csv_path = os.path.abspath(os.path.join('../../punchbowl/data/data/', 'omniheader.csv'))
+src_csv_path = os.path.abspath(os.path.join('../punchbowl/data/data/', 'omniheader.csv'))
 dest_csv_path = os.path.abspath(os.path.join('./data/', 'omniheader_select.csv'))
 columns_to_include = ['KEYWORD', 'COMMENT']
 
@@ -74,12 +74,13 @@ copy_and_truncate_csv(src_csv_path, dest_csv_path, columns_to_include, filter_co
 extensions = ["autoapi.extension",
               "sphinx.ext.autodoc",
               "sphinx.ext.napoleon",
+              "sphinx_rtd_theme",
               "sphinx_favicon",
-              "nbsphinx",
+              'sphinx_gallery.gen_gallery',
               "sphinxcontrib.mermaid",
+              # 'jupyterlite_sphinx',
               "IPython.sphinxext.ipython_console_highlighting"]
 
-nbsphinx_requirejs_path = ""
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -125,8 +126,27 @@ html_context = {
 }
 
 
-autoapi_dirs = ["../../punchbowl"]
+autoapi_dirs = ["../punchbowl"]
 
 favicons = ["favicon.ico"]
 
 mermaid_verbose = True
+
+sphinx_gallery_conf = {
+    'filename_pattern': '^((?!skip_).)*$',
+    'examples_dirs': os.path.join('..', 'examples'),
+    'gallery_dirs': 'auto_examples',
+    'jupyterlite': {
+        'use_jupyter_lab': True,
+        'notebook_modification_function': None,
+        'jupyterlite_contents': "jupyterlite_contents"
+    },
+    "binder": {
+        "org": "punch-mission",
+        "repo": "punchbowl",
+        "branch": "binder",
+        "binderhub_url": "https://mybinder.org",
+        "dependencies": "./binder/requirements.txt",
+        "use_jupyter_lab": True,
+    },
+}

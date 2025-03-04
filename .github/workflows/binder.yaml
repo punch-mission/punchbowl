@@ -1,0 +1,47 @@
+name: deploy-binder
+
+# Only run this when the master branch changes
+on:
+  push:
+    branches:
+    - main
+
+# This job installs dependencies, builds the book, and pushes it to `gh-pages`
+jobs:
+  deploy-binder:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v2
+
+    # Install dependencies
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[docs]"
+
+    # Build the book
+    - name: Sphinx build
+      run: |
+        cd ./docs; make html; cd ..
+        mkdir notebooks
+        mkdir notebooks/auto_examples/
+        cp -r punchbowl/ notebooks/auto_examples/
+        cp pyproject.toml notebooks/auto_examples/
+        cp docs/binder/requirements.txt notebooks/auto_examples/
+        cp docs/binder/requirements.txt .
+        cp docs/binder/runtime.txt notebooks/auto_examples/
+        cp docs/binder/runtime.txt .
+        cp docs/auto_examples/*.ipynb notebooks/auto_examples/
+    # Push the rendered notebooks to branch
+    - uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        branch: binder
+        create_branch: true
+        push_options: '--force'

@@ -48,10 +48,10 @@ jobs:
       with:
         skip: '*.fits'
         ignore_words_file: .codespellignore
-        path: docs/source
+        path: docs
     - name: Test with pytest
       run: |
-        coverage run -m pytest
+        pytest --cov=punchbowl/
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       env:

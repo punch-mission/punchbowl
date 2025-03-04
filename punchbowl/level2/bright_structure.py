@@ -1,7 +1,7 @@
-
 import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger
+from scipy.ndimage import gaussian_filter
 from skimage.morphology import binary_dilation
 
 from punchbowl.data import load_ndcube_from_fits
@@ -16,8 +16,10 @@ def run_zspike(
     veto_limit: int = 2,
     diff_method: str = "sigma",
     dilation: int = 0,
+    blur_scale: float = 1.0,
+    blur_threshold: float | None = 0.15,
     index_of_interest: int | None = None,
-) -> np.ndarray:
+    ) -> np.ndarray:
     """
     Identify bright structures in temporal series of images.
 
@@ -95,6 +97,12 @@ def run_zspike(
     dilation: int
         If nonzero, this is the number of times to morphologically dilate pixels marked as bright structures.
 
+    blur_scale: float
+        The scale of the gaussian kernel used for convolving with the mask for blurring.
+
+    blur_threshold: float
+        The threshold value used to cast a blurred mask array back to a boolean data type.
+
     index_of_interest : int
         if you have an even number of frames, or you don't want to find spikes
         in the center frame, the frame_of_interest will be used. index_of_interest
@@ -154,6 +162,11 @@ def run_zspike(
     # expand flags by dilating to remove holes or fuzzy edges
     for _ in range(dilation):
         binary_dilation(flagged_features_array, out=flagged_features_array)
+
+    # blur and threshold the mask
+    if blur_scale is not None:
+        flagged_features_array = gaussian_filter(flagged_features_array.astype(float),
+                                                 sigma=blur_scale) > blur_threshold
 
     return flagged_features_array
 

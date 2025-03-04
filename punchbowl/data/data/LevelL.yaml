@@ -7,15 +7,13 @@ Level:
         overrides:
             DESCRPTN: PUNCH QuickLook data, Composite mosaic in output coordinates
     File Type and Provenance:
+        omits: [FILE_RAW]
         overrides:
             LEVEL: L
             OBSRVTRY: PUNCH
     Temporal Information:
     Instrument and Spacecraft State:
     World Coordinate System:
-    Camera and Readout State:
-    Onboard Image Processing:
-    Calibration Data:
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:

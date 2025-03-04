@@ -58,10 +58,12 @@ def write_ndcube_to_jp2(cube: NDCube,
     cmap = cmap_punch()
     norm = LogNorm(vmin=vmin, vmax=vmax)
 
-    if layer is not None:
-        cube = cube[layer, :, :]
+    if layer is not None: # noqa: SIM108
+        image = cube.data[layer, :, :]
+    else:
+        image = cube.data
 
-    scaled_arr = (cmap(norm(np.flipud(cube.data)))*255).astype(np.uint8)
+    scaled_arr = (cmap(norm(np.flipud(image)))*255).astype(np.uint8)
     encoded_arr = encode_array(scaled_arr)
 
     with open(filename, "wb") as f:
@@ -88,11 +90,15 @@ def write_ndcube_to_fits(cube: NDCube,
                                             header=full_header,
                                             name="Uncertainty array",
                                             quantize_level=uncertainty_quantize_level)
+        hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
+            name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
+        hdu_provenance.name = "File provenance"
 
         hdul = cube.wcs.to_fits()
         hdul[0] = fits.PrimaryHDU()
         hdul.insert(1, hdu_data)
         hdul.insert(2, hdu_uncertainty)
+        hdul.insert(3, hdu_provenance)
         hdul.writeto(filename, overwrite=overwrite, checksum=True)
         hdul.close()
         if write_hash:
@@ -115,8 +121,9 @@ def _pack_uncertainty(cube: NDCube) -> np.ndarray:
 def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -> np.ndarray:
     """Uncompress the uncertainty when reading from a file."""
     # This is (1/uncertainty_array) * data_array, but this way we save time on memory allocation
-    np.divide(1, uncertainty_array, out=uncertainty_array)
-    np.multiply(data_array, uncertainty_array, out=uncertainty_array)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        np.divide(1, uncertainty_array, out=uncertainty_array)
+        np.multiply(data_array, uncertainty_array, out=uncertainty_array)
     return uncertainty_array
 
 
@@ -152,7 +159,7 @@ def _update_statistics(cube: NDCube) -> None:
     cube.meta["DATAMAX"] = float(np.nanmax(cube.data))
 
 
-def load_ndcube_from_fits(path: str | Path, key: str = " ") -> NDCube:
+def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True) -> NDCube:
     """Load an NDCube from a FITS file."""
     with fits.open(path) as hdul:
         primary_hdu = hdul[1]
@@ -162,6 +169,8 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ") -> NDCube:
         header["CHECKSUM"] = ""
         header["DATASUM"] = ""
         meta = NormalizedMetadata.from_fits_header(header)
+        if include_provenance:
+            meta._provenance = hdul[3].data["provenance"]  # noqa: SLF001
         wcs = WCS(header, hdul, key=key)
         unit = u.ct
 

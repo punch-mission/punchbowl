@@ -7,6 +7,7 @@ Level:
         overrides:
             DESCRPTN: PUNCH Level-3 data, Composite mosaic in output coordinates
     File Type and Provenance:
+        omits: [FILE_RAW]
         overrides:
             LEVEL: 3
             OBSRVTRY: PUNCH
@@ -49,7 +50,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 4096
             NAXIS2: 4096
-        omits: [Velocity, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [Velocity, Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Velocity:
         overrides:
@@ -136,7 +137,7 @@ Products:
             OBSCODE: M
 
     PIM:
-        kinds: [ Polarized ]
+        kinds: [Polarized]
         overrides:
             TITLE: PUNCH Level-3 Intermediate F-corona Subtracted Polarized Mosaic
             OBSTYPE: Polarized mosaic

@@ -17,6 +17,7 @@ def test_calculate_image_pixel_area_rotated_input():
         wcs.wcs.crval = 0, 0
         wcs.wcs.crpix = 256, 256
         wcs.wcs.cdelt = 0.05, 0.05
+        wcs.array_shape = shape
 
         area_maps.append(units.calculate_image_pixel_area(wcs, shape))
 
@@ -33,6 +34,7 @@ def test_calculate_image_pixel_area_output_shape():
     wcs.wcs.crval = 0, 0
     wcs.wcs.crpix = 512, 480
     wcs.wcs.cdelt = 0.05, 0.05
+    wcs.array_shape = shape
 
     area_map = units.calculate_image_pixel_area(wcs, shape)
     assert area_map.shape == shape

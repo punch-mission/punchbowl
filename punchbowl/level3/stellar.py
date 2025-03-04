@@ -1,3 +1,4 @@
+from math import floor
 from datetime import datetime
 
 import numpy as np
@@ -5,9 +6,10 @@ import remove_starfield
 import astropy.units as u
 from solpolpy import resolve
 from ndcube import NDCube, NDCollection
+
 from prefect import flow, get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
-from remove_starfield.reducers import GaussianReducer
+from remove_starfield.reducers import PercentileReducer
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial, get_p_angle
@@ -17,14 +19,19 @@ from punchbowl.prefect import punch_task
 class PUNCHImageProcessor(ImageProcessor):
     """Special loader for PUNCH data."""
 
-    def __init__(self, layer: int) -> None:
+    def __init__(self, layer: int, apply_mask: bool = True, key: str = " ") -> None:
         """Create PUNCHImageProcessor."""
         self.layer = layer
+        self.apply_mask = apply_mask
+        self.key = key
 
     def load_image(self, filename: str) -> ImageHolder:
         """Load an image."""
-        cube = load_ndcube_from_fits(filename, key="A")
-        return ImageHolder(cube.data[self.layer], cube.wcs.celestial, cube.meta)
+        cube = load_ndcube_from_fits(filename, key=self.key)
+        data = cube.data[self.layer]
+        if self.apply_mask:
+            data[np.isclose(cube.uncertainty.array[self.layer], 0, atol=1E-30)] = np.nan
+        return ImageHolder(data, cube.wcs.celestial, cube.meta)
 
 def to_celestial(input_data: NDCube) -> NDCube:
     """
@@ -102,15 +109,21 @@ def from_celestial(input_data: NDCube) -> NDCube:
     return output
 
 
-# TODO: Use to_celestial() before generating starfield
-@flow(log_prints=True)
+@flow(log_prints=True, timeout_seconds=21_600)
 def generate_starfield_background(
         filenames: list[str],
-        n_sigma: float = 5,
         map_scale: float = 0.01,
-        target_mem_usage: float = 1000) -> [NDCube, NDCube]:
+        target_mem_usage: float = 1000,
+        n_procs: int | None = None,
+        reference_time: datetime | None = None) -> [NDCube, NDCube]:
     """Create a background starfield_bg map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
+
+    if reference_time is None:
+        reference_time = datetime.now()
+    elif isinstance(reference_time, str):
+        reference_time = parse_datetime_str(reference_time)
+
     logger.info("construct_starfield_background started")
 
     # create an empty array to fill with data
@@ -119,33 +132,39 @@ def generate_starfield_background(
         msg = "filenames cannot be empty"
         raise ValueError(msg)
 
-    ra_bounds = (0, 180)
-    dec_bounds = (-90, 90)
+    shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
+    starfield_wcs = WCS(naxis=2)
+    # n.b. it seems the RA wrap point is chosen so there's 180 degrees
+    # included on either side of crpix
+    crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
+    starfield_wcs.wcs.crpix = crpix
+    starfield_wcs.wcs.crval = 270, -23.5
+    starfield_wcs.wcs.cdelt = map_scale, map_scale
+    starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
+    starfield_wcs.wcs.cunit = "deg", "deg"
+    starfield_wcs.array_shape = shape
 
     logger.info("Starting m starfield")
     starfield_m = remove_starfield.build_starfield_estimate(
         filenames,
         attribution=False,
         frame_count=False,
-        reducer=GaussianReducer(n_sigma=n_sigma),
-        ra_bounds=ra_bounds,
-        dec_bounds=dec_bounds,
-        map_scale=map_scale,
-        processor=PUNCHImageProcessor(0),
+        reducer=PercentileReducer(10),
+        starfield_wcs=starfield_wcs,
+        n_procs=n_procs,
+        processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
         target_mem_usage=target_mem_usage)
     logger.info("Ending m starfield")
-
 
     logger.info("Starting z starfield")
     starfield_z = remove_starfield.build_starfield_estimate(
         filenames,
         attribution=False,
         frame_count=False,
-        ra_bounds=ra_bounds,
-        dec_bounds=dec_bounds,
-        reducer=GaussianReducer(n_sigma=n_sigma),
-        map_scale=map_scale,
-        processor=PUNCHImageProcessor(1),
+        reducer=PercentileReducer(10),
+        starfield_wcs=starfield_wcs,
+        n_procs=n_procs,
+        processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
         target_mem_usage=target_mem_usage)
     logger.info("Ending z starfield")
 
@@ -155,36 +174,30 @@ def generate_starfield_background(
         filenames,
         attribution=False,
         frame_count=False,
-        ra_bounds=ra_bounds,
-        dec_bounds=dec_bounds,
-        reducer=GaussianReducer(n_sigma=n_sigma),
-        map_scale=map_scale,
-        processor=PUNCHImageProcessor(2),
+        reducer=PercentileReducer(10),
+        starfield_wcs=starfield_wcs,
+        n_procs=n_procs,
+        processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
         target_mem_usage=target_mem_usage)
     logger.info("Ending p starfield")
-
 
     # create an output PUNCHdata object
     logger.info("Preparing to create outputs")
 
     meta = NormalizedMetadata.load_template("PSM", "3")
-    meta["DATE-OBS"] = str(datetime(2024, 8, 1, 12, 0, 0,
-                                    tzinfo=datetime.timezone.utc))
-    out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
-    output_before = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
-                    wcs=out_wcs, meta=meta)
-    output_before.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
+    meta["DATE-OBS"] = reference_time.isoformat()
+    meta["DATE-BEG"] = reference_time.isoformat()
+    meta["DATE-END"] = reference_time.isoformat()
+    meta["DATE-AVG"] = reference_time.isoformat()
+    meta["DATE"] = datetime.now().isoformat()
 
-    meta = NormalizedMetadata.load_template("PSM", "3")
-    meta["DATE-OBS"] = str(datetime(2024, 12, 1, 12, 0, 0,
-                                    tzinfo=datetime.timezone.utc))
     out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
-    output_after = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
+    output = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),
                     wcs=out_wcs, meta=meta)
-    output_after.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
+    output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     logger.info("construct_starfield_background finished")
-    return [output_before, output_after]
+    return [output]
 
 
 @punch_task
@@ -218,18 +231,30 @@ def subtract_starfield_background_task(data_object: NDCube,
         output.meta.history.add_now("LEVEL3-subtract_starfield_background",
                                            "starfield subtraction skipped since path is empty")
     else:
-        star_datacube = load_ndcube_from_fits(starfield_background_path)
-        data_wcs = calculate_celestial_wcs_from_helio(data_object.wcs.celestial,
-                                                      data_object.meta.astropy_time,
-                                                      data_object.data.shape[-2:])
-        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)),
-                                    star_datacube.wcs.celestial)
+        star_datacube = load_ndcube_from_fits(starfield_background_path, key="A")
+        # data_wcs = calculate_celestial_wcs_from_helio(data_object.wcs.celestial,
+        #                                               data_object.meta.astropy_time,
+        #                                               data_object.data.shape[-2:])
+        map_scale = 0.01
+        shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
+        starfield_wcs = WCS(naxis=2)
+        # n.b. it seems the RA wrap point is chosen so there's 180 degrees
+        # included on either side of crpix
+        crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
+        starfield_wcs.wcs.crpix = crpix
+        starfield_wcs.wcs.crval = 270, -23.5
+        starfield_wcs.wcs.cdelt = map_scale, map_scale
+        starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
+        starfield_wcs.wcs.cunit = "deg", "deg"
+        starfield_wcs.array_shape = shape
+
+        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), starfield_wcs)
 
         subtracted = starfield_model.subtract_from_image(
             NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
-                   wcs=data_wcs,
+                   wcs=data_object.wcs.celestial,
                    meta=data_object.meta),
-            processor=PUNCHImageProcessor(0))
+            processor=PUNCHImageProcessor(0, key="A"))
 
         data_object.data[...] = subtracted.subtracted[0]
         data_object.uncertainty.array[...] -= subtracted.subtracted[1]

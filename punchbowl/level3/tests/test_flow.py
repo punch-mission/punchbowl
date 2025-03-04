@@ -6,8 +6,8 @@ import pytest
 from ndcube import NDCube
 from prefect.testing.utilities import prefect_test_harness
 
-from punchbowl.data.io import write_ndcube_to_fits
-from punchbowl.data.tests.test_io import sample_ndcube
+from punchbowl.data.punch_io import write_ndcube_to_fits
+from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level3.flow import level3_core_flow
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()

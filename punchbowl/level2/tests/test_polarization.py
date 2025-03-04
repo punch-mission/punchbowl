@@ -3,7 +3,7 @@ from ndcube import NDCube
 from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 
-from punchbowl.data.tests.test_io import sample_ndcube
+from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level2.polarization import resolve_polarization, resolve_polarization_task
 
 

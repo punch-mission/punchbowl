@@ -1,22 +1,29 @@
 # punchbowl
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14029123.svg)](https://doi.org/10.5281/zenodo.14029123)
+
 `punchbowl` is the science calibration code for [the PUNCH mission](https://punch.space.swri.edu/).
 
 > [!CAUTION]
-> This package is still being developed. There will be breaking code changes until v1.
-> We advise you to wait until then to use it.
+> This package will likely have breaking changes during commissioning (the first few months after launch).
+> Stability is not promised until v1.
 
 ## Accessing the data
 
-Coming soon.
+Data will be available via the Solar Data Analysis Center. More details will be provided after launch.
 
 ## Installing `punchbowl`
 
-Coming soon.
+Install with `pip install punchbowl` to get the released version.
+
+To get the current latest version: clone the repo and install locally.
 
 ## Running `punchbowl`
 
-Coming soon.
+[The documentation](https://punchbowl.readthedocs.io/en/latest/index.html) provides details on how to run the various components.
+It also provides a short explanation of each underlying algorithm.
+If you want to process larger quantities of data, we suggest using [punchpipe](https://github.com/punch-mission/punchpipe).
+Please reach out with a discussion for more help.
 
 ## Getting help
 

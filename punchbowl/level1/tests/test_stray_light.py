@@ -6,7 +6,7 @@ import pytest
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
 
-from punchbowl.data.tests.test_io import sample_ndcube
+from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.exceptions import LargeTimeDeltaWarning
 #from punchbowl.exceptions import InvalidDataError
 from punchbowl.level1.stray_light import remove_stray_light_task

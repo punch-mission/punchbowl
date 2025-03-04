@@ -49,7 +49,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits: [NAXIS3]
+        omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment, NAXIS3]
 
     PM:
         overrides:
@@ -135,17 +135,6 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-
-    ST4:
-        kinds: []
-        overrides:
-            TITLE: PUNCH Level-0 STEAM Image
-            OBSTYPE: STEAM Data
-            TYPECODE: ST
-            INSTRUME: NFI-0
-            TELESCOP: PUNCH-4
-            OBSCODE: "{craftid}"
-        omits: [OBS-MODE, OBSLAYR1, FILTER, POLAR]
 
     DK?:
         kinds: [Calibration]

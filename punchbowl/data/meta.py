@@ -29,6 +29,8 @@ ValueType = int | str | float
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 REQUIRED_HEADER_KEYWORDS = ["SIMPLE", "BITPIX", "NAXIS", "EXTEND"]
 DISTORTION_KEYWORDS = ["CPDIS1", "CPDIS2", "DP1", "DP2"]
+WCS_OMITTED_KEYWORDS = ["TIMESYS", "DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "TELAPSE",
+                        "RSUN_REF", "DSUN_OBS", "CRLN_OBS", "CRLT_OBS", "HGLN_OBS", "HGLT_OBS"]
 
 
 def load_omniheader(path: str | None = None) -> pd.DataFrame:
@@ -208,6 +210,7 @@ class NormalizedMetadata(Mapping):
             self,
             contents: t.OrderedDict[str, t.OrderedDict[str, MetaField]],
             history: History | None = None,
+            provenance: list[str] | None = None,
             wcs_section_name: str = "World Coordinate System",
     ) -> None:
         """
@@ -219,12 +222,15 @@ class NormalizedMetadata(Mapping):
             contents of the meta information
         history: History
             history contents for this meta field
+        provenance: list[str]
+            list of files used in the generation of this product
         wcs_section_name: str
             the section title for the WCS section to specially fill
 
         """
         self._contents = contents
         self._history = history if history is not None else History()
+        self._provenance = provenance if provenance is not None else []
         self._wcs_section_name = wcs_section_name
 
     def __iter__(self) -> t.Iterator[t.Any]:
@@ -289,7 +295,9 @@ class NormalizedMetadata(Mapping):
                     else:
                         wcs_header = this_wcs.to_header()
                     for card in wcs_header.cards:
-                        if key == "" or (key != "" and card[0][-1].isnumeric() and card[0] not in DISTORTION_KEYWORDS):
+                        if key == "" or (key != "" and card[0][-1].isnumeric() and
+                                         card[0] not in DISTORTION_KEYWORDS and
+                                         card[0] not in WCS_OMITTED_KEYWORDS):
                             hdr.append(
                                 (
                                 card[0] + key,
@@ -615,6 +623,11 @@ class NormalizedMetadata(Mapping):
     @history.setter
     def history(self, history: History) -> None:
         self._history = history
+
+    @property
+    def provenance(self) -> list[str]:
+        """Returns file provenance."""
+        return self._provenance
 
     @staticmethod
     def _validate_key_is_str(key: str) -> None:

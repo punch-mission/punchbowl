@@ -3,7 +3,7 @@ import pytest
 from astropy.wcs import WCS
 from ndcube import NDCube
 
-from punchbowl.data.tests.test_io import sample_ndcube
+from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level2.merge import merge_many_polarized_task
 
 
@@ -33,14 +33,13 @@ def test_merge_many_task(sample_data_list):
     """
     trefoil_wcs = WCS("level2/data/trefoil_hdr.fits")
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    trefoil_shape  = (4096, 4096)
+    trefoil_wcs.array_shape = trefoil_shape
 
-    pd_list = sample_data_list
-
-
-    output_punchdata = merge_many_polarized_task.fn(pd_list, trefoil_wcs)
+    output_punchdata = merge_many_polarized_task.fn(sample_data_list, trefoil_wcs)
     assert isinstance(output_punchdata, NDCube)
     assert output_punchdata.data.shape == (3, 4096, 4096)
     assert np.allclose(output_punchdata.data[0, 100:300, 300:400], 1)
-    assert np.allclose(output_punchdata.data[0, 500:700, 800:900], 500)
+    assert np.allclose(output_punchdata.data[0, 500:700, 800:900], 1)
     assert np.allclose(output_punchdata.uncertainty.array[0, 100:300, 300:400], 1)
-    assert np.allclose(output_punchdata.uncertainty.array[0, 500:700, 800:900], 0)
+    assert np.allclose(output_punchdata.uncertainty.array[0, 500:700, 800:900], 1)

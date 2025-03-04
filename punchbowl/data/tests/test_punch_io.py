@@ -9,14 +9,14 @@ from astropy.wcs import WCS, DistortionLookupTable
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from ndcube import NDCube
 
-from punchbowl.data.io import (
+from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.punch_io import (
     _update_statistics,
     get_base_file_name,
     load_ndcube_from_fits,
     write_ndcube_to_fits,
     write_ndcube_to_jp2,
 )
-from punchbowl.data.meta import NormalizedMetadata
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -63,6 +63,11 @@ def test_write_data(sample_ndcube, tmpdir):
     test_path = os.path.join(tmpdir, "test.fits")
     write_ndcube_to_fits(cube, test_path)
     assert os.path.isfile(test_path)
+
+    with fits.open(test_path) as hdul:
+        assert hdul[1].header['EXTNAME'] == "PRIMARY DATA ARRAY"
+        assert hdul[2].header['EXTNAME'] == "UNCERTAINTY ARRAY"
+        assert hdul[3].header['EXTNAME'] == "FILE PROVENANCE"
 
 
 def test_write_data_jp2(sample_ndcube, tmpdir):
@@ -204,7 +209,7 @@ def test_load_punchdata_with_history(tmpdir):
     os.remove(file_path)
 
 
-def make_empty_distortion_model(num_bins: int, image: np.ndarray) -> (DistortionLookupTable, DistortionLookupTable):
+def make_empty_distortion_model(num_bins: int, image: np.ndarray) -> tuple:
     """ Create an empty distortion table
 
     Parameters
@@ -262,7 +267,7 @@ def test_write_punchdata_with_distortion(tmpdir):
     write_ndcube_to_fits(obj, file_path, overwrite=True)
 
     with fits.open(file_path) as hdul:
-        assert len(hdul) == 5
+        assert len(hdul) == 6
 
     loaded_cube = load_ndcube_from_fits(file_path)
     assert loaded_cube.wcs.has_distortion

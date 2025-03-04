@@ -46,6 +46,7 @@ def zero_starfield_data(shape: tuple = (256, 256)) -> Starfield:
     wcs.wcs.cdelt = 0.02, 0.02
     wcs.wcs.crpix = 128, 128
     wcs.wcs.crval = 0, 24.75
+    wcs.array_shape = shape
 
     return Starfield(starfield=starfield, wcs=wcs)
 

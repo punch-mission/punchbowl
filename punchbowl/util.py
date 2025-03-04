@@ -81,10 +81,10 @@ def _zvalue_from_index(arr, ind):  # noqa: ANN202, ANN001
     This is faster and more memory efficient than using the ogrid based solution with fancy indexing.
     """
     # get number of columns and rows
-    _, n_cols, n_rows = arr.shape
+    _, n_rows, n_cols = arr.shape
 
     # get linear indices and extract elements with np.take()
-    idx = n_cols*n_rows*ind + n_rows*np.arange(n_rows)[:,None] + np.arange(n_cols)
+    idx = n_cols*n_rows*ind + n_cols*np.arange(n_rows)[:,None] + np.arange(n_cols)
     return np.take(arr, idx)
 
 

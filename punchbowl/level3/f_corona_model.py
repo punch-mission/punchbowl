@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 import multiprocessing as mp
 
@@ -39,6 +40,7 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
         Array of coefficients for solving polynomial
 
     """
+    logger = get_run_logger()
     c = np.transpose(input_vals)
     cube_is_good = np.isfinite(cube)
     num_inputs = np.sum(cube_is_good, axis=0)
@@ -46,6 +48,7 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
     solution = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
     this_solution = np.zeros(input_vals.shape[1])
     for i in range(cube.shape[1]):
+        start = time.time()
         for j in range(cube.shape[2]):
             is_good = cube_is_good[:, i, j]
             time_series = cube[:, i, j][is_good]
@@ -60,7 +63,8 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
                 except ValueError:
                     this_solution[:] = 0
             solution[:, i, j] = this_solution
-
+        end = time.time()
+        logger.info(f"{i} took {end - start} seconds")
     return np.asarray(solution), num_inputs
 
 

@@ -46,7 +46,6 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
     num_inputs = np.sum(cube_is_good, axis=0)
 
     solution = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
-    this_solution = np.zeros(input_vals.shape[1])
     for i in range(cube.shape[1]):
         start = time.time()
         for j in range(cube.shape[2]):

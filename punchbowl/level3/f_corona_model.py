@@ -53,16 +53,15 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
             is_good = cube_is_good[:, i, j]
             time_series = cube[:, i, j][is_good]
             if time_series.size < n_nonnan_required:
-                this_solution[:] = 0
+                solution[:, i, j] = 0
             else:
                 c_iter = c[:, is_good]
                 g_iter = np.matmul(c_iter, c_iter.T)
                 a = np.matmul(c_iter, time_series)
                 try:
-                    this_solution = solve_qp(g_iter, a, c_iter, time_series)[0]
+                    solution[:, i, j] = solve_qp(g_iter, a, c_iter, time_series)[0]
                 except ValueError:
-                    this_solution[:] = 0
-            solution[:, i, j] = this_solution
+                    solution[:, i, j] = 0
         end = time.time()
         logger.info(f"{i} took {end - start} seconds")
     return np.asarray(solution), num_inputs
@@ -109,6 +108,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
         The smoothed data cube. Returned only if return_full_curves is True.
 
     """
+    logger = get_run_logger()
     cube[cube < min_brightness] = np.nan
     if clip_factor is not None:
         low, center, high = nan_percentile(cube, [25, 50, 75])
@@ -128,7 +128,12 @@ def model_fcorona_for_cube(xt: np.ndarray,
     coefficients *= -1
     if return_full_curves:
         return polynomial.polyval(xt, coefficients[::-1, :, :]).transpose((2, 0, 1)), counts, cube
-    return polynomial.polyval(reference_xt, coefficients[::-1, :, :]), counts
+
+    start = time.time()
+    out = polynomial.polyval(reference_xt, coefficients[::-1, :, :]), counts
+    end = time.time()
+    logger.info(f"computed polyval in {end - start} seconds")
+    return out
 
 
 def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:

@@ -18,9 +18,6 @@ Data Product Codes
    * - 0
      - PX1, PX2, PX3, PX4
      - Science images in a nonstandard polarization state
-   * - 0
-     - ST
-     - STEAM data packet (CSV format)
    * - 1
      - PM1, PM2, PM3, PM4, PZ1, PZ2, PZ3, PZ4, PP1, PP2, PP3, PP4, CR1, CR2, CR3, CR4
      - Science images in the standard polarization (PM, PZ, PP) and clear (CR) states (photometrically calibrated)

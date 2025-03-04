@@ -44,13 +44,13 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
     num_inputs = np.sum(cube_is_good, axis=0)
 
     solution = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
-
-    def worker(i):
+    this_solution = np.zeros(input_vals.shape[1])
+    for i in range(cube.shape[1]):
         for j in range(cube.shape[2]):
             is_good = cube_is_good[:, i, j]
             time_series = cube[:, i, j][is_good]
             if time_series.size < n_nonnan_required:
-                this_solution = np.zeros(input_vals.shape[1])
+                this_solution[:] = 0
             else:
                 c_iter = c[:, is_good]
                 g_iter = np.matmul(c_iter, c_iter.T)
@@ -58,14 +58,11 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
                 try:
                     this_solution = solve_qp(g_iter, a, c_iter, time_series)[0]
                 except ValueError:
-                    this_solution = np.zeros(input_vals.shape[1])
+                    this_solution[:] = 0
             solution[:, i, j] = this_solution
 
-    with mp.Pool(num_workers) as pool:
-        output = pool.map(worker, range(cube.shape[1]))
-    solution = np.array(output).reshape((cube.shape[1], cube.shape[2]))
-
     return np.asarray(solution), num_inputs
+
 
 def model_fcorona_for_cube(xt: np.ndarray,
                            reference_xt: float,

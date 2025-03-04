@@ -1,6 +1,6 @@
 import time
-from datetime import datetime
 import multiprocessing as mp
+from datetime import datetime
 
 import astropy
 import numpy as np
@@ -144,6 +144,25 @@ def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
     grid_x, grid_y = np.mgrid[0:image.shape[0], 0:image.shape[1]]
     return griddata((x, y), known_values, (grid_x, grid_y), method="cubic")
 
+
+def _load_one_file(filename: str) -> NDCube:
+    """
+    Support for loading files in parallel via multiprocessing.
+
+    Parameters
+    ----------
+    filename : str
+        The file to load
+
+    Returns
+    -------
+    data_object : `NDCube`
+        The loaded data
+
+    """
+    return load_ndcube_from_fits(filename)
+
+
 @flow(log_prints=True)
 def construct_polarized_f_corona_model(filenames: list[str],
                                        clip_factor: float = 3.0,
@@ -179,13 +198,13 @@ def construct_polarized_f_corona_model(filenames: list[str],
 
     logger.info("beginning data loading")
     dates = []
-    for i, address_out in enumerate(filenames):
-        data_object = load_ndcube_from_fits(address_out)
-        dates.append(data_object.meta.datetime)
-        data_cube[i, ...] = data_object.data
-        uncertainty_cube[i, ...] = data_object.uncertainty.array
-        obs_times.append(data_object.meta.datetime.timestamp())
-        meta_list.append(data_object.meta)
+    with mp.Pool(processes=num_workers) as pool:
+        for i, data_object in enumerate(pool.imap(_load_one_file, filenames)):
+            dates.append(data_object.meta.datetime)
+            data_cube[i] = data_object.data
+            uncertainty_cube[i] = data_object.uncertainty.array
+            obs_times.append(data_object.meta.datetime.timestamp())
+            meta_list.append(data_object.meta)
     logger.info("ending data loading")
     output_datebeg = min(dates).isoformat()
     output_dateend = max(dates).isoformat()

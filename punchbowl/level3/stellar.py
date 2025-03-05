@@ -1,16 +1,16 @@
 from math import floor
 from datetime import datetime
 
+import astropy.units as u
 import numpy as np
 import remove_starfield
-import astropy.units as u
 from astropy.wcs import WCS
-from solpolpy import resolve
-from ndcube import NDCube, NDCollection
 from dateutil.parser import parse as parse_datetime_str
+from ndcube import NDCollection, NDCube
 from prefect import flow, get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import PercentileReducer
+from solpolpy import resolve
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, get_p_angle

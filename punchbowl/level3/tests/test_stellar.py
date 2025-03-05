@@ -1,17 +1,22 @@
+from datetime import datetime
+
+import astropy.units as u
 import numpy as np
 import pytest
-import astropy.units as u
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
-from remove_starfield import Starfield
 from prefect import flow, get_run_logger
+from remove_starfield import Starfield
+
 from punchbowl.data import NormalizedMetadata
-from datetime import datetime
-from punchbowl.level3.stellar import (generate_starfield_background,
-                                      subtract_starfield_background_task,
-                                      from_celestial, to_celestial)
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial, get_p_angle
+from punchbowl.level3.stellar import (
+    from_celestial,
+    generate_starfield_background,
+    subtract_starfield_background_task,
+    to_celestial,
+)
 
 
 @pytest.fixture()

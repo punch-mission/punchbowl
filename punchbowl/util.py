@@ -96,6 +96,7 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
     is_good = np.isfinite(arr)
     n_valid_obs = np.sum(is_good, axis=0)
     # replace NaN with maximum
+    arr = arr.copy()
     arr[~is_good] = np.nanmax(arr)
     # sort - former NaNs will move to the end
     arr = np.sort(arr, axis=0)

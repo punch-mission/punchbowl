@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 
 import astropy.coordinates
+import astropy.time
 import astropy.units as u
 import astropy.wcs.wcsapi
 import numpy as np
@@ -27,7 +28,7 @@ def extract_crota_from_wcs(wcs: WCS) -> u.deg:
 
 
 def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
-                                       date_obs: datetime,
+                                       date_obs: astropy.time.Time,
                                        data_shape: tuple[int, int]) -> tuple[WCS, float]:
     """Calculate the helio WCS from a celestial WCS."""
     is_3d = len(data_shape) == 3
@@ -274,7 +275,7 @@ def gcrs_to_hpc(GCRScoord, Helioprojective): # noqa: ANN201, N803, ANN001
     return Helioprojective.realize_frame(rep)
 
 
-def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_shape: tuple[int, int]) -> WCS:
+def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: astropy.time.Time, data_shape: tuple[int, int]) -> WCS:
     """Calculate the celestial WCS from a helio WCS."""
     is_3d = len(data_shape) == 3
 

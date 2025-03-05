@@ -20,7 +20,7 @@ from punchbowl.util import nan_percentile
 
 
 def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
-                  n_nonnan_required: int=7, num_workers: int | None = 8) -> (np.ndarray, np.ndarray):
+                  n_nonnan_required: int=7) -> (np.ndarray, np.ndarray):
     """
     Fast solver for the quadratic programming problem.
 
@@ -71,7 +71,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
                            cube: np.ndarray,
                            min_brightness: float = 1E-18,
                            clip_factor: float | None = 1,
-                           return_full_curves: bool=False,
+                           return_full_curves: bool = False,
                            num_workers: int | None = 8,
                            ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -95,6 +95,8 @@ def model_fcorona_for_cube(xt: np.ndarray,
         If True, this function returns the full curve fitted to the time series at each pixel
         and the smoothed data cube. If False (default), only the curve's value at the central
         frame is returned, producing a model at one instant in time.
+    num_workers: int | None
+        Work is parallelized over this many worker processes. If None, this matches the number of cores.
 
     Returns
     -------
@@ -107,6 +109,38 @@ def model_fcorona_for_cube(xt: np.ndarray,
         The smoothed data cube. Returned only if return_full_curves is True.
 
     """
+    if num_workers < 2:
+        # Skip forking, reassembling, etc.
+        return _model_fcorona_for_cube_inner(xt, reference_xt, cube, min_brightness, clip_factor, return_full_curves)
+
+    def args() -> tuple:
+        # Generate a set of args for one task
+        for i in range(cube.shape[1]):
+            yield xt, reference_xt, cube[:, i:i + 1], min_brightness, clip_factor, return_full_curves
+
+    with mp.Pool(processes=num_workers) as pool:
+        chunks = pool.starmap(_model_fcorona_for_cube_inner, args(), chunksize=10)
+
+    # Combine the outputs of each task into final output arrays
+    if return_full_curves:
+        curves, counts, cubes = zip(*chunks, strict=False)
+        curves = np.concatenate(curves, axis=-2)
+        counts = np.concatenate(counts, axis=-2)
+        cubes = np.concatenate(cubes, axis=-2)
+        return curves, counts, cubes
+    model, counts = zip(*chunks, strict=False)
+    model = np.concatenate(model, axis=-2)
+    counts = np.concatenate(counts, axis=-2)
+    return model, counts
+
+
+def _model_fcorona_for_cube_inner(xt: np.ndarray,
+                                  reference_xt: float,
+                                  cube: np.ndarray,
+                                  min_brightness: float = 1E-18,
+                                  clip_factor: float | None = 1,
+                                  return_full_curves: bool=False,
+                                  ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
     logger = get_run_logger()
     cube[cube < min_brightness] = np.nan
     if clip_factor is not None:
@@ -123,7 +157,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
     xt -= xt[0]
 
     input_array = np.c_[np.power(xt, 3), np.square(xt), xt, np.ones(len(xt))]
-    coefficients, counts = solve_qp_cube(input_array, -cube ,num_workers=num_workers)
+    coefficients, counts = solve_qp_cube(input_array, -cube)
     coefficients *= -1
     if return_full_curves:
         return polynomial.polyval(xt, coefficients[::-1, :, :]).transpose((2, 0, 1)), counts, cube

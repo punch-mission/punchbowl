@@ -4,7 +4,7 @@
 
 ## Latest: unreleased
 
--
+- Changes so that vignetting is a separate step in the pipeline. 
 
 ## Version 0.0.9: Feb 28, 2025
 

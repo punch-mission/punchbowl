@@ -55,7 +55,6 @@ def write_ndcube_to_jp2(cube: NDCube,
                f"Found: {os.path.splitext(filename)[1]}")
         raise ValueError(msg)
 
-    cmap = cmap_punch()
     norm = LogNorm(vmin=vmin, vmax=vmax)
 
     if layer is not None: # noqa: SIM108
@@ -63,7 +62,7 @@ def write_ndcube_to_jp2(cube: NDCube,
     else:
         image = cube.data
 
-    scaled_arr = (cmap(norm(np.flipud(image)))*255).astype(np.uint8)
+    scaled_arr = (cmap_punch(norm(np.flipud(image)))*255).astype(np.uint8)
     encoded_arr = encode_array(scaled_arr)
 
     with open(filename, "wb") as f:

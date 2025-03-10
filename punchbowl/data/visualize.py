@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 from skimage.color import lab2rgb
 
+cmap_punch = cmap_punch()
 
 def cmap_punch() -> LinearSegmentedColormap:
     """Generate PUNCH colormap."""

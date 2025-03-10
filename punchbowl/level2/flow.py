@@ -6,6 +6,7 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import flow, get_run_logger
+from prefect_ray import RayTaskRunner
 
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
 from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
@@ -22,7 +23,7 @@ ORDER = ["PM1", "PZ1", "PP1",
          "PM4", "PZ4", "PP4"]
 
 
-@flow(validate_parameters=False)
+@flow(validate_parameters=False, task_runner=RayTaskRunner)
 def level2_core_flow(data_list: list[str] | list[NDCube],
                      voter_filenames: list[list[str]],
                      trefoil_wcs: WCS | None = None,
@@ -85,8 +86,3 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
 
     logger.info("ending level 2 core flow")
     return [output_data]
-
-
-if __name__ == "__main__":
-    filenames = glob("/Users/jhughes/new_results/nov25-1026/cr/*.fits")
-    out = levelq_core_flow(filenames)

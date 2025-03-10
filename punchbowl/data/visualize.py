@@ -3,7 +3,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from skimage.color import lab2rgb
 
 
-def cmap_punch() -> LinearSegmentedColormap:
+def _cmap_punch() -> LinearSegmentedColormap:
     """Generate PUNCH colormap."""
     # Define key colors in LAB space
     black_lab = np.array([0, 0, 0])
@@ -27,6 +27,7 @@ def cmap_punch() -> LinearSegmentedColormap:
     rgb_colors = lab2rgb(lab_colors.reshape(1, -1, 3)).reshape(n, 3)
     return LinearSegmentedColormap.from_list("PUNCH", rgb_colors, N=n)
 
+cmap_punch = _cmap_punch()
 
 def radial_distance(h: int, w: int, center: tuple[int, int] | None = None, radius: float | None = None) -> np.ndarray:
     """Create radial distance array."""

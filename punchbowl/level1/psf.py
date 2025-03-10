@@ -1,25 +1,25 @@
 import os
 from pathlib import Path
-from typing import List
 
-from astropy.wcs import WCS
-import reproject
 import numpy as np
+import reproject
+from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import get_run_logger
-from regularizepsf import (ArrayPSF, ArrayPSFTransform, simple_functional_psf,
-                           varied_functional_psf, ArrayPSFBuilder)
+from regularizepsf import ArrayPSF, ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf, varied_functional_psf
 from regularizepsf.util import calculate_covering
 
 from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.prefect import punch_task
 
-def build_psf_transform(image_paths: List[str] | List[Path],
+
+def build_psf_transform(image_paths: list[str] | list[Path],
                         alpha: float = 0.7,
                         epsilon: float = 0.515,
                         target_sigma: float = 3.3,
                         psf_size: int = 64) -> ArrayPSFTransform:
-    """ Build the PSF transform for Level 1 processing from a list of images.
+    """
+    Build the PSF transform for Level 1 processing from a list of images.
 
     Parameters
     ----------
@@ -38,11 +38,12 @@ def build_psf_transform(image_paths: List[str] | List[Path],
     -------
     ArrayPSFTransform
         the PSF transform that corresponds to the input images
+
     """
     b = ArrayPSFBuilder(psf_size)
     model, counts = b.build(image_paths)
 
-    first_cube = load_ndcube_from_fits(image_paths[0], key='A')
+    first_cube = load_ndcube_from_fits(image_paths[0], key="A")
 
     corrected_psf = generate_projected_psf(
             first_cube.wcs, psf_width=psf_size, star_gaussian_sigma=target_sigma)
@@ -53,7 +54,6 @@ def generate_projected_psf(
         psf_width: int = 64,
         star_gaussian_sigma: float = 3.3 / 2.355) -> ArrayPSF:
     """Create a varying PSF reflecting how a true circle looks in the mosaic image projection."""
-
     # Create a Gaussian star
     coords = np.arange(psf_width) - psf_width / 2 + .5
     xx, yy = np.meshgrid(coords, coords)

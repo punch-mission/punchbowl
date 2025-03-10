@@ -1,4 +1,3 @@
-from glob import glob
 from datetime import datetime
 
 import numpy as np
@@ -14,7 +13,6 @@ from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.merge import merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.resample import reproject_many_flow
-from punchbowl.levelq.flow import levelq_core_flow
 from punchbowl.util import average_datetime, load_image_task, output_image_task
 
 ORDER = ["PM1", "PZ1", "PP1",

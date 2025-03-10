@@ -24,7 +24,7 @@ ORDER = ["PM1", "PZ1", "PP1",
 
 
 @flow(validate_parameters=False, task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 4, "threads_per_worker": 2}
+    cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
 ))
 def level2_core_flow(data_list: list[str] | list[NDCube],
                      voter_filenames: list[list[str]],

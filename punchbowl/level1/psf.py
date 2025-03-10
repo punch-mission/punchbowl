@@ -15,10 +15,10 @@ from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.prefect import punch_task
 
 def build_psf_transform(image_paths: List[str] | List[Path],
-                        alpha=0.7,
-                        epsilon=0.515,
-                        target_sigma=3.3,
-                        psf_size=64) -> ArrayPSFTransform:
+                        alpha: float = 0.7,
+                        epsilon: float = 0.515,
+                        target_sigma: float = 3.3,
+                        psf_size: int = 64) -> ArrayPSFTransform:
     """ Build the PSF transform for Level 1 processing from a list of images.
 
     Parameters

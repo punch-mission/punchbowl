@@ -1,17 +1,19 @@
 from math import floor
 from datetime import datetime
 
+import astropy.units as u
 import numpy as np
 import remove_starfield
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
-from ndcube import NDCube
+from ndcube import NDCollection, NDCube
 from prefect import flow, get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import PercentileReducer
+from solpolpy import resolve
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
+from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, get_p_angle
 from punchbowl.prefect import punch_task
 
 
@@ -31,6 +33,81 @@ class PUNCHImageProcessor(ImageProcessor):
         if self.apply_mask:
             data[np.isclose(cube.uncertainty.array[self.layer], 0, atol=1E-30)] = np.nan
         return ImageHolder(data, cube.wcs.celestial, cube.meta)
+
+def to_celestial(input_data: NDCube) -> NDCube:
+    """
+    Convert polarization from mzpsolar to Celestial frame.
+
+    All images need their polarization converted to Celestial frame
+    to generated the background starfield model.
+    """
+    # Create a data collection for M, Z, P components
+    mzp_angles = [-60, 0, 60]*u.degree
+
+    # Compute new angles for celestial frame
+    cel_north_offset = get_p_angle(time=input_data[0].meta["DATE-OBS"].value)
+    new_angles = mzp_angles - cel_north_offset
+
+    collection_contents = [
+        (label,
+         NDCube(data=input_data[i].data,
+                wcs=input_data.wcs.dropaxis(2),
+                meta={"POLAR": angle}))
+        for label, i, angle in zip(["M", "Z", "P"], [0, 1, 2], mzp_angles, strict=False)
+    ]
+    data_collection = NDCollection(collection_contents, aligned_axes="all")
+
+    # Resolve data to celestial frame
+    celestial_data_collection = resolve(data_collection, "npol", out_angles=new_angles, imax_effect=False)
+
+    valid_keys = [key for key in celestial_data_collection if key != "alpha"]
+    new_data = [celestial_data_collection[key].data for key in valid_keys]
+    new_wcs = input_data.wcs.copy()
+
+    output_meta = NormalizedMetadata.load_template("PTM", "3")
+    output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
+
+    output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
+    output.meta.history.add_now("LEVEL3-convert2celestial", "Convert mzpsolar to Celestial")
+
+    return output
+
+
+def from_celestial(input_data: NDCube) -> NDCube:
+    """
+    Convert polarization from Celestial frame to mzpsolar.
+
+    All images need their polarization converted back to Solar frame
+    after removing the stellar polarization.
+    """
+    # Create a data collection for M, Z, P components
+    mzp_angles = [-60, 0, 60]*u.degree
+    # Compute new angles for celestial frame
+    cel_north_offset = get_p_angle(time=input_data[0].meta["DATE-OBS"].value)
+    new_angles = mzp_angles - cel_north_offset
+    collection_contents = [
+        (f"{angle.value} deg",
+         NDCube(data=input_data[i].data,
+                wcs=input_data.wcs.dropaxis(2),
+                meta={"POLAR": angle}))
+        for i, angle in enumerate(new_angles)
+    ]
+    data_collection = NDCollection(collection_contents, aligned_axes="all")
+
+    # Resolve data to mzpsolar frame
+    solar_data_collection = resolve(data_collection, "mzpsolar", imax_effect=False)
+
+    valid_keys = [key for key in solar_data_collection if key != "alpha"]
+    new_data = [solar_data_collection[key].data for key in valid_keys]
+    new_wcs = input_data.wcs.copy()
+
+    output_meta = NormalizedMetadata.load_template("PTM", "2")
+    output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
+
+    output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
+    output.meta.history.add_now("LEVEL3-convert2mzpsolar", "Convert Celestial to mzpsolar")
+
+    return output
 
 
 @flow(log_prints=True, timeout_seconds=21_600)
@@ -189,7 +266,7 @@ def subtract_starfield_background_task(data_object: NDCube,
 
     return output
 
-
+#TODO: Pass the outputs through from_celestial() to convert everything back to mzpsolar
 def create_empty_starfield_background(data_object: NDCube) -> np.ndarray:
     """Create an empty starfield background map."""
     return np.zeros_like(data_object.data)

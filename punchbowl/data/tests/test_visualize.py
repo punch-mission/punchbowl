@@ -20,5 +20,4 @@ def test_radial_filter():
 
 
 def test_cmap_punch():
-    cmap = cmap_punch()
-    assert isinstance(cmap, LinearSegmentedColormap)
+    assert isinstance(cmap_punch, LinearSegmentedColormap)

@@ -283,9 +283,6 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: astropy.time.Ti
                          frame="helioprojective", observer="earth", obstime=date_obs)
     new_crval = old_crval.transform_to(GCRS)
 
-    rotation_angle = extract_crota_from_wcs(wcs_helio).to(u.rad).value - get_p_angle(date_obs).rad
-    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
-
     cdelt1 = np.abs(wcs_helio.wcs.cdelt[0]) * u.deg
     cdelt2 = np.abs(wcs_helio.wcs.cdelt[1]) * u.deg
 
@@ -295,21 +292,95 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: astropy.time.Ti
     else:
         new_ctypes = "RA", "DEC"
 
-
     wcs_celestial = WCS(naxis=2)
     wcs_celestial.wcs.ctype = new_ctypes
     wcs_celestial.wcs.cunit = ("deg", "deg")
     wcs_celestial.wcs.cdelt = (-cdelt1.to(u.deg).value, cdelt2.to(u.deg).value)
     wcs_celestial.wcs.crpix = (wcs_helio.wcs.crpix[0], wcs_helio.wcs.crpix[1])
     wcs_celestial.wcs.crval = (new_crval.ra.to(u.deg).value,  new_crval.dec.to(u.deg).value)
-    wcs_celestial.wcs.pc = new_pc_matrix
     wcs_celestial.wcs.set_pv(wcs_helio.wcs.get_pv())
+
+    rotation_angle = compute_hp_to_eq_rotation_angle(wcs_helio)
+    rotation_angle += extract_crota_from_wcs(wcs_helio)
+    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
+    wcs_celestial.wcs.pc = new_pc_matrix
 
     if is_3d:
         wcs_celestial = add_stokes_axis_to_wcs(wcs_celestial, 2)
     wcs_celestial.array_shape = data_shape
 
     return wcs_celestial
+
+
+def project_vec_onto_plane(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarray:
+    """Project vec1 onto the plane perpendicular to vec2."""
+    # First project vec1 onto vec2
+    v1_projected = np.dot(vec1, vec2) * vec2 / np.dot(vec2, vec2)
+    # Now subtract that from vec1 to get the component perpendicular to vec2
+    return vec1 - v1_projected
+
+
+def angle_between_vectors(vec1: np.ndarray, vec2: np.ndarray, plane_normal: np.ndarray) -> np.ndarray:
+    """
+    Compute the angle between vec1 and vec2.
+
+    The angle is computed in the plane normal to plane_normal. This normal vector also sets the handedness and the sign
+    of the angle.
+    """
+    plane_normal = plane_normal / np.linalg.norm(plane_normal)
+    return np.arctan2(np.dot(np.cross(vec1, vec2), plane_normal), np.dot(vec1, vec2))
+
+
+def compute_hp_to_eq_rotation_angle(wcs_helio: WCS) -> u.Quantity:
+    """
+    Compute the necessary rotation angle to align a celestial WCS to a helioprojective one.
+
+    The computed angle includes the effect of the P angle but not the rotation of the helioprojective WCS
+
+    Parameters
+    ----------
+    wcs_helio : WCS
+        A helioprojective WCS for which we're producing a corresponding celestial WCS
+
+    Returns
+    -------
+    rotation_angle : Quantity
+        The rotation angle that should be added to that in wcs_celestial's PC matrix
+
+    """
+    # Get our CRVAL vector
+    axis_sc = wcs_helio.pixel_to_world(wcs_helio.wcs.crpix[0] - 1, wcs_helio.wcs.crpix[1] - 1)
+    axis = axis_sc.cartesian.xyz
+    axis /= np.linalg.norm(axis)
+
+    # Create a new vector pointing near north. Projected into the plane perpendicular to axis, this will point as
+    # north as possible in that plane.
+    northward = axis.copy()
+    northward[2] += 20
+    northward /= np.linalg.norm(northward)
+
+    # Package up that vector and convert to our target coordinate system
+    northward = SkyCoord(*northward, representation_type="cartesian", frame=axis_sc.frame)
+    northward.representation_type = "spherical"
+    rotated = northward.transform_to("gcrs")
+    rotated = rotated.cartesian.xyz
+    rotated /= np.linalg.norm(rotated)
+
+    # And also transform the CRVAL axis
+    axis_rotated = axis_sc.transform_to("gcrs")
+    axis_rotated = axis_rotated.cartesian.xyz
+    axis_rotated /= np.linalg.norm(axis_rotated)
+
+    # Create a new northward vector in the target frame
+    northward_in_new_frame = axis_rotated.copy()
+    northward_in_new_frame[2] += 20
+    northward_in_new_frame /= np.linalg.norm(northward_in_new_frame)
+
+    # Project the old and new northward vectors into the plane perpendicular to axis
+    northward_in_new_frame_proj = project_vec_onto_plane(northward_in_new_frame, axis_rotated)
+    rotated_proj = project_vec_onto_plane(rotated, axis_rotated)
+
+    return -angle_between_vectors(northward_in_new_frame_proj, rotated_proj, axis_rotated).to(u.deg)
 
 
 def load_trefoil_wcs() -> tuple[astropy.wcs.WCS, tuple[int, int]]:

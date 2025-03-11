@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os.path
+import subprocess
 from pathlib import Path
 
 import astropy.units as u
@@ -9,6 +10,7 @@ import numpy as np
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ffmpeg import FFmpeg
 from matplotlib.colors import LogNorm
 from ndcube import NDCube
 from openjpeg.utils import encode_array
@@ -67,6 +69,76 @@ def write_ndcube_to_jp2(cube: NDCube,
 
     with open(filename, "wb") as f:
         f.write(encoded_arr)
+
+
+def write_jp2_to_mp4_ffmpegpy(files: list[str],
+                     filename: str,
+                     framerate: int = 5,
+                     resolution: int = 1024) -> None:
+    """
+    Write a list of input quicklook jpeg2000 files to an output mp4 animation.
+
+    Parameters
+    ----------
+    files : list[str]
+        List of input files to animate
+    filename : str
+        Output filename
+    framerate : int, optional
+        Frame rate (default 5)
+    resolution : int, optional
+        Output resolution (default 1024)
+
+    """
+    ff = FFmpeg(
+        inputs={"input": "concat:" + "|".join(files)},
+        output=filename,
+        options={
+            "-framerate": framerate,
+            "-i": "input",
+            "-vf": f"scale=-1:{resolution}",
+            "-c:v": "libx264",
+            "-pix_fmt": "yuv420p",
+            "-y": "",
+        },
+    )
+    ff.run()
+
+
+def write_jp2_to_mp4_subprocess(files: list[str],
+                     filename: str,
+                     framerate: int = 5,
+                     resolution: int = 1024) -> None:
+    """
+    Write a list of input quicklook jpeg2000 files to an output mp4 animation.
+
+    Parameters
+    ----------
+    files : list[str]
+        List of input files to animate
+    filename : str
+        Output filename
+    framerate : int, optional
+        Frame rate (default 5)
+    resolution : int, optional
+        Output resolution (default 1024)
+
+    """
+    input_sequence = f"concat:{'|'.join(files)}"
+
+    ffmpeg_command = [
+        "ffmpeg",
+        "-framerate", str(framerate),
+        "-i", input_sequence,
+        "-vf", f"scale=-1:{resolution}",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-y",
+        filename,
+    ]
+
+    # TODO - or use ffmpeg-python to avoid trust issues with subprocess? (see function above)
+    subprocess.run(ffmpeg_command, check=False)  # noqa: S603
 
 
 def write_ndcube_to_fits(cube: NDCube,

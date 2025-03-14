@@ -1,8 +1,7 @@
 from typing import Any
 
 from ndcube import NDCube
-from prefect import task
-from prefect import Task, get_run_logger
+from prefect import Task, get_run_logger, task
 from prefect.client.schemas.objects import TaskRun
 from prefect.states import State
 from prefect.variables import Variable

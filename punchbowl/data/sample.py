@@ -111,7 +111,7 @@ def _handle_final_errors(results:parfive.Results) -> None:
 
 def _get_sampledata_dir() -> Path:
     # Workaround for tox only. This is not supported as a user option
-    sampledata_dir = os.environ.get("SUNPY_SAMPLEDIR", False)
+    sampledata_dir = os.environ.get("SUNPY_SAMPLEDIR", "False")
     if sampledata_dir:
         sampledata_dir = Path(sampledata_dir).expanduser().resolve()
         _is_writable_dir(sampledata_dir)

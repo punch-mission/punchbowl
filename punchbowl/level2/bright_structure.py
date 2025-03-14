@@ -180,20 +180,20 @@ def identify_bright_structures_task(
     veto_limit: int = 2,
     diff_method: str = "sigma",
     dilation: int = 0,
-) -> NDCube | None:
+) -> (NDCube | None, NDCube | None):
     """Prefect task to perform bright structure identification."""
     logger = get_run_logger()
     logger.info("identify_bright_structures_task started")
 
     if data is None:
         logger.info("Identify bright structures skipped since data is None")
-        return data
+        return data, None
 
     if len(voter_filenames) == 0:
         logger.info("Identify bright structures skipped since no voters provided")
         data.meta.history.add_now("LEVEL2-bright_structure",
                                   "Identify bright structures skipped since no voters provided")
-        return data
+        return data, None
 
     # construct voter cube
     voters, voters_uncertainty = [], []
@@ -224,4 +224,4 @@ def identify_bright_structures_task(
     data.meta.history.add_now("LEVEL2-bright_structures",
                               "bright structure identification completed")
 
-    return data
+    return data, spike_mask

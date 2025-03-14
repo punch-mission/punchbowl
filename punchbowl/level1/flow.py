@@ -1,5 +1,4 @@
 import pathlib
-from collections.abc import Callable
 
 import astropy.units as u
 import numpy as np
@@ -118,13 +117,13 @@ def level1_core_flow(
         data = remove_stray_light_task(data, stray_light_path)
         data = correct_psf_task(data, psf_model_path)
 
-        observatory = int(data.meta["OBSCODE"].value)   # noqa: ERA001
+        observatory = int(data.meta["OBSCODE"].value)
         if observatory < 4:
-            alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)   # noqa: ERA001
-        else:   # noqa: ERA001
+            alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
+        else:
             alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
                                            * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        data = align_task(data, mask=alignment_mask)   # noqa: ERA001
+        data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value

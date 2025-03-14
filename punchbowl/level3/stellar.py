@@ -56,7 +56,7 @@ def generate_starfield_background(
         msg = "filenames cannot be empty"
         raise ValueError(msg)
 
-    shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
+    shape = [floor(132 / map_scale), floor(360 / map_scale)]
     starfield_wcs = WCS(naxis=2)
     # n.b. it seems the RA wrap point is chosen so there's 180 degrees
     # included on either side of crpix
@@ -160,7 +160,7 @@ def subtract_starfield_background_task(data_object: NDCube,
         #                                               data_object.meta.astropy_time,
         #                                               data_object.data.shape[-2:])
         map_scale = 0.01
-        shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
+        shape = [floor(132 / map_scale), floor(360 / map_scale)]
         starfield_wcs = WCS(naxis=2)
         # n.b. it seems the RA wrap point is chosen so there's 180 degrees
         # included on either side of crpix

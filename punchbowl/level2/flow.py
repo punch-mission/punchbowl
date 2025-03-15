@@ -63,6 +63,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         data_list = reproject_many_flow([j for i in data_list for j in i], trefoil_wcs, trefoil_shape)
         data_list = [identify_bright_structures_task(cube, this_voter_filenames)
                      for cube, this_voter_filenames in zip(data_list, ordered_voters, strict=True)]
+        spike_masks = [e[1] for e in data_list]  # split off the spike masks for saving separately
+        data_list = [e[0] for e in data_list]
         output_data = merge_many_polarized_task(data_list, trefoil_wcs)
     else:
         output_dateobs = datetime.now().isoformat()
@@ -75,6 +77,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         wcs=trefoil_wcs,
         meta=NormalizedMetadata.load_template("PTM", "2"),
     )
+        spike_masks = None
 
     output_data.meta["DATE"] = datetime.now().isoformat()
     output_data.meta["DATE-AVG"] = output_dateobs
@@ -87,7 +90,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         output_image_task(output_data, output_filename)
 
     logger.info("ending level 2 core flow")
-    return [output_data]
+    return [output_data, spike_masks]
 
 
 if __name__ == "__main__":

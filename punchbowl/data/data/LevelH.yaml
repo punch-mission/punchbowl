@@ -1,0 +1,112 @@
+# Level specification
+Level:
+    FITS Required:
+        overrides:
+            BITPIX: -32
+    Documentation, Contact, and Collection Metadata:
+        overrides:
+            DESCRPTN: PUNCH Level-H data, used for calibration
+    File Type and Provenance:
+        overrides:
+            LEVEL: H
+    Temporal Information:
+    Instrument and Spacecraft State:
+        omits: [OBSLAYR2, OBSLAYR3]
+    World Coordinate System:
+    Camera and Readout State:
+    Onboard Image Processing:
+    Calibration Data:
+    Image Statistics and Properties:
+    Solar Reference Data:
+    Spacecraft Location & Environment:
+    Fixity:
+    History:
+
+
+# Kind specifications
+Kinds:
+    Polarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+            POLARREF: 'Instrument'
+        omits: [NAXIS3]
+
+    Unpolarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+        omits: [NAXIS3]
+
+    PM:
+        overrides:
+            TYPECODE: PM
+            FILTER: P1
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            POLAR: -60
+
+    PZ:
+        overrides:
+            TYPECODE: PZ
+            FILTER: P2
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_Z
+            POLAR: 0
+
+    PP:
+        overrides:
+            TYPECODE: PP
+            FILTER: P3
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_P
+            POLAR: +60
+
+    CR:
+        overrides:
+            TYPECODE: CR
+            FILTER: Clear
+            OBS-MODE: Unpolarized
+            OBSLAYR1: Unpolarized
+            POLAR: -999
+
+
+# Product specifications
+Products:
+    PM?:
+        kinds: [Polarized, PM]
+        overrides:
+            TITLE: PUNCH Level-H {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    PZ?:
+        kinds: [Polarized, PZ]
+        overrides:
+            TITLE: PUNCH Level-H {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    PP?:
+        kinds: [Polarized, PP]
+        overrides:
+            TITLE: PUNCH Level-H {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    CR?:
+        kinds: [Unpolarized, CR]
+        overrides:
+            TITLE: PUNCH Level-H {craftname} Clear Image
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"

@@ -1,14 +1,15 @@
-# ruff: noqa
-import os
+from typing import Any
 
 from ndcube import NDCube
-from prefect import task
+from prefect import Task, get_run_logger, task
+from prefect.client.schemas.objects import TaskRun
+from prefect.states import State
 from prefect.variables import Variable
 
 from punchbowl.data.punch_io import get_base_file_name, write_ndcube_to_fits
 
 
-def completion_debugger(task, task_run, state):
+def completion_debugger(task: Task, task_run: TaskRun, state: State) -> None:
     """Run on task completion during debug mode."""
     if Variable.get("debug", False):
         cube = state.result()
@@ -20,13 +21,12 @@ def completion_debugger(task, task_run, state):
                 new_filename = f"{get_base_file_name(c)}_{task.name}_{i}.fits"
                 write_ndcube_to_fits(c, new_filename, overwrite=True, write_hash=False)
         else:
-            print("Cannot write output.")
+            logger = get_run_logger()
+            logger.error(f"Cannot write debug output for {task} {task_run} in {state}.")
 
-def failure_hook(task, task_run, state):
+def failure_hook(task: Task, task_run: TaskRun, state: State) -> None:
     """Run if a punch_task fails."""
-    print(f"I'm a special debugger that runs if {task.name} fails. I failed on {task_run} with {state}."
-          "I could also be configured to alert the SOC I failed.")
 
-def punch_task(*args, **kwargs):
+def punch_task(*args: Any, **kwargs: Any) -> Task:
     """Prefect task that does PUNCH special things."""
     return task(*args, **kwargs, on_completion=[completion_debugger], on_failure=[failure_hook])

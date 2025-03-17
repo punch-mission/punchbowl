@@ -28,9 +28,14 @@ def extract_crota_from_wcs(wcs: WCS) -> u.deg:
 
 
 def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
-                                       date_obs: astropy.time.Time,
-                                       data_shape: tuple[int, int]) -> tuple[WCS, float]:
+                                       date_obs: astropy.time.Time | str | None=None,
+                                       data_shape: tuple[int, int] | None=None) -> tuple[WCS, float]:
     """Calculate the helio WCS from a celestial WCS."""
+    if date_obs is None:
+        date_obs = wcs_celestial.wcs.dateobs
+    if data_shape is None:
+        data_shape = wcs_celestial.array_shape
+    date_obs = Time(date_obs)
     is_3d = len(data_shape) == 3
 
     # we're at the center of the Earth
@@ -49,34 +54,29 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
         distance=test_gcrs.hcrs.distance,
     )
 
-    reference_coord_arcsec = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
-
-    cdelt1 = (np.abs(wcs_celestial.wcs.cdelt[0]) * u.deg).to(u.arcsec)
-    cdelt2 = (np.abs(wcs_celestial.wcs.cdelt[1]) * u.deg).to(u.arcsec)
-
-    p_angle = get_p_angle(date_obs)
-
-    rotation_angle = extract_crota_from_wcs(wcs_celestial).to(u.rad).value - get_p_angle(date_obs).rad
-    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_celestial.wcs.cdelt)
-
+    reference_coord_hp = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
     projection_code = wcs_celestial.wcs.ctype[0][-3:] if "-" in wcs_celestial.wcs.ctype[0] else ""
-    if projection_code:  # noqa: SIM108
-        new_ctypes = (f"HPLN-{projection_code}", f"HPLT-{projection_code}")
-    else:
-        new_ctypes = "HPLN", "HPLT"
 
-    wcs_helio = WCS(naxis=2)
-    wcs_helio.wcs.ctype = new_ctypes
-    wcs_helio.wcs.cunit = ("deg", "deg")
-    wcs_helio.wcs.cdelt = (cdelt1.to(u.deg).value, cdelt2.to(u.deg).value)
-    wcs_helio.wcs.crpix = (wcs_celestial.wcs.crpix[0], wcs_celestial.wcs.crpix[1])
-    wcs_helio.wcs.crval = (reference_coord_arcsec.Tx.to(u.deg).value,  reference_coord_arcsec.Ty.to(u.deg).value)
-    wcs_helio.wcs.pc = new_pc_matrix
+    hdr = sunpy.map.make_fitswcs_header(
+        np.empty(data_shape),
+        reference_coord_hp,
+        reference_pixel=wcs_celestial.wcs.crpix * u.pix - 1 * u.pix,
+        scale=np.abs(wcs_celestial.wcs.cdelt) * u.deg / u.pix,
+        projection_code=projection_code)
+
+    wcs_helio = WCS(hdr, naxis=2)
     wcs_helio.wcs.set_pv(wcs_celestial.wcs.get_pv())
+
+    rotation_angle = -compute_hp_to_eq_rotation_angle(wcs_helio)
+    rotation_angle -= extract_crota_from_wcs(wcs_celestial)
+    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_celestial.wcs.cdelt)
+    wcs_helio.wcs.pc = new_pc_matrix
 
     if is_3d:
         wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 2)
     wcs_helio.array_shape = data_shape
+
+    p_angle = get_p_angle(date_obs)
 
     return wcs_helio, p_angle
 
@@ -305,6 +305,8 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS,
     wcs_celestial.wcs.crpix = (wcs_helio.wcs.crpix[0], wcs_helio.wcs.crpix[1])
     wcs_celestial.wcs.crval = (new_crval.ra.to(u.deg).value,  new_crval.dec.to(u.deg).value)
     wcs_celestial.wcs.set_pv(wcs_helio.wcs.get_pv())
+    wcs_celestial.wcs.dateobs = wcs_helio.wcs.dateobs
+    wcs_celestial.wcs.mjdobs = wcs_helio.wcs.mjdobs
 
     rotation_angle = compute_hp_to_eq_rotation_angle(wcs_helio)
     rotation_angle += extract_crota_from_wcs(wcs_helio)
@@ -346,7 +348,7 @@ def compute_hp_to_eq_rotation_angle(wcs_helio: WCS) -> u.Quantity:
     Parameters
     ----------
     wcs_helio : WCS
-        A helioprojective WCS for which we're producing a corresponding celestial WCS
+        A helioprojective WCS for which we're producing a corresponding celestial WCS. Only CRVAL is used from this WCS
 
     Returns
     -------

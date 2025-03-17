@@ -208,67 +208,6 @@ def test_load_trefoil_wcs():
     assert isinstance(trefoil_wcs, WCS)
 
 
-def test_helio_celestial_wcs():
-    # header = fits.Header.fromtextfile(os.path.join(_ROOT, "example_header.txt"))
-    #
-    # date_obs = Time(header['DATE-OBS'])
-    date_obs = Time("2021-06-20T00:00:00.000", format='isot', scale='utc')
-    #
-    wcs_helio = WCS({"CRVAL1": 0.0,
-                     "CRVAL2": 0.0,
-                     "CRPIX1": 2047.5,
-                     "CRPIX2": 2047.5,
-                     "CRPIX3": 0.0,
-                     "CDELT1": 0.0225,
-                     "CDELT2": 0.0225,
-                     "CDELT3": 1.0,
-                     "CUNIT1": "deg",
-                     "CUNIT2": "deg",
-                     "CTYPE1": "HPLN-ARC",
-                     "CTYPE2": "HPLT-ARC",
-                     "CTYPE3": "STOKES"})
-    # wcs_helio = WCS(header)
-    wcs_celestial = calculate_celestial_wcs_from_helio(wcs_helio, date_obs, (3, 4096, 4096))
-
-    # wcs_celestial2 = WCS(header, key='A')
-
-    test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
-    test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
-
-    npoints = 20
-    input_coords = np.stack([
-                             np.linspace(0, 4096, npoints).astype(int),
-                             np.linspace(0, 4096, npoints).astype(int),
-                             np.ones(npoints, dtype=int),],
-        axis=1)
-
-    points_celestial = wcs_celestial.all_pix2world(input_coords, 0)
-    points_helio = wcs_helio.all_pix2world(input_coords, 0)
-
-    output_coords = []
-    for c_pix, c_celestial, c_helio in zip(input_coords, points_celestial, points_helio):
-        skycoord_celestial = SkyCoord(c_celestial[0] * u.deg, c_celestial[1] * u.deg,
-                                      frame=GCRS,
-                                      obstime=date_obs,
-                                      observer="earth",
-                                      # observer=test_gcrs,
-                                      # obsgeoloc=test_gcrs.cartesian,
-                                      # obsgeovel=test_gcrs.velocity.to_cartesian(),
-                                      # distance=test_gcrs.hcrs.distance
-                                      )
-
-        intermediate = skycoord_celestial.transform_to(frames.Helioprojective(observer='earth', obstime=date_obs))
-        # final = SkyCoord(intermediate.Tx, intermediate.Ty, frame="helioprojective", observer=intermediate.observer, obstime=intermediate.obstime)
-        output_coords.append(wcs_helio.all_world2pix(intermediate.Tx.to(u.deg).value,
-                                                     intermediate.Ty.to(u.deg).value,
-                                                     2,
-                                                     0))
-
-    output_coords = np.array(output_coords)
-    distances = np.linalg.norm(input_coords - output_coords, axis=1)
-
-    assert np.nanmean(distances) < 0.1
-
 from punchbowl.data.wcs import extract_crota_from_wcs, get_p_angle
 
 

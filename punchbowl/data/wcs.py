@@ -355,7 +355,7 @@ def compute_hp_to_eq_rotation_angle(wcs_helio: WCS) -> u.Quantity:
 
     """
     # Get our CRVAL vector
-    axis_sc = wcs_helio.pixel_to_world(wcs_helio.wcs.crpix[0] - 1, wcs_helio.wcs.crpix[1] - 1)
+    axis_sc = wcs_helio.celestial.pixel_to_world(wcs_helio.wcs.crpix[0] - 1, wcs_helio.wcs.crpix[1] - 1)
     axis = axis_sc.cartesian.xyz
     axis /= np.linalg.norm(axis)
 

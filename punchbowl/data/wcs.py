@@ -275,8 +275,14 @@ def gcrs_to_hpc(GCRScoord, Helioprojective): # noqa: ANN201, N803, ANN001
     return Helioprojective.realize_frame(rep)
 
 
-def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: astropy.time.Time, data_shape: tuple[int, int]) -> WCS:
+def calculate_celestial_wcs_from_helio(wcs_helio: WCS,
+                                       date_obs: astropy.time.Time | None=None,
+                                       data_shape: tuple[int, int] | None=None) -> WCS:
     """Calculate the celestial WCS from a helio WCS."""
+    if date_obs is None:
+        date_obs = wcs_helio.wcs.dateobs
+    if data_shape is None:
+        data_shape = wcs_helio.array_shape
     is_3d = len(data_shape) == 3
 
     old_crval = SkyCoord(wcs_helio.wcs.crval[0] * u.deg, wcs_helio.wcs.crval[1] * u.deg,

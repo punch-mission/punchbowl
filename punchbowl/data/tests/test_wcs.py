@@ -1,15 +1,14 @@
 import os
 from datetime import datetime
+from itertools import product
 
 import astropy
 import astropy.units as u
 import numpy as np
 from astropy.coordinates import GCRS, EarthLocation, SkyCoord, get_sun
-from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
-from ndcube import NDCube
-from sunpy.coordinates import frames
+from sunpy.coordinates import frames, get_earth
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.wcs import (
@@ -81,57 +80,61 @@ def test_extract_crota_helio():
     assert np.allclose(extract_crota_from_wcs(wcs_helio), 10 * u.deg)
 
 def test_wcs_many_point_2d_check():
-    m = NormalizedMetadata.load_template("CTM", "2")
-    date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
-    m['DATE-OBS'] = str(date_obs)
-
-    sun_radec = get_sun(date_obs)
-    wcs_celestial = WCS({"CRVAL1": sun_radec.ra.to(u.deg).value,
-                         "CRVAL2": sun_radec.dec.to(u.deg).value,
+    for date_obs, crval1, crval2, crot in product(
+            ["2021-03-20T00:00:00", "2021-01-20T00:00:00"],
+            [-20, 10, 30],
+            [-10, 0, 10],
+            [-30, 0, 30] * u.deg):
+        earth = get_earth(date_obs)
+        wcs_helio = WCS({"CRVAL1": crval1,
+                         "CRVAL2": crval2,
                          "CRPIX1": 2047.5,
                          "CRPIX2": 2047.5,
-                         "CDELT1": -0.0225,
+                         "NAXIS1": 4096,
+                         "NAXIS2": 4096,
+                         "CDELT1": 0.0225,
                          "CDELT2": 0.0225,
                          "CUNIT1": "deg",
                          "CUNIT2": "deg",
-                         "CTYPE1": "RA---ARC",
-                         "CTYPE2": "DEC--ARC"})
+                         "CTYPE1": "HPLN-AZP",
+                         "CTYPE2": "HPLT-AZP",
+                         "PC1_1": np.cos(crot).value,
+                         "PC1_2": -np.sin(crot).value,
+                         "PC2_1": np.sin(crot).value,
+                         "PC2_2": np.cos(crot).value,
+                         "DATE-OBS": date_obs,
+                         "MJD-OBS": Time(date_obs).mjd,
+                         "DSUN_OBS": earth.radius.to_value(u.m),
+                         "HGLN_OBS": earth.lon.to_value(u.deg),
+                         "HGLT_OBS": earth.lat.to_value(u.deg),
+                         "PV2_1": 0,
+                         })
 
-    # we're at the center of the Earth so let's try that
-    test_loc = EarthLocation.from_geocentric(0, 0, 0, unit=u.m)
-    test_gcrs = SkyCoord(test_loc.get_gcrs(date_obs))
+        wcs_celestial = calculate_celestial_wcs_from_helio(wcs_helio)
 
-    wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, (4096, 4096))
+        npoints = 20
+        xs, ys = np.meshgrid(
+            np.linspace(0, wcs_helio.pixel_shape[0], npoints),
+            np.linspace(0, wcs_helio.pixel_shape[1], npoints),
+        )
 
-    npoints = 20
-    input_coords = np.stack([
-                             np.linspace(0, 4096, npoints).astype(int),
-                             np.linspace(0, 4096, npoints).astype(int)], axis=1)
+        hp_coords = wcs_helio.pixel_to_world(xs, ys)
+        # These come out claiming to be ICRS, but they're really GCRS (since it doesn't seem possible to tell a WCS
+        # that it's GCRS)
+        eq_coords = wcs_celestial.pixel_to_world(xs, ys)
+        hp_to_eq_coords = hp_coords.transform_to('gcrs')
 
-    points_celestial = wcs_celestial.all_pix2world(input_coords, 0)
-    points_helio = wcs_helio.all_pix2world(input_coords, 0)
+        eq_ra = eq_coords.ra.to_value(u.deg)
+        hp_to_eq_ra = hp_to_eq_coords.ra.to_value(u.deg)
+        straddles_wrap = np.nonzero(np.abs(eq_ra - hp_to_eq_ra) > 350)
+        for r, c in zip(*straddles_wrap):
+            if eq_ra[r, c] > 350:
+                eq_ra[r, c] -= 360
+            else:
+                hp_to_eq_ra[r, c] -= 360
 
-    output_coords = []
-    intermediates = []
-    for c_pix, c_celestial, c_helio in zip(input_coords, points_celestial, points_helio):
-        skycoord_celestial = SkyCoord(c_celestial[0] * u.deg, c_celestial[1] * u.deg,
-                                      frame=GCRS,
-                                      obstime=date_obs,
-                                      observer=test_gcrs,
-                                      obsgeoloc=test_gcrs.cartesian,
-                                      obsgeovel=test_gcrs.velocity.to_cartesian(),
-                                      distance=test_gcrs.hcrs.distance
-                                      )
-
-        intermediate = skycoord_celestial.transform_to(frames.Helioprojective)
-        intermediates.append(intermediate)
-        output_coords.append(wcs_helio.all_world2pix(intermediate.data.lon.to(u.deg).value,
-                                                     intermediate.data.lat.to(u.deg).value, 0))
-
-    output_coords = np.array(output_coords)
-    print(intermediates[0].Tx.deg,  intermediates[0].Ty.deg, points_helio[0])
-    distances = np.linalg.norm(input_coords - output_coords, axis=1)
-    assert np.mean(distances) < 0.1
+        np.testing.assert_allclose(eq_ra, hp_to_eq_ra, atol=1e-12)
+        np.testing.assert_allclose(eq_coords.dec.to_value(u.deg), hp_to_eq_coords.dec.to_value(u.deg), atol=1e-12)
 
 
 def test_wcs_many_point_3d_check():

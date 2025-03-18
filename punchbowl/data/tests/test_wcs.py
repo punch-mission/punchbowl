@@ -80,7 +80,7 @@ def test_extract_crota_helio():
     wcs_helio.wcs.pc = pc
     assert np.allclose(extract_crota_from_wcs(wcs_helio), 10 * u.deg)
 
-def test_wcs_many_point_2d_check():
+def test_helio_to_celestial_wcs_many_points():
     for date_obs, crval1, crval2, crot in product(
             ["2021-03-20T00:00:00", "2021-01-20T00:00:00"],
             [-20, 10, 30],
@@ -137,8 +137,64 @@ def test_wcs_many_point_2d_check():
         np.testing.assert_allclose(eq_ra, hp_to_eq_ra, atol=1e-12)
         np.testing.assert_allclose(eq_coords.dec.to_value(u.deg), hp_to_eq_coords.dec.to_value(u.deg), atol=1e-12)
 
+def test_celesital_to_helio_wcs_many_points():
+    for date_obs, crval1, crval2, crot in product(
+            ["2021-03-20T00:00:00", "2021-01-20T00:00:00"],
+            [10, 90, 220],
+            [-30, 0, 30],
+            [-30, 0, 30] * u.deg):
+        wcs_celestial = WCS({"CRVAL1": crval1,
+                         "CRVAL2": crval2,
+                         "CRPIX1": 2047.5,
+                         "CRPIX2": 2047.5,
+                         "NAXIS1": 4096,
+                         "NAXIS2": 4096,
+                         "CDELT1": -0.0225,
+                         "CDELT2": 0.0225,
+                         "CUNIT1": "deg",
+                         "CUNIT2": "deg",
+                         "CTYPE1": "RA---AZP",
+                         "CTYPE2": "DEC--AZP",
+                         "PC1_1": np.cos(crot).value,
+                         "PC1_2": np.sin(crot).value,
+                         "PC2_1": -np.sin(crot).value,
+                         "PC2_2": np.cos(crot).value,
+                         "DATE-OBS": date_obs,
+                         "MJD-OBS": Time(date_obs).mjd,
+                         "PV2_1": 0,
+                         })
 
-def test_wcs_many_point_3d_check():
+        wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial)
+
+        npoints = 20
+        xs, ys = np.meshgrid(
+            np.linspace(0, wcs_celestial.pixel_shape[0], npoints),
+            np.linspace(0, wcs_celestial.pixel_shape[1], npoints),
+        )
+
+        hp_coords = wcs_helio.pixel_to_world(xs, ys)
+        # These come out claiming to be ICRS, but they're really GCRS (since it doesn't seem possible to tell a WCS
+        # that it's GCRS)
+        eq_coords = wcs_celestial.pixel_to_world(xs, ys)
+        # Make them bona-fide GCRS
+        eq_coords = SkyCoord(eq_coords.ra, eq_coords.dec, frame='gcrs', obstime=date_obs)
+        eq_to_hp_coords = eq_coords.transform_to('helioprojective')
+
+        hp_tx = hp_coords.Tx.to_value(u.deg)
+        eq_to_hp_tx = eq_to_hp_coords.Tx.to_value(u.deg)
+        straddles_wrap = np.nonzero(np.abs(hp_tx - eq_to_hp_tx) > 350)
+        for r, c in zip(*straddles_wrap):
+            if hp_tx[r, c] > 170:
+                hp_tx[r, c] -= 360
+            else:
+                eq_to_hp_tx[r, c] -= 360
+
+        np.testing.assert_allclose(hp_tx, eq_to_hp_tx, atol=1e-12)
+        np.testing.assert_allclose(hp_coords.Ty.to_value(u.deg), eq_to_hp_coords.Ty.to_value(u.deg), atol=1e-12)
+
+
+def test_helio_to_celestial_wcs_many_points_3d():
+    # The third dimension here is Stokes
     for date_obs, crval1, crval2, crot in product(
             ["2021-03-20T00:00:00", "2021-01-20T00:00:00"],
             [-20, 10, 30],
@@ -200,6 +256,69 @@ def test_wcs_many_point_3d_check():
 
         np.testing.assert_allclose(eq_ra, hp_to_eq_ra, atol=1e-12)
         np.testing.assert_allclose(eq_coords[0].dec.to_value(u.deg), hp_to_eq_coords.dec.to_value(u.deg), atol=1e-12)
+        np.testing.assert_array_equal(hp_coords[1], eq_coords[1])
+
+
+def test_celestial_to_helio_wcs_many_points_3d():
+    # The third dimension here is Stokes
+    for date_obs, crval1, crval2, crot in product(
+            ["2021-03-20T00:00:00", "2021-01-20T00:00:00"],
+            [10, 90, 220],
+            [-30, 0, 30],
+            [-30, 0, 30] * u.deg):
+        wcs_celestial = WCS({"CRVAL1": crval1,
+                         "CRVAL2": crval2,
+                         "CRVAL3": 0,
+                         "CRPIX1": 2047.5,
+                         "CRPIX2": 2047.5,
+                         "CRPIX3": 0,
+                         "NAXIS1": 4096,
+                         "NAXIS2": 4096,
+                         "NAXIS3": 3,
+                         "CDELT1": -0.0225,
+                         "CDELT2": 0.0225,
+                         "CDELT3": 1.0,
+                         "CUNIT1": "deg",
+                         "CUNIT2": "deg",
+                         "CUNIT3": "",
+                         "CTYPE1": "RA---AZP",
+                         "CTYPE2": "DEC--AZP",
+                         "CTYPE3": "STOKES",
+                         "PC1_1": np.cos(crot).value,
+                         "PC1_2": np.sin(crot).value,
+                         "PC2_1": -np.sin(crot).value,
+                         "PC2_2": np.cos(crot).value,
+                         "DATE-OBS": date_obs,
+                         "MJD-OBS": Time(date_obs).mjd,
+                         "PV2_1": 0,
+                         })
+
+        wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial)
+
+        npoints = 20
+        xs, ys = np.meshgrid(
+            np.linspace(0, wcs_celestial.pixel_shape[0], npoints),
+            np.linspace(0, wcs_celestial.pixel_shape[1], npoints))
+        zs = np.ones_like(xs)
+
+        hp_coords = wcs_helio.pixel_to_world(xs, ys, zs)
+        # These come out claiming to be ICRS, but they're really GCRS (since it doesn't seem possible to tell a WCS
+        # that it's GCRS)
+        eq_coords = wcs_celestial.pixel_to_world(xs, ys, zs)
+        eq_coords = SkyCoord(eq_coords[0].ra, eq_coords[0].dec, frame='gcrs', obstime=date_obs), eq_coords[1]
+        eq_to_hp_coords = eq_coords[0].transform_to('helioprojective')
+
+        hp_tx = hp_coords[0].Tx.to_value(u.deg)
+        eq_to_hp_tx = eq_to_hp_coords.Tx.to_value(u.deg)
+        straddles_wrap = np.nonzero(np.abs(hp_tx - eq_to_hp_tx) > 350)
+        for r, c in zip(*straddles_wrap):
+            if hp_tx[r, c] > 170:
+                hp_tx[r, c] -= 360
+            else:
+                eq_to_hp_tx[r, c] -= 360
+
+        np.testing.assert_allclose(hp_tx, eq_to_hp_tx, atol=1e-12)
+        np.testing.assert_allclose(hp_coords[0].Ty.to_value(u.deg), eq_to_hp_coords.Ty.to_value(u.deg), atol=1e-12)
         np.testing.assert_array_equal(hp_coords[1], eq_coords[1])
 
 

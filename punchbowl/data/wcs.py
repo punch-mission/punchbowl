@@ -72,7 +72,7 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
 
     rotation_angle = -compute_hp_to_eq_rotation_angle(wcs_helio, date_obs)
     rotation_angle -= extract_crota_from_wcs(wcs_celestial)
-    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_celestial.wcs.cdelt)
+    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
     wcs_helio.wcs.pc = new_pc_matrix
 
     if is_3d:

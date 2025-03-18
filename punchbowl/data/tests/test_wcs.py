@@ -5,16 +5,17 @@ from itertools import product
 import astropy
 import astropy.units as u
 import numpy as np
-from astropy.coordinates import GCRS, EarthLocation, SkyCoord, get_sun
+import pytest
+from astropy.coordinates import GCRS, SkyCoord, get_sun
 from astropy.time import Time
 from astropy.wcs import WCS
 from sunpy.coordinates import frames, get_earth
 
-from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.wcs import (
     calculate_celestial_wcs_from_helio,
     calculate_helio_wcs_from_celestial,
     calculate_pc_matrix,
+    extract_crota_from_wcs,
     load_trefoil_wcs,
 )
 
@@ -208,13 +209,10 @@ def test_load_trefoil_wcs():
     assert isinstance(trefoil_wcs, WCS)
 
 
-from punchbowl.data.wcs import extract_crota_from_wcs, get_p_angle
-
-
-def test_back_and_forth_wcs_from_celestial():
+@pytest.mark.parametrize("starting_rotation", [-140, -30, 0, 50, 100])
+def test_back_and_forth_wcs_from_celestial(starting_rotation):
     date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
     sun_radec = get_sun(date_obs)
-    pc = calculate_pc_matrix(0, [0.0225, 0.0225])
     wcs_celestial = WCS({"CRVAL1": sun_radec.ra.to(u.deg).value,
                          "CRVAL2": sun_radec.dec.to(u.deg).value,
                          "CRPIX1": 2047.5,
@@ -225,27 +223,23 @@ def test_back_and_forth_wcs_from_celestial():
                          "CUNIT2": "deg",
                          "CTYPE1": "RA---AZP",
                          "CTYPE2": "DEC--AZP",
-                         "PC1_1": pc[0, 0],
-                         "PC1_2": pc[0, 1],
-                         "PC2_1": pc[1, 0],
-                         "PC2_2": pc[1, 1]
                          })
+    pc = calculate_pc_matrix(starting_rotation, wcs_celestial.wcs.cdelt)
+    wcs_celestial.wcs.pc = pc
 
-    print(extract_crota_from_wcs(wcs_celestial))
     wcs_helio, p_angle = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, (10, 10))
-    print(extract_crota_from_wcs(wcs_helio))
     wcs_celestial_recovered = calculate_celestial_wcs_from_helio(wcs_helio, date_obs, (10, 10))
-    print(extract_crota_from_wcs(wcs_celestial_recovered))
 
     assert np.allclose(wcs_celestial.wcs.crval, wcs_celestial_recovered.wcs.crval)
     assert np.allclose(wcs_celestial.wcs.crpix, wcs_celestial_recovered.wcs.crpix)
     assert np.allclose(wcs_celestial.wcs.pc, wcs_celestial_recovered.wcs.pc)
     assert np.allclose(wcs_celestial.wcs.cdelt, wcs_celestial_recovered.wcs.cdelt)
+    assert list(wcs_celestial.wcs.ctype) == list(wcs_celestial_recovered.wcs.ctype)
 
 
-def test_back_and_forth_wcs_from_helio():
+@pytest.mark.parametrize("starting_rotation", [-140, -30, 0, 50, 100])
+def test_back_and_forth_wcs_from_helio(starting_rotation):
     date_obs = Time("2024-01-01T00:00:00", format='isot', scale='utc')
-
     wcs_helio = WCS({"CRVAL1": 15.0,
                      "CRVAL2": 10.0,
                      "CRPIX1": 2047.5,
@@ -256,14 +250,14 @@ def test_back_and_forth_wcs_from_helio():
                      "CUNIT2": "deg",
                      "CTYPE1": "HPLN-ARC",
                      "CTYPE2": "HPLT-ARC"})
+    pc = calculate_pc_matrix(starting_rotation, wcs_helio.wcs.cdelt)
+    wcs_helio.wcs.pc = pc
 
-    print(extract_crota_from_wcs(wcs_helio))
     wcs_celestial = calculate_celestial_wcs_from_helio(wcs_helio.copy(), date_obs, (10, 10))
-    print(extract_crota_from_wcs(wcs_celestial))
     wcs_helio_recovered, p_angle = calculate_helio_wcs_from_celestial(wcs_celestial.copy(), date_obs, (10, 10))
-    print(extract_crota_from_wcs(wcs_helio_recovered))
 
     assert np.allclose(wcs_helio.wcs.crval, wcs_helio_recovered.wcs.crval)
     assert np.allclose(wcs_helio.wcs.crpix, wcs_helio_recovered.wcs.crpix)
     assert np.allclose(wcs_helio.wcs.pc, wcs_helio_recovered.wcs.pc)
     assert np.allclose(wcs_helio.wcs.cdelt, wcs_helio_recovered.wcs.cdelt)
+    assert list(wcs_helio_recovered.wcs.ctype) == list(wcs_helio.wcs.ctype)

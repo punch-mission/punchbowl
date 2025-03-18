@@ -58,6 +58,21 @@ def load_spacecraft_def(path: str | None = None) -> dict[str, t.Any]:
         return yaml.safe_load(f)
 
 
+def construct_all_product_codes(level: str) -> list[str]:
+    """Generate all data product codes."""
+    level_path = os.path.join(_ROOT, "data", f"Level{level}.yaml")
+    level_spec = load_level_spec(level_path)
+    product_keys = list(level_spec["Products"].keys())
+    if level in ["0", "1", "2"]:
+        crafts = {"1": "", "2": "", "3": "", "4": ""}.keys()
+    if level in ["2", "3", "Q", "L"]:
+        crafts = {"M": "", "N": ""}.keys()
+    if level in ["Q", "L"]:
+        crafts = {"M": "", "N": ""}.keys()
+
+    return sorted({pc.replace("?", craft) for craft in crafts for pc in product_keys})
+
+
 class MetaField:
     """The MetaField object describes a single field within the NormalizedMetadata object."""
 

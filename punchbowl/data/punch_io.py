@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os.path
+import subprocess
 from pathlib import Path
 
 import astropy.units as u
@@ -43,6 +44,7 @@ def get_base_file_name(cube: NDCube) -> str:
 def write_ndcube_to_jp2(cube: NDCube,
                         filename: str,
                         layer: int | None = None,
+                        # TODO - Configure these parameters for defaults per data level
                         vmin: float = 1e-15,
                         vmax: float = 8e-13) -> None:
     """Write an NDCube as a JPEG2000 file."""
@@ -67,6 +69,41 @@ def write_ndcube_to_jp2(cube: NDCube,
 
     with open(filename, "wb") as f:
         f.write(encoded_arr)
+
+
+def write_jp2_to_mp4(files: list[str],
+                     filename: str,
+                     framerate: int = 5,
+                     resolution: int = 1024) -> None:
+    """
+    Write a list of input quicklook jpeg2000 files to an output mp4 animation.
+
+    Parameters
+    ----------
+    files : list[str]
+        List of input files to animate
+    filename : str
+        Output filename
+    framerate : int, optional
+        Frame rate (default 5)
+    resolution : int, optional
+        Output resolution (default 1024)
+
+    """
+    input_sequence = f"concat:{'|'.join(files)}"
+
+    ffmpeg_command = [
+        "ffmpeg",
+        "-framerate", str(framerate),
+        "-i", input_sequence,
+        "-vf", f"scale=-1:{resolution}",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-y",
+        filename,
+    ]
+
+    subprocess.run(ffmpeg_command, check=False)  # noqa: S603
 
 
 def write_ndcube_to_fits(cube: NDCube,

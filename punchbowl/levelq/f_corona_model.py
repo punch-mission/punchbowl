@@ -50,7 +50,7 @@ def construct_qp_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
     logger.info("ending data loading")
 
     reference_xt = reference_time.timestamp()
-    model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube, smooth_level=smooth_level)
+    model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube, clip_factor=smooth_level)
     model_fcorona[model_fcorona<=0] = np.nan
     model_fcorona = fill_nans_with_interpolation(model_fcorona)
 

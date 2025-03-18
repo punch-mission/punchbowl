@@ -31,10 +31,13 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
                                        date_obs: astropy.time.Time | str | None=None,
                                        data_shape: tuple[int, int] | None=None) -> tuple[WCS, float]:
     """Calculate the helio WCS from a celestial WCS."""
-    if date_obs is None:
+    if not date_obs:
         date_obs = wcs_celestial.wcs.dateobs
     if data_shape is None:
         data_shape = wcs_celestial.array_shape
+    if not date_obs:
+        msg = "dateobs must be provided, either as an argument or inside the WCS"
+        raise ValueError(msg)
     date_obs = Time(date_obs)
     is_3d = len(data_shape) == 3
 
@@ -67,7 +70,7 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
     wcs_helio = WCS(hdr, naxis=2)
     wcs_helio.wcs.set_pv(wcs_celestial.wcs.get_pv())
 
-    rotation_angle = -compute_hp_to_eq_rotation_angle(wcs_helio)
+    rotation_angle = -compute_hp_to_eq_rotation_angle(wcs_helio, date_obs)
     rotation_angle -= extract_crota_from_wcs(wcs_celestial)
     new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_celestial.wcs.cdelt)
     wcs_helio.wcs.pc = new_pc_matrix
@@ -276,13 +279,16 @@ def gcrs_to_hpc(GCRScoord, Helioprojective): # noqa: ANN201, N803, ANN001
 
 
 def calculate_celestial_wcs_from_helio(wcs_helio: WCS,
-                                       date_obs: astropy.time.Time | None=None,
+                                       date_obs: astropy.time.Time | str | None=None,
                                        data_shape: tuple[int, int] | None=None) -> WCS:
     """Calculate the celestial WCS from a helio WCS."""
-    if date_obs is None:
+    if not date_obs:
         date_obs = wcs_helio.wcs.dateobs
     if data_shape is None:
         data_shape = wcs_helio.array_shape
+    if not date_obs:
+        msg = "dateobs must be provided, either as an argument or inside the WCS"
+        raise ValueError(msg)
     is_3d = len(data_shape) == 3
 
     old_crval = SkyCoord(wcs_helio.wcs.crval[0] * u.deg, wcs_helio.wcs.crval[1] * u.deg,
@@ -308,7 +314,7 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS,
     wcs_celestial.wcs.dateobs = wcs_helio.wcs.dateobs
     wcs_celestial.wcs.mjdobs = wcs_helio.wcs.mjdobs
 
-    rotation_angle = compute_hp_to_eq_rotation_angle(wcs_helio)
+    rotation_angle = compute_hp_to_eq_rotation_angle(wcs_helio, date_obs)
     rotation_angle += extract_crota_from_wcs(wcs_helio)
     new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
     wcs_celestial.wcs.pc = new_pc_matrix
@@ -339,7 +345,7 @@ def angle_between_vectors(vec1: np.ndarray, vec2: np.ndarray, plane_normal: np.n
     return np.arctan2(np.dot(np.cross(vec1, vec2), plane_normal), np.dot(vec1, vec2))
 
 
-def compute_hp_to_eq_rotation_angle(wcs_helio: WCS) -> u.Quantity:
+def compute_hp_to_eq_rotation_angle(wcs_helio: WCS, date_obs: str | Time | None=None) -> u.Quantity:
     """
     Compute the necessary rotation angle to align a celestial WCS to a helioprojective one.
 
@@ -349,6 +355,9 @@ def compute_hp_to_eq_rotation_angle(wcs_helio: WCS) -> u.Quantity:
     ----------
     wcs_helio : WCS
         A helioprojective WCS for which we're producing a corresponding celestial WCS. Only CRVAL is used from this WCS
+    date_obs : str | Time | None
+        The observation date. If not provided, it will be pulled from wcs_helio. If not provided in wcs_helio, it must
+        be specified here.
 
     Returns
     -------
@@ -356,8 +365,15 @@ def compute_hp_to_eq_rotation_angle(wcs_helio: WCS) -> u.Quantity:
         The rotation angle that should be added to that in wcs_celestial's PC matrix
 
     """
+    if not date_obs:
+        date_obs = wcs_helio.wcs.dateobs
+    if not date_obs:
+        msg = "dateobs must be provided, either as an argument or inside the WCS"
+        raise ValueError(msg)
     # Get our CRVAL vector
     axis_sc = wcs_helio.celestial.pixel_to_world(wcs_helio.wcs.crpix[0] - 1, wcs_helio.wcs.crpix[1] - 1)
+    # Make sure date_obs and observer are specified
+    axis_sc = SkyCoord(axis_sc.data, frame="helioprojective", observer=axis_sc.observer or "earth", obstime=date_obs)
     axis = axis_sc.cartesian.xyz
     axis /= np.linalg.norm(axis)
 

@@ -92,16 +92,3 @@ def test_to_celestial(sample_ndcube) -> NDCube:
     assert isinstance(data_cel, NDCube)
     assert np.allclose(data_cel.data, expected_cel)
 
-
-    # for i in enumerate(angles):
-    #     assert np.allclose(angles[i], test_cube[i].meta["POLAR"]*u.degree)
-
-
-# def test_basic_subtraction(one_data: NDCube, zero_starfield_data: Starfield) -> None:
-#     """
-#
-#     """
-#     subtraction_starfield = subtract_starfield_background(one_data, zero_starfield_data)
-#     subtraction_punchdata = NDCube(data=subtraction_starfield.data, wcs=subtraction_starfield.wcs, meta=subtraction_starfield.meta)
-#     assert isinstance(subtraction_punchdata, NDCube)
-#     assert np.allclose(subtraction_punchdata.data, 1)

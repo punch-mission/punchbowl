@@ -260,13 +260,12 @@ def subtract_starfield_background_task(data_object: NDCube,
         data_object.data[...] = subtracted.subtracted[0]
         data_object.uncertainty.array[...] -= subtracted.subtracted[1]
         data_object.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
-        output = data_object
+        output = from_celestial(data_object)
     logger.info("subtract_starfield_background finished")
-
 
     return output
 
-#TODO: Pass the outputs through from_celestial() to convert everything back to mzpsolar
+
 def create_empty_starfield_background(data_object: NDCube) -> np.ndarray:
     """Create an empty starfield background map."""
     return np.zeros_like(data_object.data)

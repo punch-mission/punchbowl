@@ -152,10 +152,6 @@ def levelh_core_flow(
     dark_level: float = 55.81,
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
-    quartic_coefficient_path: str | None = None,
-    exposure_time: float = 49 * 1000,
-    readout_line_time: float = 163/2148,
-    reset_line_time: float = 163/2148,
     psf_model_path: str | None = None,
     output_filename: str | None = None,
 ) -> list[NDCube]:
@@ -175,25 +171,7 @@ def levelh_core_flow(
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                )
-        data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
-        if data.meta["OBSCODE"].value == "4":
-            scaling = {"gain": 4.9 * u.photon / u.DN,
-                       "wavelength": 530. * u.nm,
-                       "exposure": 49 * u.s,
-                       "aperture": 49.57 * u.mm ** 2}
-        else:
-            scaling = {"gain": 4.9 * u.photon / u.DN,
-                       "wavelength": 530. * u.nm,
-                       "exposure": 49 * u.s,
-                       "aperture": 34 * u.mm ** 2}
-        data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
-        data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
-
-        data = destreak_task(data,
-                             exposure_time=exposure_time,
-                             reset_line_time=reset_line_time,
-                             readout_line_time=readout_line_time)
         data = correct_psf_task(data, psf_model_path)
 
         observatory = int(data.meta["OBSCODE"].value)

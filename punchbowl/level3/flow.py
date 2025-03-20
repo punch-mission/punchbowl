@@ -25,7 +25,7 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 
     logger.info("beginning level 3 PIM/CIM flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
-    new_type = "CIM" if data_list[0].meta["TYPECODE"] == "CT" else "PIM"
+    new_type = "CIM" if data_list[0].meta["TYPECODE"].value == "CT" else "PIM"
 
     data_list = [subtract_f_corona_background_task(d,
                                                    before_f_corona_model_path,
@@ -64,7 +64,7 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
                                                    before_f_corona_model_path,
                                                    after_f_corona_model_path) for d in data_list]
     data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
-    if data_list[0].meta["TYPECODE"] == "PT":
+    if data_list[0].meta["TYPECODE"].value == "PT":
         data_list = [convert_polarization(d) for d in data_list]
     logger.info("ending level 3 core flow")
 

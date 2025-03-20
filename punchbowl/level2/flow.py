@@ -10,7 +10,7 @@ from prefect_dask.task_runners import DaskTaskRunner
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
 from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
 from punchbowl.level2.bright_structure import identify_bright_structures_task
-from punchbowl.level2.merge import merge_many_polarized_task
+from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.util import average_datetime, load_image_task, output_image_task
@@ -85,4 +85,57 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         output_image_task(output_data, output_filename)
 
     logger.info("ending level 2 core flow")
+    return [output_data]
+
+
+@flow(validate_parameters=False, task_runner=DaskTaskRunner(
+    cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
+))
+def level2_ctm_flow(data_list: list[str] | list[NDCube],
+                     voter_filenames: list[list[str]],
+                     trefoil_wcs: WCS | None = None,
+                     trefoil_shape: tuple[int, int] | None = None,
+                     output_filename: str | None = None) -> list[NDCube]:
+    """Level 2 CTM flow."""
+    logger = get_run_logger()
+    logger.info("beginning level 2 CTM flow")
+
+    data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+
+    if data_list:
+        # order the data list so it can be processed properly
+        output_dateobs = average_datetime([d.meta.datetime for d in data_list]).isoformat()
+        output_datebeg = min([d.meta.datetime for d in data_list]).isoformat()
+        output_dateend = max([d.meta.datetime for d in data_list]).isoformat()
+
+        if trefoil_wcs is None or trefoil_shape is None:
+            trefoil_wcs, trefoil_shape = load_trefoil_wcs()
+
+        data_list = reproject_many_flow([j for i in data_list for j in i], trefoil_wcs, trefoil_shape)
+        data_list = [identify_bright_structures_task(cube, this_voter_filenames)
+                     for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
+        output_data = merge_many_clear_task(data_list, trefoil_wcs)
+    else:
+        output_dateobs = datetime.now().isoformat()
+        output_datebeg = output_dateobs
+        output_dateend = output_datebeg
+
+        output_data = NDCube(
+        data=np.zeros(trefoil_shape),
+        uncertainty=StdDevUncertainty(np.zeros(trefoil_shape)),
+        wcs=trefoil_wcs,
+        meta=NormalizedMetadata.load_template("CTM", "2"),
+    )
+
+    output_data.meta["DATE"] = datetime.now().isoformat()
+    output_data.meta["DATE-AVG"] = output_dateobs
+    output_data.meta["DATE-OBS"] = output_dateobs
+    output_data.meta["DATE-BEG"] = output_datebeg
+    output_data.meta["DATE-END"] = output_dateend
+    output_data = set_spacecraft_location_to_earth(output_data)
+
+    if output_filename is not None:
+        output_image_task(output_data, output_filename)
+
+    logger.info("ending level 2 CTM flow")
     return [output_data]

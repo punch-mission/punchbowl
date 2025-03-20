@@ -47,7 +47,7 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
         output_datebeg_nfi = min([d.meta.datetime for d in data_list_nfi]).isoformat()
         output_dateend_nfi = max([d.meta.datetime for d in data_list_nfi]).isoformat()
 
-        output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs)
+        output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs, level="Q")
 
         output_data_mosaic.meta["DATE"] = datetime.now().isoformat()
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs

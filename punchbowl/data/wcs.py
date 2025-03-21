@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 
 import astropy.coordinates
+import astropy.time
 import astropy.units as u
 import astropy.wcs.wcsapi
 import numpy as np
@@ -27,9 +28,17 @@ def extract_crota_from_wcs(wcs: WCS) -> u.deg:
 
 
 def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
-                                       date_obs: datetime,
-                                       data_shape: tuple[int, int]) -> tuple[WCS, float]:
+                                       date_obs: astropy.time.Time | str | None=None,
+                                       data_shape: tuple[int, int] | None=None) -> tuple[WCS, float]:
     """Calculate the helio WCS from a celestial WCS."""
+    if not date_obs:
+        date_obs = wcs_celestial.wcs.dateobs
+    if data_shape is None:
+        data_shape = wcs_celestial.array_shape
+    if not date_obs:
+        msg = "dateobs must be provided, either as an argument or inside the WCS"
+        raise ValueError(msg)
+    date_obs = Time(date_obs)
     is_3d = len(data_shape) == 3
 
     # we're at the center of the Earth
@@ -48,34 +57,29 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
         distance=test_gcrs.hcrs.distance,
     )
 
-    reference_coord_arcsec = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
-
-    cdelt1 = (np.abs(wcs_celestial.wcs.cdelt[0]) * u.deg).to(u.arcsec)
-    cdelt2 = (np.abs(wcs_celestial.wcs.cdelt[1]) * u.deg).to(u.arcsec)
-
-    p_angle = get_p_angle(date_obs)
-
-    rotation_angle = extract_crota_from_wcs(wcs_celestial).to(u.rad).value - get_p_angle(date_obs).rad
-    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_celestial.wcs.cdelt)
-
+    reference_coord_hp = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
     projection_code = wcs_celestial.wcs.ctype[0][-3:] if "-" in wcs_celestial.wcs.ctype[0] else ""
-    if projection_code:  # noqa: SIM108
-        new_ctypes = (f"HPLN-{projection_code}", f"HPLT-{projection_code}")
-    else:
-        new_ctypes = "HPLN", "HPLT"
 
-    wcs_helio = WCS(naxis=2)
-    wcs_helio.wcs.ctype = new_ctypes
-    wcs_helio.wcs.cunit = ("deg", "deg")
-    wcs_helio.wcs.cdelt = (cdelt1.to(u.deg).value, cdelt2.to(u.deg).value)
-    wcs_helio.wcs.crpix = (wcs_celestial.wcs.crpix[0], wcs_celestial.wcs.crpix[1])
-    wcs_helio.wcs.crval = (reference_coord_arcsec.Tx.to(u.deg).value,  reference_coord_arcsec.Ty.to(u.deg).value)
-    wcs_helio.wcs.pc = new_pc_matrix
+    hdr = sunpy.map.make_fitswcs_header(
+        np.empty(data_shape),
+        reference_coord_hp,
+        reference_pixel=wcs_celestial.wcs.crpix * u.pix - 1 * u.pix,
+        scale=np.abs(wcs_celestial.wcs.cdelt) * u.deg / u.pix,
+        projection_code=projection_code)
+
+    wcs_helio = WCS(hdr, naxis=2)
     wcs_helio.wcs.set_pv(wcs_celestial.wcs.get_pv())
+
+    rotation_angle = -compute_hp_to_eq_rotation_angle(wcs_helio, date_obs)
+    rotation_angle -= extract_crota_from_wcs(wcs_celestial)
+    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
+    wcs_helio.wcs.pc = new_pc_matrix
 
     if is_3d:
         wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 2)
     wcs_helio.array_shape = data_shape
+
+    p_angle = get_p_angle(date_obs)
 
     return wcs_helio, p_angle
 
@@ -274,16 +278,22 @@ def gcrs_to_hpc(GCRScoord, Helioprojective): # noqa: ANN201, N803, ANN001
     return Helioprojective.realize_frame(rep)
 
 
-def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_shape: tuple[int, int]) -> WCS:
+def calculate_celestial_wcs_from_helio(wcs_helio: WCS,
+                                       date_obs: astropy.time.Time | str | None=None,
+                                       data_shape: tuple[int, int] | None=None) -> WCS:
     """Calculate the celestial WCS from a helio WCS."""
+    if not date_obs:
+        date_obs = wcs_helio.wcs.dateobs
+    if data_shape is None:
+        data_shape = wcs_helio.array_shape
+    if not date_obs:
+        msg = "dateobs must be provided, either as an argument or inside the WCS"
+        raise ValueError(msg)
     is_3d = len(data_shape) == 3
 
     old_crval = SkyCoord(wcs_helio.wcs.crval[0] * u.deg, wcs_helio.wcs.crval[1] * u.deg,
                          frame="helioprojective", observer="earth", obstime=date_obs)
     new_crval = old_crval.transform_to(GCRS)
-
-    rotation_angle = extract_crota_from_wcs(wcs_helio).to(u.rad).value - get_p_angle(date_obs).rad
-    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
 
     cdelt1 = np.abs(wcs_helio.wcs.cdelt[0]) * u.deg
     cdelt2 = np.abs(wcs_helio.wcs.cdelt[1]) * u.deg
@@ -294,21 +304,107 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS, date_obs: datetime, data_
     else:
         new_ctypes = "RA", "DEC"
 
-
     wcs_celestial = WCS(naxis=2)
     wcs_celestial.wcs.ctype = new_ctypes
     wcs_celestial.wcs.cunit = ("deg", "deg")
     wcs_celestial.wcs.cdelt = (-cdelt1.to(u.deg).value, cdelt2.to(u.deg).value)
     wcs_celestial.wcs.crpix = (wcs_helio.wcs.crpix[0], wcs_helio.wcs.crpix[1])
     wcs_celestial.wcs.crval = (new_crval.ra.to(u.deg).value,  new_crval.dec.to(u.deg).value)
-    wcs_celestial.wcs.pc = new_pc_matrix
     wcs_celestial.wcs.set_pv(wcs_helio.wcs.get_pv())
+    wcs_celestial.wcs.dateobs = wcs_helio.wcs.dateobs
+    wcs_celestial.wcs.mjdobs = wcs_helio.wcs.mjdobs
+
+    rotation_angle = compute_hp_to_eq_rotation_angle(wcs_helio, date_obs)
+    rotation_angle += extract_crota_from_wcs(wcs_helio)
+    new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
+    wcs_celestial.wcs.pc = new_pc_matrix
 
     if is_3d:
         wcs_celestial = add_stokes_axis_to_wcs(wcs_celestial, 2)
     wcs_celestial.array_shape = data_shape
 
     return wcs_celestial
+
+
+def project_vec_onto_plane(vec1: np.ndarray, vec2: np.ndarray) -> np.ndarray:
+    """Project vec1 onto the plane perpendicular to vec2."""
+    # First project vec1 onto vec2
+    v1_projected = np.dot(vec1, vec2) * vec2 / np.dot(vec2, vec2)
+    # Now subtract that from vec1 to get the component perpendicular to vec2
+    return vec1 - v1_projected
+
+
+def angle_between_vectors(vec1: np.ndarray, vec2: np.ndarray, plane_normal: np.ndarray) -> np.ndarray:
+    """
+    Compute the angle between vec1 and vec2.
+
+    The angle is computed in the plane normal to plane_normal. This normal vector also sets the handedness and the sign
+    of the angle.
+    """
+    plane_normal = plane_normal / np.linalg.norm(plane_normal)
+    return np.arctan2(np.dot(np.cross(vec1, vec2), plane_normal), np.dot(vec1, vec2))
+
+
+def compute_hp_to_eq_rotation_angle(wcs_helio: WCS, date_obs: str | Time | None=None) -> u.Quantity:
+    """
+    Compute the necessary rotation angle to align a celestial WCS to a helioprojective one.
+
+    The computed angle includes the effect of the P angle but not the rotation of the helioprojective WCS
+
+    Parameters
+    ----------
+    wcs_helio : WCS
+        A helioprojective WCS for which we're producing a corresponding celestial WCS. Only CRVAL is used from this WCS
+    date_obs : str | Time | None
+        The observation date. If not provided, it will be pulled from wcs_helio. If not provided in wcs_helio, it must
+        be specified here.
+
+    Returns
+    -------
+    rotation_angle : Quantity
+        The rotation angle that should be added to that in wcs_celestial's PC matrix
+
+    """
+    if not date_obs:
+        date_obs = wcs_helio.wcs.dateobs
+    if not date_obs:
+        msg = "dateobs must be provided, either as an argument or inside the WCS"
+        raise ValueError(msg)
+    # Get our CRVAL vector
+    axis_sc = wcs_helio.celestial.pixel_to_world(wcs_helio.wcs.crpix[0] - 1, wcs_helio.wcs.crpix[1] - 1)
+    # Make sure date_obs and observer are specified
+    axis_sc = SkyCoord(axis_sc.data, frame="helioprojective", observer=axis_sc.observer or "earth", obstime=date_obs)
+    axis = axis_sc.cartesian.xyz
+    axis /= np.linalg.norm(axis)
+
+    # Create a new vector pointing near north. Projected into the plane perpendicular to axis, this will point as
+    # north as possible in that plane.
+    northward = axis.copy()
+    northward[2] += 20
+    northward /= np.linalg.norm(northward)
+
+    # Package up that vector and convert to our target coordinate system
+    northward = SkyCoord(*northward, representation_type="cartesian", frame=axis_sc.frame)
+    northward.representation_type = "spherical"
+    rotated = northward.transform_to("gcrs")
+    rotated = rotated.cartesian.xyz
+    rotated /= np.linalg.norm(rotated)
+
+    # And also transform the CRVAL axis
+    axis_rotated = axis_sc.transform_to("gcrs")
+    axis_rotated = axis_rotated.cartesian.xyz
+    axis_rotated /= np.linalg.norm(axis_rotated)
+
+    # Create a new northward vector in the target frame
+    northward_in_new_frame = axis_rotated.copy()
+    northward_in_new_frame[2] += 20
+    northward_in_new_frame /= np.linalg.norm(northward_in_new_frame)
+
+    # Project the old and new northward vectors into the plane perpendicular to axis
+    northward_in_new_frame_proj = project_vec_onto_plane(northward_in_new_frame, axis_rotated)
+    rotated_proj = project_vec_onto_plane(rotated, axis_rotated)
+
+    return -angle_between_vectors(northward_in_new_frame_proj, rotated_proj, axis_rotated).to(u.deg)
 
 
 def load_trefoil_wcs() -> tuple[astropy.wcs.WCS, tuple[int, int]]:

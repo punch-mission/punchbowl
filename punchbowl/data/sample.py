@@ -111,7 +111,7 @@ def _handle_final_errors(results:parfive.Results) -> None:
 
 def _get_sampledata_dir() -> Path:
     # Workaround for tox only. This is not supported as a user option
-    sampledata_dir = os.environ.get("SUNPY_SAMPLEDIR", False)
+    sampledata_dir = os.environ.get("SUNPY_SAMPLEDIR", "False")
     if sampledata_dir:
         sampledata_dir = Path(sampledata_dir).expanduser().resolve()
         _is_writable_dir(sampledata_dir)
@@ -172,7 +172,7 @@ def _get_sample_files(filename_list: list, no_download:bool=False, force_downloa
 
 # Add a table row to the module docstring for each sample file
 for _keyname, _filename in sorted(_SAMPLE_DATA.items()):
-    __doc__ += f"   * - ``{_keyname}``\n     - {_filename}\n"  # noqa: A001
+    __doc__ += f"   * - ``{_keyname}``\n     - {_filename}\n"
 
 
 # file_dict and file_list are not normal variables; see __getattr__() below

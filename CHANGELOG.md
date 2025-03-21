@@ -4,7 +4,11 @@
 
 ## Latest: unreleased
 
--
+- Changes so that vignetting is a separate step in the pipeline.
+- Switches to use Prefect Dask Task Runner in https://github.com/punch-mission/punchbowl/pull/387
+- Changes level 0.5 to level H in https://github.com/punch-mission/punchbowl/pull/388
+- Fixes WCS conversions in https://github.com/punch-mission/punchbowl/pull/390
+- Parallelize F corona model building in https://github.com/punch-mission/punchbowl/pull/392
 
 ## Version 0.0.9: Feb 28, 2025
 

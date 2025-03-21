@@ -135,7 +135,7 @@ def generate_starfield_background(
         msg = "filenames cannot be empty"
         raise ValueError(msg)
 
-    shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
+    shape = [floor(132 / map_scale), floor(360 / map_scale)]
     starfield_wcs = WCS(naxis=2)
     # n.b. it seems the RA wrap point is chosen so there's 180 degrees
     # included on either side of crpix

@@ -1,3 +1,5 @@
+import time
+import multiprocessing as mp
 from datetime import datetime
 
 import astropy
@@ -38,36 +40,40 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
         Array of coefficients for solving polynomial
 
     """
+    logger = get_run_logger()
     c = np.transpose(input_vals)
     cube_is_good = np.isfinite(cube)
     num_inputs = np.sum(cube_is_good, axis=0)
 
     solution = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
     for i in range(cube.shape[1]):
+        start = time.time()
         for j in range(cube.shape[2]):
             is_good = cube_is_good[:, i, j]
             time_series = cube[:, i, j][is_good]
             if time_series.size < n_nonnan_required:
-                this_solution = np.zeros(input_vals.shape[1])
+                solution[:, i, j] = 0
             else:
                 c_iter = c[:, is_good]
                 g_iter = np.matmul(c_iter, c_iter.T)
                 a = np.matmul(c_iter, time_series)
                 try:
-                    this_solution = solve_qp(g_iter, a, c_iter, time_series)[0]
+                    solution[:, i, j] = solve_qp(g_iter, a, c_iter, time_series)[0]
                 except ValueError:
-                    this_solution = np.zeros(input_vals.shape[1])
-            solution[:, i, j] = this_solution
-
+                    solution[:, i, j] = 0
+        end = time.time()
+        logger.info(f"{i} took {end - start} seconds")
     return np.asarray(solution), num_inputs
+
 
 def model_fcorona_for_cube(xt: np.ndarray,
                            reference_xt: float,
                            cube: np.ndarray,
                            min_brightness: float = 1E-18,
-                           smooth_level: float | None = 1,
-                           return_full_curves: bool=False,
-                          ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
+                           clip_factor: float | None = 1,
+                           return_full_curves: bool = False,
+                           num_workers: int | None = 8,
+                           ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Model the F corona given a list of times and a corresponding data cube.
 
@@ -81,13 +87,16 @@ def model_fcorona_for_cube(xt: np.ndarray,
         observation array
     min_brightness: float
         pixels dimmer than this value are set to nan and considered empty
-    smooth_level : float | None
+    clip_factor : float | None
         If None, no smoothing is applied.
-        Otherwise, the top and bottom `smooth_level` standard deviations of data are rejected.
+        Otherwise, the difference between the 25th and 75th percentile is computed and values that vary from the median
+        by more than `clip_factor` times the difference data are rejected.
     return_full_curves: bool
         If True, this function returns the full curve fitted to the time series at each pixel
         and the smoothed data cube. If False (default), only the curve's value at the central
         frame is returned, producing a model at one instant in time.
+    num_workers: int | None
+        Work is parallelized over this many worker processes. If None, this matches the number of cores.
 
     Returns
     -------
@@ -100,14 +109,47 @@ def model_fcorona_for_cube(xt: np.ndarray,
         The smoothed data cube. Returned only if return_full_curves is True.
 
     """
+    if num_workers < 2:
+        # Skip forking, reassembling, etc.
+        return _model_fcorona_for_cube_inner(xt, reference_xt, cube, min_brightness, clip_factor, return_full_curves)
+
+    def args() -> tuple:
+        # Generate a set of args for one task
+        for i in range(cube.shape[1]):
+            yield xt, reference_xt, cube[:, i:i + 1], min_brightness, clip_factor, return_full_curves
+
+    with mp.Pool(processes=num_workers) as pool:
+        chunks = pool.starmap(_model_fcorona_for_cube_inner, args(), chunksize=10)
+
+    # Combine the outputs of each task into final output arrays
+    if return_full_curves:
+        curves, counts, cubes = zip(*chunks, strict=False)
+        curves = np.concatenate(curves, axis=-2)
+        counts = np.concatenate(counts, axis=-2)
+        cubes = np.concatenate(cubes, axis=-2)
+        return curves, counts, cubes
+    model, counts = zip(*chunks, strict=False)
+    model = np.concatenate(model, axis=-2)
+    counts = np.concatenate(counts, axis=-2)
+    return model, counts
+
+
+def _model_fcorona_for_cube_inner(xt: np.ndarray,
+                                  reference_xt: float,
+                                  cube: np.ndarray,
+                                  min_brightness: float = 1E-18,
+                                  clip_factor: float | None = 1,
+                                  return_full_curves: bool=False,
+                                  ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
+    logger = get_run_logger()
     cube[cube < min_brightness] = np.nan
-    if smooth_level is not None:
+    if clip_factor is not None:
         low, center, high = nan_percentile(cube, [25, 50, 75])
         width = high - low
-        a, b, c = np.where(cube[:, ...] > (center + (smooth_level * width)))
+        a, b, c = np.where(cube[:, ...] > (center + (clip_factor * width)))
         cube[a, b, c] = np.nan
 
-        a, b, c = np.where(cube[:, ...] < (center - (smooth_level * width)))
+        a, b, c = np.where(cube[:, ...] < (center - (clip_factor * width)))
         cube[a, b, c] = np.nan
 
     xt = np.array(xt)
@@ -119,7 +161,12 @@ def model_fcorona_for_cube(xt: np.ndarray,
     coefficients *= -1
     if return_full_curves:
         return polynomial.polyval(xt, coefficients[::-1, :, :]).transpose((2, 0, 1)), counts, cube
-    return polynomial.polyval(reference_xt, coefficients[::-1, :, :]), counts
+
+    start = time.time()
+    out = polynomial.polyval(reference_xt, coefficients[::-1, :, :]), counts
+    end = time.time()
+    logger.info(f"computed polyval in {end - start} seconds")
+    return out
 
 
 def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
@@ -131,9 +178,31 @@ def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
     grid_x, grid_y = np.mgrid[0:image.shape[0], 0:image.shape[1]]
     return griddata((x, y), known_values, (grid_x, grid_y), method="cubic")
 
+
+def _load_one_file(filename: str) -> NDCube:
+    """
+    Support for loading files in parallel via multiprocessing.
+
+    Parameters
+    ----------
+    filename : str
+        The file to load
+
+    Returns
+    -------
+    data_object : `NDCube`
+        The loaded data
+
+    """
+    return load_ndcube_from_fits(filename)
+
+
 @flow(log_prints=True)
-def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
-                                       reference_time: str | None = None) -> list[NDCube]:
+def construct_polarized_f_corona_model(filenames: list[str],
+                                       clip_factor: float = 3.0,
+                                       reference_time: str | None = None,
+                                       num_workers: int = 8,
+                                       fill_nans: bool = True) -> list[NDCube]:
     """Construct a full F corona model."""
     logger = get_run_logger()
 
@@ -163,36 +232,43 @@ def construct_polarized_f_corona_model(filenames: list[str], smooth_level: float
 
     logger.info("beginning data loading")
     dates = []
-    for i, address_out in enumerate(filenames):
-        data_object = load_ndcube_from_fits(address_out)
-        dates.append(data_object.meta.datetime)
-        data_cube[i, ...] = data_object.data
-        uncertainty_cube[i, ...] = data_object.uncertainty.array
-        obs_times.append(data_object.meta.datetime.timestamp())
-        meta_list.append(data_object.meta)
+    with mp.Pool(processes=num_workers) as pool:
+        for i, data_object in enumerate(pool.imap(_load_one_file, filenames)):
+            dates.append(data_object.meta.datetime)
+            data_cube[i] = data_object.data
+            uncertainty_cube[i] = data_object.uncertainty.array
+            obs_times.append(data_object.meta.datetime.timestamp())
+            meta_list.append(data_object.meta)
     logger.info("ending data loading")
     output_datebeg = min(dates).isoformat()
     output_dateend = max(dates).isoformat()
 
     reference_xt = reference_time.timestamp()
     m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt,
-                                                data_cube[:, 0, :, :], smooth_level=smooth_level)
+                                                data_cube[:, 0, :, :],
+                                                num_workers=num_workers,
+                                                clip_factor=clip_factor)
     m_model_fcorona[m_model_fcorona==0] = np.nan
-    m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona)
+    if fill_nans:
+        m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona)
 
     z_model_fcorona, _ = model_fcorona_for_cube(obs_times,
                                                 reference_xt,
                                                 data_cube[:, 1, :, :],
-                                                smooth_level=smooth_level)
+                                                num_workers=num_workers,
+                                                clip_factor=clip_factor)
     z_model_fcorona[z_model_fcorona==0] = np.nan
-    z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona)
+    if fill_nans:
+        z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona)
 
     p_model_fcorona, _ = model_fcorona_for_cube(obs_times,
                                                 reference_xt,
                                                 data_cube[:, 2, :, :],
-                                                smooth_level=smooth_level)
+                                                num_workers=num_workers,
+                                                clip_factor=clip_factor)
     p_model_fcorona[p_model_fcorona==0] = np.nan
-    p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
+    if fill_nans:
+        p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
 
     meta = NormalizedMetadata.load_template("PFM", "3")
     meta["DATE"] = datetime.now().isoformat()

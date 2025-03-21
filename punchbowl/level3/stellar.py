@@ -17,29 +17,12 @@ from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, get_p_angle
 from punchbowl.prefect import punch_task
 
 
-class PUNCHImageProcessor(ImageProcessor):
-    """Special loader for PUNCH data."""
-
-    def __init__(self, layer: int, apply_mask: bool = True, key: str = " ") -> None:
-        """Create PUNCHImageProcessor."""
-        self.layer = layer
-        self.apply_mask = apply_mask
-        self.key = key
-
-    def load_image(self, filename: str) -> ImageHolder:
-        """Load an image."""
-        cube = load_ndcube_from_fits(filename, key=self.key)
-        data = cube.data[self.layer]
-        if self.apply_mask:
-            data[np.isclose(cube.uncertainty.array[self.layer], 0, atol=1E-30)] = np.nan
-        return ImageHolder(data, cube.wcs.celestial, cube.meta)
-
 def to_celestial(input_data: NDCube) -> NDCube:
     """
     Convert polarization from mzpsolar to Celestial frame.
 
     All images need their polarization converted to Celestial frame
-    to generated the background starfield model.
+    to generate the background starfield model.
     """
     # Create a data collection for M, Z, P components
     mzp_angles = [-60, 0, 60]*u.degree
@@ -104,10 +87,29 @@ def from_celestial(input_data: NDCube) -> NDCube:
     output_meta = NormalizedMetadata.load_template("PTM", "2")
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
 
-    output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
+    output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta, uncertainty=input_data.uncertainty)
     output.meta.history.add_now("LEVEL3-convert2mzpsolar", "Convert Celestial to mzpsolar")
 
     return output
+
+
+class PUNCHImageProcessor(ImageProcessor):
+    """Special loader for PUNCH data."""
+
+    def __init__(self, layer: int, apply_mask: bool = True, key: str = " ") -> None:
+        """Create PUNCHImageProcessor."""
+        self.layer = layer
+        self.apply_mask = apply_mask
+        self.key = key
+
+    def load_image(self, filename: str) -> ImageHolder:
+        """Load an image."""
+        cube = load_ndcube_from_fits(filename, key=self.key)
+        cube = to_celestial(cube)
+        data = cube.data[self.layer]
+        if self.apply_mask:
+            data[np.isclose(cube.uncertainty.array[self.layer], 0, atol=1E-30)] = np.nan
+        return ImageHolder(data, cube.wcs.celestial, cube.meta)
 
 
 @flow(log_prints=True, timeout_seconds=21_600)
@@ -236,20 +238,8 @@ def subtract_starfield_background_task(data_object: NDCube,
         # data_wcs = calculate_celestial_wcs_from_helio(data_object.wcs.celestial,
         #                                               data_object.meta.astropy_time,
         #                                               data_object.data.shape[-2:])
-        map_scale = 0.01
-        shape = [int(floor(132 / map_scale)), int(floor(360 / map_scale))]
-        starfield_wcs = WCS(naxis=2)
-        # n.b. it seems the RA wrap point is chosen so there's 180 degrees
-        # included on either side of crpix
-        crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
-        starfield_wcs.wcs.crpix = crpix
-        starfield_wcs.wcs.crval = 270, -23.5
-        starfield_wcs.wcs.cdelt = map_scale, map_scale
-        starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
-        starfield_wcs.wcs.cunit = "deg", "deg"
-        starfield_wcs.array_shape = shape
 
-        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), starfield_wcs)
+        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), star_datacube.wcs)
 
         subtracted = starfield_model.subtract_from_image(
             NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),

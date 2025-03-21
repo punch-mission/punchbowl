@@ -91,4 +91,3 @@ def test_to_celestial(sample_ndcube) -> NDCube:
     expected_cel = np.full((3, 10, 10), 1.0, dtype=np.float32)
     assert isinstance(data_cel, NDCube)
     assert np.allclose(data_cel.data, expected_cel)
-

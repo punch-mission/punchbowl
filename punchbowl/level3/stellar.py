@@ -1,5 +1,5 @@
 from math import floor
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 import astropy.units as u
 import numpy as np
@@ -123,7 +123,7 @@ def generate_starfield_background(
     logger = get_run_logger()
 
     if reference_time is None:
-        reference_time = datetime.now(timezone.utc)
+        reference_time = datetime.now(UTC)
     elif isinstance(reference_time, str):
         reference_time = parse_datetime_str(reference_time)
 
@@ -192,7 +192,7 @@ def generate_starfield_background(
     meta["DATE-BEG"] = reference_time.isoformat()
     meta["DATE-END"] = reference_time.isoformat()
     meta["DATE-AVG"] = reference_time.isoformat()
-    meta["DATE"] = datetime.now(timezone.utc).isoformat()
+    meta["DATE"] = datetime.now(UTC).isoformat()
 
     out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     output = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),

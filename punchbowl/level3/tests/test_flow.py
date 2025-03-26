@@ -1,6 +1,6 @@
 import os
 import pathlib
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, UTC, timedelta
 
 import pytest
 from ndcube import NDCube

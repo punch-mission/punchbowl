@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
@@ -39,7 +39,7 @@ def sample_ndcube(shape, code="PM1", level="0"):
 
 
 def construct_all_product_headers(directory, level, outpath):
-    date_obs = datetime.now(timezone.utc)
+    date_obs = datetime.now(UTC)
     level_path = os.path.join(directory, f"Level{level}.yaml")
     level_spec = load_level_spec(level_path)
     product_keys = list(level_spec["Products"].keys())
@@ -59,7 +59,7 @@ def construct_all_product_headers(directory, level, outpath):
             meta = NormalizedMetadata.load_template(pc, level)
         except Exception as e:
             assert False, f"failed to create {pc} for level {level} because: {e}"
-        meta['DATE-OBS'] = str(datetime.now(timezone.utc))
+        meta['DATE-OBS'] = str(datetime.now(UTC))
 
         sample_data = sample_ndcube(shape=shape, code=pc, level=level)
 

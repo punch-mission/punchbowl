@@ -1,7 +1,7 @@
 """Creates test data with the appropriate metadata for punchbowl"""
 import os
 from io import BytesIO
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 import astropy.nddata
 import numpy as np
@@ -31,7 +31,7 @@ def create_L2_PTM_test_file(path="../punchbowl/level3/tests/data/"):
 
 def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):
     meta = NormalizedMetadata.load_template("CFM", "3")
-    meta["DATE-OBS"] = str(datetime.now())
+    meta["DATE-OBS"] = str(datetime.now(timezone.utc))
     wcs = WCS(naxis=2)
     for i in range(10):
         data = np.ones((3, 10, 10)) * i
@@ -42,7 +42,7 @@ def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):
 
 # def create_punchdata_test_data(path="../punchbowl/tests/"):
 #     meta = NormalizedMetadata.load_template("CFM", "3")
-#     meta["DATE-OBS"] = str(datetime.now())
+#     meta["DATE-OBS"] = str(datetime.now(timezone.utc))
 #     wcs = WCS(naxis=2)
 #     data = np.ones((10, 10))
 #     obj = NDCube(data=data, wcs=wcs, meta=meta)
@@ -70,7 +70,7 @@ def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):
 
 def create_quartic_coefficients_test_data(path="../punchbowl/level1/tests/data/"):
     meta = NormalizedMetadata.load_template("FQ1", "1")
-    meta['DATE-OBS'] = str(datetime.now())
+    meta['DATE-OBS'] = str(datetime.now(timezone.utc))
     wcs = WCS(naxis=3)
     data = create_constant_quartic_coefficients((10, 10))
     obj = NDCube(data=data, wcs=wcs, meta=meta)

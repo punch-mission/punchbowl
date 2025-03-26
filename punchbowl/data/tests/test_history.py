@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from pytest import fixture
@@ -13,7 +13,7 @@ def empty_history():
 
 
 def test_history_add_one(empty_history):
-    entry = HistoryEntry(datetime.now(), "test", "dummy")
+    entry = HistoryEntry(datetime.now(timezone.utc), "test", "dummy")
     assert len(empty_history) == 0
     empty_history.add_entry(entry)
     assert len(empty_history) == 1
@@ -25,9 +25,9 @@ def test_history_add_one(empty_history):
 
 
 def test_history_iterate(empty_history):
-    empty_history.add_entry(HistoryEntry(datetime.now(), "0", "0"))
-    empty_history.add_entry(HistoryEntry(datetime.now(), "1", "1"))
-    empty_history.add_entry(HistoryEntry(datetime.now(), "2", "2"))
+    empty_history.add_entry(HistoryEntry(datetime.now(timezone.utc), "0", "0"))
+    empty_history.add_entry(HistoryEntry(datetime.now(timezone.utc), "1", "1"))
+    empty_history.add_entry(HistoryEntry(datetime.now(timezone.utc), "2", "2"))
 
     for i, entry in enumerate(empty_history):
         assert entry.comment == str(i), "history objects not read in order"

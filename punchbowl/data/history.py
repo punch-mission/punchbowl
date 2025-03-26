@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import namedtuple
 
 from astropy.io.fits import Header
@@ -48,7 +48,7 @@ class History:
         None
 
         """
-        self._entries.append(HistoryEntry(datetime.now(), source, comment))
+        self._entries.append(HistoryEntry(datetime.now(timezone.utc), source, comment))
 
     def clear(self) -> None:
         """

@@ -1,5 +1,5 @@
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 import pytest

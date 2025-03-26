@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
@@ -17,7 +17,7 @@ def construct_qp_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
     logger = get_run_logger()
 
     if reference_time is None:
-        reference_time = datetime.now()
+        reference_time = datetime.now(timezone.utc)
     elif isinstance(reference_time, str):
         reference_time = parse_datetime_str(reference_time)
 

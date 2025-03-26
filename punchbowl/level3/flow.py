@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ndcube import NDCube
 from prefect import flow, get_run_logger
@@ -30,7 +30,7 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 
     out_list = [NDCube(data=d.data, wcs=d.wcs, meta=output_meta) for d in data_list]
     for o, d in zip(out_list, data_list, strict=True):
-        o.meta["DATE"] = datetime.now().isoformat()
+        o.meta["DATE"] = datetime.now(timezone.utc).isoformat()
         o.meta["DATE-AVG"] = d.meta["DATE-AVG"].value
         o.meta["DATE-OBS"] = d.meta["DATE-OBS"].value
         o.meta["DATE-BEG"] = d.meta["DATE-BEG"].value

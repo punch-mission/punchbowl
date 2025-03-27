@@ -4,8 +4,7 @@ from datetime import datetime
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
-from punchbowl.data import NormalizedMetadata
-from punchbowl.data.meta import set_spacecraft_location_to_earth
+from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization

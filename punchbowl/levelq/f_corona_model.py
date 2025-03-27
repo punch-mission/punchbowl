@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str

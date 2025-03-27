@@ -1,6 +1,6 @@
 import time
 import multiprocessing as mp
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import astropy
 import numpy as np

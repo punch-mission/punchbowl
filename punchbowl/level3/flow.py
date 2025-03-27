@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from ndcube import NDCube
 from prefect import flow, get_run_logger

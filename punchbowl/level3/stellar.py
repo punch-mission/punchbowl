@@ -1,5 +1,5 @@
 from math import floor
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import astropy.units as u
 import numpy as np

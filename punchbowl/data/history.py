@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from collections import namedtuple
 
 from astropy.io.fits import Header

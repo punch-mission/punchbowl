@@ -12,6 +12,7 @@ from astropy.wcs import WCS
 from matplotlib.colors import LogNorm
 from ndcube import NDCube
 from openjpeg.utils import encode_array
+from PIL import Image, ImageDraw, ImageFont
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.visualize import cmap_punch
@@ -44,7 +45,8 @@ def write_ndcube_to_jp2(cube: NDCube,
                         filename: str,
                         layer: int | None = None,
                         vmin: float = 1e-15,
-                        vmax: float = 8e-13) -> None:
+                        vmax: float = 8e-13,
+                        annotate: str = True) -> None:
     """Write an NDCube as a JPEG2000 file."""
     if (len(cube.data.shape) != 2) and layer is None:
         msg = ("Output data must be two-dimensional, or a layer must be specified")
@@ -57,12 +59,37 @@ def write_ndcube_to_jp2(cube: NDCube,
 
     norm = LogNorm(vmin=vmin, vmax=vmax)
 
+    m = cube.meta
+
     if layer is not None: # noqa: SIM108
         image = cube.data[layer, :, :]
     else:
         image = cube.data
 
     scaled_arr = (cmap_punch(norm(np.flipud(image)))*255).astype(np.uint8)
+
+    if annotate:
+        pil_image = Image.fromarray(scaled_arr)
+
+        pad_height = int(image.shape[1] * 50 / 2048)
+        padded_image = Image.new("L", (pil_image.width, pil_image.height + pad_height))
+
+        padded_image.paste(pil_image, (0, 0))
+
+        draw = ImageDraw.Draw(padded_image)
+        font = ImageFont.load_default(size=int(pad_height/2))
+
+        primary_text = f"{m["OBSRVTRY"]} - {m["TYPECODE"]}{m["OBSCODE"]} - {m["DATE-OBS"]}"
+        diagnostic_text = f"exptime: {m["EXPTIME"].value} s - polarizer: {m["POLAR"].value} deg"
+        text = primary_text + " - " + diagnostic_text
+        # TODO - Make this string customizable as an input
+
+        text_offset = int(10 * image.shape[1] / 2048)
+        text_position = (text_offset, pil_image.height + text_offset)
+        draw.text(text_position, text, font=font, fill=255)
+
+        scaled_arr = np.array(padded_image)
+
     encoded_arr = encode_array(scaled_arr)
 
     with open(filename, "wb") as f:

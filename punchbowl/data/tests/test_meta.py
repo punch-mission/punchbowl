@@ -5,7 +5,7 @@ import pytest
 from astropy.io import fits
 
 from punchbowl.data.history import HistoryEntry
-from punchbowl.data.meta import MetaField, NormalizedMetadata, load_spacecraft_def
+from punchbowl.data.meta import MetaField, NormalizedMetadata, construct_all_product_codes, load_spacecraft_def
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -198,3 +198,9 @@ def test_load_spacecraft_yaml():
         assert "craftname" in v
         assert "crafttype" in v
         assert "obsname" in v
+
+
+def test_construct_all_product_codes():
+    codes = construct_all_product_codes(level="0")
+    assert isinstance(codes, list)
+    assert len(codes) != 0

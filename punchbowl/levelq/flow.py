@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
@@ -49,7 +49,7 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
 
         output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs)
 
-        output_data_mosaic.meta["DATE"] = datetime.now().isoformat()
+        output_data_mosaic.meta["DATE"] = datetime.now(UTC).isoformat()
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs
         output_data_mosaic.meta["DATE-OBS"] = output_dateobs
         output_data_mosaic.meta["DATE-BEG"] = output_datebeg
@@ -64,14 +64,14 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
             wcs=quickpunch_nfi_wcs,
             meta=output_meta_nfi,
             )
-        output_data_nfi.meta["DATE"] = datetime.now().isoformat()
+        output_data_nfi.meta["DATE"] = datetime.now(UTC).isoformat()
         output_data_nfi.meta["DATE-AVG"] = output_dateobs_nfi
         output_data_nfi.meta["DATE-OBS"] = output_dateobs_nfi
         output_data_nfi.meta["DATE-BEG"] = output_datebeg_nfi
         output_data_nfi.meta["DATE-END"] = output_dateend_nfi
         output_data_nfi = set_spacecraft_location_to_earth(output_data_nfi)
     else:
-        output_dateobs = datetime.now().isoformat()
+        output_dateobs = datetime.now(UTC).isoformat()
         output_datebeg = output_dateobs
         output_dateend = output_datebeg
 
@@ -83,7 +83,7 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
             wcs=quickpunch_mosaic_wcs,
             meta=NormalizedMetadata.load_template("CTM", "Q"),
         )
-        output_data_mosaic.meta["DATE"] = datetime.now().isoformat()
+        output_data_mosaic.meta["DATE"] = datetime.now(UTC).isoformat()
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs
         output_data_mosaic.meta["DATE-OBS"] = output_dateobs
         output_data_mosaic.meta["DATE-BEG"] = output_datebeg
@@ -97,7 +97,7 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
             meta=NormalizedMetadata.load_template("CNN", "Q"),
         )
 
-        output_data_nfi.meta["DATE"] = datetime.now().isoformat()
+        output_data_nfi.meta["DATE"] = datetime.now(UTC).isoformat()
         output_data_nfi.meta["DATE-AVG"] = output_dateobs
         output_data_nfi.meta["DATE-OBS"] = output_dateobs
         output_data_nfi.meta["DATE-BEG"] = output_dateobs

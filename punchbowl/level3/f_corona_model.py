@@ -1,6 +1,6 @@
 import time
 import multiprocessing as mp
-from datetime import datetime
+from datetime import UTC, datetime
 
 import astropy
 import numpy as np
@@ -207,7 +207,7 @@ def construct_polarized_f_corona_model(filenames: list[str],
     logger = get_run_logger()
 
     if reference_time is None:
-        reference_time = datetime.now()
+        reference_time = datetime.now(UTC)
     elif isinstance(reference_time, str):
         reference_time = parse_datetime_str(reference_time)
 
@@ -271,7 +271,7 @@ def construct_polarized_f_corona_model(filenames: list[str],
         p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
 
     meta = NormalizedMetadata.load_template("PFM", "3")
-    meta["DATE"] = datetime.now().isoformat()
+    meta["DATE"] = datetime.now(UTC).isoformat()
     meta["DATE-AVG"] = reference_time.isoformat()
     meta["DATE-OBS"] = reference_time.isoformat()
 

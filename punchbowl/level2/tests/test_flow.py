@@ -9,7 +9,7 @@ from prefect.testing.utilities import prefect_test_harness
 from punchbowl.data.punch_io import write_ndcube_to_fits
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.data.wcs import load_trefoil_wcs
-from punchbowl.level2.flow import ORDER, level2_core_flow
+from punchbowl.level2.flow import ORDER, level2_core_flow, level2_ctm_flow
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -25,6 +25,20 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
     trefoil_wcs, _ = load_trefoil_wcs()
     with prefect_test_harness():
         output = level2_core_flow(paths, voters, trefoil_wcs=trefoil_wcs, trefoil_shape=(4096, 4096))
+    assert isinstance(output[0], NDCube)
+
+def test_ctm_flow_runs_with_filenames(sample_ndcube, tmpdir):
+    data_list = [sample_ndcube(shape=(10, 10), code=code, level="1") for code in ["CR1", "CR2", "CR3", "CR4"]]
+    paths = []
+    for i, cube in enumerate(data_list):
+        path = os.path.join(tmpdir, f"test_input_{i}.fits")
+        write_ndcube_to_fits(cube, path)
+        paths.append(path)
+    voters = [[] for _ in data_list]
+
+    trefoil_wcs, _ = load_trefoil_wcs()
+    with prefect_test_harness():
+        output = level2_ctm_flow(paths, voters, trefoil_wcs=trefoil_wcs, trefoil_shape=(4096, 4096))
     assert isinstance(output[0], NDCube)
 
 @pytest.mark.parametrize("drop_indices", [[], [1], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]])

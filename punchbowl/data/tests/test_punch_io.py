@@ -16,6 +16,7 @@ from punchbowl.data.punch_io import (
     load_ndcube_from_fits,
     write_ndcube_to_fits,
     write_ndcube_to_jp2,
+    DEFAULT_ANNOTATION
 )
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -81,6 +82,20 @@ def test_write_data_jp2(sample_ndcube, tmpdir):
 
     test_path = os.path.join(tmpdir, "test.jp2")
     write_ndcube_to_jp2(cube, test_path)
+    assert os.path.isfile(test_path)
+
+
+def test_write_data_jp2_with_annotation(sample_ndcube, tmpdir):
+    cube = sample_ndcube((2048, 2048))
+    cube.meta["LEVEL"] = "1"
+    cube.meta["TYPECODE"] = "CL"
+    cube.meta["OBSRVTRY"] = "1"
+    cube.meta["PIPEVRSN"] = "0.1"
+    cube.meta["DATE-OBS"] = str(datetime.now())
+    cube.meta["DATE-END"] = str(datetime.now())
+
+    test_path = os.path.join(tmpdir, "test.jp2")
+    write_ndcube_to_jp2(cube, test_path, annotation=DEFAULT_ANNOTATION)
     assert os.path.isfile(test_path)
 
 

@@ -185,9 +185,7 @@ class MetaField:
 
     def __str__(self) -> str:
         """Get a string."""
-        if self.datatype is str:
-            return str(self._value)
-        raise TypeError(f"Cannot convert {self._datatype} to str.")
+        return str(self._value)
 
 
 class NormalizedMetadata(Mapping):
@@ -232,6 +230,9 @@ class NormalizedMetadata(Mapping):
         self._history = history if history is not None else History()
         self._provenance = provenance if provenance is not None else []
         self._wcs_section_name = wcs_section_name
+
+    def keys(self):
+        return self.fits_keys
 
     def __iter__(self) -> t.Iterator[t.Any]:
         """Iterate."""

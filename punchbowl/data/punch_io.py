@@ -19,6 +19,8 @@ from punchbowl.data.visualize import cmap_punch
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
+DEFAULT_ANNOTATION = "{OBSRVTRY} - {TYPECODE}{OBSCODE} - {DATE-OBS} - exptime: {EXPTIME} s - polarizer: {POLAR} deg"
+
 def write_file_hash(path: str) -> None:
     """Create a SHA-256 hash for a file."""
     file_hash = hashlib.sha256()
@@ -46,7 +48,7 @@ def write_ndcube_to_jp2(cube: NDCube,
                         layer: int | None = None,
                         vmin: float = 1e-15,
                         vmax: float = 8e-13,
-                        annotate: str = True) -> None:
+                        annotation: str | None = None) -> None:
     """Write an NDCube as a JPEG2000 file."""
     if (len(cube.data.shape) != 2) and layer is None:
         msg = ("Output data must be two-dimensional, or a layer must be specified")
@@ -59,8 +61,6 @@ def write_ndcube_to_jp2(cube: NDCube,
 
     norm = LogNorm(vmin=vmin, vmax=vmax)
 
-    m = cube.meta
-
     if layer is not None: # noqa: SIM108
         image = cube.data[layer, :, :]
     else:
@@ -68,7 +68,7 @@ def write_ndcube_to_jp2(cube: NDCube,
 
     scaled_arr = (cmap_punch(norm(np.flipud(image)))*255).astype(np.uint8)
 
-    if annotate:
+    if annotation:
         pil_image = Image.fromarray(scaled_arr)
 
         pad_height = int(image.shape[1] * 50 / 2048)
@@ -79,10 +79,7 @@ def write_ndcube_to_jp2(cube: NDCube,
         draw = ImageDraw.Draw(padded_image)
         font = ImageFont.load_default(size=int(pad_height/2))
 
-        primary_text = f"{m["OBSRVTRY"]} - {m["TYPECODE"]}{m["OBSCODE"]} - {m["DATE-OBS"]}"
-        diagnostic_text = f"exptime: {m["EXPTIME"].value} s - polarizer: {m["POLAR"].value} deg"
-        text = primary_text + " - " + diagnostic_text
-        # TODO - Make this string customizable as an input
+        text = annotation.format(**cube.meta)
 
         text_offset = int(10 * image.shape[1] / 2048)
         text_position = (text_offset, pil_image.height + text_offset)

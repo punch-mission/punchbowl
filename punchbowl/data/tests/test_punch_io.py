@@ -11,12 +11,12 @@ from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import (
+    DEFAULT_ANNOTATION,
     _update_statistics,
     get_base_file_name,
     load_ndcube_from_fits,
     write_ndcube_to_fits,
     write_ndcube_to_jp2,
-    DEFAULT_ANNOTATION
 )
 
 TESTDATA_DIR = os.path.dirname(__file__)

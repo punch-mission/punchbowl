@@ -231,7 +231,8 @@ class NormalizedMetadata(Mapping):
         self._provenance = provenance if provenance is not None else []
         self._wcs_section_name = wcs_section_name
 
-    def keys(self):
+    def keys(self) -> t.Iterable[str]:
+        """Return FITS keys for collection."""
         return self.fits_keys
 
     def __iter__(self) -> t.Iterator[t.Any]:

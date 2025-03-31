@@ -43,7 +43,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,OBSLAYR2,,Image Mode for second datacube layer,str,TRUE,TRUE,
 4,keyword,OBSLAYR3,,Image Mode for third datacube layer,str,TRUE,TRUE,
 4,keyword,POLAR,,[deg] Polarizer angle or fill value for clear,int,TRUE,TRUE,
-4,keyword,POLAROFF,,[deg] Offset in degrees of polarizer from POLAR,float,TRUE,TRUE,0.0
+4,keyword,POLAROFF,,[deg] Offset in degrees of polarizer from POLAR,float,TRUE,TRUE,0
 4,keyword,POLARREF,,Polarizer reference frame (instrument or solar),str,TRUE,TRUE,
 4,keyword,INSTRUME,,Instrument name,str,TRUE,TRUE,
 4,keyword,TELESCOP,,Satellite name,str,TRUE,TRUE,
@@ -52,39 +52,39 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
 6,section,COMMENT,Camera and Readout State,,str,TRUE,TRUE,Camera and Readout State
 6,keyword,DETECTOR,CCD 2Kx2K,CCD detector 2048x2048 pixels,str,TRUE,TRUE,CCD 2Kx2K
-6,keyword,EXPTIME,3,[s] commanded exposure time,float,TRUE,TRUE,3
-6,keyword,OBT_BEG,317813545.8,MET when first pixel of first image received,float,TRUE,TRUE,317813545.8
-6,keyword,OBT_END,317813586.4,MET when first pixel of last image is received,float,TRUE,TRUE,317813586.4
-6,keyword,NSUMEXP,3,total number images stacked on onboard,int,TRUE,TRUE,3
-6,keyword,NSUMBAD,0,number of images with invalid pixel counts,int,TRUE,TRUE,0
-6,keyword,READTIME,2.4576,[s] time to readout raw image from camera,float,TRUE,TRUE,2.4576
-6,keyword,TELAPSE,48.1296,[s] time between begin and end of exposure,float,TRUE,TRUE,48.1296
-6,keyword,REGION,1,region,int,TRUE,TRUE,1
-6,keyword,READOUT0,3,readout region if region=0,int,TRUE,TRUE,3
-6,keyword,CAMERA,FMCFMD,detector name,str,TRUE,TRUE,FMCFMD
-6,keyword,PXBEG1,1,first read-out detector row,int,TRUE,TRUE,1
-6,keyword,PXEND1,2048,last read-out detector row,int,TRUE,TRUE,2048
-6,keyword,PXBEG2,1,first read-out detector column,int,TRUE,TRUE,1
-6,keyword,PXEND2,2048,last read-out detector column,int,TRUE,TRUE,2048
-6,keyword,NBIN1,1,number of pixels binned along axis1,int,TRUE,TRUE,1
-6,keyword,NBIN2,1,number of pixels binned along axis2,int,TRUE,TRUE,1
-6,keyword,NBIN,1,number of pixels binned,int,TRUE,TRUE,1
-6,keyword,DSTART1,1,first column of image array on data array,int,TRUE,TRUE,1
-6,keyword,DSTOP1,2048,last column of image array on data array,int,TRUE,TRUE,2048
-6,keyword,DSTART2,1,first row of image area on data array,int,TRUE,TRUE,1
-6,keyword,DSTOP2,2048,last row of image area on data array,int,TRUE,TRUE,2048
-6,keyword,IMGCTR,8370,image counter from IDPU,int,TRUE,TRUE,8370
-6,keyword,LEDSTATE,Off,state of LED,str,TRUE,TRUE,Off
-6,keyword,LEDDAC,0,last commanded setting of LED,int,TRUE,TRUE,0
-6,keyword,OFFSET,40,commanded offset value used in camera,int,TRUE,TRUE,40
-6,keyword,GAINCMD,12,commanded gain value,float,TRUE,TRUE,12
-6,keyword,XFBYTES,1374028,number of bytes sent,int,TRUE,TRUE,1374028
+6,keyword,EXPTIME,,[s] commanded exposure time,float,TRUE,TRUE,
+6,keyword,OBT_BEG,,MET when first pixel of first image received,float,TRUE,TRUE,
+6,keyword,OBT_END,,MET when first pixel of last image is received,float,TRUE,TRUE,
+6,keyword,NSUMEXP,,total number images stacked on onboard,int,TRUE,TRUE,
+6,keyword,NSUMBAD,,number of images with invalid pixel counts,int,TRUE,TRUE,
+6,keyword,READTIME,,[s] time to readout raw image from camera,float,TRUE,TRUE,
+6,keyword,TELAPSE,,[s] time between begin and end of exposure,float,TRUE,TRUE,
+6,keyword,REGION,,region,int,TRUE,TRUE,
+6,keyword,READOUT0,,readout region if region=0,int,TRUE,TRUE,
+6,keyword,CAMERA,,detector name,str,TRUE,TRUE,
+6,keyword,PXBEG1,,first read-out detector row,int,TRUE,TRUE,
+6,keyword,PXEND1,,last read-out detector row,int,TRUE,TRUE,
+6,keyword,PXBEG2,,first read-out detector column,int,TRUE,TRUE,
+6,keyword,PXEND2,,last read-out detector column,int,TRUE,TRUE,
+6,keyword,NBIN1,,number of pixels binned along axis1,int,TRUE,TRUE,
+6,keyword,NBIN2,,number of pixels binned along axis2,int,TRUE,TRUE,
+6,keyword,NBIN,,number of pixels binned,int,TRUE,TRUE,
+6,keyword,DSTART1,,first column of image array on data array,int,TRUE,TRUE,
+6,keyword,DSTOP1,,last column of image array on data array,int,TRUE,TRUE,
+6,keyword,DSTART2,,first row of image area on data array,int,TRUE,TRUE,
+6,keyword,DSTOP2,,last row of image area on data array,int,TRUE,TRUE,
+6,keyword,IMGCTR,,image counter from IDPU,int,TRUE,TRUE,
+6,keyword,LEDSTATE,,state of LED,int,TRUE,TRUE,
+6,keyword,LEDDAC,,last commanded setting of LED,int,TRUE,TRUE,
+6,keyword,OFFSET,,commanded offset value used in camera,int,TRUE,TRUE,
+6,keyword,GAINCMD,,commanded gain value,float,TRUE,TRUE,
+6,keyword,XFBYTES,,number of bytes sent,int,TRUE,TRUE,
 7,section,COMMENT,Onboard Image Processing,,str,TRUE,TRUE,Onboard Image Processing
-7,keyword,RAWBITS,16,[bits] raw image bits per pixel,int,TRUE,TRUE,16
-7,keyword,COMPBITS,10,[bits] compressed image bits per pixel,int,TRUE,TRUE,10
+7,keyword,RAWBITS,,[bits] raw image bits per pixel,int,TRUE,TRUE,
+7,keyword,COMPBITS,,[bits] compressed image bits per pixel,int,TRUE,TRUE,
 7,keyword,SQRTCODE,,square-root coding table name,str,TRUE,TRUE,
 7,keyword,COMPRESS,,image compression type,str,TRUE,TRUE,
-7,keyword,COMP_RAT,-1.0,compressed/uncompressed data ratio,float,TRUE,TRUE,
+7,keyword,COMP_RAT,,compressed/uncompressed data ratio,float,TRUE,TRUE,
 8,section,COMMENT,Calibration Data,,str,TRUE,TRUE,Calibration Data
 8,keyword,CALCF,,quartic fit filename,str,TRUE,TRUE,
 8,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,
@@ -115,7 +115,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 10,keyword,RSUN_ARC,,[arcsec] photospheric solar radius,float,TRUE,TRUE,
 10,keyword,RSUN_REF,695700000,[m] assumed physical solar radius,float,TRUE,TRUE,
 10,keyword,SOLAR_EP,,[deg] S/C ecliptic North to solar North angle,float,TRUE,TRUE,
-10,keyword,CAR_ROT,0.0,Carrington Rotation number,float,TRUE,TRUE,
+10,keyword,CAR_ROT,,Carrington Rotation number,float,TRUE,TRUE,
 11,section,COMMENT,Spacecraft Location & Environment,,str,TRUE,TRUE,Spacecraft Location & Environment
 11,keyword,GEOD_LAT,,[deg] S/C sub-point geodetic latitude,float,TRUE,TRUE,
 11,keyword,GEOD_LON,,[deg] S/C sub-point longitude,float,TRUE,TRUE,
@@ -154,8 +154,89 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,PLTBINS,,Number of azimuthal bins in the output flow maps,int,TRUE,TRUE,
 12,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
 12,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
-13,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
-13,keyword,CHECKSUM,,,str,TRUE,TRUE,
-13,keyword,DATASUM,,,str,TRUE,TRUE,0
-14,section,COMMENT,History,,str,TRUE,TRUE,History
-14,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline
+13,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
+13,keyword,CEBSTAT,,Status to indicate if CEB telemetry packet is stale,,TRUE,TRUE,
+13,keyword,CEBTIME,,ContainsSpacwire time code,,TRUE,TRUE,
+13,keyword,CEBWGS,,WGS_STATUS,,TRUE,TRUE,
+13,keyword,CEBFIFO,,Number of pixels in video FIFO (0-2047),,TRUE,TRUE,
+13,keyword,CEBBIAS1,,CCD output drain bias (Analog 1),,TRUE,TRUE,
+13,keyword,CEBBIAS2,,CCD dump drain bias (Analog 2),,TRUE,TRUE,
+13,keyword,CEBBIAS3,,CCD reset drain bias (Analog 3),,TRUE,TRUE,
+13,keyword,CEBBIAS4,,CCD top gate bias (Analog 4),,TRUE,TRUE,
+13,keyword,CEBBIAS5,,CCD output gate bias (Analog 5),,TRUE,TRUE,
+13,keyword,CEBVREF,,2.5V ref. for bias/temp setting (Analog 6),,TRUE,TRUE,
+13,keyword,CEBGND1,,Ground (Analog 7),,TRUE,TRUE,
+13,keyword,CEBCONV1,,P30V DC-DC converter output (Analog 8),,TRUE,TRUE,
+13,keyword,CEBCONV2,,P15V DC-DC converter output (Analog 9),,TRUE,TRUE,
+13,keyword,CEBCONV3,,P5V DC-DC converter output (Analog 10),,TRUE,TRUE,
+13,keyword,BIASVREF,,Bias settig reference (Analog 11),,TRUE,TRUE,
+13,keyword,CEBGND2,,Ground (Analog 15),,TRUE,TRUE,
+13,keyword,CEBSEDAC,,Single-bit EDAC,,TRUE,TRUE,
+13,keyword,CEBMEDAC,,Multi-bit EDAC,,TRUE,TRUE,
+14,section,COMMENT,Polarizing Filter Wheel,,,TRUE,TRUE,Polarizing Filter Wheel
+14,keyword,PFWSTAT,,"Current PFW Status (0 - no error, else error)",,TRUE,TRUE,
+14,keyword,STEPCALC,,Calculated step (0-1199),,TRUE,TRUE,
+14,keyword,CMDSTEPS,,Commanded number of steps (1-1199),,TRUE,TRUE,
+14,keyword,HOMEOVRD,,HOME Position OVERRIDE,,TRUE,TRUE,
+14,keyword,POSCURR,,"Current position (1-5, 0 - manual stepping)",,TRUE,TRUE,
+14,keyword,POSCMD,,"Commanded position (1-5, 0 - manual stepping)",,TRUE,TRUE,
+14,keyword,POSRAW,,Resolver position - raw resolver counts (0-65000),,TRUE,TRUE,
+14,keyword,POSRAW2,,Resolver position - error correction applied (0-65000),,TRUE,TRUE,
+14,keyword,READCNT,,Accumulative # of resolver reads (resets on boot),,TRUE,TRUE,
+14,keyword,LMNSTEP,,Number of steps on last move (1-1199),,TRUE,TRUE,
+14,keyword,LMTIME,,Current move execution time,,TRUE,TRUE,
+14,keyword,LTSTEP,,Lifetime accumulative number of steps taken,,TRUE,TRUE,
+14,keyword,LTTIME,,Lifetime accumulative execution time,,TRUE,TRUE,
+14,keyword,FSMSTAT,,Controller FSM State,,TRUE,TRUE,
+14,keyword,READSTAT,,READ Sub-FSM State,,TRUE,TRUE,
+14,keyword,MOVSTAT,,MOVE Sub-FSM State,,TRUE,TRUE,
+14,keyword,HOMESTAT,,HOME Sub-FSM State,,TRUE,TRUE,
+14,keyword,HOMEPOS,,Home Position (1-5),,TRUE,TRUE,
+14,keyword,RESSEL,,Resolver Select,,TRUE,TRUE,
+14,keyword,RESTOLH,,Resolver Tolerance,,TRUE,TRUE,
+14,keyword,RESTOLC,,Resolver Tolerance,,TRUE,TRUE,
+14,keyword,STEPSEL,,Stepper Motor Select,,TRUE,TRUE,
+14,keyword,STEPDLY,,Stepper Motor Rate Delay,,TRUE,TRUE,
+14,keyword,STEPRATE,,Stepper Motor Rate,,TRUE,TRUE,
+14,keyword,SHORTMV,,"Short Move(1-4 steps)
+Settling time before reading resolver",,TRUE,TRUE,
+14,keyword,LONGMV,,"Long Move(5-1199 steps)
+Setting time before reading resolver",,TRUE,TRUE,
+14,keyword,PFWOFF1,,Primary Step Offset 1,,TRUE,TRUE,
+14,keyword,PFWOFF2,,Primary Step Offset 2,,TRUE,TRUE,
+14,keyword,PFWOFF3,,Primary Step Offset 3,,TRUE,TRUE,
+14,keyword,PFWOFF4,,Primary Step Offset 4,,TRUE,TRUE,
+14,keyword,PFWOFF5,,Primary Step Offset 5,,TRUE,TRUE,
+14,keyword,RPFWOFF1,,Redundant Step Offset 1,,TRUE,TRUE,
+14,keyword,RPFWOFF2,,Redundant Step Offset 2,,TRUE,TRUE,
+14,keyword,RPFWOFF3,,Redundant Step Offset 3,,TRUE,TRUE,
+14,keyword,RPFWOFF4,,Redundant Step Offset 4,,TRUE,TRUE,
+14,keyword,RPFWOFF5,,Redundant Step Offset 5,,TRUE,TRUE,
+14,keyword,PFWPOS1,,Primary Resolver Position 1,,TRUE,TRUE,
+14,keyword,PFWPOS2,,Primary Resolver Position 2,,TRUE,TRUE,
+14,keyword,PFWPOS3,,Primary Resolver Position 3,,TRUE,TRUE,
+14,keyword,PFWPOS4,,Primary Resolver Position 4,,TRUE,TRUE,
+14,keyword,PFWPOS5,,Primary Resolver Position 5,,TRUE,TRUE,
+14,keyword,RPFWPOS1,,Redundant Resolver Position 1,,TRUE,TRUE,
+14,keyword,RPFWPOS2,,Redundant Resolver Position 2,,TRUE,TRUE,
+14,keyword,RPFWPOS3,,Redundant Resolver Position 3,,TRUE,TRUE,
+14,keyword,RPFWPOS4,,Redundant Resolver Position 4,,TRUE,TRUE,
+14,keyword,RPFWPOS5,,Redundant Resolver Position 5,,TRUE,TRUE,
+15,section,COMMENT,LED Status,,,TRUE,TRUE,LED Status
+15,keyword,LED1STAT,,LED1 Activation State,,TRUE,TRUE,
+15,keyword,LEDPLSN,,LED Number of Pulses,,TRUE,TRUE,
+15,keyword,LED2STAT,,LED2 Activation State,,TRUE,TRUE,
+15,keyword,LEDPLSD,,LED Pulse Delay,,TRUE,TRUE,
+15,keyword,LWDPLSW,,LED Pulse Width,,TRUE,TRUE,
+15,keyword,LED1CURR,,LED1 Accumulated Current for pulse,,TRUE,TRUE,
+15,keyword,LED2CURR,,LED2 Accumulated Current for pulse,,TRUE,TRUE,
+15,keyword,LEDCNT,,LED Sample Count,,TRUE,TRUE,
+15,keyword,PLSSEC1,,Pulse Train start TAI Second,,TRUE,TRUE,
+15,keyword,PLSUSEC1,,Pulse Train start TAI MIcroseconds-in-Seconds,,TRUE,TRUE,
+15,keyword,PLSSEC2,,Pulse Train end TAI Second,,TRUE,TRUE,
+15,keyword,PLSUSEC2,,Pulse Train end TAI MIcroseconds-in-Seconds,,TRUE,TRUE,
+16,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
+16,keyword,CHECKSUM,,,str,TRUE,TRUE,
+16,keyword,DATASUM,,,str,TRUE,TRUE,0
+17,section,COMMENT,History,,str,TRUE,TRUE,History
+17,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline

@@ -157,6 +157,15 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+    CIM:
+        kinds: [ Unpolarized ]
+        overrides:
+            TITLE: PUNCH Level-3 Intermediate F-corona Subtracted Unpolarized Mosaic
+            OBSTYPE: Unpolarized mosaic
+            TYPECODE: CI
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
 
     CTM:
         kinds: [Unpolarized]

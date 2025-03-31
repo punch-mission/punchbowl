@@ -15,7 +15,6 @@ Level:
     World Coordinate System:
     Camera and Readout State:
     Onboard Image Processing:
-    Calibration Data:
     Image Statistics and Properties:
         overrides:
             DSATVAL: 65535
@@ -23,6 +22,9 @@ Level:
         omits: [BSUN_DEF]
     Solar Reference Data:
     Spacecraft Location & Environment:
+    Camera Electronics Board:
+    Polarizing Filter Wheel:
+    LED Status:
     Fixity:
     History:
 
@@ -49,7 +51,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment, NAXIS3]
+        omits: [NAXIS3]
 
     PM:
         overrides:

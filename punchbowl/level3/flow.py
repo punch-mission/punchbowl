@@ -1,11 +1,10 @@
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
-from punchbowl.data import NormalizedMetadata
-from punchbowl.data.meta import set_spacecraft_location_to_earth
+from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization
@@ -34,7 +33,7 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 
     out_list = [NDCube(data=d.data, wcs=d.wcs, meta=output_meta) for d in data_list]
     for o, d in zip(out_list, data_list, strict=True):
-        o.meta["DATE"] = datetime.now().isoformat()
+        o.meta["DATE"] = datetime.now(UTC).isoformat()
         o.meta["DATE-AVG"] = d.meta["DATE-AVG"].value
         o.meta["DATE-OBS"] = d.meta["DATE-OBS"].value
         o.meta["DATE-BEG"] = d.meta["DATE-BEG"].value

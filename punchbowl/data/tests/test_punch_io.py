@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 import numpy as np
 import pytest
@@ -57,8 +57,8 @@ def test_write_data(sample_ndcube, tmpdir):
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
     cube.meta["PIPEVRSN"] = "0.1"
-    cube.meta["DATE-OBS"] = str(datetime.now())
-    cube.meta["DATE-END"] = str(datetime.now())
+    cube.meta["DATE-OBS"] = str(datetime.now(UTC))
+    cube.meta["DATE-END"] = str(datetime.now(UTC))
 
     test_path = os.path.join(tmpdir, "test.fits")
     write_ndcube_to_fits(cube, test_path)
@@ -76,8 +76,8 @@ def test_write_data_jp2(sample_ndcube, tmpdir):
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
     cube.meta["PIPEVRSN"] = "0.1"
-    cube.meta["DATE-OBS"] = str(datetime.now())
-    cube.meta["DATE-END"] = str(datetime.now())
+    cube.meta["DATE-OBS"] = str(datetime.now(UTC))
+    cube.meta["DATE-END"] = str(datetime.now(UTC))
 
     test_path = os.path.join(tmpdir, "test.jp2")
     write_ndcube_to_jp2(cube, test_path)
@@ -90,8 +90,8 @@ def test_write_data_jp2_wrong_filename(sample_ndcube, tmpdir):
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
     cube.meta["PIPEVRSN"] = "0.1"
-    cube.meta["DATE-OBS"] = str(datetime.now())
-    cube.meta["DATE-END"] = str(datetime.now())
+    cube.meta["DATE-OBS"] = str(datetime.now(UTC))
+    cube.meta["DATE-END"] = str(datetime.now(UTC))
 
     test_path = os.path.join(tmpdir, "test.fits")
     with pytest.raises(ValueError):
@@ -103,8 +103,8 @@ def test_write_data_jp2_wrong_dimensions(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "3"
     cube.meta["TYPECODE"] = "PAM"
     cube.meta["PIPEVRSN"] = "0.1"
-    cube.meta["DATE-OBS"] = str(datetime.now())
-    cube.meta["DATE-END"] = str(datetime.now())
+    cube.meta["DATE-OBS"] = str(datetime.now(UTC))
+    cube.meta["DATE-END"] = str(datetime.now(UTC))
 
     test_path = os.path.join(tmpdir, "test.jp2")
     with pytest.raises(ValueError):
@@ -176,14 +176,14 @@ def test_filename_base_generation(sample_ndcube):
 
 def test_has_typecode():
     meta = NormalizedMetadata.load_template("CFM", "3")
-    meta["DATE-OBS"] = str(datetime.now())
+    meta["DATE-OBS"] = str(datetime.now(UTC))
     assert "TYPECODE" in meta
 
 
 def test_load_punchdata_with_history(tmpdir):
     data = np.ones((10, 10), dtype=np.uint16)
     meta = NormalizedMetadata.load_template("CR4", "0")
-    meta['DATE-OBS'] = str(datetime.now())
+    meta['DATE-OBS'] = str(datetime.now(UTC))
     meta.history.add_now("test", "this is a test!")
     meta.history.add_now("test", "this is a second test!")
     wcs = WCS({"CRVAL1": 0.0,
@@ -246,7 +246,7 @@ def make_empty_distortion_model(num_bins: int, image: np.ndarray) -> tuple:
 def test_write_punchdata_with_distortion(tmpdir):
     data = np.ones((2048, 2048), dtype=np.uint16)
     meta = NormalizedMetadata.load_template("CR4", "1")
-    meta['DATE-OBS'] = str(datetime.now())
+    meta['DATE-OBS'] = str(datetime.now(UTC))
     meta.history.add_now("test", "this is a test!")
     meta.history.add_now("test", "this is a second test!")
     wcs = WCS({"CRVAL1": 0.0,

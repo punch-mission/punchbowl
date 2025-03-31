@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
@@ -63,7 +63,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
                      for cube, this_voter_filenames in zip(data_list, ordered_voters, strict=True)]
         output_data = merge_many_polarized_task(data_list, trefoil_wcs)
     else:
-        output_dateobs = datetime.now().isoformat()
+        output_dateobs = datetime.now(UTC).isoformat()
         output_datebeg = output_dateobs
         output_dateend = output_datebeg
 
@@ -74,7 +74,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         meta=NormalizedMetadata.load_template("PTM", "2"),
     )
 
-    output_data.meta["DATE"] = datetime.now().isoformat()
+    output_data.meta["DATE"] = datetime.now(UTC).isoformat()
     output_data.meta["DATE-AVG"] = output_dateobs
     output_data.meta["DATE-OBS"] = output_dateobs
     output_data.meta["DATE-BEG"] = output_datebeg
@@ -92,10 +92,10 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
 ))
 def level2_ctm_flow(data_list: list[str] | list[NDCube],
-                     voter_filenames: list[list[str]],
-                     trefoil_wcs: WCS | None = None,
-                     trefoil_shape: tuple[int, int] | None = None,
-                     output_filename: str | None = None) -> list[NDCube]:
+                    voter_filenames: list[list[str]],
+                    trefoil_wcs: WCS | None = None,
+                    trefoil_shape: tuple[int, int] | None = None,
+                    output_filename: str | None = None) -> list[NDCube]:
     """Level 2 CTM flow."""
     logger = get_run_logger()
     logger.info("beginning level 2 CTM flow")
@@ -111,7 +111,7 @@ def level2_ctm_flow(data_list: list[str] | list[NDCube],
         if trefoil_wcs is None or trefoil_shape is None:
             trefoil_wcs, trefoil_shape = load_trefoil_wcs()
 
-        data_list = reproject_many_flow([j for i in data_list for j in i], trefoil_wcs, trefoil_shape)
+        data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape)
         data_list = [identify_bright_structures_task(cube, this_voter_filenames)
                      for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
         output_data = merge_many_clear_task(data_list, trefoil_wcs)

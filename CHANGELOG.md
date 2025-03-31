@@ -9,6 +9,7 @@
 - Changes level 0.5 to level H in https://github.com/punch-mission/punchbowl/pull/388
 - Fixes WCS conversions in https://github.com/punch-mission/punchbowl/pull/390
 - Parallelize F corona model building in https://github.com/punch-mission/punchbowl/pull/392
+- Fixes starfield polarization; checks times are in UTC in https://github.com/punch-mission/punchbowl/pull/328#pullrequestreview-2726230483
 
 ## Version 0.0.9: Feb 28, 2025
 

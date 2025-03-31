@@ -169,7 +169,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 13,keyword,CEBCONV1,,P30V DC-DC converter output (Analog 8),,TRUE,TRUE,
 13,keyword,CEBCONV2,,P15V DC-DC converter output (Analog 9),,TRUE,TRUE,
 13,keyword,CEBCONV3,,P5V DC-DC converter output (Analog 10),,TRUE,TRUE,
-13,keyword,BIASVREF,,Bias settig reference (Analog 11),,TRUE,TRUE,
+13,keyword,BIASVREF,,Bias setting reference (Analog 11),,TRUE,TRUE,
 13,keyword,CEBGND2,,Ground (Analog 15),,TRUE,TRUE,
 13,keyword,CEBSEDAC,,Single-bit EDAC,,TRUE,TRUE,
 13,keyword,CEBMEDAC,,Multi-bit EDAC,,TRUE,TRUE,

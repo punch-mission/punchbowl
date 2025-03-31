@@ -103,7 +103,6 @@ def level2_ctm_flow(data_list: list[str] | list[NDCube],
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
 
     if data_list:
-        # order the data list so it can be processed properly
         output_dateobs = average_datetime([d.meta.datetime for d in data_list]).isoformat()
         output_datebeg = min([d.meta.datetime for d in data_list]).isoformat()
         output_dateend = max([d.meta.datetime for d in data_list]).isoformat()

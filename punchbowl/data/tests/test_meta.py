@@ -203,4 +203,4 @@ def test_load_spacecraft_yaml():
 def test_construct_all_product_codes():
     codes = construct_all_product_codes(level="0")
     assert isinstance(codes, list)
-    assert len(codes) != 0
+    assert len(codes) == 36

@@ -63,7 +63,7 @@ def construct_all_product_codes(level: str) -> list[str]:
     level_path = os.path.join(_ROOT, "data", f"Level{level}.yaml")
     level_spec = load_level_spec(level_path)
     product_keys = list(level_spec["Products"].keys())
-    if level in ["0", "1", "2"]:
+    if level in ["0", "H", "1", "2"]:
         crafts = {"1": "", "2": "", "3": "", "4": ""}.keys()
     if level in ["2", "3", "Q", "L"]:
         crafts = {"M": "", "N": ""}.keys()

@@ -112,11 +112,11 @@ def write_ndcube_to_quicklook(cube: NDCube,
     pil_image.save(filename)
 
 
-def write_jp2_to_mp4(files: list[str],
-                     filename: str,
-                     framerate: int = 5,
-                     resolution: int = 1024,
-                     codec: str = "libx264") -> None:
+def write_quicklook_to_mp4(files: list[str],
+                           filename: str,
+                           framerate: int = 5,
+                           resolution: int = 1024,
+                           codec: str = "libx264") -> None:
     """
     Write a list of input quicklook jpeg2000 files to an output mp4 animation.
 

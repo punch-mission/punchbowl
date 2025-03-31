@@ -7,14 +7,12 @@ downloaded by calling :func:`~punchbowl.data.sample.download_all`.
 
 Code adapted from SunPy.
 """
-
-import os
 from pathlib import Path
 from urllib.parse import urljoin
 
 import parfive
 from sunpy import log
-from sunpy.util.config import _is_writable_dir, get_and_create_sample_dir
+from sunpy.util.config import _is_writable_dir
 from sunpy.util.parfive_helpers import Downloader
 
 _BASE_URLS = (
@@ -31,6 +29,16 @@ _SAMPLE_DATA = {
 }
 
 _SAMPLE_FILES = {v: k for k, v in _SAMPLE_DATA.items()}
+
+
+def get_and_create_sample_dir() -> Path:
+    """Get the config of download directory and create one if not present."""
+    sample_dir = Path("PUNCH_SAMPLE").expanduser().resolve()
+    if not _is_writable_dir(sample_dir):
+        raise RuntimeError(f'Could not write to SunPy sample data directory="{sample_dir}"')
+
+    return sample_dir
+
 
 def _download_sample_data(base_url:str, sample_files:list, overwrite:bool) -> parfive.Results:
     """
@@ -110,18 +118,10 @@ def _handle_final_errors(results:parfive.Results) -> None:
 
 
 def _get_sampledata_dir() -> Path:
-    # Workaround for tox only. This is not supported as a user option
-    sampledata_dir = os.environ.get("SUNPY_SAMPLEDIR", False)
-    if sampledata_dir:
-        sampledata_dir = Path(sampledata_dir).expanduser().resolve()
-        _is_writable_dir(sampledata_dir)
-    else:
-        # Creating the directory for sample files to be downloaded
-        sampledata_dir = Path(get_and_create_sample_dir())
-    return sampledata_dir
+    return Path(get_and_create_sample_dir())
 
 
-def _get_sample_files(filename_list: list, no_download:bool=False, force_download:bool=False) -> list:
+def _get_sample_files(filename_list: list, no_download:bool=False, force_download:bool=False) -> list[Path]:
     """
     Return a list of disk locations for a list of sample data filenames, downloading sample data files as needed.
 
@@ -196,7 +196,7 @@ def __getattr__(name):  # noqa: ANN001, ANN202
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
-def download_all(force_download:bool=False) -> None:
+def download_all(force_download:bool=False) -> list[Path]:
     """
     Download all sample data at once that has not already been downloaded.
 
@@ -206,5 +206,10 @@ def download_all(force_download:bool=False) -> None:
         If ``True``, files are downloaded even if they already exist.  Default is
         ``False``.
 
+    Returns
+    -------
+    `list` of `pathlib.Path`
+        List of filepaths for sample data
+
     """
-    _get_sample_files(_SAMPLE_DATA.values(), force_download=force_download)
+    return _get_sample_files(_SAMPLE_DATA.values(), force_download=force_download)

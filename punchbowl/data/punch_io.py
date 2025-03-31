@@ -12,12 +12,15 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from matplotlib.colors import LogNorm
 from ndcube import NDCube
-from openjpeg.utils import encode_array
+from PIL import Image, ImageDraw, ImageFont
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.visualize import cmap_punch
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
+
+CALIBRATION_ANNOTATION = "{OBSRVTRY} - {TYPECODE}{OBSCODE} - {DATE-OBS} - exptime: {EXPTIME} s - polarizer: {POLAR} deg"
+
 
 def write_file_hash(path: str) -> None:
     """Create a SHA-256 hash for a file."""
@@ -41,34 +44,72 @@ def get_base_file_name(cube: NDCube) -> str:
     return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string + "_v" + file_version
 
 
-def write_ndcube_to_jp2(cube: NDCube,
-                        filename: str,
-                        layer: int | None = None,
-                        # TODO - Configure these parameters for defaults per data level
-                        vmin: float = 1e-15,
-                        vmax: float = 8e-13) -> None:
-    """Write an NDCube as a JPEG2000 file."""
+def write_ndcube_to_quicklook(cube: NDCube,
+                              filename: str,
+                              layer: int | None = None,
+                              vmin: float = 1e-15,
+                              vmax: float = 8e-13,
+                              annotation: str | None = None) -> None:
+    """
+    Write an NDCube to a Quicklook format as a jpeg.
+
+    Parameters
+    ----------
+    cube : NDCube
+        data cube to visualize
+    filename : str
+        path to save output, must end in .jp2, .j2k, .jpeg, .jpg
+    layer : int | None
+        if the cube is 3D, then selects cube.data[layer] for visualization
+    vmin : float
+        the lower limit value to visualize
+    vmax : float
+        the upper limit value to visualize
+    annotation : str | None
+        a formatted string to add to the bottom of the image as a label
+        can access metadata by key, e.g. "typecode={TYPECODE}" would write the data's typecode into the image
+
+    Returns
+    -------
+    None
+
+    """
     if (len(cube.data.shape) != 2) and layer is None:
-        msg = ("Output data must be two-dimensional, or a layer must be specified")
+        msg = "Output data must be two-dimensional, or a layer must be specified"
         raise ValueError(msg)
 
-    if not filename.endswith((".jp2", ".j2k")):
-        msg = ("Filename must have a valid file extension `.jp2` or `.j2k`"
+    if not filename.endswith((".jp2", ".j2k", ".jpeg", ".jpg")):
+        msg = ("Filename must have a valid file extension `.jpeg`, `jpg`, `.jp2` or `.j2k`"
                f"Found: {os.path.splitext(filename)[1]}")
         raise ValueError(msg)
 
     norm = LogNorm(vmin=vmin, vmax=vmax)
 
-    if layer is not None: # noqa: SIM108
+    if layer is not None:  # noqa: SIM108
         image = cube.data[layer, :, :]
     else:
         image = cube.data
 
-    scaled_arr = (cmap_punch(norm(np.flipud(image)))*255).astype(np.uint8)
-    encoded_arr = encode_array(scaled_arr)
+    scaled_arr = (cmap_punch(norm(np.flipud(image))) * 255).astype(np.uint8)
 
-    with open(filename, "wb") as f:
-        f.write(encoded_arr)
+    pil_image = Image.fromarray(scaled_arr, mode="RGBA")
+
+    if annotation:
+        pad_height = int(image.shape[1] * 50 / 2048)
+        padded_image = Image.new("RGB", (pil_image.width, pil_image.height + pad_height))
+
+        padded_image.paste(pil_image, (0, 0))  # copies the original image data into the padded image
+
+        draw = ImageDraw.Draw(padded_image)
+        font = ImageFont.load_default(size=int(pad_height / 2))
+
+        text = annotation.format(**cube.meta)
+        text_offset = int(10 * image.shape[1] / 2048)
+        text_position = (text_offset, pil_image.height + text_offset)
+        draw.text(text_position, text, font=font, fill=(255, 255, 255))
+        pil_image = padded_image
+
+    pil_image.save(filename)
 
 
 def write_jp2_to_mp4(files: list[str],

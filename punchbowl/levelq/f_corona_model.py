@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
@@ -17,7 +17,7 @@ def construct_qp_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
     logger = get_run_logger()
 
     if reference_time is None:
-        reference_time = datetime.now()
+        reference_time = datetime.now(UTC)
     elif isinstance(reference_time, str):
         reference_time = parse_datetime_str(reference_time)
 
@@ -50,7 +50,7 @@ def construct_qp_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
     logger.info("ending data loading")
 
     reference_xt = reference_time.timestamp()
-    model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube, smooth_level=smooth_level)
+    model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube, clip_factor=smooth_level)
     model_fcorona[model_fcorona<=0] = np.nan
     model_fcorona = fill_nans_with_interpolation(model_fcorona)
 

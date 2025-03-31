@@ -74,7 +74,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 6,keyword,DSTART2,,first row of image area on data array,int,TRUE,TRUE,
 6,keyword,DSTOP2,,last row of image area on data array,int,TRUE,TRUE,
 6,keyword,IMGCTR,,image counter from IDPU,int,TRUE,TRUE,
-6,keyword,LEDSTATE,,state of LED,int,TRUE,TRUE,
+6,keyword,LEDSTATE,,state of LED,str,TRUE,TRUE,Off
 6,keyword,LEDDAC,,last commanded setting of LED,int,TRUE,TRUE,
 6,keyword,OFFSET,,commanded offset value used in camera,int,TRUE,TRUE,
 6,keyword,GAINCMD,,commanded gain value,float,TRUE,TRUE,

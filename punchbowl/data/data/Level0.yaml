@@ -15,6 +15,7 @@ Level:
     World Coordinate System:
     Camera and Readout State:
     Onboard Image Processing:
+    Calibration Data:
     Image Statistics and Properties:
         overrides:
             DSATVAL: 65535

@@ -88,7 +88,7 @@ def test_write_jpeg(sample_ndcube, tmpdir):
     from punchbowl.data.sample import PUNCH_PAM
     cube = sample_ndcube((4096, 4096))
     with fits.open(PUNCH_PAM) as hdul:
-        cube.data = hdul[1].data[0]
+        cube.data[...] = hdul[1].data[0]
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"

@@ -45,7 +45,8 @@ def generate_psf_model_core_flow(input_filepaths: [str],
 @flow(validate_parameters=False)
 def level1_core_flow(
     input_data: list[str] | list[NDCube],
-    gain: float = 4.9,
+    gain_left: float = 4.9,
+    gain_right: float = 4.9,
     bias_level: float = 100,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
@@ -80,19 +81,22 @@ def level1_core_flow(
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,
-                                               gain=gain,
+                                               gain_left=gain_left,
+                                               gain_right=gain_right,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                )
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
         if data.meta["OBSCODE"].value == "4":
-            scaling = {"gain": 4.9 * u.photon / u.DN,
+            scaling = {"gain_left": 4.9 * u.photon / u.DN,
+                       "gain_right": 4.9 * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
                        "exposure": 49 * u.s,
                        "aperture": 49.57 * u.mm ** 2}
         else:
-            scaling = {"gain": 4.9 * u.photon / u.DN,
+            scaling = {"gain_left": 4.9 * u.photon / u.DN,
+                       "gain_right": 4.9 * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
                        "exposure": 49 * u.s,
                        "aperture": 34 * u.mm ** 2}
@@ -147,7 +151,8 @@ def level1_core_flow(
 @flow(validate_parameters=False)
 def levelh_core_flow(
     input_data: list[str] | list[NDCube],
-    gain: float = 4.9,
+    gain_left: float = 4.9,
+    gain_right: float = 4.9,
     bias_level: float = 100,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
@@ -167,7 +172,8 @@ def levelh_core_flow(
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,
-                                               gain=gain,
+                                               gain_left=gain_left,
+                                               gain_right=gain_right,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                )

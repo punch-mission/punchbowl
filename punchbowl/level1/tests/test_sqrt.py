@@ -9,6 +9,7 @@ from prefect.logging import disable_run_logger
 from pytest import fixture
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.units import ccd_array
 from punchbowl.level1.sqrt import decode_sqrt, decode_sqrt_data, decode_sqrt_simple, encode_sqrt
 
 
@@ -36,7 +37,8 @@ def sample_punchdata():
 
     punchdata_obj.meta['RAWBITS'] = 16
     punchdata_obj.meta['COMPBITS'] = 10
-    punchdata_obj.meta['GAINCMD'] = 1.0/4.3
+    punchdata_obj.meta['GAINLEFT'] = 1.0/4.9
+    punchdata_obj.meta['GAINRGHT'] = 1.0/4.9
     punchdata_obj.meta['OFFSET'] = 100
 
     return punchdata_obj
@@ -65,7 +67,8 @@ def test_decoding():
 @pytest.mark.parametrize('from_bits, to_bits', [(16, 10), (16, 11), (16, 12)])
 def test_encode_then_decode(from_bits, to_bits):
     arr_dim = 2048
-    ccd_gain = 1.0 / 4.3  # DN/electron
+    ccd_gain_left = 1.0 / 4.9  # DN/electron
+    ccd_gain_right = 1.0 / 4.9  # DN/electron
     ccd_offset = 100  # DN
     ccd_read_noise = 17  # DN
 
@@ -75,9 +78,12 @@ def test_encode_then_decode(from_bits, to_bits):
     decoded_arr = decode_sqrt(encoded_arr,
                               from_bits=from_bits,
                               to_bits=to_bits,
-                              ccd_gain=ccd_gain,
+                              ccd_gain_left=ccd_gain_left,
+                              ccd_gain_right=ccd_gain_right,
                               ccd_offset=ccd_offset,
                               ccd_read_noise=ccd_read_noise)
+
+    ccd_gain = ccd_array(original_arr.shape, ccd_gain_left, ccd_gain_right)
 
     noise_tolerance = np.sqrt(original_arr / ccd_gain) * ccd_gain
 

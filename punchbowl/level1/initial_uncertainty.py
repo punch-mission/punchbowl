@@ -2,11 +2,13 @@ import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger
 
+from punchbowl.data.units import ccd_array
 from punchbowl.prefect import punch_task
 
 
-def dn_to_photons(data_array: np.ndarray, gain: float = 4.3) -> np.ndarray:
+def dn_to_photons(data_array: np.ndarray, gain_left: float = 4.9, gain_right: float = 4.9) -> np.ndarray:
     """Convert an input array from DN to photon count."""
+    gain = ccd_array(data_array.shape, gain_left, gain_right)
     return data_array * gain
 
 
@@ -14,7 +16,8 @@ def compute_noise(
         data: np.ndarray,
         bias_level: float = 100,
         dark_level: float = 55.81,
-        gain: float = 4.9,
+        gain_left: float = 4.9,
+        gain_right: float = 4.9,
         read_noise_level: float = 17,
         bitrate_signal: int = 16) -> np.ndarray:
     """
@@ -28,8 +31,10 @@ def compute_noise(
         ccd bias level
     dark_level
         ccd dark level
-    gain
-        ccd gain
+    gain_left
+        ccd gain (left side of CCD)
+    gain_right
+        ccd gain (right side of CCD)
     read_noise_level
         ccd read noise level
     bitrate_signal
@@ -42,6 +47,8 @@ def compute_noise(
 
     """
     data = data.copy().astype("long")
+
+    gain = ccd_array(data.shape, gain_left, gain_right)
 
     # Photon / shot noise generation
     data_photon = data * gain  # DN to photoelectrons
@@ -67,7 +74,8 @@ def compute_noise(
 def compute_uncertainty(data_array: np.ndarray,
                         bias_level: float = 100,
                         dark_level: float = 55.81,
-                        gain: float = 4.9,
+                        gain_left: float = 4.9,
+                        gain_right: float = 4.9,
                         read_noise_level: float = 17,
                         bitrate_signal: int = 16,
                         ) -> np.ndarray:
@@ -76,7 +84,8 @@ def compute_uncertainty(data_array: np.ndarray,
     return compute_noise(data_array,
                                 bias_level=bias_level,
                                 dark_level=dark_level,
-                                gain=gain,
+                                gain_left=gain_left,
+                                gain_right=gain_right,
                                 read_noise_level=read_noise_level,
                                 bitrate_signal=bitrate_signal)
 
@@ -84,10 +93,11 @@ def compute_uncertainty(data_array: np.ndarray,
 @punch_task
 def update_initial_uncertainty_task(data_object: NDCube,
                                     bias_level: float = 100,
-        dark_level: float = 55.81,
-        gain: float = 4.9,
-        read_noise_level: float = 17,
-        bitrate_signal: int = 16) -> NDCube:
+                                    dark_level: float = 55.81,
+                                    gain_left: float = 4.9,
+                                    gain_right: float = 4.9,
+                                    read_noise_level: float = 17,
+                                    bitrate_signal: int = 16) -> NDCube:
     """Prefect task to compute initial uncertainty."""
     logger = get_run_logger()
     logger.info("initial uncertainty computation started")
@@ -95,7 +105,8 @@ def update_initial_uncertainty_task(data_object: NDCube,
     uncertainty_array = compute_uncertainty(data_object.data,
                                             bias_level=bias_level,
                                             dark_level=dark_level,
-                                            gain=gain,
+                                            gain_left=gain_left,
+                                            gain_right=gain_right,
                                             read_noise_level=read_noise_level,
                                             bitrate_signal=bitrate_signal,
                                             )
@@ -104,7 +115,8 @@ def update_initial_uncertainty_task(data_object: NDCube,
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed with:")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"bias_level={bias_level}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"dark_level={dark_level}")
-    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain={gain}")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_left={gain_left}")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_right={gain_right}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"read_noise_level={read_noise_level}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"bitrate_signal={bitrate_signal}")
 

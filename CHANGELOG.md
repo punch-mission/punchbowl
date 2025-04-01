@@ -10,6 +10,7 @@
 - Fixes WCS conversions in https://github.com/punch-mission/punchbowl/pull/390
 - Parallelize F corona model building in https://github.com/punch-mission/punchbowl/pull/392
 - Fixes starfield polarization; checks times are in UTC in https://github.com/punch-mission/punchbowl/pull/328#pullrequestreview-2726230483
+- Fixes issues with calibration metadata in https://github.com/punch-mission/punchbowl/pull/404
 
 ## Version 0.0.9: Feb 28, 2025
 

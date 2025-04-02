@@ -118,7 +118,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 10,keyword,CAR_ROT,,Carrington Rotation number,float,TRUE,TRUE,
 11,section,COMMENT,Spacecraft Location & Environment,,str,TRUE,TRUE,Spacecraft Location & Environment
 11,keyword,GEOD_LAT,,[deg] S/C sub-point geodetic latitude,float,TRUE,TRUE,
-11,keyword,GEOD_LON,,[deg] S/C sub-point longitude,float,TRUE,TRUE,
+11,keyword,GEOD_LON,,[deg] S/C sub-point geodetic longitude,float,TRUE,TRUE,
 11,keyword,GEOD_ALT,,[m] S/C WGS84 altitude,float,TRUE,TRUE,
 11,keyword,LOS_ALT,,[m] line-of-sight altitude above Earth,float,TRUE,TRUE,
 11,keyword,HGLT_OBS,,[deg] S/C heliographic latitude,float,TRUE,TRUE,
@@ -225,7 +225,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 15,keyword,LEDPLSN,,LED Number of Pulses,int,TRUE,TRUE,
 15,keyword,LED2STAT,,LED2 Activation State,int,TRUE,TRUE,
 15,keyword,LEDPLSD,,LED Pulse Delay,int,TRUE,TRUE,
-15,keyword,LWDPLSW,,LED Pulse Width,int,TRUE,TRUE,
+15,keyword,LEDPLSW,,LED Pulse Width,int,TRUE,TRUE,
 15,keyword,LED1CURR,,LED1 Accumulated Current for pulse,int,TRUE,TRUE,
 15,keyword,LED2CURR,,LED2 Accumulated Current for pulse,int,TRUE,TRUE,
 15,keyword,LEDCNT,,LED Sample Count,int,TRUE,TRUE,

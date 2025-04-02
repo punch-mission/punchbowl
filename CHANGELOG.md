@@ -11,6 +11,7 @@
 - Parallelize F corona model building in https://github.com/punch-mission/punchbowl/pull/392
 - Fixes starfield polarization; checks times are in UTC in https://github.com/punch-mission/punchbowl/pull/328#pullrequestreview-2726230483
 - Fixes issues with calibration metadata in https://github.com/punch-mission/punchbowl/pull/404
+- Fixes a keyword typo in omniheader in https://github.com/punch-mission/punchbowl/pull/407
 
 ## Version 0.0.9: Feb 28, 2025
 

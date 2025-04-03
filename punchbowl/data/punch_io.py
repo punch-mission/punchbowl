@@ -153,7 +153,7 @@ def write_quicklook_to_mp4(files: list[str],
 
 def write_ndcube_to_fits(cube: NDCube,
                          filename: str,
-                         overwrite: bool = True,
+                         overwrite: bool = False,
                          write_hash: bool = True,
                          skip_stats: bool = False,
                          uncertainty_quantize_level: float = 16) -> None:

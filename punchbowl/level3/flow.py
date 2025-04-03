@@ -2,7 +2,7 @@ import os
 from datetime import UTC, datetime
 
 from ndcube import NDCube
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 
 from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
@@ -10,10 +10,11 @@ from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization
 from punchbowl.level3.stellar import subtract_starfield_background_task
 from punchbowl.level3.velocity import plot_flow_map, track_velocity
+from punchbowl.prefect import punch_flow
 from punchbowl.util import load_image_task, output_image_task
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
                      before_f_corona_model_path: str,
                      after_f_corona_model_path: str,
@@ -48,7 +49,7 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
     return out_list
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def level3_core_flow(data_list: list[str] | list[NDCube],
                      before_f_corona_model_path: str,
                      after_f_corona_model_path: str,
@@ -74,7 +75,7 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     return data_list
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def generate_level3_low_noise_flow(data_list: list[str] | list[NDCube],
                                    output_filename: str | None = None) -> list[NDCube]:
     """Generate low noise products."""
@@ -90,7 +91,7 @@ def generate_level3_low_noise_flow(data_list: list[str] | list[NDCube],
     return [low_noise_image]
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def generate_level3_velocity_flow(data_list: list[str],
                                   output_filename: str | None = None) -> list[NDCube]:
     """Generate Level 3 velocity data product."""

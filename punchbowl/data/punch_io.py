@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os.path
+import subprocess
 from pathlib import Path
 
 import astropy.units as u
@@ -109,6 +110,45 @@ def write_ndcube_to_quicklook(cube: NDCube,
         pil_image = padded_image
 
     pil_image.save(filename)
+
+
+def write_quicklook_to_mp4(files: list[str],
+                           filename: str,
+                           framerate: int = 5,
+                           resolution: int = 1024,
+                           codec: str = "libx264") -> None:
+    """
+    Write a list of input quicklook jpeg2000 files to an output mp4 animation.
+
+    Parameters
+    ----------
+    files : list[str]
+        List of input files to animate
+    filename : str
+        Output filename
+    framerate : int, optional
+        Frame rate (default 5)
+    resolution : int, optional
+        Output resolution (default 1024)
+    codec : str, optional
+        Codec to use for encoding. For GPU acceleration.
+        "h264_videotoolbox" can be used on ARM Macs, "h264_nvenc" can be used on Intel machines.
+
+    """
+    input_sequence = f"concat:{'|'.join(files)}"
+
+    ffmpeg_command = [
+        "ffmpeg",
+        "-framerate", str(framerate),
+        "-i", input_sequence,
+        "-vf", f"scale=-1:{resolution}",
+        "-c:v", codec,
+        "-pix_fmt", "yuv420p",
+        "-y",
+        filename,
+    ]
+
+    subprocess.run(ffmpeg_command, check=False)  # noqa: S603
 
 
 def write_ndcube_to_fits(cube: NDCube,

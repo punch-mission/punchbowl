@@ -11,6 +11,7 @@
 - Parallelize F corona model building in https://github.com/punch-mission/punchbowl/pull/392
 - Fixes starfield polarization; checks times are in UTC in https://github.com/punch-mission/punchbowl/pull/328#pullrequestreview-2726230483
 - Fixes issues with calibration metadata in https://github.com/punch-mission/punchbowl/pull/404
+- Adds quicklook movie generation in https://github.com/punch-mission/punchbowl/pull/391
 
 ## Version 0.0.9: Feb 28, 2025
 

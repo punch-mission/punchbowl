@@ -7,14 +7,14 @@ import remove_starfield
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCollection, NDCube
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import PercentileReducer
 from solpolpy import resolve
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, get_p_angle
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import punch_flow, punch_task
 
 
 def to_celestial(input_data: NDCube) -> NDCube:
@@ -112,7 +112,7 @@ class PUNCHImageProcessor(ImageProcessor):
         return ImageHolder(data, cube.wcs.celestial, cube.meta)
 
 
-@flow(log_prints=True, timeout_seconds=21_600)
+@punch_flow(log_prints=True, timeout_seconds=21_600)
 def generate_starfield_background(
         filenames: list[str],
         map_scale: float = 0.01,

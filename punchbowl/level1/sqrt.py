@@ -13,7 +13,8 @@ def decode_sqrt(
     data: np.ndarray | float,
     from_bits: int = 16,
     to_bits: int = 12,
-    ccd_gain: float = 1 / 4.3,
+    ccd_gain_left: float = 1 / 4.9,
+    ccd_gain_right: float = 1 / 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
     overwrite_table: bool = False,
@@ -29,8 +30,10 @@ def decode_sqrt(
         Specified bitrate of encoded image to unpack
     to_bits
         Specified bitrate of output data (decoded)
-    ccd_gain
-        CCD gain [photons / DN]
+    ccd_gain_left
+        CCD gain (left side of CCD) [photons / DN]
+    ccd_gain_right
+        CCD gain (right side of CCD) [photons / DN]
     ccd_offset
         CCD bias level [DN]
     ccd_read_noise
@@ -44,14 +47,14 @@ def decode_sqrt(
         Square root decoded version of the input image
 
     """
-    table_name = (
+    table_name_left = (
         TABLE_PATH
         + "tab_fb"
         + str(from_bits)
         + "_tb"
         + str(to_bits)
         + "_g"
-        + str(1 / ccd_gain)
+        + str(1 / ccd_gain_left)
         + "_b"
         + str(ccd_offset)
         + "_r"
@@ -59,17 +62,45 @@ def decode_sqrt(
         + ".npy"
     )
 
-    if not os.path.isfile(table_name) or overwrite_table:
-        table = generate_decode_sqrt_table(from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise)
+    table_name_right = (
+        TABLE_PATH
+        + "tab_fb"
+        + str(from_bits)
+        + "_tb"
+        + str(to_bits)
+        + "_g"
+        + str(1 / ccd_gain_right)
+        + "_b"
+        + str(ccd_offset)
+        + "_r"
+        + str(ccd_read_noise)
+        + ".npy"
+    )
+
+    if not os.path.isfile(table_name_left) or overwrite_table:
+        table_left = generate_decode_sqrt_table(from_bits, to_bits, ccd_gain_left, ccd_offset, ccd_read_noise)
 
         if not os.path.isdir(TABLE_PATH):
             os.makedirs(TABLE_PATH, exist_ok=True)
 
-        np.save(table_name, table)
+        np.save(table_name_left, table_left)
     else:
-        table = np.load(table_name)
+        table_left = np.load(table_name_left)
 
-    return decode_sqrt_by_table(data, table)
+    if not os.path.isfile(table_name_right) or overwrite_table:
+        table_right = generate_decode_sqrt_table(from_bits, to_bits, ccd_gain_right, ccd_offset, ccd_read_noise)
+
+        if not os.path.isdir(TABLE_PATH):
+            os.makedirs(TABLE_PATH, exist_ok=True)
+
+        np.save(table_name_right, table_right)
+    else:
+        table_right = np.load(table_name_right)
+
+    data[:,0:data.shape[1]//2] = decode_sqrt_by_table(data[:,0:data.shape[1]//2], table_left)
+    data[:,data.shape[1]//2:] = decode_sqrt_by_table(data[:,data.shape[1]//2:], table_right)
+
+    return data
 
 
 def encode_sqrt(data: np.ndarray | float, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
@@ -125,7 +156,7 @@ def decode_sqrt_simple(data: np.ndarray | float, from_bits: int = 16, to_bits: i
 
 def noise_pdf(
     data_value: np.ndarray | float,
-    ccd_gain: float = 1 / 4.3,
+    ccd_gain: float = 1 / 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
     n_sigma: int = 5,
@@ -182,7 +213,7 @@ def mean_b_offset(
     data_value: float,
     from_bits: int = 16,
     to_bits: int = 12,
-    ccd_gain: float = 1 / 4.3,
+    ccd_gain: float = 1 / 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
 ) -> float:
@@ -240,7 +271,7 @@ def decode_sqrt_corrected(
     data_value: float,
     from_bits: int = 16,
     to_bits: int = 12,
-    ccd_gain: float = 1 / 4.3,
+    ccd_gain: float = 1 / 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
 ) -> float:
@@ -283,7 +314,7 @@ def decode_sqrt_corrected(
 def generate_decode_sqrt_table(
     from_bits: int = 16,
     to_bits: int = 12,
-    ccd_gain: float = 1 / 4.3,
+    ccd_gain: float = 1 / 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
 ) -> np.ndarray:
@@ -365,7 +396,8 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
     from_bits = data_object.meta["RAWBITS"].value
     to_bits = data_object.meta["COMPBITS"].value
 
-    ccd_gain = data_object.meta["GAINCMD"].value
+    ccd_gain_left = data_object.meta["GAINLEFT"].value
+    ccd_gain_right = data_object.meta["GAINRGHT"].value
     ccd_offset = data_object.meta["OFFSET"].value
     ccd_read_noise = 17  # DN  # TODO: make this not a hardcoded value!
 
@@ -373,7 +405,8 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
         data,
         from_bits=from_bits,
         to_bits=to_bits,
-        ccd_gain=ccd_gain,
+        ccd_gain_left=ccd_gain_left,
+        ccd_gain_right=ccd_gain_right,
         ccd_offset=ccd_offset,
         ccd_read_noise=ccd_read_noise,
         overwrite_table=overwrite_table,

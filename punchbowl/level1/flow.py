@@ -3,7 +3,7 @@ import pathlib
 import astropy.units as u
 import numpy as np
 from ndcube import NDCube
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
 from regularizepsf.util import calculate_covering
 
@@ -19,10 +19,11 @@ from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
+from punchbowl.prefect import punch_flow
 from punchbowl.util import load_image_task, output_image_task
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def generate_psf_model_core_flow(input_filepaths: [str],
                                  alpha: float = 2.0,
                                  epsilon: float = 0.3,
@@ -42,10 +43,11 @@ def generate_psf_model_core_flow(input_filepaths: [str],
     return ArrayPSFTransform.construct(image_psf, target.as_array_psf(coords, psf_size), alpha, epsilon)
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def level1_core_flow(
     input_data: list[str] | list[NDCube],
-    gain: float = 4.9,
+    gain_left: float = 4.9,
+    gain_right: float = 4.9,
     bias_level: float = 100,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
@@ -80,19 +82,22 @@ def level1_core_flow(
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,
-                                               gain=gain,
+                                               gain_left=gain_left,
+                                               gain_right=gain_right,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                )
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
         if data.meta["OBSCODE"].value == "4":
-            scaling = {"gain": 4.9 * u.photon / u.DN,
+            scaling = {"gain_left": 4.9 * u.photon / u.DN,
+                       "gain_right": 4.9 * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
                        "exposure": 49 * u.s,
                        "aperture": 49.57 * u.mm ** 2}
         else:
-            scaling = {"gain": 4.9 * u.photon / u.DN,
+            scaling = {"gain_left": 4.9 * u.photon / u.DN,
+                       "gain_right": 4.9 * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
                        "exposure": 49 * u.s,
                        "aperture": 34 * u.mm ** 2}
@@ -144,10 +149,11 @@ def level1_core_flow(
     return output_data
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def levelh_core_flow(
     input_data: list[str] | list[NDCube],
-    gain: float = 4.9,
+    gain_left: float = 4.9,
+    gain_right: float = 4.9,
     bias_level: float = 100,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
@@ -167,7 +173,8 @@ def levelh_core_flow(
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,
-                                               gain=gain,
+                                               gain_left=gain_left,
+                                               gain_right=gain_right,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                )

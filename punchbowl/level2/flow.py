@@ -4,7 +4,7 @@ import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 from prefect_dask.task_runners import DaskTaskRunner
 
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
@@ -13,6 +13,7 @@ from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.resample import reproject_many_flow
+from punchbowl.prefect import punch_flow
 from punchbowl.util import average_datetime, load_image_task, output_image_task
 
 ORDER = ["PM1", "PZ1", "PP1",
@@ -21,7 +22,7 @@ ORDER = ["PM1", "PZ1", "PP1",
          "PM4", "PZ4", "PP4"]
 
 
-@flow(validate_parameters=False, task_runner=DaskTaskRunner(
+@punch_flow(task_runner=DaskTaskRunner(
     cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
 ))
 def level2_core_flow(data_list: list[str] | list[NDCube],
@@ -88,7 +89,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     return [output_data]
 
 
-@flow(validate_parameters=False, task_runner=DaskTaskRunner(
+@punch_flow(task_runner=DaskTaskRunner(
     cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
 ))
 def level2_ctm_flow(data_list: list[str] | list[NDCube],

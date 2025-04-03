@@ -3,11 +3,10 @@ import numpy as np
 import reproject
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect import flow
 from sunpy.coordinates import sun
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import punch_flow, punch_task
 
 
 @punch_task
@@ -90,7 +89,7 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     return output_array
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube | None]:
     """Reproject many flow."""
     out_layers = [reproject_cube.submit(d, trefoil_wcs, trefoil_shape) if d is not None else None for d in data]

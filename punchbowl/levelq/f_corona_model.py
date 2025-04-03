@@ -3,14 +3,15 @@ from datetime import UTC, datetime
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs
 from punchbowl.level3.f_corona_model import fill_nans_with_interpolation, model_fcorona_for_cube
+from punchbowl.prefect import punch_flow
 
 
-@flow(log_prints=True)
+@punch_flow(log_prints=True)
 def construct_qp_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
                                        reference_time: str | None = None) -> list[NDCube]:
     """Construct QuickPUNCH F corona model."""

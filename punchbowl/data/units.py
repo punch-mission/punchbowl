@@ -50,7 +50,8 @@ def msb_to_dn(data: ndarray,
 
 def dn_to_msb(data: ndarray,
               data_wcs: WCS,
-              gain: float = 4.9 * u.photon / u.DN,
+              gain_left: float = 4.9 * u.photon / u.DN,
+              gain_right: float = 4.9 * u.photon / u.DN,
               wavelength: float = 530. * u.nm,
               exposure: float = 49 * u.s,
               aperture: float = 34 * u.mm**2,
@@ -61,4 +62,13 @@ def dn_to_msb(data: ndarray,
     photon_flux = MSB / energy_per_photon
     pixel_scale = calculate_image_pixel_area(data_wcs, data.shape, pixel_area_stride).to(u.sr) / u.pixel
     photon_count = (photon_flux * exposure * aperture * pixel_scale * u.pixel).decompose()
+    gain = split_ccd_array(data.shape, gain_left, gain_right)
     return data * gain / photon_count
+
+
+def split_ccd_array(shape:tuple, value_left:float, value_right:float) -> ndarray:
+    """Generate parameters across CCD halves."""
+    array = np.zeros(shape)
+    array[:shape[1]//2, :] = value_left
+    array[shape[1]//2:, :] = value_right
+    return array

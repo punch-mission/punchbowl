@@ -1,7 +1,7 @@
 from typing import Any
 
 from ndcube import NDCube
-from prefect import Task, get_run_logger, task
+from prefect import Flow, Task, flow, get_run_logger, task
 from prefect.client.schemas.objects import TaskRun
 from prefect.states import State
 from prefect.variables import Variable
@@ -30,3 +30,7 @@ def failure_hook(task: Task, task_run: TaskRun, state: State) -> None:
 def punch_task(*args: Any, **kwargs: Any) -> Task:
     """Prefect task that does PUNCH special things."""
     return task(*args, **kwargs, on_completion=[completion_debugger], on_failure=[failure_hook])
+
+def punch_flow(*args: Any, **kwargs: Any) -> Flow:
+    """Prefect flow that does PUNCH special things."""
+    return flow(*args, **kwargs, validate_parameters=False)

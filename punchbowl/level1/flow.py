@@ -3,7 +3,7 @@ import pathlib
 import astropy.units as u
 import numpy as np
 from ndcube import NDCube
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
 from regularizepsf.util import calculate_covering
 
@@ -19,10 +19,11 @@ from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
+from punchbowl.prefect import punch_flow
 from punchbowl.util import load_image_task, output_image_task
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def generate_psf_model_core_flow(input_filepaths: [str],
                                  alpha: float = 2.0,
                                  epsilon: float = 0.3,
@@ -42,7 +43,7 @@ def generate_psf_model_core_flow(input_filepaths: [str],
     return ArrayPSFTransform.construct(image_psf, target.as_array_psf(coords, psf_size), alpha, epsilon)
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def level1_core_flow(
     input_data: list[str] | list[NDCube],
     gain: float = 4.9,
@@ -144,7 +145,7 @@ def level1_core_flow(
     return output_data
 
 
-@flow(validate_parameters=False)
+@punch_flow
 def levelh_core_flow(
     input_data: list[str] | list[NDCube],
     gain: float = 4.9,

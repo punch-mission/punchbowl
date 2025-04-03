@@ -7,7 +7,7 @@ import numpy as np
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from numpy.polynomial import polynomial
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 from quadprog import solve_qp
 from scipy.interpolate import griddata
 
@@ -15,7 +15,7 @@ from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import nan_percentile
 
 
@@ -197,7 +197,7 @@ def _load_one_file(filename: str) -> NDCube:
     return load_ndcube_from_fits(filename)
 
 
-@flow(log_prints=True)
+@punch_flow(log_prints=True)
 def construct_polarized_f_corona_model(filenames: list[str],
                                        clip_factor: float = 3.0,
                                        reference_time: str | None = None,

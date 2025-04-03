@@ -2,7 +2,11 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-## Latest: unreleased
+## Latest: unreleased 
+
+- 
+
+## Version 0.0.10: Apr 2, 2025
 
 - Changes so that vignetting is a separate step in the pipeline.
 - Switches to use Prefect Dask Task Runner in https://github.com/punch-mission/punchbowl/pull/387

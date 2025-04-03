@@ -11,6 +11,7 @@
 - Parallelize F corona model building in https://github.com/punch-mission/punchbowl/pull/392
 - Fixes starfield polarization; checks times are in UTC in https://github.com/punch-mission/punchbowl/pull/328#pullrequestreview-2726230483
 - Fixes issues with calibration metadata in https://github.com/punch-mission/punchbowl/pull/404
+- Computes gain on two detector halves separately in https://github.com/punch-mission/punchbowl/pull/406
 - Fixes a keyword typo in omniheader in https://github.com/punch-mission/punchbowl/pull/407
 - Creates a uses a custom PUNCH flow in prefect in https://github.com/punch-mission/punchbowl/pull/409
 - Changes default of NDCube writing to prohibit overwriting in https://github.com/punch-mission/punchbowl/pull/408

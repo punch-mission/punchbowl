@@ -12,7 +12,9 @@
 - Fixes starfield polarization; checks times are in UTC in https://github.com/punch-mission/punchbowl/pull/328#pullrequestreview-2726230483
 - Fixes issues with calibration metadata in https://github.com/punch-mission/punchbowl/pull/404
 - Computes gain on two detector halves separately in https://github.com/punch-mission/punchbowl/pull/406
--
+- Fixes a keyword typo in omniheader in https://github.com/punch-mission/punchbowl/pull/407
+- Changes default of NDCube writing to prohibit overwriting in https://github.com/punch-mission/punchbowl/pull/408
+
 ## Version 0.0.9: Feb 28, 2025
 
 * adds zspike blurring and parameterization by @lowderchris in https://github.com/punch-mission/punchbowl/pull/345

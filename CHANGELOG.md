@@ -2,9 +2,9 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-## Latest: unreleased 
+## Latest: unreleased
 
-- 
+-
 
 ## Version 0.0.10: Apr 2, 2025
 

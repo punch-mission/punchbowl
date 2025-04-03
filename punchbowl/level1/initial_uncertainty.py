@@ -2,13 +2,13 @@ import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger
 
-from punchbowl.data.units import ccd_array
+from punchbowl.data.units import split_ccd_array
 from punchbowl.prefect import punch_task
 
 
 def dn_to_photons(data_array: np.ndarray, gain_left: float = 4.9, gain_right: float = 4.9) -> np.ndarray:
     """Convert an input array from DN to photon count."""
-    gain = ccd_array(data_array.shape, gain_left, gain_right)
+    gain = split_ccd_array(data_array.shape, gain_left, gain_right)
     return data_array * gain
 
 
@@ -48,7 +48,7 @@ def compute_noise(
     """
     data = data.copy().astype("long")
 
-    gain = ccd_array(data.shape, gain_left, gain_right)
+    gain = split_ccd_array(data.shape, gain_left, gain_right)
 
     # Photon / shot noise generation
     data_photon = data * gain  # DN to photoelectrons

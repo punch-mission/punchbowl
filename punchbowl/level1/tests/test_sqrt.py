@@ -9,7 +9,7 @@ from prefect.logging import disable_run_logger
 from pytest import fixture
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.data.units import ccd_array
+from punchbowl.data.units import split_ccd_array
 from punchbowl.level1.sqrt import decode_sqrt, decode_sqrt_data, decode_sqrt_simple, encode_sqrt
 
 
@@ -83,7 +83,7 @@ def test_encode_then_decode(from_bits, to_bits):
                               ccd_offset=ccd_offset,
                               ccd_read_noise=ccd_read_noise)
 
-    ccd_gain = ccd_array(original_arr.shape, ccd_gain_left, ccd_gain_right)
+    ccd_gain = split_ccd_array(original_arr.shape, ccd_gain_left, ccd_gain_right)
 
     noise_tolerance = np.sqrt(original_arr / ccd_gain) * ccd_gain
 

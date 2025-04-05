@@ -1,4 +1,5 @@
 import pathlib
+from collections.abc import Generator
 
 import astropy.units as u
 import numpy as np
@@ -25,6 +26,7 @@ from punchbowl.util import load_image_task, output_image_task
 
 @punch_flow
 def generate_psf_model_core_flow(input_filepaths: [str],
+                                 masks: list[pathlib.Path | str] | np.ndarray | Generator = None,
                                  alpha: float = 2.0,
                                  epsilon: float = 0.3,
                                  image_shape: (int, int) = (2048, 2048),
@@ -35,10 +37,11 @@ def generate_psf_model_core_flow(input_filepaths: [str],
     center = psf_size / 2
     sigma = target_fwhm / 2.355
     @simple_functional_psf
-    def target(x, y, x0=center, y0=center, sigma_x=sigma, sigma_y=sigma) -> np.ndarray:  # noqa: ANN001
-        return np.exp(-(np.square(x - x0) / (2 * np.square(sigma_x)) + np.square(y - y0) / (2 * np.square(sigma_y))))
+    def target(row, col, x0=center, y0=center, sigma_x=sigma, sigma_y=sigma) -> np.ndarray:  # noqa: ANN001
+        return np.exp(-(np.square(row - x0) / (2 * np.square(sigma_x))
+                        + np.square(col - y0) / (2 * np.square(sigma_y))))
 
-    image_psf = ArrayPSFBuilder(psf_size).build(input_filepaths)
+    image_psf, counts = ArrayPSFBuilder(psf_size).build(input_filepaths, hdu_choice=1, star_masks=masks)
     coords = calculate_covering(image_shape, psf_size)
     return ArrayPSFTransform.construct(image_psf, target.as_array_psf(coords, psf_size), alpha, epsilon)
 

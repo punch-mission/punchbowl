@@ -371,7 +371,14 @@ def decode_sqrt_by_table(data: np.ndarray | float, table: np.ndarray) -> np.ndar
 
 
 @punch_task
-def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCube:
+def decode_sqrt_data(data_object: NDCube,
+                     from_bits: int = 16,
+                     to_bits: int = 12,
+                     gain_left: float | None = 4.9,
+                     gain_right: float | None = 4.9,
+                     ccd_offset: float = 100,
+                     ccd_read_noise: float = 17,
+                     overwrite_table: bool = False) -> NDCube:
     """
     Prefect task in the pipeline to decode square root encoded data.
 
@@ -379,7 +386,19 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
     ----------
     data_object : NDCube
         the object you wish to decode
-    overwrite_table
+    from_bits : int | None
+        Specified bitrate of encoded image to unpack
+    to_bits : int | None
+        Specified bitrate of output data (decoded)
+    gain_left : float | None
+        CCD gain (left side of CCD) [photons / DN]
+    gain_right : float | None
+        CCD gain (right side of CCD) [photons / DN]
+    ccd_offset : float | None
+        CCD bias level [DN]
+    ccd_read_noise : float | None
+        CCD read noise level [DN]
+    overwrite_table : bool
         Toggle to regenerate and overwrite existing decoding table
 
     Returns
@@ -393,13 +412,14 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
 
     data = data_object.data
 
-    from_bits = data_object.meta["RAWBITS"].value
-    to_bits = data_object.meta["COMPBITS"].value
+    from_bits = from_bits if from_bits is not None else data_object.meta["RAWBITS"].value
+    to_bits = to_bits if to_bits is not None else data_object.meta["COMPBITS"].value
 
-    ccd_gain_left = data_object.meta["GAINLEFT"].value
-    ccd_gain_right = data_object.meta["GAINRGHT"].value
-    ccd_offset = data_object.meta["OFFSET"].value
-    ccd_read_noise = 17  # DN  # TODO: make this not a hardcoded value!
+    ccd_gain_left = gain_left if gain_left is not None else data_object.meta["GAINLEFT"].value
+    ccd_gain_right = gain_right if gain_right is not None else data_object.meta["GAINRGHT"].value
+    ccd_offset = ccd_offset if ccd_offset is not None else data_object.meta["OFFSET"].value
+    # TODO: make this not a hardcoded value!
+    ccd_read_noise = ccd_read_noise if ccd_read_noise is not None else 17  # DN
 
     decoded_data = decode_sqrt(
         data,

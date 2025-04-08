@@ -4,7 +4,7 @@
 
 ## Latest: unreleased
 
--
+- Updates code to match new regularizepsf version in https://github.com/punch-mission/punchbowl/pull/413
 
 ## Version 0.0.10: Apr 2, 2025
 

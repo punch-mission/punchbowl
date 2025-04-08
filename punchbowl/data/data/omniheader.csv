@@ -85,11 +85,11 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 7,section,COMMENT,Onboard Image Processing,,str,TRUE,TRUE,Onboard Image Processing
 7,keyword,RAWBITS,,[bits] raw image bits per pixel,int,TRUE,TRUE,
 7,keyword,COMPBITS,,[bits] compressed image bits per pixel,int,TRUE,TRUE,
-7,keyword,SCALE,,data scaling factor,float,TRUE,TRUE,
+7,keyword,SCALE,,data scaling factor,float,TRUE,TRUE,64
 7,keyword,SQRTCODE,,square-root coding table name,str,TRUE,TRUE,
 7,keyword,COMPRESS,,image compression type,str,TRUE,TRUE,
 7,keyword,COMP_RAT,,compressed/uncompressed data ratio,float,TRUE,TRUE,
-7,keyword,WASJPEG,,toggle indicating data JPEG downlink compression,bool,TRUE,TRUE,
+7,keyword,WASJPEG,,toggle indicating data JPEG downlink compression,int,TRUE,TRUE,1
 8,section,COMMENT,Calibration Data,,str,TRUE,TRUE,Calibration Data
 8,keyword,CALCF,,quartic fit filename,str,TRUE,TRUE,
 8,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,

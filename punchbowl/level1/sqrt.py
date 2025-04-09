@@ -100,6 +100,7 @@ def decode_sqrt(
     else:
         table_right = np.load(table_name_right)
 
+    data = data.copy()
     data[:,0:data.shape[1]//2] = decode_sqrt_by_table(data[:,0:data.shape[1]//2], table_left)
     data[:,data.shape[1]//2:] = decode_sqrt_by_table(data[:,data.shape[1]//2:], table_right)
 

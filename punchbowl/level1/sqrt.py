@@ -13,7 +13,6 @@ def decode_sqrt(
     data: np.ndarray | float,
     from_bits: int = 16,
     to_bits: int = 12,
-    scaling_factor: float = 64,
     ccd_gain_left: float = 4.9,
     ccd_gain_right: float = 4.9,
     ccd_offset: float = 100,
@@ -31,8 +30,6 @@ def decode_sqrt(
         Specified bitrate of encoded image to unpack
     to_bits
         Specified bitrate of output data (decoded)
-    scaling_factor
-        Data scaling factor in square root encoding
     ccd_gain_left
         CCD gain (left side of CCD) [e / DN]
     ccd_gain_right
@@ -101,10 +98,10 @@ def decode_sqrt(
         table_right = np.load(table_name_right)
 
     data = data.copy()
-    data[:,0:data.shape[1]//2] = decode_sqrt_by_table(data[:,0:data.shape[1]//2], table_left)
-    data[:,data.shape[1]//2:] = decode_sqrt_by_table(data[:,data.shape[1]//2:], table_right)
+    data[0:data.shape[1]//2,:] = decode_sqrt_by_table(data[0:data.shape[1]//2,:], table_left)
+    data[data.shape[1]//2:,:] = decode_sqrt_by_table(data[data.shape[1]//2:,:], table_right)
 
-    return data / scaling_factor
+    return data
 
 
 def encode_sqrt(data: np.ndarray | float, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:

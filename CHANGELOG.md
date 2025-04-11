@@ -4,7 +4,7 @@
 
 ## Latest: unreleased
 
--
+- Changes error message for default overwriting in https://github.com/punch-mission/punchbowl/pull/420
 
 ## Version 0.0.10: Apr 2, 2025
 

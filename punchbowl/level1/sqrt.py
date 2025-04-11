@@ -402,13 +402,10 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
     ccd_offset = data_object.meta["OFFSET"].value
     ccd_read_noise = 17  # DN  # TODO: make this not a hardcoded value!
 
-    scaling_factor = data_object.meta["SCALE"].value
-
     decoded_data = decode_sqrt(
         data,
         from_bits=from_bits,
         to_bits=to_bits,
-        scaling_factor=scaling_factor,
         ccd_gain_left=ccd_gain_left,
         ccd_gain_right=ccd_gain_right,
         ccd_offset=ccd_offset,

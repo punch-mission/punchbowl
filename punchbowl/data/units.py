@@ -69,6 +69,6 @@ def dn_to_msb(data: ndarray,
 def split_ccd_array(shape:tuple, value_left:float, value_right:float) -> ndarray:
     """Generate parameters across CCD halves."""
     array = np.zeros(shape)
-    array[:shape[1]//2, :] = value_left
-    array[shape[1]//2:, :] = value_right
+    array[:,:shape[1]//2] = value_left
+    array[:,shape[1]//2:] = value_right
     return array

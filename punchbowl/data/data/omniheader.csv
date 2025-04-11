@@ -52,6 +52,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
 6,section,COMMENT,Camera and Readout State,,str,TRUE,TRUE,Camera and Readout State
 6,keyword,DETECTOR,CCD 2Kx2K,CCD detector 2048x2048 pixels,str,TRUE,TRUE,CCD 2Kx2K
+6,keyword,COM_SET,,compression setting,int,TRUE,TRUE,
+6,keyword,ACQ_SET,,acquisition setting,int,TRUE,TRUE,
 6,keyword,EXPTIME,,[s] commanded exposure time,float,TRUE,TRUE,
 6,keyword,OBT_BEG,,MET when first pixel of first image received,float,TRUE,TRUE,
 6,keyword,OBT_END,,MET when first pixel of last image is received,float,TRUE,TRUE,
@@ -85,9 +87,11 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 7,section,COMMENT,Onboard Image Processing,,str,TRUE,TRUE,Onboard Image Processing
 7,keyword,RAWBITS,,[bits] raw image bits per pixel,int,TRUE,TRUE,
 7,keyword,COMPBITS,,[bits] compressed image bits per pixel,int,TRUE,TRUE,
+7,keyword,SCALE,,data scaling factor,float,TRUE,TRUE,64
 7,keyword,SQRTCODE,,square-root coding table name,str,TRUE,TRUE,
 7,keyword,COMPRESS,,image compression type,str,TRUE,TRUE,
 7,keyword,COMP_RAT,,compressed/uncompressed data ratio,float,TRUE,TRUE,
+7,keyword,WASJPEG,,toggle indicating data JPEG downlink compression,int,TRUE,TRUE,1
 8,section,COMMENT,Calibration Data,,str,TRUE,TRUE,Calibration Data
 8,keyword,CALCF,,quartic fit filename,str,TRUE,TRUE,
 8,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,
@@ -158,9 +162,9 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
 12,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
 13,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
-13,keyword,CEBSTAT,,Status to indicate if CEB telemetry packet is stale,str,TRUE,TRUE,
+13,keyword,CEBSTAT,,Status to indicate if CEB telemetry packet is stale,int,TRUE,TRUE,
 13,keyword,CEBTIME,,ContainsSpacwire time code,int,TRUE,TRUE,
-13,keyword,CEBWGS,,WGS_STATUS,str,TRUE,TRUE,
+13,keyword,CEBWGS,,WGS_STATUS,int,TRUE,TRUE,
 13,keyword,CEBFIFO,,Number of pixels in video FIFO (0-2047),int,TRUE,TRUE,
 13,keyword,CEBBIAS1,,CCD output drain bias (Analog 1),int,TRUE,TRUE,
 13,keyword,CEBBIAS2,,CCD dump drain bias (Analog 2),int,TRUE,TRUE,
@@ -187,9 +191,9 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 14,keyword,POSRAW2,,Resolver position - error correction applied (0-65000),int,TRUE,TRUE,
 14,keyword,READCNT,,Accumulative # of resolver reads (resets on boot),int,TRUE,TRUE,
 14,keyword,LMNSTEP,,Number of steps on last move (1-1199),int,TRUE,TRUE,
-14,keyword,LMTIME,,Current move execution time,int,TRUE,TRUE,
+14,keyword,LMTIME,,Current move execution time,float,TRUE,TRUE,
 14,keyword,LTSTEP,,Lifetime accumulative number of steps taken,int,TRUE,TRUE,
-14,keyword,LTTIME,,Lifetime accumulative execution time,int,TRUE,TRUE,
+14,keyword,LTTIME,,Lifetime accumulative execution time,float,TRUE,TRUE,
 14,keyword,FSMSTAT,,Controller FSM State,int,TRUE,TRUE,
 14,keyword,READSTAT,,READ Sub-FSM State,int,TRUE,TRUE,
 14,keyword,MOVSTAT,,MOVE Sub-FSM State,int,TRUE,TRUE,
@@ -200,7 +204,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 14,keyword,RESTOLC,,Resolver Tolerance,int,TRUE,TRUE,
 14,keyword,STEPSEL,,Stepper Motor Select,int,TRUE,TRUE,
 14,keyword,STEPDLY,,Stepper Motor Rate Delay,int,TRUE,TRUE,
-14,keyword,STEPRATE,,Stepper Motor Rate,int,TRUE,TRUE,
+14,keyword,STEPRATE,,Stepper Motor Rate,float,TRUE,TRUE,
 14,keyword,SHORTMV,,"Short Move(1-4 steps) Settling time before reading resolver",int,TRUE,TRUE,
 14,keyword,LONGMV,,"Long Move(5-1199 steps) Setting time before reading resolver",int,TRUE,TRUE,
 14,keyword,PFWOFF1,,Primary Step Offset 1,int,TRUE,TRUE,

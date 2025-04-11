@@ -13,6 +13,7 @@ def decode_sqrt(
     data: np.ndarray | float,
     from_bits: int = 16,
     to_bits: int = 12,
+    scaling_factor: float = 64,
     ccd_gain_left: float = 1 / 4.9,
     ccd_gain_right: float = 1 / 4.9,
     ccd_offset: float = 100,
@@ -30,6 +31,8 @@ def decode_sqrt(
         Specified bitrate of encoded image to unpack
     to_bits
         Specified bitrate of output data (decoded)
+    scaling_factor
+        Data scaling factor in square root encoding
     ccd_gain_left
         CCD gain (left side of CCD) [photons / DN]
     ccd_gain_right
@@ -100,7 +103,7 @@ def decode_sqrt(
     data[:,0:data.shape[1]//2] = decode_sqrt_by_table(data[:,0:data.shape[1]//2], table_left)
     data[:,data.shape[1]//2:] = decode_sqrt_by_table(data[:,data.shape[1]//2:], table_right)
 
-    return data
+    return data / scaling_factor
 
 
 def encode_sqrt(data: np.ndarray | float, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
@@ -401,10 +404,13 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
     ccd_offset = data_object.meta["OFFSET"].value
     ccd_read_noise = 17  # DN  # TODO: make this not a hardcoded value!
 
+    scaling_factor = data_object.meta["SCALE"].value
+
     decoded_data = decode_sqrt(
         data,
         from_bits=from_bits,
         to_bits=to_bits,
+        scaling_factor=scaling_factor,
         ccd_gain_left=ccd_gain_left,
         ccd_gain_right=ccd_gain_right,
         ccd_offset=ccd_offset,

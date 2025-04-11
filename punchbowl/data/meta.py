@@ -168,7 +168,7 @@ class MetaField:
         if isinstance(default, self._datatype) or default is None:
             self._default = default
         else:
-            msg = f"Value was {type(default)} but must be {self._default}."
+            msg = f"Value was {type(default)} but must be {self._datatype}."
             raise TypeError(msg)
 
     def __eq__(self, other: MetaField) -> bool:

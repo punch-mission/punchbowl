@@ -6,6 +6,7 @@
 
 - Updates code to match new regularizepsf version in https://github.com/punch-mission/punchbowl/pull/413
 - Adds the scale factor to the square root decoding in https://github.com/punch-mission/punchbowl/pull/418
+- Standardize square root decoding in https://github.com/punch-mission/punchbowl/pull/421
 
 ## Version 0.0.10: Apr 2, 2025
 

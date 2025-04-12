@@ -52,6 +52,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
 6,section,COMMENT,Camera and Readout State,,str,TRUE,TRUE,Camera and Readout State
 6,keyword,DETECTOR,CCD 2Kx2K,CCD detector 2048x2048 pixels,str,TRUE,TRUE,CCD 2Kx2K
+6,keyword,COM_SET,,compression setting,int,TRUE,TRUE,
+6,keyword,ACQ_SET,,acquisition setting,int,TRUE,TRUE,
 6,keyword,EXPTIME,,[s] commanded exposure time,float,TRUE,TRUE,
 6,keyword,OBT_BEG,,MET when first pixel of first image received,float,TRUE,TRUE,
 6,keyword,OBT_END,,MET when first pixel of last image is received,float,TRUE,TRUE,
@@ -160,9 +162,9 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
 12,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
 13,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
-13,keyword,CEBSTAT,,Status to indicate if CEB telemetry packet is stale,str,TRUE,TRUE,
+13,keyword,CEBSTAT,,Status to indicate if CEB telemetry packet is stale,int,TRUE,TRUE,
 13,keyword,CEBTIME,,ContainsSpacwire time code,int,TRUE,TRUE,
-13,keyword,CEBWGS,,WGS_STATUS,str,TRUE,TRUE,
+13,keyword,CEBWGS,,WGS_STATUS,int,TRUE,TRUE,
 13,keyword,CEBFIFO,,Number of pixels in video FIFO (0-2047),int,TRUE,TRUE,
 13,keyword,CEBBIAS1,,CCD output drain bias (Analog 1),int,TRUE,TRUE,
 13,keyword,CEBBIAS2,,CCD dump drain bias (Analog 2),int,TRUE,TRUE,

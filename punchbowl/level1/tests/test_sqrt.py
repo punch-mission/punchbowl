@@ -71,7 +71,6 @@ def test_encode_then_decode(from_bits, to_bits):
     ccd_gain_right = 1.0 / 4.9  # DN/electron
     ccd_offset = 100  # DN
     ccd_read_noise = 17  # DN
-    scale_factor = 64
 
     original_arr = (np.random.random([arr_dim, arr_dim]) * (2 ** from_bits)).astype(int)
 
@@ -90,7 +89,7 @@ def test_encode_then_decode(from_bits, to_bits):
 
     test_coords = np.where(original_arr > 150)
 
-    assert np.all(np.abs(original_arr[test_coords] - decoded_arr[test_coords]*scale_factor) <= noise_tolerance[test_coords])
+    assert np.all(np.abs(original_arr[test_coords] - decoded_arr[test_coords]) <= noise_tolerance[test_coords])
 
 
 def test_decode_sqrt_data_task(sample_punchdata):

@@ -13,9 +13,8 @@ def decode_sqrt(
     data: np.ndarray | float,
     from_bits: int = 16,
     to_bits: int = 12,
-    scaling_factor: float = 64,
-    ccd_gain_left: float = 1 / 4.9,
-    ccd_gain_right: float = 1 / 4.9,
+    ccd_gain_left: float = 4.9,
+    ccd_gain_right: float = 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
     overwrite_table: bool = False,
@@ -31,12 +30,10 @@ def decode_sqrt(
         Specified bitrate of encoded image to unpack
     to_bits
         Specified bitrate of output data (decoded)
-    scaling_factor
-        Data scaling factor in square root encoding
     ccd_gain_left
-        CCD gain (left side of CCD) [photons / DN]
+        CCD gain (left side of CCD) [e / DN]
     ccd_gain_right
-        CCD gain (right side of CCD) [photons / DN]
+        CCD gain (right side of CCD) [e / DN]
     ccd_offset
         CCD bias level [DN]
     ccd_read_noise
@@ -57,7 +54,7 @@ def decode_sqrt(
         + "_tb"
         + str(to_bits)
         + "_g"
-        + str(1 / ccd_gain_left)
+        + str(ccd_gain_left)
         + "_b"
         + str(ccd_offset)
         + "_r"
@@ -72,7 +69,7 @@ def decode_sqrt(
         + "_tb"
         + str(to_bits)
         + "_g"
-        + str(1 / ccd_gain_right)
+        + str(ccd_gain_right)
         + "_b"
         + str(ccd_offset)
         + "_r"
@@ -100,10 +97,11 @@ def decode_sqrt(
     else:
         table_right = np.load(table_name_right)
 
-    data[:,0:data.shape[1]//2] = decode_sqrt_by_table(data[:,0:data.shape[1]//2], table_left)
-    data[:,data.shape[1]//2:] = decode_sqrt_by_table(data[:,data.shape[1]//2:], table_right)
+    data = data.copy()
+    data[0:data.shape[1]//2,:] = decode_sqrt_by_table(data[0:data.shape[1]//2,:], table_left)
+    data[data.shape[1]//2:,:] = decode_sqrt_by_table(data[data.shape[1]//2:,:], table_right)
 
-    return data / scaling_factor
+    return data
 
 
 def encode_sqrt(data: np.ndarray | float, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
@@ -159,7 +157,7 @@ def decode_sqrt_simple(data: np.ndarray | float, from_bits: int = 16, to_bits: i
 
 def noise_pdf(
     data_value: np.ndarray | float,
-    ccd_gain: float = 1 / 4.9,
+    ccd_gain: float = 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
     n_sigma: int = 5,
@@ -173,7 +171,7 @@ def noise_pdf(
     data_value
         Input data value
     ccd_gain
-        CCD gain [DN / electron]
+        CCD gain [e/DN]
     ccd_offset
         CCD bias level [DN]
     ccd_read_noise
@@ -193,10 +191,10 @@ def noise_pdf(
 
     """
     # Use camera calibration to get an e-count
-    electrons = np.clip((data_value - ccd_offset) / ccd_gain, 1, None)
+    electrons = np.clip((data_value - ccd_offset) * ccd_gain, 1, None)
 
     # Shot noise, converted back to DN
-    poisson_sigma = np.sqrt(electrons) * ccd_gain
+    poisson_sigma = np.sqrt(electrons) / ccd_gain
 
     # Total sigma is quadrature sum of fixed & shot
     sigma = np.sqrt(poisson_sigma**2 + ccd_read_noise**2)
@@ -216,7 +214,7 @@ def mean_b_offset(
     data_value: float,
     from_bits: int = 16,
     to_bits: int = 12,
-    ccd_gain: float = 1 / 4.9,
+    ccd_gain: float = 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
 ) -> float:
@@ -232,7 +230,7 @@ def mean_b_offset(
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        CCD gain [DN / electron]
+        CCD gain [e/DN]
     ccd_offset
         CCD bias level [DN]
     ccd_read_noise
@@ -274,7 +272,7 @@ def decode_sqrt_corrected(
     data_value: float,
     from_bits: int = 16,
     to_bits: int = 12,
-    ccd_gain: float = 1 / 4.9,
+    ccd_gain: float = 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
 ) -> float:
@@ -290,7 +288,7 @@ def decode_sqrt_corrected(
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        CCD gain [DN / electron]
+        CCD gain [e/DN]
     ccd_offset
         CCD bias level [DN]
     ccd_read_noise
@@ -317,7 +315,7 @@ def decode_sqrt_corrected(
 def generate_decode_sqrt_table(
     from_bits: int = 16,
     to_bits: int = 12,
-    ccd_gain: float = 1 / 4.9,
+    ccd_gain: float = 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
 ) -> np.ndarray:
@@ -331,7 +329,7 @@ def generate_decode_sqrt_table(
     to_bits
         Specified bitrate of output data (decoded)
     ccd_gain
-        CCD gain [DN / electron]
+        CCD gain [e/DN]
     ccd_offset
         CCD bias level [DN]
     ccd_read_noise
@@ -404,13 +402,10 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
     ccd_offset = data_object.meta["OFFSET"].value
     ccd_read_noise = 17  # DN  # TODO: make this not a hardcoded value!
 
-    scaling_factor = data_object.meta["SCALE"].value
-
     decoded_data = decode_sqrt(
         data,
         from_bits=from_bits,
         to_bits=to_bits,
-        scaling_factor=scaling_factor,
         ccd_gain_left=ccd_gain_left,
         ccd_gain_right=ccd_gain_right,
         ccd_offset=ccd_offset,

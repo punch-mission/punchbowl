@@ -9,6 +9,7 @@ To run the sample notebooks contained within punchbowl, you must first create a 
 # %%
 # To run the sample notebooks contained within punchbowl, you must first create a Python environment. These days, it's recommended to have a local virtual environment for a project rather than a global configuration.
 # If using an environment for running Jupyter notebooks (Visual Studio Code, PyCharm, etc), this environment setup may be handled automatically or through UI prompts on notebook execution.
+# Note that for a full environment setup, including full PUNCH requirements, see the instructions linked at the [punch-mission README](https://github.com/punch-mission/punch-mission?tab=readme-ov-file#setting-up-the-punch-environment).
 
 # %%
 # To set up manually, start within a terminal, and navigate to the directory in which you want to work with notebooks.

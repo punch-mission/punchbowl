@@ -71,6 +71,7 @@ def level1_core_flow(
     deficient_pixel_max_window_size: int = 10,
     psf_model_path: str | Callable | None = None,
     output_filename: list[str] | None = None,
+    max_workers: int | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1."""
     logger = get_run_logger()
@@ -115,7 +116,8 @@ def level1_core_flow(
         data = destreak_task(data,
                              exposure_time=exposure_time,
                              reset_line_time=reset_line_time,
-                             readout_line_time=readout_line_time)
+                             readout_line_time=readout_line_time,
+                             max_workers=max_workers)
         data = correct_vignetting_task(data, vignetting_function_path)
         data = remove_deficient_pixels_task(data,
                                             deficient_pixel_map_path,
@@ -123,7 +125,7 @@ def level1_core_flow(
                                             max_window_size=deficient_pixel_max_window_size,
                                             method=deficient_pixel_method)
         data = remove_stray_light_task(data, stray_light_path)
-        data = correct_psf_task(data, psf_model_path)
+        data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
 
         observatory = int(data.meta["OBSCODE"].value)
         if observatory < 4:

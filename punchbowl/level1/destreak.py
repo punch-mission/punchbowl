@@ -1,6 +1,7 @@
 import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger
+from threadpoolctl import threadpool_limits
 
 from punchbowl.prefect import punch_task
 from punchbowl.util import validate_image_is_square
@@ -64,6 +65,7 @@ def correct_streaks(
     exposure_time: float,
     readout_line_time: float,
     reset_line_time: float,
+    max_workers: int | None = None,
 ) -> np.ndarray:
     """
     Corrects an image for streaks.
@@ -78,6 +80,8 @@ def correct_streaks(
         time to read out a line in consistent units (e.g. milliseconds) with exposure_time and reset_line time
     reset_line_time : float
         time to reset CCD in consistent units (e.g. milliseconds) with readout_line_time and exposure_time
+    max_workers : int
+        the number of worker threads to use. If None, defaults to the system CPU count
 
     Returns
     -------
@@ -102,19 +106,22 @@ def correct_streaks(
 
     """
     validate_image_is_square(image)
-    correction_matrix = streak_correction_matrix(image.shape[0], exposure_time, readout_line_time, reset_line_time)
-    return correction_matrix @ image
+    with threadpool_limits(max_workers):
+        correction_matrix = streak_correction_matrix(image.shape[0], exposure_time, readout_line_time, reset_line_time)
+        return correction_matrix @ image
 
 
 @punch_task
 def destreak_task(data_object: NDCube,
                   exposure_time: float = 1.0,
                   readout_line_time: float = 0.1,
-                  reset_line_time: float = 0.1) -> NDCube:
+                  reset_line_time: float = 0.1,
+                  max_workers: int | None = None) -> NDCube:
     """Prefect task to destreak an image."""
     logger = get_run_logger()
     logger.info("destreak started")
-    new_data = correct_streaks(data_object.data, exposure_time, readout_line_time, reset_line_time)
+    new_data = correct_streaks(
+        data_object.data, exposure_time, readout_line_time, reset_line_time, max_workers=max_workers)
     data_object.data[...] = new_data[...] * exposure_time
 
     # data_object.uncertainty.array[...] = correct_streaks(data_object.uncertainty.array,

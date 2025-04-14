@@ -9,6 +9,7 @@
 - Adds the scale factor to the square root decoding in https://github.com/punch-mission/punchbowl/pull/418
 - Standardize square root decoding in https://github.com/punch-mission/punchbowl/pull/421
 - Fixes to ensure vignetting correction runs in https://github.com/punch-mission/punchbowl/pull/423
+- Adds square root decoding example notebook in https://github.com/punch-mission/punchbowl/pull/425
 
 ## Version 0.0.10: Apr 2, 2025
 

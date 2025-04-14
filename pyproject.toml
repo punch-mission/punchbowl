@@ -29,6 +29,7 @@ dependencies = [
         "pylibjpeg[openjpeg]",
         "requests",
         "threadpoolctl",
+        "numexpr",
 ]
 requires-python = ">=3.11"
 authors = [

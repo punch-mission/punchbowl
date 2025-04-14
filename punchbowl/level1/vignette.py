@@ -1,6 +1,7 @@
 import os
 import pathlib
 import warnings
+from collections.abc import Callable
 
 from ndcube import NDCube
 from prefect import get_run_logger
@@ -17,7 +18,7 @@ from punchbowl.prefect import punch_task
 
 
 @punch_task
-def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.Path) -> NDCube:
+def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.Path | Callable | None) -> NDCube:
     """
     Prefect task to correct the vignetting of an image.
 
@@ -62,18 +63,20 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
     logger = get_run_logger()
     logger.info("correct_vignetting started")
 
-    if isinstance(vignetting_path, str):
-        vignetting_path = pathlib.Path(vignetting_path)
-
     if vignetting_path is None:
         data_object.meta.history.add_now("LEVEL1-correct_vignetting", "Vignetting skipped")
         msg=f"Calibration file {vignetting_path} is unavailable, vignetting correction not applied"
         warnings.warn(msg, NoCalibrationDataWarning)
-    elif not vignetting_path.exists():
-        msg = f"File {vignetting_path} does not exist."
-        raise InvalidDataError(msg)
     else:
-        vignetting_function = load_ndcube_from_fits(vignetting_path, include_provenance=False)
+        if isinstance(vignetting_path, Callable):
+            vignetting_function, vignetting_path = vignetting_path()
+        else:
+            if isinstance(vignetting_path, str):
+                vignetting_path = pathlib.Path(vignetting_path)
+            if not vignetting_path.exists():
+                msg = f"File {vignetting_path} does not exist."
+                raise InvalidDataError(msg)
+            vignetting_function = load_ndcube_from_fits(vignetting_path, include_provenance=False)
         vignetting_function_date = vignetting_function.meta.astropy_time
         observation_date = data_object.meta.astropy_time
         if abs((vignetting_function_date - observation_date).to("day").value) > 14:

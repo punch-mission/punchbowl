@@ -55,6 +55,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 6,keyword,COM_SET,,compression setting,int,TRUE,TRUE,
 6,keyword,ACQ_SET,,acquisition setting,int,TRUE,TRUE,
 6,keyword,EXPTIME,,[s] commanded exposure time,float,TRUE,TRUE,
+6,keyword,OFFSET,,commanded offset value used in camera,int,TRUE,TRUE,
 6,keyword,GAINLEFT,,gain value (left CCD side) [e/DN],float,TRUE,TRUE,
 6,keyword,GAINRGHT,,gain value (right CCD side) [e/DN],float,TRUE,TRUE,
 6,keyword,GAINCMDL,,commanded gain value (left CCD side) [e/DN],float,TRUE,TRUE,

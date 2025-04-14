@@ -2,7 +2,6 @@ import os.path
 
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger
 
 from punchbowl.prefect import punch_task
 
@@ -389,9 +388,6 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
         a modified version of the input with the data square root decoded
 
     """
-    logger = get_run_logger()
-    logger.info("square root decoding started")
-
     data = data_object.data
 
     from_bits = data_object.meta["RAWBITS"].value
@@ -414,7 +410,6 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
     )
     data_object.data[...] = decoded_data[...]  # TODO: we need to make sure the data type changes?
 
-    logger.info("square root decoding finished")
     data_object.meta.history.add_now("LEVEL0-decode-sqrt", "image square root decoded")
 
     return data_object

@@ -4,7 +4,6 @@ from collections.abc import Callable
 import numexpr as ne
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.prefect import punch_task
@@ -152,9 +151,6 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
     photometric_calibration
 
     """
-    logger = get_run_logger()
-    logger.info("perform_quartic_fit started")
-
     if quartic_coefficients_path is not None:
         if isinstance(quartic_coefficients_path, Callable):
             quartic_coefficients, quartic_coefficients_path = quartic_coefficients_path()
@@ -173,7 +169,5 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
         data_object.meta["CALCF"] = os.path.basename(quartic_coefficients_path)
     else:
         data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction skipped since path is empty")
-
-    logger.info("perform_quartic_fit finished")
 
     return data_object

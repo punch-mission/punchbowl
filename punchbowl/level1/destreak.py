@@ -1,6 +1,5 @@
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger
 from threadpoolctl import threadpool_limits
 
 from punchbowl.prefect import punch_task
@@ -118,8 +117,6 @@ def destreak_task(data_object: NDCube,
                   reset_line_time: float = 0.1,
                   max_workers: int | None = None) -> NDCube:
     """Prefect task to destreak an image."""
-    logger = get_run_logger()
-    logger.info("destreak started")
     new_data = correct_streaks(
         data_object.data, exposure_time, readout_line_time, reset_line_time, max_workers=max_workers)
     data_object.data[...] = new_data[...] * exposure_time
@@ -127,7 +124,6 @@ def destreak_task(data_object: NDCube,
     # data_object.uncertainty.array[...] = correct_streaks(data_object.uncertainty.array,
     #                                                 exposure_time, readout_line_time, reset_line_time) * exposure_time
 
-    logger.info("destreak finished")
     data_object.meta.history.add_now("LEVEL1-destreak", "image destreaked")
     data_object.meta.history.add_now("LEVEL1-destreak", f"exposure_time={exposure_time}")
     data_object.meta.history.add_now("LEVEL1-destreak", f"readout_line_time={readout_line_time}")

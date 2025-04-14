@@ -9,7 +9,7 @@ from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_
 from regularizepsf.util import calculate_covering
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.data.units import dn_to_msb
+from punchbowl.data.units import calculate_image_pixel_area, dn_to_msb
 from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 from punchbowl.level1.despike import despike_task
@@ -106,6 +106,8 @@ def level1_core_flow(
                        "wavelength": 530. * u.nm,
                        "exposure": 49 * u.s,
                        "aperture": 34 * u.mm ** 2}
+        pixel_scale = calculate_image_pixel_area(data.wcs, data.shape).to(u.sr) / u.pixel
+        scaling["pixel_scale"] = pixel_scale
         data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 

@@ -56,11 +56,13 @@ def dn_to_msb(data: ndarray,
               exposure: float = 49 * u.s,
               aperture: float = 34 * u.mm**2,
               pixel_area_stride: int = 1,
+              pixel_scale: u.Quantity = None,
               ) -> ndarray:
     """Convert DN to mean solar brightness."""
     energy_per_photon = (const.h * const.c / wavelength).to(u.J) / u.photon
     photon_flux = MSB / energy_per_photon
-    pixel_scale = calculate_image_pixel_area(data_wcs, data.shape, pixel_area_stride).to(u.sr) / u.pixel
+    if pixel_scale is None:
+        pixel_scale = calculate_image_pixel_area(data_wcs, data.shape, pixel_area_stride).to(u.sr) / u.pixel
     photon_count = (photon_flux * exposure * aperture * pixel_scale * u.pixel).decompose()
     gain = split_ccd_array(data.shape, gain_left, gain_right)
     return data * gain / photon_count

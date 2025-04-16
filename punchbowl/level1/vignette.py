@@ -92,7 +92,7 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
             msg = f"Incorrect vignetting function shape within {vignetting_path}"
             raise InvalidDataError(msg)
 
-        data_object.data[:, :] = data_object.data[:, :] / vignetting_function.data[:, :]
+        data_object.data[:, :] /= vignetting_function.data[:, :]
         data_object.uncertainty.array[:, :] /= vignetting_function.data[:, :]
         data_object.meta.history.add_now("LEVEL1-correct_vignetting",
                                          f"Vignetting corrected using {os.path.basename(str(vignetting_path))}")

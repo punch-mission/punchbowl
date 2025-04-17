@@ -273,10 +273,11 @@ class NormalizedMetadata(Mapping):
         """
         hdr = fits.Header()
         for section in self._contents:
-            hdr.append(
-                ("COMMENT", ("----- " + section + " ").ljust(72, "-")),
-                end=True,
-            )
+            if section != "FITS Required":
+                hdr.append(
+                    ("COMMENT", ("----- " + section + " ").ljust(72, "-")),
+                    end=True,
+                )
             # for normal sections
             for field in self._contents[section].values():
                 if field.value is not None:

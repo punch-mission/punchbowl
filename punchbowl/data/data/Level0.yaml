@@ -19,8 +19,7 @@ Level:
     Image Statistics and Properties:
         overrides:
             DSATVAL: 65535
-            BUNIT: sqrt(DN)
-        omits: [BSUN_DEF]
+            BUNIT: sqrt(DN), Units of observation
     Solar Reference Data:
     Spacecraft Location & Environment:
     Camera Electronics Board:

@@ -81,8 +81,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 8,keyword,CALPM,,bad pixel map filename,str,TRUE,TRUE,
 8,keyword,CALSL,,stray light model filename,str,TRUE,TRUE,
 9,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
-9,keyword,BUNIT,'W/(m2 sr)',Units of observation,str,TRUE,TRUE,Mean Solar Brightness
-9,keyword,BSUN_DEF,2.0090000E7,[W/m2/sr] Mean Solar Brightness,float,TRUE,TRUE,2.0090000E7
+9,keyword,BUNIT,'2.009e+07 W/(m2 sr)',Units of observation - Mean Solar Brightness,str,TRUE,TRUE,2.009e+07 W/(m2 sr)
 9,keyword,DATAZER,,number of pixels=0,int,TRUE,TRUE,
 9,keyword,DATASAT,,number of saturated pixels,int,TRUE,TRUE,
 9,keyword,DSATVAL,65535,saturation value in calibrated units,float,TRUE,TRUE,65535

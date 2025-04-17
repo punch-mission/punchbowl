@@ -1,0 +1,28 @@
+"1":
+    craftname: WFI-1
+    crafttype: WFI
+    obsname: PUNCH-1
+"2":
+    craftname: WFI-2
+    crafttype: WFI
+    obsname: PUNCH-2
+"3":
+    craftname: WFI-3
+    crafttype: WFI
+    obsname: PUNCH-3
+"4":
+    craftname: NFI-0
+    crafttype: WFI
+    obsname: PUNCH-4
+M:
+    craftname: WFI+NFI Mosaic
+    crafttype: Mosaic
+    obsname: PUNCH 1-2-3-4
+N:
+    craftname: NFI-0
+    crafttype: NFI
+    obsname: PUNCH-4
+T:
+    craftname: "test-0"
+    crafttype: "test"
+    obsname: "PUNCH-test"

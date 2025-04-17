@@ -1,0 +1,253 @@
+# Level specification
+Level:
+    FITS Required:
+        overrides:
+            BITPIX: -32
+    Documentation, Contact, and Collection Metadata:
+        overrides:
+            DESCRPTN: PUNCH Level-1 data, Calibrated instrumental units in camera coordinates
+    File Type and Provenance:
+        omits: [FILE_RAW]
+        overrides:
+            LEVEL: 1
+    Temporal Information:
+    Instrument and Spacecraft State:
+        omits: [OBSLAYR2, OBSLAYR3]
+    World Coordinate System:
+    Camera and Readout State:
+    Onboard Image Processing:
+    Calibration Data:
+    Image Statistics and Properties:
+    Solar Reference Data:
+    Spacecraft Location & Environment:
+    Fixity:
+    History:
+
+
+# Kind specifications
+Kinds:
+    Polarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+            POLARREF: 'Instrument'
+        omits: [NAXIS3]
+
+    Unpolarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+        omits: [NAXIS3]
+
+    Calibration:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 2048
+            NAXIS2: 2048
+        omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment, NAXIS3]
+
+    QuarticCalibration:
+        overrides:
+            NAXIS: 3
+            NAXIS1: 2048
+            NAXIS2: 2048
+            NAXIS3: 5
+            omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment]
+
+    PM:
+        overrides:
+            TYPECODE: PM
+            FILTER: P1
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            POLAR: -60
+
+    PZ:
+        overrides:
+            TYPECODE: PZ
+            FILTER: P2
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_Z
+            POLAR: 0
+
+    PP:
+        overrides:
+            TYPECODE: PP
+            FILTER: P3
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_P
+            POLAR: +60
+
+    CR:
+        overrides:
+            TYPECODE: CR
+            FILTER: Clear
+            OBS-MODE: Unpolarized
+            OBSLAYR1: Unpolarized
+            POLAR: -999
+
+
+# Product specifications
+Products:
+    PM?:
+        kinds: [Polarized, PM]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    PZ?:
+        kinds: [Polarized, PZ]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    PP?:
+        kinds: [Polarized, PP]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    CR?:
+        kinds: [Unpolarized, CR]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Clear Image
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+
+    BD?:
+        kinds: [Calibration]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Deficient Pixel Map
+            OBSTYPE: "{crafttype} deficient pixel map"
+            TYPECODE: BD
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    FQ?:
+        kinds: [QuarticCalibration]
+        overrides:
+            NAXIS: 3
+            NAXIS1: 2048
+            NAXIS2: 2048
+            NAXIS3: 5
+            TITLE: PUNCH Level-1 {craftname} Flat-field Parameter Map (quartic polynomial coefficients)
+            OBSTYPE: "{crafttype} flat-field parameter map (quartic polynomial coefficients)"
+            TYPECODE: FQ
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    GM?:
+        kinds: [Calibration, PM]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Vignetting Function
+            OBSTYPE: "{crafttype} vignetting function"
+            TYPECODE: GM
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    GZ?:
+        kinds: [Calibration, PZ]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Vignetting Function
+            OBSTYPE: "{crafttype} vignetting function"
+            TYPECODE: GZ
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    GP?:
+        kinds: [Calibration, PP]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Vignetting Function
+            OBSTYPE: "{crafttype} vignetting function"
+            TYPECODE: GP
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    GR?:
+        kinds: [Calibration, CR]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Vignetting Function
+            OBSTYPE: "{crafttype} vignetting function"
+            TYPECODE: GR
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    SM?:
+        kinds: [Calibration, PM]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
+            OBSTYPE: "{crafttype} additive stray light model"
+            TYPECODE: SM
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    SZ?:
+        kinds: [Calibration, PZ]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
+            OBSTYPE: "{crafttype} additive stray light model"
+            TYPECODE: SZ
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    SP?:
+        kinds: [Calibration, PP]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
+            OBSTYPE: "{crafttype} additive stray light model"
+            TYPECODE: SP
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    SR?:
+        kinds: [Calibration, CR]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Additive Stray Light Model
+            OBSTYPE: "{crafttype} additive stray light model"
+            TYPECODE: SR
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    RG?:
+        kinds: [Calibration]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Point Spread Function Model
+            OBSTYPE: "{crafttype} point spread function model"
+            TYPECODE: RG
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]

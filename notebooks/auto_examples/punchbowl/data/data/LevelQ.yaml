@@ -1,0 +1,103 @@
+# Level specification
+Level:
+    FITS Required:
+        overrides:
+            BITPIX: -32
+    Documentation, Contact, and Collection Metadata:
+        overrides:
+            DESCRPTN: PUNCH QuickPUNCH data, Composite mosaic in output coordinates
+    File Type and Provenance:
+        omits: [FILE_RAW]
+        overrides:
+            LEVEL: Q
+            OBSRVTRY: PUNCH
+    Temporal Information:
+    Instrument and Spacecraft State:
+    World Coordinate System:
+    Image Statistics and Properties:
+    Solar Reference Data:
+    Spacecraft Location & Environment:
+        omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]
+    Fixity:
+    History:
+
+
+# Kind specifications
+Kinds:
+    Polarized:
+        overrides:
+            NAXIS: 3
+            NAXIS1: 4096
+            NAXIS2: 4096
+            NAXIS3: 3
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            OBSLAYR2: Polar_Z
+            OBSLAYR3: Polar_P
+            POLARREF: 'Solar'
+        omits: [FILTER, POLAR]
+
+    Unpolarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+            OBS-MODE: Unpolarized
+            POLAR: -999
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+
+    Calibration:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+        omits: [Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+
+
+# Product specifications
+Products:
+    CFM:
+        kinds: [Unpolarized, Calibration]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-2 Unpolarized QuickPUNCH Mosaic F-Corona Model
+            OBSTYPE: Unpolarized quicklook mosaic F-corona model
+            TYPECODE: CF
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+    CFN:
+        kinds: [Unpolarized, Calibration]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-2 Unpolarized QuickPUNCH NFI F-Corona Model
+            OBSTYPE: Unpolarized NFI quicklook F-corona model
+            TYPECODE: CF
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: N
+
+    CTM:
+        kinds: [Unpolarized]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-2 Unpolarized QuickPUNCH Mosaic
+            OBSTYPE: Unpolarized quicklook mosaic
+            TYPECODE: CT
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+    CNN:
+        kinds: [Unpolarized]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-2 Unpolarized QuickPUNCH NFI Image
+            OBSTYPE: Unpolarized NFI quicklook image
+            TYPECODE: CN
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: N

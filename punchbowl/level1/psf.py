@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from collections.abc import Callable
 
 import numpy as np
 import reproject
@@ -100,9 +101,10 @@ def generate_projected_psf(
 def correct_psf(
     data: NDCube,
     psf_transform: ArrayPSFTransform,
+    max_workers: int | None = None,
 ) -> NDCube:
     """Correct PSF."""
-    new_data = psf_transform.apply(data.data)
+    new_data = psf_transform.apply(data.data, workers=max_workers)
 
     data.data[...] = new_data[...]
     # TODO: uncertainty propagation
@@ -111,7 +113,8 @@ def correct_psf(
 @punch_task
 def correct_psf_task(
     data_object: NDCube,
-    model_path: str | None = None,
+    model_path: str | Callable | None = None,
+    max_workers: int | None = None,
 ) -> NDCube:
     """
     Prefect Task to correct the PSF of an image.
@@ -122,6 +125,8 @@ def correct_psf_task(
         data to operate on
     model_path : str
         path to the PSF model to use in the correction
+    max_workers : int
+        the maximum number of worker threads to use
 
     Returns
     -------
@@ -133,8 +138,11 @@ def correct_psf_task(
     logger.info("correct_psf started")
 
     if model_path is not None:
-        corrector = ArrayPSFTransform.load(Path(model_path))
-        data_object = correct_psf(data_object, corrector)
+        if isinstance(model_path, Callable):
+            corrector, model_path = model_path()
+        else:
+            corrector = ArrayPSFTransform.load(Path(model_path))
+        data_object = correct_psf(data_object, corrector, max_workers)
         data_object.meta.history.add_now("LEVEL1-correct_psf",
                                          f"PSF corrected with {os.path.basename(model_path)} model")
         data_object.meta["CALPSF"] = os.path.basename(model_path)

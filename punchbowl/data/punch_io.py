@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import os
 import hashlib
 import os.path
 import subprocess
 from pathlib import Path
 
 import astropy.units as u
+import lxml.etree as et
 import numpy as np
 from astropy.io import fits
+from astropy.io.fits import Header
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from glymur import Jp2k, jp2box
 from matplotlib.colors import LogNorm
 from ndcube import NDCube
 from PIL import Image, ImageDraw, ImageFont
@@ -42,6 +46,38 @@ def get_base_file_name(cube: NDCube) -> str:
     file_version = cube.meta["FILEVRSN"].value
     file_version = "1" if file_version == "" else file_version  # file version should never be empty!
     return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string + "_v" + file_version
+
+
+def _header_to_xml(header: Header) -> et.Element:
+    """
+    Convert image header metadata into an XML Tree that can be inserted into a JPEG2000 file header.
+
+    (Helper function adapted from SunPy)
+    """
+    fits = et.Element("fits")
+    already_added = set()
+    for key in header:
+        if (key in already_added):
+            continue
+        already_added.add(key)
+        el = et.SubElement(fits, key)
+        data = header.get(key)
+        data = ("1" if data else "0") if isinstance(data, bool) else str(data)
+        el.text = data
+    return fits
+
+
+def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
+    """
+    Generate the JPEG2000 XML box to be inserted into the JPEG2000 file.
+
+    (Helper function adapted from SunPy)
+    """
+    header_xml = _header_to_xml(header)
+    meta = et.Element("meta")
+    meta.append(header_xml)
+    tree = et.ElementTree(meta)
+    return jp2box.XMLBox(xml=tree)
 
 
 def write_ndcube_to_quicklook(cube: NDCube,
@@ -98,7 +134,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
         pad_height = int(image.shape[1] * 50 / 2048)
         padded_image = Image.new("RGB", (pil_image.width, pil_image.height + pad_height))
 
-        padded_image.paste(pil_image, (0, 0))  # copies the original image data into the padded image
+        padded_image.paste(pil_image, (0, 0))
 
         draw = ImageDraw.Draw(padded_image)
         font = ImageFont.load_default(size=int(pad_height / 2))
@@ -109,7 +145,16 @@ def write_ndcube_to_quicklook(cube: NDCube,
         draw.text(text_position, text, font=font, fill=(255, 255, 255))
         pil_image = padded_image
 
-    pil_image.save(filename)
+    arr_image = np.array(pil_image)
+
+    tmp_filename = f"{filename}tmp.jp2"
+    jp2 = Jp2k(tmp_filename, arr_image)
+    meta_boxes = jp2.box
+    target_index = len(meta_boxes) - 1
+    fits_box = _generate_jp2_xmlbox(cube.meta.to_fits_header(wcs=cube.wcs))
+    meta_boxes.insert(target_index, fits_box)
+    jp2.wrap(filename, boxes=meta_boxes)
+    os.remove(tmp_filename)
 
 
 def write_quicklook_to_mp4(files: list[str],

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import string
 import hashlib
 import os.path
 import subprocess
@@ -40,9 +41,17 @@ def get_base_file_name(cube: NDCube) -> str:
     type_code = cube.meta["TYPECODE"].value
     date_string = cube.meta.datetime.strftime("%Y%m%d%H%M%S")
     file_version = cube.meta["FILEVRSN"].value
-    file_version = "1" if file_version == "" else file_version  # file version should never be empty!
+    file_version = "?" if file_version == "" else file_version  # file version should never be empty!
     return "PUNCH_L" + file_level + "_" + type_code + obscode + "_" + date_string + "_v" + file_version
 
+
+
+class DefaultFormatter(string.Formatter):
+    def get_field(self, field_name, args, kwargs):
+        try:
+            return super().get_field(field_name, args, kwargs)
+        except (KeyError, AttributeError, IndexError):
+            return "{" + field_name + "}", ()
 
 def write_ndcube_to_quicklook(cube: NDCube,
                               filename: str,
@@ -103,7 +112,8 @@ def write_ndcube_to_quicklook(cube: NDCube,
         draw = ImageDraw.Draw(padded_image)
         font = ImageFont.load_default(size=int(pad_height / 2))
 
-        text = annotation.format(**cube.meta)
+        formatter = DefaultFormatter()
+        text = formatter.format(annotation, **cube.meta)
         text_offset = int(10 * image.shape[1] / 2048)
         text_position = (text_offset, pil_image.height + text_offset)
         draw.text(text_position, text, font=font, fill=(255, 255, 255))
@@ -163,6 +173,7 @@ def write_ndcube_to_fits(cube: NDCube,
             _update_statistics(cube)
 
         full_header = cube.meta.to_fits_header(wcs=cube.wcs)
+        full_header["FILENAME"] = filename
 
         hdu_data = fits.CompImageHDU(data=cube.data,
                                      header=full_header,

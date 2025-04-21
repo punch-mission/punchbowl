@@ -146,7 +146,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 13,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
 13,keyword,CEBTIME,,Time of CEB packet,str,TRUE,TRUE,
 13,keyword,CEBSTAT,,Status to indicate if CEB telemetry packet is stale,int,TRUE,TRUE,
-13,keyword,CEBTIME,,ContainsSpacwire time code,int,TRUE,TRUE,
 13,keyword,CEBWGS,,WGS_STATUS,int,TRUE,TRUE,
 13,keyword,CEBFIFO,,Number of pixels in video FIFO (0-2047),int,TRUE,TRUE,
 13,keyword,CEBBIAS1,,CCD output drain bias (Analog 1),int,TRUE,TRUE,

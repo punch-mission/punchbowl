@@ -12,6 +12,7 @@
 - Adds square root decoding example notebook in https://github.com/punch-mission/punchbowl/pull/425
 - Allows L1 calibration files to be passed in as callables in https://github.com/punch-mission/punchbowl/pull/426
 - Speedups to L1 production in https://github.com/punch-mission/punchbowl/pull/426
+- Modifies metadata for header / unit compliance in https://github.com/punch-mission/punchbowl/pull/427
 
 ## Version 0.0.10: Apr 2, 2025
 

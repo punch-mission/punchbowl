@@ -1,8 +1,9 @@
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from astropy.io import fits
+from astropy.wcs import WCS
 
 from punchbowl.data.history import HistoryEntry
 from punchbowl.data.meta import MetaField, NormalizedMetadata, construct_all_product_codes, load_spacecraft_def
@@ -204,3 +205,25 @@ def test_construct_all_product_codes():
     codes = construct_all_product_codes(level="0")
     assert isinstance(codes, list)
     assert len(codes) == 36
+
+
+def test_fits_header_compliance():
+    code="PM1"
+    level="0"
+
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.1, 0.1
+    wcs.wcs.crpix = 0, 0
+    wcs.wcs.crval = 1, 1
+    wcs.wcs.cname = "HPC lon", "HPC lat"
+
+    m = NormalizedMetadata.load_template(code, level)
+
+    m["DATE-OBS"] = str(datetime.now(UTC))
+    m["DATE-END"] = str(datetime.now(UTC))
+
+    h = m.to_fits_header(wcs = wcs)
+
+    assert h[0] == 'T'

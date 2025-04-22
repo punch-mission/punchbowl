@@ -106,7 +106,7 @@ def level1_core_flow(
                        "wavelength": 530. * u.nm,
                        "exposure": 49 * u.s,
                        "aperture": 34 * u.mm ** 2}
-        pixel_scale = calculate_image_pixel_area(data.wcs, data.shape).to(u.sr) / u.pixel
+        pixel_scale = calculate_image_pixel_area(data.wcs, data.data.shape).to(u.sr) / u.pixel
         scaling["pixel_scale"] = pixel_scale
         data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)

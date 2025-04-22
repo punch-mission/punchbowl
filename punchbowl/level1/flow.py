@@ -82,7 +82,8 @@ def level1_core_flow(
     for i, this_data in enumerate(input_data):
         data = load_image_task(this_data) if isinstance(this_data, str) else this_data
 
-        data = decode_sqrt_data(data)
+        if data.meta["ISSQRT"].value:
+            data = decode_sqrt_data(data)
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,

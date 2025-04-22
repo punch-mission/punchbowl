@@ -60,6 +60,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 6,keyword,GAINRGHT,,gain value (right CCD side) [e/DN],float,TRUE,TRUE,
 6,keyword,GAINCMDL,,commanded gain value (left CCD side) [e/DN],float,TRUE,TRUE,
 6,keyword,GAINCMDR,,commanded gain value (right CCD side) [e/DN],float,TRUE,TRUE,
+6,keyword,CCDTEMP,,CCD temperature [deg C],float,TRUE,TRUE,
 7,section,COMMENT,Onboard Image Processing,,str,TRUE,TRUE,Onboard Image Processing
 7,keyword,RAWBITS,,[bits] raw image bits per pixel,int,TRUE,TRUE,
 7,keyword,COMPBITS,,[bits] compressed image bits per pixel,int,TRUE,TRUE,

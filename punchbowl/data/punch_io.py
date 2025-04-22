@@ -151,7 +151,9 @@ def write_ndcube_to_quicklook(cube: NDCube,
     jp2 = Jp2k(tmp_filename, arr_image)
     meta_boxes = jp2.box
     target_index = len(meta_boxes) - 1
-    fits_box = _generate_jp2_xmlbox(cube.meta.to_fits_header(wcs=cube.wcs))
+    header = cube.meta.to_fits_header(wcs=cube.wcs)
+    header.remove("COMMENT", ignore_missing=True, remove_all=True)
+    fits_box = _generate_jp2_xmlbox(header)
     meta_boxes.insert(target_index, fits_box)
     jp2.wrap(filename, boxes=meta_boxes)
     os.remove(tmp_filename)

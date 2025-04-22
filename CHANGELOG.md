@@ -2,6 +2,10 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Unreleased
+
+- L1 speedups, L2 reprojection fix, and accepting ints for `float` fields in `NormalizedMetadata` in https://github.com/punch-mission/punchbowl/pull/435
+
 ## Version 0.0.11: Apr 14, 2025
 
 - Changes error message for default overwriting in https://github.com/punch-mission/punchbowl/pull/420

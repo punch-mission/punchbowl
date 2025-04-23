@@ -4,6 +4,7 @@ import string
 import hashlib
 import os.path
 import subprocess
+from typing import Any
 from pathlib import Path
 
 import astropy.units as u
@@ -47,7 +48,10 @@ def get_base_file_name(cube: NDCube) -> str:
 
 
 class DefaultFormatter(string.Formatter):
-    def get_field(self, field_name, args, kwargs):
+    """A formatter that doesn't fail if a keyword is missing. Used for quicklook."""
+
+    def get_field(self, field_name: str, args: Any, kwargs: Any) -> str:
+        """Provide a special getter that returns the name if it fails."""
         try:
             return super().get_field(field_name, args, kwargs)
         except (KeyError, AttributeError, IndexError):

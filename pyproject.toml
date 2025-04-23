@@ -29,7 +29,8 @@ dependencies = [
         "pylibjpeg[openjpeg]",
         "requests",
         "threadpoolctl",
-        "glymur"
+        "glymur",
+        "lxml"
 ]
 requires-python = ">=3.11"
 authors = [

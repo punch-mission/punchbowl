@@ -156,7 +156,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,PLTBINS,,Number of azimuthal bins in the output flow maps,int,TRUE,TRUE,
 12,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
 12,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
-
 13,section,COMMENT,Polarizing Filter Wheel,,str,TRUE,TRUE,Polarizing Filter Wheel
 13,keyword,PFWSTAT,,"Current PFW Status (0 - no error, else error)",int,TRUE,TRUE,
 13,keyword,STEPCALC,,Calculated step (0-1199),int,TRUE,TRUE,

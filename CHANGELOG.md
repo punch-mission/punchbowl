@@ -10,7 +10,6 @@
 - Checks for square root decompression in L1 processing in https://github.com/punch-mission/punchbowl/pull/434
 - Modifies metadata for header / unit compliance in https://github.com/punch-mission/punchbowl/pull/427
 
-
 ## Version 0.0.11: Apr 14, 2025
 
 - Changes error message for default overwriting in https://github.com/punch-mission/punchbowl/pull/420

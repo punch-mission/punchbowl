@@ -7,7 +7,7 @@ Level:
         overrides:
             DESCRPTN: PUNCH Level-1 data, Calibrated instrumental units in camera coordinates
     File Type and Provenance:
-        omits: [FILE_RAW]
+        omits: []
         overrides:
             LEVEL: 1
     Temporal Information:

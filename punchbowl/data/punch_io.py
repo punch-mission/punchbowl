@@ -138,6 +138,9 @@ def write_quicklook_to_mp4(files: list[str],
     input_sequence = f"concat:{'|'.join(files)}"
 
     ffmpeg_command = [
+        "/bin/bash",  # handles ffmpeg defined as an alias via https://stackoverflow.com/a/25099813
+        "-i",
+        "-c",
         "ffmpeg",
         "-framerate", str(framerate),
         "-i", input_sequence,

@@ -2,7 +2,7 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-# Unreleased 
+# Unreleased
 
 - Allows L1 calibration files to be passed in as callables in https://github.com/punch-mission/punchbowl/pull/426
 - Speedups to L1 production in https://github.com/punch-mission/punchbowl/pull/426

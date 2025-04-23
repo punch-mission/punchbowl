@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import string
 import os
+import string
 import hashlib
 import os.path
 import subprocess

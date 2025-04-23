@@ -116,7 +116,9 @@ def write_quicklook_to_mp4(files: list[str],
                            filename: str,
                            framerate: int = 5,
                            resolution: int = 1024,
-                           codec: str = "libx264") -> None:
+                           codec: str = "libx264",
+                           ffmpeg_cmd: str = "ffmpeg",
+                           ) -> None:
     """
     Write a list of input quicklook jpeg2000 files to an output mp4 animation.
 
@@ -133,15 +135,14 @@ def write_quicklook_to_mp4(files: list[str],
     codec : str, optional
         Codec to use for encoding. For GPU acceleration.
         "h264_videotoolbox" can be used on ARM Macs, "h264_nvenc" can be used on Intel machines.
+    ffmpeg_cmd : str
+        path to the ffmpeg executable
 
     """
     input_sequence = f"concat:{'|'.join(files)}"
 
     ffmpeg_command = [
-        "/bin/bash",  # handles ffmpeg defined as an alias via https://stackoverflow.com/a/25099813
-        "-i",
-        "-c",
-        "ffmpeg",
+        ffmpeg_cmd,
         "-framerate", str(framerate),
         "-i", input_sequence,
         "-vf", f"scale=-1:{resolution}",

@@ -2,10 +2,11 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-# Unreleased
+## Unreleased
 
 - Allows L1 calibration files to be passed in as callables in https://github.com/punch-mission/punchbowl/pull/426
 - Speedups to L1 production in https://github.com/punch-mission/punchbowl/pull/426
+- Adds metadata to output jpeg2000 files in https://github.com/punch-mission/punchbowl/pull/433
 - Checks for square root decompression in L1 processing in https://github.com/punch-mission/punchbowl/pull/434
 - Modifies metadata for header / unit compliance in https://github.com/punch-mission/punchbowl/pull/427
 
@@ -17,7 +18,6 @@
 - Standardize square root decoding in https://github.com/punch-mission/punchbowl/pull/421
 - Fixes to ensure vignetting correction runs in https://github.com/punch-mission/punchbowl/pull/423
 - Adds square root decoding example notebook in https://github.com/punch-mission/punchbowl/pull/425
-
 
 ## Version 0.0.10: Apr 2, 2025
 

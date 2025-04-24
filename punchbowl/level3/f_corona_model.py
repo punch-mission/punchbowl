@@ -12,7 +12,6 @@ from quadprog import solve_qp
 from scipy.interpolate import griddata
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
@@ -284,7 +283,6 @@ def construct_polarized_f_corona_model(filenames: list[str],
                                                p_model_fcorona], axis=0),
                                 meta=meta,
                                 wcs=trefoil_3d_wcs)
-    output_cube = set_spacecraft_location_to_earth(output_cube)
 
     return [output_cube]
 

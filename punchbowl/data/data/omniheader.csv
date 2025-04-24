@@ -25,7 +25,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 2,keyword,OBSCODE,,Observatory spacecraft code,str,TRUE,TRUE,
 2,keyword,PIPEVRSN,,punchbowl software version number,str,TRUE,TRUE,
 2,keyword,FILEVRSN,,File version number,str,FALSE,TRUE,0
-2,keyword,FILE_RAW,,Raw telemetry filename,str,TRUE,TRUE,
 2,keyword,ORIGIN,SwRI,Institution responsible for creating the file,str,TRUE,TRUE,SwRI
 3,section,COMMENT,Temporal Information,,str,TRUE,TRUE,Temporal Information
 3,keyword,TIMESYS,UTC,Principal time system,str,TRUE,TRUE,UTC
@@ -105,6 +104,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 10,keyword,SOLAR_EP,,[deg] S/C ecliptic North to solar North angle,float,TRUE,TRUE,
 10,keyword,CAR_ROT,,Carrington Rotation number,float,TRUE,TRUE,
 11,section,COMMENT,Spacecraft Location & Environment,,str,TRUE,TRUE,Spacecraft Location & Environment
+11,keyword,XACTTIME,,Time of XACT packet,str,TRUE,TRUE,
 11,keyword,GEOD_LAT,,[deg] S/C sub-point geodetic latitude,float,TRUE,TRUE,
 11,keyword,GEOD_LON,,[deg] S/C sub-point geodetic longitude,float,TRUE,TRUE,
 11,keyword,GEOD_ALT,,[m] S/C WGS84 altitude,float,TRUE,TRUE,
@@ -143,8 +143,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
 12,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
 13,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
+13,keyword,CEBTIME,,Time of CEB packet,str,TRUE,TRUE,
 13,keyword,CEBSTAT,,Status to indicate if CEB telemetry packet is stale,int,TRUE,TRUE,
-13,keyword,CEBTIME,,ContainsSpacwire time code,int,TRUE,TRUE,
 13,keyword,CEBWGS,,WGS_STATUS,int,TRUE,TRUE,
 13,keyword,CEBFIFO,,Number of pixels in video FIFO (0-2047),int,TRUE,TRUE,
 13,keyword,CEBBIAS1,,CCD output drain bias (Analog 1),int,TRUE,TRUE,
@@ -162,6 +162,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 13,keyword,CEBSEDAC,,Single-bit EDAC,int,TRUE,TRUE,
 13,keyword,CEBMEDAC,,Multi-bit EDAC,int,TRUE,TRUE,
 14,section,COMMENT,Polarizing Filter Wheel,,str,TRUE,TRUE,Polarizing Filter Wheel
+14,keyword,PFWTIME,,Time of PFW packet,str,TRUE,TRUE,
 14,keyword,PFWSTAT,,"Current PFW Status (0 - no error, else error)",int,TRUE,TRUE,
 14,keyword,STEPCALC,,Calculated step (0-1199),int,TRUE,TRUE,
 14,keyword,CMDSTEPS,,Commanded number of steps (1-1199),int,TRUE,TRUE,
@@ -209,6 +210,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 14,keyword,RPFWPOS4,,Redundant Resolver Position 4,int,TRUE,TRUE,
 14,keyword,RPFWPOS5,,Redundant Resolver Position 5,int,TRUE,TRUE,
 15,section,COMMENT,LED Status,,str,TRUE,TRUE,LED Status
+15,keyword,LEDTIME,,Time of LED packet,str,TRUE,TRUE,
 15,keyword,LED1STAT,,LED1 Activation State,int,TRUE,TRUE,
 15,keyword,LEDPLSN,,LED Number of Pulses,int,TRUE,TRUE,
 15,keyword,LED2STAT,,LED2 Activation State,int,TRUE,TRUE,

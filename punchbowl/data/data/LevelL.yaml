@@ -7,7 +7,7 @@ Level:
         overrides:
             DESCRPTN: PUNCH QuickLook data, Composite mosaic in output coordinates
     File Type and Provenance:
-        omits: [FILE_RAW]
+        omits: []
         overrides:
             LEVEL: L
             OBSRVTRY: PUNCH

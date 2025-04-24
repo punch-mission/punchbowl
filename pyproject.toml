@@ -29,6 +29,7 @@ dependencies = [
         "pylibjpeg[openjpeg]",
         "requests",
         "threadpoolctl",
+        "numexpr",
         "glymur",
         "lxml"
 ]

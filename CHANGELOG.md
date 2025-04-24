@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- L1 speedups, L2 reprojection fix, and accepting ints for `float` fields in `NormalizedMetadata` in https://github.com/punch-mission/punchbowl/pull/435
 - Allows custom path for ffmpeg in quicklook movies in https://github.com/punch-mission/punchbowl/pull/438
 - Allows L1 calibration files to be passed in as callables in https://github.com/punch-mission/punchbowl/pull/426
 - Speedups to L1 production in https://github.com/punch-mission/punchbowl/pull/426

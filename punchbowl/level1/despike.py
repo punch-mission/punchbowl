@@ -1,6 +1,5 @@
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger
 from scipy.signal import convolve2d, medfilt2d
 
 from punchbowl.level1.deficient_pixel import cell_neighbors
@@ -117,13 +116,10 @@ def despike_task(data_object: NDCube,
         a modified version of the input with spikes removed
 
     """
-    logger = get_run_logger()
-    logger.info("despike started")
     data_object.data[...], spikes = spikejones(
         data_object.data[...], unsharp_size=unsharp_size, method=method, alpha=alpha, dilation=dilation,
     )
     data_object.uncertainty.array[spikes] = np.inf
-    logger.info("despike finished")
     data_object.meta.history.add_now("LEVEL1-despike", "image despiked")
     data_object.meta.history.add_now("LEVEL1-despike", f"method={method}")
     data_object.meta.history.add_now("LEVEL1-despike", f"unsharp_size={unsharp_size}")

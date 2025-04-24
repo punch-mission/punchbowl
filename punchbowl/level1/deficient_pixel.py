@@ -3,7 +3,6 @@ import os
 import numpy as np
 from ndcube import NDCube
 from numpy.lib.stride_tricks import as_strided
-from prefect import get_run_logger
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.prefect import punch_task
@@ -175,9 +174,6 @@ def remove_deficient_pixels_task(
         A background subtracted data frame
 
     """
-    logger = get_run_logger()
-    logger.info("remove_deficient_pixels started")
-
     if deficient_pixel_map_path is None:
         output_object = data
         output_object.meta.history.add_now("LEVEL1-remove_deficient_pixels",
@@ -192,7 +188,6 @@ def remove_deficient_pixels_task(
                                                 max_window_size=max_window_size,
                                                 method=method)
         output_object.meta["CALPM"] = os.path.basename(deficient_pixel_map_path)
-        logger.info("remove_deficient_pixels finished")
         output_object.meta.history.add_now("LEVEL1-remove_deficient_pixels", "deficient pixels removed")
 
     return output_object

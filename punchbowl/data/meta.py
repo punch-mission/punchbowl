@@ -152,7 +152,7 @@ class MetaField:
         if not self._mutable:
             msg = "Cannot mutate this value because it is set to immutable."
             raise RuntimeError(msg)
-        if isinstance(value, self._datatype) or value is None:
+        if self._type_matches(value, self._datatype) or value is None:
             self._value = value
         else:
             msg = f"Value of {self.keyword} was {type(value)} but must be {self._datatype}."
@@ -165,11 +165,17 @@ class MetaField:
 
     @default.setter
     def default(self, default: ValueType) -> None:
-        if isinstance(default, self._datatype) or default is None:
+        if self._type_matches(default, self._datatype) or default is None:
             self._default = default
         else:
             msg = f"Value was {type(default)} but must be {self._datatype}."
             raise TypeError(msg)
+
+    @staticmethod
+    def _type_matches(value: ValueType, field_type: t.Any) -> bool:
+        if isinstance(value, field_type):
+            return True
+        return field_type is float and isinstance(value, int)
 
     def __eq__(self, other: MetaField) -> bool:
         """Check equality."""

@@ -3,7 +3,6 @@ import numpy as np
 import reproject
 from astropy.wcs import WCS
 from ndcube import NDCube
-from sunpy.coordinates import sun
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from punchbowl.prefect import punch_flow, punch_task
@@ -45,8 +44,6 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
 
     celestial_source = calculate_celestial_wcs_from_helio(input_wcs, time, output_shape)
     celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape)
-
-    celestial_source.wcs.set_pv([(2, 1, (-sun.earth_distance(time) / sun.constants.radius).decompose().value)])
 
     # When we build mosaics, each input image fills only a portion (less than half) of the output frame. When we
     # reproject, we don't want it spending time looping over all those empty pixels, calculating coordinates,

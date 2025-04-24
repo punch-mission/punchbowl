@@ -4,7 +4,6 @@ from collections.abc import Callable
 import numpy as np
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect import get_run_logger
 from thuban.pointing import refine_pointing
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
@@ -29,8 +28,6 @@ def align_task(data_object: NDCube, mask: Callable | None = None) -> NDCube:
         a modified version of the input with the WCS more accurately determined
 
     """
-    logger = get_run_logger()
-    logger.info("alignment started")
     saved_wcs = copy.deepcopy(data_object.wcs)
     celestial_input = calculate_celestial_wcs_from_helio(copy.deepcopy(data_object.wcs),
                                                          data_object.meta.astropy_time,
@@ -63,7 +60,6 @@ def align_task(data_object: NDCube, mask: Callable | None = None) -> NDCube:
         saved_header[key] = recovered_header[key]
     recovered_wcs = WCS(saved_header, saved_wcs_fits)
 
-    logger.info("alignment finished")
     output = NDCube(data=data_object.data,
                     wcs=recovered_wcs,
                     uncertainty=data_object.uncertainty,

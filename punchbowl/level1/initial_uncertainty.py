@@ -1,6 +1,5 @@
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger
 
 from punchbowl.data.units import split_ccd_array
 from punchbowl.prefect import punch_task
@@ -99,9 +98,6 @@ def update_initial_uncertainty_task(data_object: NDCube,
                                     read_noise_level: float = 17,
                                     bitrate_signal: int = 16) -> NDCube:
     """Prefect task to compute initial uncertainty."""
-    logger = get_run_logger()
-    logger.info("initial uncertainty computation started")
-
     uncertainty_array = compute_uncertainty(data_object.data,
                                             bias_level=bias_level,
                                             dark_level=dark_level,
@@ -119,6 +115,4 @@ def update_initial_uncertainty_task(data_object: NDCube,
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_right={gain_right}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"read_noise_level={read_noise_level}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"bitrate_signal={bitrate_signal}")
-
-    logger.info("initial uncertainty computed")
     return data_object

@@ -5,7 +5,6 @@ import warnings
 import numpy as np
 from astropy.time import Time
 from ndcube import NDCube
-from prefect import get_run_logger
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import (
@@ -60,9 +59,6 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> N
         modified version of the input with the stray light removed
 
     """
-    logger = get_run_logger()
-    logger.info("remove_stray_light started")
-
     if stray_light_path is None:
         data_object.meta.history.add_now("LEVEL1-remove_stray_light", "Stray light correction skipped")
     elif not stray_light_path.exists():
@@ -92,6 +88,4 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> N
             data_object.meta["CALSL"] = os.path.basename(str(stray_light_path))
             data_object.meta.history.add_now("LEVEL1-remove_stray_light",
                                              f"stray light removed with {os.path.basename(str(stray_light_model))}")
-
-    logger.info("remove_stray_light finished")
     return data_object

@@ -44,7 +44,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits: [NAXIS3, POLAROFF, POLARREF]
+        omits: [NAXIS3]
 
     Calibration:
         overrides:
@@ -147,7 +147,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR, POLAROFF, POLARREF]
+        omits: [FILTER, OBS-MODE, POLAR]
 
     DY?:
         kinds: [Calibration]
@@ -158,7 +158,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR, POLAROFF, POLARREF]
+        omits: [FILTER, OBS-MODE, POLAR]
 
     OV?:
         kinds: [Calibration]
@@ -169,7 +169,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR, POLAROFF, POLARREF]
+        omits: [FILTER, OBS-MODE, POLAR]
 
     XI?:
         kinds: [Calibration]
@@ -180,4 +180,4 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR, POLAROFF, POLARREF]
+        omits: [FILTER, OBS-MODE, POLAR]

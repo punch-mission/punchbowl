@@ -116,7 +116,7 @@ def level2_ctm_flow(data_list: list[str] | list[NDCube],
                      for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
         output_data = merge_many_clear_task(data_list, trefoil_wcs)
     else:
-        output_dateobs = datetime.now().isoformat()
+        output_dateobs = datetime.now(UTC).isoformat()
         output_datebeg = output_dateobs
         output_dateend = output_datebeg
 
@@ -127,7 +127,7 @@ def level2_ctm_flow(data_list: list[str] | list[NDCube],
         meta=NormalizedMetadata.load_template("CTM", "2"),
     )
 
-    output_data.meta["DATE"] = datetime.now().isoformat()
+    output_data.meta["DATE"] = datetime.now(UTC).isoformat()
     output_data.meta["DATE-AVG"] = output_dateobs
     output_data.meta["DATE-OBS"] = output_dateobs
     output_data.meta["DATE-BEG"] = output_datebeg

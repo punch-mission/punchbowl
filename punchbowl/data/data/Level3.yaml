@@ -34,7 +34,7 @@ Kinds:
             OBSLAYR1: Polar_B
             OBSLAYR2: Polar_pB
             POLARREF: 'Solar'
-        omits: [Velocity, FILTER, POLAR, OBSLAYR3]
+        omits: [Velocity, FILTER, POLAR, POLAROFF, OBSLAYR3]
 
     Unpolarized:
         overrides:
@@ -43,7 +43,7 @@ Kinds:
             NAXIS2: 4096
             OBS-MODE: Unpolarized
             POLAR: -999
-        omits: [Velocity, NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [Velocity, POLAROFF, POLARREF, NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Calibration:
         overrides:
@@ -57,7 +57,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 1440
             NAXIS2: 4
-        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, POLAR]
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, POLAR, POLAROFF, POLARREF]
 
 
 # Product specifications

@@ -35,7 +35,7 @@ Kinds:
             OBSLAYR2: Polar_Z
             OBSLAYR3: Polar_P
             POLARREF: 'Solar'
-        omits: [FILTER, POLAR]
+        omits: [FILTER, POLAR, POLAROFF]
 
     Unpolarized:
         overrides:
@@ -58,7 +58,7 @@ Kinds:
             CRPIX2A: 2047.5
             CTYPE1A: RA---ARC
             CTYPE2A: DEC--ARC
-        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3,CRPIX3,
+        omits: [NAXIS3, FILTER, POLAROFF, POLARREF, OBSLAYR1, OBSLAYR2, OBSLAYR3,CRPIX3,
                 PC1_3, PC2_3, PC3_1, PC3_2, PC3_3, CDELT3, CUNIT3, CTYPE3, CRVAL3, CNAME3,
                 CRPIX3A, PC1_3A, PC2_3A, PC3_1A, PC3_2A, PC3_3A, CDELT3A, CUNIT3A, CTYPE3A, CRVAL3A, CNAME3A]
 

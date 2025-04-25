@@ -35,7 +35,7 @@ Kinds:
             OBSLAYR2: Polar_Z
             OBSLAYR3: Polar_P
             POLARREF: 'Solar'
-        omits: [FILTER, POLAR]
+        omits: [FILTER, POLAR, POLAROFF]
 
     Unpolarized:
         overrides:
@@ -44,7 +44,7 @@ Kinds:
             NAXIS2: 4096
             OBS-MODE: Unpolarized
             POLAR: -999
-        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [NAXIS3, FILTER, POLAROFF, POLARREF, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Calibration:
         overrides:

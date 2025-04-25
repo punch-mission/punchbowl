@@ -39,7 +39,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits: [NAXIS3]
+        omits: [NAXIS3, POLAROFF, POLARREF]
 
     Calibration:
         overrides:
@@ -136,7 +136,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR]
+        omits: [FILTER, OBS-MODE, POLAR, POLAROFF, POLARREF]
 
     FQ?:
         kinds: [QuarticCalibration]
@@ -151,7 +151,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR]
+        omits: [FILTER, OBS-MODE, POLAR, POLAROFF, POLARREF]
 
     GM?:
         kinds: [Calibration, PM]
@@ -162,7 +162,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR]
+        omits: [FILTER, OBS-MODE, POLAR, POLAROFF, POLARREF]
 
     GZ?:
         kinds: [Calibration, PZ]
@@ -173,7 +173,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR]
+        omits: [FILTER, OBS-MODE, POLAR, POLAROFF, POLARREF]
 
     GP?:
         kinds: [Calibration, PP]
@@ -184,7 +184,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR]
+        omits: [FILTER, OBS-MODE, POLAR, POLAROFF, POLARREF]
 
     GR?:
         kinds: [Calibration, CR]

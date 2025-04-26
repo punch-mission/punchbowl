@@ -199,11 +199,12 @@ def _load_one_file(filename: str) -> NDCube:
 
 
 @punch_flow(log_prints=True)
-def construct_polarized_f_corona_model(filenames: list[str],
-                                       clip_factor: float = 3.0,
-                                       reference_time: str | None = None,
-                                       num_workers: int = 8,
-                                       fill_nans: bool = True) -> list[NDCube]:
+def construct_f_corona_model(filenames: list[str],
+                             clip_factor: float = 3.0,
+                             reference_time: str | None = None,
+                             num_workers: int = 8,
+                             fill_nans: bool = True,
+                             polarized: bool = False) -> list[NDCube]:
     """Construct a full F corona model."""
     logger = get_run_logger()
 
@@ -222,7 +223,7 @@ def construct_polarized_f_corona_model(filenames: list[str],
 
     filenames.sort()
 
-    data_shape = (3, *trefoil_shape)
+    data_shape = (3, *trefoil_shape) if polarized else trefoil_shape
 
     number_of_data_frames = len(filenames)
     data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
@@ -243,46 +244,61 @@ def construct_polarized_f_corona_model(filenames: list[str],
     output_dateend = max(dates).isoformat()
 
     reference_xt = reference_time.timestamp()
-    m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt,
-                                                data_cube[:, 0, :, :],
-                                                num_workers=num_workers,
-                                                clip_factor=clip_factor)
-    m_model_fcorona[m_model_fcorona==0] = np.nan
-    if fill_nans:
-        m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona)
+    if polarized:
+        m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt,
+                                                    data_cube[:, 0, :, :],
+                                                    num_workers=num_workers,
+                                                    clip_factor=clip_factor)
+        m_model_fcorona[m_model_fcorona==0] = np.nan
+        if fill_nans:
+            m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona)
 
-    z_model_fcorona, _ = model_fcorona_for_cube(obs_times,
-                                                reference_xt,
-                                                data_cube[:, 1, :, :],
-                                                num_workers=num_workers,
-                                                clip_factor=clip_factor)
-    z_model_fcorona[z_model_fcorona==0] = np.nan
-    if fill_nans:
-        z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona)
+        z_model_fcorona, _ = model_fcorona_for_cube(obs_times,
+                                                    reference_xt,
+                                                    data_cube[:, 1, :, :],
+                                                    num_workers=num_workers,
+                                                    clip_factor=clip_factor)
+        z_model_fcorona[z_model_fcorona==0] = np.nan
+        if fill_nans:
+            z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona)
 
-    p_model_fcorona, _ = model_fcorona_for_cube(obs_times,
-                                                reference_xt,
-                                                data_cube[:, 2, :, :],
-                                                num_workers=num_workers,
-                                                clip_factor=clip_factor)
-    p_model_fcorona[p_model_fcorona==0] = np.nan
-    if fill_nans:
-        p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
+        p_model_fcorona, _ = model_fcorona_for_cube(obs_times,
+                                                    reference_xt,
+                                                    data_cube[:, 2, :, :],
+                                                    num_workers=num_workers,
+                                                    clip_factor=clip_factor)
+        p_model_fcorona[p_model_fcorona==0] = np.nan
+        if fill_nans:
+            p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
 
-    meta = NormalizedMetadata.load_template("PFM", "3")
+        output_data = np.stack([m_model_fcorona,
+                                z_model_fcorona,
+                                p_model_fcorona], axis=0)
+        meta = NormalizedMetadata.load_template("PFM", "3")
+        trefoil_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
+    else:
+        model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt,
+                                                  data_cube,
+                                                  num_workers=num_workers,
+                                                  clip_factor=clip_factor)
+        model_fcorona[model_fcorona==0] = np.nan
+        if fill_nans:
+            model_fcorona = fill_nans_with_interpolation(model_fcorona)
+
+        output_data = model_fcorona
+        meta = NormalizedMetadata.load_template("CFM", "3")
+
     meta["DATE"] = datetime.now(UTC).isoformat()
     meta["DATE-AVG"] = reference_time.isoformat()
     meta["DATE-OBS"] = reference_time.isoformat()
 
     meta["DATE-BEG"] = output_datebeg
     meta["DATE-END"] = output_dateend
-    trefoil_3d_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
 
-    output_cube = NDCube(data=np.stack([m_model_fcorona,
-                                               z_model_fcorona,
-                                               p_model_fcorona], axis=0),
-                                meta=meta,
-                                wcs=trefoil_3d_wcs)
+    output_cube = NDCube(data=output_data,
+                         meta=meta,
+                         wcs=trefoil_wcs)
+
 
     return [output_cube]
 

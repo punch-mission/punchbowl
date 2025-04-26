@@ -193,7 +193,9 @@ def _load_one_file(filename: str) -> NDCube:
         The loaded data
 
     """
-    return load_ndcube_from_fits(filename)
+    cube = load_ndcube_from_fits(filename)
+    data = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
+    return data, cube.meta
 
 
 @punch_flow(log_prints=True)
@@ -224,7 +226,6 @@ def construct_polarized_f_corona_model(filenames: list[str],
 
     number_of_data_frames = len(filenames)
     data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
-    uncertainty_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
 
     meta_list = []
     obs_times = []
@@ -232,12 +233,11 @@ def construct_polarized_f_corona_model(filenames: list[str],
     logger.info("beginning data loading")
     dates = []
     with mp.Pool(processes=num_workers) as pool:
-        for i, data_object in enumerate(pool.imap(_load_one_file, filenames)):
-            dates.append(data_object.meta.datetime)
-            data_cube[i] = data_object.data
-            uncertainty_cube[i] = data_object.uncertainty.array
-            obs_times.append(data_object.meta.datetime.timestamp())
-            meta_list.append(data_object.meta)
+        for i, (data, meta) in enumerate(pool.imap(_load_one_file, filenames)):
+            dates.append(meta.datetime)
+            data_cube[i] = data
+            obs_times.append(meta.datetime.timestamp())
+            meta_list.append(meta)
     logger.info("ending data loading")
     output_datebeg = min(dates).isoformat()
     output_dateend = max(dates).isoformat()

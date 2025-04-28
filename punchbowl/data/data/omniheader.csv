@@ -90,6 +90,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 8,keyword,ISTEST,,boolean indicating if image is a test pattern,int,TRUE,TRUE,
 8,keyword,ISSQRT,,toggle indicating whether data is sqrt compressed,int,TRUE,TRUE,
 8,keyword,WASJPEG,,toggle indicating data JPEG downlink compression,int,TRUE,TRUE,
+8,keyword,NUM_PCKT,,number of packets used in data creation,int,TRUE,TRUE,
 8,keyword,DELAY,,Delay time between SHIFT+READOUT table in 100ms ticks,int,TRUE,TRUE,
 8,keyword,IMGCOUNT,,Num images collected in this acquisition cycle,int,TRUE,TRUE,
 8,keyword,TABLE1,,Assigns location of CLEAR table in WGS RAM,int,TRUE,TRUE,

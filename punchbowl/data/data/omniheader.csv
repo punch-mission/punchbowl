@@ -63,7 +63,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 6,keyword,CCDTEMP,,CCD temperature [deg C],float,TRUE,TRUE,
 7,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
 7,keyword,CEBSTAT,,Status to indicate stale CEB telemetry packet,int,TRUE,TRUE,
-7,keyword,CEBTIME,,ContainsSpacwire time code,int,TRUE,TRUE,
+7,keyword,CEBTIME,,CEB packet timestamp,str,TRUE,TRUE,
 7,keyword,CEBWGS,,WGS_STATUS,int,TRUE,TRUE,
 7,keyword,CEBFIFO,,Number of pixels in video FIFO (0-2047),int,TRUE,TRUE,
 7,keyword,CEBBIAS1,,CCD output drain bias (Analog 1),int,TRUE,TRUE,
@@ -142,6 +142,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 11,keyword,HEQX_OBS,,[m] S/C Heliocentric Earth Equatorial X,float,TRUE,TRUE,
 11,keyword,HEQY_OBS,,[m] S/C Heliocentric Earth Equatorial Y,float,TRUE,TRUE,
 11,keyword,HEQZ_OBS,,[m] S/C Heliocentric Earth Equatorial Z,float,TRUE,TRUE,
+11,keyword,XACTTIME,,XACT packet timestamp,str,TRUE,TRUE,
 12,section,COMMENT,Velocity,,str,TRUE,TRUE,Velocity
 12,keyword,DELTAT,,Time offset in frames between images,int,TRUE,TRUE,
 12,keyword,SPARSITY,,Frame skip interval for averaging,int,TRUE,TRUE,
@@ -156,6 +157,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
 12,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
 13,section,COMMENT,Polarizing Filter Wheel,,str,TRUE,TRUE,Polarizing Filter Wheel
+13,keyword,PFWTIME,,PFW packet timestamp,str,TRUE,TRUE,
 13,keyword,PFWSTAT,,"Current PFW Status (0 - no error, else error)",int,TRUE,TRUE,
 13,keyword,STEPCALC,,Calculated step (0-1199),int,TRUE,TRUE,
 13,keyword,CMDSTEPS,,Commanded number of steps (1-1199),int,TRUE,TRUE,
@@ -204,6 +206,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 13,keyword,RPFWPOS5,,Redundant Resolver Position 5,int,TRUE,TRUE,
 14,section,COMMENT,LED Status,,str,TRUE,TRUE,LED Status
 14,keyword,LED_PCKT,,LED packet indicator,int,TRUE,TRUE,0
+14,keyword,LEDTIME,,LED packet timestamp,str,TRUE,TRUE,
 14,keyword,LED1STAT,,LED1 Activation State,int,TRUE,TRUE,
 14,keyword,LEDPLSN,,LED Number of Pulses,int,TRUE,TRUE,
 14,keyword,LED2STAT,,LED2 Activation State,int,TRUE,TRUE,

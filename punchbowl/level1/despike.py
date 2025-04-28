@@ -74,7 +74,7 @@ def spikejones(
     # optional dilation
     if dilation != 0:
         dilation_size = 2 * dilation + 1
-        unsharped_image = convolve2d(unsharped_image, np.ones(dilation_size, dilation_size), mode="same") != 0
+        unsharped_image = convolve2d(unsharped_image, np.ones((dilation_size, dilation_size)), mode="same") != 0
 
     # detect the spikes and fill them with their neighbors
     spikes = np.where(unsharped_image != 0)

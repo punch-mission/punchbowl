@@ -182,8 +182,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 13,keyword,STEPSEL,,Stepper Motor Select,int,TRUE,TRUE,
 13,keyword,STEPDLY,,Stepper Motor Rate Delay,int,TRUE,TRUE,
 13,keyword,STEPRATE,,Stepper Motor Rate,float,TRUE,TRUE,
-13,keyword,SHORTMV,,Short Move(1-4 steps) Settling time before reading resolver,int,TRUE,TRUE,
-13,keyword,LONGMV,,Long Move(5-1199 steps) Setting time before reading resolver,int,TRUE,TRUE,
+13,keyword,SHORTMV,,Short Move(1-4 steps) Settling time,int,TRUE,TRUE,
+13,keyword,LONGMV,,Long Move(5-1199 steps) Setting time,int,TRUE,TRUE,
 13,keyword,PFWOFF1,,Primary Step Offset 1,int,TRUE,TRUE,
 13,keyword,PFWOFF2,,Primary Step Offset 2,int,TRUE,TRUE,
 13,keyword,PFWOFF3,,Primary Step Offset 3,int,TRUE,TRUE,
@@ -205,7 +205,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 13,keyword,RPFWPOS4,,Redundant Resolver Position 4,int,TRUE,TRUE,
 13,keyword,RPFWPOS5,,Redundant Resolver Position 5,int,TRUE,TRUE,
 14,section,COMMENT,LED Status,,str,TRUE,TRUE,LED Status
-14,keyword,LED_PCKT,,LED packet indicator (below values empty if False),int,TRUE,TRUE,0
+14,keyword,LED_PCKT,,LED packet indicator,int,TRUE,TRUE,0
 14,keyword,LED1STAT,,LED1 Activation State,int,TRUE,TRUE,
 14,keyword,LEDPLSN,,LED Number of Pulses,int,TRUE,TRUE,
 14,keyword,LED2STAT,,LED2 Activation State,int,TRUE,TRUE,

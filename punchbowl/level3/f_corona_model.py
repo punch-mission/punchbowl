@@ -1,4 +1,3 @@
-import time
 import multiprocessing as mp
 from datetime import UTC, datetime
 
@@ -39,14 +38,12 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
         Array of coefficients for solving polynomial
 
     """
-    logger = get_run_logger()
     c = np.transpose(input_vals)
     cube_is_good = np.isfinite(cube)
     num_inputs = np.sum(cube_is_good, axis=0)
 
     solution = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
     for i in range(cube.shape[1]):
-        start = time.time()
         for j in range(cube.shape[2]):
             is_good = cube_is_good[:, i, j]
             time_series = cube[:, i, j][is_good]
@@ -60,8 +57,6 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
                     solution[:, i, j] = solve_qp(g_iter, a, c_iter, time_series)[0]
                 except ValueError:
                     solution[:, i, j] = 0
-        end = time.time()
-        logger.info(f"{i} took {end - start} seconds")
     return np.asarray(solution), num_inputs
 
 
@@ -140,7 +135,6 @@ def _model_fcorona_for_cube_inner(xt: np.ndarray,
                                   clip_factor: float | None = 1,
                                   return_full_curves: bool=False,
                                   ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
-    logger = get_run_logger()
     cube[cube < min_brightness] = np.nan
     if clip_factor is not None:
         low, center, high = nan_percentile(cube, [25, 50, 75])
@@ -161,11 +155,7 @@ def _model_fcorona_for_cube_inner(xt: np.ndarray,
     if return_full_curves:
         return polynomial.polyval(xt, coefficients[::-1, :, :]).transpose((2, 0, 1)), counts, cube
 
-    start = time.time()
-    out = polynomial.polyval(reference_xt, coefficients[::-1, :, :]), counts
-    end = time.time()
-    logger.info(f"computed polyval in {end - start} seconds")
-    return out
+    return polynomial.polyval(reference_xt, coefficients[::-1, :, :]), counts
 
 
 def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:

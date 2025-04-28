@@ -2,6 +2,9 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Latest: unreleased
+- Updates L0 header generation in https://github.com/punch-mission/punchbowl/pull/444
+
 ## Version 0.0.11: Apr 14, 2025
 
 - Changes error message for default overwriting in https://github.com/punch-mission/punchbowl/pull/420

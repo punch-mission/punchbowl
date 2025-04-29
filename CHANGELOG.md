@@ -11,7 +11,7 @@
 - Adds metadata to output jpeg2000 files in https://github.com/punch-mission/punchbowl/pull/433
 - Checks for square root decompression in L1 processing in https://github.com/punch-mission/punchbowl/pull/434
 - Modifies metadata for header / unit compliance in https://github.com/punch-mission/punchbowl/pull/427
-- - Updates L0 header generation in https://github.com/punch-mission/punchbowl/pull/444
+- Updates L0 header generation in https://github.com/punch-mission/punchbowl/pull/444
 
 ## Version 0.0.11: Apr 14, 2025
 

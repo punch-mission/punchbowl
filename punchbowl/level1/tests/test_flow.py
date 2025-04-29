@@ -13,7 +13,7 @@ THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
         input_name = os.path.join(tmpdir, "test_input.fits")
         output_name = os.path.join(tmpdir, "test_output.fits")
-        sample_data = sample_ndcube(shape=(10, 10), code="CR1", level="0")
+        sample_data = sample_ndcube(shape=(10, 10), code="CR1", level="1")
         sample_data.meta["RAWBITS"] = 16
         sample_data.meta["COMPBITS"] = 10
         sample_data.meta["GAINLEFT"] = 4.9
@@ -34,7 +34,7 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
 
 
 def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
-    cube = sample_ndcube(shape=(10, 10), code="CR1", level="0")
+    cube = sample_ndcube(shape=(10, 10), code="CR1", level="1")
     cube.meta["RAWBITS"] = 16
     cube.meta["COMPBITS"] = 10
     cube.meta["GAINLEFT"] = 4.9

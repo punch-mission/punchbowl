@@ -63,7 +63,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 6,keyword,CCDTEMP,,CCD temperature [deg C],float,TRUE,TRUE,
 7,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
 7,keyword,CEBSTAT,,Status to indicate stale CEB telemetry packet,int,TRUE,TRUE,
-7,keyword,CEBTIME,,CEB packet timestamp,str,TRUE,TRUE,
+7,keyword,CEBTIME,,CEB packet timestamp,int,TRUE,TRUE,
 7,keyword,CEBWGS,,WGS_STATUS,int,TRUE,TRUE,
 7,keyword,CEBFIFO,,Number of pixels in video FIFO (0-2047),int,TRUE,TRUE,
 7,keyword,CEBBIAS1,,CCD output drain bias (Analog 1),int,TRUE,TRUE,

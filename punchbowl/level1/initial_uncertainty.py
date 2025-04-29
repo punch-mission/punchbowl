@@ -18,7 +18,7 @@ def compute_noise(
         gain_left: float = 4.9,
         gain_right: float = 4.9,
         read_noise_level: float = 17,
-        bitrate_signal: int = 16) -> np.ndarray:
+        bitrate_signal: int = 16) -> tuple[np.ndarray, np.ndarray]:
     """
     Generate noise based on an input data array, with specified noise parameters.
 
@@ -41,7 +41,9 @@ def compute_noise(
 
     Returns
     -------
-    np.ndarray
+    data : np.ndarray
+        clipped data with the bias level added
+    noise : np.ndarray
         computed noise array corresponding to input data and ccd/noise parameters
 
     """
@@ -67,7 +69,7 @@ def compute_noise(
     noise_read = noise_read / gain  # Convert back to DN
 
     # And then add noise terms directly
-    return noise_photon + noise_dark + noise_read
+    return data, noise_photon + noise_dark + noise_read
 
 
 def compute_uncertainty(data_array: np.ndarray,
@@ -80,13 +82,14 @@ def compute_uncertainty(data_array: np.ndarray,
                         ) -> np.ndarray:
     """With an input data array compute a corresponding uncertainty array."""
     # Convert this photon count to a shot noise
-    return compute_noise(data_array,
+    _, noise = compute_noise(data_array,
                                 bias_level=bias_level,
                                 dark_level=dark_level,
                                 gain_left=gain_left,
                                 gain_right=gain_right,
                                 read_noise_level=read_noise_level,
                                 bitrate_signal=bitrate_signal)
+    return noise
 
 
 @punch_task

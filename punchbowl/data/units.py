@@ -34,7 +34,8 @@ def calculate_image_pixel_area(wcs: WCS, data_shape: tuple[int, int], stride: in
 
 def msb_to_dn(data: ndarray,
               data_wcs: WCS,
-              gain: float = 4.9 * u.photon / u.DN,
+              gain_left: float = 4.9 * u.photon / u.DN,
+              gain_right: float = 4.9 * u.photon / u.DN,
               wavelength: float = 530. * u.nm,
               exposure: float = 49 * u.s,
               aperture: float = 49.57 * u.mm**2,
@@ -45,7 +46,8 @@ def msb_to_dn(data: ndarray,
     photon_flux = MSB / energy_per_photon
     pixel_scale = calculate_image_pixel_area(data_wcs, data.shape, pixel_area_stride).to(u.sr) / u.pixel
     photon_count = (photon_flux * exposure * aperture * pixel_scale * u.pixel).decompose()
-    return (data * photon_count / gain).astype(int)
+    gain = split_ccd_array(data.shape, gain_left, gain_right)
+    return data * photon_count / gain
 
 
 def dn_to_msb(data: ndarray,

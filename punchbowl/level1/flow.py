@@ -25,11 +25,11 @@ from punchbowl.util import load_image_task, output_image_task
 
 
 @punch_flow
-def generate_psf_model_core_flow(input_filepaths: [str],
+def generate_psf_model_core_flow(input_filepaths: list[str],
                                  masks: list[pathlib.Path | str] | np.ndarray | Generator = None,
                                  alpha: float = 2.0,
                                  epsilon: float = 0.3,
-                                 image_shape: (int, int) = (2048, 2048),
+                                 image_shape: tuple[int, int] = (2048, 2048),
                                  psf_size: int = 32,
                                  target_fwhm: float = 3.25) -> ArrayPSFTransform:
     """Generate PSF model."""

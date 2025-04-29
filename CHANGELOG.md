@@ -12,6 +12,7 @@
 - Checks for square root decompression in L1 processing in https://github.com/punch-mission/punchbowl/pull/434
 - Modifies metadata for header / unit compliance in https://github.com/punch-mission/punchbowl/pull/427
 - Updates L0 header generation in https://github.com/punch-mission/punchbowl/pull/444
+- Doesn't set SC location for F-corona models, improvements to msb_to_dn and compute_noise, and F-corona modeling improvements in https://github.com/punch-mission/punchbowl/pull/441
 
 ## Version 0.0.11: Apr 14, 2025
 

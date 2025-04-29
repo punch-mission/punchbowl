@@ -319,9 +319,10 @@ class NormalizedMetadata(Mapping):
                     else:
                         wcs_header = this_wcs.to_header()
                     for card in wcs_header.cards:
-                        if key == "" or (key != "" and card[0][-1].isnumeric() and
-                                         card[0] not in DISTORTION_KEYWORDS and
-                                         card[0] not in WCS_OMITTED_KEYWORDS):
+                        if ((key == "" and card[0] not in WCS_OMITTED_KEYWORDS)
+                                or (key != "" and card[0][-1].isnumeric() and
+                                    card[0] not in DISTORTION_KEYWORDS and
+                                    card[0] not in WCS_OMITTED_KEYWORDS)):
                             hdr.append(
                                 (
                                 card[0] + key,

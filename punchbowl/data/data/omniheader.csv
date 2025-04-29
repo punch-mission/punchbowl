@@ -120,6 +120,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 10,keyword,SOLAR_EP,,[deg] S/C ecliptic North to solar North angle,float,TRUE,TRUE,
 10,keyword,CAR_ROT,,Carrington Rotation number,float,TRUE,TRUE,
 11,section,COMMENT,Spacecraft Location & Environment,,str,TRUE,TRUE,Spacecraft Location & Environment
+11,keyword,XACTTIME,,Time of XACT packet,str,TRUE,TRUE,
 11,keyword,GEOD_LAT,,[deg] S/C sub-point geodetic latitude,float,TRUE,TRUE,
 11,keyword,GEOD_LON,,[deg] S/C sub-point geodetic longitude,float,TRUE,TRUE,
 11,keyword,GEOD_ALT,,[m] S/C WGS84 altitude,float,TRUE,TRUE,

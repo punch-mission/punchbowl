@@ -4,7 +4,6 @@ import warnings
 from collections.abc import Callable
 
 from ndcube import NDCube
-from prefect import get_run_logger
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import (
@@ -60,9 +59,6 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
         modified version of the input with the vignetting corrected
 
     """
-    logger = get_run_logger()
-    logger.info("correct_vignetting started")
-
     if vignetting_path is None:
         data_object.meta.history.add_now("LEVEL1-correct_vignetting", "Vignetting skipped")
         msg=f"Calibration file {vignetting_path} is unavailable, vignetting correction not applied"
@@ -97,5 +93,4 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
         data_object.meta.history.add_now("LEVEL1-correct_vignetting",
                                          f"Vignetting corrected using {os.path.basename(str(vignetting_path))}")
         data_object.meta["CALVI"] = os.path.basename(str(vignetting_path))
-    logger.info("correct_vignetting finished")
     return data_object

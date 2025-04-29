@@ -1,9 +1,9 @@
 import os
 from collections.abc import Callable
 
+import numexpr as ne
 import numpy as np
 from ndcube import NDCube
-from prefect import get_run_logger
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.prefect import punch_task
@@ -112,10 +112,20 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
 
     # find the number of quartic fit coefficients
     num_coefficients = coefficient_image.shape[0]
-    return np.sum(
-        [coefficient_image[i, ...] * np.power(image, num_coefficients - i - 1) for i in range(num_coefficients)],
-        axis=0,
-    )
+    # Here we compute sum(coefficient_image[i] * image ** (num_coefficients - i - 1))
+    # This is a good domain for numexpr, and using it speeds up the full L1 flow by ~10%. But because numexpr doesn't
+    # support indexing, we have to pre-define variables for each slice of coefficient_image. And because we're handling
+    # a dynamic number of coefficients, we have to build this up programmatically.
+    # This will contain the pieces of the expression (each term in the summation)
+    pieces = []
+    # This will contain all the variables that go into the numexpr expression
+    inputs = {"image": image}
+    for i in range(num_coefficients):
+        # Define a "variable" for this slice
+        inputs[f"a{i}"] = coefficient_image[i]
+        # Write this part of the summation
+        pieces.append(f"a{i} * image ** {num_coefficients - i - 1}")
+    return ne.evaluate(" + ".join(pieces), local_dict=inputs)
 
 
 @punch_task
@@ -141,9 +151,6 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
     photometric_calibration
 
     """
-    logger = get_run_logger()
-    logger.info("perform_quartic_fit started")
-
     if quartic_coefficients_path is not None:
         if isinstance(quartic_coefficients_path, Callable):
             quartic_coefficients, quartic_coefficients_path = quartic_coefficients_path()
@@ -162,7 +169,5 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
         data_object.meta["CALCF"] = os.path.basename(quartic_coefficients_path)
     else:
         data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction skipped since path is empty")
-
-    logger.info("perform_quartic_fit finished")
 
     return data_object

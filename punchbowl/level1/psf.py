@@ -134,9 +134,6 @@ def correct_psf_task(
         modified version of the input with the PSF corrected
 
     """
-    logger = get_run_logger()
-    logger.info("correct_psf started")
-
     if model_path is not None:
         if isinstance(model_path, Callable):
             corrector, model_path = model_path()
@@ -148,7 +145,6 @@ def correct_psf_task(
         data_object.meta["CALPSF"] = os.path.basename(model_path)
     else:
         data_object.meta.history.add_now("LEVEL1-correct_psf", "Empty model path so no correction applied")
+        logger = get_run_logger()
         logger.info("No model path so PSF correction is skipped")
-
-    logger.info("correct_psf finished")
     return data_object

@@ -5,7 +5,6 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import get_run_logger
-from prefect_dask.task_runners import DaskTaskRunner
 
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
 from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
@@ -22,9 +21,7 @@ ORDER = ["PM1", "PZ1", "PP1",
          "PM4", "PZ4", "PP4"]
 
 
-@punch_flow(task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
-))
+@punch_flow
 def level2_core_flow(data_list: list[str] | list[NDCube],
                      voter_filenames: list[list[str]],
                      trefoil_wcs: WCS | None = None,
@@ -89,9 +86,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     return [output_data]
 
 
-@punch_flow(task_runner=DaskTaskRunner(
-    cluster_kwargs={"n_workers": 4, "threads_per_worker": 2},
-))
+@punch_flow
 def level2_ctm_flow(data_list: list[str] | list[NDCube],
                     voter_filenames: list[list[str]],
                     trefoil_wcs: WCS | None = None,

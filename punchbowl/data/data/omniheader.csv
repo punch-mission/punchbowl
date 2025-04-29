@@ -96,7 +96,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 8,keyword,TABLE1,,Assigns location of CLEAR in WGS RAM,int,TRUE,TRUE,
 8,keyword,TABLE2,,Assigns location of SHIFT+READOUT in WGS RAM,int,TRUE,TRUE,
 9,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
-9,keyword,BUNIT,'2.009e+07 W/(m2 sr)',Units of observation - Mean Solar Brightness,str,TRUE,TRUE,2.009e+07 W/(m2 sr)
+9,keyword,BUNIT,2.009e+07 W/(m2 sr),Units of observation - Mean Solar Brightness,str,TRUE,TRUE,2.009e+07 W/(m2 sr)
 9,keyword,DATAZER,,number of pixels=0,int,TRUE,TRUE,
 9,keyword,DATASAT,,number of saturated pixels,int,TRUE,TRUE,
 9,keyword,DSATVAL,65535,saturation value in calibrated units,float,TRUE,TRUE,65535
@@ -125,6 +125,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 11,keyword,GEOD_LON,,[deg] S/C sub-point geodetic longitude,float,TRUE,TRUE,
 11,keyword,GEOD_ALT,,[m] S/C WGS84 altitude,float,TRUE,TRUE,
 11,keyword,LOS_ALT,,[m] line-of-sight altitude above Earth,float,TRUE,TRUE,
+11,keyword,HGLT_OBS,,[deg] S/C heliographic latitude,float,TRUE,TRUE,
+11,keyword,HGLN_OBS,,[deg] S/C heliographic longitude (B0),float,TRUE,TRUE,
 11,keyword,CRLT_OBS,,[deg] S/C Carrington latitude (B0),float,TRUE,TRUE,
 11,keyword,CRLN_OBS,,[deg] S/C Carrington longitude,float,TRUE,TRUE,
 11,keyword,DSUN_OBS,,[m] S/C distance from Sun,float,TRUE,TRUE,

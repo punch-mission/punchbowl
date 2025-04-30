@@ -25,7 +25,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 2,keyword,OBSCODE,,Observatory spacecraft code,str,TRUE,TRUE,
 2,keyword,PIPEVRSN,,punchbowl software version number,str,TRUE,TRUE,
 2,keyword,FILEVRSN,,File version number (<1 is provisional),str,FALSE,TRUE,0
-2,keyword,FILE_RAW,,Raw telemetry filename,str,TRUE,TRUE,
 2,keyword,ORIGIN,SwRI,Institution responsible for creating the file,str,TRUE,TRUE,SwRI
 3,section,COMMENT,Temporal Information,,str,TRUE,TRUE,Temporal Information
 3,keyword,TIMESYS,UTC,Principal time system,str,TRUE,TRUE,UTC
@@ -63,7 +62,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 6,keyword,CCDTEMP,,CCD temperature [deg C],float,TRUE,TRUE,
 7,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
 7,keyword,CEBSTAT,,Status to indicate stale CEB telemetry packet,int,TRUE,TRUE,
-7,keyword,CEBTIME,,CEB packet timestamp,int,TRUE,TRUE,
+7,keyword,CEBTIME,,CEB packet timestamp,str,TRUE,TRUE,
 7,keyword,CEBWGS,,WGS_STATUS,int,TRUE,TRUE,
 7,keyword,CEBFIFO,,Number of pixels in video FIFO (0-2047),int,TRUE,TRUE,
 7,keyword,CEBBIAS1,,CCD output drain bias (Analog 1),int,TRUE,TRUE,
@@ -91,6 +90,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 8,keyword,ISSQRT,,data sqrt compression status,int,TRUE,TRUE,
 8,keyword,WASJPEG,,data JPEG downlink compression status,int,TRUE,TRUE,
 8,keyword,NUM_PCKT,,number of packets used in data creation,int,TRUE,TRUE,
+8,keywrod,PCKTBYTE,,bytes of packet data,float,TRUE,TRUE,
 8,keyword,DELAY,,Delay time between SHIFT+READOUT in 100ms ticks,int,TRUE,TRUE,
 8,keyword,IMGCOUNT,,Num images collected in this acquisition cycle,int,TRUE,TRUE,
 8,keyword,TABLE1,,Assigns location of CLEAR in WGS RAM,int,TRUE,TRUE,
@@ -102,7 +102,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 9,keyword,CALPM,,bad pixel map filename,str,TRUE,TRUE,
 9,keyword,CALSL,,stray light model filename,str,TRUE,TRUE,
 10,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
-10,keyword,BUNIT,2.009e+07 W/(m2 sr),Units of observation - Mean Solar Brightness,str,TRUE,TRUE,2.009e+07 W/(m2 sr)
+10,keyword,BUNIT,2.009e+07 W/(m2 sr),Units of observation,str,TRUE,TRUE,2.009e+07 W/(m2 sr)
 10,keyword,DATAZER,,number of pixels=0,int,TRUE,TRUE,
 10,keyword,DATASAT,,number of saturated pixels,int,TRUE,TRUE,
 10,keyword,DSATVAL,65535,saturation value in calibrated units,float,TRUE,TRUE,65535

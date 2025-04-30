@@ -43,6 +43,7 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
+            POLARREF: 'Unpolarized'
         omits: [NAXIS3]
 
     Calibration:

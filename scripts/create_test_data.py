@@ -87,6 +87,22 @@ def create_vignetting_test_data(path="../punchbowl/level1/tests/data/"):
     file_path = os.path.join(path, get_base_file_name(obj) + '.fits')
     write_ndcube_to_fits(obj, file_path, overwrite=True)
 
+def create_dark_test_data(path="../punchbowl/level1/tests/data/"):
+    meta = NormalizedMetadata.load_template("DK1", "0")
+    meta['DATE-OBS'] = str(datetime(2024,2, 22, 16,34, 25))
+    meta['FILEVRSN'] = "1"
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.1, 0.1
+    wcs.wcs.crpix = 0, 0
+    wcs.wcs.crval = 1, 1
+    wcs.wcs.cname = "HPC lon", "HPC lat"
+    data = np.random.random((10, 10))
+    obj = NDCube(data=data, wcs=wcs, meta=meta)
+    file_path = os.path.join(path, get_base_file_name(obj) + '.fits')
+    write_ndcube_to_fits(obj, file_path, overwrite=True)
+
 def create_stray_light_test_data(path="../punchbowl/level1/tests/data/"):
     meta = NormalizedMetadata.load_template("SM1", "1")
     meta['DATE-OBS'] = str(datetime(2024,2, 22, 16,34, 25))
@@ -103,3 +119,4 @@ if __name__ == "__main__":
     create_quartic_coefficients_test_data()
     create_stray_light_test_data()
     create_vignetting_test_data()
+    create_dark_test_data()

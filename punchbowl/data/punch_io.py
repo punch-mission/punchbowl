@@ -233,19 +233,21 @@ def write_ndcube_to_fits(cube: NDCube,
         hdu_data = fits.CompImageHDU(data=cube.data,
                                      header=full_header,
                                      name="Primary data array")
-        hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
-                                            header=full_header,
-                                            name="Uncertainty array",
-                                            quantize_level=uncertainty_quantize_level)
+        if cube.uncertainty is not None:
+            hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
+                                                header=full_header,
+                                                name="Uncertainty array",
+                                                quantize_level=uncertainty_quantize_level)
         hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
             name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
         hdu_provenance.name = "File provenance"
 
         hdul = cube.wcs.to_fits()
         hdul[0] = fits.PrimaryHDU()
-        hdul.insert(1, hdu_data)
-        hdul.insert(2, hdu_uncertainty)
-        hdul.insert(3, hdu_provenance)
+        hdul.append(hdu_data)
+        if cube.uncertainty is not None:
+            hdul.append(hdu_uncertainty)
+        hdul.append(hdu_provenance)
         hdul.writeto(filename, overwrite=overwrite, checksum=True)
         hdul.close()
         if write_hash:

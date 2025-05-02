@@ -319,13 +319,20 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
         header["DATASUM"] = ""
         meta = NormalizedMetadata.from_fits_header(header)
         if include_provenance:
-            meta._provenance = hdul[3].data["provenance"]  # noqa: SLF001
+            if isinstance(hdul[-1], fits.hdu.BinTableHDU):
+                meta._provenance = hdul[-1].data["provenance"]  # noqa: SLF001
+            else:
+                msg = "Provenance HDU does not appear to be BinTableHDU type."
+                raise ValueError(msg)
         wcs = WCS(header, hdul, key=key)
         unit = u.ct
 
-        secondary_hdu = hdul[2]
-        uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data)
-        uncertainty = StdDevUncertainty(uncertainty)
+        if len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
+            secondary_hdu = hdul[2]
+            uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data)
+            uncertainty = StdDevUncertainty(uncertainty)
+        else:
+            uncertainty = None
 
     return NDCube(
         data.view(dtype=data.dtype.newbyteorder()).byteswap().astype(float),

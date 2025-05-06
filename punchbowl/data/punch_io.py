@@ -97,8 +97,9 @@ def write_ndcube_to_quicklook(cube: NDCube,
                               filename: str,
                               layer: int | None = None,
                               vmin: float = 1e-15,
-                              vmax: float = 8e-13,
-                              annotation: str | None = None) -> None:
+                              vmax: float = 8e-12,
+                              annotation: str | None = None,
+                              color: bool = False) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
 
@@ -117,6 +118,8 @@ def write_ndcube_to_quicklook(cube: NDCube,
     annotation : str | None
         a formatted string to add to the bottom of the image as a label
         can access metadata by key, e.g. "typecode={TYPECODE}" would write the data's typecode into the image
+    color : bool
+        flag to generate RGB quicklook files, grayscale by default
 
     Returns
     -------
@@ -139,13 +142,20 @@ def write_ndcube_to_quicklook(cube: NDCube,
     else:
         image = cube.data
 
-    scaled_arr = (cmap_punch(norm(np.flipud(image))) * 255).astype(np.uint8)
+    if color:
+        mode = "RGBA"
+        scaled_arr = (cmap_punch(norm(np.flipud(image))) * 255).astype(np.uint8)
+        fill_value = (255, 255, 255)
+    else:
+        mode = "L"
+        scaled_arr = (np.clip(norm(np.flipud(image)), 0, 1) * 255).astype(np.uint8)
+        fill_value = 255
 
-    pil_image = Image.fromarray(scaled_arr, mode="RGBA")
+    pil_image = Image.fromarray(scaled_arr, mode=mode)
 
     if annotation:
         pad_height = int(image.shape[1] * 50 / 2048)
-        padded_image = Image.new("RGB", (pil_image.width, pil_image.height + pad_height))
+        padded_image = Image.new(mode, (pil_image.width, pil_image.height + pad_height))
 
         padded_image.paste(pil_image, (0, 0))
 
@@ -156,7 +166,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
         text = formatter.format(annotation, **cube.meta)
         text_offset = int(10 * image.shape[1] / 2048)
         text_position = (text_offset, pil_image.height + text_offset)
-        draw.text(text_position, text, font=font, fill=(255, 255, 255))
+        draw.text(text_position, text, font=font, fill=fill_value)
         pil_image = padded_image
 
     arr_image = np.array(pil_image)

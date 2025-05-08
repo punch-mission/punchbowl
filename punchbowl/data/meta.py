@@ -22,7 +22,7 @@ from sunpy.coordinates.sun import _sun_north_angle_to_z
 from sunpy.map import solar_angular_radius
 
 from punchbowl.data.history import History
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, get_p_angle
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, extract_crota_from_wcs, get_p_angle
 from punchbowl.exceptions import MissingMetadataError
 
 ValueType = int | str | float
@@ -335,6 +335,7 @@ class NormalizedMetadata(Mapping):
                                 ),
                                 end=True,
                             )
+                hdr["CROTA"] = (extract_crota_from_wcs(wcs)).to(u.deg).value
 
         # add the history section
         for entry in self.history:

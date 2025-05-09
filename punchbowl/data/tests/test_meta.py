@@ -1,5 +1,6 @@
 import os
 from datetime import UTC, datetime
+from collections import Counter
 
 import pytest
 from astropy.io import fits
@@ -227,3 +228,8 @@ def test_fits_header_compliance():
     h = m.to_fits_header(wcs = wcs)
 
     assert h[0] == 'T'
+
+    allowed_duplicates = {'COMMENT', 'HISTORY'}
+    keyword_counts = Counter(key for key in h.keys() if key not in allowed_duplicates)
+    keyword_duplicates = [keyword for keyword, count in keyword_counts.items() if count > 1]
+    assert not keyword_duplicates

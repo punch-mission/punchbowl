@@ -19,7 +19,7 @@ def test_check_calibration_time_delta_warning(sample_ndcube) -> None:
     If the time between the data of interest and the calibration file is too great, then a warning is raised.
     """
 
-    sample_data = sample_ndcube(shape=(10, 10))
+    sample_data = sample_ndcube(shape=(10, 10), level="1")
     sample_data.meta['DATE-OBS'].value = str(datetime(2022, 2, 22, 16, 0, 1))
     stray_light_filename = THIS_DIRECTORY / "data" / "PUNCH_L1_SM1_20240222163425_v1.fits"
 

@@ -315,6 +315,8 @@ class NormalizedMetadata(Mapping):
                     wcses = {"": wcs, "A": calculate_celestial_wcs_from_helio(wcs, self.astropy_time, self.shape)}
                 else:
                     wcses = {"": wcs}
+                if self.product_level == "0":
+                    hdr.insert("CROTA", ("COMMENT","Level 0 WCS approximated from spacecraft-reported state"))
                 for key, this_wcs in wcses.items():
                     if this_wcs.has_distortion:
                         wcs_header = this_wcs.to_fits()[0].header

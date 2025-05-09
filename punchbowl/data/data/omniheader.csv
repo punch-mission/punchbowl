@@ -49,7 +49,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,OBSRVTRY,PUNCH,Observatory name,str,TRUE,TRUE,PUNCH
 4,keyword,OBJECT,Heliosphere white light,Object observed,str,TRUE,TRUE,Heliosphere white light
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
-5,keyword,CROTA,,[deg] Human-readable solar north pole angle,float,TRUE,TRUE,
 6,section,COMMENT,Camera and Readout State,,str,TRUE,TRUE,Camera and Readout State
 6,keyword,DETECTOR,CCD 2Kx2K,CCD detector 2048x2048 pixels,str,TRUE,TRUE,CCD 2Kx2K
 6,keyword,COM_SET,,compression setting,int,TRUE,TRUE,

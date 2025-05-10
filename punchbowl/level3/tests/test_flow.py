@@ -4,7 +4,6 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from ndcube import NDCube
-from prefect.testing.utilities import prefect_test_harness
 
 from punchbowl.data.punch_io import write_ndcube_to_fits
 from punchbowl.data.tests.test_punch_io import sample_ndcube
@@ -30,10 +29,9 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
         write_ndcube_to_fits(cube, path)
         paths.append(path)
 
-    with prefect_test_harness():
-        output = level3_core_flow(data_list,
-                                  before_f_corona_model_path, after_f_corona_model_path,
-                                  None)
+    output = level3_core_flow(data_list,
+                              before_f_corona_model_path, after_f_corona_model_path,
+                              None)
     assert isinstance(output[0], NDCube)
 
 def test_core_flow_clear_runs_with_filenames(sample_ndcube, tmpdir):
@@ -54,10 +52,9 @@ def test_core_flow_clear_runs_with_filenames(sample_ndcube, tmpdir):
         write_ndcube_to_fits(cube, path)
         paths.append(path)
 
-    with prefect_test_harness():
-        output = level3_core_flow(data_list,
-                                  before_f_corona_model_path, after_f_corona_model_path,
-                                  None)
+    output = level3_core_flow(data_list,
+                              before_f_corona_model_path, after_f_corona_model_path,
+                              None)
     assert isinstance(output[0], NDCube)
 
 @pytest.mark.parametrize("num_files", [1, 3])
@@ -74,8 +71,7 @@ def test_core_flow_runs_with_objects_and_calibration_files(tmpdir, sample_ndcube
     after_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1) + timedelta(hours=5))
     write_ndcube_to_fits(after_f_corona_model, after_f_corona_model_path)
 
-    with prefect_test_harness():
-        output = level3_core_flow(data_list,
-                                  before_f_corona_model_path, after_f_corona_model_path,
-                                  None)
+    output = level3_core_flow(data_list,
+                              before_f_corona_model_path, after_f_corona_model_path,
+                              None)
     assert isinstance(output[0], NDCube)

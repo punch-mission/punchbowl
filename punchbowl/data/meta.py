@@ -152,12 +152,11 @@ class MetaField:
         if not self._mutable:
             msg = "Cannot mutate this value because it is set to immutable."
             raise RuntimeError(msg)
-        # TODO reactivate in a comprehensive matter... i.e. numpy.uint should be fine in the int class
-        # if self._type_matches(value, self._datatype) or value is None:
-        #     self._value = value
-        # else:
-        #     msg = f"Value of {self.keyword} was {type(value)} but must be {self._datatype}."
-        #     raise TypeError(msg)
+        if self._type_matches(value, self._datatype) or value is None:
+            self._value = value
+        else:
+            msg = f"Value of {self.keyword} was {type(value)} but must be {self._datatype}."
+            raise TypeError(msg)
         self._value = value
 
 

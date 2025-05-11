@@ -95,7 +95,7 @@ def test_write_jpeg(sample_ndcube, tmpdir):
     cube.meta["DATE-END"] = str(datetime.now())
 
     test_path = os.path.join(tmpdir, "test.jpeg")
-    write_ndcube_to_quicklook(cube, test_path, vmin=1E-15,  vmax=8E-13, annotation="Hi there! I'm {TYPECODE}.")
+    write_ndcube_to_quicklook(cube, test_path, vmin=1E-15,  vmax=8E-12, annotation="Hi there! I'm {TYPECODE}.", color=True)
     assert os.path.isfile(test_path)
 
 

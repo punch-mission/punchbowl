@@ -60,7 +60,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 6,keyword,GAINRGHT,,[e/DN] gain value (right CCD side),float,TRUE,TRUE,
 6,keyword,GAINCMDL,,[e/DN] commanded gain value (left CCD side),float,TRUE,TRUE,
 6,keyword,GAINCMDR,,[e/DN] commanded gain value (right CCD side),float,TRUE,TRUE,
-6,keyword,CCDTEMP,,CCD temperature [deg C],float,TRUE,TRUE,
 7,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
 7,keyword,CEBSTAT,,Status to indicate stale CEB telemetry packet,int,TRUE,TRUE,
 7,keyword,CEBTIME,,CEB packet timestamp,str,TRUE,TRUE,
@@ -91,7 +90,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 8,keyword,ISSQRT,,data sqrt compression status,int,TRUE,TRUE,
 8,keyword,WASJPEG,,data JPEG downlink compression status,int,TRUE,TRUE,
 8,keyword,NUM_PCKT,,number of packets used in data creation,int,TRUE,TRUE,
-8,keywrod,PCKTBYTE,,bytes of packet data,float,TRUE,TRUE,
+8,keyword,PCKTBYTE,,bytes of packet data,float,TRUE,TRUE,
 8,keyword,DELAY,,Delay time between SHIFT+READOUT in 100ms ticks,int,TRUE,TRUE,
 8,keyword,IMGCOUNT,,Num images collected in this acquisition cycle,int,TRUE,TRUE,
 8,keyword,TABLE1,,Assigns location of CLEAR in WGS RAM,int,TRUE,TRUE,
@@ -229,8 +228,20 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 15,keyword,PLSUSEC1,,Pulse Train start TAI MIcroseconds-in-Seconds,int,TRUE,TRUE,
 15,keyword,PLSSEC2,,Pulse Train end TAI Second,int,TRUE,TRUE,
 15,keyword,PLSUSEC2,,Pulse Train end TAI MIcroseconds-in-Seconds,int,TRUE,TRUE,
-16,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
-16,keyword,CHECKSUM,,,str,TRUE,TRUE,
-16,keyword,DATASUM,,,str,TRUE,TRUE,0
-17,section,COMMENT,History,,str,TRUE,TRUE,History
-17,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline
+16,section,COMMENT,LZ Packet Info,,str,TRUE,TRUE,LZ Packet Info
+16,keyword,LZTIME,,Time of LZ packet,str,TRUE,TRUE,
+16,keyword,CCDTEMP,,Camera Detector (CCD) Temp,float,TRUE,TRUE,
+16,keyword,ICMTEMP,,Camera ICM Temp Primary,float,TRUE,TRUE,
+16,keyword,FORTEMP,,Baffle Forward +Y Temp (NFI) or OLA Temp Primary (WFI),float,TRUE,TRUE,
+16,keyword,AFTTEMP,,Baffle Aft +Z Temp (NFI) or PFW Clamshell Temp Primary (WFI),float,TRUE,TRUE,
+16,keyword,PFWTEMP,,PFW Motor Temp,float,TRUE,TRUE,
+16,keyword,DOORTEMP,,Door Actuator Temp (NFI) or Radiator Center Temp (WFI),float,TRUE,TRUE,
+16,keyword,CEBTEMP,,CEB Base Temp Primary,float,TRUE,TRUE,
+16,keyword,HOUSTEMP,,Electronics Side Temp (STEAM) or Camera Housing -X Temp (WFI),float,TRUE,TRUE,
+16,keyword,FINGTEMP,,Detector Side Temp Primary (STEAM) or Cold Finger +Z Temp (WFI),float,TRUE,TRUE,
+16,keyword,FPGATEMP,,FPGA Temperature,float,TRUE,TRUE,
+17,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
+17,keyword,CHECKSUM,,,str,TRUE,TRUE,
+17,keyword,DATASUM,,,str,TRUE,TRUE,0
+18,section,COMMENT,History,,str,TRUE,TRUE,History
+18,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline

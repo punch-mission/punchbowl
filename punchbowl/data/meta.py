@@ -176,7 +176,8 @@ class MetaField:
 
     @staticmethod
     def _type_matches(value: ValueType, field_type: t.Any) -> bool:
-        if isinstance(value, field_type):
+        numpy_equivalents = {int: np.integer, float: np.floating}
+        if isinstance(value, field_type) or isinstance(value, numpy_equivalents[field_type]):  # noqa: SIM101
             return True
         return field_type is float and isinstance(value, int)
 
@@ -659,6 +660,11 @@ class NormalizedMetadata(Mapping):
     def provenance(self) -> list[str]:
         """Returns file provenance."""
         return self._provenance
+
+    @provenance.setter
+    def provenance(self, provenance: list[str]) -> None:
+        """Set file provenance."""
+        self._provenance = provenance
 
     @staticmethod
     def _validate_key_is_str(key: str) -> None:

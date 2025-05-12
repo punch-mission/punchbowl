@@ -2,7 +2,7 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-## Unreleased
+## Version 0.0.12: May 12, 2025
 
 - L1 speedups, L2 reprojection fix, and accepting ints for `float` fields in `NormalizedMetadata` in https://github.com/punch-mission/punchbowl/pull/435
 - Allows custom path for ffmpeg in quicklook movies in https://github.com/punch-mission/punchbowl/pull/438
@@ -11,7 +11,9 @@
 - Adds metadata to output jpeg2000 files in https://github.com/punch-mission/punchbowl/pull/433
 - Checks for square root decompression in L1 processing in https://github.com/punch-mission/punchbowl/pull/434
 - Modifies metadata for header / unit compliance in https://github.com/punch-mission/punchbowl/pull/427
+- Updates L0 header generation in https://github.com/punch-mission/punchbowl/pull/444
 - Doesn't set SC location for F-corona models, improvements to msb_to_dn and compute_noise, and F-corona modeling improvements in https://github.com/punch-mission/punchbowl/pull/441
+- Sets quicklook images to grayscale by default, with a flag for color rendering in https://github.com/punch-mission/punchbowl/pull/447
 
 ## Version 0.0.11: Apr 14, 2025
 

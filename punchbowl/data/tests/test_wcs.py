@@ -137,7 +137,7 @@ def test_helio_to_celestial_wcs_many_points():
         np.testing.assert_allclose(eq_ra, hp_to_eq_ra, atol=1e-12)
         np.testing.assert_allclose(eq_coords.dec.to_value(u.deg), hp_to_eq_coords.dec.to_value(u.deg), atol=1e-12)
 
-def test_celesital_to_helio_wcs_many_points():
+def test_celestial_to_helio_wcs_many_points():
     for date_obs, crval1, crval2, crot in product(
             ["2021-03-20T00:00:00", "2021-01-20T00:00:00"],
             [10, 90, 220],

@@ -22,7 +22,7 @@ from sunpy.coordinates.sun import _sun_north_angle_to_z
 from sunpy.map import solar_angular_radius
 
 from punchbowl.data.history import History
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, get_p_angle
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, extract_crota_from_wcs, get_p_angle
 from punchbowl.exceptions import MissingMetadataError
 
 ValueType = int | str | float
@@ -157,6 +157,9 @@ class MetaField:
         else:
             msg = f"Value of {self.keyword} was {type(value)} but must be {self._datatype}."
             raise TypeError(msg)
+        self._value = value
+
+
 
     @property
     def default(self) -> ValueType:
@@ -173,7 +176,8 @@ class MetaField:
 
     @staticmethod
     def _type_matches(value: ValueType, field_type: t.Any) -> bool:
-        if isinstance(value, field_type):
+        numpy_equivalents = {int: np.integer, float: np.floating}
+        if isinstance(value, field_type) or isinstance(value, numpy_equivalents[field_type]):  # noqa: SIM101
             return True
         return field_type is float and isinstance(value, int)
 
@@ -311,6 +315,8 @@ class NormalizedMetadata(Mapping):
                     wcses = {"": wcs, "A": calculate_celestial_wcs_from_helio(wcs, self.astropy_time, self.shape)}
                 else:
                     wcses = {"": wcs}
+                if self.product_level == "0":
+                    hdr.insert("CROTA", ("COMMENT","Level 0 WCS approximated from spacecraft-reported state"))
                 for key, this_wcs in wcses.items():
                     if this_wcs.has_distortion:
                         wcs_header = this_wcs.to_fits()[0].header
@@ -319,9 +325,10 @@ class NormalizedMetadata(Mapping):
                     else:
                         wcs_header = this_wcs.to_header()
                     for card in wcs_header.cards:
-                        if key == "" or (key != "" and card[0][-1].isnumeric() and
-                                         card[0] not in DISTORTION_KEYWORDS and
-                                         card[0] not in WCS_OMITTED_KEYWORDS):
+                        if ((key == "" and card[0] not in WCS_OMITTED_KEYWORDS)
+                                or (key != "" and card[0][-1].isnumeric() and
+                                    card[0] not in DISTORTION_KEYWORDS and
+                                    card[0] not in WCS_OMITTED_KEYWORDS)):
                             hdr.append(
                                 (
                                 card[0] + key,
@@ -330,6 +337,7 @@ class NormalizedMetadata(Mapping):
                                 ),
                                 end=True,
                             )
+                hdr["CROTA"] = (extract_crota_from_wcs(wcs)).to(u.deg).value
 
         # add the history section
         for entry in self.history:
@@ -652,6 +660,11 @@ class NormalizedMetadata(Mapping):
     def provenance(self) -> list[str]:
         """Returns file provenance."""
         return self._provenance
+
+    @provenance.setter
+    def provenance(self, provenance: list[str]) -> None:
+        """Set file provenance."""
+        self._provenance = provenance
 
     @staticmethod
     def _validate_key_is_str(key: str) -> None:

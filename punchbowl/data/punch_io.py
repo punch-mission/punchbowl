@@ -97,8 +97,9 @@ def write_ndcube_to_quicklook(cube: NDCube,
                               filename: str,
                               layer: int | None = None,
                               vmin: float = 1e-15,
-                              vmax: float = 8e-13,
-                              annotation: str | None = None) -> None:
+                              vmax: float = 8e-12,
+                              annotation: str | None = None,
+                              color: bool = False) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
 
@@ -117,6 +118,8 @@ def write_ndcube_to_quicklook(cube: NDCube,
     annotation : str | None
         a formatted string to add to the bottom of the image as a label
         can access metadata by key, e.g. "typecode={TYPECODE}" would write the data's typecode into the image
+    color : bool
+        flag to generate RGB quicklook files, grayscale by default
 
     Returns
     -------
@@ -139,13 +142,20 @@ def write_ndcube_to_quicklook(cube: NDCube,
     else:
         image = cube.data
 
-    scaled_arr = (cmap_punch(norm(np.flipud(image))) * 255).astype(np.uint8)
+    if color:
+        mode = "RGBA"
+        scaled_arr = (cmap_punch(norm(np.flipud(image))) * 255).astype(np.uint8)
+        fill_value = (255, 255, 255)
+    else:
+        mode = "L"
+        scaled_arr = (np.clip(norm(np.flipud(image)), 0, 1) * 255).astype(np.uint8)
+        fill_value = 255
 
-    pil_image = Image.fromarray(scaled_arr, mode="RGBA")
+    pil_image = Image.fromarray(scaled_arr, mode=mode)
 
     if annotation:
         pad_height = int(image.shape[1] * 50 / 2048)
-        padded_image = Image.new("RGB", (pil_image.width, pil_image.height + pad_height))
+        padded_image = Image.new(mode, (pil_image.width, pil_image.height + pad_height))
 
         padded_image.paste(pil_image, (0, 0))
 
@@ -156,7 +166,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
         text = formatter.format(annotation, **cube.meta)
         text_offset = int(10 * image.shape[1] / 2048)
         text_position = (text_offset, pil_image.height + text_offset)
-        draw.text(text_position, text, font=font, fill=(255, 255, 255))
+        draw.text(text_position, text, font=font, fill=fill_value)
         pil_image = padded_image
 
     arr_image = np.array(pil_image)
@@ -223,34 +233,7 @@ def write_ndcube_to_fits(cube: NDCube,
                          skip_stats: bool = False,
                          uncertainty_quantize_level: float = 16) -> None:
     """Write an NDCube as a FITS file."""
-    if filename.endswith(".fits"):
-        if not skip_stats:
-            _update_statistics(cube)
-
-        full_header = cube.meta.to_fits_header(wcs=cube.wcs)
-        full_header["FILENAME"] = filename
-
-        hdu_data = fits.CompImageHDU(data=cube.data,
-                                     header=full_header,
-                                     name="Primary data array")
-        hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
-                                            header=full_header,
-                                            name="Uncertainty array",
-                                            quantize_level=uncertainty_quantize_level)
-        hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
-            name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
-        hdu_provenance.name = "File provenance"
-
-        hdul = cube.wcs.to_fits()
-        hdul[0] = fits.PrimaryHDU()
-        hdul.insert(1, hdu_data)
-        hdul.insert(2, hdu_uncertainty)
-        hdul.insert(3, hdu_provenance)
-        hdul.writeto(filename, overwrite=overwrite, checksum=True)
-        hdul.close()
-        if write_hash:
-            write_file_hash(filename)
-    else:
+    if not filename.endswith(".fits"):
         msg = (
             "Filename must have a valid file extension `.fits`"
             f"Found: {os.path.splitext(filename)[1]}"
@@ -258,6 +241,35 @@ def write_ndcube_to_fits(cube: NDCube,
         raise ValueError(
             msg,
         )
+
+    if not skip_stats:
+        _update_statistics(cube)
+
+    full_header = cube.meta.to_fits_header(wcs=cube.wcs)
+    full_header["FILENAME"] = os.path.basename(filename)
+
+    hdu_data = fits.CompImageHDU(data=cube.data,
+                                 header=full_header,
+                                 name="Primary data array")
+    hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
+        name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
+    hdu_provenance.name = "File provenance"
+
+    hdul = cube.wcs.to_fits()
+    hdul[0] = fits.PrimaryHDU()
+    hdul.insert(1, hdu_data)
+    if cube.meta["LEVEL"].value != "0":
+        hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
+                                            header=full_header,
+                                            name="Uncertainty array",
+                                            quantize_level=uncertainty_quantize_level)
+        hdul.insert(2, hdu_uncertainty)
+    hdul.append(hdu_provenance)
+    hdul.writeto(filename, overwrite=overwrite, checksum=True)
+    hdul.close()
+    if write_hash:
+        write_file_hash(filename)
+
 
 
 def _pack_uncertainty(cube: NDCube) -> np.ndarray:
@@ -317,13 +329,20 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
         header["DATASUM"] = ""
         meta = NormalizedMetadata.from_fits_header(header)
         if include_provenance:
-            meta._provenance = hdul[3].data["provenance"]  # noqa: SLF001
+            if isinstance(hdul[-1], fits.hdu.BinTableHDU):
+                meta._provenance = hdul[-1].data["provenance"]  # noqa: SLF001
+            else:
+                msg = "Provenance HDU does not appear to be BinTableHDU type."
+                raise ValueError(msg)
         wcs = WCS(header, hdul, key=key)
         unit = u.ct
 
-        secondary_hdu = hdul[2]
-        uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data)
-        uncertainty = StdDevUncertainty(uncertainty)
+        if len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
+            secondary_hdu = hdul[2]
+            uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data)
+            uncertainty = StdDevUncertainty(uncertainty)
+        else:
+            uncertainty = None
 
     return NDCube(
         data.view(dtype=data.dtype.newbyteorder()).byteswap().astype(float),

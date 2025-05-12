@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from astropy.wcs import WCS
 from ndcube import NDCube
+from prefect.logging import disable_run_logger
 
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level2.merge import merge_many_polarized_task
@@ -26,7 +27,6 @@ def sample_data_list(sample_ndcube):
     return [sample_pd1, sample_pd2]
 
 
-@pytest.mark.prefect_test
 def test_merge_many_task(sample_data_list):
     """
     Test the image_merge prefect flow using a test harness
@@ -36,7 +36,8 @@ def test_merge_many_task(sample_data_list):
     trefoil_shape  = (4096, 4096)
     trefoil_wcs.array_shape = trefoil_shape
 
-    output_punchdata = merge_many_polarized_task.fn(sample_data_list, trefoil_wcs)
+    with disable_run_logger():
+        output_punchdata = merge_many_polarized_task.fn(sample_data_list, trefoil_wcs)
     assert isinstance(output_punchdata, NDCube)
     assert output_punchdata.data.shape == (3, 4096, 4096)
     assert np.allclose(output_punchdata.data[0, 100:300, 300:400], 1)

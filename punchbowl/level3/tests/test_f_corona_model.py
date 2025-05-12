@@ -9,7 +9,6 @@ import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect.logging import disable_run_logger
 
 # punchbowl imports
 from punchbowl.data import NormalizedMetadata
@@ -28,12 +27,6 @@ def sample_data_list():
     for iStep in range(number_elements):
         data_list.append(SAMPLE_FITS_PATH)
     return data_list
-
-
-def test_list_input_2(sample_data_list):
-    #background = construct_f_corona_background.fn(sample_data)
-    #assert isinstance(background, NDCube)
-    assert isinstance(sample_data_list, list)
 
 
 @pytest.fixture()
@@ -160,11 +153,9 @@ def test_after_is_before_subtraction_fails(observation_data: NDCube, one_data: N
         _ = subtract_f_corona_background(observation_data, one_data, one_data)
 
 
-@pytest.mark.prefect_test()
 def test_different_array_size_subtraction(incorrect_shape_data: NDCube, zero_data: NDCube) -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in
     """
     with pytest.raises(Exception):
-        with disable_run_logger():
-            subtract_f_corona_background_task.fn(incorrect_shape_data, zero_data)
+        subtract_f_corona_background_task(incorrect_shape_data, zero_data)

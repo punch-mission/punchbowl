@@ -91,8 +91,8 @@ def test_write_jpeg(sample_ndcube, tmpdir):
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
     cube.meta["PIPEVRSN"] = "0.1"
-    cube.meta["DATE-OBS"] = str(datetime.now())
-    cube.meta["DATE-END"] = str(datetime.now())
+    cube.meta["DATE-OBS"] = str(datetime.now(UTC))
+    cube.meta["DATE-END"] = str(datetime.now(UTC))
 
     test_path = os.path.join(tmpdir, "test.jpeg")
     write_ndcube_to_quicklook(cube, test_path, vmin=1E-15,  vmax=8E-12, annotation="Hi there! I'm {TYPECODE}.", color=True)
@@ -105,8 +105,8 @@ def test_write_data_jp2_with_annotation(sample_ndcube, tmpdir):
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
     cube.meta["PIPEVRSN"] = "0.1"
-    cube.meta["DATE-OBS"] = str(datetime.now())
-    cube.meta["DATE-END"] = str(datetime.now())
+    cube.meta["DATE-OBS"] = str(datetime.now(UTC))
+    cube.meta["DATE-END"] = str(datetime.now(UTC))
 
     test_path = os.path.join(tmpdir, "test.jp2")
     write_ndcube_to_quicklook(cube, test_path, annotation=CALIBRATION_ANNOTATION)

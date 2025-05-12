@@ -75,4 +75,5 @@ def split_ccd_array(shape:tuple, value_left:float, value_right:float) -> ndarray
     array = np.zeros(shape)
     array[:,:shape[1]//2] = value_left
     array[:,shape[1]//2:] = value_right
-    return array
+    # TODO - Will need to either transpose output array or rename left/right across punchbowl
+    return array.T

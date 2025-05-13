@@ -2,6 +2,10 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Unreleased
+
+- F-corona detrending, fixes for L2 FILEVRSN and DATE-OBS, and use header's gain and exposure time in https://github.com/punch-mission/punchbowl/pull/455
+
 ## Version 0.0.12: May 12, 2025
 
 - L1 speedups, L2 reprojection fix, and accepting ints for `float` fields in `NormalizedMetadata` in https://github.com/punch-mission/punchbowl/pull/435

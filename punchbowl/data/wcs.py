@@ -167,7 +167,7 @@ def hpc_to_gcrs(HPcoord, GCRSframe):  # noqa: ANN201, N803, ANN001
     # Compute the three angles we need
     position = astropy.coordinates.get_sun(obstime)
     ra, dec = position.ra.rad, position.dec.rad
-    p = get_p_angle(obstime).rad
+    p = -get_p_angle(obstime).rad
 
     # Prepare rotation matrices for each
     p_matrix = np.array([
@@ -225,7 +225,7 @@ def gcrs_to_hpc(GCRScoord, Helioprojective): # noqa: ANN201, N803, ANN001
     # Compute the three angles we need
     position = astropy.coordinates.get_sun(obstime)
     ra, dec = position.ra.rad, position.dec.rad
-    p = get_p_angle(obstime).rad
+    p = -get_p_angle(obstime).rad
 
     # Prepare rotation matrices for each
     p_matrix = np.array([

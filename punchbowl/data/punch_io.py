@@ -4,6 +4,7 @@ import os
 import string
 import hashlib
 import os.path
+import warnings
 import subprocess
 from typing import Any
 from pathlib import Path
@@ -14,7 +15,7 @@ import numpy as np
 from astropy.io import fits
 from astropy.io.fits import Header
 from astropy.nddata import StdDevUncertainty
-from astropy.wcs import WCS
+from astropy.wcs import WCS, FITSFixedWarning
 from glymur import Jp2k, jp2box
 from matplotlib.colors import LogNorm
 from ndcube import NDCube
@@ -320,7 +321,9 @@ def _update_statistics(cube: NDCube) -> None:
 
 def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True) -> NDCube:
     """Load an NDCube from a FITS file."""
-    with fits.open(path) as hdul:
+    with warnings.catch_warnings(), fits.open(path) as hdul:
+        warnings.filterwarnings(action="ignore", message=".*CROTA.*Human-readable solar north pole angle.*",
+                                category=FITSFixedWarning)
         primary_hdu = hdul[1]
         data = primary_hdu.data
         header = primary_hdu.header

@@ -11,7 +11,7 @@ dependencies = [
         "sunpy[all]",
         "pandas",
         "ndcube",
-        "matplotlib<=3.9.2",
+        "matplotlib<=3.10.3",
         "ccsdspy",
         "prefect[dask]",
         "regularizepsf",

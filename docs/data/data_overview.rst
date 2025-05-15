@@ -38,8 +38,8 @@ greater then 2 :sup:`16`.
 
 Level 0 files have two-letter codes with a spacecraft number appended.  WFI1, WFI2, and WFI3 are assigned the numbers 1-3, and NFI is
 assigned the number 4.  Polarized images have the codes "PMn", "PZn", and "PPn" where "n" is the spacecraft number.
-The M, Z, and P refer to physical polarizer angles relative to camera-frame horizontal, though these are not calibrated at this level.  
-Clear images (taken with no polarizer in the beam) have the codes "CRn".  
+The M, Z, and P refer to physical polarizer angles relative to camera-frame horizontal, though these are not calibrated at this level.
+Clear images (taken with no polarizer in the beam) have the codes "CRn".
 These sixteen codes (four image types and four spacecraft) form the bulk of the L0 dataset.
 
 Level 1

@@ -81,7 +81,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 7,keyword,CEBMEDAC,,Multi-bit EDAC,int,TRUE,TRUE,
 8,section,COMMENT,Onboard Image Processing,,str,TRUE,TRUE,Onboard Image Processing
 8,keyword,RAWBITS,,[bits] raw image bits per pixel,int,TRUE,TRUE,
-8,keyword,COMPBITS,,[bits] compressed image bits per pixel,int,TRUE,TRUE,
+8,keyword,COMPBITS,,[bits] compressed image bits per pixel,float,TRUE,TRUE,
 8,keyword,PMB_INIT,,True to initialize pixel mask bits to '1',int,TRUE,TRUE,
 8,keyword,CMP_BYP,,True bypasses JPEG-LS compression ,int,TRUE,TRUE,
 8,keyword,BSEL,,data or pre-scaled square-rooted image data,int,TRUE,TRUE,

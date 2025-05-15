@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import typing as t
-from datetime import datetime
+from datetime import UTC, datetime
 from collections import OrderedDict
 from collections.abc import Mapping
 
@@ -803,7 +803,7 @@ class NormalizedMetadata(Mapping):
         if "DATE-OBS" not in self:
             msg = "DATE-OBS is missing from the metadata."
             raise MissingMetadataError(msg)
-        return parse_datetime(self["DATE-OBS"].value)
+        return parse_datetime(self["DATE-OBS"].value).replace(tzinfo=UTC)
 
     @property
     def shape(self) -> tuple:

@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 import numpy as np
 from ndcube import NDCube
@@ -67,7 +67,7 @@ def average_datetime(datetimes: list[datetime]) -> datetime:
     """Compute average datetime from a list of datetimes."""
     timestamps = [dt.timestamp() for dt in datetimes]
     average_timestamp = sum(timestamps) / len(timestamps)
-    return datetime.fromtimestamp(average_timestamp)  # noqa: DTZ006
+    return datetime.fromtimestamp(average_timestamp).astimezone(UTC)
 
 
 def _zvalue_from_index(arr, ind):  # noqa: ANN202, ANN001

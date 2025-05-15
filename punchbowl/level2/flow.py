@@ -110,6 +110,7 @@ def level2_ctm_flow(data_list: list[str] | list[NDCube],
         data_list = [identify_bright_structures_task(cube, this_voter_filenames)
                      for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
         output_data = merge_many_clear_task(data_list, trefoil_wcs)
+        output_data.meta["FILEVRSN"] = data_list[0].meta["FILEVRSN"].value
     else:
         output_dateobs = datetime.now(UTC).isoformat()
         output_datebeg = output_dateobs

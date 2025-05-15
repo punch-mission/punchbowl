@@ -22,11 +22,11 @@ The four levels of processing are:
 Level 0
 -------
 
-These are data direct from the PUNCH cameras, assembled into FITS files and merged with metadata from the spacecraft. The data are
+These are data direct from the PUNCH cameras, assembled into FITS files and merged with metadata from the spacecraft. The data are typically
 square-root coded and losslessly compressed on board the spacecraft; L0 images have been decompressed into their original square-root
 coded form, but the coding is preserved. The square-root coding is tuned to match the effective digital step size to the photon noise
 level, across the dynamic range of the image.  To reconstruct direct camera values that are roughly proportional to photometric intensity,
-you can examine the "ISSQRT" field in the header.  If that field has a nonzero value, then the radiance B of a particular pixel is given by
+you can examine the "ISSQRT" field in the header.  If "ISSQRT" has a nonzero value, then the radiance B of a particular pixel is given by
 
 B = P * P / SCALE
 
@@ -37,9 +37,10 @@ Raw camera pixel values are digitized at 16 bits.  NFI pixel values are sums of 
 greater then 2 :sup:`16`.
 
 Level 0 files have two-letter codes with a spacecraft number appended.  WFI1, WFI2, and WFI3 are assigned the numbers 1-3, and NFI is
-assigned the number 4.  Polarized images have the codes "PMn", "PZn", and "PPn".  The M, Z, and P refer to physical polarizer angles
-relative to camera-frame horizontal, though these are not calibrated at this level.  Clear images (taken with no polarizer in the beam)
-have the codes "CRn".  These sixteen codes (four image types and four spacecraft) form the bulk of the L0 dataset.
+assigned the number 4.  Polarized images have the codes "PMn", "PZn", and "PPn" where "n" is the spacecraft number.
+The M, Z, and P refer to physical polarizer angles relative to camera-frame horizontal, though these are not calibrated at this level.  
+Clear images (taken with no polarizer in the beam) have the codes "CRn".  
+These sixteen codes (four image types and four spacecraft) form the bulk of the L0 dataset.
 
 Level 1
 -------
@@ -65,7 +66,7 @@ Level 3
 
 Level 3 products are background-subtracted and are intended to be usable directly as coronal and solar-wind images.  The basic product
 codes are similar to the Level 2 codes, but include long-term average products ("PAM", "PAN", "CAM", and "CAN") that fill in the entire circular
-FOV by averaging across 32 minutes of PUNCH data acquisition.  In addition, two wind-flow products "VAM" and "VAN" describe derived solar-wind motion.
+FOV by averaging across 32 minutes of PUNCH data acquisition.  In addition, a wind-flow product "VAM" describes derived solar-wind motion.
 
 Level Q: QuickPUNCH
 -------------------

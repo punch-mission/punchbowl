@@ -1,6 +1,7 @@
 import numpy as np
 from ndcube import NDCube
 from scipy.signal import convolve2d, medfilt2d
+from astroscrappy import detect_cosmics
 
 from punchbowl.level1.deficient_pixel import cell_neighbors
 from punchbowl.prefect import punch_task
@@ -86,6 +87,55 @@ def spikejones(
         output[x, y] = np.nanmean(neighbors[neighbors < threshold])
 
     return output, spikes
+
+
+def astroscrappy_despike(image,
+            sigclip=50, sigfrac=0.25, objlim=160.0, niter=10,
+            gain=4.9, readnoise=17, cleantype='meanmask',
+            **kwargs):
+    """
+    Despike an image using astroscrappy.detect_cosmics.
+
+    Parameters
+    ----------
+    image : 2D numpy arrays
+        Input image to be despiked.
+    sigclip : float, optional
+        Laplacian-to-noise limit for cosmic ray detection.
+    sigfrac : float, optional
+        Fractional detection limit for neighboring pixels.
+    objlim : float, optional
+        Contrast limit between Laplacian image and the fine structure image.
+    niter : int, optional
+        Number of iterations.
+    gain : float, optional
+        Gain of the image (electrons/ADU).
+    readnoise : float, optional
+        Read noise of the image (electrons).
+    cleantype : str, optional
+        Type of cleaning algorithm: 'meanmask', 'medmask', or 'idl'.
+    **kwargs : dict, optional
+        Any other keyword arguments to pass to `detect_cosmics`.
+
+    Returns
+    -------
+    cleaned : 2D numpy array
+        The cleaned image with cosmic rays removed.
+    mask : 2D numpy array
+        Boolean mask of detected cosmic rays.
+    """
+    mask, cleaned = detect_cosmics(
+        image,
+        sigclip=sigclip,
+        sigfrac=sigfrac,
+        objlim=objlim,
+        niter=niter,
+        gain=gain,
+        readnoise=readnoise,
+        cleantype=cleantype,
+        **kwargs
+    )
+    return cleaned, mask
 
 
 @punch_task

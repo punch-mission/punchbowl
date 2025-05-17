@@ -1,6 +1,7 @@
 import numpy as np
 from ndcube import NDCube
 from scipy.signal import convolve2d, medfilt2d
+from astroscrappy import detect_cosmics
 
 from punchbowl.level1.deficient_pixel import cell_neighbors
 from punchbowl.prefect import punch_task
@@ -90,6 +91,70 @@ def spikejones(
 
 @punch_task
 def despike_task(data_object: NDCube,
+                        sigclip: float=50,
+                        sigfrac: float=0.25,
+                        objlim: float=160.0,
+                        niter:int=10,
+                        gain:float=4.9,
+                        readnoise:float=17,
+                        cleantype='meanmask',
+                        **kwargs)-> NDCube:
+    """
+    Despike an image using astroscrappy.detect_cosmics.
+
+    Parameters
+    ----------
+    image : 2D numpy arrays
+        Input image to be despiked.
+    sigclip : float, optional
+        Laplacian-to-noise limit for cosmic ray detection.
+    sigfrac : float, optional
+        Fractional detection limit for neighboring pixels.
+    objlim : float, optional
+        Contrast limit between Laplacian image and the fine structure image.
+    niter : int, optional
+        Number of iterations.
+    gain : float, optional
+        Gain of the image (electrons/ADU).
+    readnoise : float, optional
+        Read noise of the image (electrons).
+    cleantype : str, optional
+        Type of cleaning algorithm: 'meanmask', 'medmask', or 'idw'.
+    **kwargs : dict, optional
+        Any other keyword arguments to pass to `detect_cosmics`.
+
+    Returns
+    -------
+    cleaned : 2D numpy array
+        The cleaned image with cosmic rays removed.
+    mask : 2D numpy array
+        Boolean mask of detected cosmic rays.
+    """
+    spikes, data_object.data[...] = detect_cosmics(
+                                    data_object.data[...],
+                                    sigclip=sigclip,
+                                    sigfrac=sigfrac,
+                                    objlim=objlim,
+                                    niter=niter,
+                                    gain=gain,
+                                    readnoise=readnoise,
+                                    cleantype=cleantype,
+                                    **kwargs)
+
+    data_object.uncertainty.array[spikes] = np.inf
+    data_object.meta.history.add_now("LEVEL1-despike", "image despiked")
+    data_object.meta.history.add_now("LEVEL1-despike", f"method={cleantype}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"sigclip={sigclip}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"unsharp_size={sigfrac}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"alpha={objlim}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"iteraions={niter}")
+
+    return data_object
+
+
+
+@punch_task
+def despikejones_task(data_object: NDCube,
                  unsharp_size: int = 3,
                  method: str = "convolve",
                  alpha: float = 1,

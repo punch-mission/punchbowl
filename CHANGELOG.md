@@ -6,6 +6,7 @@
 
 - Suppress CROTA warnings in load_ndcube_from_fits in https://github.com/punch-mission/punchbowl/pull/456
 - Corrects the sign in p angle when converting between helio and celestial in https://github.com/punch-mission/punchbowl/pull/454
+- Supports floating-point COMPBITS values in https://github.com/punch-mission/punchbowl/pull/461
 
 ## Version 0.0.12: May 12, 2025
 

@@ -5,7 +5,7 @@ What is PUNCH?
 --------------
 PUNCH is a NASA Small Explorer (SMEX) mission to better understand how the mass and energy of
 the Sun’s corona become the solar wind that fills the solar system.
-Four suitcase-sized satellites will work together to produce images of the entire inner solar system around the clock.
+Four suitcase-sized satellites work together to produce images of the entire inner solar system around the clock.
 You can learn more at the `PUNCH website <https://punch.space.swri.edu/>`_.
 
 Where does `punchbowl` fit in?

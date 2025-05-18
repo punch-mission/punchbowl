@@ -3,13 +3,15 @@ Accessing PUNCH Data
 
 Downloading Data
 ----------------
-Data output from the PUNCH data processing pipeline will be stored and accessible through the Solar Data Analysis Center (SDAC) - a portal for hosting through tools such as the Virtual Solar Observatory (VSO). From here PUNCH data products can be queried and requested for download using metadata within the data products.
+Data output from the PUNCH data processing pipeline are stored and accessible through the Solar Data Analysis Center (SDAC) - a portal for hosting through tools such as the Virtual Solar Observatory (VSO).
+From here PUNCH data products can be queried and requested for download using metadata within the data products.
 
-PUNCH data will also be accessible using the helioviewer tool, where it can be quickly visualized and stitched together with other observations for context.
+PUNCH data is also accessible using the helioviewer tool, where it can be quickly visualized and stitched together with other observations for context.
 
 Reading Data
 ------------
-Standard PUNCH data is stored as a standards-compliant FITS file, which bundles the primary data along with secondary data and metadata fully describing the observation. Each file is named with a convention that uniquely identifies the product - a sample being 'PUNCH_L3_PAM_20230704000000_v1.fits' - where L3 defines the data level, PAM is an example of a particular data product code, 20230704000000 is a timestamp in the format yyyymmddhhmmss, and _v1 is the version of the data (used in reprocessing).
+Standard PUNCH data is stored as a standards-compliant FITS file, which bundles the primary data along with secondary data and metadata fully describing the observation.
+Each file is named with a convention that uniquely identifies the product - a sample being 'PUNCH_L3_PAM_20230704000000_v1.fits' - where L3 defines the data level, PAM is an example of a particular data product code, 20230704000000 is a timestamp in the format yyyymmddhhmmss, and _v1 is the version of the data.
 
 For most end-users the primary data of interest are PAM (low-noise full frame data gathered over one full spacecraft rotation cycle) and PTM (high-cadence trefoil mosaics).
 

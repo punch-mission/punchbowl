@@ -18,6 +18,7 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
         sample_data.meta["GAINLEFT"] = 4.9
         sample_data.meta["GAINRGHT"] = 4.9
         sample_data.meta["OFFSET"] = 100
+        sample_data.meta["EXPTIME"] = 49
         write_ndcube_to_fits(sample_data, input_name)
 
         quartic_coefficient_path = THIS_DIRECTORY / "data" / "test_quartic_coeffs.fits"
@@ -38,6 +39,7 @@ def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
     cube.meta["GAINLEFT"] = 4.9
     cube.meta["GAINRGHT"] = 4.9
     cube.meta["OFFSET"] = 100
+    cube.meta["EXPTIME"] = 49
     quartic_coefficient_path = THIS_DIRECTORY / "data" / "test_quartic_coeffs.fits"
     vignetting_path = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425_v1.fits"
 

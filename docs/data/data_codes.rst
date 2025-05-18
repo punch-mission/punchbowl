@@ -9,27 +9,27 @@ Data Product Codes
 .. list-table::
    :header-rows: 1
 
-   * - Level
-     - Code
-     - Description
+   * - **Level**
+     - **Code**
+     - **Description**
    * - 0
      - PM1, PM2, PM3, PM4, PZ1, PZ2, PZ3, PZ4, PP1, PP2, PP3, PP4, CR1, CR2, CR3, CR4
-     - Science images in the standard polarization (PM, PZ, PP) and clear (CR) states
+     - Standard polarization (PM for -60 degree, PZ for 0 degree, PP for +60 degree polarization) and clear (CR) images
    * - 0
      - PX1, PX2, PX3, PX4
-     - Science images in a nonstandard polarization state
+     - Science images in a nonstandard polarization state or when the filter wheel packet is stale
    * - 1
      - PM1, PM2, PM3, PM4, PZ1, PZ2, PZ3, PZ4, PP1, PP2, PP3, PP4, CR1, CR2, CR3, CR4
-     - Science images in the standard polarization (PM, PZ, PP) and clear (CR) states (photometrically calibrated)
+     - Standard polarization (PM for -60 degree, PZ for 0 degree, PP for +60 degree polarization) and clear (CR) images (photometrically calibrated)
    * - 2
      - PTM
-     - Pol. science mosaics (Trefoil) in output coordinates, resolved into MZP pol. triplets, and uncertainty layer
+     - Polarized science mosaics (Trefoil) in output coordinates, resolved into MZP polarization triplets, and uncertainty layer
    * - 2
      - CTM
      - Clear science mosaics (Trefoil) in output coordinates, resolved into image and uncertainty layer
    * - 2
      - PNN
-     - Pol. NFI images in output coordinates, resolved into MZP pol. triplets, and uncertainty layer
+     - Polarized NFI images in output coordinates, resolved into MZP polarization triplets, and uncertainty layer
    * - 2
      - CNN
      - Clear NFI images in output coordinates, resolved into image, and uncertainty layer
@@ -74,10 +74,10 @@ Data Product Codes
      - Clear K NFI science image, bkg-sub & resolved into B & uncertainty layer
    * - 3
      - VAM
-     - Mosaic derived wind velocity maps extracted from MP’s: 1440 pos. angles at various altitudes
+     - Mosaic derived wind velocity maps: 1440 pos. angles at various altitudes
    * - 3
      - VAN
-     - NFI derived wind velocity maps extracted from MP’s: 1440 pos. angles at various altitudes
+     - NFI derived wind velocity maps: 1440 pos. angles at various altitudes
    * - 3
      - PAM
      - Polarized low-noise science mosaic, bkg-sub & resolved into B, pB, & uncertainty layer
@@ -124,25 +124,25 @@ Calibration Product Codes
      - QuickPUNCH Mosaic images (5.4–80 Rsun) F corona model
    * - 3
      - PFM
-     - Polarized mosaic F corona model, resolved into MZP pol. triplets, and uncertainty layer (from MP’s)
+     - Polarized mosaic F corona model, resolved into MZP pol. triplets, and uncertainty layer
    * - 3
      - CFM
-     - Clear mosaic F corona model, resolved into image and uncertainty layer (from MC’s)
+     - Clear mosaic F corona model, resolved into image and uncertainty layer
    * - 3
      - PFN
-     - Polarized NFI F-corona model, resolved into MZP pol. triplets, and uncertainty layer (from NP’s)
+     - Polarized NFI F-corona model, resolved into MZP pol. triplets, and uncertainty layer
    * - 3
      - CFN
-     - Clear NFI F-corona model, resolved into image and uncertainty layer (from NC’s)
+     - Clear NFI F-corona model, resolved into image and uncertainty layer
    * - 3
      - PSM
-     - Polarized mosaic stellar model, resolved into MZP pol. triplets, and uncertainty layer (from MP’s)
+     - Polarized mosaic stellar model, resolved into MZP pol. triplets, and uncertainty layer
    * - 3
      - CSM
-     - Clear mosaic stellar model, resolved into image and uncertainty layer (from MC’s)
+     - Clear mosaic stellar model, resolved into image and uncertainty layer
    * - 3
      - PSN
-     - Polarized NFI stellar model, resolved into MZP pol. triplets, and uncertainty layer (from MP’s)
+     - Polarized NFI stellar model, resolved into MZP pol. triplets, and uncertainty layer
    * - 3
      - CSN
-     - Clear NFI stellar model, resolved into image and uncertainty layer (from MC’s)
+     - Clear NFI stellar model, resolved into image and uncertainty layer

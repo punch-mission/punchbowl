@@ -10,19 +10,19 @@
 
 ## Accessing the data
 
-Data will be available via the Solar Data Analysis Center. More details will be provided after launch.
+Data are available via the Solar Data Analysis Center.
+See [the PUNCH website](https://punch.space.swri.edu/punch_science_getdata.php) for details.
 
 ## Installing `punchbowl`
 
 Install with `pip install punchbowl` to get the released version.
 
-To get the current latest version: clone the repo and install locally.
+To get the latest unreleased version: clone the repo and install it locally.
 
 ## Running `punchbowl`
 
 [The documentation](https://punchbowl.readthedocs.io/en/latest/index.html) provides details on how to run the various components.
 It also provides a short explanation of each underlying algorithm.
-If you want to process larger quantities of data, we suggest using [punchpipe](https://github.com/punch-mission/punchpipe).
 Please reach out with a discussion for more help.
 
 ## Getting help

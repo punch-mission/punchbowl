@@ -6,7 +6,8 @@
 
 - Suppress CROTA warnings in load_ndcube_from_fits in https://github.com/punch-mission/punchbowl/pull/456
 - Corrects the sign in p angle when converting between helio and celestial in https://github.com/punch-mission/punchbowl/pull/454
-
+- Changes to astroscrappy for despiking in https://github.com/punch-mission/punchbowl/pull/462
+-
 ## Version 0.0.12: May 12, 2025
 
 - L1 speedups, L2 reprojection fix, and accepting ints for `float` fields in `NormalizedMetadata` in https://github.com/punch-mission/punchbowl/pull/435

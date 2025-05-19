@@ -7,6 +7,7 @@
 - F-corona detrending, fixes for L2 FILEVRSN and DATE-OBS, and use header's gain and exposure time in https://github.com/punch-mission/punchbowl/pull/455
 - Suppress CROTA warnings in load_ndcube_from_fits in https://github.com/punch-mission/punchbowl/pull/456
 - Corrects the sign in p angle when converting between helio and celestial in https://github.com/punch-mission/punchbowl/pull/454
+- Changes to astroscrappy for despiking in https://github.com/punch-mission/punchbowl/pull/462
 - Supports floating-point COMPBITS values in https://github.com/punch-mission/punchbowl/pull/461
 - Adds data overview documentation in https://github.com/punch-mission/punchbowl/pull/458
 

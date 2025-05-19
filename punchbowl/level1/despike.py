@@ -1,7 +1,7 @@
 import numpy as np
+from astroscrappy import detect_cosmics
 from ndcube import NDCube
 from scipy.signal import convolve2d, medfilt2d
-from astroscrappy import detect_cosmics
 
 from punchbowl.level1.deficient_pixel import cell_neighbors
 from punchbowl.prefect import punch_task
@@ -97,14 +97,13 @@ def despike_task(data_object: NDCube,
                         niter:int=10,
                         gain:float=4.9,
                         readnoise:float=17,
-                        cleantype='meanmask',
-                        **kwargs)-> NDCube:
+                        cleantype:str="meanmask")-> NDCube:
     """
     Despike an image using astroscrappy.detect_cosmics.
 
     Parameters
     ----------
-    image : 2D numpy arrays
+    data_object : NDCube
         Input image to be despiked.
     sigclip : float, optional
         Laplacian-to-noise limit for cosmic ray detection.
@@ -120,15 +119,12 @@ def despike_task(data_object: NDCube,
         Read noise of the image (electrons).
     cleantype : str, optional
         Type of cleaning algorithm: 'meanmask', 'medmask', or 'idw'.
-    **kwargs : dict, optional
-        Any other keyword arguments to pass to `detect_cosmics`.
 
     Returns
     -------
-    cleaned : 2D numpy array
-        The cleaned image with cosmic rays removed.
-    mask : 2D numpy array
-        Boolean mask of detected cosmic rays.
+    NDCube
+        Despiked cube.
+
     """
     spikes, data_object.data[...] = detect_cosmics(
                                     data_object.data[...],
@@ -138,8 +134,7 @@ def despike_task(data_object: NDCube,
                                     niter=niter,
                                     gain=gain,
                                     readnoise=readnoise,
-                                    cleantype=cleantype,
-                                    **kwargs)
+                                    cleantype=cleantype)
 
     data_object.uncertainty.array[spikes] = np.inf
     data_object.meta.history.add_now("LEVEL1-despike", "image despiked")
@@ -147,7 +142,7 @@ def despike_task(data_object: NDCube,
     data_object.meta.history.add_now("LEVEL1-despike", f"sigclip={sigclip}")
     data_object.meta.history.add_now("LEVEL1-despike", f"unsharp_size={sigfrac}")
     data_object.meta.history.add_now("LEVEL1-despike", f"alpha={objlim}")
-    data_object.meta.history.add_now("LEVEL1-despike", f"iteraions={niter}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"iterations={niter}")
 
     return data_object
 

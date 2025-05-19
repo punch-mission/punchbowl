@@ -56,10 +56,11 @@ def level1_core_flow(
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
     quartic_coefficient_path: str | pathlib.Path | Callable | None = None,
-    despike_unsharp_size: int = 1,
-    despike_method: str = "median",
-    despike_alpha: float = 10,
-    despike_dilation: int = 0,
+    despike_sigclip: float = 50,
+    despike_sigfrac: float = 0.25,
+    despike_objlim: float = 160.0,
+    despike_niter: int = 10,
+    despike_cleantype: str = "meanmask",
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
@@ -112,10 +113,13 @@ def level1_core_flow(
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 
         data = despike_task(data,
-                            unsharp_size=despike_unsharp_size,
-                            method=despike_method,
-                            alpha=despike_alpha,
-                            dilation=despike_dilation)
+                            despike_sigclip,
+                            despike_sigfrac,
+                            despike_objlim,
+                            despike_niter,
+                            gain_left,  # TODO: despiking should handle the gain more completely
+                            read_noise_level,
+                            despike_cleantype)
         data = destreak_task(data,
                              exposure_time=exposure_time,
                              reset_line_time=reset_line_time,

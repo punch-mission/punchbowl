@@ -30,7 +30,8 @@ dependencies = [
         "requests",
         "threadpoolctl",
         "numexpr",
-        "glymur"
+        "glymur",
+        "astroscrappy",
 ]
 requires-python = ">=3.11"
 authors = [

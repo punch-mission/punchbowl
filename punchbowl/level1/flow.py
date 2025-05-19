@@ -3,6 +3,7 @@ from collections.abc import Callable, Generator
 
 import astropy.units as u
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import get_run_logger
 from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
@@ -85,6 +86,20 @@ def level1_core_flow(
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
+
+        # Repackage data with proper metadata
+        product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
+        new_meta = NormalizedMetadata.load_template(product_code, "1")
+        new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
+
+        output_header = new_meta.to_fits_header(data.wcs)
+        for key in output_header:
+            if (key in data.meta) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"):
+                new_meta[key].value = data.meta[key].value
+
+        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit,
+                      uncertainty=StdDevUncertainty(np.zeros_like(data.data)))
+
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,
@@ -141,18 +156,6 @@ def level1_core_flow(
             alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
                                            * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
         data = align_task(data, mask=alignment_mask)
-
-        # Repackage data with proper metadata
-        product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
-        new_meta = NormalizedMetadata.load_template(product_code, "1")
-        new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
-
-        output_header = new_meta.to_fits_header(data.wcs)
-        for key in output_header:
-            if (key in data.meta) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"):
-                new_meta[key].value = data.meta[key].value
-
-        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])

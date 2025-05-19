@@ -96,16 +96,16 @@ def level1_core_flow(
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
         if data.meta["OBSCODE"].value == "4":
-            scaling = {"gain_left": 4.9 * u.photon / u.DN,
-                       "gain_right": 4.9 * u.photon / u.DN,
+            scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,
+                       "gain_right": data.meta["GAINRGHT"].value * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
-                       "exposure": 49 * u.s,
+                       "exposure": data.meta["EXPTIME"].value * u.s,
                        "aperture": 49.57 * u.mm ** 2}
         else:
-            scaling = {"gain_left": 4.9 * u.photon / u.DN,
-                       "gain_right": 4.9 * u.photon / u.DN,
+            scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,
+                       "gain_right": data.meta["GAINRGHT"].value * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
-                       "exposure": 49 * u.s,
+                       "exposure": data.meta["EXPTIME"].value * u.s,
                        "aperture": 34 * u.mm ** 2}
         pixel_scale = calculate_image_pixel_area(data.wcs, data.data.shape).to(u.sr) / u.pixel
         scaling["pixel_scale"] = pixel_scale

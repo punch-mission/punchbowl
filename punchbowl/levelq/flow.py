@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from collections.abc import Callable
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
@@ -10,13 +11,15 @@ from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_wcs
 from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.resample import reproject_many_flow
+from punchbowl.levelq.pca import pca_filter
 from punchbowl.util import average_datetime, load_image_task, output_image_task
 
 ORDER_QP = ["CR1", "CR2", "CR3", "CR4"]
 
 @flow(validate_parameters=False)
 def levelq_core_flow(data_list: list[str] | list[NDCube],
-                     output_filename: list[str] | None = None) -> list[NDCube]:
+                     output_filename: list[str] | None = None,
+                     files_to_fit: list[str | NDCube | Callable] | None = None) -> list[NDCube]:
     """Level quickPUNCH core flow."""
     logger = get_run_logger()
     logger.info("beginning level quickPUNCH core flow")
@@ -33,6 +36,9 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
                     ordered_data_list[i] = data_element
         logger.info("Ordered files are "
                     f"{[get_base_file_name(cube) if cube is not None else None for cube in ordered_data_list]}")
+
+        if files_to_fit:
+            pca_filter(ordered_data_list[-1], files_to_fit)
 
         quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_quickpunch_mosaic_wcs()
         quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()

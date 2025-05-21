@@ -34,13 +34,14 @@ def pca_filter(input_cube: NDCube, files_to_fit: list[NDCube | Callable | str],
         pca.fit(all_files_to_fit.reshape((len(all_files_to_fit), -1)))
         logger.info("Fitting finished")
 
+        transformed = pca.transform(input_cube.data.reshape((1, -1)))
+
         if med_filt:
             for i in range(len(pca.components_)):
                 comp = pca.components_[i].reshape(input_cube.data.shape)
                 comp = scipy.signal.medfilt2d(comp, med_filt)
                 pca.components_[i] = comp.ravel()
-        logger.info("Median smoothing finished finished")
+            logger.info("Median smoothing finished")
 
-        transformed = pca.transform(input_cube.data.reshape((1, -1)))
         reconstructed = pca.inverse_transform(transformed).reshape(input_cube.data.shape)
         input_cube.data -= reconstructed

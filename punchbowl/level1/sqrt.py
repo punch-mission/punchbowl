@@ -1,9 +1,11 @@
 import os.path
+import warnings
 from math import ceil
 
 import numpy as np
 from ndcube import NDCube
 
+from punchbowl.exceptions import DataValueWarning
 from punchbowl.prefect import punch_task
 
 TABLE_PATH = os.path.dirname(__file__) + "/decoding_tables/"
@@ -366,7 +368,10 @@ def decode_sqrt_by_table(data: np.ndarray | float, table: np.ndarray) -> np.ndar
         Decoded version of input data
 
     """
-    data = np.round(data).astype(np.int32).clip(0, table.shape[0])
+    rounded_data = np.round(data).astype(np.int32)
+    if np.any(rounded_data > table.shape[0]):
+        warnings.warn("Data values exceeded square-root encoding lookup table.", DataValueWarning)
+    data = rounded_data.clip(0, table.shape[0]-1)
 
     return table[data]
 

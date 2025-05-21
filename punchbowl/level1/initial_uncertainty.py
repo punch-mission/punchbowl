@@ -92,6 +92,13 @@ def compute_uncertainty(data_array: np.ndarray,
     return noise
 
 
+def flag_saturated_pixels(data_object: NDCube) -> NDCube:
+    """Flag saturated pixels in the uncertainty layer."""
+    saturation_value = 2**data_object.meta["COMPBITS"].value - 1
+    data_object.uncertainty.array[np.where(data_object.data >= saturation_value)] = np.inf
+    return data_object
+
+
 @punch_task
 def update_initial_uncertainty_task(data_object: NDCube,
                                     bias_level: float = 100,
@@ -110,6 +117,8 @@ def update_initial_uncertainty_task(data_object: NDCube,
                                             bitrate_signal=bitrate_signal,
                                             )
     data_object.uncertainty.array = uncertainty_array
+
+    data_object = flag_saturated_pixels(data_object)
 
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed with:")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"bias_level={bias_level}")

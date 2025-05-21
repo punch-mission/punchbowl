@@ -142,7 +142,6 @@ def correct_psf_task(
         data_object = correct_psf(data_object, corrector, max_workers)
         data_object.meta.history.add_now("LEVEL1-correct_psf",
                                          f"PSF corrected with {os.path.basename(model_path)} model")
-        data_object.meta["CALPSF"] = os.path.basename(model_path)
     else:
         data_object.meta.history.add_now("LEVEL1-correct_psf", "Empty model path so no correction applied")
         logger = get_run_logger()

@@ -39,7 +39,7 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
 
     """
     output_dir = os.path.dirname(output_filename)
-    if not os.path.isdir(output_dir):
+    if output_dir and not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     write_ndcube_to_fits(data, output_filename)
 

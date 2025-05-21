@@ -11,6 +11,7 @@
 - Supports floating-point COMPBITS values in https://github.com/punch-mission/punchbowl/pull/461
 - Adds data overview documentation in https://github.com/punch-mission/punchbowl/pull/458
 - Manages square root decoding table value overflow in https://github.com/punch-mission/punchbowl/pull/469
+- LQ PCA filtering, fix for NormalizedMetadata str values, and LQ FILEVRSN propagation in https://github.com/punch-mission/punchbowl/pull/472
 
 ## Version 0.0.12: May 12, 2025
 

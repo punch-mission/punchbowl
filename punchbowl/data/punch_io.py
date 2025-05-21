@@ -99,6 +99,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
                               layer: int | None = None,
                               vmin: float = 1e-15,
                               vmax: float = 8e-12,
+                              include_meta: bool = True,
                               annotation: str | None = None,
                               color: bool = False) -> None:
     """
@@ -116,6 +117,8 @@ def write_ndcube_to_quicklook(cube: NDCube,
         the lower limit value to visualize
     vmax : float
         the upper limit value to visualize
+    include_meta : bool
+        whether to include metadata in the JPEG2000 file
     annotation : str | None
         a formatted string to add to the bottom of the image as a label
         can access metadata by key, e.g. "typecode={TYPECODE}" would write the data's typecode into the image
@@ -176,10 +179,11 @@ def write_ndcube_to_quicklook(cube: NDCube,
     jp2 = Jp2k(tmp_filename, arr_image)
     meta_boxes = jp2.box
     target_index = len(meta_boxes) - 1
-    header = cube.meta.to_fits_header(wcs=cube.wcs)
-    header.remove("COMMENT", ignore_missing=True, remove_all=True)
-    fits_box = _generate_jp2_xmlbox(header)
-    meta_boxes.insert(target_index, fits_box)
+    if include_meta:
+        header = cube.meta.to_fits_header(wcs=cube.wcs)
+        header.remove("COMMENT", ignore_missing=True, remove_all=True)
+        fits_box = _generate_jp2_xmlbox(header)
+        meta_boxes.insert(target_index, fits_box)
     jp2.wrap(filename, boxes=meta_boxes)
     os.remove(tmp_filename)
 

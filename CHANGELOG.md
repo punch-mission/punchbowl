@@ -2,7 +2,7 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-## Unreleased
+## Version 0.0.13: May 22, 2025
 
 - F-corona detrending, fixes for L2 FILEVRSN and DATE-OBS, and use header's gain and exposure time in https://github.com/punch-mission/punchbowl/pull/455
 - Suppress CROTA warnings in load_ndcube_from_fits in https://github.com/punch-mission/punchbowl/pull/456

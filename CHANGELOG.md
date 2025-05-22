@@ -10,6 +10,7 @@
 - Changes to astroscrappy for despiking in https://github.com/punch-mission/punchbowl/pull/462
 - Supports floating-point COMPBITS values in https://github.com/punch-mission/punchbowl/pull/461
 - Adds data overview documentation in https://github.com/punch-mission/punchbowl/pull/458
+- Flags uncertainty of saturated pixels in https://github.com/punch-mission/punchbowl/pull/471
 - Prepares changes for QuickPUNCH creation in https://github.com/punch-mission/punchbowl/pull/473/f
 - Improve documentation for despiking in https://github.com/punch-mission/punchbowl/pull/470
 - Manages square root decoding table value overflow in https://github.com/punch-mission/punchbowl/pull/469

@@ -1,13 +1,16 @@
 Pipeline Design
 ===============
 
-This data flow is orchestrated using the `Prefect <https://github.com/PrefectHQ/prefect>`_ framework, which handles and monitors the pipeline as a whole. This is bundled into a PUNCH specific processing tool named `punchpipe <https://github.com/punch-mission/punchpipe>`_. Within punchbowl, individual flows are defined for each data level, which outline the series of pipeline modules that the data will pass through.
+This data flow is orchestrated using the `Prefect <https://github.com/PrefectHQ/prefect>`_ framework, which handles and monitors the pipeline as a whole.
+This is bundled into a PUNCH specific processing tool named punchpipe.
+Within punchbowl, individual flows are defined for each data level, which outline the series of pipeline modules that the data pass through.
 
-The code snippet below provides an example for a punchbowl level 3 flow. This flow is marked with a @flow decorator, and takes in a list of data to process through the marked modules. Using the punchbowl code, an end user could use this as a starting point for bespoke processing - either modifying an existing flow to skip processing steps, or defining a new processing flow altogether.
+The code snippet below provides an example for a punchbowl level 3 flow. This flow is marked with a @punch_flow decorator, and takes in a list of data to process through the marked modules.
+Using the punchbowl code, an end user could use this as a starting point for bespoke processing - either modifying an existing flow to skip processing steps, or defining a new processing flow altogether.
 
 .. code-block:: python
 
-    @flow(validate_parameters=False)
+    @punch_flow
     def level3_core_flow(data_list: list[str] | list[NDCube],
                         before_f_corona_model_path: str,
                         after_f_corona_model_path: str,
@@ -31,7 +34,8 @@ The code snippet below provides an example for a punchbowl level 3 flow. This fl
         return data_list
 
 
-For individual pipeline modules, such as the example F-corona subtraction below, the @punch_task decorator is used to mark this as a punch specific task, orchestrated as part of a data flow as defined above. This task handles the overall data flow and logging, with the primary processing happening inside a separate function.
+For individual pipeline modules, such as the example F-corona subtraction below, the @punch_task decorator is used to mark this as a punch specific task, orchestrated as part of a data flow as defined above.
+This task handles the overall data flow and logging, with the primary processing happening inside a separate function.
 
 .. code-block:: python
 
@@ -75,7 +79,8 @@ For individual pipeline modules, such as the example F-corona subtraction below,
 
         return output
 
-As specified above, the above task handles logging and pipeline orchestration, with a standalone function defined as below handling the primary reduction step. This function can therefore be extracted / remixed for use inside a custom processing pipeline.
+As specified above, the above task handles logging and pipeline orchestration, with a standalone function defined as below handling the primary reduction step.
+This function can therefore be extracted / remixed for use inside a custom processing pipeline.
 
 .. code-block:: python
 

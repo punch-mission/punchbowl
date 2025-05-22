@@ -74,6 +74,8 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
     rotation_angle -= extract_crota_from_wcs(wcs_celestial)
     new_pc_matrix = calculate_pc_matrix(rotation_angle, wcs_helio.wcs.cdelt)
     wcs_helio.wcs.pc = new_pc_matrix
+    wcs_helio.cpdis1 = wcs_celestial.cpdis1
+    wcs_helio.cpdis2 = wcs_celestial.cpdis2
 
     if is_3d:
         wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 2)
@@ -313,6 +315,8 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS,
     wcs_celestial.wcs.set_pv(wcs_helio.wcs.get_pv())
     wcs_celestial.wcs.dateobs = wcs_helio.wcs.dateobs
     wcs_celestial.wcs.mjdobs = wcs_helio.wcs.mjdobs
+    wcs_celestial.cpdis1 = wcs_helio.cpdis1
+    wcs_celestial.cpdis2 = wcs_helio.cpdis2
 
     rotation_angle = compute_hp_to_eq_rotation_angle(wcs_helio, date_obs)
     rotation_angle += extract_crota_from_wcs(wcs_helio)

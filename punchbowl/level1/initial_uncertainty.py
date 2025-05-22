@@ -94,8 +94,7 @@ def compute_uncertainty(data_array: np.ndarray,
 
 def flag_saturated_pixels(data_object: NDCube) -> NDCube:
     """Flag saturated pixels in the uncertainty layer."""
-    saturation_value = 2**data_object.meta["COMPBITS"].value - 1
-    data_object.uncertainty.array[np.where(data_object.data >= saturation_value)] = np.inf
+    data_object.uncertainty.array[np.where(data_object.data >= data_object.meta["DSATVAL"].value)] = np.inf
     return data_object
 
 

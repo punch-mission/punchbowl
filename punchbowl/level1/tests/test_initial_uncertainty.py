@@ -40,12 +40,13 @@ def test_flag_saturated_pixels(sample_punchdata: NDCube) -> None:
     cube = sample_punchdata
 
     cube.meta["COMPBITS"] = 10
+    cube.meta["DSATVAL"] = 2**cube.meta["COMPBITS"].value-1
 
     n_saturated_pixels = 20
     x_coords = np.fix(np.random.random(n_saturated_pixels) * cube.data.shape[0]).astype(int)
     y_coords = np.fix(np.random.random(n_saturated_pixels) * cube.data.shape[1]).astype(int)
 
-    cube.data[x_coords, y_coords] = 2**cube.meta["COMPBITS"].value-1
+    cube.data[x_coords, y_coords] = cube.meta["DSATVAL"].value
 
     cube = flag_saturated_pixels(cube)
 

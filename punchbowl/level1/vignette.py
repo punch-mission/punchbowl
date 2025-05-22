@@ -92,5 +92,4 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
         data_object.uncertainty.array[:, :] /= vignetting_function.data[:, :]
         data_object.meta.history.add_now("LEVEL1-correct_vignetting",
                                          f"Vignetting corrected using {os.path.basename(str(vignetting_path))}")
-        data_object.meta["CALVI"] = os.path.basename(str(vignetting_path))
     return data_object

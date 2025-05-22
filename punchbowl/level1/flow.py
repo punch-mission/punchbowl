@@ -1,3 +1,4 @@
+import os
 import pathlib
 from collections.abc import Callable, Generator
 
@@ -56,10 +57,11 @@ def level1_core_flow(
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
     quartic_coefficient_path: str | pathlib.Path | Callable | None = None,
-    despike_unsharp_size: int = 1,
-    despike_method: str = "median",
-    despike_alpha: float = 10,
-    despike_dilation: int = 0,
+    despike_sigclip: float = 50,
+    despike_sigfrac: float = 0.25,
+    despike_objlim: float = 160.0,
+    despike_niter: int = 10,
+    despike_cleantype: str = "meanmask",
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
@@ -70,8 +72,11 @@ def level1_core_flow(
     deficient_pixel_required_good_count: int = 3,
     deficient_pixel_max_window_size: int = 10,
     psf_model_path: str | Callable | None = None,
+    distortion_path: str | None = None,
     output_filename: list[str] | None = None,
     max_workers: int | None = None,
+    mask_path: str | None = None,
+    pointing_shift: tuple[float, float] = (0, 0),
 ) -> list[NDCube]:
     """Core flow for level 1."""
     logger = get_run_logger()
@@ -95,16 +100,16 @@ def level1_core_flow(
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
         if data.meta["OBSCODE"].value == "4":
-            scaling = {"gain_left": 4.9 * u.photon / u.DN,
-                       "gain_right": 4.9 * u.photon / u.DN,
+            scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,
+                       "gain_right": data.meta["GAINRGHT"].value * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
-                       "exposure": 49 * u.s,
+                       "exposure": data.meta["EXPTIME"].value * u.s,
                        "aperture": 49.57 * u.mm ** 2}
         else:
-            scaling = {"gain_left": 4.9 * u.photon / u.DN,
-                       "gain_right": 4.9 * u.photon / u.DN,
+            scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,
+                       "gain_right": data.meta["GAINRGHT"].value * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
-                       "exposure": 49 * u.s,
+                       "exposure": data.meta["EXPTIME"].value * u.s,
                        "aperture": 34 * u.mm ** 2}
         pixel_scale = calculate_image_pixel_area(data.wcs, data.data.shape).to(u.sr) / u.pixel
         scaling["pixel_scale"] = pixel_scale
@@ -112,10 +117,13 @@ def level1_core_flow(
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 
         data = despike_task(data,
-                            unsharp_size=despike_unsharp_size,
-                            method=despike_method,
-                            alpha=despike_alpha,
-                            dilation=despike_dilation)
+                            despike_sigclip,
+                            despike_sigfrac,
+                            despike_objlim,
+                            despike_niter,
+                            gain_left,  # TODO: despiking should handle the gain more completely
+                            read_noise_level,
+                            despike_cleantype)
         data = destreak_task(data,
                              exposure_time=exposure_time,
                              reset_line_time=reset_line_time,
@@ -136,17 +144,29 @@ def level1_core_flow(
         else:
             alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
                                            * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
-        data = align_task(data, mask=alignment_mask)
+        data = align_task(data, distortion_path, mask=alignment_mask, pointing_shift=pointing_shift)
+
+        if mask_path:
+            with open(mask_path, "rb") as f:
+                b = f.read()
+            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048)
+            data.data *= mask
+            data.uncertainty.array[mask==0] = np.inf
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
         new_meta = NormalizedMetadata.load_template(product_code, "1")
+        # copy over the existing values
+        for key in data.meta:
+            if key in new_meta:
+                new_meta[key] = data.meta[key].value
+        new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
-
-        output_header = new_meta.to_fits_header(data.wcs)
-        for key in output_header:
-            if (key in data.meta) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"):
-                new_meta[key].value = data.meta[key].value
+        new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
+        new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
+        new_meta["CALSL"] = os.path.basename(stray_light_path) if stray_light_path else ""
+        new_meta["CALCF"] = os.path.basename(quartic_coefficient_path) if quartic_coefficient_path else ""
+        new_meta["LEVEL"] = "1"
 
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
 

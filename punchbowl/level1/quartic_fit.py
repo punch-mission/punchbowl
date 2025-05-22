@@ -159,14 +159,10 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
         new_data = photometric_calibration(data_object.data, quartic_coefficients.data)
         data_object.data[...] = new_data[...]
 
-        new_uncertainty = photometric_calibration(data_object.uncertainty.array, quartic_coefficients.data)
-        data_object.uncertainty.array[...] = new_uncertainty
-
         data_object.meta.history.add_now(
             "LEVEL1-quartic_fit",
             f"Quartic fit correction completed with {os.path.basename(quartic_coefficients_path)}",
         )
-        data_object.meta["CALCF"] = os.path.basename(quartic_coefficients_path)
     else:
         data_object.meta.history.add_now("LEVEL1-quartic_fit", "Quartic fit correction skipped since path is empty")
 

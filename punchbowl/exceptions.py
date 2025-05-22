@@ -31,3 +31,6 @@ class IncorrectPolarizationStateWarning(PUNCHBowlWarning):
 
 class IncorrectTelescopeWarning(PUNCHBowlWarning):
     """Mismatched telescope detected but ignored."""
+
+class DataValueWarning(PUNCHBowlWarning):
+    """Data values may exceed expected values."""

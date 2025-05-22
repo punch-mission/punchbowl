@@ -7,17 +7,19 @@ Concept
 -------
 
 Despiking is carried out by our implementation
-of `DeForest's spikejones algorithm <https://github.com/drzowie/solarpdl-tools/blob/79d431d937bab6178eb68bec229eee59614233b3/image/spikejones.pdl#L12>`_.
-The algorithm works on a single image at a time. It applies an unsharp mask
-to an image and compares that to a smoothed copy. Pixels with a significant difference
-are considered spikes.
+of `Astropy's Astro-SCRAPPY algorithm <https://github.com/astropy/astroscrappy>`_.
+The algorithm works on a single image at a time and is based on Pieter van Dokkum's L.A.Cosmic algorithm.
+It identifies cosmic rays in images by exploiting their sharp, high-contrast edges using a Laplacian
+edge detection algorithm. This approach distinguishes cosmic rays from real astronomical objects by their
+characteristic sharpness and lack of spatial coherence. The technique enhances the Laplacian-filtered image,
+isolates significant outliers, and then removes or replaces the cosmic ray pixels to preserve image integrity.
 
 Applying correction
 -------------------
 
-The correction is carried out primarily in the ``punchbowl.level1.despike.spikejones`` function:
+The correction is carried out primarily using the ``astroscrappy.detect_cosmics`` function:
 
-.. autofunction:: punchbowl.level1.despike.spikejones
+.. autofunction:: astroscrappy.detect_cosmics
     :no-index:
 
 If you wish to incorporate this as a Prefect task in a custom pipeline,

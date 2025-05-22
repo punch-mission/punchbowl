@@ -319,7 +319,8 @@ def _update_statistics(cube: NDCube) -> None:
     cube.meta["DATAMAX"] = float(np.nanmax(cube.data))
 
 
-def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True) -> NDCube:
+def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True,
+                          include_uncertainty: bool = True) -> NDCube:
     """Load an NDCube from a FITS file."""
     with warnings.catch_warnings(), fits.open(path) as hdul:
         warnings.filterwarnings(action="ignore", message=".*CROTA.*Human-readable solar north pole angle.*",
@@ -340,7 +341,7 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
         wcs = WCS(header, hdul, key=key)
         unit = u.ct
 
-        if len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
+        if include_uncertainty and len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
             secondary_hdu = hdul[2]
             uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data)
             uncertainty = StdDevUncertainty(uncertainty)

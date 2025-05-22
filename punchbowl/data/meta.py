@@ -159,8 +159,6 @@ class MetaField:
             raise TypeError(msg)
         self._value = value
 
-
-
     @property
     def default(self) -> ValueType:
         """Get the default value."""
@@ -177,7 +175,8 @@ class MetaField:
     @staticmethod
     def _type_matches(value: ValueType, field_type: t.Any) -> bool:
         numpy_equivalents = {int: np.integer, float: np.floating}
-        if isinstance(value, field_type) or isinstance(value, numpy_equivalents[field_type]):  # noqa: SIM101
+        if (isinstance(value, field_type) or
+                (field_type in numpy_equivalents and isinstance(value, numpy_equivalents[field_type]))):
             return True
         return field_type is float and isinstance(value, int)
 

@@ -1,4 +1,5 @@
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 
 from punchbowl.data.units import split_ccd_array
@@ -109,7 +110,7 @@ def update_initial_uncertainty_task(data_object: NDCube,
                                             read_noise_level=read_noise_level,
                                             bitrate_signal=bitrate_signal,
                                             )
-    data_object.uncertainty.array = uncertainty_array
+    data_object.uncertainty = StdDevUncertainty(uncertainty_array)
 
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed with:")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"bias_level={bias_level}")

@@ -10,6 +10,7 @@ from pytest import fixture
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.units import split_ccd_array
+from punchbowl.exceptions import DataValueWarning
 from punchbowl.level1.sqrt import decode_sqrt, decode_sqrt_data, decode_sqrt_simple, encode_sqrt
 
 
@@ -62,6 +63,16 @@ def test_decoding():
 
     assert decoded_arr.shape == arr.shape
     assert np.max(decoded_arr) <= 2 ** 16
+
+
+def test_decoding_exceed_table():
+    arr_dim = 2048
+    arr = np.random.random([arr_dim, arr_dim]) * (2 ** 10) + 1
+
+    with pytest.warns(DataValueWarning):
+        decoded_arr = decode_sqrt(arr, from_bits=16, to_bits=10)
+        assert decoded_arr.shape == arr.shape
+        assert np.max(decoded_arr) <= 2 ** 16
 
 
 @pytest.mark.parametrize('from_bits, to_bits', [(16, 10), (16, 11), (16, 12)])

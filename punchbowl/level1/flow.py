@@ -48,7 +48,7 @@ def generate_psf_model_core_flow(input_filepaths: list[str],
 
 
 @punch_flow
-def level1_core_flow(
+def level1_core_flow(  # noqa: C901
     input_data: list[str] | list[NDCube],
     gain_left: float = 4.9,
     gain_right: float = 4.9,
@@ -162,9 +162,19 @@ def level1_core_flow(
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
+
+        if isinstance(psf_model_path, Callable):
+            _, psf_model_path = psf_model_path()
         new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
+
+        if isinstance(vignetting_function_path, Callable):
+            _, vignetting_function_path = vignetting_function_path()
         new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
+
         new_meta["CALSL"] = os.path.basename(stray_light_path) if stray_light_path else ""
+
+        if isinstance(quartic_coefficient_path, Callable):
+            _, quartic_coefficient_path = quartic_coefficient_path()
         new_meta["CALCF"] = os.path.basename(quartic_coefficient_path) if quartic_coefficient_path else ""
         new_meta["LEVEL"] = "1"
 

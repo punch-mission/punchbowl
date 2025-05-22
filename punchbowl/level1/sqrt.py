@@ -401,7 +401,7 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
 
     ccd_gain_left = data_object.meta["GAINLEFT"].value
     ccd_gain_right = data_object.meta["GAINRGHT"].value
-    ccd_offset = data_object.meta["OFFSET"].value
+    ccd_offset = data_object.meta["OFFSET"].value or 400  # in the case it's not provided, we use 400
     ccd_read_noise = 17  # DN  # TODO: make this not a hardcoded value!
 
     decoded_data = decode_sqrt(

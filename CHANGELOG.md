@@ -10,6 +10,7 @@
 - Changes to astroscrappy for despiking in https://github.com/punch-mission/punchbowl/pull/462
 - Supports floating-point COMPBITS values in https://github.com/punch-mission/punchbowl/pull/461
 - Adds data overview documentation in https://github.com/punch-mission/punchbowl/pull/458
+- Prepares changes for QuickPUNCH creation in https://github.com/punch-mission/punchbowl/pull/473/f
 
 ## Version 0.0.12: May 12, 2025
 

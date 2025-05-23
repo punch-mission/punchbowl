@@ -24,7 +24,7 @@ def estimate_stray_light(filepaths: [str], percentile: float = 3) -> np.ndarray:
 
 
 @punch_task
-def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> NDCube:
+def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib.Path | str) -> NDCube:
     """
     Prefect task to remove stray light from an image.
 
@@ -59,6 +59,7 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib) -> N
         modified version of the input with the stray light removed
 
     """
+    stray_light_path = pathlib.Path(stray_light_path)
     if stray_light_path is None:
         data_object.meta.history.add_now("LEVEL1-remove_stray_light", "Stray light correction skipped")
     elif not stray_light_path.exists():

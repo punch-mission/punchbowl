@@ -149,7 +149,7 @@ def level1_core_flow(  # noqa: C901
         if mask_path:
             with open(mask_path, "rb") as f:
                 b = f.read()
-            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048)
+            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
             data.data *= mask
             data.uncertainty.array[mask==0] = np.inf
 

@@ -89,6 +89,7 @@ def level1_core_flow(  # noqa: C901
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
+            data.meta["DSATVAL"] = 2**data.meta["RAWBITS"].value - 1
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,

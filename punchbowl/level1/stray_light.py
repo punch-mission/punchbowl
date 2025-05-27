@@ -85,7 +85,10 @@ def remove_stray_light_task(data_object: NDCube, stray_light_path: pathlib.Path 
             raise InvalidDataError(msg)
         else:
             data_object.data[:, :] -= stray_light_model.data[:, :]
-            data_object.uncertainty.array[...] -= stray_light_model.data[:, :]
+            uncertainty = 0
+            # TODO: when we have real uncertainties, use them
+            # uncertainty = stray_light_model.uncertainty.array # noqa: ERA001
+            data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 + uncertainty**2)
             data_object.meta.history.add_now("LEVEL1-remove_stray_light",
                                              f"stray light removed with {os.path.basename(str(stray_light_path))}")
     return data_object

@@ -414,6 +414,19 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
         ccd_read_noise=ccd_read_noise,
         overwrite_table=overwrite_table,
     )
+
+    decoded_saturation_value = decode_sqrt(
+        data_object.meta["DSATVAL"].value,
+        from_bits=from_bits,
+        to_bits=to_bits,
+        ccd_gain_left=ccd_gain_left,
+        ccd_gain_right=ccd_gain_right,
+        ccd_offset=ccd_offset,
+        ccd_read_noise=ccd_read_noise,
+        overwrite_table=overwrite_table,
+    )
+    data_object.meta["DSATVAL"] = decoded_saturation_value
+
     data_object.data[...] = decoded_data[...]  # TODO: we need to make sure the data type changes?
 
     data_object.meta.history.add_now("LEVEL0-decode-sqrt", "image square root decoded")

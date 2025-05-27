@@ -88,7 +88,6 @@ def level1_core_flow(  # noqa: C901
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
-            data.meta["DSATVAL"] = 2**data.meta["RAWBITS"].value - 1
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
         data = update_initial_uncertainty_task(data,
                                                dark_level=dark_level,

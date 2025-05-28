@@ -99,9 +99,12 @@ def decode_sqrt(
     else:
         table_right = np.load(table_name_right)
 
-    out_data = np.empty_like(data)
-    out_data[0:data.shape[1]//2,:] = decode_sqrt_by_table(data[0:data.shape[1]//2,:], table_left)
-    out_data[data.shape[1]//2:,:] = decode_sqrt_by_table(data[data.shape[1]//2:,:], table_right)
+    if isinstance(data, np.ndarray):
+        out_data = np.empty_like(data)
+        out_data[0:data.shape[1]//2,:] = decode_sqrt_by_table(data[0:data.shape[1]//2,:], table_left)
+        out_data[data.shape[1]//2:,:] = decode_sqrt_by_table(data[data.shape[1]//2:,:], table_right)
+    else:
+        out_data = decode_sqrt_by_table(data, table_left)
 
     return out_data
 

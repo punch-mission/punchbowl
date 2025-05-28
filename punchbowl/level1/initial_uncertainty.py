@@ -122,8 +122,6 @@ def update_initial_uncertainty_task(data_object: NDCube,
                                             )
     data_object.uncertainty = StdDevUncertainty(uncertainty_array)
 
-    data_object = flag_saturated_pixels(data_object)
-
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed with:")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"dark_level={dark_level}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_left={gain_left}")

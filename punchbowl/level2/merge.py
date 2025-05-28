@@ -31,9 +31,11 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
             trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
 
     output_meta = NormalizedMetadata.load_template("PTM", "2")
-    output_dateobs = average_datetime([d.meta.datetime for d in data if d is not None]).isoformat()
-    output_datebeg = min([d.meta.datetime for d in data if d is not None]).isoformat()
-    output_dateend = max([d.meta.datetime for d in data if d is not None]).isoformat()
+    output_dateobs = average_datetime(
+        [d.meta.datetime for d in data if d is not None],
+    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_datebeg = min([d.meta.datetime for d in data if d is not None]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_dateend = max([d.meta.datetime for d in data if d is not None]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_meta["DATE-OBS"] = output_dateobs
     output_meta["DATE-BEG"] = output_datebeg
     output_meta["DATE-END"] = output_dateend

@@ -99,11 +99,11 @@ def decode_sqrt(
     else:
         table_right = np.load(table_name_right)
 
-    data = data.copy()
-    data[0:data.shape[1]//2,:] = decode_sqrt_by_table(data[0:data.shape[1]//2,:], table_left)
-    data[data.shape[1]//2:,:] = decode_sqrt_by_table(data[data.shape[1]//2:,:], table_right)
+    out_data = np.empty_like(data)
+    out_data[0:data.shape[1]//2,:] = decode_sqrt_by_table(data[0:data.shape[1]//2,:], table_left)
+    out_data[data.shape[1]//2:,:] = decode_sqrt_by_table(data[data.shape[1]//2:,:], table_right)
 
-    return data
+    return out_data
 
 
 def encode_sqrt(data: np.ndarray | float, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:

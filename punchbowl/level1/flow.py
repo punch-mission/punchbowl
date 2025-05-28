@@ -15,7 +15,7 @@ from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 from punchbowl.level1.despike import despike_task
 from punchbowl.level1.destreak import destreak_task
-from punchbowl.level1.initial_uncertainty import flag_saturated_pixels, update_initial_uncertainty_task
+from punchbowl.level1.initial_uncertainty import update_initial_uncertainty_task
 from punchbowl.level1.psf import correct_psf_task
 from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.sqrt import decode_sqrt_data
@@ -88,7 +88,7 @@ def level1_core_flow(  # noqa: C901
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
-        data = flag_saturated_pixels(data)
+        saturated_pixels = data.data >= data.meta["DSATVAL"].value
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
         data = update_initial_uncertainty_task(data,
                                                dark_level=dark_level,
@@ -96,6 +96,7 @@ def level1_core_flow(  # noqa: C901
                                                gain_right=gain_right,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
+                                               saturated_pixels=saturated_pixels,
                                                )
 
         if data.meta["OBSCODE"].value == "4":

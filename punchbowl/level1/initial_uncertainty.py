@@ -100,9 +100,11 @@ def compute_uncertainty(data_array: np.ndarray,
     return np.sqrt(noise_photon**2 + noise_dark**2 + noise_read**2)
 
 
-def flag_saturated_pixels(data_object: NDCube) -> NDCube:
+def flag_saturated_pixels(data_object: NDCube,
+                          saturated_pixels: np.ndarray) -> NDCube:
     """Flag saturated pixels in the uncertainty layer."""
-    data_object.uncertainty.array[np.where(data_object.data >= data_object.meta["DSATVAL"].value)] = np.inf
+    if saturated_pixels is not None:
+        data_object.uncertainty.array[saturated_pixels] = np.inf
     return data_object
 
 
@@ -112,7 +114,8 @@ def update_initial_uncertainty_task(data_object: NDCube,
                                     gain_left: float = 4.9,
                                     gain_right: float = 4.9,
                                     read_noise_level: float = 17,
-                                    bitrate_signal: int = 16) -> NDCube:
+                                    bitrate_signal: int = 16,
+                                    saturated_pixels: np.ndarray | None = None) -> NDCube:
     """Prefect task to compute initial uncertainty."""
     uncertainty_array = compute_uncertainty(data_object.data,
                                             dark_level=dark_level,
@@ -121,6 +124,8 @@ def update_initial_uncertainty_task(data_object: NDCube,
                                             read_noise_level=read_noise_level,
                                             )
     data_object.uncertainty = StdDevUncertainty(uncertainty_array)
+
+    flag_saturated_pixels(data_object, saturated_pixels)
 
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed with:")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"dark_level={dark_level}")

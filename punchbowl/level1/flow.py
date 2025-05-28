@@ -88,7 +88,6 @@ def level1_core_flow(  # noqa: C901
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
-        data = perform_quartic_fit_task(data, quartic_coefficient_path)
         data = update_initial_uncertainty_task(data,
                                                dark_level=dark_level,
                                                gain_left=gain_left,
@@ -96,6 +95,7 @@ def level1_core_flow(  # noqa: C901
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                )
+        data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
         if data.meta["OBSCODE"].value == "4":
             scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,

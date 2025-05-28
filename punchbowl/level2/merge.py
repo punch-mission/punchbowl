@@ -20,7 +20,6 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
             reprojected_uncertainties = np.stack([d.uncertainty.array for d in selected_images], axis=-1)
             reprojected_uncertainties[reprojected_uncertainties <= 0] = np.inf
             reprojected_uncertainties[np.isinf(reprojected_uncertainties)] = 1E64
-            reprojected_uncertainties[reprojected_data <= 0] = np.inf
 
             reprojected_weights = 1 / np.square(reprojected_uncertainties)
 
@@ -57,7 +56,6 @@ def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS, level: st
         reprojected_uncertainties = np.stack([d.uncertainty.array for d in selected_images], axis=-1)
         reprojected_uncertainties[reprojected_uncertainties <= 0] = np.inf
         reprojected_uncertainties[np.isinf(reprojected_uncertainties)] = 1E64
-        reprojected_uncertainties[reprojected_data <= 0] = np.inf
 
         reprojected_weights = 1/np.square(reprojected_uncertainties)
 

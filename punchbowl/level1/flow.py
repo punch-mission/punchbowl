@@ -163,8 +163,8 @@ def level1_core_flow(  # noqa: C901
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
         new_meta = NormalizedMetadata.load_template(product_code, "1")
         # copy over the existing values
-        for key in data.meta:
-            if key in new_meta:
+        for key in data.meta.keys(): # noqa: SIM118
+            if key in new_meta.keys(): # noqa: SIM118
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
@@ -243,7 +243,7 @@ def levelh_core_flow(
 
         output_header = new_meta.to_fits_header(data.wcs)
         for key in output_header:
-            if (key in data.meta) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"):
+            if (key in data.meta.keys()) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"): # noqa: SIM118
                 new_meta[key].value = data.meta[key].value
 
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)

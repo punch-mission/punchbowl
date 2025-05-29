@@ -1,6 +1,7 @@
 import astropy.wcs.utils
 import numpy as np
 import reproject
+from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
 
@@ -92,6 +93,6 @@ def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_sha
     out_layers = [reproject_cube.submit(d, trefoil_wcs, trefoil_shape) if d is not None else None for d in data]
 
     return [NDCube(data=out_layers[i].result()[0],
-                   uncertainty=out_layers[i].result()[1],
+                   uncertainty=StdDevUncertainty(out_layers[i].result()[1]),
                    wcs=trefoil_wcs,
                    meta=d.meta) if d is not None else None for i, d in enumerate(data)]

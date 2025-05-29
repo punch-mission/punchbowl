@@ -82,6 +82,7 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         shape_out=(2, np.max((ymax-ymin, 0)), np.max((xmax-xmin, 0))),
         roundtrip_coords=False, return_footprint=False,
         output_array=output_array[..., ymin:ymax, xmin:xmax],
+        conserve_flux=True,
     )
 
     return output_array

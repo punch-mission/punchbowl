@@ -57,7 +57,7 @@ def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS, level: st
         reprojected_data = np.stack([d.data for d in selected_images], axis=-1)
         reprojected_uncertainties = np.stack([d.uncertainty.array for d in selected_images], axis=-1)
         reprojected_uncertainties[reprojected_uncertainties <= 0] = np.inf
-        reprojected_uncertainties[np.isinf(reprojected_uncertainties)] = 1E64
+        reprojected_uncertainties[~np.isfinite(reprojected_uncertainties)] = 1E64
 
         reprojected_weights = 1/np.square(reprojected_uncertainties)
 

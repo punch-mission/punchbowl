@@ -17,10 +17,21 @@ from punchbowl.prefect import punch_task
 from punchbowl.util import nan_percentile
 
 
-def estimate_stray_light(filepaths: [str], percentile: float = 3) -> np.ndarray:
+def estimate_stray_light(
+        filepaths: [str], percentile: float = 3, do_uncertainty: bool = True) -> tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
-    data = np.array([load_ndcube_from_fits(path).data for path in filepaths])
-    return nan_percentile(data, percentile)
+    cubes = [load_ndcube_from_fits(path) for path in filepaths]
+
+    data = np.array([cube.data for cube in cubes])
+    stray_light_estimate = nan_percentile(data, percentile).squeeze()
+
+    if not do_uncertainty:
+        return stray_light_estimate
+
+    uncertainty_squared = np.array([cube.uncertainty.array**2 for cube in cubes])
+    uncertainty = np.sqrt(np.sum(uncertainty_squared, axis=0)) / len(filepaths)
+
+    return stray_light_estimate, uncertainty
 
 
 @punch_task

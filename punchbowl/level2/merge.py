@@ -48,7 +48,8 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
     )
 
 @punch_task
-def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2") -> NDCube:
+def merge_many_clear_task(
+        data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2", maintain_nans: bool = False) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
     trefoil_data_layers, trefoil_uncertainty_layers = [], []
     selected_images = [d for d in data if d is not None]
@@ -64,6 +65,9 @@ def merge_many_clear_task(data: list[NDCube | None], trefoil_wcs: WCS, level: st
         trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=-1) /
                                    np.nansum(reprojected_weights, axis=-1))
         trefoil_uncertainty_layers.append(1/np.sqrt(np.nansum(reprojected_weights, axis=-1)))
+        if maintain_nans:
+            was_nan = np.all(np.isnan(reprojected_data), axis=-1)
+            trefoil_data_layers[0][was_nan] = np.nan
     else:
         trefoil_data_layers.append(np.zeros((4096, 4096)))
         trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)

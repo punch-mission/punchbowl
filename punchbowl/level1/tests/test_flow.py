@@ -15,8 +15,8 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
         sample_data = sample_ndcube(shape=(10, 10), code="CR1", level="1")
         sample_data.meta["RAWBITS"] = 16
         sample_data.meta["COMPBITS"] = 10
-        sample_data.meta["GAINLEFT"] = 4.9
-        sample_data.meta["GAINRGHT"] = 4.9
+        sample_data.meta["GAINBTM"] = 4.9
+        sample_data.meta["GAINTOP"] = 4.9
         sample_data.meta["OFFSET"] = 100
         sample_data.meta["EXPTIME"] = 49
         write_ndcube_to_fits(sample_data, input_name)
@@ -36,8 +36,8 @@ def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
     cube = sample_ndcube(shape=(10, 10), code="CR1", level="1")
     cube.meta["RAWBITS"] = 16
     cube.meta["COMPBITS"] = 10
-    cube.meta["GAINLEFT"] = 4.9
-    cube.meta["GAINRGHT"] = 4.9
+    cube.meta["GAINBTM"] = 4.9
+    cube.meta["GAINTOP"] = 4.9
     cube.meta["OFFSET"] = 100
     cube.meta["EXPTIME"] = 49
     quartic_coefficient_path = THIS_DIRECTORY / "data" / "test_quartic_coeffs.fits"

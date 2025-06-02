@@ -35,8 +35,8 @@ cube = load_ndcube_from_fits(PUNCH_DK4)
 data_decoded = decode_sqrt(cube.data,
                       from_bits = 16,
                       to_bits = 11,
-                      ccd_gain_right = 4.94,
-                      ccd_gain_left = 4.89,
+                      ccd_gain_top = 4.94,
+                      ccd_gain_bottom = 4.89,
                       ccd_offset = 400,
                       ccd_read_noise = 17
                     )

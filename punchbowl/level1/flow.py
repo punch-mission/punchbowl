@@ -52,7 +52,6 @@ def level1_core_flow(  # noqa: C901
     input_data: list[str] | list[NDCube],
     gain_left: float = 4.9,
     gain_right: float = 4.9,
-    bias_level: float = 100,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
@@ -89,15 +88,16 @@ def level1_core_flow(  # noqa: C901
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
+        saturated_pixels = data.data >= data.meta["DSATVAL"].value
+        data = perform_quartic_fit_task(data, quartic_coefficient_path)
         data = update_initial_uncertainty_task(data,
-                                               bias_level=bias_level,
                                                dark_level=dark_level,
                                                gain_left=gain_left,
                                                gain_right=gain_right,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
+                                               saturated_pixels=saturated_pixels,
                                                )
-        data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
         if data.meta["OBSCODE"].value == "4":
             scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,
@@ -113,6 +113,14 @@ def level1_core_flow(  # noqa: C901
                        "aperture": 34 * u.mm ** 2}
         pixel_scale = calculate_image_pixel_area(data.wcs, data.data.shape).to(u.sr) / u.pixel
         scaling["pixel_scale"] = pixel_scale
+
+        # TODO - In dealing with converting the DSATVAL to MSB...
+        # subtract bias, work with MSB conversion
+        # watch out for linearization blowing up these values
+        dsatval_msb = np.clip(dn_to_msb(np.zeros_like(data.data)+data.meta["DSATVAL"].value,
+                                        data.wcs, **scaling), a_min=0, a_max=None)
+        data.meta["DSATVAL"] = np.nanmin(dsatval_msb)
+
         data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 
@@ -149,7 +157,7 @@ def level1_core_flow(  # noqa: C901
         if mask_path:
             with open(mask_path, "rb") as f:
                 b = f.read()
-            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048)
+            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
             data.data *= mask
             data.uncertainty.array[mask==0] = np.inf
 
@@ -157,8 +165,8 @@ def level1_core_flow(  # noqa: C901
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
         new_meta = NormalizedMetadata.load_template(product_code, "1")
         # copy over the existing values
-        for key in data.meta:
-            if key in new_meta:
+        for key in data.meta.keys(): # noqa: SIM118
+            if key in new_meta.keys(): # noqa: SIM118
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
@@ -237,7 +245,7 @@ def levelh_core_flow(
 
         output_header = new_meta.to_fits_header(data.wcs)
         for key in output_header:
-            if (key in data.meta) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"):
+            if (key in data.meta.keys()) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"): # noqa: SIM118
                 new_meta[key].value = data.meta[key].value
 
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)

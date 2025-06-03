@@ -188,11 +188,11 @@ def generate_starfield_background(
     logger.info("Preparing to create outputs")
 
     meta = NormalizedMetadata.load_template("PSM", "3")
-    meta["DATE-OBS"] = reference_time.isoformat()
-    meta["DATE-BEG"] = reference_time.isoformat()
-    meta["DATE-END"] = reference_time.isoformat()
-    meta["DATE-AVG"] = reference_time.isoformat()
-    meta["DATE"] = datetime.now(UTC).isoformat()
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-BEG"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-END"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-AVG"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     output = NDCube(np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0),

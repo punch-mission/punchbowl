@@ -99,11 +99,14 @@ def decode_sqrt(
     else:
         table_right = np.load(table_name_right)
 
-    data = data.copy()
-    data[0:data.shape[1]//2,:] = decode_sqrt_by_table(data[0:data.shape[1]//2,:], table_left)
-    data[data.shape[1]//2:,:] = decode_sqrt_by_table(data[data.shape[1]//2:,:], table_right)
+    if isinstance(data, np.ndarray):
+        out_data = np.empty_like(data)
+        out_data[0:data.shape[1]//2,:] = decode_sqrt_by_table(data[0:data.shape[1]//2,:], table_left)
+        out_data[data.shape[1]//2:,:] = decode_sqrt_by_table(data[data.shape[1]//2:,:], table_right)
+    else:
+        out_data = decode_sqrt_by_table(data, table_left)
 
-    return data
+    return out_data
 
 
 def encode_sqrt(data: np.ndarray | float, from_bits: int = 16, to_bits: int = 12) -> np.ndarray:
@@ -414,6 +417,19 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
         ccd_read_noise=ccd_read_noise,
         overwrite_table=overwrite_table,
     )
+
+    decoded_saturation_value = decode_sqrt(
+        data_object.meta["DSATVAL"].value,
+        from_bits=from_bits,
+        to_bits=to_bits,
+        ccd_gain_left=ccd_gain_left,
+        ccd_gain_right=ccd_gain_right,
+        ccd_offset=ccd_offset,
+        ccd_read_noise=ccd_read_noise,
+        overwrite_table=overwrite_table,
+    )
+    data_object.meta["DSATVAL"] = decoded_saturation_value
+
     data_object.data[...] = decoded_data[...]  # TODO: we need to make sure the data type changes?
 
     data_object.meta.history.add_now("LEVEL0-decode-sqrt", "image square root decoded")

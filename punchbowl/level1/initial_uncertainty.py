@@ -74,54 +74,60 @@ def compute_noise(
 
 
 def compute_uncertainty(data_array: np.ndarray,
-                        bias_level: float = 100,
                         dark_level: float = 55.81,
                         gain_left: float = 4.9,
                         gain_right: float = 4.9,
                         read_noise_level: float = 17,
-                        bitrate_signal: int = 16,
                         ) -> np.ndarray:
     """With an input data array compute a corresponding uncertainty array."""
     # Convert this photon count to a shot noise
-    _, noise = compute_noise(data_array,
-                                bias_level=bias_level,
-                                dark_level=dark_level,
-                                gain_left=gain_left,
-                                gain_right=gain_right,
-                                read_noise_level=read_noise_level,
-                                bitrate_signal=bitrate_signal)
-    return noise
+    data = data_array.copy()
+
+    gain = split_ccd_array(data.shape, gain_left, gain_right)
+
+    # Photon / shot noise generation
+    data_photon = data * gain  # DN to photoelectrons
+    sigma_photon = np.sqrt(data_photon)  # Converting sigma of this
+    noise_photon = sigma_photon / gain  # Converting back to DN
+
+    # Dark noise generation
+    noise_dark = dark_level
+
+    # Read noise generation
+    noise_read = read_noise_level / gain  # Convert back to DN
+
+    # And then add noise terms directly
+    return np.sqrt(noise_photon**2 + noise_dark**2 + noise_read**2)
 
 
-def flag_saturated_pixels(data_object: NDCube) -> NDCube:
+def flag_saturated_pixels(data_object: NDCube,
+                          saturated_pixels: np.ndarray) -> NDCube:
     """Flag saturated pixels in the uncertainty layer."""
-    data_object.uncertainty.array[np.where(data_object.data >= data_object.meta["DSATVAL"].value)] = np.inf
+    if saturated_pixels is not None:
+        data_object.uncertainty.array[saturated_pixels] = np.inf
     return data_object
 
 
 @punch_task
 def update_initial_uncertainty_task(data_object: NDCube,
-                                    bias_level: float = 100,
                                     dark_level: float = 55.81,
                                     gain_left: float = 4.9,
                                     gain_right: float = 4.9,
                                     read_noise_level: float = 17,
-                                    bitrate_signal: int = 16) -> NDCube:
+                                    bitrate_signal: int = 16,
+                                    saturated_pixels: np.ndarray | None = None) -> NDCube:
     """Prefect task to compute initial uncertainty."""
     uncertainty_array = compute_uncertainty(data_object.data,
-                                            bias_level=bias_level,
                                             dark_level=dark_level,
                                             gain_left=gain_left,
                                             gain_right=gain_right,
                                             read_noise_level=read_noise_level,
-                                            bitrate_signal=bitrate_signal,
                                             )
     data_object.uncertainty = StdDevUncertainty(uncertainty_array)
 
-    data_object = flag_saturated_pixels(data_object)
+    flag_saturated_pixels(data_object, saturated_pixels)
 
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed with:")
-    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"bias_level={bias_level}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"dark_level={dark_level}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_left={gain_left}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_right={gain_right}")

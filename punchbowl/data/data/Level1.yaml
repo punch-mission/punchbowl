@@ -262,3 +262,14 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
+
+    MS?:
+        kinds: [Calibration]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Mask Function
+            OBSTYPE: "{crafttype} mask function"
+            TYPECODE: MS
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]

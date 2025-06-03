@@ -267,7 +267,8 @@ def write_ndcube_to_fits(cube: NDCube,
         hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
                                             header=full_header,
                                             name="Uncertainty array",
-                                            quantize_level=uncertainty_quantize_level)
+                                            quantize_level=uncertainty_quantize_level,
+                                            quantize_method=1)
         hdul.insert(2, hdu_uncertainty)
     hdul.append(hdu_provenance)
     hdul.writeto(filename, overwrite=overwrite, checksum=True)

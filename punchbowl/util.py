@@ -70,7 +70,7 @@ def load_image_task(input_filename: str, include_provenance: bool = True, includ
 
 def average_datetime(datetimes: list[datetime]) -> datetime:
     """Compute average datetime from a list of datetimes."""
-    timestamps = [dt.timestamp() for dt in datetimes]
+    timestamps = [dt.replace(tzinfo=UTC).timestamp() for dt in datetimes]
     average_timestamp = sum(timestamps) / len(timestamps)
     return datetime.fromtimestamp(average_timestamp).astimezone(UTC)
 

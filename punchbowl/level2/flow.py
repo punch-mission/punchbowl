@@ -35,9 +35,9 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
 
     if data_list:
         # order the data list so it can be processed properly
-        output_dateobs = average_datetime([d.meta.datetime for d in data_list]).isoformat()
-        output_datebeg = min([d.meta.datetime for d in data_list]).isoformat()
-        output_dateend = max([d.meta.datetime for d in data_list]).isoformat()
+        output_dateobs = average_datetime([d.meta.datetime for d in data_list]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_datebeg = min([d.meta.datetime for d in data_list]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_dateend = max([d.meta.datetime for d in data_list]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         ordered_data_list: list[NDCube | None] = [None for _ in range(len(ORDER))]
         ordered_voters: list[list[str]] = [[] for _ in range(len(ORDER))]
@@ -61,7 +61,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
                      for cube, this_voter_filenames in zip(data_list, ordered_voters, strict=True)]
         output_data = merge_many_polarized_task(data_list, trefoil_wcs)
     else:
-        output_dateobs = datetime.now(UTC).isoformat()
+        output_dateobs = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_datebeg = output_dateobs
         output_dateend = output_datebeg
 
@@ -72,7 +72,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         meta=NormalizedMetadata.load_template("PTM", "2"),
     )
 
-    output_data.meta["DATE"] = datetime.now(UTC).isoformat()
+    output_data.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_data.meta["DATE-AVG"] = output_dateobs
     output_data.meta["DATE-OBS"] = output_dateobs
     output_data.meta["DATE-BEG"] = output_datebeg
@@ -99,9 +99,9 @@ def level2_ctm_flow(data_list: list[str] | list[NDCube],
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
 
     if data_list:
-        output_dateobs = average_datetime([d.meta.datetime for d in data_list]).isoformat()
-        output_datebeg = min([d.meta.datetime for d in data_list]).isoformat()
-        output_dateend = max([d.meta.datetime for d in data_list]).isoformat()
+        output_dateobs = average_datetime([d.meta.datetime for d in data_list]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_datebeg = min([d.meta.datetime for d in data_list]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_dateend = max([d.meta.datetime for d in data_list]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         if trefoil_wcs is None or trefoil_shape is None:
             trefoil_wcs, trefoil_shape = load_trefoil_wcs()
@@ -112,7 +112,7 @@ def level2_ctm_flow(data_list: list[str] | list[NDCube],
         output_data = merge_many_clear_task(data_list, trefoil_wcs)
         output_data.meta["FILEVRSN"] = data_list[0].meta["FILEVRSN"].value
     else:
-        output_dateobs = datetime.now(UTC).isoformat()
+        output_dateobs = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_datebeg = output_dateobs
         output_dateend = output_datebeg
 
@@ -123,7 +123,7 @@ def level2_ctm_flow(data_list: list[str] | list[NDCube],
         meta=NormalizedMetadata.load_template("CTM", "2"),
     )
 
-    output_data.meta["DATE"] = datetime.now(UTC).isoformat()
+    output_data.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_data.meta["DATE-AVG"] = output_dateobs
     output_data.meta["DATE-OBS"] = output_dateobs
     output_data.meta["DATE-BEG"] = output_datebeg

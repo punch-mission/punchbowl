@@ -6,6 +6,7 @@ Level:
     Documentation, Contact, and Collection Metadata:
         overrides:
             DESCRPTN: PUNCH Level-0 data, square-root encoded DN values in camera coordinates
+            DOI: https://doi.org/10.48322/5k49-bh56
     File Type and Provenance:
         overrides:
             LEVEL: 0

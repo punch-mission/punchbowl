@@ -2,6 +2,11 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Version 0.0.14: June 3, 2025
+
+- Adds DOI for level 0 data products in https://github.com/punch-mission/punchbowl/pull/481
+- Many processing improvements in https://github.com/punch-mission/punchbowl/pull/482
+
 ## Version 0.0.13: May 22, 2025
 
 - F-corona detrending, fixes for L2 FILEVRSN and DATE-OBS, and use header's gain and exposure time in https://github.com/punch-mission/punchbowl/pull/455
@@ -10,6 +15,7 @@
 - Changes to astroscrappy for despiking in https://github.com/punch-mission/punchbowl/pull/462
 - Supports floating-point COMPBITS values in https://github.com/punch-mission/punchbowl/pull/461
 - Adds data overview documentation in https://github.com/punch-mission/punchbowl/pull/458
+- Flags uncertainty of saturated pixels in https://github.com/punch-mission/punchbowl/pull/471
 - Prepares changes for QuickPUNCH creation in https://github.com/punch-mission/punchbowl/pull/473/f
 - Improve documentation for despiking in https://github.com/punch-mission/punchbowl/pull/470
 - Manages square root decoding table value overflow in https://github.com/punch-mission/punchbowl/pull/469

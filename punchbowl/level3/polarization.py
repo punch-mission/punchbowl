@@ -32,7 +32,7 @@ def convert_polarization(
     new_wcs = input_data.wcs.copy()
 
     output_meta = NormalizedMetadata.load_template("PTM", "3")
-    output_meta["DATE"] = datetime.now(UTC).isoformat()
+    output_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_meta["DATE-AVG"] = input_data.meta["DATE-AVG"].value
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
     output_meta["DATE-BEG"] = input_data.meta["DATE-BEG"].value

@@ -44,18 +44,22 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
         quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
 
         data_list_mosaic = reproject_many_flow(ordered_data_list, quickpunch_mosaic_wcs, quickpunch_mosaic_shape)
-        output_dateobs = average_datetime([d.meta.datetime for d in data_list_mosaic]).isoformat()
-        output_datebeg = min([d.meta.datetime for d in data_list_mosaic]).isoformat()
-        output_dateend = max([d.meta.datetime for d in data_list_mosaic]).isoformat()
+        output_dateobs = average_datetime(
+            [d.meta.datetime for d in data_list_mosaic],
+        ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_datebeg = min([d.meta.datetime for d in data_list_mosaic]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_dateend = max([d.meta.datetime for d in data_list_mosaic]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         data_list_nfi = reproject_many_flow(ordered_data_list[-1:], quickpunch_nfi_wcs, quickpunch_nfi_shape)
-        output_dateobs_nfi = average_datetime([d.meta.datetime for d in data_list_nfi]).isoformat()
-        output_datebeg_nfi = min([d.meta.datetime for d in data_list_nfi]).isoformat()
-        output_dateend_nfi = max([d.meta.datetime for d in data_list_nfi]).isoformat()
+        output_dateobs_nfi = average_datetime(
+            [d.meta.datetime for d in data_list_nfi],
+        ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_datebeg_nfi = min([d.meta.datetime for d in data_list_nfi]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_dateend_nfi = max([d.meta.datetime for d in data_list_nfi]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs, level="Q")
 
-        output_data_mosaic.meta["DATE"] = datetime.now(UTC).isoformat()
+        output_data_mosaic.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs
         output_data_mosaic.meta["DATE-OBS"] = output_dateobs
         output_data_mosaic.meta["DATE-BEG"] = output_datebeg
@@ -71,7 +75,7 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
             wcs=quickpunch_nfi_wcs,
             meta=output_meta_nfi,
             )
-        output_data_nfi.meta["DATE"] = datetime.now(UTC).isoformat()
+        output_data_nfi.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_data_nfi.meta["DATE-AVG"] = output_dateobs_nfi
         output_data_nfi.meta["DATE-OBS"] = output_dateobs_nfi
         output_data_nfi.meta["DATE-BEG"] = output_datebeg_nfi
@@ -79,7 +83,7 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
         output_data_nfi.meta["FILEVRSN"] = ordered_data_list[0].meta["FILEVRSN"].value
         output_data_nfi = set_spacecraft_location_to_earth(output_data_nfi)
     else:
-        output_dateobs = datetime.now(UTC).isoformat()
+        output_dateobs = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_datebeg = output_dateobs
         output_dateend = output_datebeg
 
@@ -91,7 +95,7 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
             wcs=quickpunch_mosaic_wcs,
             meta=NormalizedMetadata.load_template("CTM", "Q"),
         )
-        output_data_mosaic.meta["DATE"] = datetime.now(UTC).isoformat()
+        output_data_mosaic.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs
         output_data_mosaic.meta["DATE-OBS"] = output_dateobs
         output_data_mosaic.meta["DATE-BEG"] = output_datebeg
@@ -105,7 +109,7 @@ def levelq_core_flow(data_list: list[str] | list[NDCube],
             meta=NormalizedMetadata.load_template("CNN", "Q"),
         )
 
-        output_data_nfi.meta["DATE"] = datetime.now(UTC).isoformat()
+        output_data_nfi.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_data_nfi.meta["DATE-AVG"] = output_dateobs
         output_data_nfi.meta["DATE-OBS"] = output_dateobs
         output_data_nfi.meta["DATE-BEG"] = output_dateobs

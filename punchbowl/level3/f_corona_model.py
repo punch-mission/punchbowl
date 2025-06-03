@@ -273,8 +273,8 @@ def construct_f_corona_model(filenames: list[str],
             obs_times.append(meta.datetime.timestamp())
             meta_list.append(meta)
     logger.info("ending data loading")
-    output_datebeg = min(dates).isoformat()
-    output_dateend = max(dates).isoformat()
+    output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     reference_xt = reference_time.timestamp()
     if polarized:
@@ -321,9 +321,9 @@ def construct_f_corona_model(filenames: list[str],
         output_data = model_fcorona
         meta = NormalizedMetadata.load_template("CFM", "3")
 
-    meta["DATE"] = datetime.now(UTC).isoformat()
-    meta["DATE-AVG"] = reference_time.isoformat()
-    meta["DATE-OBS"] = reference_time.isoformat()
+    meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-AVG"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     meta["DATE-BEG"] = output_datebeg
     meta["DATE-END"] = output_dateend

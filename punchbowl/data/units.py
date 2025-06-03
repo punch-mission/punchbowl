@@ -65,9 +65,10 @@ def dn_to_msb(data: ndarray,
     photon_flux = MSB / energy_per_photon
     if pixel_scale is None:
         pixel_scale = calculate_image_pixel_area(data_wcs, data.shape, pixel_area_stride).to(u.sr) / u.pixel
-    photon_count = (photon_flux * exposure * aperture * pixel_scale * u.pixel).decompose()
+    photon_count = (photon_flux * exposure * aperture * pixel_scale * u.pixel)
     gain = split_ccd_array(data.shape, gain_left, gain_right)
-    return data * gain / photon_count
+    factor = (gain / photon_count).decompose().value
+    return data * factor
 
 
 def split_ccd_array(shape:tuple, value_left:float, value_right:float) -> ndarray:

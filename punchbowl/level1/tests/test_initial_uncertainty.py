@@ -47,7 +47,8 @@ def test_flag_saturated_pixels(sample_punchdata: NDCube) -> None:
     y_coords = np.fix(np.random.random(n_saturated_pixels) * cube.data.shape[1]).astype(int)
 
     cube.data[x_coords, y_coords] = cube.meta["DSATVAL"].value
+    saturated_pixels = cube.data >= cube.meta["DSATVAL"].value
 
-    cube = flag_saturated_pixels(cube)
+    cube = flag_saturated_pixels(cube, saturated_pixels)
 
     assert np.all(np.isposinf(cube.uncertainty.array[x_coords, y_coords]))

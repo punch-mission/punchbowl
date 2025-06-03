@@ -2,9 +2,10 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-## Unreleased
+## Version 0.0.14: June 3, 2025
 
 - Adds DOI for level 0 data products in https://github.com/punch-mission/punchbowl/pull/481
+- Many processing improvements in https://github.com/punch-mission/punchbowl/pull/482
 
 ## Version 0.0.13: May 22, 2025
 

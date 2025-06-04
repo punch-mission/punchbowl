@@ -253,7 +253,7 @@ def write_ndcube_to_fits(cube: NDCube,
     full_header = cube.meta.to_fits_header(wcs=cube.wcs)
     full_header["FILENAME"] = os.path.basename(filename)
 
-    hdu_data = fits.CompImageHDU(data=cube.data,
+    hdu_data = fits.CompImageHDU(data=cube.data.astype(np.float32) if cube.data.dtype == np.float64 else cube.data,
                                  header=full_header,
                                  name="Primary data array")
     hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(

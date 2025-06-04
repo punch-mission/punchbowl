@@ -4,6 +4,7 @@
 
 ## Unreleased
 
+- Restricts the mask for NFI pointing refinement in https://github.com/punch-mission/punchbowl/pull/486
 - Removes VAN product code from documentation in https://github.com/punch-mission/punchbowl/pull/489
 - Changes default float writing dtype to 32 bit instead of 64 bit in https://github.com/punch-mission/punchbowl/pull/485
 

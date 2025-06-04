@@ -2,6 +2,10 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Unreleased
+
+- Changes default float writing dtype to 32 bit instead of 64 bit in https://github.com/punch-mission/punchbowl/pull/485
+
 ## Version 0.0.14: June 3, 2025
 
 - Adds DOI for level 0 data products in https://github.com/punch-mission/punchbowl/pull/481

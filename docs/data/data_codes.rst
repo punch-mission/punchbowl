@@ -76,9 +76,6 @@ Data Product Codes
      - VAM
      - Mosaic derived wind velocity maps: 1440 pos. angles at various altitudes
    * - 3
-     - VAN
-     - NFI derived wind velocity maps: 1440 pos. angles at various altitudes
-   * - 3
      - PAM
      - Polarized low-noise science mosaic, bkg-sub & resolved into B, pB, & uncertainty layer
 

@@ -2,6 +2,10 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Unreleased
+
+- Restricts the mask for NFI pointing refinement in https://github.com/punch-mission/punchbowl/pull/486
+
 ## Version 0.0.14: June 3, 2025
 
 - Adds DOI for level 0 data products in https://github.com/punch-mission/punchbowl/pull/481

@@ -233,9 +233,10 @@ def levelh_core_flow(
             def alignment_mask(x:float, y:float) -> float:
                 return (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
         else:
-            def alignment_mask(x:float, y:float) -> float:
-                return ((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224)) * \
-                    (x > 100) * (x < 1900) * (y > 100) * (y < 1900)
+            def alignment_mask(x: float, y: float) -> bool:
+                r = np.sqrt((x - 1024) ** 2 + (y - 1024) ** 2)
+                theta = np.rad2deg(np.arctan2(y - 1024, x - 1024)) + 180
+                return (r > 250) * (r < 950) * ((theta < 25) + (theta > 155))
         data = align_task(data, mask=alignment_mask)
 
         # Repackage data with proper metadata

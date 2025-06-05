@@ -148,10 +148,13 @@ def level1_core_flow(  # noqa: C901
 
         observatory = int(data.meta["OBSCODE"].value)
         if observatory < 4:
-            alignment_mask = lambda x, y: (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
+            def alignment_mask(x:float, y:float) -> float:
+                return (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
         else:
-            alignment_mask = lambda x, y: (((x < 824) + (x > 1224)) * ((y < 824) + (y > 1224))
-                                           * (x > 100) * (x < 1900) * (y > 100) * (y < 1900))
+            def alignment_mask(x: float, y: float) -> bool:
+                r = np.sqrt((x - 1024) ** 2 + (y - 1024) ** 2)
+                theta = np.rad2deg(np.arctan2(y - 1024, x - 1024)) + 180
+                return (r > 250) * (r < 950) * ((theta < 25) + (theta > 155))
         data = align_task(data, distortion_path, mask=alignment_mask, pointing_shift=pointing_shift)
 
         if mask_path:

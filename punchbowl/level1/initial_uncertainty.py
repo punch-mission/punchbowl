@@ -6,9 +6,9 @@ from punchbowl.data.units import split_ccd_array
 from punchbowl.prefect import punch_task
 
 
-def dn_to_photons(data_array: np.ndarray, gain_left: float = 4.9, gain_right: float = 4.9) -> np.ndarray:
+def dn_to_photons(data_array: np.ndarray, gain_bottom: float = 4.9, gain_top: float = 4.9) -> np.ndarray:
     """Convert an input array from DN to photon count."""
-    gain = split_ccd_array(data_array.shape, gain_left, gain_right)
+    gain = split_ccd_array(data_array.shape, gain_bottom, gain_top)
     return data_array * gain
 
 
@@ -16,8 +16,8 @@ def compute_noise(
         data: np.ndarray,
         bias_level: float = 100,
         dark_level: float = 55.81,
-        gain_left: float = 4.9,
-        gain_right: float = 4.9,
+        gain_bottom: float = 4.9,
+        gain_top: float = 4.9,
         read_noise_level: float = 17,
         bitrate_signal: int = 16) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -31,10 +31,10 @@ def compute_noise(
         ccd bias level
     dark_level
         ccd dark level
-    gain_left
-        ccd gain (left side of CCD)
-    gain_right
-        ccd gain (right side of CCD)
+    gain_bottom
+        ccd gain (bottom side of CCD)
+    gain_top
+        ccd gain (top side of CCD)
     read_noise_level
         ccd read noise level
     bitrate_signal
@@ -50,7 +50,7 @@ def compute_noise(
     """
     data = data.copy().astype("long")
 
-    gain = split_ccd_array(data.shape, gain_left, gain_right)
+    gain = split_ccd_array(data.shape, gain_bottom, gain_top)
 
     # Photon / shot noise generation
     data_photon = data * gain  # DN to photoelectrons
@@ -75,15 +75,15 @@ def compute_noise(
 
 def compute_uncertainty(data_array: np.ndarray,
                         dark_level: float = 55.81,
-                        gain_left: float = 4.9,
-                        gain_right: float = 4.9,
+                        gain_bottom: float = 4.9,
+                        gain_top: float = 4.9,
                         read_noise_level: float = 17,
                         ) -> np.ndarray:
     """With an input data array compute a corresponding uncertainty array."""
     # Convert this photon count to a shot noise
     data = data_array.copy()
 
-    gain = split_ccd_array(data.shape, gain_left, gain_right)
+    gain = split_ccd_array(data.shape, gain_bottom, gain_top)
 
     # Photon / shot noise generation
     data_photon = data * gain  # DN to photoelectrons
@@ -111,16 +111,16 @@ def flag_saturated_pixels(data_object: NDCube,
 @punch_task
 def update_initial_uncertainty_task(data_object: NDCube,
                                     dark_level: float = 55.81,
-                                    gain_left: float = 4.9,
-                                    gain_right: float = 4.9,
+                                    gain_bottom: float = 4.9,
+                                    gain_top: float = 4.9,
                                     read_noise_level: float = 17,
                                     bitrate_signal: int = 16,
                                     saturated_pixels: np.ndarray | None = None) -> NDCube:
     """Prefect task to compute initial uncertainty."""
     uncertainty_array = compute_uncertainty(data_object.data,
                                             dark_level=dark_level,
-                                            gain_left=gain_left,
-                                            gain_right=gain_right,
+                                            gain_bottom=gain_bottom,
+                                            gain_top=gain_top,
                                             read_noise_level=read_noise_level,
                                             )
     data_object.uncertainty = StdDevUncertainty(uncertainty_array)
@@ -129,8 +129,8 @@ def update_initial_uncertainty_task(data_object: NDCube,
 
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed with:")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"dark_level={dark_level}")
-    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_left={gain_left}")
-    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_right={gain_right}")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_bottom={gain_bottom}")
+    data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"gain_top={gain_top}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"read_noise_level={read_noise_level}")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"bitrate_signal={bitrate_signal}")
     return data_object

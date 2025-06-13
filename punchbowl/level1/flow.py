@@ -50,8 +50,8 @@ def generate_psf_model_core_flow(input_filepaths: list[str],
 @punch_flow
 def level1_core_flow(  # noqa: C901
     input_data: list[str] | list[NDCube],
-    gain_left: float = 4.9,
-    gain_right: float = 4.9,
+    gain_bottom: float = 4.9,
+    gain_top: float = 4.9,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
@@ -92,22 +92,22 @@ def level1_core_flow(  # noqa: C901
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
         data = update_initial_uncertainty_task(data,
                                                dark_level=dark_level,
-                                               gain_left=gain_left,
-                                               gain_right=gain_right,
+                                               gain_bottom=gain_bottom,
+                                               gain_top=gain_top,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                saturated_pixels=saturated_pixels,
                                                )
 
         if data.meta["OBSCODE"].value == "4":
-            scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,
-                       "gain_right": data.meta["GAINRGHT"].value * u.photon / u.DN,
+            scaling = {"gain_bottom": data.meta["GAINBTM"].value * u.photon / u.DN,
+                       "gain_top": data.meta["GAINTOP"].value * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
                        "exposure": data.meta["EXPTIME"].value * u.s,
                        "aperture": 49.57 * u.mm ** 2}
         else:
-            scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,
-                       "gain_right": data.meta["GAINRGHT"].value * u.photon / u.DN,
+            scaling = {"gain_bottom": data.meta["GAINBTM"].value * u.photon / u.DN,
+                       "gain_top": data.meta["GAINTOP"].value * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
                        "exposure": data.meta["EXPTIME"].value * u.s,
                        "aperture": 34 * u.mm ** 2}
@@ -129,7 +129,7 @@ def level1_core_flow(  # noqa: C901
                             despike_sigfrac,
                             despike_objlim,
                             despike_niter,
-                            gain_left,  # TODO: despiking should handle the gain more completely
+                            gain_bottom,  # TODO: despiking should handle the gain more completely
                             read_noise_level,
                             despike_cleantype)
         data = destreak_task(data,
@@ -202,8 +202,8 @@ def level1_core_flow(  # noqa: C901
 @punch_flow
 def levelh_core_flow(
     input_data: list[str] | list[NDCube],
-    gain_left: float = 4.9,
-    gain_right: float = 4.9,
+    gain_bottom: float = 4.9,
+    gain_top: float = 4.9,
     bias_level: float = 100,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
@@ -223,8 +223,8 @@ def levelh_core_flow(
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,
-                                               gain_left=gain_left,
-                                               gain_right=gain_right,
+                                               gain_bottom=gain_bottom,
+                                               gain_top=gain_top,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                )

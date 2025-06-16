@@ -102,6 +102,9 @@ Calibration Product Codes
      - BD1, BD2, BD3, BD4
      - Calibration: Deficient Pixel (Boolean) Map
    * - 1
+     - DS1, DS2, DS3, DS4
+     - Calibration: Distortion models
+   * - 1
      - FQ1, FQ2, FQ3, FQ4
      - Calibration: Flat-field parameters (quartic polynomial coefficients), by pixel
    * - 1

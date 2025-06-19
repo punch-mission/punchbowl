@@ -111,6 +111,10 @@ class History:
         self.current_index = 0
         return self
 
+    def __hash__(self) -> int:
+        """Hash a history object."""
+        return sum([hash(e) for e in self._entries])
+
     def __next__(self) -> HistoryEntry:
         """Get next."""
         if self.current_index >= len(self):

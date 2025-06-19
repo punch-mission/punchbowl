@@ -19,7 +19,7 @@ def main() -> None:
         parser.print_help()
 
 def create_calibration(level: str, code: str) -> None:
-    """Create calibration product."""
+    """Create calibration products."""
 
 if __name__ == "__main__":
     main()

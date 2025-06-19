@@ -252,17 +252,6 @@ Products:
             OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
-    DS?:
-        kinds: [Calibration]
-        overrides:
-            TITLE: PUNCH Level-1 {craftname} Distortion Model
-            OBSTYPE: "{crafttype} distortion model"
-            TYPECODE: DS
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: "{craftid}"
-        omits: [FILTER, OBS-MODE, POLAR]
-
     MS?:
         kinds: [Calibration]
         overrides:

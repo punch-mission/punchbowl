@@ -6,6 +6,7 @@ import hashlib
 import os.path
 import warnings
 import subprocess
+from copy import deepcopy
 from typing import Any
 from pathlib import Path
 
@@ -239,27 +240,25 @@ def write_ndcube_to_fits(cube: NDCube,
             "Filename must have a valid file extension `.fits`"
             f"Found: {os.path.splitext(filename)[1]}"
         )
-        raise ValueError(
-            msg,
-        )
+        raise ValueError(msg)
 
     if not skip_stats:
-        _update_statistics(cube)
+        meta = _update_statistics(cube)
 
-    full_header = cube.meta.to_fits_header(wcs=cube.wcs)
+    full_header = meta.to_fits_header(wcs=cube.wcs)
     full_header["FILENAME"] = os.path.basename(filename)
 
     hdu_data = fits.CompImageHDU(data=cube.data.astype(np.float32) if cube.data.dtype == np.float64 else cube.data,
                                  header=full_header,
                                  name="Primary data array")
     hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
-        name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
+        name="provenance", format="A40", array=np.char.array(meta.provenance))]))
     hdu_provenance.name = "File provenance"
 
     hdul = cube.wcs.to_fits()
     hdul[0] = fits.PrimaryHDU()
     hdul.insert(1, hdu_data)
-    if cube.meta["LEVEL"].value != "0":
+    if meta["LEVEL"].value != "0":
         hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
                                             header=full_header,
                                             name="Uncertainty array",
@@ -288,36 +287,39 @@ def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -
     return uncertainty_array
 
 
-def _update_statistics(cube: NDCube) -> None:
+def _update_statistics(cube: NDCube) -> NormalizedMetadata:
     """Update image statistics in metadata before writing to file."""
     # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
 
-    cube.meta["DATAZER"] = len(np.where(cube.data == 0)[0])
+    meta = deepcopy(cube.meta)
 
-    cube.meta["DATASAT"] = len(np.where(cube.data >= cube.meta["DSATVAL"].value)[0])
+    meta["DATAZER"] = len(np.where(cube.data == 0)[0])
 
-    cube.data[np.logical_not(np.isfinite(cube.data))] = 0
+    meta["DATASAT"] = len(np.where(cube.data >= meta["DSATVAL"].value)[0])
+
     nonzero_data = cube.data[np.isfinite(cube.data) * (cube.data != 0)].flatten()
 
     if len(nonzero_data) > 0:
-        cube.meta["DATAAVG"] = np.nanmean(nonzero_data).item()
-        cube.meta["DATAMDN"] = np.nanmedian(nonzero_data).item()
-        cube.meta["DATASIG"] = np.nanstd(nonzero_data).item()
+        meta["DATAAVG"] = np.mean(nonzero_data).item()
+        meta["DATAMDN"] = np.median(nonzero_data).item()
+        meta["DATASIG"] = np.std(nonzero_data).item()
     else:
-        cube.meta["DATAAVG"] = -999.0
-        cube.meta["DATAMDN"] = -999.0
-        cube.meta["DATASIG"] = -999.0
+        meta["DATAAVG"] = -999.0
+        meta["DATAMDN"] = -999.0
+        meta["DATASIG"] = -999.0
 
     percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
-    percentile_values = np.nanpercentile(nonzero_data, percentile_percentages)
+    percentile_values = np.percentile(nonzero_data, percentile_percentages)
     if np.any(np.isnan(percentile_values)):  # report nan if any of the values are nan
         percentile_values = [-999.0 for _ in percentile_percentages]
 
     for percent, value in zip(percentile_percentages, percentile_values, strict=False):
-        cube.meta[f"DATAP{percent:02d}"] = value
+        meta[f"DATAP{percent:02d}"] = value
 
-    cube.meta["DATAMIN"] = float(np.nanmin(cube.data))
-    cube.meta["DATAMAX"] = float(np.nanmax(cube.data))
+    meta["DATAMIN"] = np.min(nonzero_data).item()
+    meta["DATAMAX"] = np.max(nonzero_data).item()
+
+    return meta
 
 
 def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True) -> NDCube:

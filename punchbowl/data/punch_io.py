@@ -289,6 +289,7 @@ def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -
     with np.errstate(divide="ignore", invalid="ignore"):
         np.divide(1, uncertainty_array, out=uncertainty_array)
         np.multiply(data_array, uncertainty_array, out=uncertainty_array)
+        uncertainty_array[np.isnan(uncertainty_array) * (data_array == 0)] = np.inf
     return uncertainty_array
 
 

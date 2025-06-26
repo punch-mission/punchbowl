@@ -107,7 +107,7 @@ def correct_streaks(
     validate_image_is_square(image)
     with threadpool_limits(max_workers):
         correction_matrix = streak_correction_matrix(image.shape[0], exposure_time, readout_line_time, reset_line_time)
-        return correction_matrix.T @ image
+        return correction_matrix @ image
 
 
 @punch_task

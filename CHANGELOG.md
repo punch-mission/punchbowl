@@ -6,6 +6,7 @@
 
 - Relabels CCD halves in https://github.com/punch-mission/punchbowl/pull/493
 - Adds documentation for data versions and anomalies in https://github.com/punch-mission/punchbowl/pull/495
+- Ensures inf values in uncertainty layers roundtrip through compression in https://github.com/punch-mission/punchbowl/pull/506
 
 ## Version 0.0.15: June 4, 2025
 

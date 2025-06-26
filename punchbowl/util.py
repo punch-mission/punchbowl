@@ -39,13 +39,13 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
 
     """
     output_dir = os.path.dirname(output_filename)
-    if not os.path.isdir(output_dir):
+    if output_dir and not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     write_ndcube_to_fits(data, output_filename)
 
 
 @punch_task
-def load_image_task(input_filename: str) -> NDCube:
+def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True) -> NDCube:
     """
     Prefect task to load data for processing.
 
@@ -53,6 +53,10 @@ def load_image_task(input_filename: str) -> NDCube:
     ----------
     input_filename : str
         path to file to load
+    include_provenance : bool
+        whether to load the provenance layer
+    include_uncertainty : bool
+        whether to load the uncertainty layer
 
     Returns
     -------
@@ -60,7 +64,8 @@ def load_image_task(input_filename: str) -> NDCube:
         loaded version of the image
 
     """
-    return load_ndcube_from_fits(input_filename)
+    return load_ndcube_from_fits(
+        input_filename, include_provenance=include_provenance, include_uncertainty=include_uncertainty)
 
 
 def average_datetime(datetimes: list[datetime]) -> datetime:

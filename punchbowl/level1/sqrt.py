@@ -1,9 +1,11 @@
 import os.path
+import warnings
 from math import ceil
 
 import numpy as np
 from ndcube import NDCube
 
+from punchbowl.exceptions import DataValueWarning
 from punchbowl.prefect import punch_task
 
 TABLE_PATH = os.path.dirname(__file__) + "/decoding_tables/"
@@ -369,7 +371,10 @@ def decode_sqrt_by_table(data: np.ndarray | float, table: np.ndarray) -> np.ndar
         Decoded version of input data
 
     """
-    data = np.round(data).astype(np.int32).clip(0, table.shape[0])
+    rounded_data = np.round(data).astype(np.int32)
+    if np.any(rounded_data > table.shape[0]):
+        warnings.warn("Data values exceeded square-root encoding lookup table.", DataValueWarning)
+    data = rounded_data.clip(0, table.shape[0]-1)
 
     return table[data]
 
@@ -399,7 +404,7 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
 
     ccd_gain_bottom = data_object.meta["GAINBTM"].value
     ccd_gain_top = data_object.meta["GAINTOP"].value
-    ccd_offset = data_object.meta["OFFSET"].value
+    ccd_offset = data_object.meta["OFFSET"].value or 400  # in the case it's not provided, we use 400
     ccd_read_noise = 17  # DN  # TODO: make this not a hardcoded value!
 
     decoded_data = decode_sqrt(

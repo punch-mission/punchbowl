@@ -88,10 +88,12 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
         data_list_mosaic = reproject_many_flow(ordered_data_list, quickpunch_mosaic_wcs, quickpunch_mosaic_shape)
         output_dateobs = average_datetime(
-            [d.meta.datetime for d in data_list_mosaic],
+            [d.meta.datetime for d in data_list_mosaic if d is not None],
         ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        output_datebeg = min([d.meta.datetime for d in data_list_mosaic]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        output_dateend = max([d.meta.datetime for d in data_list_mosaic]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_datebeg = min([d.meta.datetime for d in data_list_mosaic if d is not None],
+                             ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_dateend = max([d.meta.datetime for d in data_list_mosaic if d is not None],
+                             ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs, level="Q")
 

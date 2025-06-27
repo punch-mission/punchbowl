@@ -169,7 +169,7 @@ def level1_core_flow(  # noqa: C901
         new_meta = NormalizedMetadata.load_template(product_code, "1")
         # copy over the existing values
         for key in data.meta.keys(): # noqa: SIM118
-            if key in ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "TITLE"]:
+            if key in ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE"]:
                 continue
             if key in new_meta.keys(): # noqa: SIM118
                 new_meta[key] = data.meta[key].value

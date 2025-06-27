@@ -3,9 +3,12 @@ import pathlib
 import warnings
 from collections.abc import Callable
 
+import numpy as np
 from ndcube import NDCube
 
+from punchbowl.cli import create_calibration
 from punchbowl.data import load_ndcube_from_fits
+from punchbowl.data.punch_io import get_base_file_name, write_ndcube_to_fits
 from punchbowl.exceptions import (
     IncorrectPolarizationStateWarning,
     IncorrectTelescopeWarning,
@@ -93,3 +96,18 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
         data_object.meta.history.add_now("LEVEL1-correct_vignetting",
                                          f"Vignetting corrected using {os.path.basename(str(vignetting_path))}")
     return data_object
+
+
+def calibrate_vignetting(calibration_data: np.ndarray,
+                         code: str,
+                         spacecraft: str,
+                         timestamp: str,
+                         file_version: str,
+                         outpath: str) -> None:
+    """Create calibration data for vignetting."""
+    cube = create_calibration(code=code, spacecraft=spacecraft, timestamp=timestamp, file_version=file_version)
+    cube.data[...] = calibration_data
+
+    filename = f"{outpath}{get_base_file_name(cube)}.fits"
+
+    write_ndcube_to_fits(cube, filename=filename, overwrite=True, write_hash=False)

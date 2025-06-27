@@ -120,3 +120,7 @@ def test_vignetting_correction(sample_ndcube) -> None:
         corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
 
     assert isinstance(corrected_punchdata, NDCube)
+
+def test_vignetting_calibration_generation() -> None:
+    """Test that vignetting calibration data is generated"""
+    # TODO - test this.

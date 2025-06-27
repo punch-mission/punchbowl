@@ -1,5 +1,11 @@
 import argparse
 
+import numpy as np
+from astropy.wcs import WCS
+from ndcube import NDCube
+
+from punchbowl.data.meta import NormalizedMetadata
+
 
 def main() -> None:
     """Call main method for CLI."""
@@ -18,8 +24,17 @@ def main() -> None:
     else:
         parser.print_help()
 
-def create_calibration(level: str, code: str) -> None:
-    """Create calibration products."""
 
-if __name__ == "__main__":
-    main()
+def create_calibration(level: str,
+                       code: str,
+                       spacecraft: str,
+                       timestamp: str,
+                       file_version: str,
+                       shape: tuple[int, int] = (2048,2048),
+                       ) -> NDCube:
+    """Create calibration products."""
+    m = NormalizedMetadata.load_template(f"{code}{spacecraft}", level)
+    m["DATE-OBS"] = timestamp
+    m["FILEVRSN"] = file_version
+
+    return NDCube(data=np.zeros(shape), wcs=WCS(naxis=2), meta=m)

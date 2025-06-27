@@ -5,6 +5,8 @@
 ## Unreleased
 
 - Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510
+- Relabels CCD halves in https://github.com/punch-mission/punchbowl/pull/493
+- Adds documentation for data versions and anomalies in https://github.com/punch-mission/punchbowl/pull/495
 
 ## Version 0.0.15: June 4, 2025
 

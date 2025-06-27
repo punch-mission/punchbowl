@@ -2,6 +2,10 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Unreleased
+
+- Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510
+
 ## Version 0.0.15: June 4, 2025
 
 - Restricts the mask for NFI pointing refinement in https://github.com/punch-mission/punchbowl/pull/486

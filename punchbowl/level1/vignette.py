@@ -103,11 +103,18 @@ def calibrate_vignetting(calibration_data: np.ndarray,
                          spacecraft: str,
                          timestamp: str,
                          file_version: str,
-                         outpath: str) -> None:
+                         outpath: str | None = None) -> None | NDCube:
     """Create calibration data for vignetting."""
-    cube = create_calibration(code=code, spacecraft=spacecraft, timestamp=timestamp, file_version=file_version)
+    cube = create_calibration(code=code,
+                              spacecraft=spacecraft,
+                              timestamp=timestamp,
+                              file_version=file_version,
+                              level="1")
     cube.data[...] = calibration_data
 
     filename = f"{outpath}{get_base_file_name(cube)}.fits"
 
-    write_ndcube_to_fits(cube, filename=filename, overwrite=True, write_hash=False)
+    if outpath is not None:
+        write_ndcube_to_fits(cube, filename=filename, overwrite=True, write_hash=False)
+        return None
+    return cube

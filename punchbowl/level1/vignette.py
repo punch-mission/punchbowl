@@ -31,7 +31,7 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
     Correction maps will be 2048*2048 arrays, to match the input data, and
     built using the starfield brightness pattern. Mathematical Operation:
 
-        I'_{i,j} = I_i,j * FF_{i,j}
+        I'_{i,j} = I_i,j / FF_{i,j}
 
     Where I_{i,j} is the number of counts in pixel i, j. I'_{i,j} refers to the
     modified value. FF_{i,j} is the small-scale flat field factor for pixel i,

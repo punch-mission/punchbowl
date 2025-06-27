@@ -169,6 +169,8 @@ def level1_core_flow(  # noqa: C901
         new_meta = NormalizedMetadata.load_template(product_code, "1")
         # copy over the existing values
         for key in data.meta.keys(): # noqa: SIM118
+            if key in ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "TITLE"]:
+                continue
             if key in new_meta.keys(): # noqa: SIM118
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
@@ -187,7 +189,6 @@ def level1_core_flow(  # noqa: C901
         if isinstance(quartic_coefficient_path, Callable):
             _, quartic_coefficient_path = quartic_coefficient_path()
         new_meta["CALCF"] = os.path.basename(quartic_coefficient_path) if quartic_coefficient_path else ""
-        new_meta["LEVEL"] = "1"
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)

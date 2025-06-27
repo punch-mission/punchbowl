@@ -6,6 +6,7 @@
 
 - Relabels CCD halves in https://github.com/punch-mission/punchbowl/pull/493
 - Adds documentation for data versions and anomalies in https://github.com/punch-mission/punchbowl/pull/495
+- Allow writing out L1s with stray light included in https://github.com/punch-mission/punchbowl/pull/509
 
 ## Version 0.0.15: June 4, 2025
 

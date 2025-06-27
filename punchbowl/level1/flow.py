@@ -1,9 +1,11 @@
 import os
 import pathlib
+from copy import deepcopy
 from collections.abc import Callable, Generator
 
 import astropy.units as u
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import get_run_logger
 from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
@@ -76,6 +78,7 @@ def level1_core_flow(  # noqa: C901
     max_workers: int | None = None,
     mask_path: str | None = None,
     pointing_shift: tuple[float, float] = (0, 0),
+    return_with_stray_light: bool = False,
 ) -> list[NDCube]:
     """Core flow for level 1."""
     logger = get_run_logger()
@@ -143,6 +146,9 @@ def level1_core_flow(  # noqa: C901
                                             required_good_count=deficient_pixel_required_good_count,
                                             max_window_size=deficient_pixel_max_window_size,
                                             method=deficient_pixel_method)
+        if return_with_stray_light:
+            data_with_stray_light = data.data.copy()
+            uncertainty_with_stray_light = data.uncertainty.array.copy()
         data = remove_stray_light_task(data, stray_light_path)
         data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
 
@@ -163,6 +169,9 @@ def level1_core_flow(  # noqa: C901
             mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
             data.data *= mask
             data.uncertainty.array[mask==0] = np.inf
+            if return_with_stray_light:
+                data_with_stray_light *= mask
+                uncertainty_with_stray_light[mask==0] = np.inf
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -195,6 +204,21 @@ def level1_core_flow(  # noqa: C901
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
         output_data.append(data)
+
+        if return_with_stray_light:
+            meta = deepcopy(new_meta)
+            del meta["CALPSF"]
+            del meta["CALSL"]
+            meta["TYPECODE"] = "X" + meta["TYPECODE"].value[1:]
+            meta["TITLE"] = meta["TITLE"].value + " with Stray Light"
+            meta.history.clear_entries_from_source("LEVEL1-correct_psf")
+            meta.history.clear_entries_from_source("LEVEL1-remove_stray_light")
+            stray_light_cube = NDCube(data=data_with_stray_light,
+                                      meta=meta,
+                                      wcs=data.wcs,
+                                      uncertainty=StdDevUncertainty(uncertainty_with_stray_light),
+                                      unit=data.unit)
+            output_data.append(stray_light_cube)
         logger.info("ending level 1 core flow")
     return output_data
 

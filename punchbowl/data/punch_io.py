@@ -268,7 +268,7 @@ def write_ndcube_to_fits(cube: NDCube,
                                             header=full_header,
                                             name="Uncertainty array",
                                             quantize_level=uncertainty_quantize_level,
-                                            quantize_method=1)
+                                            quantize_method=2)
         hdul.insert(2, hdu_uncertainty)
     hdul.append(hdu_provenance)
     hdul.writeto(filename, overwrite=overwrite, checksum=True)
@@ -289,6 +289,7 @@ def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -
     with np.errstate(divide="ignore", invalid="ignore"):
         np.divide(1, uncertainty_array, out=uncertainty_array)
         np.multiply(data_array, uncertainty_array, out=uncertainty_array)
+        uncertainty_array[np.isnan(uncertainty_array) * (data_array == 0)] = np.inf
     return uncertainty_array
 
 

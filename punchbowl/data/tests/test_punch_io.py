@@ -300,3 +300,13 @@ def test_write_punchdata_with_distortion(tmpdir):
 
     loaded_cube = load_ndcube_from_fits(file_path)
     assert loaded_cube.wcs.has_distortion
+
+
+def test_uncertainty_inf_roundtrip(sample_ndcube, tmpdir):
+    cube = sample_ndcube((50, 50), level="1")
+    cube.data[:25] = 0
+    cube.uncertainty.array[...] = np.inf
+    test_path = os.path.join(tmpdir, "test.fits")
+    write_ndcube_to_fits(cube, test_path)
+    loaded_cube = load_ndcube_from_fits(test_path)
+    assert np.all(np.isinf(loaded_cube.uncertainty.array))

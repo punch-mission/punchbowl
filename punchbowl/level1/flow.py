@@ -24,6 +24,8 @@ from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import punch_flow
 from punchbowl.util import load_image_task, output_image_task
 
+L0_KEYS_TO_IGNORE = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE"]
+
 
 @punch_flow
 def generate_psf_model_core_flow(input_filepaths: list[str],
@@ -169,7 +171,7 @@ def level1_core_flow(  # noqa: C901
         new_meta = NormalizedMetadata.load_template(product_code, "1")
         # copy over the existing values
         for key in data.meta.keys(): # noqa: SIM118
-            if key in ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE"]:
+            if key in L0_KEYS_TO_IGNORE:
                 continue
             if key in new_meta.keys(): # noqa: SIM118
                 new_meta[key] = data.meta[key].value
@@ -189,7 +191,7 @@ def level1_core_flow(  # noqa: C901
         if isinstance(quartic_coefficient_path, Callable):
             _, quartic_coefficient_path = quartic_coefficient_path()
         new_meta["CALCF"] = os.path.basename(quartic_coefficient_path) if quartic_coefficient_path else ""
-        new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
+        new_meta["FILEVRSN"] = "0a"
 
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
 

@@ -22,7 +22,7 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
     voters = [[] for _ in data_list]
 
     trefoil_wcs, _ = load_trefoil_wcs()
-    output = level2_core_flow(paths, voters, trefoil_wcs=trefoil_wcs, trefoil_shape=(4096, 4096))
+    output = level2_core_flow(paths, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512))
     assert isinstance(output[0], NDCube)
     assert output[0].meta["TYPECODE"].value == "PT"
 
@@ -37,7 +37,7 @@ def test_ctm_flow_runs_with_filenames(sample_ndcube, tmpdir):
     voters = [[] for _ in data_list]
 
     trefoil_wcs, _ = load_trefoil_wcs()
-    output = level2_core_flow(paths, voters, trefoil_wcs=trefoil_wcs, trefoil_shape=(4096, 4096))
+    output = level2_core_flow(paths, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512))
     assert isinstance(output[0], NDCube)
     assert output[0].meta["TYPECODE"].value == "CT"
 
@@ -48,7 +48,7 @@ def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube, drop_i
 
     trefoil_wcs, _ = load_trefoil_wcs()
     voters = [[] for _ in data_list]
-    output = level2_core_flow(data_list, voters, trefoil_wcs=trefoil_wcs, trefoil_shape=(4096, 4096),
+    output = level2_core_flow(data_list, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512),
                               polarized=True)
     assert isinstance(output[0], NDCube)
     assert output[0].meta["TYPECODE"].value == "PT"

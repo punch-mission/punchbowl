@@ -100,6 +100,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
                               layer: int | None = None,
                               vmin: float = 1e-15,
                               vmax: float = 8e-12,
+                              include_meta: bool = True,
                               annotation: str | None = None,
                               color: bool = False) -> None:
     """
@@ -117,6 +118,8 @@ def write_ndcube_to_quicklook(cube: NDCube,
         the lower limit value to visualize
     vmax : float
         the upper limit value to visualize
+    include_meta : bool
+        whether to include metadata in the JPEG2000 file
     annotation : str | None
         a formatted string to add to the bottom of the image as a label
         can access metadata by key, e.g. "typecode={TYPECODE}" would write the data's typecode into the image
@@ -177,10 +180,11 @@ def write_ndcube_to_quicklook(cube: NDCube,
     jp2 = Jp2k(tmp_filename, arr_image)
     meta_boxes = jp2.box
     target_index = len(meta_boxes) - 1
-    header = cube.meta.to_fits_header(wcs=cube.wcs)
-    header.remove("COMMENT", ignore_missing=True, remove_all=True)
-    fits_box = _generate_jp2_xmlbox(header)
-    meta_boxes.insert(target_index, fits_box)
+    if include_meta:
+        header = cube.meta.to_fits_header(wcs=cube.wcs)
+        header.remove("COMMENT", ignore_missing=True, remove_all=True)
+        fits_box = _generate_jp2_xmlbox(header)
+        meta_boxes.insert(target_index, fits_box)
     jp2.wrap(filename, boxes=meta_boxes)
     os.remove(tmp_filename)
 
@@ -263,7 +267,7 @@ def write_ndcube_to_fits(cube: NDCube,
                                             header=full_header,
                                             name="Uncertainty array",
                                             quantize_level=uncertainty_quantize_level,
-                                            quantize_method=1)
+                                            quantize_method=2)
         hdul.insert(2, hdu_uncertainty)
     hdul.append(hdu_provenance)
     hdul.writeto(filename, overwrite=overwrite, checksum=True)
@@ -284,6 +288,7 @@ def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -
     with np.errstate(divide="ignore", invalid="ignore"):
         np.divide(1, uncertainty_array, out=uncertainty_array)
         np.multiply(data_array, uncertainty_array, out=uncertainty_array)
+        uncertainty_array[np.isnan(uncertainty_array) * (data_array == 0)] = np.inf
     return uncertainty_array
 
 
@@ -322,7 +327,8 @@ def _update_statistics(cube: NDCube) -> NormalizedMetadata:
     return meta
 
 
-def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True) -> NDCube:
+def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True,
+                          include_uncertainty: bool = True) -> NDCube:
     """Load an NDCube from a FITS file."""
     with warnings.catch_warnings(), fits.open(path) as hdul:
         warnings.filterwarnings(action="ignore", message=".*CROTA.*Human-readable solar north pole angle.*",
@@ -343,7 +349,7 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
         wcs = WCS(header, hdul, key=key)
         unit = u.ct
 
-        if len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
+        if include_uncertainty and len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
             secondary_hdu = hdul[2]
             uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data)
             uncertainty = StdDevUncertainty(uncertainty)

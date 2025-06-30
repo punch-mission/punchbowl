@@ -7,6 +7,7 @@
 - Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510
 - Relabels CCD halves in https://github.com/punch-mission/punchbowl/pull/493
 - Adds documentation for data versions and anomalies in https://github.com/punch-mission/punchbowl/pull/495
+- Avoids mutating input cubes in `write_ndcube_to_fits` in https://github.com/punch-mission/punchbowl/pull/502
 - Ensures inf values in uncertainty layers roundtrip through compression in https://github.com/punch-mission/punchbowl/pull/506
 
 ## Version 0.0.15: June 4, 2025

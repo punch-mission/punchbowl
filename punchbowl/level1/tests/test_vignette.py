@@ -13,7 +13,7 @@ from punchbowl.exceptions import (
     InvalidDataError,
     LargeTimeDeltaWarning,
 )
-from punchbowl.level1.vignette import calibrate_vignetting, correct_vignetting_task
+from punchbowl.level1.vignette import correct_vignetting_task, generate_vignetting_calibration
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -123,13 +123,7 @@ def test_vignetting_correction(sample_ndcube) -> None:
     assert isinstance(corrected_punchdata, NDCube)
 
 
-def test_vignetting_calibration_generation() -> None:
+def test_generate_vignetting_calibration() -> None:
     """Test that vignetting calibration data is generated"""
-    cube = calibrate_vignetting(calibration_data = np.ones((2048,2048)),
-                                code = "GR",
-                                spacecraft = "4",
-                                timestamp = "20250601000000",
-                                file_version = "0b",
-                                outpath = None)
-
-    assert isinstance(cube, NDCube)
+    vignetting_data = generate_vignetting_calibration(spacecraft="4", timestamp="20250601000000")
+    assert isinstance(vignetting_data, np.ndarray)

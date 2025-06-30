@@ -1,10 +1,10 @@
 import argparse
 
-import numpy as np
-from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.punch_io import get_base_file_name, write_ndcube_to_fits
+from punchbowl.level1.vignette import generate_vignetting_calibration
 
 
 def main() -> None:
@@ -30,11 +30,21 @@ def create_calibration(level: str,
                        spacecraft: str,
                        timestamp: str,
                        file_version: str,
-                       shape: tuple[int, int] = (2048,2048),
-                       ) -> NDCube:
+                       outpath: str) -> NDCube:
     """Create calibration products."""
-    m = NormalizedMetadata.load_template(f"{code}{spacecraft}", level)
-    m["DATE-OBS"] = timestamp
-    m["FILEVRSN"] = file_version
+    calibration_meta = NormalizedMetadata.load_template(f"{code}{spacecraft}", level)
+    calibration_meta["DATE-OBS"] = timestamp
+    calibration_meta["FILEVRSN"] = file_version
 
-    return NDCube(data=np.zeros(shape), wcs=WCS(naxis=2), meta=m)
+    match code:
+        case "VG":
+            calibration_data, calibration_wcs = generate_vignetting_calibration(spacecraft=spacecraft,
+                                                                                timestamp=timestamp)
+
+    calibration_cube = NDCube(data=calibration_data, wcs=calibration_wcs, meta=calibration_meta)
+
+    filename = f"{outpath}{get_base_file_name(calibration_cube)}.fits"
+
+    write_ndcube_to_fits(calibration_cube, filename=filename, overwrite=True, write_hash=False)
+
+    return None

@@ -6,9 +6,7 @@ from collections.abc import Callable
 import numpy as np
 from ndcube import NDCube
 
-from punchbowl.cli import create_calibration
 from punchbowl.data import load_ndcube_from_fits
-from punchbowl.data.punch_io import get_base_file_name, write_ndcube_to_fits
 from punchbowl.exceptions import (
     IncorrectPolarizationStateWarning,
     IncorrectTelescopeWarning,
@@ -98,23 +96,8 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
     return data_object
 
 
-def calibrate_vignetting(calibration_data: np.ndarray,
-                         code: str,
-                         spacecraft: str,
-                         timestamp: str,
-                         file_version: str,
-                         outpath: str | None = None) -> None | NDCube:
+def generate_vignetting_calibration() -> np.ndarray:
     """Create calibration data for vignetting."""
-    cube = create_calibration(code=code,
-                              spacecraft=spacecraft,
-                              timestamp=timestamp,
-                              file_version=file_version,
-                              level="1")
-    cube.data[...] = calibration_data
-
-    filename = f"{outpath}{get_base_file_name(cube)}.fits"
-
-    if outpath is not None:
-        write_ndcube_to_fits(cube, filename=filename, overwrite=True, write_hash=False)
-        return None
-    return cube
+    # TODO - Load appropriate data in this case
+    # TODO - add spacecraft: str, timestamp: str back to inputs
+    return np.zeros((2048,2048))

@@ -98,14 +98,13 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
     return data_object
 
 
-def generate_vignetting_calibration(spacecraft: str, timestamp: str) -> np.ndarray:  # noqa: ARG001
+def generate_vignetting_calibration(path_vignetting: str, path_mask: str,
+                                    spacecraft: str) -> np.ndarray:
     """Create calibration data for vignetting."""
     if spacecraft in ["1", "2", "3"]:
-        path_vignetting = f"/Users/clowder/data/punch/calibration/vignetting/wfi{spacecraft}_a45_2d.dat"
         with open(path_vignetting) as f:
             lines = f.readlines()
 
-        path_mask = f"/Users/clowder/data/punch/calibration/vignetting/mask_wfi{spacecraft}.bin"
         with open(path_mask, "rb") as f:
             byte_array = f.read()
         mask = np.unpackbits(np.frombuffer(byte_array, dtype=np.uint8)).reshape(2048,2048)
@@ -137,5 +136,7 @@ def generate_vignetting_calibration(spacecraft: str, timestamp: str) -> np.ndarr
         vignetting[mask == 0] = 1
 
         return vignetting
-
-    return np.ones((2048,2048))
+    if spacecraft=="4":
+        # TODO: implement NFI speckle inclusion
+        return np.ones((2048,2048))
+    raise RuntimeError(f"Unknown spacecraft {spacecraft}")

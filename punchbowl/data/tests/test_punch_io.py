@@ -152,7 +152,8 @@ def test_generate_data_statistics_from_zeros():
 
     sample_data = NDCube(data=np.zeros((2048, 2048),dtype=np.int16), wcs=w, meta=m)
 
-    _update_statistics(sample_data)
+    new_meta = _update_statistics(sample_data)
+    sample_data.meta = new_meta
 
     assert sample_data.meta['DATAZER'].value == 2048*2048
 
@@ -174,7 +175,8 @@ def test_generate_data_statistics_from_zeros():
 
 def test_generate_data_statistics(sample_ndcube):
     cube = sample_ndcube((50, 50))
-    _update_statistics(cube)
+    new_meta = _update_statistics(cube)
+    cube.meta = new_meta
 
     nonzero_sample_data = cube.data[np.where(cube.data != 0)].flatten()
 

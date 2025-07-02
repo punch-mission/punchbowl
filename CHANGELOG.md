@@ -12,6 +12,7 @@
 - Avoids mutating input cubes in `write_ndcube_to_fits` in https://github.com/punch-mission/punchbowl/pull/502
 - Ensures inf values in uncertainty layers roundtrip through compression in https://github.com/punch-mission/punchbowl/pull/506
 - Allow writing out L1s with stray light included in https://github.com/punch-mission/punchbowl/pull/509
+- Unified L2 clear and polarized flows in https://github.com/punch-mission/punchbowl/pull/513
 
 ## Version 0.0.15: June 4, 2025
 

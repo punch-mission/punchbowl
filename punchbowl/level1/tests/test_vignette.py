@@ -125,6 +125,6 @@ def test_vignetting_correction(sample_ndcube) -> None:
 
 def test_generate_vignetting_calibration() -> None:
     """Test that vignetting calibration data is generated"""
-    vignetting_data = generate_vignetting_calibration(spacecraft="4", timestamp="20250601000000")
+    vignetting_data = generate_vignetting_calibration("data.dat", "mask.bin", spacecraft="4")
     assert isinstance(vignetting_data, np.ndarray)
     assert vignetting_data.shape == (2048, 2048)

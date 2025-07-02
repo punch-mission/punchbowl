@@ -1,6 +1,7 @@
 import argparse
 from datetime import datetime
 
+from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 
@@ -75,14 +76,15 @@ def create_calibration(level: str,
         input_list = input_list_file.readlines()
 
     match code:
-        case "VG":
-            calibration_data, calibration_wcs = generate_vignetting_calibration(input_list[0],
+        case "GR" | "GM" | "GZ" | "GP":
+            calibration_data = generate_vignetting_calibration(input_list[0],
                                                                                 input_list[1],
                                                                                 spacecraft=spacecraft)
+            calibration_cube = NDCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
         case _:
             raise RuntimeError(f"Calibration pipeline not written for this code: {code}.")
-    calibration_cube = NDCube(data=calibration_data, wcs=calibration_wcs, meta=calibration_meta)
 
-    filename = f"{out_path}{get_base_file_name(calibration_cube)}.fits"
+    filename = f"{out_path}/{get_base_file_name(calibration_cube)}.fits"
 
-    write_ndcube_to_fits(calibration_cube, filename=filename, overwrite=True, write_hash=False)
+    write_ndcube_to_fits(calibration_cube, filename=filename, overwrite=True,
+                         write_hash=False, skip_wcs_conversion=True)

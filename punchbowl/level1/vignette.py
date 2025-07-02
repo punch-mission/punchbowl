@@ -4,7 +4,9 @@ import warnings
 from collections.abc import Callable
 
 import numpy as np
+from astropy.wcs import WCS
 from ndcube import NDCube
+from reproject import reproject_adaptive
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import (
@@ -96,8 +98,44 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
     return data_object
 
 
-def generate_vignetting_calibration() -> np.ndarray:
+def generate_vignetting_calibration(spacecraft: str, timestamp: str) -> np.ndarray:  # noqa: ARG001
     """Create calibration data for vignetting."""
-    # TODO - Load appropriate data in this case
-    # TODO - add spacecraft: str, timestamp: str back to inputs
-    return np.zeros((2048,2048))
+    if spacecraft in ["1", "2", "3"]:
+        path_vignetting = f"/Users/clowder/data/punch/calibration/vignetting/wfi{spacecraft}_a45_2d.dat"
+        with open(path_vignetting) as f:
+            lines = f.readlines()
+
+        path_mask = f"/Users/clowder/data/punch/calibration/vignetting/mask_wfi{spacecraft}.bin"
+        with open(path_mask, "rb") as f:
+            byte_array = f.read()
+        mask = np.unpackbits(np.frombuffer(byte_array, dtype=np.uint8)).reshape(2048,2048)
+        mask = mask.T
+
+        num_bins, bin_size = lines[0].split()
+        num_bins = int(num_bins)
+        bin_size = int(bin_size)
+
+        values = np.array([float(v) for line in lines[1:] for v in line.split()])
+        vignetting_original = values[:num_bins**2].reshape((num_bins, num_bins))
+
+        vignetting_original[np.isnan(vignetting_original)] = 0
+
+        vignetting_original[6,:] = 0
+
+        wcs_vignetting = WCS(naxis=2)
+
+        wcs_wfi = WCS(naxis=2)
+        wcs_wfi.wcs.cdelt = wcs_wfi.wcs.cdelt * vignetting_original.shape[0] / 2048.
+
+        vignetting = reproject_adaptive((vignetting_original, wcs_vignetting),
+                                        shape_out=(2048,2048),
+                                        output_projection=wcs_wfi,
+                                        boundary_mode="ignore")[0]
+
+        vignetting = vignetting * mask
+
+        vignetting[mask == 0] = 1
+
+        return vignetting
+
+    return np.ones((2048,2048))

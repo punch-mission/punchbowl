@@ -13,7 +13,7 @@ from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_t
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.prefect import punch_flow
-from punchbowl.util import average_datetime, load_image_task, output_image_task
+from punchbowl.util import average_datetime, find_first_existing_file, load_image_task, output_image_task
 
 POLARIZED_FILE_ORDER = ["PM1", "PZ1", "PP1",
                         "PM2", "PZ2", "PP2",
@@ -58,7 +58,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
 
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
 
-    if data_list:
+    if data_list and not all(cube is None for cube in data_list):
         if polarized is None:
             polarized = data_list[0].meta["TYPECODE"].value[0] == "P"
 
@@ -94,6 +94,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
                      for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
         merger = merge_many_polarized_task if polarized else merge_many_clear_task
         output_data = merger(data_list, trefoil_wcs)
+        output_data.meta["FILEVRSN"] = find_first_existing_file(data_list).meta["FILEVRSN"].value
     else:
         if polarized is None:
             msg = "A polarization state must be provided"

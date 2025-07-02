@@ -13,6 +13,7 @@
 - Ensures inf values in uncertainty layers roundtrip through compression in https://github.com/punch-mission/punchbowl/pull/506
 - Allow writing out L1s with stray light included in https://github.com/punch-mission/punchbowl/pull/509
 - Unified L2 clear and polarized flows in https://github.com/punch-mission/punchbowl/pull/513
+- Sets FILEVRSN in L2 flow in https://github.com/punch-mission/punchbowl/pull/514
 
 ## Version 0.0.15: June 4, 2025
 

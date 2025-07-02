@@ -15,6 +15,7 @@
 - Unified L2 clear and polarized flows in https://github.com/punch-mission/punchbowl/pull/513
 - Sets FILEVRSN in L2 flow in https://github.com/punch-mission/punchbowl/pull/514
 - Removes unused prefect test decorator in https://github.com/punch-mission/punchbowl/pull/515
+- Creates calibration creation CLI and adds hash functions as needed in https://github.com/punch-mission/punchbowl/pull/497
 
 ## Version 0.0.15: June 4, 2025
 

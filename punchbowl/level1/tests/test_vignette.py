@@ -1,6 +1,7 @@
 import pathlib
 from datetime import datetime
 
+import numpy as np
 import pytest
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
@@ -12,7 +13,7 @@ from punchbowl.exceptions import (
     InvalidDataError,
     LargeTimeDeltaWarning,
 )
-from punchbowl.level1.vignette import correct_vignetting_task
+from punchbowl.level1.vignette import correct_vignetting_task, generate_vignetting_calibration
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -113,3 +114,10 @@ def test_vignetting_correction(sample_ndcube) -> None:
         corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
 
     assert isinstance(corrected_punchdata, NDCube)
+
+
+def test_generate_vignetting_calibration() -> None:
+    """Test that vignetting calibration data is generated"""
+    vignetting_data = generate_vignetting_calibration("data.dat", "mask.bin", spacecraft="4")
+    assert isinstance(vignetting_data, np.ndarray)
+    assert vignetting_data.shape == (2048, 2048)

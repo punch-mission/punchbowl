@@ -94,6 +94,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
                      for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
         merger = merge_many_polarized_task if polarized else merge_many_clear_task
         output_data = merger(data_list, trefoil_wcs)
+        output_data.meta["FILEVRSN"] = data_list[0].meta["FILEVRSN"].value
     else:
         if polarized is None:
             msg = "A polarization state must be provided"

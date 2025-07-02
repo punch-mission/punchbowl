@@ -21,6 +21,7 @@ from sunpy.coordinates import frames, get_earth, sun
 from sunpy.coordinates.sun import _sun_north_angle_to_z
 from sunpy.map import solar_angular_radius
 
+import punchbowl
 from punchbowl.data.history import History
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, extract_crota_from_wcs, get_p_angle
 from punchbowl.exceptions import MissingMetadataError
@@ -644,6 +645,10 @@ class NormalizedMetadata(Mapping):
                             e["MUTABLE"],
                             default,
                         )
+
+        if "File Type and Provenance" in contents and "PIPEVRSN" in contents["File Type and Provenance"]:
+            contents["File Type and Provenance"]["PIPEVRSN"].value = punchbowl.__version__
+
         return cls(contents, history)
 
     @property

@@ -61,6 +61,10 @@ class History:
         """
         self._entries = []
 
+    def clear_entries_from_source(self, source: str) -> None:
+        """Clear all history entries from a given source."""
+        self._entries = [entry for entry in self._entries if entry.source != source]
+
     def __getitem__(self, index: int) -> HistoryEntry:
         """
         Given an index, return the requested HistoryEntry.

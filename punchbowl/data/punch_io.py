@@ -314,15 +314,22 @@ def _update_statistics(cube: NDCube) -> NormalizedMetadata:
         meta["DATASIG"] = -999.0
 
     percentile_percentages = [1, 10, 25, 50, 75, 90, 95, 98, 99]
-    percentile_values = np.percentile(nonzero_data, percentile_percentages)
-    if np.any(np.isnan(percentile_values)):  # report nan if any of the values are nan
-        percentile_values = [-999.0 for _ in percentile_percentages]
+    if len(nonzero_data) > 0:
+        percentile_values = np.percentile(nonzero_data, percentile_percentages)
+        if np.any(np.isnan(percentile_values)):  # report nan if any of the values are nan
+            percentile_values = [-999.0 for _ in percentile_percentages]
 
-    for percent, value in zip(percentile_percentages, percentile_values, strict=False):
-        meta[f"DATAP{percent:02d}"] = value
+        for percent, value in zip(percentile_percentages, percentile_values, strict=True):
+            meta[f"DATAP{percent:02d}"] = value
 
-    meta["DATAMIN"] = np.min(nonzero_data).item()
-    meta["DATAMAX"] = np.max(nonzero_data).item()
+        meta["DATAMIN"] = np.min(nonzero_data).item()
+        meta["DATAMAX"] = np.max(nonzero_data).item()
+    else:
+        for percent in percentile_percentages:
+            meta[f"DATAP{percent:02d}"] = -999.0
+
+        meta["DATAMIN"] = 0.0
+        meta["DATAMAX"] = 0.0
 
     return meta
 

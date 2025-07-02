@@ -14,7 +14,8 @@
 - Allow writing out L1s with stray light included in https://github.com/punch-mission/punchbowl/pull/509
 - Unified L2 clear and polarized flows in https://github.com/punch-mission/punchbowl/pull/513
 - Sets FILEVRSN in L2 flow in https://github.com/punch-mission/punchbowl/pull/514
-
+- Removes unused prefect test decorator in https://github.com/punch-mission/punchbowl/pull/515
+  
 ## Version 0.0.15: June 4, 2025
 
 - Restricts the mask for NFI pointing refinement in https://github.com/punch-mission/punchbowl/pull/486

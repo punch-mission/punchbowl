@@ -130,3 +130,11 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
     result[:, n_valid_obs == 0] = np.nan
 
     return result
+
+def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
+    """Find the first cube that's not None in a list of NDCubes."""
+    for cube in inputs:
+        if cube is not None:
+            return cube
+    msg = "No cube found. All inputs are None."
+    raise RuntimeError(msg)

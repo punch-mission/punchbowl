@@ -84,6 +84,9 @@ docs = ["astroid>=3",
 gpu = ["cupy"]
 dev = ["punchbowl[docs,test]"]
 
+[project.scripts]
+punchbowl = "punchbowl.cli:main"
+
 [project.urls]
 #Homepage = "https://example.com"
 Documentation = "https://punchbowl.readthedocs.io/en/latest/"

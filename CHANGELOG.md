@@ -2,6 +2,21 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Version 0.0.16: July 3, 2025
+
+- Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510
+- Relabels CCD halves in https://github.com/punch-mission/punchbowl/pull/493
+- Adds documentation for data versions and anomalies in https://github.com/punch-mission/punchbowl/pull/495
+- Separates LQ CNN and CTM into separate flows in https://github.com/punch-mission/punchbowl/pull/507
+- Avoid incorrectly coping some metadata from L0 to L1, and update PIPEVRSN in https://github.com/punch-mission/punchbowl/pull/508
+- Avoids mutating input cubes in `write_ndcube_to_fits` in https://github.com/punch-mission/punchbowl/pull/502
+- Ensures inf values in uncertainty layers roundtrip through compression in https://github.com/punch-mission/punchbowl/pull/506
+- Allow writing out L1s with stray light included in https://github.com/punch-mission/punchbowl/pull/509
+- Unified L2 clear and polarized flows in https://github.com/punch-mission/punchbowl/pull/513
+- Sets FILEVRSN in L2 flow in https://github.com/punch-mission/punchbowl/pull/514
+- Removes unused prefect test decorator in https://github.com/punch-mission/punchbowl/pull/515
+- Creates calibration creation CLI and adds hash functions as needed in https://github.com/punch-mission/punchbowl/pull/497
+
 ## Version 0.0.15: June 4, 2025
 
 - Restricts the mask for NFI pointing refinement in https://github.com/punch-mission/punchbowl/pull/486

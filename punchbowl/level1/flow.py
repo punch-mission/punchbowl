@@ -1,9 +1,11 @@
 import os
 import pathlib
+from copy import deepcopy
 from collections.abc import Callable, Generator
 
 import astropy.units as u
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import get_run_logger
 from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
@@ -23,6 +25,8 @@ from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import punch_flow
 from punchbowl.util import load_image_task, output_image_task
+
+L0_KEYS_TO_IGNORE = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE"]
 
 
 @punch_flow
@@ -50,8 +54,8 @@ def generate_psf_model_core_flow(input_filepaths: list[str],
 @punch_flow
 def level1_core_flow(  # noqa: C901
     input_data: list[str] | list[NDCube],
-    gain_left: float = 4.9,
-    gain_right: float = 4.9,
+    gain_bottom: float = 4.9,
+    gain_top: float = 4.9,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
@@ -76,6 +80,7 @@ def level1_core_flow(  # noqa: C901
     max_workers: int | None = None,
     mask_path: str | None = None,
     pointing_shift: tuple[float, float] = (0, 0),
+    return_with_stray_light: bool = False,
 ) -> list[NDCube]:
     """Core flow for level 1."""
     logger = get_run_logger()
@@ -92,22 +97,22 @@ def level1_core_flow(  # noqa: C901
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
         data = update_initial_uncertainty_task(data,
                                                dark_level=dark_level,
-                                               gain_left=gain_left,
-                                               gain_right=gain_right,
+                                               gain_bottom=gain_bottom,
+                                               gain_top=gain_top,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                saturated_pixels=saturated_pixels,
                                                )
 
         if data.meta["OBSCODE"].value == "4":
-            scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,
-                       "gain_right": data.meta["GAINRGHT"].value * u.photon / u.DN,
+            scaling = {"gain_bottom": data.meta["GAINBTM"].value * u.photon / u.DN,
+                       "gain_top": data.meta["GAINTOP"].value * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
                        "exposure": data.meta["EXPTIME"].value * u.s,
                        "aperture": 49.57 * u.mm ** 2}
         else:
-            scaling = {"gain_left": data.meta["GAINLEFT"].value * u.photon / u.DN,
-                       "gain_right": data.meta["GAINRGHT"].value * u.photon / u.DN,
+            scaling = {"gain_bottom": data.meta["GAINBTM"].value * u.photon / u.DN,
+                       "gain_top": data.meta["GAINTOP"].value * u.photon / u.DN,
                        "wavelength": 530. * u.nm,
                        "exposure": data.meta["EXPTIME"].value * u.s,
                        "aperture": 34 * u.mm ** 2}
@@ -129,7 +134,7 @@ def level1_core_flow(  # noqa: C901
                             despike_sigfrac,
                             despike_objlim,
                             despike_niter,
-                            gain_left,  # TODO: despiking should handle the gain more completely
+                            gain_bottom,  # TODO: despiking should handle the gain more completely
                             read_noise_level,
                             despike_cleantype)
         data = destreak_task(data,
@@ -143,6 +148,9 @@ def level1_core_flow(  # noqa: C901
                                             required_good_count=deficient_pixel_required_good_count,
                                             max_window_size=deficient_pixel_max_window_size,
                                             method=deficient_pixel_method)
+        if return_with_stray_light:
+            data_with_stray_light = data.data.copy()
+            uncertainty_with_stray_light = data.uncertainty.array.copy()
         data = remove_stray_light_task(data, stray_light_path)
         data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
 
@@ -163,12 +171,17 @@ def level1_core_flow(  # noqa: C901
             mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
             data.data *= mask
             data.uncertainty.array[mask==0] = np.inf
+            if return_with_stray_light:
+                data_with_stray_light *= mask
+                uncertainty_with_stray_light[mask==0] = np.inf
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
         new_meta = NormalizedMetadata.load_template(product_code, "1")
         # copy over the existing values
         for key in data.meta.keys(): # noqa: SIM118
+            if key in L0_KEYS_TO_IGNORE:
+                continue
             if key in new_meta.keys(): # noqa: SIM118
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
@@ -187,7 +200,6 @@ def level1_core_flow(  # noqa: C901
         if isinstance(quartic_coefficient_path, Callable):
             _, quartic_coefficient_path = quartic_coefficient_path()
         new_meta["CALCF"] = os.path.basename(quartic_coefficient_path) if quartic_coefficient_path else ""
-        new_meta["LEVEL"] = "1"
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
@@ -195,6 +207,21 @@ def level1_core_flow(  # noqa: C901
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
         output_data.append(data)
+
+        if return_with_stray_light:
+            meta = deepcopy(new_meta)
+            del meta["CALPSF"]
+            del meta["CALSL"]
+            meta["TYPECODE"] = "X" + meta["TYPECODE"].value[1:]
+            meta["TITLE"] = meta["TITLE"].value + " with Stray Light"
+            meta.history.clear_entries_from_source("LEVEL1-correct_psf")
+            meta.history.clear_entries_from_source("LEVEL1-remove_stray_light")
+            stray_light_cube = NDCube(data=data_with_stray_light,
+                                      meta=meta,
+                                      wcs=data.wcs,
+                                      uncertainty=StdDevUncertainty(uncertainty_with_stray_light),
+                                      unit=data.unit)
+            output_data.append(stray_light_cube)
         logger.info("ending level 1 core flow")
     return output_data
 
@@ -202,8 +229,8 @@ def level1_core_flow(  # noqa: C901
 @punch_flow
 def levelh_core_flow(
     input_data: list[str] | list[NDCube],
-    gain_left: float = 4.9,
-    gain_right: float = 4.9,
+    gain_bottom: float = 4.9,
+    gain_top: float = 4.9,
     bias_level: float = 100,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
@@ -223,8 +250,8 @@ def levelh_core_flow(
         data = update_initial_uncertainty_task(data,
                                                bias_level=bias_level,
                                                dark_level=dark_level,
-                                               gain_left=gain_left,
-                                               gain_right=gain_right,
+                                               gain_bottom=gain_bottom,
+                                               gain_top=gain_top,
                                                read_noise_level=read_noise_level,
                                                bitrate_signal=bitrate_signal,
                                                )

@@ -86,6 +86,23 @@ def test_metafield_wrong_kind_for_update():
     with pytest.raises(TypeError):
         mf.default = "this is invalid"
 
+def test_metafield_hashes():
+    mf1 = MetaField("HI", "What's up?", 3, int, False, True, -99)
+    mf2 = MetaField("BYE", "What's up?", 3, int, False, True, -99)
+    mf3 = MetaField("HI", "What's up?", 3, int, False, True, -99)
+
+    assert hash(mf1) != hash(mf2)
+    assert mf1 != mf2
+    assert mf1 == mf3
+    assert hash(mf1) == hash(mf3)
+
+
+def test_normalizedmetadata_hashes():
+    result = NormalizedMetadata.load_template("CB1",
+                                              omniheader_path=SAMPLE_OMNIBUS_PATH,
+                                              level_spec_path=SAMPLE_LEVEL_PATH,
+                                              spacecraft_def_path=SAMPLE_SPACECRAFT_DEF_PATH)
+    assert isinstance(hash(result), int)
 
 def test_normalizedmetadata_from_template_abq():
     result = NormalizedMetadata.load_template("ABT",

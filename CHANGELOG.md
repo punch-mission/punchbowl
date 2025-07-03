@@ -2,7 +2,7 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-## Unreleased
+## Version 0.0.16: July 3, 2025
 
 - Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510
 - Relabels CCD halves in https://github.com/punch-mission/punchbowl/pull/493

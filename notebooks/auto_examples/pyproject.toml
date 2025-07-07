@@ -1,0 +1,156 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "punchbowl"
+dynamic = ["version"]
+dependencies = [
+        "numpy",
+        "astropy",
+        "sunpy[all]",
+        "pandas",
+        "ndcube",
+        "matplotlib<=3.9.2",
+        "ccsdspy",
+        "prefect[dask]",
+        "regularizepsf",
+        "solpolpy",
+        "scipy",
+        "lmfit",
+        "sunkit-image",
+        "setuptools",
+        "reproject",
+        "pylibjpeg",
+        "python-dateutil",
+        "thuban",
+        "remove_starfield>=0.0.4",
+        "quadprog",
+        "pylibjpeg[openjpeg]",
+        "requests",
+        "threadpoolctl",
+        "numexpr",
+        "glymur",
+        "astroscrappy",
+        "scikit-learn",
+]
+requires-python = ">=3.11"
+authors = [
+    {name = "J. Marcus Hughes", email = "marcus.hughes@swri.org"},
+    {name = "Chris Lowder", email = "chris.lowder@swri.org"},
+    {name = "Matthew West", email = "matthew.west@swri.org"},
+    {name = "Sarak Kovac", email = "sarah.kovac@swri.org"},
+    {name = "Ritesh Patel", email = "ritesh.patel@swri.org"},
+    {name = "Derek Lamb", email = "derek.lamb@swri.org"},
+    {name = "Dan Seaton", email = "daniel.seaton@swri.org"}
+]
+maintainers = [
+  {name = "J. Marcus Hughes", email = "marcus.hughes@swri.org"}
+]
+description = "PUNCH science calibration code"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["solar physics", "PUNCH", "NASA", "science", "calibration"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python"
+]
+
+[project.optional-dependencies]
+test = ["pytest",
+        "pytest-order",
+        "codespell",
+        "coverage",
+        "pytest-cov",
+        "flake8",
+        "pytest-runner",
+        "pytest-mpl",
+        "pre-commit",
+        "ruff",
+        "hypothesis"]
+docs = ["astroid>=3",
+        "sphinx",
+        "sphinx-gallery",
+        "sphinx_rtd_theme",
+        "codespell",
+        "packaging",
+        "pydata-sphinx-theme",
+        "sphinx-autoapi",
+        "sphinx-favicon",
+        "jupyterlite-sphinx",
+        "ipython",
+        "ipykernel",
+        "sphinxcontrib-mermaid"]
+gpu = ["cupy"]
+dev = ["punchbowl[docs,test]"]
+
+[project.scripts]
+punchbowl = "punchbowl.cli:main"
+
+[project.urls]
+#Homepage = "https://example.com"
+Documentation = "https://punchbowl.readthedocs.io/en/latest/"
+Repository = "https://github.com/punch-mission/punchbowl.git"
+"Bug Tracker" = "https://github.com/punch-mission/punchbowl/issues"
+#Changelog = "https://github.com/punch-mission/thuban/blob/main/CHANGELOG.md"
+
+[tool.setuptools_scm]
+
+[tool.setuptools]
+packages = ["punchbowl"]
+
+[tool.codespell]
+skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
+
+[tool.ruff]
+target-version = 'py311'
+exclude = ['tests', 'scripts', 'docs', 'examples']
+line-length=120
+lint.select = ["ALL"]
+lint.ignore = [
+    'EM102',
+    'TRY003',
+    'G004',
+    "I001",
+    'D100',
+    'D104',
+    "PTH",
+    "FBT",
+    "TD",
+    "FIX",
+    "PLR",
+    "B028",
+    "NPY002",
+    "PERF403",
+    "PYI041",
+    "ANN401",
+    "PYI024",
+    "DTZ005",
+    "D203",
+    "D212",
+    "TC002",
+    "TC003", "E731"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+"*/tests/*" = ['S101']
+"confest.py" = ["ANN", "D"]
+
+[tool.isort]
+balanced_wrapping = true
+default_section = "THIRDPARTY"
+include_trailing_comma = true
+known_compatibility = "future"
+known_first_party = "punchbowl"
+length_sort = false
+length_sort_sections = "stdlib"
+line_length = 120
+multi_line_output = 3
+no_lines_before = "LOCALFOLDER"
+sections = "FUTURE, COMPATIBILITY, STDLIB, THIRDPARTY, FIRSTPARTY, LOCALFOLDER"
+
+[tool.pytest.ini_options]
+markers = [
+    "prefect_test: a test that integrates with Prefect",
+    "regression: a regression test, likely slow",
+]

@@ -115,27 +115,29 @@ def generate_vignetting_calibration(path_vignetting: str, path_mask: str,
         bin_size = int(bin_size)
 
         values = np.array([float(v) for line in lines[1:] for v in line.split()])
-        vignetting_original = values[:num_bins**2].reshape((num_bins, num_bins))
+        vignetting = values[:num_bins**2].reshape((num_bins, num_bins))
 
-        vignetting_original[np.isnan(vignetting_original)] = 0
+        vignetting[vignetting > 1.2] = np.nan
 
-        vignetting_original[6,:] = 0
+        vignetting[13:15,:] = np.nan
+        vignetting[15:16,:] = np.min(vignetting[16:20,:], axis=0)
 
         wcs_vignetting = WCS(naxis=2)
 
         wcs_wfi = WCS(naxis=2)
-        wcs_wfi.wcs.cdelt = wcs_wfi.wcs.cdelt * vignetting_original.shape[0] / 2048.
+        wcs_wfi.wcs.cdelt = wcs_wfi.wcs.cdelt * vignetting.shape[0] / 2048.
 
-        vignetting = reproject_adaptive((vignetting_original, wcs_vignetting),
-                                        shape_out=(2048,2048),
-                                        output_projection=wcs_wfi,
-                                        boundary_mode="ignore")[0]
+        vignetting_reprojected = reproject_adaptive((vignetting, wcs_vignetting),
+                                                shape_out=(2048,2048),
+                                                output_projection=wcs_wfi,
+                                                boundary_mode="ignore",
+                                                bad_value_mode="ignore")[0]
 
-        vignetting = vignetting * mask
+        vignetting_reprojected = vignetting_reprojected * mask
 
-        vignetting[mask == 0] = 1
+        vignetting_reprojected[mask == 0] = 1
 
-        return vignetting
+        return vignetting_reprojected
     if spacecraft=="4":
         # TODO: implement NFI speckle inclusion
         return np.ones((2048,2048))

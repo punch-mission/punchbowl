@@ -59,7 +59,7 @@ def create_calibration(level: str,
         Output file's VERSION.
     input_list_path : str
         Path to a list of filenames to use for generating this specific calibration product.
-        For VG: the first entry is the Tappin data file. The second entry is the mask.
+        For vignetting (GR, GM, GZ, GP): the first entry is the Tappin data file. The second entry is the mask.
     out_path : str
         Directory to write calibration product to.
 
@@ -73,13 +73,13 @@ def create_calibration(level: str,
     calibration_meta["FILEVRSN"] = file_version
 
     with open(input_list_path) as input_list_file:
-        input_list = input_list_file.readlines()
+        input_list = [line.strip() for line in input_list_file]
 
     match code:
         case "GR" | "GM" | "GZ" | "GP":
             calibration_data = generate_vignetting_calibration(input_list[0],
-                                                                                input_list[1],
-                                                                                spacecraft=spacecraft)
+                                                               input_list[1],
+                                                               spacecraft=spacecraft)
             calibration_cube = NDCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
         case _:
             raise RuntimeError(f"Calibration pipeline not written for this code: {code}.")

@@ -2,6 +2,10 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Unreleased
+
+- Fixes constant deficient pixel map creation in https://github.com/punch-mission/punchbowl/pull/522
+
 ## Version 0.0.16: July 3, 2025
 
 - Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510

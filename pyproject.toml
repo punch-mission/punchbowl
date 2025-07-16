@@ -33,6 +33,7 @@ dependencies = [
         "glymur",
         "astroscrappy",
         "scikit-learn",
+        "astrometry"
 ]
 requires-python = ">=3.11"
 authors = [

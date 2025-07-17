@@ -44,7 +44,7 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
     write_ndcube_to_fits(data, output_filename)
 
 
-@punch_task
+@punch_task(tags=["image_loader"])
 def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True) -> NDCube:
     """
     Prefect task to load data for processing.

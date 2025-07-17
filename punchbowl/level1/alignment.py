@@ -246,7 +246,7 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
     Parameters
     ----------
     catalog : pd.DataFrame
-        a catalog loaded from `~thuban.catalog.load_hipparcos_catalog` or `~thuban.catalog.load_raw_hipparcos_catalog`
+        a catalog loaded from `~load_hipparcos_catalog` or `~load_raw_hipparcos_catalog`
 
     dimmest_magnitude : float
         the dimmest magnitude to keep

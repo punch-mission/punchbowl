@@ -24,7 +24,7 @@ HIPPARCOS_URL = "https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat"
 
 def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_size: float = 3) -> np.ndarray:
     """
-    Returns a filtered copy of a distortion map table.
+    Filter a copy of the distortion lookup table.
 
     Any rows/columns at the edges that are all NaNs will be removed and
     replaced with a copy of the closest non-removed edge at the end of
@@ -109,11 +109,12 @@ def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_
     # Replicate the edge rows/columns to replace those we trimmed earlier
     return np.pad(data, [trimmed[0:2], trimmed[2:]], mode="edge")
 
-def get_data(path):
+def get_data_path(path: str) -> str:
+    """Get the path to the local data directory."""
     return os.path.join(_ROOT, "data", path)
 
 
-def load_hipparcos_catalog(catalog_path: str = get_data("reduced_hip.csv")) -> pd.DataFrame:
+def load_hipparcos_catalog(catalog_path: str = get_data_path("reduced_hip.csv")) -> pd.DataFrame:
     """
     Load the Hipparcos catalog from the local, reduced version. This version only keeps necessary columns.
 
@@ -240,7 +241,7 @@ def load_raw_hipparcos_catalog(catalog_path: str = HIPPARCOS_URL) -> pd.DataFram
 
 def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6) -> pd.DataFrame:
     """
-    Filters to only include stars brighter than a given magnitude
+    Filter to only include stars brighter than a given magnitude.
 
     Parameters
     ----------
@@ -260,11 +261,11 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
 
 
 def find_catalog_in_image(
-    catalog: pd.DataFrame, wcs: WCS, image_shape: (int, int), mask: Callable = None,
+    catalog: pd.DataFrame, wcs: WCS, image_shape: tuple[int, int], mask: Callable | None = None,
         mode: str = "all",
-) -> np.ndarray:
+) -> pd.DataFrame:
     """
-    Using the provided WCS converts the RA/DEC catalog into pixel coordinates
+     Convert the RA/DEC catalog into pixel coordinates using the provided WCS.
 
     Parameters
     ----------
@@ -274,6 +275,8 @@ def find_catalog_in_image(
         the world coordinate system of a given image
     image_shape: (int, int)
         the shape of the image array associated with the WCS, used to only consider stars with coordinates in image
+    mask: Callable
+        a function that indicates whether a given coordinate is included
     mode : str
         either "all" or "wcs",
         see
@@ -281,7 +284,7 @@ def find_catalog_in_image(
 
     Returns
     -------
-    np.ndarray
+    pd.DataFrame
         pixel coordinates of stars in catalog that are present in the image
 
     """
@@ -307,7 +310,29 @@ def find_star_coordinates(image_data: np.ndarray,
                           saturation_limit: float = np.inf,
                           max_distance_from_center: float = 700,
                           background_size: int = 16,
-                          detection_threshold: float = 5.0):
+                          detection_threshold: float = 5.0) -> np.ndarray:
+    """
+    Extract the coordinates of observed stars in an image using sep.
+
+    Parameters
+    ----------
+    image_data : np.ndarray
+        an array of an image
+    saturation_limit : float
+        stars brighter than this are ignored
+    max_distance_from_center: float
+        only returns stars at most this distance from the center of th eimage
+    background_size: int
+        pixel size used by sep when building background model
+    detection_threshold : float
+        number of sigma brighter than noise level a star must be for detection
+
+    Returns
+    -------
+    np.ndarray
+        pixel coordinates of stars that are present in the image
+
+    """
     image_copy = image_data.copy()
     image_copy[image_copy > saturation_limit] = 0
     background = sep.Background(image_data, bw=background_size, bh=background_size)
@@ -318,15 +343,39 @@ def find_star_coordinates(image_data: np.ndarray,
 
     center = image_data.shape[0]//2, image_data.shape[1]//2
     distance = np.sqrt(np.square(observed_coords[:, 0] - center[0]) + np.square(observed_coords[:, 1] - center[1]))
-    observed_coords = observed_coords[distance < max_distance_from_center, :]
-    return observed_coords
+    return observed_coords[distance < max_distance_from_center, :]
 
-def astrometry_net_initial_solve(observed_coords,
+
+def astrometry_net_initial_solve(observed_coords: np.ndarray,
                                  image_wcs: WCS,
                                  search_scales: tuple[int] = (14, 15, 16),
                                  num_stars: int = 150,
                                  lower_arcsec_per_pixel: float = 80.0,
-                                 upper_arcsec_per_pixel: float = 100.0):
+                                 upper_arcsec_per_pixel: float = 100.0) -> WCS | None:
+    """
+    Solve for the WCS of an image using Astrometry.net.
+
+    Parameters
+    ----------
+    observed_coords : np.ndarray
+        pixel coordinates of stars in image, returned by `find_star_coordinates`
+    image_wcs : WCS
+        best guess WCS
+    search_scales: tuple[int]
+        scales to use for search, see https://github.com/neuromorphicsystems/astrometry?tab=readme-ov-file#choosing-series
+    num_stars: int
+        number of stars in the observed_coords to use for search
+    lower_arcsec_per_pixel: float
+        lower guess on the platescale
+    upper_arcsec_per_pixel: float
+        upper guess on the platescale
+
+    Returns
+    -------
+    WCS | None
+        the best WCS if search successful, otherwise None
+
+    """
     with astrometry.Solver(
         astrometry.series_4100.index_files(
             cache_directory="astrometry_cache",
@@ -357,9 +406,12 @@ def astrometry_net_initial_solve(observed_coords,
 
 
 def _residual(params: Parameters,
-              subcatalog, observed_coords, guess_wcs, max_error: float = 30):
+              subcatalog: pd.DataFrame,
+              observed_coords: np.ndarray,
+              guess_wcs: WCS,
+              max_error: float = 30) -> float:
     """
-    Residual used when optimizing the pointing
+    Residual used when optimizing the pointing.
 
     Parameters
     ----------
@@ -367,12 +419,12 @@ def _residual(params: Parameters,
         optimization parameters from lmfit
     observed_coords : np.ndarray
         pixel coordinates of stars observed in the image, i.e. the coordinates found by sep of the actual star location
-    catalog : pd.DataFrame
+    subcatalog : pd.DataFrame
         image catalog of stars to match against
     guess_wcs : WCS
         initial guess of the world coordinate system, must overlap with the true WCS
-    n: int
-        number of stars to use in calculating the error
+    max_error: float
+        stars more distant than this are complete misses, and their error is zeroed out
 
     Returns
     -------
@@ -411,35 +463,37 @@ def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
     delta_ratio = abs(wcs.wcs.cdelt[1]) / abs(wcs.wcs.cdelt[0])
     return (np.arctan2(wcs.wcs.pc[1, 0]/delta_ratio, wcs.wcs.pc[0, 0])) * u.rad
 
-def convert_cd_matrix_to_pc_matrix(wcs):
-    if hasattr(wcs.wcs, "cd"):
-        cdelt1, cdelt2 = utils.proj_plane_pixel_scales(wcs)
-        crota = np.arctan2(abs(cdelt1) * wcs.wcs.cd[0, 1], abs(cdelt2) * wcs.wcs.cd[0, 0])
-
-        new_wcs = WCS(naxis=2)
-        new_wcs.wcs.ctype = wcs.wcs.ctype
-        new_wcs.wcs.crval = wcs.wcs.crval
-        new_wcs.wcs.crpix = wcs.wcs.crpix
-        new_wcs.wcs.pc = np.array(
-        [
-            [-np.cos(crota), -np.sin(crota) * (cdelt1 / cdelt2)],
-            [np.sin(crota) * (cdelt2 / cdelt1), -np.cos(crota)],
-        ],
-    )
-        new_wcs.wcs.cdelt = (-cdelt1, cdelt2)
-        new_wcs.wcs.cunit = "deg", "deg"
-        return new_wcs
-    else:  # noqa RET505
+def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
+    """Convert a WCS with a CD matrix to one with a PC matrix."""
+    if not hasattr(wcs.wcs, "cd"):
         return wcs
+    cdelt1, cdelt2 = utils.proj_plane_pixel_scales(wcs)
+    crota = np.arctan2(abs(cdelt1) * wcs.wcs.cd[0, 1], abs(cdelt2) * wcs.wcs.cd[0, 0])
 
-def refine_pointing_single_step(image, guess_wcs, observed_coords, subcatalog, method="least_squares",
-                                ra_tolerance=10, dec_tolerance=5,
-                                fix_crval=False, fix_cdelt=True, fix_crota=False, fix_pv=True):
+    new_wcs = WCS(naxis=2)
+    new_wcs.wcs.ctype = wcs.wcs.ctype
+    new_wcs.wcs.crval = wcs.wcs.crval
+    new_wcs.wcs.crpix = wcs.wcs.crpix
+    new_wcs.wcs.pc = np.array(
+    [
+        [-np.cos(crota), -np.sin(crota) * (cdelt1 / cdelt2)],
+        [np.sin(crota) * (cdelt2 / cdelt1), -np.cos(crota)],
+    ])
+    new_wcs.wcs.cdelt = (-cdelt1, cdelt2)
+    new_wcs.wcs.cunit = "deg", "deg"
+    return new_wcs
 
+
+def  refine_pointing_single_step(
+    guess_wcs: WCS, observed_coords: np.ndarray, subcatalog: pd.DataFrame, method: str = "least_squares",
+                                ra_tolerance: float = 10, dec_tolerance: float = 5,
+                                fix_crval: bool = False,
+                                fix_crota: bool = False,
+                                fix_pv: bool = True) -> WCS:
+    """Perform a single step of pointing refinement."""
     # set up the optimization
     params = Parameters()
     initial_crota = extract_crota_from_wcs(guess_wcs)
-    # print("INITIAL_CROTA", initial_crota)
     params.add("crota", value=initial_crota.to(u.rad).value,
                min=-np.pi, max=np.pi, vary=not fix_crota)
     params.add("crval1", value=guess_wcs.wcs.crval[0],
@@ -449,10 +503,7 @@ def refine_pointing_single_step(image, guess_wcs, observed_coords, subcatalog, m
                min=guess_wcs.wcs.crval[1]-dec_tolerance,
                max=guess_wcs.wcs.crval[1]+dec_tolerance, vary=not fix_crval)
     params.add("platescale", value=abs(guess_wcs.wcs.cdelt[0]), min=0, max=1, vary=False)
-    if guess_wcs.wcs.get_pv():
-        pv = guess_wcs.wcs.get_pv()[0][-1]
-    else:
-        pv = 0.0
+    pv = guess_wcs.wcs.get_pv()[0][-1] if guess_wcs.wcs.get_pv() else 0.0
     params.add("pv", value=pv, min=0.0, max=1.0, vary=not fix_pv)
 
     out = minimize(_residual, params, method=method,
@@ -473,11 +524,17 @@ def refine_pointing_single_step(image, guess_wcs, observed_coords, subcatalog, m
 
     return result_wcs
 
-def solve_pointing(image_data, image_wcs: WCS, distortion: WCS | None = None, saturation_limit: float =np.inf):
+def solve_pointing(
+    image_data: np.ndarray,
+    image_wcs: WCS,
+    distortion: WCS | None = None,
+    saturation_limit: float = np.inf) -> WCS:
+    """Carefully refine the pointing of an image based on a guess WCS."""
     observed = find_star_coordinates(image_data, saturation_limit=saturation_limit)
     astrometry_net = astrometry_net_initial_solve(observed, image_wcs.deepcopy())
     if astrometry_net is None:
-        raise RuntimeError("astrometry failed")
+        msg = "Astrometry.net initial solution failed."
+        raise RuntimeError(msg)
 
     astrometry_net = convert_cd_matrix_to_pc_matrix(astrometry_net)
 
@@ -500,9 +557,9 @@ def solve_pointing(image_data, image_wcs: WCS, distortion: WCS | None = None, sa
     stars_in_image = find_catalog_in_image(catalog, guess_wcs, (2048, 2048))
 
     candidate_wcs = []
-    for i in range(50):
+    for _ in range(50):
         sample = stars_in_image.sample(n=15)
-        candidate_wcs.append(refine_pointing_single_step(image_data, guess_wcs, observed, sample, fix_pv=True, fix_cdelt=True))
+        candidate_wcs.append(refine_pointing_single_step(guess_wcs, observed, sample, fix_pv=True))
 
     ras = [w.wcs.crval[0] for w in candidate_wcs]
     decs = [w.wcs.crval[1] for w in candidate_wcs]
@@ -525,7 +582,12 @@ def solve_pointing(image_data, image_wcs: WCS, distortion: WCS | None = None, sa
     return solved_wcs
 
 
-def measure_wcs_error(image_data, w: WCS, dimmest_magnitude: float = 6.0, max_error: float = 15.0) -> float:
+def measure_wcs_error(
+    image_data: np.ndarray,
+    w: WCS,
+    dimmest_magnitude: float = 6.0,
+    max_error: float = 15.0) -> float:
+    """Estimate the error in the WCS based on an image."""
     catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=dimmest_magnitude)
     stars_in_image = find_catalog_in_image(catalog, w, image_data.shape)
     try:
@@ -538,21 +600,27 @@ def measure_wcs_error(image_data, w: WCS, dimmest_magnitude: float = 6.0, max_er
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
     refined_coords = np.stack([xs, ys], axis=-1)
 
-    observed_coords = find_star_coordinates(image_data, detection_threshold = 15.0, max_distance_from_center=800, saturation_limit=1000)
+    observed_coords = find_star_coordinates(
+        image_data,
+        detection_threshold = 15.0,
+        max_distance_from_center=800,
+        saturation_limit=1000)
 
     out = np.array([np.min(np.linalg.norm(observed_coords - coord, axis=-1)) for coord in refined_coords])
     out[out > max_error] = np.nan
     return np.sqrt(np.nanmean(np.square(out)))
 
-def build_distortion_model(l0_paths: list[str], dimmest_magnitude: float = 6.5, max_error: float = np.inf, num_bins: int = 60) -> WCS:
+def build_distortion_model(
+    l0_paths: list[str],
+    dimmest_magnitude: float = 6.5,
+    num_bins: int = 60) -> WCS:
+    """Create a distortion model from a set of PUNCH L0 images."""
     refined_wcses = []
     for path in l0_paths:
         with fits.open(path) as hdul:
             image_data = hdul[1].data.astype(float)
             img_shape = image_data.shape
             image_wcs = WCS(hdul[1].header, hdul, key="A")
-            original_wcs = image_wcs.deepcopy()
-            image_header = hdul[1].header
             mask = image_data != 0
 
         solved_wcs = solve_pointing(image_data, image_wcs)
@@ -566,17 +634,19 @@ def build_distortion_model(l0_paths: list[str], dimmest_magnitude: float = 6.5, 
         with fits.open(path.replace(".wcs", ".fits")) as hdul:
             image_data = hdul[1].data.astype(float)
             image_wcs = WCS(hdul[1].header, hdul, key="A")
-            original_wcs = image_wcs.deepcopy()
-            image_header = hdul[1].header
 
         stars_in_image = find_catalog_in_image(catalog, new_wcs, image_data.shape)
         subcoords = np.column_stack([[stars_in_image["RAdeg"], stars_in_image["DEdeg"]]]).T
         refined_coords = new_wcs.all_world2pix(subcoords, 0)
 
-        # only keep coords that are in the image
-        refined_coords = refined_coords[image_data[refined_coords[:, 1].astype(int), refined_coords[:, 0].astype(int)] > 10]
+        refined_coords = refined_coords[
+            image_data[refined_coords[:, 1].astype(int),
+            refined_coords[:, 0].astype(int)] > 10]
 
-        observed_coords = find_star_coordinates(image_data, max_distance_from_center=1100, detection_threshold=25.0, saturation_limit=1000)
+        observed_coords = find_star_coordinates(image_data,
+            max_distance_from_center=1100,
+            detection_threshold=25.0,
+            saturation_limit=1000)
 
         closest_star = np.array([np.argmin(np.linalg.norm(observed_coords - coord, axis=-1))
                                  for coord in refined_coords])
@@ -640,8 +710,7 @@ def build_distortion_model(l0_paths: list[str], dimmest_magnitude: float = 6.5, 
     return out_wcs
 
 @punch_task
-def align_task(data_object: NDCube, distortion_path: str | None, mask: Callable | None = None,
-               pointing_shift: tuple[float, float] = (0, 0)) -> NDCube:
+def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.
 
@@ -649,12 +718,8 @@ def align_task(data_object: NDCube, distortion_path: str | None, mask: Callable 
     ----------
     data_object : NDCube
         data object to align
-    mask : Callable | None
-        function accepting coordinates and returning them only if they are not masked out
     distortion_path: str | None
         path to a distortion model
-    pointing_shift: tuple[float, float]
-        offset to pre-apply to the pointing to account for boresight to satellite-x shift
 
     Returns
     -------

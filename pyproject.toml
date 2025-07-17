@@ -6,82 +6,84 @@ build-backend = "setuptools.build_meta"
 name = "punchbowl"
 dynamic = ["version"]
 dependencies = [
-        "numpy",
-        "astropy",
-        "sunpy[all]",
-        "pandas",
-        "ndcube",
-        "matplotlib<=3.9.2",
-        "ccsdspy",
-        "prefect[dask]",
-        "regularizepsf",
-        "solpolpy",
-        "scipy",
-        "lmfit",
-        "sunkit-image",
-        "setuptools",
-        "reproject",
-        "pylibjpeg",
-        "python-dateutil",
-        "thuban",
-        "remove_starfield>=0.0.4",
-        "quadprog",
-        "pylibjpeg[openjpeg]",
-        "requests",
-        "threadpoolctl",
-        "numexpr",
-        "glymur",
-        "astroscrappy",
-        "scikit-learn",
-        "astrometry"
+    "numpy",
+    "astropy",
+    "sunpy[all]",
+    "pandas",
+    "ndcube",
+    "matplotlib<=3.9.2",
+    "ccsdspy",
+    "prefect[dask]",
+    "regularizepsf",
+    "solpolpy",
+    "scipy",
+    "lmfit",
+    "sunkit-image",
+    "setuptools",
+    "reproject",
+    "pylibjpeg",
+    "python-dateutil",
+    "thuban",
+    "remove_starfield>=0.0.4",
+    "quadprog",
+    "pylibjpeg[openjpeg]",
+    "requests",
+    "threadpoolctl",
+    "numexpr",
+    "glymur",
+    "astroscrappy",
+    "scikit-learn",
+    "astrometry",
 ]
 requires-python = ">=3.11"
 authors = [
-    {name = "J. Marcus Hughes", email = "marcus.hughes@swri.org"},
-    {name = "Chris Lowder", email = "chris.lowder@swri.org"},
-    {name = "Matthew West", email = "matthew.west@swri.org"},
-    {name = "Sarak Kovac", email = "sarah.kovac@swri.org"},
-    {name = "Ritesh Patel", email = "ritesh.patel@swri.org"},
-    {name = "Derek Lamb", email = "derek.lamb@swri.org"},
-    {name = "Dan Seaton", email = "daniel.seaton@swri.org"}
+    { name = "J. Marcus Hughes", email = "marcus.hughes@swri.org" },
+    { name = "Chris Lowder", email = "chris.lowder@swri.org" },
+    { name = "Matthew West", email = "matthew.west@swri.org" },
+    { name = "Sarak Kovac", email = "sarah.kovac@swri.org" },
+    { name = "Ritesh Patel", email = "ritesh.patel@swri.org" },
+    { name = "Derek Lamb", email = "derek.lamb@swri.org" },
+    { name = "Dan Seaton", email = "daniel.seaton@swri.org" },
 ]
-maintainers = [
-  {name = "J. Marcus Hughes", email = "marcus.hughes@swri.org"}
-]
+maintainers = [{ name = "J. Marcus Hughes", email = "marcus.hughes@swri.org" }]
 description = "PUNCH science calibration code"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 keywords = ["solar physics", "PUNCH", "NASA", "science", "calibration"]
 classifiers = [
-  "Development Status :: 4 - Beta",
-  "Programming Language :: Python"
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
 ]
 
 [project.optional-dependencies]
-test = ["pytest",
-        "pytest-order",
-        "codespell",
-        "coverage",
-        "pytest-cov",
-        "flake8",
-        "pytest-runner",
-        "pytest-mpl",
-        "pre-commit",
-        "ruff",
-        "hypothesis"]
-docs = ["astroid>=3",
-        "sphinx",
-        "sphinx-gallery",
-        "sphinx_rtd_theme",
-        "codespell",
-        "packaging",
-        "pydata-sphinx-theme",
-        "sphinx-autoapi",
-        "sphinx-favicon",
-        "jupyterlite-sphinx",
-        "ipython",
-        "ipykernel",
-        "sphinxcontrib-mermaid"]
+test = [
+    "pytest",
+    "pytest-order",
+    "codespell",
+    "coverage",
+    "pytest-cov",
+    "flake8",
+    "pytest-runner",
+    "pytest-mpl",
+    "pre-commit",
+    "ruff",
+    "hypothesis",
+]
+docs = [
+    "astroid>=3",
+    "sphinx",
+    "sphinx-gallery",
+    "sphinx_rtd_theme",
+    "codespell",
+    "packaging",
+    "pydata-sphinx-theme",
+    "sphinx-autoapi",
+    "sphinx-favicon",
+    "jupyterlite-sphinx",
+    "ipython",
+    "ipykernel",
+    "sphinxcontrib-mermaid",
+]
 gpu = ["cupy"]
 dev = ["punchbowl[docs,test]"]
 
@@ -106,7 +108,7 @@ skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
 [tool.ruff]
 target-version = 'py311'
 exclude = ['tests', 'scripts', 'docs', 'examples']
-line-length=120
+line-length = 120
 lint.select = ["ALL"]
 lint.ignore = [
     'EM102',
@@ -122,6 +124,7 @@ lint.ignore = [
     "PLR",
     "B028",
     "NPY002",
+    "PERF401",
     "PERF403",
     "PYI041",
     "ANN401",
@@ -130,7 +133,9 @@ lint.ignore = [
     "D203",
     "D212",
     "TC002",
-    "TC003", "E731"]
+    "TC003",
+    "E731",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]

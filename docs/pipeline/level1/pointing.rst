@@ -8,7 +8,7 @@ merging later in the pipeline.
 Concept
 -------
 
-The pointing correction is carried out by the `thuban <https://github.com/punch-mission/thuban>`_ package, with a module within the punchbowl calling this code.
+TODO
 
 Applying correction
 -------------------

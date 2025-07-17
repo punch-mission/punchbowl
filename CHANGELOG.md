@@ -2,6 +2,10 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Unreleased
+
+- Rewrites pointing refinement in https://github.com/punch-mission/punchbowl/pull/524
+
 ## Version 0.0.16: July 3, 2025
 
 - Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510

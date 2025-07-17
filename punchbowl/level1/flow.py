@@ -79,7 +79,6 @@ def level1_core_flow(  # noqa: C901
     output_filename: list[str] | None = None,
     max_workers: int | None = None,
     mask_path: str | None = None,
-    pointing_shift: tuple[float, float] = (0, 0),
     return_with_stray_light: bool = False,
 ) -> list[NDCube]:
     """Core flow for level 1."""
@@ -153,17 +152,7 @@ def level1_core_flow(  # noqa: C901
             uncertainty_with_stray_light = data.uncertainty.array.copy()
         data = remove_stray_light_task(data, stray_light_path)
         data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
-
-        observatory = int(data.meta["OBSCODE"].value)
-        if observatory < 4:
-            def alignment_mask(x:float, y:float) -> float:
-                return (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
-        else:
-            def alignment_mask(x: float, y: float) -> bool:
-                r = np.sqrt((x - 1024) ** 2 + (y - 1024) ** 2)
-                theta = np.rad2deg(np.arctan2(y - 1024, x - 1024)) + 180
-                return (r > 250) * (r < 950) * ((theta < 25) + (theta > 155))
-        data = align_task(data, distortion_path, mask=alignment_mask, pointing_shift=pointing_shift)
+        data = align_task(data, distortion_path)
 
         if mask_path:
             with open(mask_path, "rb") as f:

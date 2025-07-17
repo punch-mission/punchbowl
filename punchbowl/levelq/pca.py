@@ -1,3 +1,6 @@
+import os
+import multiprocessing as mp
+from itertools import repeat
 from collections.abc import Callable
 
 import numpy as np
@@ -11,79 +14,92 @@ from prefect import get_run_logger
 from sklearn.decomposition import PCA
 from threadpoolctl import threadpool_limits
 
+from punchbowl.data import NormalizedMetadata
+from punchbowl.levelq.limits import LimitSet
 from punchbowl.prefect import punch_task
 from punchbowl.util import load_image_task
 
+_all_files_to_fit = None
+
 
 @punch_task()
-def pca_filter(input_cube: NDCube, files_to_fit: list[NDCube | Callable | str],
-               n_components: int=50, med_filt: int=5) -> None:
+def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | Callable | str],
+               n_components: int=50, med_filt: int=5, outlier_limits: str | LimitSet=None,
+               n_strides: int = 5) -> None:
     """Run PCA-based filtering."""
     logger = get_run_logger()
 
-    all_files_to_fit, bodies_in_quarter = load_files(input_cube, files_to_fit)
+    if isinstance(outlier_limits, str):
+        outlier_limits = LimitSet.from_file(outlier_limits)
 
-    quarter_slices = [
-        np.s_[0:all_files_to_fit.shape[1] // 2, 0:all_files_to_fit.shape[2] // 2],
-        np.s_[0:all_files_to_fit.shape[1] // 2, all_files_to_fit.shape[2] // 2:],
-        np.s_[all_files_to_fit.shape[1] // 2:, 0:all_files_to_fit.shape[2] // 2],
-        np.s_[all_files_to_fit.shape[1] // 2:, all_files_to_fit.shape[2] // 2:],
-    ]
+    try:
+        global _all_files_to_fit # noqa: PLW0603
+        _all_files_to_fit, bodies_in_quarter, to_subtract = load_files(input_cubes, files_to_fit, outlier_limits)
+        with mp.Pool(n_strides) as p:
+            for subtracted_cube_indices, subtracted_images in p.starmap(
+                    pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
+                    repeat(to_subtract), repeat(n_components), repeat(med_filt))):
+                for index, image in zip(subtracted_cube_indices, subtracted_images, strict=False):
+                    input_cubes[index].data[...] = image
+    finally:
+        _all_files_to_fit = None
 
-    filtered_by_quarter = np.empty_like(input_cube.data)
-    for i, quarter_slice in enumerate(quarter_slices):
-        logger.info(f"Starting to filter quarter {i+1}")
-        no_bodies_in_quarter = np.all(bodies_in_quarter[:, :, i] == False, axis=1) # noqa: E712
-        images_for_quarter = all_files_to_fit[no_bodies_in_quarter]
-        filtered = run_pca_filtering(input_cube, images_for_quarter, n_components, med_filt)
-
-        filtered_by_quarter[quarter_slice] = filtered[quarter_slice]
-
-    input_cube.data[...] = filtered_by_quarter
     logger.info("PCA filtering finished")
 
 
-def check_file(mean: float, median: float) -> bool:
+def check_file(meta: NormalizedMetadata, outlier_limits: LimitSet) -> bool:
     """Check if a file should be used."""
-    if not (.3e-10 < median < 1.2e-10):
-        return False
-    if mean > 1.2e-10: # noqa: SIM103
-        return False
-    return True
+    return outlier_limits.is_good(meta)
 
 
 @punch_task
-def load_files(input_cube: NDCube, files_to_fit: list[NDCube | str | Callable]) -> np.ndarray:
+def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Callable],
+               outlier_limits: LimitSet=None) -> tuple[np.ndarray, np.ndarray]:
     """Load files."""
     logger = get_run_logger()
+
+    # Join these two sets of things into one list, sorted by observation time, and keep track of which ones need to be
+    # subtracted
+    things_to_load = np.array(input_cubes + files_to_fit, dtype=object)
+    to_subtract = np.concatenate((range(len(input_cubes)), [-1] * len(files_to_fit)))
+    def sort_key(thing: str | NDCube) -> str:
+        if isinstance(thing, str):
+            return os.path.basename(thing)
+        if isinstance(thing, NDCube):
+            return thing.meta["FILENAME"].value
+        return os.path.basename(thing.src_repr())
+    keys = np.array([sort_key(t) for t in things_to_load])
+    sort_by_date = np.argsort(keys)
+    things_to_load = things_to_load[sort_by_date]
+    to_subtract = to_subtract[sort_by_date]
 
     # We'll pre-allocate an array to load files into. Since we'll reject any bad files, we'll track an insertion
     # index as we add good files, and at the end we'll slice the array to drop any empty spots at the end. When
     # np.empty allocates memory, the OS doesn't *actually* allocate those pages until they're used, so we won't
     # actually use any more RAM than needed.
-    all_files_to_fit = np.empty((len(files_to_fit), *input_cube.data.shape), dtype=input_cube.data.dtype)
+    all_files_to_fit = np.empty((len(files_to_fit), *input_cubes[0].data.shape), dtype=input_cubes[0].data.dtype)
     index_to_insert = 0
     bodies_in_quarter = []
-    for input_file in files_to_fit:
+    loaded_to_subtract = []
+    for input_file, subtract in zip(things_to_load, to_subtract, strict=False):
         if isinstance(input_file, NDCube):
-            if check_file(input_file.meta["DATAAVG"].value, input_file.meta["DATAMDN"].value):
-                all_files_to_fit[index_to_insert] = input_file.data
-                index_to_insert += 1
-                bodies_in_quarter.append(find_bodies_in_image(input_file))
+            data, meta = input_file.data, input_file.meta
+            bodies = find_bodies_in_image(input_file)
         elif isinstance(input_file, str):
             cube = load_image_task(input_file, include_provenance=False, include_uncertainty=False)
-            if check_file(cube.meta["DATAAVG"].value, cube.meta["DATAMDN"].value):
-                all_files_to_fit[index_to_insert] = cube.data
-                index_to_insert += 1
-                bodies_in_quarter.append(find_bodies_in_image(cube))
+            data, meta = cube.data, cube.meta
+            bodies = find_bodies_in_image(cube)
         elif isinstance(input_file, Callable):
-            mean, median, bodies = input_file(all_files_to_fit[index_to_insert])
-            if check_file(mean, median):
-                # This is a bad file. Don't increment the insertion index, so this one gets overwritten by the next file
-                index_to_insert += 1
-                bodies_in_quarter.append(bodies)
+            data, meta, bodies = input_file()
         else:
             raise TypeError(f"Invalid type {type(input_file)} for input file")
+        if check_file(meta, outlier_limits):
+            loaded_to_subtract.append(subtract)
+            all_files_to_fit[index_to_insert] = data
+            index_to_insert += 1
+            bodies_in_quarter.append(bodies)
+
+    loaded_to_subtract = np.array(loaded_to_subtract)
 
     # Crop the unused end of the array
     all_files_to_fit = all_files_to_fit[:index_to_insert]
@@ -93,29 +109,58 @@ def load_files(input_cube: NDCube, files_to_fit: list[NDCube | str | Callable]) 
 
     bodies_in_quarter = np.array(bodies_in_quarter)
 
-    return all_files_to_fit, bodies_in_quarter
+    return all_files_to_fit, bodies_in_quarter, loaded_to_subtract
 
 
-@punch_task
-def run_pca_filtering(input_cube: NDCube, all_files_to_fit: np.ndarray, n_components: int, med_filt: int) -> np.ndarray:
+def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, to_subtract: np.ndarray,
+                          n_components: int, med_filt: int) -> np.ndarray:
+    """Run PCA-based filtering for one stride position."""
+    logger = get_run_logger()
+
+    quarter_slices = [
+        np.s_[0:_all_files_to_fit.shape[1] // 2, 0:_all_files_to_fit.shape[2] // 2],
+        np.s_[0:_all_files_to_fit.shape[1] // 2, _all_files_to_fit.shape[2] // 2:],
+        np.s_[_all_files_to_fit.shape[1] // 2:, 0:_all_files_to_fit.shape[2] // 2],
+        np.s_[_all_files_to_fit.shape[1] // 2:, _all_files_to_fit.shape[2] // 2:],
+    ]
+
+    stride_filter = np.arange(len(_all_files_to_fit)) % n_strides == stride
+    to_subtract_filter = stride_filter * (to_subtract >= 0)
+    images_to_subtract = _all_files_to_fit[to_subtract_filter]
+    subtracted_cube_indices = to_subtract[to_subtract_filter]
+
+    filtered_by_quarter = np.empty_like(images_to_subtract)
+    for i, quarter_slice in enumerate(quarter_slices):
+        logger.info(f"Starting to filter quarter {i+1}")
+        no_bodies_in_quarter = np.all(bodies_in_quarter[:, :, i] == False, axis=1) # noqa: E712
+        images_to_fit = _all_files_to_fit[no_bodies_in_quarter * ~to_subtract_filter]
+        filtered = run_pca_filtering(images_to_subtract, images_to_fit, n_components, med_filt)
+
+        filtered_by_quarter[:, quarter_slice] = filtered[:, quarter_slice]
+
+    return subtracted_cube_indices, filtered_by_quarter
+
+
+def run_pca_filtering(images_to_subtract: np.ndarray, images_to_fit: np.ndarray, n_components: int,
+                      med_filt: int) -> np.ndarray:
     """Run PCA filtering."""
     logger = get_run_logger()
-    with threadpool_limits(30):
+    with threadpool_limits(10):
         pca = PCA(n_components=n_components)
-        pca.fit(all_files_to_fit.reshape((len(all_files_to_fit), -1)))
+        pca.fit(images_to_fit.reshape((len(images_to_fit), -1)))
         logger.info("Fitting finished")
 
-        transformed = pca.transform(input_cube.data.reshape((1, -1)))
+        transformed = pca.transform(images_to_subtract.reshape((len(images_to_subtract), -1)))
 
         if med_filt:
             for i in range(len(pca.components_)):
-                comp = pca.components_[i].reshape(input_cube.data.shape)
+                comp = pca.components_[i].reshape(images_to_fit.shape[1:])
                 comp = scipy.signal.medfilt2d(comp, med_filt)
                 pca.components_[i] = comp.ravel()
             logger.info("Median smoothing finished")
 
-        reconstructed = pca.inverse_transform(transformed).reshape(input_cube.data.shape)
-        return input_cube.data - reconstructed
+        reconstructed = pca.inverse_transform(transformed).reshape(images_to_subtract.shape)
+        return images_to_subtract - reconstructed
 
 
 def find_bodies_in_image(frame: str | NDCube | WCS) -> list:

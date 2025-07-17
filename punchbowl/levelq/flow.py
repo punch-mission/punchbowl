@@ -1,3 +1,4 @@
+import os
 from datetime import UTC, datetime
 from collections.abc import Callable
 
@@ -19,17 +20,26 @@ ORDER_QP = ["CR1", "CR2", "CR3", "CNN"]
 @flow(validate_parameters=False)
 def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                          output_filename: list[str] | None = None,
-                         files_to_fit: list[str | NDCube | Callable] | None = None) -> list[NDCube]:
+                         files_to_fit: list[str | NDCube | Callable] | None = None,
+                         outlier_limits: str | None = None,
+                         data_root: str | None = None) -> list[NDCube]:
     """Level quickPUNCH NFI core flow."""
     logger = get_run_logger()
     logger.info("beginning level quickPUNCH CNN core flow")
 
     output_cubes = []
-    for i, input_file in enumerate(data_list):
-        data_cube = load_image_task(input_file) if isinstance(input_file, str) else input_file
-        if files_to_fit:
-            pca_filter(data_cube, files_to_fit)
 
+    data_cubes = [input_file for input_file in data_list if isinstance(input_file, NDCube)]
+    input_paths = [input_file for input_file in data_list if isinstance(input_file, str)]
+    if data_root is not None:
+        input_paths = [os.path.join(data_root, path) for path in input_paths]
+    load_tasks = [load_image_task.submit(input_file) for input_file in input_paths]
+    data_cubes += [task.result() for task in load_tasks]
+
+    if files_to_fit:
+        pca_filter(data_cubes, files_to_fit, outlier_limits=outlier_limits)
+
+    for i, data_cube in enumerate(data_cubes):
         quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
 
         data_list_nfi = reproject_many_flow([data_cube], quickpunch_nfi_wcs, quickpunch_nfi_shape)

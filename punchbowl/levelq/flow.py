@@ -45,10 +45,10 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     if files_to_fit is not None:
         pca_filter(data_cubes, files_to_fit, outlier_limits=outlier_limits)
 
-    for i, data_cube in enumerate(data_cubes):
-        quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
+    quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
+    data_list_nfi = reproject_many_flow(data_cubes, quickpunch_nfi_wcs, quickpunch_nfi_shape)
 
-        data_list_nfi = reproject_many_flow([data_cube], quickpunch_nfi_wcs, quickpunch_nfi_shape)
+    for i, data_cube in enumerate(data_cubes):
         data = data_list_nfi[0].data
         uncertainty = data_list_nfi[0].uncertainty.array
 

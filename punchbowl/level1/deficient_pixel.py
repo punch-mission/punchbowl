@@ -193,7 +193,19 @@ def remove_deficient_pixels_task(
     return output_object
 
 
-def create_all_valid_deficient_pixel_map(data: NDCube) -> NDCube:
-    """Create valid deficient pixel map."""
-    data.data[...] = np.ones_like(data.data)
-    return data
+def create_all_valid_deficient_pixel_map(data: NDCube) -> np.ndarray:
+    """
+    Create valid deficient pixel map.
+
+    Parameters
+    ----------
+    data: NDCube
+        NDCube being modified
+
+    Returns
+    -------
+    np.ndarray
+        Array with all data points set to 1, representing the valid deficient pixel map.
+
+    """
+    return np.ones(data.data.shape, dtype=bool)

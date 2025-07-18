@@ -15,6 +15,12 @@ def create_low_noise_task(inputs: list[NDCube]) -> NDCube:
 
     new_code = inputs[0].meta.product_code[0] + "A" + inputs[0].meta.product_code[2]
     new_meta = NormalizedMetadata.load_template(new_code, "3")
-    for old_key, old_value in inputs[0].meta.items():
-        new_meta[old_key] = old_value
+    # TODO - This needs to be done more specifically, some keywords need to be used for timing, etc
+    # timing_keywords = ["DATE-OBS", "DATE-BEG", "DATE-OBS"]  # noqa: ERA001
+    # for old_key, old_value in inputs[0].meta.items():
+    #     if old_key not in timing_keywords:
+    #         new_meta[old_key] = old_value  # noqa: ERA001
+
+    # TODO - timing meta updates
+
     return NDCube(data=new_data, uncertainty=final_uncertainty, wcs=inputs[0].wcs, meta=new_meta)

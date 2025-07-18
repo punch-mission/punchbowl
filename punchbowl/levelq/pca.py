@@ -38,6 +38,8 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
         outlier_limits = LimitSet.from_file(outlier_limits)
 
     try:
+        # We stash the loaded images in a global variable so that, when we fork for parallel processing,
+        # those images don't have to be individually copied to each worker process.
         global _all_files_to_fit # noqa: PLW0603
         _all_files_to_fit, bodies_in_quarter, to_subtract = load_files(input_cubes, files_to_fit, outlier_limits)
         # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
@@ -64,8 +66,9 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     """Load files."""
     logger = get_run_logger()
 
-    # Join these two sets of things into one list, sorted by observation time, and keep track of which ones need to be
-    # subtracted
+    # Join these two sets of things into one list, sorted by observation time, and keep track of which ones need to
+    # be subtracted and where they are in the original list of input cubes. We sort by observation time to ensure the
+    # staggered dropping of files is spread evenly over time.
     things_to_load = np.array(input_cubes + files_to_fit, dtype=object)
     to_subtract = np.concatenate((range(len(input_cubes)), [-1] * len(files_to_fit)))
     def sort_key(thing: str | NDCube | DataLoader) -> str:

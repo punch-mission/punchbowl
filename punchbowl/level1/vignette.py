@@ -131,7 +131,8 @@ def generate_vignetting_calibration(path_vignetting: str, path_mask: str,
                                                 shape_out=(2048,2048),
                                                 output_projection=wcs_wfi,
                                                 boundary_mode="ignore",
-                                                bad_value_mode="ignore")[0]
+                                                bad_value_mode="ignore",
+                                                return_footprint=False)
 
         vignetting_reprojected = vignetting_reprojected * mask
 

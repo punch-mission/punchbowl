@@ -90,6 +90,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     index_to_insert = 0
     bodies_in_quarter = []
     loaded_to_subtract = []
+    n_outliers = 0
     for input_file, subtract in zip(things_to_load, to_subtract, strict=False):
         if isinstance(input_file, NDCube):
             data, meta = input_file.data, input_file.meta
@@ -107,14 +108,17 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
             all_files_to_fit[index_to_insert] = data
             index_to_insert += 1
             bodies_in_quarter.append(bodies)
+        else:
+            n_outliers += 1
 
     loaded_to_subtract = np.array(loaded_to_subtract)
 
     # Crop the unused end of the array
     all_files_to_fit = all_files_to_fit[:index_to_insert]
-    logger.info(
-        f"Loaded {len(files_to_fit)} images to fit")
-    logger.info(f"Kept {index_to_insert}, filling {all_files_to_fit.nbytes / 1024 ** 3:.2f} GB")
+    logger.info(f"Total of {len(all_files_to_fit)} images to fit, filling {all_files_to_fit.nbytes / 1024 ** 3:.2f} GB")
+    logger.info(f"(Drawn from {len(input_cubes)} images to subtract and {len(files_to_fit)} extra images for fitting)")
+    logger.info(f"({n_outliers} outliers were rejected from fitting)")
+
 
     bodies_in_quarter = np.array(bodies_in_quarter)
 
@@ -122,7 +126,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
 
 
 def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, to_subtract: np.ndarray,
-                          n_components: int, med_filt: int) -> np.ndarray:
+                          n_components: int, med_filt: int) -> tuple[np.ndarray, np.ndarray]:
     """Run PCA-based filtering for one stride position."""
     # This sets up a logger that forwards entries through a queue to the main process, where they can be forwarded to
     # Prefect

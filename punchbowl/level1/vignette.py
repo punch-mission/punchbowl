@@ -121,9 +121,9 @@ def generate_vignetting_calibration(path_vignetting: str,
     rows_ignore : tuple, optional
         rows to exclude entirely from original vignetting data, by default (13,15) for 128x128 input
     rows_adjust : tuple, optional
-        rows to adjust based on adjacent row values, by default (15,16) for 128x128 input
+        rows to adjust to the minimum of a set of rows above (per column), by default (15,16) for 128x128 input
     rows_adjust_source : tuple, optional
-        rows to use for statistics to adjust vignetting rows, by default (16,20) for 128x128 input
+        rows to use for statistics to adjust vignetting rows as above, by default (16,20) for 128x128 input
 
     Returns
     -------

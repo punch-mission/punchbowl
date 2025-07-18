@@ -1,5 +1,7 @@
+import abc
 import os
 from datetime import UTC, datetime
+from typing import Generic, TypeVar
 
 import numpy as np
 from ndcube import NDCube
@@ -138,3 +140,17 @@ def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
             return cube
     msg = "No cube found. All inputs are None."
     raise RuntimeError(msg)
+
+
+T = TypeVar("T")
+
+
+class DataLoader(abc.ABC, Generic[T]):
+    """Interface for passing callable objects instead of file paths to be loaded."""
+    @abc.abstractmethod
+    def load(self) -> T:
+        """Load the data."""
+
+    @abc.abstractmethod
+    def src_repr(self) -> str:
+        """Return a string representation of the data source."""

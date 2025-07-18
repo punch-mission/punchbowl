@@ -1,7 +1,6 @@
 import os
 import multiprocessing as mp
 from itertools import repeat
-from collections.abc import Callable
 
 import numpy as np
 import scipy.signal
@@ -17,14 +16,15 @@ from threadpoolctl import threadpool_limits
 from punchbowl.data import NormalizedMetadata
 from punchbowl.levelq.limits import LimitSet
 from punchbowl.prefect import punch_task
-from punchbowl.util import load_image_task
+from punchbowl.util import load_image_task, DataLoader
+
 
 _all_files_to_fit = None
 
 
-@punch_task()
-def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | Callable | str],
-               n_components: int=50, med_filt: int=5, outlier_limits: str | LimitSet=None,
+@punch_task
+def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader | str],
+               n_components: int=50, med_filt: int=5, outlier_limits: str | LimitSet = None,
                n_strides: int = 5) -> None:
     """Run PCA-based filtering."""
     logger = get_run_logger()
@@ -53,8 +53,8 @@ def check_file(meta: NormalizedMetadata, outlier_limits: LimitSet) -> bool:
 
 
 @punch_task
-def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Callable],
-               outlier_limits: LimitSet=None) -> tuple[np.ndarray, np.ndarray]:
+def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | DataLoader],
+               outlier_limits: LimitSet | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Load files."""
     logger = get_run_logger()
 
@@ -62,7 +62,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Call
     # subtracted
     things_to_load = np.array(input_cubes + files_to_fit, dtype=object)
     to_subtract = np.concatenate((range(len(input_cubes)), [-1] * len(files_to_fit)))
-    def sort_key(thing: str | NDCube) -> str:
+    def sort_key(thing: str | NDCube | DataLoader) -> str:
         if isinstance(thing, str):
             return os.path.basename(thing)
         if isinstance(thing, NDCube):
@@ -89,8 +89,8 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Call
             cube = load_image_task(input_file, include_provenance=False, include_uncertainty=False)
             data, meta = cube.data, cube.meta
             bodies = find_bodies_in_image(cube)
-        elif isinstance(input_file, Callable):
-            data, meta, bodies = input_file()
+        elif isinstance(input_file, DataLoader):
+            data, meta, bodies = input_file.load()
         else:
             raise TypeError(f"Invalid type {type(input_file)} for input file")
         if check_file(meta, outlier_limits):

@@ -1,6 +1,5 @@
 import os
 from datetime import UTC, datetime
-from collections.abc import Callable
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
@@ -13,14 +12,14 @@ from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_w
 from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.levelq.pca import pca_filter
-from punchbowl.util import average_datetime, load_image_task, output_image_task
+from punchbowl.util import DataLoader, average_datetime, load_image_task, output_image_task
 
 ORDER_QP = ["CR1", "CR2", "CR3", "CNN"]
 
 @flow(validate_parameters=False)
 def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                          output_filename: list[str] | None = None,
-                         files_to_fit: list[str | NDCube | Callable] | None = None,
+                         files_to_fit: list[str | NDCube | DataLoader] | None = None,
                          outlier_limits: str | None = None,
                          data_root: str | None = None) -> list[NDCube]:
     """Level quickPUNCH NFI core flow."""

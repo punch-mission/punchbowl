@@ -47,9 +47,9 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
     logger.info("PCA filtering finished")
 
 
-def check_file(meta: NormalizedMetadata, outlier_limits: LimitSet) -> bool:
+def check_file(meta: NormalizedMetadata, outlier_limits: LimitSet | None) -> bool:
     """Check if a file should be used."""
-    return outlier_limits.is_good(meta)
+    return outlier_limits.is_good(meta) if outlier_limits is not None else True
 
 
 @punch_task

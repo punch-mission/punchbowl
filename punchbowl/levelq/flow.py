@@ -1,4 +1,5 @@
 import os
+import multiprocessing
 from datetime import UTC, datetime
 
 import numpy as np
@@ -6,7 +7,7 @@ from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
-from punchbowl.data import NormalizedMetadata, get_base_file_name
+from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits
 from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_wcs
 from punchbowl.level2.merge import merge_many_clear_task
@@ -25,6 +26,7 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     """Level quickPUNCH NFI core flow."""
     logger = get_run_logger()
     logger.info("beginning level quickPUNCH CNN core flow")
+    logger.info(f"Got {len(data_list)} input files and {len(files_to_fit)} extra files for fitting")
 
     output_cubes = []
 
@@ -32,10 +34,15 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     input_paths = [input_file for input_file in data_list if isinstance(input_file, str)]
     if data_root is not None:
         input_paths = [os.path.join(data_root, path) for path in input_paths]
-    load_tasks = [load_image_task.submit(input_file) for input_file in input_paths]
-    data_cubes += [task.result() for task in load_tasks]
 
-    if files_to_fit:
+    # This parallelizes more effectively than running a lot of load_image_task in parallel, due to how Prefect would
+    # schedule those tasks. Experience shows that the main thread quickly gets overwhelmed by workers send back
+    # loaded images, so more than a few worker processes doesn't help anything (but this is faster than loading
+    # images in series!)
+    with multiprocessing.Pool(3) as p:
+        data_cubes += p.map(load_ndcube_from_fits, input_paths, chunksize=10)
+
+    if files_to_fit is not None:
         pca_filter(data_cubes, files_to_fit, outlier_limits=outlier_limits)
 
     for i, data_cube in enumerate(data_cubes):

@@ -77,7 +77,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     # index as we add good files, and at the end we'll slice the array to drop any empty spots at the end. When
     # np.empty allocates memory, the OS doesn't *actually* allocate those pages until they're used, so we won't
     # actually use any more RAM than needed.
-    all_files_to_fit = np.empty((len(files_to_fit), *input_cubes[0].data.shape), dtype=input_cubes[0].data.dtype)
+    all_files_to_fit = np.empty((len(things_to_load), *input_cubes[0].data.shape), dtype=input_cubes[0].data.dtype)
     index_to_insert = 0
     bodies_in_quarter = []
     loaded_to_subtract = []
@@ -126,6 +126,10 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
 
     stride_filter = np.arange(len(_all_files_to_fit)) % n_strides == stride
     to_subtract_filter = stride_filter * (to_subtract >= 0)
+    if not np.any(to_subtract_filter):
+        logger.info(f"Stride {stride} has no images to subtract")
+        return [], []
+
     images_to_subtract = _all_files_to_fit[to_subtract_filter]
     subtracted_cube_indices = to_subtract[to_subtract_filter]
 
@@ -136,7 +140,7 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
         images_to_fit = _all_files_to_fit[no_bodies_in_quarter * ~to_subtract_filter]
         filtered = run_pca_filtering(images_to_subtract, images_to_fit, n_components, med_filt)
 
-        filtered_by_quarter[:, quarter_slice] = filtered[:, quarter_slice]
+        filtered_by_quarter[:, *quarter_slice] = filtered[:, *quarter_slice]
 
     return subtracted_cube_indices, filtered_by_quarter
 

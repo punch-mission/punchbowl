@@ -20,9 +20,12 @@ class Limit:
 
     def is_good(self, point: Header | NormalizedMetadata | Iterable) -> bool | np.ndarray:
         """Check if a point satisfies a limit."""
-        if isinstance(point, (Header, NormalizedMetadata)):
+        if isinstance(point, Header):
             x = point[self.xkey]
             y = point[self.ykey]
+        elif isinstance(point, NormalizedMetadata):
+            x = point[self.xkey].value
+            y = point[self.ykey].value
         elif isinstance(point, Iterable) and isinstance(point[0], (Header, NormalizedMetadata)):
             return np.array([self.is_good(p) for p in point])
         else:
@@ -45,7 +48,10 @@ class Limit:
         """Plot the limit."""
         plt.plot(self.xs, self.ys, color="C1")
         if points:
-            if isinstance(points[0], (Header, NormalizedMetadata)):
+            if isinstance(points[0], NormalizedMetadata):
+                xs = [p[self.xkey].value for p in points]
+                ys = [p[self.ykey].value for p in points]
+            elif isinstance(points[0], Header):
                 xs = [p[self.xkey] for p in points]
                 ys = [p[self.ykey] for p in points]
             else:

@@ -18,18 +18,28 @@ from punchbowl.util import nan_percentile
 
 
 def estimate_stray_light(
-        filepaths: [str], percentile: float = 3, do_uncertainty: bool = True) -> tuple[np.ndarray, np.ndarray]:
+        filepaths: list[str],
+        percentile: float = 3,
+        do_uncertainty: bool = True) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
-    cubes = [load_ndcube_from_fits(path) for path in filepaths]
+    data = None
+    uncertainties = None
+    for i, path in enumerate(filepaths):
+        cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
+        if data is None:
+            data = np.empty((len(filepaths), *cube.data.shape))
+        data[i] = cube.data
+        if do_uncertainty:
+            if uncertainties is None:
+                uncertainties = np.empty_like(data)
+            uncertainties[i] = cube.uncertainty.array
 
-    data = np.array([cube.data for cube in cubes])
     stray_light_estimate = nan_percentile(data, percentile).squeeze()
 
     if not do_uncertainty:
         return stray_light_estimate
 
-    uncertainty_squared = np.array([cube.uncertainty.array**2 for cube in cubes])
-    uncertainty = np.sqrt(np.sum(uncertainty_squared, axis=0)) / len(filepaths)
+    uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths)
 
     return stray_light_estimate, uncertainty
 

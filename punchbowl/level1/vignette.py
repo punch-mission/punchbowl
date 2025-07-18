@@ -98,9 +98,39 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
     return data_object
 
 
-def generate_vignetting_calibration(path_vignetting: str, path_mask: str,
-                                    spacecraft: str) -> np.ndarray:
-    """Create calibration data for vignetting."""
+def generate_vignetting_calibration(path_vignetting: str,
+                                    path_mask: str,
+                                    spacecraft: str,
+                                    vignetting_threshold: float = 1.2,
+                                    rows_ignore: tuple = (13,15),
+                                    rows_adjust: tuple = (15,16),
+                                    rows_adjust_source: tuple = (16,20)) -> np.ndarray:
+    """
+    Create calibration data for vignetting.
+
+    Parameters
+    ----------
+    path_vignetting : str
+        path to raw input vignetting function
+    path_mask : str
+        path to spacecraft mask function
+    spacecraft : str
+        spacecraft number
+    vignetting_threshold : float, optional
+        threshold for bad vignetting pixels, by default 1.2
+    rows_ignore : tuple, optional
+        rows to exclude entirely from original vignetting data, by default (13,15) for 128x128 input
+    rows_adjust : tuple, optional
+        rows to adjust based on adjacent row values, by default (15,16) for 128x128 input
+    rows_adjust_source : tuple, optional
+        rows to use for statistics to adjust vignetting rows, by default (16,20) for 128x128 input
+
+    Returns
+    -------
+    np.ndarray
+        vignetting function array
+
+    """
     if spacecraft in ["1", "2", "3"]:
         with open(path_vignetting) as f:
             lines = f.readlines()
@@ -117,10 +147,11 @@ def generate_vignetting_calibration(path_vignetting: str, path_mask: str,
         values = np.array([float(v) for line in lines[1:] for v in line.split()])
         vignetting = values[:num_bins**2].reshape((num_bins, num_bins))
 
-        vignetting[vignetting > 1.2] = np.nan
+        vignetting[vignetting > vignetting_threshold] = np.nan
 
-        vignetting[13:15,:] = np.nan
-        vignetting[15:16,:] = np.min(vignetting[16:20,:], axis=0)
+        vignetting[rows_ignore[0]:rows_ignore[1],:] = np.nan
+        vignetting[rows_adjust[0]:rows_adjust[1],:] = np.min(vignetting[rows_adjust_source[0]:rows_adjust_source[1],:],
+                                                             axis=0)
 
         wcs_vignetting = WCS(naxis=2)
 

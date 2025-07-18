@@ -1,0 +1,247 @@
+SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
+0,section,COMMENT,FITS Required,,str,TRUE,TRUE,FITS Required
+0,keyword,SIMPLE,T,Conforms to FITS Standard,str,TRUE,TRUE,T
+0,keyword,BITPIX,16,Number of bits per pixel,int,TRUE,TRUE,16
+0,keyword,NAXIS,3,Number of axes,int,TRUE,TRUE,3
+0,keyword,NAXIS1,2408,Length of the first axis,int,TRUE,TRUE,2048
+0,keyword,NAXIS2,2048,Length of the second axis,int,TRUE,TRUE,2048
+0,keyword,NAXIS3,3,Length of the third axis,int,TRUE,TRUE,3
+0,keyword,EXTNAME,PRIMARY DATA ARRAY,Name of this binary table extension,str,TRUE,TRUE,
+0,keyword,LONGSTRN,OGIP 1.0,The OGIP long string convention may be used,str,TRUE,TRUE,OGIP 1.0
+1,section,COMMENT,"Documentation, Contact, and Collection Metadata",,str,TRUE,TRUE," Documentation, Contact, and Collection Metadata"
+1,keyword,DOI,https://doi.org/TBD,Data reference DOI,str,TRUE,TRUE,https://doi.org/TBD
+1,keyword,PROJECT,PUNCH,,str,TRUE,TRUE,PUNCH
+1,keyword,TITLE,PUNCH Level-0 WFI-1 Clear Image,,str,TRUE,TRUE,PUNCH Level-0 WFI-1 Clear Image
+1,keyword,KEYVOCAB,Unified Astronomy Thesaurus Keywords,,str,TRUE,TRUE,Unified Astronomy Thesaurus Keywords
+1,keyword,KEYWORDS,"Solar Corona (1483), Solar K Corona (2042), Solar F Corona (1991), Solar Coronal Streamers (1486), Solar Coronal Plumes (2039), Solar Wind (1534), Fast Solar Wind (1872), Slow Solar Wind (1873), Solar Coronal Mass Ejection (310), Heliosphere (711), Polarimetry (1278)",,str,TRUE,TRUE,"Solar Corona (1483), Solar K Corona (2042), Solar F Corona (1991), Solar Coronal Streamers (1486), Solar Coronal Plumes (2039), Solar Wind (1534), Fast Solar Wind (1872), Slow Solar Wind (1873), Solar Coronal Mass Ejection (310), Heliosphere (711), Polarimetry (1278)"
+1,keyword,LICENSE,Creative Commons Attribution 4.0 International | CC BY 4.0,,str,TRUE,TRUE,Creative Commons Attribution 4.0 International | CC BY 4.0
+1,keyword,DESCRPTN,"PUNCH Level-0 data, Uncalibrated instrumental units in camera coordinates",,str,TRUE,TRUE,"PUNCH Level-0 data, Uncalibrated instrumental units in camera coordinates"
+1,keyword,DOC_URL,https://punch.spaceops.swri.org,,str,TRUE,TRUE,https://punch.spaceops.swri.org
+2,section,COMMENT,File Type and Provenance,,str,TRUE,TRUE,File Type and Provenance
+2,keyword,FILENAME,,Name of file,str,TRUE,TRUE,
+2,keyword,LEVEL,,Product Level,str,TRUE,TRUE,
+2,keyword,OBSTYPE,,Plain text observation,str,TRUE,TRUE,
+2,keyword,TYPECODE,,Observation product type code,str,TRUE,TRUE,
+2,keyword,OBSCODE,,Observatory spacecraft code,str,TRUE,TRUE,
+2,keyword,PIPEVRSN,,punchbowl software version number,str,TRUE,TRUE,
+2,keyword,FILEVRSN,,File version number (<1 is provisional),str,FALSE,TRUE,0
+2,keyword,ORIGIN,SwRI,Institution responsible for creating the file,str,TRUE,TRUE,SwRI
+3,section,COMMENT,Temporal Information,,str,TRUE,TRUE,Temporal Information
+3,keyword,TIMESYS,UTC,Principal time system,str,TRUE,TRUE,UTC
+3,keyword,DATE-BEG,,UTC time observation,str,TRUE,TRUE,
+3,keyword,DATE-OBS,,UTC reference time,str,TRUE,TRUE,
+3,keyword,DATE-AVG,,UTC reference time,str,TRUE,TRUE,
+3,keyword,DATE-END,,UTC time of observation end,str,TRUE,TRUE,
+3,keyword,DATE,,UTC file generation date and time,str,TRUE,TRUE,
+4,section,COMMENT,Instrument and Spacecraft State,,str,TRUE,TRUE, Instrument and Spacecraft State
+4,keyword,WAVELNTH,530,[nm] average peak response,int,TRUE,TRUE,530
+4,keyword,WAVEUNIT,nanometer,Unit of observation measurement,str,TRUE,TRUE,nanometer
+4,keyword,FILTER,,Name of filter for observations,str,TRUE,TRUE,
+4,keyword,OBS-MODE,,"Image Mode (Unpolarized, Polar_MZP, Polar_BpB)",str,TRUE,TRUE,
+4,keyword,OBSLAYR1,,Image Mode for first datacube layer,str,TRUE,TRUE,
+4,keyword,OBSLAYR2,,Image Mode for second datacube layer,str,TRUE,TRUE,
+4,keyword,OBSLAYR3,,Image Mode for third datacube layer,str,TRUE,TRUE,
+4,keyword,POLAR,,[deg] Polarizer angle or fill value for clear,int,TRUE,TRUE,
+4,keyword,POLAROFF,,[deg] Offset in degrees of polarizer from POLAR,float,TRUE,TRUE,0
+4,keyword,POLARREF,,Polarizer reference frame (instrument or solar),str,TRUE,TRUE,
+4,keyword,INSTRUME,,Instrument name,str,TRUE,TRUE,
+4,keyword,TELESCOP,,Satellite name,str,TRUE,TRUE,
+4,keyword,OBSRVTRY,PUNCH,Observatory name,str,TRUE,TRUE,PUNCH
+4,keyword,OBJECT,Heliosphere white light,Object observed,str,TRUE,TRUE,Heliosphere white light
+5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
+5,keyword,CROTA,,[deg] Human-readable solar north pole angle,float,TRUE,TRUE,
+6,section,COMMENT,Camera and Readout State,,str,TRUE,TRUE,Camera and Readout State
+6,keyword,DETECTOR,CCD 2Kx2K,CCD detector 2048x2048 pixels,str,TRUE,TRUE,CCD 2Kx2K
+6,keyword,COM_SET,,compression setting,int,TRUE,TRUE,
+6,keyword,ACQ_SET,,acquisition setting,int,TRUE,TRUE,
+6,keyword,EXPTIME,,[s] commanded exposure time,float,TRUE,TRUE,
+6,keyword,OFFSET,,commanded offset value used in camera,int,TRUE,TRUE,
+6,keyword,GAINBTM,,[e/DN] gain value (bottom CCD side),float,TRUE,TRUE,
+6,keyword,GAINTOP,,[e/DN] gain value (top CCD side),float,TRUE,TRUE,
+6,keyword,GAINCMDB,,[e/DN] commanded gain value (bottom CCD side),float,TRUE,TRUE,
+6,keyword,GAINCMDT,,[e/DN] commanded gain value (top CCD side),float,TRUE,TRUE,
+7,section,COMMENT,Camera Electronics Board,,str,TRUE,TRUE,Camera Electronics Board
+7,keyword,CEBSTAT,,Status to indicate stale CEB telemetry packet,int,TRUE,TRUE,
+7,keyword,CEBTIME,,CEB packet timestamp,str,TRUE,TRUE,
+7,keyword,CEBWGS,,WGS_STATUS,int,TRUE,TRUE,
+7,keyword,CEBFIFO,,Number of pixels in video FIFO (0-2047),int,TRUE,TRUE,
+7,keyword,CEBBIAS1,,CCD output drain bias (Analog 1),int,TRUE,TRUE,
+7,keyword,CEBBIAS2,,CCD dump drain bias (Analog 2),int,TRUE,TRUE,
+7,keyword,CEBBIAS3,,CCD reset drain bias (Analog 3),int,TRUE,TRUE,
+7,keyword,CEBBIAS4,,CCD top gate bias (Analog 4),int,TRUE,TRUE,
+7,keyword,CEBBIAS5,,CCD output gate bias (Analog 5),int,TRUE,TRUE,
+7,keyword,CEBVREF,,2.5V ref. for bias/temp setting (Analog 6),int,TRUE,TRUE,
+7,keyword,CEBGND1,,Ground (Analog 7),int,TRUE,TRUE,
+7,keyword,CEBCONV1,,P30V DC-DC converter output (Analog 8),int,TRUE,TRUE,
+7,keyword,CEBCONV2,,P15V DC-DC converter output (Analog 9),int,TRUE,TRUE,
+7,keyword,CEBCONV3,,P5V DC-DC converter output (Analog 10),int,TRUE,TRUE,
+7,keyword,BIASVREF,,Bias setting reference (Analog 11),int,TRUE,TRUE,
+7,keyword,CEBGND2,,Ground (Analog 15),int,TRUE,TRUE,
+7,keyword,CEBSEDAC,,Single-bit EDAC,int,TRUE,TRUE,
+7,keyword,CEBMEDAC,,Multi-bit EDAC,int,TRUE,TRUE,
+8,section,COMMENT,Onboard Image Processing,,str,TRUE,TRUE,Onboard Image Processing
+8,keyword,RAWBITS,,[bits] raw image bits per pixel,int,TRUE,TRUE,
+8,keyword,COMPBITS,,[bits] compressed image bits per pixel,float,TRUE,TRUE,
+8,keyword,PMB_INIT,,True to initialize pixel mask bits to '1',int,TRUE,TRUE,
+8,keyword,CMP_BYP,,True bypasses JPEG-LS compression ,int,TRUE,TRUE,
+8,keyword,BSEL,,data or pre-scaled square-rooted image data,int,TRUE,TRUE,
+8,keyword,SCALE,,data scaling factor,float,TRUE,TRUE,
+8,keyword,ISTEST,,boolean indicating if image is a test pattern,int,TRUE,TRUE,
+8,keyword,ISSQRT,,data sqrt compression status,int,TRUE,TRUE,
+8,keyword,WASJPEG,,data JPEG downlink compression status,int,TRUE,TRUE,
+8,keyword,NUM_PCKT,,number of packets used in data creation,int,TRUE,TRUE,
+8,keyword,PCKTBYTE,,bytes of packet data,float,TRUE,TRUE,
+8,keyword,DELAY,,Delay time between SHIFT+READOUT in 100ms ticks,int,TRUE,TRUE,
+8,keyword,IMGCOUNT,,Num images collected in this acquisition cycle,int,TRUE,TRUE,
+8,keyword,TABLE1,,Assigns location of CLEAR in WGS RAM,int,TRUE,TRUE,
+8,keyword,TABLE2,,Assigns location of SHIFT+READOUT in WGS RAM,int,TRUE,TRUE,
+9,section,COMMENT,Calibration Data,,str,TRUE,TRUE,Calibration Data
+9,keyword,CALCF,,quartic fit filename,str,TRUE,TRUE,
+9,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,
+9,keyword,CALPSF,,PSF filename,str,TRUE,TRUE,
+9,keyword,CALPM,,bad pixel map filename,str,TRUE,TRUE,
+9,keyword,CALSL,,stray light model filename,str,TRUE,TRUE,
+10,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
+10,keyword,BUNIT,2.009e+07 W/(m2 sr),Units of observation,str,TRUE,TRUE,2.009e+07 W/(m2 sr)
+10,keyword,DATAZER,,number of pixels=0,int,TRUE,TRUE,
+10,keyword,DATASAT,,number of saturated pixels,int,TRUE,TRUE,
+10,keyword,DSATVAL,65535,saturation value in calibrated units,float,TRUE,TRUE,65535
+10,keyword,DATAAVG,,average non-zero pixel value,float,TRUE,TRUE,
+10,keyword,DATAMDN,,median non-zero pixel value,float,TRUE,TRUE,
+10,keyword,DATASIG,,standard deviation of non-zero pixels,float,TRUE,TRUE,
+10,keyword,DATAP01,,1% of non-zero pixels are LE this value,float,TRUE,TRUE,
+10,keyword,DATAP10,,10% of non-zero pixels are LE this value,float,TRUE,TRUE,
+10,keyword,DATAP25,,25% of non-zero pixels are LE this value,float,TRUE,TRUE,
+10,keyword,DATAP50,,50% of non-zero pixels are LE this value,float,TRUE,TRUE,
+10,keyword,DATAP75,,75% of non-zero pixels are LE this value,float,TRUE,TRUE,
+10,keyword,DATAP90,,90% of non-zero pixels are LE this value,float,TRUE,TRUE,
+10,keyword,DATAP95,,95% of non-zero pixels are LE this value,float,TRUE,TRUE,
+10,keyword,DATAP98,,98% of non-zero pixels are LE this value,float,TRUE,TRUE,
+10,keyword,DATAP99,,99% of non-zero pixels are LE this value,float,TRUE,TRUE,
+10,keyword,DATAMIN,,minimum valid physical value,float,TRUE,TRUE,
+10,keyword,DATAMAX,,maximum valid physical value,float,TRUE,TRUE,
+11,section,COMMENT,Solar Reference Data,,str,TRUE,TRUE,Solar Reference Data
+11,keyword,RSUN_ARC,,[arcsec] photospheric solar radius,float,TRUE,TRUE,
+11,keyword,RSUN_REF,695700000,[m] assumed physical solar radius,float,TRUE,TRUE,
+11,keyword,SOLAR_EP,,[deg] S/C ecliptic North to solar North angle,float,TRUE,TRUE,
+11,keyword,CAR_ROT,,Carrington Rotation number,float,TRUE,TRUE,
+12,section,COMMENT,Spacecraft Location & Environment,,str,TRUE,TRUE,Spacecraft Location & Environment
+12,keyword,XACTTIME,,Time of XACT packet,str,TRUE,TRUE,
+12,keyword,GEOD_LAT,,[deg] S/C sub-point geodetic latitude,float,TRUE,TRUE,
+12,keyword,GEOD_LON,,[deg] S/C sub-point geodetic longitude,float,TRUE,TRUE,
+12,keyword,GEOD_ALT,,[m] S/C WGS84 altitude,float,TRUE,TRUE,
+12,keyword,LOS_ALT,,[m] line-of-sight altitude above Earth,float,TRUE,TRUE,
+12,keyword,HGLT_OBS,,[deg] S/C heliographic latitude,float,TRUE,TRUE,
+12,keyword,HGLN_OBS,,[deg] S/C heliographic longitude (B0),float,TRUE,TRUE,
+12,keyword,CRLT_OBS,,[deg] S/C Carrington latitude (B0),float,TRUE,TRUE,
+12,keyword,CRLN_OBS,,[deg] S/C Carrington longitude,float,TRUE,TRUE,
+12,keyword,DSUN_OBS,,[m] S/C distance from Sun,float,TRUE,TRUE,
+12,keyword,HEEX_OBS,,[m] S/C Heliocentric Earth Ecliptic X,float,TRUE,TRUE,
+12,keyword,HEEY_OBS,,[m] S/C Heliocentric Earth Ecliptic Y,float,TRUE,TRUE,
+12,keyword,HEEZ_OBS,,[m] S/C Heliocentric Earth Ecliptic Z,float,TRUE,TRUE,
+12,keyword,HCIX_OBS,,[m] S/C Heliocentric Inertial X,float,TRUE,TRUE,
+12,keyword,HCIY_OBS,,[m] S/C Heliocentric Inertial Y,float,TRUE,TRUE,
+12,keyword,HCIZ_OBS,,[m] S/C Heliocentric Inertial Z,float,TRUE,TRUE,
+12,keyword,HCIX_VOB,,[m/s] S/C Heliocentric Inertial X Velocity,float,TRUE,TRUE,
+12,keyword,HCIY_VOB,,[m/s] S/C Heliocentric Inertial Y Velocity,float,TRUE,TRUE,
+12,keyword,HCIZ_VOB,,[m/s] S/C Heliocentric Inertial Z Velocity,float,TRUE,TRUE,
+12,keyword,HAEX_OBS,,[m] S/C Heliocentric Aries Ecliptic X,float,TRUE,TRUE,
+12,keyword,HAEY_OBS,,[m] S/C Heliocentric Aries Ecliptic Y,float,TRUE,TRUE,
+12,keyword,HAEZ_OBS,,[m] S/C Heliocentric Aries Ecliptic Z,float,TRUE,TRUE,
+12,keyword,HEQX_OBS,,[m] S/C Heliocentric Earth Equatorial X,float,TRUE,TRUE,
+12,keyword,HEQY_OBS,,[m] S/C Heliocentric Earth Equatorial Y,float,TRUE,TRUE,
+12,keyword,HEQZ_OBS,,[m] S/C Heliocentric Earth Equatorial Z,float,TRUE,TRUE,
+12,keyword,XACTTIME,,XACT packet timestamp,str,TRUE,TRUE,
+13,section,COMMENT,Velocity,,str,TRUE,TRUE,Velocity
+13,keyword,DELTAT,,Time offset in frames between images,int,TRUE,TRUE,
+13,keyword,SPARSITY,,Frame skip interval for averaging,int,TRUE,TRUE,
+13,keyword,N_OFS,,Number of spatial offsets for cross-correlation,int,TRUE,TRUE,
+13,keyword,DELTA_PX,,Pixel offset increment per sample,int,TRUE,TRUE,
+13,keyword,KPSEXP,,Expected wind speed in km/s,int,TRUE,TRUE,
+13,keyword,BANDWDTH,,Half-width of each radial band in solar radii,float,TRUE,TRUE,
+13,keyword,MAXRAD,,The maximum radius in degrees,int,TRUE,TRUE,
+13,keyword,AZMBINS,,Number of azimuthal bins in the polar remapped images,int,TRUE,TRUE,
+13,keyword,AZMBINF,,Azimuthal binning factor,int,TRUE,TRUE,
+13,keyword,PLTBINS,,Number of azimuthal bins in the output flow maps,int,TRUE,TRUE,
+13,keyword,YCENS,,Radial band centers in solar radii,str,TRUE,TRUE,
+13,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
+14,section,COMMENT,Polarizing Filter Wheel,,str,TRUE,TRUE,Polarizing Filter Wheel
+14,keyword,PFWTIME,,PFW packet timestamp,str,TRUE,TRUE,
+14,keyword,PFWSTAT,,"Current PFW Status (0 - no error, else error)",int,TRUE,TRUE,
+14,keyword,STEPCALC,,Calculated step (0-1199),int,TRUE,TRUE,
+14,keyword,CMDSTEPS,,Commanded number of steps (1-1199),int,TRUE,TRUE,
+14,keyword,HOMEOVRD,,HOME Position OVERRIDE,int,TRUE,TRUE,
+14,keyword,POSCURR,,"Current position (1-5, 0 - manual stepping)",int,TRUE,TRUE,
+14,keyword,POSCMD,,"Commanded position (1-5, 0 - manual stepping)",int,TRUE,TRUE,
+14,keyword,POSRAW,,Resolver position - raw counts (0-65000),int,TRUE,TRUE,
+14,keyword,POSRAW2,,Resolver position - error corrected (0-65000),int,TRUE,TRUE,
+14,keyword,READCNT,,Accumulative resolver reads (resets on boot),int,TRUE,TRUE,
+14,keyword,LMNSTEP,,Number of steps on last move (1-1199),int,TRUE,TRUE,
+14,keyword,LMTIME,,Current move execution time,float,TRUE,TRUE,
+14,keyword,LTSTEP,,Lifetime accumulative number of steps taken,int,TRUE,TRUE,
+14,keyword,LTTIME,,Lifetime accumulative execution time,float,TRUE,TRUE,
+14,keyword,FSMSTAT,,Controller FSM State,int,TRUE,TRUE,
+14,keyword,READSTAT,,READ Sub-FSM State,int,TRUE,TRUE,
+14,keyword,MOVSTAT,,MOVE Sub-FSM State,int,TRUE,TRUE,
+14,keyword,HOMESTAT,,HOME Sub-FSM State,int,TRUE,TRUE,
+14,keyword,HOMEPOS,,Home Position (1-5),int,TRUE,TRUE,
+14,keyword,RESSEL,,Resolver Select,int,TRUE,TRUE,
+14,keyword,RESTOLH,,Resolver Tolerance,int,TRUE,TRUE,
+14,keyword,RESTOLC,,Resolver Tolerance,int,TRUE,TRUE,
+14,keyword,STEPSEL,,Stepper Motor Select,int,TRUE,TRUE,
+14,keyword,STEPDLY,,Stepper Motor Rate Delay,int,TRUE,TRUE,
+14,keyword,STEPRATE,,Stepper Motor Rate,float,TRUE,TRUE,
+14,keyword,SHORTMV,,Short Move(1-4 steps) Settling time,int,TRUE,TRUE,
+14,keyword,LONGMV,,Long Move(5-1199 steps) Setting time,int,TRUE,TRUE,
+14,keyword,PFWOFF1,,Primary Step Offset 1,int,TRUE,TRUE,
+14,keyword,PFWOFF2,,Primary Step Offset 2,int,TRUE,TRUE,
+14,keyword,PFWOFF3,,Primary Step Offset 3,int,TRUE,TRUE,
+14,keyword,PFWOFF4,,Primary Step Offset 4,int,TRUE,TRUE,
+14,keyword,PFWOFF5,,Primary Step Offset 5,int,TRUE,TRUE,
+14,keyword,RPFWOFF1,,Redundant Step Offset 1,int,TRUE,TRUE,
+14,keyword,RPFWOFF2,,Redundant Step Offset 2,int,TRUE,TRUE,
+14,keyword,RPFWOFF3,,Redundant Step Offset 3,int,TRUE,TRUE,
+14,keyword,RPFWOFF4,,Redundant Step Offset 4,int,TRUE,TRUE,
+14,keyword,RPFWOFF5,,Redundant Step Offset 5,int,TRUE,TRUE,
+14,keyword,PFWPOS1,,Primary Resolver Position 1,int,TRUE,TRUE,
+14,keyword,PFWPOS2,,Primary Resolver Position 2,int,TRUE,TRUE,
+14,keyword,PFWPOS3,,Primary Resolver Position 3,int,TRUE,TRUE,
+14,keyword,PFWPOS4,,Primary Resolver Position 4,int,TRUE,TRUE,
+14,keyword,PFWPOS5,,Primary Resolver Position 5,int,TRUE,TRUE,
+14,keyword,RPFWPOS1,,Redundant Resolver Position 1,int,TRUE,TRUE,
+14,keyword,RPFWPOS2,,Redundant Resolver Position 2,int,TRUE,TRUE,
+14,keyword,RPFWPOS3,,Redundant Resolver Position 3,int,TRUE,TRUE,
+14,keyword,RPFWPOS4,,Redundant Resolver Position 4,int,TRUE,TRUE,
+14,keyword,RPFWPOS5,,Redundant Resolver Position 5,int,TRUE,TRUE,
+15,section,COMMENT,LED Status,,str,TRUE,TRUE,LED Status
+15,keyword,LED_PCKT,,LED packet indicator,int,TRUE,TRUE,0
+15,keyword,LEDTIME,,LED packet timestamp,str,TRUE,TRUE,
+15,keyword,LED1STAT,,LED1 Activation State,int,TRUE,TRUE,
+15,keyword,LEDPLSN,,LED Number of Pulses,int,TRUE,TRUE,
+15,keyword,LED2STAT,,LED2 Activation State,int,TRUE,TRUE,
+15,keyword,LEDPLSD,,LED Pulse Delay,int,TRUE,TRUE,
+15,keyword,LEDPLSW,,LED Pulse Width,int,TRUE,TRUE,
+15,keyword,LED1CURR,,LED1 Accumulated Current for pulse,int,TRUE,TRUE,
+15,keyword,LED2CURR,,LED2 Accumulated Current for pulse,int,TRUE,TRUE,
+15,keyword,LEDCNT,,LED Sample Count,int,TRUE,TRUE,
+15,keyword,PLSSEC1,,Pulse Train start TAI Second,int,TRUE,TRUE,
+15,keyword,PLSUSEC1,,Pulse Train start TAI MIcroseconds-in-Seconds,int,TRUE,TRUE,
+15,keyword,PLSSEC2,,Pulse Train end TAI Second,int,TRUE,TRUE,
+15,keyword,PLSUSEC2,,Pulse Train end TAI MIcroseconds-in-Seconds,int,TRUE,TRUE,
+16,section,COMMENT,LZ Packet Info,,str,TRUE,TRUE,LZ Packet Info
+16,keyword,LZTIME,,Time of LZ packet,str,TRUE,TRUE,
+16,keyword,CCDTEMP,,Camera Detector (CCD) Temp,float,TRUE,TRUE,
+16,keyword,ICMTEMP,,Camera ICM Temp Primary,float,TRUE,TRUE,
+16,keyword,FORTEMP,,Baffle Forward +Y Temp (NFI) or OLA Temp Primary (WFI),float,TRUE,TRUE,
+16,keyword,AFTTEMP,,Baffle Aft +Z Temp (NFI) or PFW Clamshell Temp Primary (WFI),float,TRUE,TRUE,
+16,keyword,PFWTEMP,,PFW Motor Temp,float,TRUE,TRUE,
+16,keyword,DOORTEMP,,Door Actuator Temp (NFI) or Radiator Center Temp (WFI),float,TRUE,TRUE,
+16,keyword,CEBTEMP,,CEB Base Temp Primary,float,TRUE,TRUE,
+16,keyword,HOUSTEMP,,Electronics Side Temp (STEAM) or Camera Housing -X Temp (WFI),float,TRUE,TRUE,
+16,keyword,FINGTEMP,,Detector Side Temp Primary (STEAM) or Cold Finger +Z Temp (WFI),float,TRUE,TRUE,
+16,keyword,FPGATEMP,,FPGA Temperature,float,TRUE,TRUE,
+17,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
+17,keyword,CHECKSUM,,,str,TRUE,TRUE,
+17,keyword,DATASUM,,,str,TRUE,TRUE,0
+18,section,COMMENT,History,,str,TRUE,TRUE,History
+18,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline

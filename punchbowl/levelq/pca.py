@@ -188,7 +188,7 @@ def run_pca_filtering(images_to_subtract: np.ndarray, images_to_fit: np.ndarray,
     return images_to_subtract - reconstructed
 
 
-def find_bodies_in_image(frame: str | NDCube | WCS) -> list:
+def find_bodies_in_image(frame: str | NDCube | tuple[NormalizedMetadata, WCS]) -> list:
     """Find celestial bodies in image."""
     if isinstance(frame, str):
         header = fits.getheader(frame, 1)
@@ -199,7 +199,11 @@ def find_bodies_in_image(frame: str | NDCube | WCS) -> list:
         location = frame.meta["GEOD_LON"].value, frame.meta["GEOD_LAT"].value, frame.meta["GEOD_ALT"].value
         wcs = frame.wcs
         image_shape = frame.data.shape
-    elif not isinstance(frame, WCS):
+    elif isinstance(frame, tuple):
+        frame, wcs = frame
+        location = frame["GEOD_LON"].value, frame["GEOD_LAT"].value, frame["GEOD_ALT"].value
+        image_shape = wcs.array_shape
+    else:
         msg = "Type of 'frame' not recognized"
         raise TypeError(msg)
 

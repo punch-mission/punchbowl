@@ -30,7 +30,7 @@ _log_queue = None
 @punch_task
 def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader | str],
                n_components: int=50, med_filt: int=5, outlier_limits: str | LimitSet = None,
-               n_strides: int = 5) -> None:
+               n_strides: int = 8) -> None:
     """Run PCA-based filtering."""
     logger = get_run_logger()
 

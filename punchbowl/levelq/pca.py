@@ -30,7 +30,7 @@ _log_queue = None
 @punch_task
 def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader | str],
                n_components: int=50, med_filt: int=5, outlier_limits: str | LimitSet = None,
-               n_strides: int = 8) -> None:
+               n_strides: int = 8, blend_size: int = 70) -> None:
     """Run PCA-based filtering."""
     logger = get_run_logger()
 
@@ -41,12 +41,13 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
         # We stash the loaded images in a global variable so that, when we fork for parallel processing,
         # those images don't have to be individually copied to each worker process.
         global _all_files_to_fit # noqa: PLW0603
-        _all_files_to_fit, bodies_in_quarter, to_subtract = load_files(input_cubes, files_to_fit, outlier_limits)
+        _all_files_to_fit, bodies_in_quarter, to_subtract = load_files(input_cubes, files_to_fit, outlier_limits,
+                                                                       blend_size)
         # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
-        with _log_forwarder(), threadpool_limits(25), mp.Pool(n_strides) as p:
+        with _log_forwarder(), threadpool_limits(min(25, os.cpu_count())), mp.Pool(min(n_strides, os.cpu_count())) as p:
             for subtracted_cube_indices, subtracted_images in p.starmap(
                     pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
-                    repeat(to_subtract), repeat(n_components), repeat(med_filt))):
+                    repeat(to_subtract), repeat(n_components), repeat(med_filt), repeat(blend_size))):
                 for index, image in zip(subtracted_cube_indices, subtracted_images, strict=False):
                     input_cubes[index].data[...] = image
     finally:
@@ -62,7 +63,8 @@ def check_file(meta: NormalizedMetadata, outlier_limits: LimitSet | None) -> boo
 
 @punch_task
 def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | DataLoader],
-               outlier_limits: LimitSet | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+               outlier_limits: LimitSet | None = None,
+               blend_size: int = 70) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Load files."""
     logger = get_run_logger()
 
@@ -91,23 +93,25 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     bodies_in_quarter = []
     loaded_to_subtract = []
     n_outliers = 0
+    body_finding_inputs = []
     for input_file, subtract in zip(things_to_load, to_subtract, strict=False):
         if isinstance(input_file, NDCube):
             data, meta = input_file.data, input_file.meta
-            bodies = find_bodies_in_image(input_file)
+            body_finding_input = (input_file.meta, input_file.wcs)
         elif isinstance(input_file, str):
             cube = load_image_task(input_file, include_provenance=False, include_uncertainty=False)
             data, meta = cube.data, cube.meta
-            bodies = find_bodies_in_image(cube)
+            body_finding_input = (cube.meta, cube.wcs)
         elif isinstance(input_file, DataLoader):
-            data, meta, bodies = input_file.load()
+            data, meta, wcs = input_file.load()
+            body_finding_input = (meta, wcs)
         else:
             raise TypeError(f"Invalid type {type(input_file)} for input file")
         if check_file(meta, outlier_limits):
             loaded_to_subtract.append(subtract)
             all_files_to_fit[index_to_insert] = data
             index_to_insert += 1
-            bodies_in_quarter.append(bodies)
+            body_finding_inputs.append(body_finding_input)
         else:
             n_outliers += 1
 
@@ -119,27 +123,23 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     logger.info(f"(Drawn from {len(input_cubes)} images to subtract and {len(files_to_fit)} extra images for fitting)")
     logger.info(f"({n_outliers} outliers were rejected from fitting)")
 
-
-    bodies_in_quarter = np.array(bodies_in_quarter)
+    logger.info("Locating planets")
+    # We have a lot of data in memory right now, so forking is expensive
+    ctx = mp.get_context("forkserver")
+    with ctx.Pool(min(25, os.cpu_count())) as p:
+        bodies_in_quarter = np.array(p.starmap(find_bodies_in_image, zip(body_finding_inputs, repeat(blend_size))))
 
     return all_files_to_fit, bodies_in_quarter, loaded_to_subtract
 
 
 def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, to_subtract: np.ndarray,
-                          n_components: int, med_filt: int) -> tuple[np.ndarray, np.ndarray]:
+                          n_components: int, med_filt: int, blend_size: int) -> tuple[np.ndarray, np.ndarray]:
     """Run PCA-based filtering for one stride position."""
     # This sets up a logger that forwards entries through a queue to the main process, where they can be forwarded to
     # Prefect
     logger = logging.getLogger()
     logger.addHandler(logging.handlers.QueueHandler(_log_queue))
     logger.setLevel(logging.INFO)
-
-    quarter_slices = [
-        np.s_[0:_all_files_to_fit.shape[1] // 2, 0:_all_files_to_fit.shape[2] // 2],
-        np.s_[0:_all_files_to_fit.shape[1] // 2, _all_files_to_fit.shape[2] // 2:],
-        np.s_[_all_files_to_fit.shape[1] // 2:, 0:_all_files_to_fit.shape[2] // 2],
-        np.s_[_all_files_to_fit.shape[1] // 2:, _all_files_to_fit.shape[2] // 2:],
-    ]
 
     stride_filter = np.arange(len(_all_files_to_fit)) % n_strides == stride
     # This will mark the images we'll be subtracting from---those are the only ones we'll drop from the fitting
@@ -152,20 +152,26 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
     # This tracks where each image-to-be-subtracted is in the main list of NDCubes
     subtracted_cube_indices = to_subtract[to_subtract_filter]
 
+    yy, xx = np.indices(images_to_subtract.shape[1:])
+    blend_mask = np.clip(((_all_files_to_fit.shape[1] / 2 - 1 + blend_size / 2) - yy) / blend_size, 0, 1)
+    blend_mask = blend_mask * blend_mask.T
+    blend_masks = [blend_mask, blend_mask[:, ::-1], blend_mask[::-1], blend_mask[::-1, ::-1]]
+
     # We need to PCA separately for each quarter of the image
-    filtered_by_quarter = np.empty_like(images_to_subtract)
-    for i, quarter_slice in enumerate(quarter_slices):
-        tag = f"stride {stride}, quarter {i+1}"
-        logger.info(f"Starting to filter {tag}")
+    for i, mask in enumerate(blend_masks):
         # We mark the images that don't have any planets in the quarter we're filtering for (since those can
         # contaminate the PCA components)
         no_bodies_in_quarter = np.all(bodies_in_quarter[:, :, i] == False, axis=1) # noqa: E712
         images_to_fit = _all_files_to_fit[no_bodies_in_quarter * ~to_subtract_filter]
-        filtered = run_pca_filtering(images_to_subtract, images_to_fit, n_components, med_filt, tag, logger)
+        tag = f"stride {stride}, quarter {i+1}"
+        logger.info(f"Starting to filter {tag}, fitting {len(images_to_fit)} images")
+        filtered_by_quarter = run_pca_filtering(images_to_subtract, images_to_fit, n_components, med_filt, tag, logger)
+        if i == 0:
+            final_reconstruction = mask * filtered_by_quarter
+        else:
+            final_reconstruction += mask * filtered_by_quarter
 
-        filtered_by_quarter[:, *quarter_slice] = filtered[:, *quarter_slice]
-
-    return subtracted_cube_indices, filtered_by_quarter
+    return subtracted_cube_indices, final_reconstruction
 
 
 def run_pca_filtering(images_to_subtract: np.ndarray, images_to_fit: np.ndarray, n_components: int,
@@ -188,7 +194,7 @@ def run_pca_filtering(images_to_subtract: np.ndarray, images_to_fit: np.ndarray,
     return images_to_subtract - reconstructed
 
 
-def find_bodies_in_image(frame: str | NDCube | tuple[NormalizedMetadata, WCS]) -> list:
+def find_bodies_in_image(frame: str | NDCube | tuple[NormalizedMetadata, WCS], extra_padding: int = 0) -> list:
     """Find celestial bodies in image."""
     if isinstance(frame, str):
         header = fits.getheader(frame, 1)
@@ -200,8 +206,8 @@ def find_bodies_in_image(frame: str | NDCube | tuple[NormalizedMetadata, WCS]) -
         wcs = frame.wcs
         image_shape = frame.data.shape
     elif isinstance(frame, tuple):
-        frame, wcs = frame
-        location = frame["GEOD_LON"].value, frame["GEOD_LAT"].value, frame["GEOD_ALT"].value
+        meta, wcs = frame
+        location = meta["GEOD_LON"].value, meta["GEOD_LAT"].value, meta["GEOD_ALT"].value
         image_shape = wcs.array_shape
     else:
         msg = "Type of 'frame' not recognized"
@@ -211,7 +217,8 @@ def find_bodies_in_image(frame: str | NDCube | tuple[NormalizedMetadata, WCS]) -
     for body in ["Mercury", "Venus", "Moon", "Mars", "Jupiter", "Saturn"]:
         body_loc = get_body(body, time=Time(wcs.wcs.dateobs), location=EarthLocation.from_geodetic(*location))
         x, y = wcs.world_to_pixel(body_loc)
-        w = 40 if body == "Moon" else 10
+        w = 100 if body == "Moon" else 10
+        w += extra_padding
         in_left = 0 - w <= x <= image_shape[1] / 2 + w
         in_right = image_shape[1] / 2 - w <= x <= image_shape[1] + w
         in_bottom = 0 - w <= y <= image_shape[0] / 2 + w

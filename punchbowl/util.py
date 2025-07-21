@@ -1,7 +1,7 @@
-import abc
 import os
-from datetime import UTC, datetime
+import abc
 from typing import Generic, TypeVar
+from datetime import UTC, datetime
 
 import numpy as np
 from ndcube import NDCube
@@ -147,6 +147,7 @@ T = TypeVar("T")
 
 class DataLoader(abc.ABC, Generic[T]):
     """Interface for passing callable objects instead of file paths to be loaded."""
+
     @abc.abstractmethod
     def load(self) -> T:
         """Load the data."""

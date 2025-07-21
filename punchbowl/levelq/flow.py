@@ -36,16 +36,15 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
         input_paths = [os.path.join(data_root, path) for path in input_paths]
 
     # This parallelizes more effectively than running a lot of load_image_task in parallel, due to how Prefect would
-    # schedule those tasks. Experience shows that the main thread quickly gets overwhelmed by workers send back
-    # loaded images, so more than a few worker processes doesn't help anything (but this is faster than loading
+    # schedule those tasks. Experience shows that the main thread quickly gets overwhelmed by workers sending back
+    # loaded images, so more than a few worker processes doesn't help anything (but this is still faster than loading
     # images in series!)
     with multiprocessing.Pool(3) as p:
         data_cubes += p.map(load_ndcube_from_fits, input_paths, chunksize=10)
 
     logger.info("Loaded images to be subtracted")
 
-    if files_to_fit is not None:
-        pca_filter(data_cubes, files_to_fit, outlier_limits=outlier_limits)
+    pca_filter(data_cubes, files_to_fit, outlier_limits=outlier_limits)
 
     quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
     data_list_nfi = reproject_many_flow(data_cubes, quickpunch_nfi_wcs, quickpunch_nfi_shape)

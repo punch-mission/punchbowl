@@ -23,6 +23,7 @@ from punchbowl.levelq.limits import LimitSet
 from punchbowl.prefect import punch_task
 from punchbowl.util import DataLoader, load_image_task
 
+# We're suffering two global variables, to facilitate passing information to forker worker processes
 _all_files_to_fit = None
 _log_queue = None
 
@@ -39,7 +40,8 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
 
     try:
         # We stash the loaded images in a global variable so that, when we fork for parallel processing,
-        # those images don't have to be individually copied to each worker process.
+        # those images don't have to be individually copied to each worker process. The try/finally block ensures we
+        # don't leak this memory.
         global _all_files_to_fit # noqa: PLW0603
         _all_files_to_fit, bodies_in_quarter, to_subtract = load_files(input_cubes, files_to_fit, outlier_limits,
                                                                        blend_size)
@@ -47,7 +49,8 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
         with _log_forwarder(), threadpool_limits(min(25, os.cpu_count())), mp.Pool(min(n_strides, os.cpu_count())) as p:
             for subtracted_cube_indices, subtracted_images in p.starmap(
                     pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
-                    repeat(to_subtract), repeat(n_components), repeat(med_filt), repeat(blend_size))):
+                                               repeat(to_subtract), repeat(n_components), repeat(med_filt),
+                                               repeat(blend_size))):
                 for index, image in zip(subtracted_cube_indices, subtracted_images, strict=False):
                     input_cubes[index].data[...] = image
     finally:
@@ -72,7 +75,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     # be subtracted and where they are in the original list of input cubes. We sort by observation time to ensure the
     # staggered dropping of files is spread evenly over time.
     things_to_load = np.array(input_cubes + files_to_fit, dtype=object)
-    to_subtract = np.concatenate((range(len(input_cubes)), [-1] * len(files_to_fit)))
+    input_list_indices = np.concatenate((range(len(input_cubes)), [-1] * len(files_to_fit)))
     def sort_key(thing: str | NDCube | DataLoader) -> str:
         if isinstance(thing, str):
             return os.path.basename(thing)
@@ -82,7 +85,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     keys = np.array([sort_key(t) for t in things_to_load])
     sort_by_date = np.argsort(keys)
     things_to_load = things_to_load[sort_by_date]
-    to_subtract = to_subtract[sort_by_date]
+    input_list_indices = input_list_indices[sort_by_date]
 
     # We'll pre-allocate an array to load files into. Since we'll reject any bad files, we'll track an insertion
     # index as we add good files, and at the end we'll slice the array to drop any empty spots at the end. When
@@ -90,11 +93,10 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     # actually use any more RAM than needed.
     all_files_to_fit = np.empty((len(things_to_load), *input_cubes[0].data.shape), dtype=input_cubes[0].data.dtype)
     index_to_insert = 0
-    bodies_in_quarter = []
-    loaded_to_subtract = []
+    loaded_input_list_indices = []
     n_outliers = 0
     body_finding_inputs = []
-    for input_file, subtract in zip(things_to_load, to_subtract, strict=False):
+    for input_file, subtract in zip(things_to_load, input_list_indices, strict=False):
         if isinstance(input_file, NDCube):
             data, meta = input_file.data, input_file.meta
             body_finding_input = (input_file.meta, input_file.wcs)
@@ -108,14 +110,14 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
         else:
             raise TypeError(f"Invalid type {type(input_file)} for input file")
         if check_file(meta, outlier_limits):
-            loaded_to_subtract.append(subtract)
+            loaded_input_list_indices.append(subtract)
             all_files_to_fit[index_to_insert] = data
             index_to_insert += 1
             body_finding_inputs.append(body_finding_input)
         else:
             n_outliers += 1
 
-    loaded_to_subtract = np.array(loaded_to_subtract)
+    loaded_input_list_indices = np.array(loaded_input_list_indices)
 
     # Crop the unused end of the array
     all_files_to_fit = all_files_to_fit[:index_to_insert]
@@ -124,20 +126,21 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     logger.info(f"({n_outliers} outliers were rejected from fitting)")
 
     logger.info("Locating planets")
-    # We have a lot of data in memory right now, so forking is expensive
+    # We have a lot of data in memory right now, so forking is expensive as all that memory has to be marked as
+    # copy-on-write. Using a forkserver avoids that work.
     ctx = mp.get_context("forkserver")
     with ctx.Pool(min(25, os.cpu_count())) as p:
         bodies_in_quarter = np.array(p.starmap(find_bodies_in_image, zip(body_finding_inputs, repeat(blend_size))))
 
-    return all_files_to_fit, bodies_in_quarter, loaded_to_subtract
+    return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices
 
 
-def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, to_subtract: np.ndarray,
+def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, input_list_indices: np.ndarray,
                           n_components: int, med_filt: int, blend_size: int,
                           logger: logging.Logger | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Run PCA-based filtering for one stride position."""
     # This sets up a logger that forwards entries through a queue to the main process, where they can be forwarded to
-    # Prefect
+    # Prefect. This is required because Prefect can't log from forked worker processes.
     if logger is None:
         logger = logging.getLogger()
         logger.addHandler(logging.handlers.QueueHandler(_log_queue))
@@ -145,18 +148,22 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
 
     stride_filter = np.arange(len(_all_files_to_fit)) % n_strides == stride
     # This will mark the images we'll be subtracting from---those are the only ones we'll drop from the fitting
-    to_subtract_filter = stride_filter * (to_subtract >= 0)
+    to_subtract_filter = stride_filter * (input_list_indices >= 0)
     if not np.any(to_subtract_filter):
         logger.info(f"Stride {stride} has no images to subtract")
         return [], []
 
     images_to_subtract = _all_files_to_fit[to_subtract_filter]
     # This tracks where each image-to-be-subtracted is in the main list of NDCubes
-    subtracted_cube_indices = to_subtract[to_subtract_filter]
+    subtracted_cube_indices = input_list_indices[to_subtract_filter]
 
+    # The quartering approach that protects from planets/the Moon wrecking the PCA components can leave seams. To
+    # reduce that, we have a small blend region at those seams. Here we define a mask that's 1 in the core of a
+    # quarter and tapers to 0 through the blend region.
     yy, xx = np.indices(images_to_subtract.shape[1:])
     blend_mask = np.clip(((_all_files_to_fit.shape[1] / 2 - 1 + blend_size / 2) - yy) / blend_size, 0, 1)
     blend_mask = blend_mask * blend_mask.T
+    # Flip it around to make one for each quarter
     blend_masks = [blend_mask, blend_mask[:, ::-1], blend_mask[::-1], blend_mask[::-1, ::-1]]
 
     # We need to PCA separately for each quarter of the image
@@ -180,6 +187,7 @@ def run_pca_filtering(images_to_subtract: np.ndarray, images_to_fit: np.ndarray,
                       med_filt: int, tag: str, logger: logging.Logger) -> np.ndarray:
     """Run PCA filtering."""
     pca = PCA(n_components=n_components)
+    # The image array has to be re-shaped into (n_images, n_pixels). (i.e., PCA wants 1D vectors, not 2D images)
     pca.fit(images_to_fit.reshape((len(images_to_fit), -1)))
     logger.info(f"Fitting finished for {tag}")
 
@@ -238,9 +246,9 @@ def find_bodies_in_image(frame: str | NDCube | tuple[NormalizedMetadata, WCS], e
 def _log_forwarder() -> None:
     # This logging situation is kind of a mess. We really want to parallelize with multiprocessing so we can fork and
     # not copy all the images to each worker. But Prefect logging from those forked processes doesn't work (nor does
-    # logging print statements), so in the workers we need to set up a logger than puts log entries in a Queue,
-    # and then on the main process side we need to spawn a thread that monitors the queue and forwards log entries to
-    # Prefect.
+    # logging print statements), so in the workers we need to set up a logger than puts log entries in a
+    # shared-memory Queue, and then on the main process side we need to spawn a thread that monitors the queue and
+    # forwards log entries to Prefect.
 
     # The log queue has to be a global variable so the worker processes can retrieve it
     global _log_queue # noqa: PLW0603
@@ -275,5 +283,6 @@ def _log_forwarder() -> None:
             # Signal to the thread it can quit
             _log_queue.put(None)
         except: # noqa: S110, E722
+            # Don't let problems here stop us from clearing the global variable
             pass
         _log_queue = None

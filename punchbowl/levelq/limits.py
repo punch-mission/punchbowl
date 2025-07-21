@@ -8,10 +8,31 @@ from punchbowl.data import NormalizedMetadata
 
 
 class Limit:
-    """Represents a limit."""
+    """
+    Represents a limit for identifying outliers.
+
+    A limit is an x-y curve, with x and y being values from an image's FITS header. A comparison sense is defined (i.e.
+    '<' or '>', and a given images is considered "good" or "bad" based on how its (x, y) value compares to that curve.
+    """
 
     def __init__(self, xkey: str, xs: np.ndarray, ykey: str, ys: np.ndarray, comp: str) -> None:
-        """Create a Limit."""
+        """
+        Create a Limit.
+
+        Parameters
+        ----------
+        xkey : str
+            The key to read from a header for the x value
+        xs : np.ndarray
+            The x values defining the limit curve
+        ykey : str
+            The key to read from a header for the y value
+        ys : np.ndarray
+            The y values defining the limit curve
+        comp : str
+            How to compare a given image to the curve
+
+        """
         self.xkey = xkey
         self.xs = xs
         self.ykey = ykey
@@ -30,7 +51,9 @@ class Limit:
             return np.array([self.is_good(p) for p in point])
         else:
             x, y = point
+
         limit_value = np.interp(x, self.xs, self.ys)
+
         if self.comp == "<":
             return y < limit_value
         if self.comp == ">":
@@ -87,7 +110,11 @@ class Limit:
 
 
 class LimitSet:
-    """Represents a set of limits."""
+    """
+    Represents a set of limits.
+
+    A given image will be determined to be "good" or "bad" based on whether it satisfies all the limits.
+    """
 
     def __init__(self, limits: list[Limit] | None = None) -> None:
         """Create a LimitSet."""

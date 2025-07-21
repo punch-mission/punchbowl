@@ -133,13 +133,15 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
 
 
 def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, to_subtract: np.ndarray,
-                          n_components: int, med_filt: int, blend_size: int) -> tuple[np.ndarray, np.ndarray]:
+                          n_components: int, med_filt: int, blend_size: int,
+                          logger: logging.Logger | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Run PCA-based filtering for one stride position."""
     # This sets up a logger that forwards entries through a queue to the main process, where they can be forwarded to
     # Prefect
-    logger = logging.getLogger()
-    logger.addHandler(logging.handlers.QueueHandler(_log_queue))
-    logger.setLevel(logging.INFO)
+    if logger is None:
+        logger = logging.getLogger()
+        logger.addHandler(logging.handlers.QueueHandler(_log_queue))
+        logger.setLevel(logging.INFO)
 
     stride_filter = np.arange(len(_all_files_to_fit)) % n_strides == stride
     # This will mark the images we'll be subtracting from---those are the only ones we'll drop from the fitting

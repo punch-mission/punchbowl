@@ -42,15 +42,17 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     with multiprocessing.Pool(3) as p:
         data_cubes += p.map(load_ndcube_from_fits, input_paths, chunksize=10)
 
+    logger.info("Loaded images to be subtracted")
+
     if files_to_fit is not None:
         pca_filter(data_cubes, files_to_fit, outlier_limits=outlier_limits)
 
     quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
     data_list_nfi = reproject_many_flow(data_cubes, quickpunch_nfi_wcs, quickpunch_nfi_shape)
 
-    for i, data_cube in enumerate(data_cubes):
-        data = data_list_nfi[0].data
-        uncertainty = data_list_nfi[0].uncertainty.array
+    for i, data_cube in enumerate(data_list_nfi):
+        data = data_cube.data
+        uncertainty = data_cube.uncertainty.array
 
         isnan = np.isnan(data)
         uncertainty[isnan] = np.inf

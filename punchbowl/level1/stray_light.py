@@ -19,7 +19,7 @@ from punchbowl.util import nan_percentile
 
 @punch_flow
 def estimate_stray_light(filepaths: list[str],
-                         percentile: float = 3,
+                         percentile: float = 1,
                          do_uncertainty: bool = True) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
     data = None

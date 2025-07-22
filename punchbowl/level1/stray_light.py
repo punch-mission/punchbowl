@@ -13,14 +13,14 @@ from punchbowl.exceptions import (
     InvalidDataError,
     LargeTimeDeltaWarning,
 )
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import nan_percentile
 
 
-def estimate_stray_light(
-        filepaths: list[str],
-        percentile: float = 3,
-        do_uncertainty: bool = True) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+@punch_flow
+def estimate_stray_light(filepaths: list[str],
+                         percentile: float = 3,
+                         do_uncertainty: bool = True) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
     data = None
     uncertainties = None

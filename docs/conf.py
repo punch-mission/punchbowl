@@ -73,6 +73,7 @@ copy_and_truncate_csv(src_csv_path, dest_csv_path, columns_to_include, filter_co
 
 extensions = ["autoapi.extension",
               "sphinx.ext.autodoc",
+              "sphinx.ext.viewcode",
               "sphinx.ext.napoleon",
               "sphinx_rtd_theme",
               "sphinx_favicon",

@@ -2,6 +2,10 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Latest - Unreleased
+
+- Adds docs button to view source in https://github.com/punch-mission/punchbowl/pull/526
+
 ## Version 0.0.16: July 3, 2025
 
 - Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510

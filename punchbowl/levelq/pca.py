@@ -46,7 +46,10 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
         _all_files_to_fit, bodies_in_quarter, to_subtract, is_masked, is_outlier = load_files(
             input_cubes, files_to_fit, outlier_limits, blend_size)
         # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
-        with _log_forwarder(), threadpool_limits(min(25, os.cpu_count())), mp.Pool(min(n_strides, os.cpu_count())) as p:
+        ctx = mp.get_context("fork")
+        with (_log_forwarder(),
+              threadpool_limits(min(25, os.cpu_count())),
+              ctx.Pool(min(n_strides, os.cpu_count())) as p):
             for subtracted_cube_indices, subtracted_images in p.starmap(
                     pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
                                                repeat(to_subtract), repeat(n_components), repeat(med_filt),
@@ -145,7 +148,8 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     # copy-on-write. Using a forkserver avoids that work.
     ctx = mp.get_context("forkserver")
     with ctx.Pool(min(25, os.cpu_count())) as p:
-        bodies_in_quarter = np.array(p.starmap(find_bodies_in_image, zip(body_finding_inputs, repeat(blend_size))))
+        bodies_in_quarter = np.array(p.starmap(find_bodies_in_image_quarters,
+                                               zip(body_finding_inputs, repeat(blend_size))))
 
     return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices, is_masked, is_outlier
 
@@ -223,7 +227,7 @@ def run_pca_filtering(images_to_subtract: np.ndarray, images_to_fit: np.ndarray,
     return images_to_subtract - reconstructed
 
 
-def find_bodies_in_image(frame: str | NDCube | tuple[NormalizedMetadata, WCS], extra_padding: int = 0) -> list:
+def find_bodies_in_image_quarters(frame: str | NDCube | tuple[NormalizedMetadata, WCS], extra_padding: int = 0) -> list:
     """Find celestial bodies in image."""
     if isinstance(frame, str):
         header = fits.getheader(frame, 1)
@@ -246,6 +250,7 @@ def find_bodies_in_image(frame: str | NDCube | tuple[NormalizedMetadata, WCS], e
     for body in ["Mercury", "Venus", "Moon", "Mars", "Jupiter", "Saturn"]:
         body_loc = get_body(body, time=Time(wcs.wcs.dateobs), location=EarthLocation.from_geodetic(*location))
         x, y = wcs.world_to_pixel(body_loc)
+        # Extra margin for the big moon
         w = 100 if body == "Moon" else 10
         w += extra_padding
         in_left = 0 - w <= x <= image_shape[1] / 2 + w

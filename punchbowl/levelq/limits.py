@@ -54,18 +54,20 @@ class Limit:
 
         limit_value = np.interp(x, self.xs, self.ys)
 
-        if self.comp == "<":
-            return y < limit_value
-        if self.comp == ">":
-            return y > limit_value
-        if self.comp in ["=", "=="]:
-            return y == limit_value
-        if self.comp == ">=":
-            return y >= limit_value
-        if self.comp == "<=":
-            return y <= limit_value
-        ruff_says = "Unrecognized comparison type"
-        raise ValueError(ruff_says)
+        match self.comp:
+            case "<":
+                return y < limit_value
+            case ">":
+                return y > limit_value
+            case "=" | "==":
+                return y == limit_value
+            case ">=":
+                return y >= limit_value
+            case "<=":
+                return y <= limit_value
+            case _:
+                ruff_says = "Unrecognized comparison type"
+                raise ValueError(ruff_says)
 
     def plot(self, points: list[Header | NormalizedMetadata | Iterable] | None = None) -> None:
         """Plot the limit."""

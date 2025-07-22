@@ -23,7 +23,30 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                          files_to_fit: list[str | NDCube | DataLoader] | None = None,
                          outlier_limits: str | None = None,
                          data_root: str | None = None) -> list[NDCube]:
-    """Level quickPUNCH NFI core flow."""
+    """
+    Run the LQ CNN flow.
+
+    This flow is designed to run on a batch of input CR4 images to facilitate more efficient PCA fitting.
+
+    Parameters
+    ----------
+    data_list : list[str | NDCube]
+        The input images, either as paths or NDCubes
+    output_filename : list[str]
+        Optional output paths at which the CNN files should be written
+    files_to_fit : list[str | NDCube | DataLoader]
+        Additional files to use for the PCA fitting, but not to actually be filtered or output
+    outlier_limits : str
+        A path to a `LimitSet` to use for outlier rejection in the PCA fitting
+    data_root : str
+        The root directory which the paths in ``data_list`` are relative to
+
+    Returns
+    -------
+    output_cubes : list[NDCube]
+        The CNN data cubes
+
+    """
     logger = get_run_logger()
     logger.info("beginning level quickPUNCH CNN core flow")
     logger.info(f"Got {len(data_list)} input files and {len(files_to_fit)} extra files for fitting")

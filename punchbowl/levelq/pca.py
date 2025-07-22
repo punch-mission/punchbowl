@@ -43,7 +43,7 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
         # those images don't have to be individually copied to each worker process. The try/finally block ensures we
         # don't leak this memory.
         global _all_files_to_fit # noqa: PLW0603
-        _all_files_to_fit, bodies_in_quarter, to_subtract, is_masked, is_outlier = load_files(
+        _all_files_to_fit, bodies_in_quarter, to_subtract, good_data_mask, is_outlier = load_files(
             input_cubes, files_to_fit, outlier_limits, blend_size)
         # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
         ctx = mp.get_context("fork")
@@ -53,7 +53,7 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
             for subtracted_cube_indices, subtracted_images in p.starmap(
                     pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
                                                repeat(to_subtract), repeat(n_components), repeat(med_filt),
-                                               repeat(blend_size), repeat(is_masked), repeat(is_outlier))):
+                                               repeat(blend_size), repeat(good_data_mask), repeat(is_outlier))):
                 for index, image in zip(subtracted_cube_indices, subtracted_images, strict=False):
                     input_cubes[index].data[...] = image
     finally:
@@ -67,10 +67,9 @@ def check_file(meta: NormalizedMetadata, outlier_limits: LimitSet | None) -> boo
     return outlier_limits.is_good(meta) if outlier_limits is not None else True
 
 
-@punch_task
-def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | DataLoader],
+def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | DataLoader], # noqa: C901
                outlier_limits: LimitSet | None = None,
-               blend_size: int = 70) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+               blend_size: int = 70) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Load files."""
     logger = get_run_logger()
 
@@ -78,7 +77,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     # be subtracted and where they are in the original list of input cubes. We sort by observation time to ensure the
     # staggered dropping of files is spread evenly over time.
     things_to_load = np.array(input_cubes + files_to_fit, dtype=object)
-    input_list_indices = np.concatenate((range(len(input_cubes)), [-1] * len(files_to_fit)))
+    input_list_indices = np.concatenate((range(len(input_cubes)), [-1] * len(files_to_fit))).astype(int)
     def sort_key(thing: str | NDCube | DataLoader) -> str:
         if isinstance(thing, str):
             return os.path.basename(thing)
@@ -101,12 +100,12 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     body_finding_inputs = []
     # If a file-to-be-subtracted is an outlier, we want to keep it in the stack so we can still try to subtract it,
     # but we don't want it to factor in to the fitting, so we mark it here.
-    is_outlier = []
+    loaded_outlier_indices = []
     # We want to know which pixels are masked in every image. It's possible we'll have files made with two different
     # versions of the mask, so here we detect which pixels are maxed by looking for data == 0 and uncertainty == inf,
     # and we track which pixels satisfy that for every image.
     is_masked = np.ones(input_cubes[0].data.shape, dtype=bool)
-    for input_file, subtract in zip(things_to_load, input_list_indices, strict=False):
+    for input_file, input_list_index in zip(things_to_load, input_list_indices, strict=False):
         if isinstance(input_file, NDCube):
             data, meta = input_file.data, input_file.meta
             body_finding_input = (input_file.meta, input_file.wcs)
@@ -122,20 +121,22 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
         else:
             raise TypeError(f"Invalid type {type(input_file)} for input file")
         is_good = check_file(meta, outlier_limits)
-        if is_good or subtract >= 0:
-            loaded_input_list_indices.append(subtract)
+        if is_good or input_list_index >= 0:
+            loaded_input_list_indices.append(input_list_index)
             all_files_to_fit[index_to_insert] = data
             index_to_insert += 1
             body_finding_inputs.append(body_finding_input)
             is_masked *= uncertainty_is_inf * (data == 0)
-            is_outlier.append(not is_good)
             if not is_good:
+                loaded_outlier_indices.append(input_list_index)
                 n_outliers += 1
         else:
             n_outliers += 1
 
     loaded_input_list_indices = np.array(loaded_input_list_indices)
-    is_outlier = np.array(is_outlier)
+    is_outlier = np.full(len(all_files_to_fit), False, dtype=bool)
+    for index in loaded_outlier_indices:
+        is_outlier[index] = True
 
     # Crop the unused end of the array
     all_files_to_fit = all_files_to_fit[:index_to_insert]
@@ -151,11 +152,13 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
         bodies_in_quarter = np.array(p.starmap(find_bodies_in_image_quarters,
                                                zip(body_finding_inputs, repeat(blend_size))))
 
-    return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices, is_masked, is_outlier
+    good_data_mask = ~is_masked
+
+    return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices, good_data_mask, is_outlier
 
 
 def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, input_list_indices: np.ndarray,
-                          n_components: int, med_filt: int, blend_size: int, masked_region: np.ndarray,
+                          n_components: int, med_filt: int, blend_size: int, good_data_mask: np.ndarray,
                           is_outlier: np.ndarray, logger: logging.Logger | None = None,
                           ) -> tuple[np.ndarray, np.ndarray]:
     """Run PCA-based filtering for one stride position."""
@@ -195,7 +198,7 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
         tag = f"stride {stride}, quarter {i+1}"
         logger.info(f"Starting to filter {tag}, fitting {len(images_to_fit)} images")
         filtered_by_quarter = run_pca_filtering(images_to_subtract, images_to_fit, n_components, med_filt, tag,
-                                                masked_region, logger)
+                                                good_data_mask, logger)
         if i == 0:
             final_reconstruction = mask * filtered_by_quarter
         else:
@@ -205,25 +208,25 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
 
 
 def run_pca_filtering(images_to_subtract: np.ndarray, images_to_fit: np.ndarray, n_components: int,
-                      med_filt: int, tag: str, masked_region: np.ndarray, logger: logging.Logger) -> np.ndarray:
+                      med_filt: int, tag: str, good_data_mask: np.ndarray, logger: logging.Logger) -> np.ndarray:
     """Run PCA filtering."""
     pca = PCA(n_components=n_components)
     # The image array has to be re-shaped into (n_images, n_pixels). (i.e., PCA wants 1D vectors, not 2D images)
-    pca.fit(images_to_fit[:, masked_region])
+    pca.fit(images_to_fit[:, good_data_mask])
     logger.info(f"Fitting finished for {tag}")
 
-    transformed = pca.transform(images_to_subtract[:, masked_region])
+    transformed = pca.transform(images_to_subtract[:, good_data_mask])
 
     if med_filt:
         for i in range(len(pca.components_)):
             comp = np.zeros(images_to_fit.shape[1:], dtype=pca.components_[i].dtype)
-            comp[masked_region] = pca.components_[i]
+            comp[good_data_mask] = pca.components_[i]
             comp = scipy.signal.medfilt2d(comp, med_filt)
-            pca.components_[i] = comp[masked_region]
+            pca.components_[i] = comp[good_data_mask]
         logger.info(f"Median smoothing finished for {tag}")
 
     reconstructed = np.zeros_like(images_to_subtract)
-    reconstructed[:, masked_region] = pca.inverse_transform(transformed)
+    reconstructed[:, good_data_mask] = pca.inverse_transform(transformed)
     return images_to_subtract - reconstructed
 
 

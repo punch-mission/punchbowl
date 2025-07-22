@@ -43,14 +43,14 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
         # those images don't have to be individually copied to each worker process. The try/finally block ensures we
         # don't leak this memory.
         global _all_files_to_fit # noqa: PLW0603
-        _all_files_to_fit, bodies_in_quarter, to_subtract, is_masked = load_files(input_cubes, files_to_fit,
-                                                                                  outlier_limits, blend_size)
+        _all_files_to_fit, bodies_in_quarter, to_subtract, is_masked, is_outlier = load_files(
+            input_cubes, files_to_fit, outlier_limits, blend_size)
         # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
         with _log_forwarder(), threadpool_limits(min(25, os.cpu_count())), mp.Pool(min(n_strides, os.cpu_count())) as p:
             for subtracted_cube_indices, subtracted_images in p.starmap(
                     pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
                                                repeat(to_subtract), repeat(n_components), repeat(med_filt),
-                                               repeat(blend_size), repeat(is_masked))):
+                                               repeat(blend_size), repeat(is_masked), repeat(is_outlier))):
                 for index, image in zip(subtracted_cube_indices, subtracted_images, strict=False):
                     input_cubes[index].data[...] = image
     finally:
@@ -96,6 +96,9 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     loaded_input_list_indices = []
     n_outliers = 0
     body_finding_inputs = []
+    # If a file-to-be-subtracted is an outlier, we want to keep it in the stack so we can still try to subtract it,
+    # but we don't want it to factor in to the fitting, so we mark it here.
+    is_outlier = []
     # We want to know which pixels are masked in every image. It's possible we'll have files made with two different
     # versions of the mask, so here we detect which pixels are maxed by looking for data == 0 and uncertainty == inf,
     # and we track which pixels satisfy that for every image.
@@ -115,16 +118,21 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
             body_finding_input = (meta, wcs)
         else:
             raise TypeError(f"Invalid type {type(input_file)} for input file")
-        if check_file(meta, outlier_limits):
+        is_good = check_file(meta, outlier_limits)
+        if is_good or subtract >= 0:
             loaded_input_list_indices.append(subtract)
             all_files_to_fit[index_to_insert] = data
             index_to_insert += 1
             body_finding_inputs.append(body_finding_input)
             is_masked *= uncertainty_is_inf * (data == 0)
+            is_outlier.append(not is_good)
+            if not is_good:
+                n_outliers += 1
         else:
             n_outliers += 1
 
     loaded_input_list_indices = np.array(loaded_input_list_indices)
+    is_outlier = np.array(is_outlier)
 
     # Crop the unused end of the array
     all_files_to_fit = all_files_to_fit[:index_to_insert]
@@ -139,12 +147,13 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     with ctx.Pool(min(25, os.cpu_count())) as p:
         bodies_in_quarter = np.array(p.starmap(find_bodies_in_image, zip(body_finding_inputs, repeat(blend_size))))
 
-    return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices, is_masked
+    return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices, is_masked, is_outlier
 
 
 def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, input_list_indices: np.ndarray,
                           n_components: int, med_filt: int, blend_size: int, masked_region: np.ndarray,
-                          logger: logging.Logger | None = None) -> tuple[np.ndarray, np.ndarray]:
+                          is_outlier: np.ndarray, logger: logging.Logger | None = None,
+                          ) -> tuple[np.ndarray, np.ndarray]:
     """Run PCA-based filtering for one stride position."""
     # This sets up a logger that forwards entries through a queue to the main process, where they can be forwarded to
     # Prefect. This is required because Prefect can't log from forked worker processes.
@@ -178,7 +187,7 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
         # We mark the images that don't have any planets in the quarter we're filtering for (since those can
         # contaminate the PCA components)
         no_bodies_in_quarter = np.all(bodies_in_quarter[:, :, i] == False, axis=1) # noqa: E712
-        images_to_fit = _all_files_to_fit[no_bodies_in_quarter * ~to_subtract_filter]
+        images_to_fit = _all_files_to_fit[no_bodies_in_quarter * ~to_subtract_filter * ~is_outlier]
         tag = f"stride {stride}, quarter {i+1}"
         logger.info(f"Starting to filter {tag}, fitting {len(images_to_fit)} images")
         filtered_by_quarter = run_pca_filtering(images_to_subtract, images_to_fit, n_components, med_filt, tag,

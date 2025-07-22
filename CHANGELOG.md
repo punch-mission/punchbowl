@@ -5,6 +5,10 @@
 ## Latest - Unreleased
 
 - Adds docs button to view source in https://github.com/punch-mission/punchbowl/pull/526
+- Fixes constant deficient pixel map creation in https://github.com/punch-mission/punchbowl/pull/522
+- Adds a quickfix for parsing input filenames for the calibration CLI tool in https://github.com/punch-mission/punchbowl/pull/516
+- Adds docstring to PSF function in https://github.com/punch-mission/punchbowl/pull/519
+- Updates vignetting calibration command in https://github.com/punch-mission/punchbowl/pull/523
 
 ## Version 0.0.16: July 3, 2025
 

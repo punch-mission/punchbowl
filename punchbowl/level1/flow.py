@@ -69,7 +69,8 @@ def level1_core_flow(  # noqa: C901
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
     vignetting_function_path: str | Callable | None = None,
-    stray_light_path: str | None = None,
+    stray_light_before_path: str | None = None,
+    stray_light_after_path: str | None = None,
     deficient_pixel_map_path: str | None = None,
     deficient_pixel_method: str = "median",
     deficient_pixel_required_good_count: int = 3,
@@ -151,7 +152,7 @@ def level1_core_flow(  # noqa: C901
         if return_with_stray_light:
             data_with_stray_light = data.data.copy()
             uncertainty_with_stray_light = data.uncertainty.array.copy()
-        data = remove_stray_light_task(data, stray_light_path)
+        data = remove_stray_light_task(data, stray_light_before_path, stray_light_after_path)
         data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
 
         observatory = int(data.meta["OBSCODE"].value)
@@ -195,7 +196,8 @@ def level1_core_flow(  # noqa: C901
             _, vignetting_function_path = vignetting_function_path()
         new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
 
-        new_meta["CALSL"] = os.path.basename(stray_light_path) if stray_light_path else ""
+        # TODO - Update this for both stray light models
+        new_meta["CALSL"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
 
         if isinstance(quartic_coefficient_path, Callable):
             _, quartic_coefficient_path = quartic_coefficient_path()

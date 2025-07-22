@@ -43,14 +43,14 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
         # those images don't have to be individually copied to each worker process. The try/finally block ensures we
         # don't leak this memory.
         global _all_files_to_fit # noqa: PLW0603
-        _all_files_to_fit, bodies_in_quarter, to_subtract = load_files(input_cubes, files_to_fit, outlier_limits,
-                                                                       blend_size)
+        _all_files_to_fit, bodies_in_quarter, to_subtract, is_masked = load_files(input_cubes, files_to_fit,
+                                                                                  outlier_limits, blend_size)
         # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
         with _log_forwarder(), threadpool_limits(min(25, os.cpu_count())), mp.Pool(min(n_strides, os.cpu_count())) as p:
             for subtracted_cube_indices, subtracted_images in p.starmap(
                     pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
                                                repeat(to_subtract), repeat(n_components), repeat(med_filt),
-                                               repeat(blend_size))):
+                                               repeat(blend_size), repeat(is_masked))):
                 for index, image in zip(subtracted_cube_indices, subtracted_images, strict=False):
                     input_cubes[index].data[...] = image
     finally:
@@ -67,7 +67,7 @@ def check_file(meta: NormalizedMetadata, outlier_limits: LimitSet | None) -> boo
 @punch_task
 def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | DataLoader],
                outlier_limits: LimitSet | None = None,
-               blend_size: int = 70) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+               blend_size: int = 70) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Load files."""
     logger = get_run_logger()
 
@@ -96,16 +96,22 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     loaded_input_list_indices = []
     n_outliers = 0
     body_finding_inputs = []
+    # We want to know which pixels are masked in every image. It's possible we'll have files made with two different
+    # versions of the mask, so here we detect which pixels are maxed by looking for data == 0 and uncertainty == inf,
+    # and we track which pixels satisfy that for every image.
+    is_masked = np.ones(input_cubes[0].data.shape, dtype=bool)
     for input_file, subtract in zip(things_to_load, input_list_indices, strict=False):
         if isinstance(input_file, NDCube):
             data, meta = input_file.data, input_file.meta
             body_finding_input = (input_file.meta, input_file.wcs)
+            uncertainty_is_inf = np.isinf(input_file.uncertainty.array)
         elif isinstance(input_file, str):
-            cube = load_image_task(input_file, include_provenance=False, include_uncertainty=False)
+            cube = load_image_task(input_file, include_provenance=False, include_uncertainty=True)
             data, meta = cube.data, cube.meta
             body_finding_input = (cube.meta, cube.wcs)
+            uncertainty_is_inf = np.isinf(cube.uncertainty.array)
         elif isinstance(input_file, DataLoader):
-            data, meta, wcs = input_file.load()
+            data, meta, wcs, uncertainty_is_inf = input_file.load()
             body_finding_input = (meta, wcs)
         else:
             raise TypeError(f"Invalid type {type(input_file)} for input file")
@@ -114,6 +120,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
             all_files_to_fit[index_to_insert] = data
             index_to_insert += 1
             body_finding_inputs.append(body_finding_input)
+            is_masked *= uncertainty_is_inf * (data == 0)
         else:
             n_outliers += 1
 
@@ -132,11 +139,11 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     with ctx.Pool(min(25, os.cpu_count())) as p:
         bodies_in_quarter = np.array(p.starmap(find_bodies_in_image, zip(body_finding_inputs, repeat(blend_size))))
 
-    return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices
+    return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices, is_masked
 
 
 def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, input_list_indices: np.ndarray,
-                          n_components: int, med_filt: int, blend_size: int,
+                          n_components: int, med_filt: int, blend_size: int, masked_region: np.ndarray,
                           logger: logging.Logger | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Run PCA-based filtering for one stride position."""
     # This sets up a logger that forwards entries through a queue to the main process, where they can be forwarded to
@@ -174,7 +181,8 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
         images_to_fit = _all_files_to_fit[no_bodies_in_quarter * ~to_subtract_filter]
         tag = f"stride {stride}, quarter {i+1}"
         logger.info(f"Starting to filter {tag}, fitting {len(images_to_fit)} images")
-        filtered_by_quarter = run_pca_filtering(images_to_subtract, images_to_fit, n_components, med_filt, tag, logger)
+        filtered_by_quarter = run_pca_filtering(images_to_subtract, images_to_fit, n_components, med_filt, tag,
+                                                masked_region, logger)
         if i == 0:
             final_reconstruction = mask * filtered_by_quarter
         else:
@@ -184,23 +192,25 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
 
 
 def run_pca_filtering(images_to_subtract: np.ndarray, images_to_fit: np.ndarray, n_components: int,
-                      med_filt: int, tag: str, logger: logging.Logger) -> np.ndarray:
+                      med_filt: int, tag: str, masked_region: np.ndarray, logger: logging.Logger) -> np.ndarray:
     """Run PCA filtering."""
     pca = PCA(n_components=n_components)
     # The image array has to be re-shaped into (n_images, n_pixels). (i.e., PCA wants 1D vectors, not 2D images)
-    pca.fit(images_to_fit.reshape((len(images_to_fit), -1)))
+    pca.fit(images_to_fit[:, masked_region])
     logger.info(f"Fitting finished for {tag}")
 
-    transformed = pca.transform(images_to_subtract.reshape((len(images_to_subtract), -1)))
+    transformed = pca.transform(images_to_subtract[:, masked_region])
 
     if med_filt:
         for i in range(len(pca.components_)):
-            comp = pca.components_[i].reshape(images_to_fit.shape[1:])
+            comp = np.zeros(images_to_fit.shape[1:], dtype=pca.components_[i].dtype)
+            comp[masked_region] = pca.components_[i]
             comp = scipy.signal.medfilt2d(comp, med_filt)
-            pca.components_[i] = comp.ravel()
+            pca.components_[i] = comp[masked_region]
         logger.info(f"Median smoothing finished for {tag}")
 
-    reconstructed = pca.inverse_transform(transformed).reshape(images_to_subtract.shape)
+    reconstructed = np.zeros_like(images_to_subtract)
+    reconstructed[:, masked_region] = pca.inverse_transform(transformed)
     return images_to_subtract - reconstructed
 
 

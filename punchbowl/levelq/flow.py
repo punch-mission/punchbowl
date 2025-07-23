@@ -12,7 +12,7 @@ from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_w
 from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.levelq.pca import pca_filter
-from punchbowl.util import average_datetime, load_image_task, output_image_task
+from punchbowl.util import average_datetime, find_first_existing_file, load_image_task, output_image_task
 
 ORDER_QP = ["CR1", "CR2", "CR3", "CNN"]
 
@@ -102,7 +102,7 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
         output_data_mosaic.meta["DATE-OBS"] = output_dateobs
         output_data_mosaic.meta["DATE-BEG"] = output_datebeg
         output_data_mosaic.meta["DATE-END"] = output_dateend
-        output_data_mosaic.meta["FILEVRSN"] = ordered_data_list[0].meta["FILEVRSN"].value
+        output_data_mosaic.meta["FILEVRSN"] = find_first_existing_file(data_list).meta["FILEVRSN"].value
         output_data_mosaic = set_spacecraft_location_to_earth(output_data_mosaic)
     else:
         output_dateobs = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

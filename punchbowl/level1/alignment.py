@@ -14,6 +14,7 @@ from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
 from lmfit import Parameters, minimize
 from ndcube import NDCube
+from regularizepsf import ArrayPSFTransform
 from skimage.transform import resize
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
@@ -253,7 +254,7 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
 
     Returns
     -------
-    pd.DataFrame
+    pd.DataFrame`
         a catalog with stars dimmer than the `dimmest_magnitude` removed
 
     """
@@ -613,28 +614,33 @@ def measure_wcs_error(
 def build_distortion_model(
     l0_paths: list[str],
     dimmest_magnitude: float = 6.5,
-    num_bins: int = 60) -> WCS:
+    num_bins: int = 60,
+    psf_transform: ArrayPSFTransform | None = None) -> WCS:
     """Create a distortion model from a set of PUNCH L0 images."""
     refined_wcses = []
+    image_cube = []
     for path in l0_paths:
         with fits.open(path) as hdul:
+            image_head = hdul[1].header
             image_data = hdul[1].data.astype(float)
+            image_data = image_data ** 2 / image_head["SCALE"]
+            if psf_transform is not None:
+                saturation_threshold = image_head["DSATVAL"]**2/image_head["SCALE"]*0.9
+                image_data = psf_transform.apply(image_data,
+                                                 saturation_threshold=saturation_threshold).copy()
             img_shape = image_data.shape
             image_wcs = WCS(hdul[1].header, hdul, key="A")
             mask = image_data != 0
 
         solved_wcs = solve_pointing(image_data, image_wcs)
 
+        image_cube.append(image_data)
         refined_wcses.append(solved_wcs)
 
     catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=dimmest_magnitude)
     all_distortions = []
 
-    for path, new_wcs in zip(l0_paths, refined_wcses, strict=False):
-        with fits.open(path.replace(".wcs", ".fits")) as hdul:
-            image_data = hdul[1].data.astype(float)
-            image_wcs = WCS(hdul[1].header, hdul, key="A")
-
+    for image_data, new_wcs in zip(image_cube, refined_wcses, strict=False):
         stars_in_image = find_catalog_in_image(catalog, new_wcs, image_data.shape)
         subcoords = np.column_stack([[stars_in_image["RAdeg"], stars_in_image["DEdeg"]]]).T
         refined_coords = new_wcs.all_world2pix(subcoords, 0)

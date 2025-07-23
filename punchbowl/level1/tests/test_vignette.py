@@ -1,6 +1,7 @@
 import pathlib
 from datetime import datetime
 
+import numpy as np
 import pytest
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
@@ -12,12 +13,11 @@ from punchbowl.exceptions import (
     InvalidDataError,
     LargeTimeDeltaWarning,
 )
-from punchbowl.level1.vignette import correct_vignetting_task
+from punchbowl.level1.vignette import correct_vignetting_task, generate_vignetting_calibration
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
-@pytest.mark.prefect_test()
 def test_check_calibration_time_delta_warning(sample_ndcube) -> None:
     """
     If the time between the data of interest and the calibration file is too great, then a warning is raised.
@@ -33,7 +33,6 @@ def test_check_calibration_time_delta_warning(sample_ndcube) -> None:
             assert isinstance(corrected_punchdata, NDCube)
 
 
-@pytest.mark.prefect_test()
 def test_no_vignetting_file(sample_ndcube) -> None:
     """
     An invalid vignetting file should be provided. Check that an error is raised.
@@ -48,7 +47,6 @@ def test_no_vignetting_file(sample_ndcube) -> None:
         assert corrected_punchdata.meta.history[0].comment == 'Vignetting skipped'
 
 
-@pytest.mark.prefect_test()
 def test_invalid_vignetting_file(sample_ndcube) -> None:
     """
     An invalid vignetting file should be provided. Check that an error is raised.
@@ -62,7 +60,6 @@ def test_invalid_vignetting_file(sample_ndcube) -> None:
             corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
 
 
-@pytest.mark.prefect_test()
 def test_invalid_polarization_state(sample_ndcube) -> None:
     """
     Check that a mismatch between polarization states in the vignetting function and data raises an error.
@@ -77,7 +74,6 @@ def test_invalid_polarization_state(sample_ndcube) -> None:
             assert isinstance(corrected_punchdata, NDCube)
 
 
-@pytest.mark.prefect_test()
 def test_invalid_telescope(sample_ndcube) -> None:
     """
     Check that a mismatch between telescopes in the vignetting function and data raises an error.
@@ -93,7 +89,6 @@ def test_invalid_telescope(sample_ndcube) -> None:
             assert isinstance(corrected_punchdata, NDCube)
 
 
-@pytest.mark.prefect_test()
 def test_invalid_data_file(sample_ndcube) -> None:
     """
     An invalid vignetting file should be provided. Check that an error is raised.
@@ -107,7 +102,6 @@ def test_invalid_data_file(sample_ndcube) -> None:
             corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
 
 
-@pytest.mark.prefect_test()
 def test_vignetting_correction(sample_ndcube) -> None:
     """
     A valid vignetting file should be provided. Check that a corrected PUNCHData object is generated.
@@ -120,3 +114,10 @@ def test_vignetting_correction(sample_ndcube) -> None:
         corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
 
     assert isinstance(corrected_punchdata, NDCube)
+
+
+def test_generate_vignetting_calibration() -> None:
+    """Test that vignetting calibration data is generated"""
+    vignetting_data = generate_vignetting_calibration("data.dat", "mask.bin", spacecraft="4")
+    assert isinstance(vignetting_data, np.ndarray)
+    assert vignetting_data.shape == (2048, 2048)

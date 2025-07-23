@@ -61,6 +61,10 @@ class History:
         """
         self._entries = []
 
+    def clear_entries_from_source(self, source: str) -> None:
+        """Clear all history entries from a given source."""
+        self._entries = [entry for entry in self._entries if entry.source != source]
+
     def __getitem__(self, index: int) -> HistoryEntry:
         """
         Given an index, return the requested HistoryEntry.
@@ -110,6 +114,10 @@ class History:
         """Iterate."""
         self.current_index = 0
         return self
+
+    def __hash__(self) -> int:
+        """Hash a history object."""
+        return sum([hash(e) for e in self._entries])
 
     def __next__(self) -> HistoryEntry:
         """Get next."""

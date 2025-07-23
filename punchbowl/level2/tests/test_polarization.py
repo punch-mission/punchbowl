@@ -34,7 +34,6 @@ def test_resolve_polarization(sample_data_triplet):
     assert all(isinstance(output_punchdata, NDCube) for output_punchdata in output_punchdata_list)
 
 
-@pytest.mark.prefect_test
 def test_resolve_polarization_task(sample_data_triplet):
     """
     Test the resolve polarization prefect flow using a test harness

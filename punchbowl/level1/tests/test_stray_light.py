@@ -13,7 +13,6 @@ from punchbowl.level1.stray_light import remove_stray_light_task
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
-@pytest.mark.prefect_test()
 def test_check_calibration_time_delta_warning(sample_ndcube) -> None:
     """
     If the time between the data of interest and the calibration file is too great, then a warning is raised.
@@ -29,7 +28,6 @@ def test_check_calibration_time_delta_warning(sample_ndcube) -> None:
             assert isinstance(corrected_punchdata, NDCube)
 
 
-@pytest.mark.prefect_test()
 def test_no_straylight_file(sample_ndcube) -> None:
     """
     An invalid vignetting file should be provided. Check that an error is raised.

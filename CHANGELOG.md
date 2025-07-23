@@ -2,11 +2,30 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-## Unreleased
+## Latest - Unreleased
 
+- Adds docs button to view source in https://github.com/punch-mission/punchbowl/pull/526
+- Fixes constant deficient pixel map creation in https://github.com/punch-mission/punchbowl/pull/522
+- Adds a quickfix for parsing input filenames for the calibration CLI tool in https://github.com/punch-mission/punchbowl/pull/516
+- Adds docstring to PSF function in https://github.com/punch-mission/punchbowl/pull/519
+- Reduces memory usage of stray light model generation in https://github.com/punch-mission/punchbowl/pull/525
+- Updates vignetting calibration command in https://github.com/punch-mission/punchbowl/pull/523
+- Changed docstring in vignette.py #503 and transpose in destreak.py #487 in https://github.com/punch-mission/punchbowl/pull/530
+
+## Version 0.0.16: July 3, 2025
+
+- Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510
 - Relabels CCD halves in https://github.com/punch-mission/punchbowl/pull/493
 - Adds documentation for data versions and anomalies in https://github.com/punch-mission/punchbowl/pull/495
-- Changed docstring in vignette.py #503 and transpose in destreak.py #487 in https://github.com/punch-mission/punchbowl/pull/530
+- Separates LQ CNN and CTM into separate flows in https://github.com/punch-mission/punchbowl/pull/507
+- Avoid incorrectly coping some metadata from L0 to L1, and update PIPEVRSN in https://github.com/punch-mission/punchbowl/pull/508
+- Avoids mutating input cubes in `write_ndcube_to_fits` in https://github.com/punch-mission/punchbowl/pull/502
+- Ensures inf values in uncertainty layers roundtrip through compression in https://github.com/punch-mission/punchbowl/pull/506
+- Allow writing out L1s with stray light included in https://github.com/punch-mission/punchbowl/pull/509
+- Unified L2 clear and polarized flows in https://github.com/punch-mission/punchbowl/pull/513
+- Sets FILEVRSN in L2 flow in https://github.com/punch-mission/punchbowl/pull/514
+- Removes unused prefect test decorator in https://github.com/punch-mission/punchbowl/pull/515
+- Creates calibration creation CLI and adds hash functions as needed in https://github.com/punch-mission/punchbowl/pull/497
 
 ## Version 0.0.15: June 4, 2025
 

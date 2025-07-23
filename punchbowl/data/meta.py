@@ -21,6 +21,7 @@ from sunpy.coordinates import frames, get_earth, sun
 from sunpy.coordinates.sun import _sun_north_angle_to_z
 from sunpy.map import solar_angular_radius
 
+import punchbowl
 from punchbowl.data.history import History
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, extract_crota_from_wcs, get_p_angle
 from punchbowl.exceptions import MissingMetadataError
@@ -211,6 +212,11 @@ class MetaField:
         """Get a string."""
         return str(self._value)
 
+    def __hash__(self) -> int:
+        """Hash the field."""
+        return (hash(self._keyword) + hash(self._comment) + hash(self._value)
+                + hash(self._datatype) + hash(self.nullable) + hash(self._mutable) + hash(self._default))
+
 
 class NormalizedMetadata(Mapping):
     """
@@ -254,6 +260,15 @@ class NormalizedMetadata(Mapping):
         self._history = history if history is not None else History()
         self._provenance = provenance if provenance is not None else []
         self._wcs_section_name = wcs_section_name
+
+    def __hash__(self) -> int:
+        """Hash a NormalizedMetadata object."""
+        h = hash(self._history) + hash(self._wcs_section_name)
+        for k in self.keys():
+            h += hash(k) + hash(self.get(k))
+        for p in self.provenance:
+            h += hash(p)
+        return h
 
     def keys(self) -> t.Iterable[str]:
         """Return FITS keys for collection."""
@@ -630,6 +645,10 @@ class NormalizedMetadata(Mapping):
                             e["MUTABLE"],
                             default,
                         )
+
+        if "File Type and Provenance" in contents and "PIPEVRSN" in contents["File Type and Provenance"]:
+            contents["File Type and Provenance"]["PIPEVRSN"].value = punchbowl.__version__
+
         return cls(contents, history)
 
     @property

@@ -103,7 +103,24 @@ def correct_psf(
     psf_transform: ArrayPSFTransform,
     max_workers: int | None = None,
 ) -> NDCube:
-    """Correct PSF."""
+    """
+    Correct the PSF.
+
+    Parameters
+    ----------
+    data : NDCube
+        The input image
+    psf_transform : ArrayPSFTransform
+        The PSF transform that corresponds to the input images
+    max_workers : int | None
+        The maximum number of concurrent processes to use when performing the PSF transform
+
+    Returns
+    -------
+    NDCube
+        The corrected image
+
+    """
     new_data = psf_transform.apply(data.data, workers=max_workers)
 
     data.data[...] = new_data[...]

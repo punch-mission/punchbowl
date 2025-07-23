@@ -3,7 +3,10 @@ import pathlib
 import warnings
 from collections.abc import Callable
 
+import numpy as np
+from astropy.wcs import WCS
 from ndcube import NDCube
+from reproject import reproject_adaptive
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import (
@@ -93,3 +96,81 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
         data_object.meta.history.add_now("LEVEL1-correct_vignetting",
                                          f"Vignetting corrected using {os.path.basename(str(vignetting_path))}")
     return data_object
+
+
+def generate_vignetting_calibration(path_vignetting: str,
+                                    path_mask: str,
+                                    spacecraft: str,
+                                    vignetting_threshold: float = 1.2,
+                                    rows_ignore: tuple = (13,15),
+                                    rows_adjust: tuple = (15,16),
+                                    rows_adjust_source: tuple = (16,20)) -> np.ndarray:
+    """
+    Create calibration data for vignetting.
+
+    Parameters
+    ----------
+    path_vignetting : str
+        path to raw input vignetting function
+    path_mask : str
+        path to spacecraft mask function
+    spacecraft : str
+        spacecraft number
+    vignetting_threshold : float, optional
+        threshold for bad vignetting pixels, by default 1.2
+    rows_ignore : tuple, optional
+        rows to exclude entirely from original vignetting data, by default (13,15) for 128x128 input
+    rows_adjust : tuple, optional
+        rows to adjust to the minimum of a set of rows above (per column), by default (15,16) for 128x128 input
+    rows_adjust_source : tuple, optional
+        rows to use for statistics to adjust vignetting rows as above, by default (16,20) for 128x128 input
+
+    Returns
+    -------
+    np.ndarray
+        vignetting function array
+
+    """
+    if spacecraft in ["1", "2", "3"]:
+        with open(path_vignetting) as f:
+            lines = f.readlines()
+
+        with open(path_mask, "rb") as f:
+            byte_array = f.read()
+        mask = np.unpackbits(np.frombuffer(byte_array, dtype=np.uint8)).reshape(2048,2048)
+        mask = mask.T
+
+        num_bins, bin_size = lines[0].split()
+        num_bins = int(num_bins)
+        bin_size = int(bin_size)
+
+        values = np.array([float(v) for line in lines[1:] for v in line.split()])
+        vignetting = values[:num_bins**2].reshape((num_bins, num_bins))
+
+        vignetting[vignetting > vignetting_threshold] = np.nan
+
+        vignetting[rows_ignore[0]:rows_ignore[1],:] = np.nan
+        vignetting[rows_adjust[0]:rows_adjust[1],:] = np.min(vignetting[rows_adjust_source[0]:rows_adjust_source[1],:],
+                                                             axis=0)
+
+        wcs_vignetting = WCS(naxis=2)
+
+        wcs_wfi = WCS(naxis=2)
+        wcs_wfi.wcs.cdelt = wcs_wfi.wcs.cdelt * vignetting.shape[0] / 2048.
+
+        vignetting_reprojected = reproject_adaptive((vignetting, wcs_vignetting),
+                                                shape_out=(2048,2048),
+                                                output_projection=wcs_wfi,
+                                                boundary_mode="ignore",
+                                                bad_value_mode="ignore",
+                                                return_footprint=False)
+
+        vignetting_reprojected = vignetting_reprojected * mask
+
+        vignetting_reprojected[mask == 0] = 1
+
+        return vignetting_reprojected
+    if spacecraft=="4":
+        # TODO: implement NFI speckle inclusion
+        return np.ones((2048,2048))
+    raise RuntimeError(f"Unknown spacecraft {spacecraft}")

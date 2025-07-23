@@ -263,7 +263,7 @@ def write_ndcube_to_fits(cube: NDCube,
     hdul = cube.wcs.to_fits()
     hdul[0] = fits.PrimaryHDU()
     hdul.insert(1, hdu_data)
-    if meta["LEVEL"].value != "0":
+    if meta["LEVEL"].value != "0" and cube.uncertainty is not None:
         hdu_uncertainty = fits.CompImageHDU(data=_pack_uncertainty(cube),
                                             header=full_header,
                                             name="Uncertainty array",

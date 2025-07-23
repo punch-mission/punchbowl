@@ -13,8 +13,7 @@ from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_w
 from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.levelq.pca import pca_filter
-from punchbowl.util import DataLoader, average_datetime, find_first_existing_file load_image_task, output_image_task
-
+from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
 
 ORDER_QP = ["CR1", "CR2", "CR3", "CNN"]
 

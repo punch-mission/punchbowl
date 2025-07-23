@@ -121,7 +121,7 @@ def correct_psf(
         The corrected image
 
     """
-    new_data = psf_transform.apply(data.data, workers=max_workers)
+    new_data = psf_transform.apply(data.data, workers=max_workers, saturation_threshold=60_000)
 
     data.data[...] = new_data[...]
     # TODO: uncertainty propagation

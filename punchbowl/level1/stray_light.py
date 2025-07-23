@@ -25,8 +25,9 @@ def estimate_stray_light(filepaths: list[str],
         data[i] = cube.data
         if do_uncertainty:
             if uncertainties is None:
-                uncertainties = np.empty_like(data)
-            uncertainties[i] = cube.uncertainty.array
+                uncertainties[i] = np.empty_like(data)
+            else:
+                uncertainties[i] = cube.uncertainty.array
 
     stray_light_estimate = nan_percentile(data, percentile).squeeze()
 

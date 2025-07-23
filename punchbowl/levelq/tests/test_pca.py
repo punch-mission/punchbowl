@@ -1,4 +1,5 @@
 import numpy as np
+import prefect.logging
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
@@ -56,4 +57,5 @@ def test_that_pca_filter_runs():
                       uncertainty=StdDevUncertainty(uncertainty))
         cubes.append(cube)
 
-    pca_filter(cubes, [], n_components=20, med_filt=3, n_strides=2, blend_size=5)
+    with prefect.logging.disable_run_logger():
+        pca_filter.fn(cubes, [], n_components=20, med_filt=3, n_strides=2, blend_size=5)

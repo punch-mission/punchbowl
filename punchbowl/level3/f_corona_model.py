@@ -16,7 +16,7 @@ from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import nan_percentile
+from punchbowl.util import interpolate_data, nan_percentile
 
 
 def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
@@ -362,26 +362,9 @@ def subtract_f_corona_background(data_object: NDCube,
             msg,
         )
 
-    before_date = before_f_background_model.meta.datetime.timestamp()
-    after_date = after_f_background_model.meta.datetime.timestamp()
-    observation_date = data_object.meta.datetime.timestamp()
-
-    if before_date > observation_date:
-        msg = "Before F corona model was after the observation date"
-        raise InvalidDataError(msg)
-
-    if after_date < observation_date:
-        msg = "After F corona model was before the observation date"
-        raise InvalidDataError(msg)
-
-    if before_date == observation_date:
-        interpolated_model = before_f_background_model
-    elif after_date == observation_date:
-        interpolated_model = after_f_background_model
-    else:
-        interpolated_model = ((after_f_background_model.data - before_f_background_model.data)
-                              * (observation_date - before_date) / (after_date - before_date)
-                              + before_f_background_model.data)
+    interpolated_model = interpolate_data(before_f_background_model,
+                                          after_f_background_model,
+                                          data_object.meta.datetime)
 
     interpolated_model[np.isinf(data_object.uncertainty.array)] = 0
 

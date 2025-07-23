@@ -7,6 +7,7 @@ import numpy as np
 from ndcube import NDCube
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task
 
 
@@ -132,6 +133,33 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
     result[:, n_valid_obs == 0] = np.nan
 
     return result
+
+
+def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime) -> np.ndarray:
+    """Interpolates between two data objects."""
+    before_date = data_before.meta.datetime.timestamp()
+    after_date = data_after.meta.datetime.timestamp()
+    observation_date = reference_time.timestamp()
+
+    if before_date > observation_date:
+        msg = "Before data was after the observation date"
+        raise InvalidDataError(msg)
+
+    if after_date < observation_date:
+        msg = "After data was before the observation date"
+        raise InvalidDataError(msg)
+
+    if before_date == observation_date:
+        data_interpolated = data_before
+    elif after_date == observation_date:
+        data_interpolated = data_after
+    else:
+        data_interpolated = ((data_after.data - data_before.data)
+                              * (observation_date - before_date) / (after_date - before_date)
+                              + data_before.data)
+
+    return data_interpolated
+
 
 def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
     """Find the first cube that's not None in a list of NDCubes."""

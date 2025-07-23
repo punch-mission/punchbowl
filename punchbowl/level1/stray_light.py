@@ -3,9 +3,10 @@ import pathlib
 import warnings
 
 import numpy as np
+from astropy.wcs import WCS
 from ndcube import NDCube
 
-from punchbowl.data import load_ndcube_from_fits
+from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.exceptions import IncorrectPolarizationStateWarning, IncorrectTelescopeWarning, InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import interpolate_data, nan_percentile
@@ -20,6 +21,10 @@ def estimate_stray_light(filepaths: list[str],
     uncertainties = None
     for i, path in enumerate(filepaths):
         cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
+        if i == 0:
+            first_meta = cube.meta
+        if i == len(filepaths) - 1:
+            last_meta = cube.meta
         if data is None:
             data = np.empty((len(filepaths), *cube.data.shape))
         data[i] = cube.data
@@ -33,12 +38,19 @@ def estimate_stray_light(filepaths: list[str],
 
     stray_light_estimate = nan_percentile(data, percentile).squeeze()
 
-    if not do_uncertainty:
-        return stray_light_estimate
+    out_type = "S" + cube.meta.product_code[1:]
+    meta = NormalizedMetadata.load_template(out_type, "1")
+    meta["DATE-OBS"] = first_meta["DATE-OBS"].value
+    meta.history.add_now("stray light",
+                         f"Generated with {len(filepaths)} files running from "
+                         f"{first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
+    meta["FILEVRSN"] = first_meta["FILEVRSN"].value
 
-    uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths)
+    uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths) if do_uncertainty else None
 
-    return stray_light_estimate, uncertainty
+    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=WCS(naxis=2), uncertainty=uncertainty)
+
+    return [out_cube]
 
 
 @punch_task

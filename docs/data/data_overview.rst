@@ -75,6 +75,21 @@ These are images, derived from the Level 2 data, that are intended to be useful 
 background modeling scheme that permits low-latency production.  They're produced for NOAA's space weather forecasting infrastructure,
 but are also made available to other users.
 
+NFI images include a large and very dynamic stray light component. We are working on a technique to handle this. For
+now, we are using a PCA-based approach to fit and remove this stray light, and the F corona is also removed by it. We
+fit about 50 PCA components to a group of about 500 good images (i.e. not outlier images---no corrupted regions, no
+heavy saturation). The fitted components are then used to transform and un-transform an image to be subtracted. This
+reconstructed image, composed of only the leading PCA components, tends to contain the stray light and F corona but
+little of the K corona, and we subtract it out. The image to be subtracted is excluded from the set of images the PCA
+is fit to, to reduce the likelihood that dynamic K corona structure is contained in the PCA components. To reduce the
+impact of planets and the Moon, which can leave prominent artifacts in the leading PCA components, we divide the
+image plane into quarters. Each quarter is fit and filtered separately, with the fitting only using images that do
+not contain a planet or the Moon in that quarter. This quartering approach, combined with outlier image rejection,
+tends to reduce an initial set of 1000 images to about 500 that are actually fit for any one quarter of the image.
+
+Because this PCa approach removes the F corona from the NFI images but we are not yet subtracting the F corona from
+WFI images, NFI is currently excluded from the CTM mosaics, but this will be changed in the future.
+
 Level L: QuickLook
 ------------------
 

@@ -10,6 +10,7 @@
 - Adds docstring to PSF function in https://github.com/punch-mission/punchbowl/pull/519
 - Reduces memory usage of stray light model generation in https://github.com/punch-mission/punchbowl/pull/525
 - Updates vignetting calibration command in https://github.com/punch-mission/punchbowl/pull/523
+- Add Limit/LimitSet classes in LQ PCA; support batched PCA; add seam blending for quartered PCA in https://github.com/punch-mission/punchbowl/pull/529
 - Changed docstring in vignette.py #503 and transpose in destreak.py #487 in https://github.com/punch-mission/punchbowl/pull/530
 
 ## Version 0.0.16: July 3, 2025

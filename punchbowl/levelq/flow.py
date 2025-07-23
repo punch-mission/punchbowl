@@ -1,40 +1,80 @@
+import os
+import multiprocessing
 from datetime import UTC, datetime
-from collections.abc import Callable
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
-from punchbowl.data import NormalizedMetadata, get_base_file_name
+from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits
 from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_wcs
 from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.levelq.pca import pca_filter
-from punchbowl.util import average_datetime, load_image_task, output_image_task
+from punchbowl.util import DataLoader, average_datetime, load_image_task, output_image_task
 
 ORDER_QP = ["CR1", "CR2", "CR3", "CNN"]
 
 @flow(validate_parameters=False)
 def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                          output_filename: list[str] | None = None,
-                         files_to_fit: list[str | NDCube | Callable] | None = None) -> list[NDCube]:
-    """Level quickPUNCH NFI core flow."""
+                         files_to_fit: list[str | NDCube | DataLoader] | None = None,
+                         outlier_limits: str | None = None,
+                         data_root: str | None = None) -> list[NDCube]:
+    """
+    Run the LQ CNN flow.
+
+    This flow is designed to run on a batch of input CR4 images to facilitate more efficient PCA fitting.
+
+    Parameters
+    ----------
+    data_list : list[str | NDCube]
+        The input images, either as paths or NDCubes
+    output_filename : list[str]
+        Optional output paths at which the CNN files should be written
+    files_to_fit : list[str | NDCube | DataLoader]
+        Additional files to use for the PCA fitting, but not to actually be filtered or output
+    outlier_limits : str
+        A path to a `LimitSet` to use for outlier rejection in the PCA fitting
+    data_root : str
+        The root directory which the paths in ``data_list`` are relative to
+
+    Returns
+    -------
+    output_cubes : list[NDCube]
+        The CNN data cubes
+
+    """
     logger = get_run_logger()
     logger.info("beginning level quickPUNCH CNN core flow")
+    logger.info(f"Got {len(data_list)} input files and {len(files_to_fit)} extra files for fitting")
 
     output_cubes = []
-    for i, input_file in enumerate(data_list):
-        data_cube = load_image_task(input_file) if isinstance(input_file, str) else input_file
-        if files_to_fit:
-            pca_filter(data_cube, files_to_fit)
 
-        quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
+    data_cubes = [input_file for input_file in data_list if isinstance(input_file, NDCube)]
+    input_paths = [input_file for input_file in data_list if isinstance(input_file, str)]
+    if data_root is not None:
+        input_paths = [os.path.join(data_root, path) for path in input_paths]
 
-        data_list_nfi = reproject_many_flow([data_cube], quickpunch_nfi_wcs, quickpunch_nfi_shape)
-        data = data_list_nfi[0].data
-        uncertainty = data_list_nfi[0].uncertainty.array
+    # This parallelizes more effectively than running a lot of load_image_task in parallel, due to how Prefect would
+    # schedule those tasks. Experience shows that the main thread quickly gets overwhelmed by workers sending back
+    # loaded images, so more than a few worker processes doesn't help anything (but this is still faster than loading
+    # images in series!)
+    with multiprocessing.Pool(3) as p:
+        data_cubes += p.map(load_ndcube_from_fits, input_paths, chunksize=10)
+
+    logger.info("Loaded images to be subtracted")
+
+    pca_filter(data_cubes, files_to_fit, outlier_limits=outlier_limits)
+
+    quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
+    data_list_nfi = reproject_many_flow(data_cubes, quickpunch_nfi_wcs, quickpunch_nfi_shape)
+
+    for i, data_cube in enumerate(data_list_nfi):
+        data = data_cube.data
+        uncertainty = data_cube.uncertainty.array
 
         isnan = np.isnan(data)
         uncertainty[isnan] = np.inf

@@ -11,6 +11,7 @@
 - Reduces memory usage of stray light model generation in https://github.com/punch-mission/punchbowl/pull/525
 - Updates vignetting calibration command in https://github.com/punch-mission/punchbowl/pull/523
 - Implements rolling stray light models in https://github.com/punch-mission/punchbowl/pull/531
+- Changed docstring in vignette.py #503 and transpose in destreak.py #487 in https://github.com/punch-mission/punchbowl/pull/530
 
 ## Version 0.0.16: July 3, 2025
 

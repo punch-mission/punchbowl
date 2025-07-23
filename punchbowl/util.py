@@ -1,4 +1,6 @@
 import os
+import abc
+from typing import Generic, TypeVar
 from datetime import UTC, datetime
 
 import numpy as np
@@ -44,7 +46,7 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
     write_ndcube_to_fits(data, output_filename)
 
 
-@punch_task
+@punch_task(tags=["image_loader"])
 def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True) -> NDCube:
     """
     Prefect task to load data for processing.
@@ -138,3 +140,18 @@ def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
             return cube
     msg = "No cube found. All inputs are None."
     raise RuntimeError(msg)
+
+
+T = TypeVar("T")
+
+
+class DataLoader(abc.ABC, Generic[T]):
+    """Interface for passing callable objects instead of file paths to be loaded."""
+
+    @abc.abstractmethod
+    def load(self) -> T:
+        """Load the data."""
+
+    @abc.abstractmethod
+    def src_repr(self) -> str:
+        """Return a string representation of the data source."""

@@ -2,6 +2,20 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
+## Latest - Unreleased
+
+- Adds docs button to view source in https://github.com/punch-mission/punchbowl/pull/526
+- Fixes constant deficient pixel map creation in https://github.com/punch-mission/punchbowl/pull/522
+- Adds a quickfix for parsing input filenames for the calibration CLI tool in https://github.com/punch-mission/punchbowl/pull/516
+- Adds docstring to PSF function in https://github.com/punch-mission/punchbowl/pull/519
+- Reduces memory usage of stray light model generation in https://github.com/punch-mission/punchbowl/pull/525
+- Updates vignetting calibration command in https://github.com/punch-mission/punchbowl/pull/523
+- Implements rolling stray light models in https://github.com/punch-mission/punchbowl/pull/531
+- Add Limit/LimitSet classes in LQ PCA; support batched PCA; add seam blending for quartered PCA in https://github.com/punch-mission/punchbowl/pull/529
+- Changed docstring in vignette.py #503 and transpose in destreak.py #487 in https://github.com/punch-mission/punchbowl/pull/530
+- Output stray light models as NDCubes in https://github.com/punch-mission/punchbowl/pull/533
+- Rewrites pointing refinement in https://github.com/punch-mission/punchbowl/pull/524
+
 ## Version 0.0.16: July 3, 2025
 
 - Fixed vignetting docstring in https://github.com/punch-mission/punchbowl/pull/510

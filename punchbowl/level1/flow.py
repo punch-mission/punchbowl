@@ -69,7 +69,8 @@ def level1_core_flow(  # noqa: C901
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
     vignetting_function_path: str | Callable | None = None,
-    stray_light_path: str | None = None,
+    stray_light_before_path: str | None = None,
+    stray_light_after_path: str | None = None,
     deficient_pixel_map_path: str | None = None,
     deficient_pixel_method: str = "median",
     deficient_pixel_required_good_count: int = 3,
@@ -79,8 +80,8 @@ def level1_core_flow(  # noqa: C901
     output_filename: list[str] | None = None,
     max_workers: int | None = None,
     mask_path: str | None = None,
-    pointing_shift: tuple[float, float] = (0, 0),
     return_with_stray_light: bool = False,
+    do_align: bool = True,
 ) -> list[NDCube]:
     """Core flow for level 1."""
     logger = get_run_logger()
@@ -151,19 +152,10 @@ def level1_core_flow(  # noqa: C901
         if return_with_stray_light:
             data_with_stray_light = data.data.copy()
             uncertainty_with_stray_light = data.uncertainty.array.copy()
-        data = remove_stray_light_task(data, stray_light_path)
+        data = remove_stray_light_task(data, stray_light_before_path, stray_light_after_path)
         data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
-
-        observatory = int(data.meta["OBSCODE"].value)
-        if observatory < 4:
-            def alignment_mask(x:float, y:float) -> float:
-                return (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
-        else:
-            def alignment_mask(x: float, y: float) -> bool:
-                r = np.sqrt((x - 1024) ** 2 + (y - 1024) ** 2)
-                theta = np.rad2deg(np.arctan2(y - 1024, x - 1024)) + 180
-                return (r > 250) * (r < 950) * ((theta < 25) + (theta > 155))
-        data = align_task(data, distortion_path, mask=alignment_mask, pointing_shift=pointing_shift)
+        if do_align:
+            data = align_task(data, distortion_path)
 
         if mask_path:
             with open(mask_path, "rb") as f:
@@ -185,7 +177,7 @@ def level1_core_flow(  # noqa: C901
             if key in new_meta.keys(): # noqa: SIM118
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
-        new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value  # TODO: do this better and fill rest of meta
+        new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
 
         if isinstance(psf_model_path, Callable):
             _, psf_model_path = psf_model_path()
@@ -195,7 +187,8 @@ def level1_core_flow(  # noqa: C901
             _, vignetting_function_path = vignetting_function_path()
         new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
 
-        new_meta["CALSL"] = os.path.basename(stray_light_path) if stray_light_path else ""
+        # TODO - Update this for both stray light models
+        new_meta["CALSL"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
 
         if isinstance(quartic_coefficient_path, Callable):
             _, quartic_coefficient_path = quartic_coefficient_path()
@@ -236,6 +229,7 @@ def levelh_core_flow(
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
     psf_model_path: str | None = None,
+    distortion_path: str | None = None,
     output_filename: str | None = None,
 ) -> list[NDCube]:
     """Core flow for level 0.5 also known as level H."""
@@ -257,17 +251,7 @@ def levelh_core_flow(
                                                )
 
         data = correct_psf_task(data, psf_model_path)
-
-        observatory = int(data.meta["OBSCODE"].value)
-        if observatory < 4:
-            def alignment_mask(x:float, y:float) -> float:
-                return (x > 100) * (x < 1900) * (y > 250) * (y < 1900)
-        else:
-            def alignment_mask(x: float, y: float) -> bool:
-                r = np.sqrt((x - 1024) ** 2 + (y - 1024) ** 2)
-                theta = np.rad2deg(np.arctan2(y - 1024, x - 1024)) + 180
-                return (r > 250) * (r < 950) * ((theta < 25) + (theta > 155))
-        data = align_task(data, mask=alignment_mask)
+        data = align_task(data, distortion_path)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -278,7 +262,7 @@ def levelh_core_flow(
         for key in output_header:
             if (key in data.meta.keys()) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"): # noqa: SIM118
                 new_meta[key].value = data.meta[key].value
-
+        new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:

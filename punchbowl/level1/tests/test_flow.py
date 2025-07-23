@@ -26,7 +26,7 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
         output = level1_core_flow([input_name],
                                   quartic_coefficient_path=quartic_coefficient_path,
                                   vignetting_function_path=vignetting_path,
-                                  output_filename=[output_name])
+                                  output_filename=[output_name], do_align=False)
         assert isinstance(output[0], NDCube)
         assert os.path.exists(output_name[0])
 
@@ -45,5 +45,5 @@ def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
 
     output = level1_core_flow([cube],
                               quartic_coefficient_path=quartic_coefficient_path,
-                              vignetting_function_path=vignetting_path,)
+                              vignetting_function_path=vignetting_path, do_align=False)
     assert isinstance(output[0], NDCube)

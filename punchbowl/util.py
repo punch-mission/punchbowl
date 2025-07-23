@@ -1,10 +1,13 @@
 import os
+import abc
+from typing import Generic, TypeVar
 from datetime import UTC, datetime
 
 import numpy as np
 from ndcube import NDCube
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_task
 
 
@@ -44,7 +47,7 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
     write_ndcube_to_fits(data, output_filename)
 
 
-@punch_task
+@punch_task(tags=["image_loader"])
 def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True) -> NDCube:
     """
     Prefect task to load data for processing.
@@ -131,6 +134,33 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
 
     return result
 
+
+def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime) -> np.ndarray:
+    """Interpolates between two data objects."""
+    before_date = data_before.meta.datetime.timestamp()
+    after_date = data_after.meta.datetime.timestamp()
+    observation_date = reference_time.timestamp()
+
+    if before_date > observation_date:
+        msg = "Before data was after the observation date"
+        raise InvalidDataError(msg)
+
+    if after_date < observation_date:
+        msg = "After data was before the observation date"
+        raise InvalidDataError(msg)
+
+    if before_date == observation_date:
+        data_interpolated = data_before
+    elif after_date == observation_date:
+        data_interpolated = data_after
+    else:
+        data_interpolated = ((data_after.data - data_before.data)
+                              * (observation_date - before_date) / (after_date - before_date)
+                              + data_before.data)
+
+    return data_interpolated
+
+
 def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
     """Find the first cube that's not None in a list of NDCubes."""
     for cube in inputs:
@@ -138,3 +168,18 @@ def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
             return cube
     msg = "No cube found. All inputs are None."
     raise RuntimeError(msg)
+
+
+T = TypeVar("T")
+
+
+class DataLoader(abc.ABC, Generic[T]):
+    """Interface for passing callable objects instead of file paths to be loaded."""
+
+    @abc.abstractmethod
+    def load(self) -> T:
+        """Load the data."""
+
+    @abc.abstractmethod
+    def src_repr(self) -> str:
+        """Return a string representation of the data source."""

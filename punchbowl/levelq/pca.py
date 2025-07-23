@@ -67,7 +67,7 @@ def check_file(meta: NormalizedMetadata, outlier_limits: LimitSet | None) -> boo
     return outlier_limits.is_good(meta) if outlier_limits is not None else True
 
 
-def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | DataLoader], # noqa: C901
+def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | DataLoader],
                outlier_limits: LimitSet | None = None,
                blend_size: int = 70) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Load files."""
@@ -100,7 +100,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     body_finding_inputs = []
     # If a file-to-be-subtracted is an outlier, we want to keep it in the stack so we can still try to subtract it,
     # but we don't want it to factor in to the fitting, so we mark it here.
-    loaded_outlier_indices = []
+    is_outlier = []
     # We want to know which pixels are masked in every image. It's possible we'll have files made with two different
     # versions of the mask, so here we detect which pixels are maxed by looking for data == 0 and uncertainty == inf,
     # and we track which pixels satisfy that for every image.
@@ -127,22 +127,21 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
             index_to_insert += 1
             body_finding_inputs.append(body_finding_input)
             is_masked *= uncertainty_is_inf * (data == 0)
+            is_outlier.append(not is_good)
             if not is_good:
-                loaded_outlier_indices.append(input_list_index)
                 n_outliers += 1
         else:
             n_outliers += 1
 
-    loaded_input_list_indices = np.array(loaded_input_list_indices)
-    is_outlier = np.full(len(all_files_to_fit), False, dtype=bool)
-    for index in loaded_outlier_indices:
-        is_outlier[index] = True
-
     # Crop the unused end of the array
     all_files_to_fit = all_files_to_fit[:index_to_insert]
-    logger.info(f"Total of {len(all_files_to_fit)} images to fit, filling {all_files_to_fit.nbytes / 1024 ** 3:.2f} GB")
+    logger.info(f"Total of {len(all_files_to_fit)} images to fit and/or subtract, filling "
+                f"{all_files_to_fit.nbytes / 1024 ** 3:.2f} GB")
     logger.info(f"(Drawn from {len(input_cubes)} images to subtract and {len(files_to_fit)} extra images for fitting)")
     logger.info(f"({n_outliers} outliers were rejected from fitting)")
+
+    loaded_input_list_indices = np.array(loaded_input_list_indices)
+    is_outlier = np.array(is_outlier)
 
     logger.info("Locating planets")
     # We have a lot of data in memory right now, so forking is expensive as all that memory has to be marked as

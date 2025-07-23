@@ -51,7 +51,7 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
               threadpool_limits(min(25, os.cpu_count())),
               ctx.Pool(min(n_strides, os.cpu_count())) as p):
             for subtracted_cube_indices, subtracted_images in p.starmap(
-                    pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
+                    _call_pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
                                                repeat(to_subtract), repeat(n_components), repeat(med_filt),
                                                repeat(blend_size), repeat(good_data_mask), repeat(is_outlier))):
                 for index, image in zip(subtracted_cube_indices, subtracted_images, strict=False):
@@ -157,18 +157,28 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices, good_data_mask, is_outlier
 
 
-def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, input_list_indices: np.ndarray,
-                          n_components: int, med_filt: int, blend_size: int, good_data_mask: np.ndarray,
-                          is_outlier: np.ndarray, logger: logging.Logger | None = None,
-                          ) -> tuple[np.ndarray, np.ndarray]:
-    """Run PCA-based filtering for one stride position."""
-    # This sets up a logger that forwards entries through a queue to the main process, where they can be forwarded to
-    # Prefect. This is required because Prefect can't log from forked worker processes.
+def _call_pca_filter_one_stride(*args: list, **kwargs: dict) -> tuple[np.ndarray, np.ndarray]:
+    logger = kwargs.get("logger")
     if logger is None:
+        # This sets up a logger that forwards entries through a queue to the main process, where they can be forwarded
+        # to Prefect. This is required because Prefect can't log from forked worker processes.
         logger = logging.getLogger()
         logger.addHandler(logging.handlers.QueueHandler(_log_queue))
         logger.setLevel(logging.INFO)
+        kwargs["logger"] = logger
 
+    try:
+        return pca_filter_one_stride(*args, **kwargs)
+    except Exception:
+        logger.exception("Exception in worker process")
+        raise
+
+
+def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, input_list_indices: np.ndarray,
+                          n_components: int, med_filt: int, blend_size: int, good_data_mask: np.ndarray,
+                          is_outlier: np.ndarray, logger: logging.Logger,
+                          ) -> tuple[np.ndarray, np.ndarray]:
+    """Run PCA-based filtering for one stride position."""
     stride_filter = np.arange(len(_all_files_to_fit)) % n_strides == stride
     # This will mark the images we'll be subtracting from---those are the only ones we'll drop from the fitting
     to_subtract_filter = stride_filter * (input_list_indices >= 0)

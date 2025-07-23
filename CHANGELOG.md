@@ -2,7 +2,7 @@
 
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
-## Latest - Unreleased
+## Version 0.0.17: July 23, 2025
 
 - Adds docs button to view source in https://github.com/punch-mission/punchbowl/pull/526
 - Fixes constant deficient pixel map creation in https://github.com/punch-mission/punchbowl/pull/522

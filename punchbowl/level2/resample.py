@@ -9,7 +9,7 @@ from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from punchbowl.prefect import punch_flow, punch_task
 
 
-@punch_task
+@punch_task(tags=["reproject"])
 def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int, int]) -> np.ndarray:
     """
     Core reprojection function.

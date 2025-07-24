@@ -742,11 +742,11 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
 
     if distortion_path:
         with fits.open(distortion_path) as distortion_hdul:
-            distortion = WCS(distortion_hdul[0].header, distortion_hdul)
+            distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
     else:
         distortion = None
 
-    celestial_output = solve_pointing(refining_data, celestial_input, distortion)
+    celestial_output = solve_pointing(refining_data, celestial_input, distortion, saturation_limit=60_000)
 
     recovered_wcs, _ = calculate_helio_wcs_from_celestial(celestial_output,
                                                        data_object.meta.astropy_time,

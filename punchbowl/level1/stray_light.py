@@ -4,6 +4,7 @@ import warnings
 
 import numpy as np
 from ndcube import NDCube
+from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.exceptions import IncorrectPolarizationStateWarning, IncorrectTelescopeWarning, InvalidDataError
@@ -16,6 +17,8 @@ def estimate_stray_light(filepaths: list[str],
                          percentile: float = 1,
                          do_uncertainty: bool = True) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
+    logger = get_run_logger()
+    logger.info(f"Running with {len(filepaths)} input files")
     data = None
     uncertainties = None
     for i, path in enumerate(sorted(filepaths)):
@@ -34,6 +37,8 @@ def estimate_stray_light(filepaths: list[str],
                 uncertainties[i] = cube.uncertainty.array
             else:
                 uncertainties[i] = np.zeros_like(cube.data)
+
+    logger.info(f"Images loaded; they span {first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
 
     stray_light_estimate = nan_percentile(data, percentile).squeeze()
 

@@ -40,7 +40,7 @@ def estimate_stray_light(filepaths: list[str],
             if cube.uncertainty is not None:
                 uncertainties[i] = cube.uncertainty.array
             else:
-                uncertainties[i] = np.zeros_like(cube.data)
+                uncertainties[i] = 0
 
     logger.info(f"Images loaded; they span {first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
 

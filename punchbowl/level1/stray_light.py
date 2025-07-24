@@ -44,7 +44,10 @@ def estimate_stray_light(filepaths: list[str],
 
     logger.info(f"Images loaded; they span {first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
 
-    stray_light_estimate = nan_percentile(data, percentile).squeeze()
+    stray_light_estimate = nan_percentile(data, percentile, modify_arr_in_place=True).squeeze()
+    # The values in `data` have been modified by the percentile calculation (which saves a bit of time and a lot of
+    # memory usage), so let's make sure we don't accidentally use the array again later
+    del data
 
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")

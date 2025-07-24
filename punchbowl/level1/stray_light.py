@@ -1,6 +1,7 @@
 import os
 import pathlib
 import warnings
+from datetime import UTC, datetime
 
 import numpy as np
 from ndcube import NDCube
@@ -15,10 +16,13 @@ from punchbowl.util import interpolate_data, nan_percentile
 @punch_flow
 def estimate_stray_light(filepaths: list[str],
                          percentile: float = 1,
-                         do_uncertainty: bool = True) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+                         do_uncertainty: bool = True,
+                         reference_time: datetime | str | None = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
     logger = get_run_logger()
     logger.info(f"Running with {len(filepaths)} input files")
+    if isinstance(reference_time, str):
+        reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     data = None
     uncertainties = None
     for i, path in enumerate(sorted(filepaths)):
@@ -44,7 +48,7 @@ def estimate_stray_light(filepaths: list[str],
 
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
-    meta["DATE-OBS"] = first_meta["DATE-OBS"].value
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") or first_meta["DATE-OBS"].value
     meta.history.add_now("stray light",
                          f"Generated with {len(filepaths)} files running from "
                          f"{first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")

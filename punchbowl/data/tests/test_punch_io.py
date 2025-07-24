@@ -276,6 +276,7 @@ def make_empty_distortion_model(num_bins: int, image: np.ndarray) -> tuple:
 
 def test_write_punchdata_with_distortion(tmpdir):
     data = np.ones((2048, 2048), dtype=np.uint16)
+    uncertainty = np.zeros_like(data)
     meta = NormalizedMetadata.load_template("CR4", "1")
     meta['DATE-OBS'] = str(datetime.now(UTC))
     meta.history.add_now("test", "this is a test!")
@@ -293,7 +294,7 @@ def test_write_punchdata_with_distortion(tmpdir):
     cpdis1, cpdis2 = make_empty_distortion_model(100, data)
     wcs.cpdis1 = cpdis1
     wcs.cpdis2 = cpdis2
-    obj = NDCube(data=data, wcs=wcs, meta=meta)
+    obj = NDCube(data=data, wcs=wcs, meta=meta, uncertainty=StdDevUncertainty(uncertainty))
     file_path = os.path.join(tmpdir, get_base_file_name(obj) + ".fits")
     write_ndcube_to_fits(obj, file_path, overwrite=True)
 

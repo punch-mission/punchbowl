@@ -18,7 +18,7 @@ def estimate_stray_light(filepaths: list[str],
     """Estimate the fixed stray light pattern using a percentile."""
     data = None
     uncertainties = None
-    for i, path in enumerate(filepaths):
+    for i, path in enumerate(sorted(filepaths)):
         cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
         if i == 0:
             first_meta = cube.meta

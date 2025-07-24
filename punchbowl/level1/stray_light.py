@@ -3,7 +3,6 @@ import pathlib
 import warnings
 
 import numpy as np
-from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
@@ -48,7 +47,7 @@ def estimate_stray_light(filepaths: list[str],
 
     uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths) if do_uncertainty else None
 
-    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=WCS(naxis=2), uncertainty=uncertainty)
+    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=cube.wcs, uncertainty=uncertainty)
 
     return [out_cube]
 

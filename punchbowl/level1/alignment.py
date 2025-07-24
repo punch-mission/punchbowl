@@ -757,7 +757,7 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
 
     if distortion_path:
         with fits.open(distortion_path) as distortion_hdul:
-            distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul)
+            distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
         recovered_wcs.cpdis1 = distortion_wcs.cpdis1
         recovered_wcs.cpdis2 = distortion_wcs.cpdis2
 

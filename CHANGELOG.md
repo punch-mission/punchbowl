@@ -3,6 +3,10 @@
 [Also available in GitHub](https://github.com/punch-mission/punchbowl/releases)
 
 ## Latest - Unreleased
+- Adds uncertainty to test NDCube write and read in https://github.com/punch-mission/punchbowl/pull/535
+- Use a full, valid WCS for stray light models in https://github.com/punch-mission/punchbowl/pull/537
+
+## Version 0.0.17: July 23, 2025
 
 - Adds docs button to view source in https://github.com/punch-mission/punchbowl/pull/526
 - Fixes constant deficient pixel map creation in https://github.com/punch-mission/punchbowl/pull/522
@@ -13,7 +17,9 @@
 - Implements rolling stray light models in https://github.com/punch-mission/punchbowl/pull/531
 - Add Limit/LimitSet classes in LQ PCA; support batched PCA; add seam blending for quartered PCA in https://github.com/punch-mission/punchbowl/pull/529
 - Changed docstring in vignette.py #503 and transpose in destreak.py #487 in https://github.com/punch-mission/punchbowl/pull/530
+- Output stray light models as NDCubes in https://github.com/punch-mission/punchbowl/pull/533
 - Rewrites pointing refinement in https://github.com/punch-mission/punchbowl/pull/524
+- Only pull file version from first file for LQ in https://github.com/punch-mission/punchbowl/pull/534/
 
 ## Version 0.0.16: July 3, 2025
 

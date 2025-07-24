@@ -4,8 +4,9 @@ import warnings
 
 import numpy as np
 from ndcube import NDCube
+from prefect import get_run_logger
 
-from punchbowl.data import load_ndcube_from_fits
+from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.exceptions import IncorrectPolarizationStateWarning, IncorrectTelescopeWarning, InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import interpolate_data, nan_percentile
@@ -16,10 +17,16 @@ def estimate_stray_light(filepaths: list[str],
                          percentile: float = 1,
                          do_uncertainty: bool = True) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
+    logger = get_run_logger()
+    logger.info(f"Running with {len(filepaths)} input files")
     data = None
     uncertainties = None
-    for i, path in enumerate(filepaths):
+    for i, path in enumerate(sorted(filepaths)):
         cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
+        if i == 0:
+            first_meta = cube.meta
+        if i == len(filepaths) - 1:
+            last_meta = cube.meta
         if data is None:
             data = np.empty((len(filepaths), *cube.data.shape))
         data[i] = cube.data
@@ -31,14 +38,23 @@ def estimate_stray_light(filepaths: list[str],
             else:
                 uncertainties[i] = np.zeros_like(cube.data)
 
+    logger.info(f"Images loaded; they span {first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
+
     stray_light_estimate = nan_percentile(data, percentile).squeeze()
 
-    if not do_uncertainty:
-        return stray_light_estimate
+    out_type = "S" + cube.meta.product_code[1:]
+    meta = NormalizedMetadata.load_template(out_type, "1")
+    meta["DATE-OBS"] = first_meta["DATE-OBS"].value
+    meta.history.add_now("stray light",
+                         f"Generated with {len(filepaths)} files running from "
+                         f"{first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
+    meta["FILEVRSN"] = first_meta["FILEVRSN"].value
 
-    uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths)
+    uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths) if do_uncertainty else None
 
-    return stray_light_estimate, uncertainty
+    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=cube.wcs, uncertainty=uncertainty)
+
+    return [out_cube]
 
 
 @punch_task

@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from collections.abc import Callable
 
 import numpy as np
 import reproject
@@ -12,6 +11,7 @@ from regularizepsf.util import calculate_covering
 
 from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.prefect import punch_task
+from punchbowl.util import DataLoader
 
 
 def build_psf_transform(image_paths: list[str] | list[Path],
@@ -130,7 +130,7 @@ def correct_psf(
 @punch_task
 def correct_psf_task(
     data_object: NDCube,
-    model_path: str | Callable | None = None,
+    model_path: str | DataLoader | None = None,
     max_workers: int | None = None,
 ) -> NDCube:
     """
@@ -152,8 +152,9 @@ def correct_psf_task(
 
     """
     if model_path is not None:
-        if isinstance(model_path, Callable):
-            corrector, model_path = model_path()
+        if isinstance(model_path, DataLoader):
+            corrector = model_path.load()
+            model_path = model_path.src_repr()
         else:
             corrector = ArrayPSFTransform.load(Path(model_path))
         data_object = correct_psf(data_object, corrector, max_workers)

@@ -1,5 +1,4 @@
 import os
-from collections.abc import Callable
 
 import numexpr as ne
 import numpy as np
@@ -7,6 +6,7 @@ from ndcube import NDCube
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.prefect import punch_task
+from punchbowl.util import DataLoader
 
 
 def create_coefficient_image(flat_coefficients: np.ndarray, image_shape: tuple) -> np.ndarray:
@@ -129,7 +129,7 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
 
 
 @punch_task
-def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str | Callable | None = None) -> NDCube:
+def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str | DataLoader | None = None) -> NDCube:
     """
     Prefect task to perform the quartic fit calibration on the data.
 
@@ -152,8 +152,9 @@ def perform_quartic_fit_task(data_object: NDCube, quartic_coefficients_path: str
 
     """
     if quartic_coefficients_path is not None:
-        if isinstance(quartic_coefficients_path, Callable):
-            quartic_coefficients, quartic_coefficients_path = quartic_coefficients_path()
+        if isinstance(quartic_coefficients_path, DataLoader):
+            quartic_coefficients = quartic_coefficients_path.load()
+            quartic_coefficients_path = quartic_coefficients_path.src_repr()
         else:
             quartic_coefficients = load_ndcube_from_fits(quartic_coefficients_path)
         new_data = photometric_calibration(data_object.data, quartic_coefficients.data)

@@ -5,6 +5,7 @@
 ## Latest - Unreleased
 - Adds uncertainty to test NDCube write and read in https://github.com/punch-mission/punchbowl/pull/535
 - Use a full, valid WCS for stray light models in https://github.com/punch-mission/punchbowl/pull/537
+- Allow stray light model date_obs to be passed in, and change to passing DataLoaders rather than Callables for cache-able L1 cal files in https://github.com/punch-mission/punchbowl/pull/538
 
 ## Version 0.0.17: July 23, 2025
 

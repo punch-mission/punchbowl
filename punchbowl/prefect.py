@@ -27,9 +27,11 @@ def completion_debugger(task: Task, task_run: TaskRun, state: State) -> None:
 def failure_hook(task: Task, task_run: TaskRun, state: State) -> None:
     """Run if a punch_task fails."""
 
+_debug_mode = Variable.get("debug", False)
+
 def punch_task(*args: Any, **kwargs: Any) -> Task:
     """Prefect task that does PUNCH special things."""
-    return task(*args, **kwargs, on_completion=[completion_debugger], on_failure=[failure_hook])
+    return task(*args, **kwargs, on_completion=[completion_debugger] if _debug_mode else [], on_failure=[failure_hook])
 
 def punch_flow(*args: Any, **kwargs: Any) -> Flow:
     """Prefect flow that does PUNCH special things."""

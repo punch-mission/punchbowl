@@ -59,7 +59,11 @@ def estimate_stray_light(filepaths: list[str],
 
     uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths) if do_uncertainty else None
 
-    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=cube.wcs, uncertainty=uncertainty)
+    # Let's put in a valid, representative WCS, with the right scale and pointing, etc. But let's set the rotation to
+    # zero---the rotation value is meaningless, so it should be an obvious filler value
+    wcs = cube.wcs
+    wcs.wcs.pc = np.eye(2)
+    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=wcs, uncertainty=uncertainty)
 
     return [out_cube]
 

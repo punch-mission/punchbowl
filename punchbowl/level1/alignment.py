@@ -532,7 +532,10 @@ def solve_pointing(
     saturation_limit: float = np.inf) -> WCS:
     """Carefully refine the pointing of an image based on a guess WCS."""
     observed = find_star_coordinates(image_data, saturation_limit=saturation_limit)
-    astrometry_net = astrometry_net_initial_solve(observed, image_wcs.deepcopy())
+    wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
+    astrometry_net = astrometry_net_initial_solve(observed, image_wcs.deepcopy(),
+                                                  lower_arcsec_per_pixel=wcs_arcsec_per_pixel - 10,
+                                                  upper_arcsec_per_pixel=wcs_arcsec_per_pixel + 10)
     if astrometry_net is None:
         msg = "Astrometry.net initial solution failed."
         raise RuntimeError(msg)

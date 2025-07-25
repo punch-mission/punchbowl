@@ -166,6 +166,9 @@ enabled = true
 
 [tool.gilesbot.towncrier_changelog]
 enabled = true
+changelog_skip_label = "no-changelog-entry-needed" # default is none
+changelog_noop_label = "skip-changelog-checks"
+whatsnew_label = "whatsnew-needed"
 
 [tool.towncrier]
 package = "punchbowl"

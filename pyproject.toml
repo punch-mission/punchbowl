@@ -160,6 +160,15 @@ markers = [
     "regression: a regression test, likely slow",
 ]
 
+[tool.changelog-bot]
+[tool.changelog-bot.towncrier_changelog]
+enabled = true                                         # default is false
+verify_pr_number = true                                # default is false
+changelog_skip_label = "no-changelog-entry-needed"     # default is none
+changelog_noop_label = "skip-changelog-checks"
+whatsnew_label = "whatsnew-needed"
+whatsnew_pattern = '''docs\/whatsnew\/\d+\.\d+\.rst'''
+
 [tool.towncrier]
 package = "punchbowl"
 filename = "CHANGELOG.rst"

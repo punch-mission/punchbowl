@@ -188,7 +188,8 @@ def level1_core_flow(  # noqa: C901
         new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
 
         # TODO - Update this for both stray light models
-        new_meta["CALSL"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
+        new_meta["CALSL0"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
+        new_meta["CALSL1"] = os.path.basename(stray_light_after_path) if stray_light_before_path else ""
 
         if isinstance(quartic_coefficient_path, Callable):
             _, quartic_coefficient_path = quartic_coefficient_path()
@@ -204,7 +205,8 @@ def level1_core_flow(  # noqa: C901
         if return_with_stray_light:
             meta = deepcopy(new_meta)
             del meta["CALPSF"]
-            del meta["CALSL"]
+            del meta["CALSL0"]
+            del meta["CALSL1"]
             meta["TYPECODE"] = "X" + meta["TYPECODE"].value[1:]
             meta["TITLE"] = meta["TITLE"].value + " with Stray Light"
             meta.history.clear_entries_from_source("LEVEL1-correct_psf")

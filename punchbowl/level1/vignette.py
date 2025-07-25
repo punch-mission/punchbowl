@@ -7,6 +7,7 @@ import numpy as np
 from astropy.wcs import WCS
 from ndcube import NDCube
 from reproject import reproject_adaptive
+from scipy.ndimage import binary_erosion
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.exceptions import (
@@ -104,7 +105,8 @@ def generate_vignetting_calibration(path_vignetting: str,
                                     vignetting_threshold: float = 1.2,
                                     rows_ignore: tuple = (13,15),
                                     rows_adjust: tuple = (15,16),
-                                    rows_adjust_source: tuple = (16,20)) -> np.ndarray:
+                                    rows_adjust_source: tuple = (16,20),
+                                    mask_erosion: tuple = (6,6)) -> np.ndarray:
     """
     Create calibration data for vignetting.
 
@@ -124,6 +126,8 @@ def generate_vignetting_calibration(path_vignetting: str,
         rows to adjust to the minimum of a set of rows above (per column), by default (15,16) for 128x128 input
     rows_adjust_source : tuple, optional
         rows to use for statistics to adjust vignetting rows as above, by default (16,20) for 128x128 input
+    mask_erosion: tuple, optional
+        kernel to use in erosion operation to reduce the mask applied to the vignetting function, by default (6,6)
 
     Returns
     -------
@@ -164,6 +168,8 @@ def generate_vignetting_calibration(path_vignetting: str,
                                                 boundary_mode="ignore",
                                                 bad_value_mode="ignore",
                                                 return_footprint=False)
+
+        mask = binary_erosion(mask, structure=np.ones(mask_erosion))
 
         vignetting_reprojected = vignetting_reprojected * mask
 

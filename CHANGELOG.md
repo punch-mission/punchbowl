@@ -5,6 +5,7 @@
 ## Latest - Unreleased
 - Adds uncertainty to test NDCube write and read in https://github.com/punch-mission/punchbowl/pull/535
 - Use a full, valid WCS for stray light models in https://github.com/punch-mission/punchbowl/pull/537
+- Updates vignetting calibration generator in https://github.com/punch-mission/punchbowl/pull/539
 
 ## Version 0.0.17: July 23, 2025
 

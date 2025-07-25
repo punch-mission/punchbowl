@@ -16,7 +16,7 @@ repos:
     hooks:
       - id: codespell
         files: ^.*\.(py|c|h|md|rst|yml)$
-        args: ["--ignore-words", ".codespellignore" ]
+        args: ["--ignore-words", ".codespellignore"]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -27,11 +27,17 @@ repos:
       - id: check-yaml
       - id: debug-statements
       - id: check-added-large-files
-        args: ['--enforce-all','--maxkb=10000']
+        args: ["--enforce-all", "--maxkb=10000"]
       - id: end-of-file-fixer
         exclude: ".*(.fits|.fts|.fit|.header|.txt|tca.*|.json)$|^CITATION.rst$"
       - id: mixed-line-ending
         exclude: ".*(.fits|.fts|.fit|.header|.txt|tca.*)$"
+        repos:
+  - repo: https://github.com/twisted/towncrier
+    rev: 23.11.0 # run 'pre-commit autoupdate' to update
+    hooks:
+      - id: towncrier-update
+        files: $changelog
 ci:
   autofix_prs: false
   autoupdate_schedule: "quarterly"

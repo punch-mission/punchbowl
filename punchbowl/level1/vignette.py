@@ -102,8 +102,8 @@ def generate_vignetting_calibration(path_vignetting: str,
                                     path_mask: str,
                                     spacecraft: str,
                                     vignetting_threshold: float = 1.2,
-                                    rows_ignore: tuple = (13,16),
-                                    rows_adjust: tuple = (16,16),
+                                    rows_ignore: tuple = (13,15),
+                                    rows_adjust: tuple = (15,16),
                                     rows_adjust_source: tuple = (16,20)) -> np.ndarray:
     """
     Create calibration data for vignetting.

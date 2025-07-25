@@ -35,7 +35,7 @@ We appreciate all contributions.
 If you have a problem with the code or would like to see a new feature, please open an issue.
 Or you can submit a pull request.
 
-Thanks to all the contributors to punchbowl!
+Thanks to all the punchbowl contributors!
 
 <a href="https://github.com/punch-mission/punchbowl/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=punch-mission/punchbowl" />

@@ -1,0 +1,1 @@
+Modifies output FITS file metadata to note both versions of stray light calibration files (before and after).

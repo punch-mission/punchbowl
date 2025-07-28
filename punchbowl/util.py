@@ -110,7 +110,10 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float, modify_arr_in_place:
     # If arr is big, is_good will be big too. Let's cut our memory usage.
     del is_good
     # sort - former NaNs will move to the end
-    arr = np.sort(arr, axis=0)
+    if modify_arr_in_place:
+        arr.sort(axis=0)
+    else:
+        arr = np.sort(arr, axis=0)
 
     # loop over requested quantiles
     qs = [q] if isinstance(q, float | int) else q

@@ -532,7 +532,10 @@ def solve_pointing(
     saturation_limit: float = np.inf) -> WCS:
     """Carefully refine the pointing of an image based on a guess WCS."""
     observed = find_star_coordinates(image_data, saturation_limit=saturation_limit)
-    astrometry_net = astrometry_net_initial_solve(observed, image_wcs.deepcopy())
+    wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
+    astrometry_net = astrometry_net_initial_solve(observed, image_wcs.deepcopy(),
+                                                  lower_arcsec_per_pixel=wcs_arcsec_per_pixel - 10,
+                                                  upper_arcsec_per_pixel=wcs_arcsec_per_pixel + 10)
     if astrometry_net is None:
         msg = "Astrometry.net initial solution failed."
         raise RuntimeError(msg)
@@ -742,11 +745,11 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
 
     if distortion_path:
         with fits.open(distortion_path) as distortion_hdul:
-            distortion = WCS(distortion_hdul[0].header, distortion_hdul)
+            distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
     else:
         distortion = None
 
-    celestial_output = solve_pointing(refining_data, celestial_input, distortion)
+    celestial_output = solve_pointing(refining_data, celestial_input, distortion, saturation_limit=60_000)
 
     recovered_wcs, _ = calculate_helio_wcs_from_celestial(celestial_output,
                                                        data_object.meta.astropy_time,
@@ -754,7 +757,7 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
 
     if distortion_path:
         with fits.open(distortion_path) as distortion_hdul:
-            distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul)
+            distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
         recovered_wcs.cpdis1 = distortion_wcs.cpdis1
         recovered_wcs.cpdis2 = distortion_wcs.cpdis2
 

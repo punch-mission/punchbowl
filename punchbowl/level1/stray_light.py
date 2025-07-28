@@ -3,8 +3,8 @@ import pathlib
 import warnings
 
 import numpy as np
-from astropy.wcs import WCS
 from ndcube import NDCube
+from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.exceptions import IncorrectPolarizationStateWarning, IncorrectTelescopeWarning, InvalidDataError
@@ -17,9 +17,11 @@ def estimate_stray_light(filepaths: list[str],
                          percentile: float = 1,
                          do_uncertainty: bool = True) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
+    logger = get_run_logger()
+    logger.info(f"Running with {len(filepaths)} input files")
     data = None
     uncertainties = None
-    for i, path in enumerate(filepaths):
+    for i, path in enumerate(sorted(filepaths)):
         cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
         if i == 0:
             first_meta = cube.meta
@@ -36,6 +38,8 @@ def estimate_stray_light(filepaths: list[str],
             else:
                 uncertainties[i] = np.zeros_like(cube.data)
 
+    logger.info(f"Images loaded; they span {first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
+
     stray_light_estimate = nan_percentile(data, percentile).squeeze()
 
     out_type = "S" + cube.meta.product_code[1:]
@@ -48,7 +52,7 @@ def estimate_stray_light(filepaths: list[str],
 
     uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths) if do_uncertainty else None
 
-    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=WCS(naxis=2), uncertainty=uncertainty)
+    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=cube.wcs, uncertainty=uncertainty)
 
     return [out_cube]
 

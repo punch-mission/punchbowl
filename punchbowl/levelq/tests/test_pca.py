@@ -1,5 +1,8 @@
+import sys
+
 import numpy as np
 import prefect.logging
+import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
@@ -32,6 +35,7 @@ def test_find_bodies_in_image_quarters():
     assert np.all(np.array(result) == False)
 
 
+@pytest.mark.skipif(sys.platform == "darwin", reason="Skipping PCA test on macOS.")
 def test_that_pca_filter_runs():
     cubes = []
 

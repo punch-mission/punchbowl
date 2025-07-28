@@ -1,0 +1,1 @@
+Skips PCA testing on macOS and improves git handling of test temporary sample files.

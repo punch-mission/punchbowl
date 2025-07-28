@@ -187,9 +187,8 @@ def level1_core_flow(  # noqa: C901
             _, vignetting_function_path = vignetting_function_path()
         new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
 
-        # TODO - Update this for both stray light models
         new_meta["CALSL0"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
-        new_meta["CALSL1"] = os.path.basename(stray_light_after_path) if stray_light_before_path else ""
+        new_meta["CALSL1"] = os.path.basename(stray_light_after_path) if stray_light_after_path else ""
 
         if isinstance(quartic_coefficient_path, Callable):
             _, quartic_coefficient_path = quartic_coefficient_path()

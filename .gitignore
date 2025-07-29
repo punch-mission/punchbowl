@@ -163,3 +163,4 @@ docs/_build/
 *.DS_Store
 *.npy
 test_run/
+PUNCH_SAMPLE/

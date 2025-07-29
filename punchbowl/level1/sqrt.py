@@ -323,7 +323,7 @@ def generate_decode_sqrt_table(
     ccd_gain: float = 4.9,
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
-    second_order: bool = True,
+    first_order: bool = False,
 ) -> np.ndarray:
     """
     Generate a square root decode table between specified bitrate values and CCD parameters.
@@ -340,8 +340,8 @@ def generate_decode_sqrt_table(
         CCD bias level [DN]
     ccd_read_noise
         CCD read noise level [DN]
-    second_order
-        Toggle for second order square root decoding table, defaults to True
+    first_order
+        Toggle for first order square root decoding table only, defaults to False
 
     Returns
     -------
@@ -354,13 +354,13 @@ def generate_decode_sqrt_table(
     for i in range(table.size):
         table[i] = decode_sqrt_corrected(i, from_bits, to_bits, ccd_gain, ccd_offset, ccd_read_noise)
 
-    if second_order:
-        table0 = decode_sqrt_simple(np.arange(0,2**to_bits,1),from_bits,to_bits)
-        table2 = np.copy(table)
-        table2[1:-2] = table[1:-2] + 0.75 * ((table0-table)[0:-3]+(table0-table)[2:-1]-2*(table0-table)[1:-2])
-        return table2
+    if first_order:
+        return table
 
-    return table
+    table0 = decode_sqrt_simple(np.arange(0,2**to_bits,1),from_bits,to_bits)
+    table2 = np.copy(table)
+    table2[1:-2] = table[1:-2] + 0.75 * ((table0-table)[0:-3]+(table0-table)[2:-1]-2*(table0-table)[1:-2])
+    return table2
 
 
 def decode_sqrt_by_table(data: np.ndarray | float, table: np.ndarray) -> np.ndarray:

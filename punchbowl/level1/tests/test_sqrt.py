@@ -76,8 +76,8 @@ def test_second_order_table():
     ccd_bits=16
     encoded_bits=10
 
-    table1 = generate_decode_sqrt_table(from_bits = ccd_bits, to_bits = encoded_bits, second_order=False)
-    table2 = generate_decode_sqrt_table(from_bits = ccd_bits, to_bits = encoded_bits, second_order=True)
+    table1 = generate_decode_sqrt_table(from_bits = ccd_bits, to_bits = encoded_bits, first_order=True)
+    table2 = generate_decode_sqrt_table(from_bits = ccd_bits, to_bits = encoded_bits, first_order=False)
 
     table_diff = table1 - table2
 
@@ -92,6 +92,7 @@ def test_second_order_table():
     data_diff = np.abs(data1 - data2)
 
     assert data_diff.max() < 2
+    assert data_diff.max() != 0
 
 
 def test_decoding_exceed_table():

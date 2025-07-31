@@ -51,7 +51,7 @@ def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube, drop_i
     output = level2_core_flow(data_list, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512),
                               polarized=True)
     if drop_indices:
-        assert output is None or output[0] is None
+        assert isinstance(output[0], NDCube)
     else:
         assert isinstance(output[0], NDCube)
         assert output[0].meta["TYPECODE"].value == "PT"

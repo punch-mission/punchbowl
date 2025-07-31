@@ -117,7 +117,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     output_data.meta["DATE-END"] = output_dateend
     output_data = set_spacecraft_location_to_earth(output_data)
 
-    output_data.meta.provenance = [d.meta["FILENAME"] for d in data_list]
+    output_data.meta.provenance = [d.meta["FILENAME"] for d in data_list
+        if "FILENAME" in d.meta and d.meta["FILENAME"]]
 
     if output_filename is not None:
         output_image_task(output_data, output_filename)

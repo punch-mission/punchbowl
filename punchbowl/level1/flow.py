@@ -195,7 +195,8 @@ def level1_core_flow(  # noqa: C901
         new_meta["CALCF"] = os.path.basename(quartic_coefficient_path) if quartic_coefficient_path else ""
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
-        new_meta.provenance = [data.meta["FILENAME"]]
+        if "FILENAME" in data.meta and data.meta["FILENAME"]:
+            new_meta.provenance = [data.meta["FILENAME"]]
 
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
 

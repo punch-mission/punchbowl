@@ -1,0 +1,1 @@
+Where flows allowed an input file to be provided as a ``Callable`` that returned the required file, those flows now expect an object subclassing `DataLoader`.

@@ -45,13 +45,17 @@ def test_ctm_flow_runs_with_filenames(sample_ndcube, tmpdir):
 def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube, drop_indices):
     data_list = [sample_ndcube(shape=(10, 10), code=code, level="1")
                  for i, code in enumerate(POLARIZED_FILE_ORDER) if i not in drop_indices]
+
     data_list = [d for d in data_list if d is not None]
+
     trefoil_wcs, _ = load_trefoil_wcs()
     voters = [[] for _ in data_list]
     output = level2_core_flow(data_list, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512),
                               polarized=True)
-    if drop_indices:
-        assert output is None, "Expected None output"
+    assert isinstance(output, list)
+    assert isinstance(output[0], NDCube)
+    typecode = output[0].meta["TYPECODE"].value
+    if drop_indices == []:
+        assert typecode == "PT"
     else:
-        assert isinstance(output[0], NDCube)
-        assert output[0].meta["TYPECODE"].value == "PT"
+        assert typecode == "PTM"

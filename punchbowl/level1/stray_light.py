@@ -1,6 +1,7 @@
 import os
 import pathlib
 import warnings
+from datetime import UTC, datetime
 
 import numpy as np
 from ndcube import NDCube
@@ -15,10 +16,13 @@ from punchbowl.util import interpolate_data, nan_percentile
 @punch_flow
 def estimate_stray_light(filepaths: list[str],
                          percentile: float = 1,
-                         do_uncertainty: bool = True) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+                         do_uncertainty: bool = True,
+                         reference_time: datetime | str | None = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
     logger = get_run_logger()
     logger.info(f"Running with {len(filepaths)} input files")
+    if isinstance(reference_time, str):
+        reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     data = None
     uncertainties = None
     for i, path in enumerate(sorted(filepaths)):
@@ -36,15 +40,18 @@ def estimate_stray_light(filepaths: list[str],
             if cube.uncertainty is not None:
                 uncertainties[i] = cube.uncertainty.array
             else:
-                uncertainties[i] = np.zeros_like(cube.data)
+                uncertainties[i] = 0
 
     logger.info(f"Images loaded; they span {first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
 
-    stray_light_estimate = nan_percentile(data, percentile).squeeze()
+    stray_light_estimate = nan_percentile(data, percentile, modify_arr_in_place=True).squeeze()
+    # The values in `data` have been modified by the percentile calculation (which saves a bit of time and a lot of
+    # memory usage), so let's make sure we don't accidentally use the array again later
+    del data
 
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
-    meta["DATE-OBS"] = first_meta["DATE-OBS"].value
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") or first_meta["DATE-OBS"].value
     meta.history.add_now("stray light",
                          f"Generated with {len(filepaths)} files running from "
                          f"{first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
@@ -52,7 +59,11 @@ def estimate_stray_light(filepaths: list[str],
 
     uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths) if do_uncertainty else None
 
-    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=cube.wcs, uncertainty=uncertainty)
+    # Let's put in a valid, representative WCS, with the right scale and pointing, etc. But let's set the rotation to
+    # zero---the rotation value is meaningless, so it should be an obvious filler value
+    wcs = cube.wcs
+    wcs.wcs.pc = np.eye(2)
+    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=wcs, uncertainty=uncertainty)
 
     return [out_cube]
 

@@ -1,7 +1,6 @@
 import os
 import pathlib
 import warnings
-from collections.abc import Callable
 
 import numpy as np
 from astropy.wcs import WCS
@@ -18,10 +17,11 @@ from punchbowl.exceptions import (
     NoCalibrationDataWarning,
 )
 from punchbowl.prefect import punch_task
+from punchbowl.util import DataLoader
 
 
 @punch_task
-def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.Path | Callable | None) -> NDCube:
+def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.Path | DataLoader | None) -> NDCube:
     """
     Prefect task to correct the vignetting of an image.
 
@@ -68,8 +68,9 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
         msg=f"Calibration file {vignetting_path} is unavailable, vignetting correction not applied"
         warnings.warn(msg, NoCalibrationDataWarning)
     else:
-        if isinstance(vignetting_path, Callable):
-            vignetting_function, vignetting_path = vignetting_path()
+        if isinstance(vignetting_path, DataLoader):
+            vignetting_function = vignetting_path.load()
+            vignetting_path = vignetting_path.src_repr()
         else:
             if isinstance(vignetting_path, str):
                 vignetting_path = pathlib.Path(vignetting_path)

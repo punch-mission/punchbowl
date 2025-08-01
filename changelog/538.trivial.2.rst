@@ -1,0 +1,1 @@
+The filler WCS written in stray light models is now a valid, though arbitrary, WCS.

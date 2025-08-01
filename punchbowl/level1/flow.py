@@ -1,7 +1,7 @@
 import os
 import pathlib
 from copy import deepcopy
-from collections.abc import Callable, Generator
+from collections.abc import Generator
 
 import astropy.units as u
 import numpy as np
@@ -24,7 +24,7 @@ from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import punch_flow
-from punchbowl.util import load_image_task, output_image_task
+from punchbowl.util import DataLoader, load_image_task, output_image_task
 
 L0_KEYS_TO_IGNORE = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE"]
 
@@ -59,7 +59,7 @@ def level1_core_flow(  # noqa: C901
     dark_level: float = 55.81,
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
-    quartic_coefficient_path: str | pathlib.Path | Callable | None = None,
+    quartic_coefficient_path: str | pathlib.Path | DataLoader | None = None,
     despike_sigclip: float = 50,
     despike_sigfrac: float = 0.25,
     despike_objlim: float = 160.0,
@@ -68,14 +68,14 @@ def level1_core_flow(  # noqa: C901
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
-    vignetting_function_path: str | Callable | None = None,
+    vignetting_function_path: str | DataLoader | None = None,
     stray_light_before_path: str | None = None,
     stray_light_after_path: str | None = None,
     deficient_pixel_map_path: str | None = None,
     deficient_pixel_method: str = "median",
     deficient_pixel_required_good_count: int = 3,
     deficient_pixel_max_window_size: int = 10,
-    psf_model_path: str | Callable | None = None,
+    psf_model_path: str | DataLoader | None = None,
     distortion_path: str | None = None,
     output_filename: list[str] | None = None,
     max_workers: int | None = None,
@@ -179,19 +179,19 @@ def level1_core_flow(  # noqa: C901
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
 
-        if isinstance(psf_model_path, Callable):
-            _, psf_model_path = psf_model_path()
+        if isinstance(psf_model_path, DataLoader):
+            psf_model_path = psf_model_path.src_repr()
         new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
 
-        if isinstance(vignetting_function_path, Callable):
-            _, vignetting_function_path = vignetting_function_path()
+        if isinstance(vignetting_function_path, DataLoader):
+            vignetting_function_path = vignetting_function_path.src_repr()
         new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
 
         # TODO - Update this for both stray light models
         new_meta["CALSL"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
 
-        if isinstance(quartic_coefficient_path, Callable):
-            _, quartic_coefficient_path = quartic_coefficient_path()
+        if isinstance(quartic_coefficient_path, DataLoader):
+            quartic_coefficient_path = quartic_coefficient_path.src_repr()
         new_meta["CALCF"] = os.path.basename(quartic_coefficient_path) if quartic_coefficient_path else ""
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 

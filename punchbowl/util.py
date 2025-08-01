@@ -96,18 +96,24 @@ def _zvalue_from_index(arr, ind):  # noqa: ANN202, ANN001
     return np.take(arr, idx)
 
 
-def nan_percentile(arr: np.ndarray, q: list[float] | float) -> np.ndarray:
+def nan_percentile(arr: np.ndarray, q: list[float] | float, modify_arr_in_place: bool = False) -> np.ndarray:
     """Calculate the nan percentile faster of a 3D cube."""
     # np.nanpercentile is slow so use this: https://krstn.eu/np.nanpercentile()-there-has-to-be-a-faster-way/
 
     # valid (non NaN) observations along the first axis
     is_good = np.isfinite(arr)
     n_valid_obs = np.sum(is_good, axis=0)
+    if not modify_arr_in_place:
+        arr = arr.copy()
     # replace NaN with maximum
-    arr = arr.copy()
     arr[~is_good] = np.nanmax(arr)
+    # If arr is big, is_good will be big too. Let's cut our memory usage.
+    del is_good
     # sort - former NaNs will move to the end
-    arr = np.sort(arr, axis=0)
+    if modify_arr_in_place:
+        arr.sort(axis=0)
+    else:
+        arr = np.sort(arr, axis=0)
 
     # loop over requested quantiles
     qs = [q] if isinstance(q, float | int) else q

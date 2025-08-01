@@ -1,0 +1,1 @@
+Implements second order square root decoding table, using the technique from DeForest et al 2022.

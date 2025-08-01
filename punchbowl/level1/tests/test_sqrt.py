@@ -11,7 +11,14 @@ from pytest import fixture
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.units import split_ccd_array
 from punchbowl.exceptions import DataValueWarning
-from punchbowl.level1.sqrt import decode_sqrt, decode_sqrt_data, decode_sqrt_simple, encode_sqrt
+from punchbowl.level1.sqrt import (
+    decode_sqrt,
+    decode_sqrt_by_table,
+    decode_sqrt_data,
+    decode_sqrt_simple,
+    encode_sqrt,
+    generate_decode_sqrt_table,
+)
 
 
 # Some test inputs
@@ -63,6 +70,29 @@ def test_decoding():
 
     assert decoded_arr.shape == arr.shape
     assert np.max(decoded_arr) <= 2 ** 16
+
+
+def test_second_order_table():
+    ccd_bits=16
+    encoded_bits=10
+
+    table1 = generate_decode_sqrt_table(from_bits = ccd_bits, to_bits = encoded_bits, first_order=True)
+    table2 = generate_decode_sqrt_table(from_bits = ccd_bits, to_bits = encoded_bits, first_order=False)
+
+    table_diff = table1 - table2
+
+    assert table_diff.max() != 0
+    assert table_diff.min() != 0
+
+    data = np.arange(2**encoded_bits)
+
+    data1 = decode_sqrt_by_table(data, table1)
+    data2 = decode_sqrt_by_table(data, table2)
+
+    data_diff = np.abs(data1 - data2)
+
+    assert data_diff.max() < 2
+    assert data_diff.max() != 0
 
 
 def test_decoding_exceed_table():

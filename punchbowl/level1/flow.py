@@ -197,7 +197,7 @@ def level1_core_flow(  # noqa: C901
 
         filename = data.meta.get("FILENAME")
         if filename:
-            new_meta.provenance = [filename]
+            new_meta.provenance = [filename].value
 
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
 

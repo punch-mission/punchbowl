@@ -10,7 +10,7 @@ from prefect import get_run_logger
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.exceptions import IncorrectPolarizationStateWarning, IncorrectTelescopeWarning, InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import interpolate_data, nan_percentile
+from punchbowl.util import average_datetime, interpolate_data, nan_percentile
 
 
 @punch_flow
@@ -25,12 +25,10 @@ def estimate_stray_light(filepaths: list[str],
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     data = None
     uncertainties = None
+    date_obses = []
     for i, path in enumerate(sorted(filepaths)):
         cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
-        if i == 0:
-            first_meta = cube.meta
-        if i == len(filepaths) - 1:
-            last_meta = cube.meta
+        date_obses.append(cube.meta.datetime)
         if data is None:
             data = np.empty((len(filepaths), *cube.data.shape))
         data[i] = cube.data
@@ -42,7 +40,8 @@ def estimate_stray_light(filepaths: list[str],
             else:
                 uncertainties[i] = 0
 
-    logger.info(f"Images loaded; they span {first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
+    logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
+                f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
 
     stray_light_estimate = nan_percentile(data, percentile, modify_arr_in_place=True).squeeze()
     # The values in `data` have been modified by the percentile calculation (which saves a bit of time and a lot of
@@ -51,11 +50,15 @@ def estimate_stray_light(filepaths: list[str],
 
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
-    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") or first_meta["DATE-OBS"].value
+    meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") or meta["DATE-AVG"].value
+    meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+    meta["DATE-END"] = max(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta.history.add_now("stray light",
                          f"Generated with {len(filepaths)} files running from "
-                         f"{first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
-    meta["FILEVRSN"] = first_meta["FILEVRSN"].value
+                         f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
+                         f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
+    meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
 
     uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths) if do_uncertainty else None
 

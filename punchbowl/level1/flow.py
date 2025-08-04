@@ -26,7 +26,7 @@ from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import punch_flow
 from punchbowl.util import DataLoader, load_image_task, output_image_task
 
-L0_KEYS_TO_IGNORE = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE"]
+L0_KEYS_TO_IGNORE = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE", "TYPECODE", "FILEVRSN"]
 
 
 @punch_flow
@@ -52,7 +52,7 @@ def generate_psf_model_core_flow(input_filepaths: list[str],
 
 
 @punch_flow
-def level1_core_flow(  # noqa: C901
+def level1_early_core_flow(  # noqa: C901
     input_data: list[str] | list[NDCube],
     gain_bottom: float = 4.9,
     gain_top: float = 4.9,
@@ -80,13 +80,14 @@ def level1_core_flow(  # noqa: C901
     output_filename: list[str] | None = None,
     max_workers: int | None = None,
     mask_path: str | None = None,
+    return_preliminary_stray_light_subtracted: bool = True,
     return_with_stray_light: bool = False,
     do_align: bool = True,
 ) -> list[NDCube]:
-    """Core flow for level 1."""
+    """Core flow for level 1, doing preliminary stray light subtraction."""
     logger = get_run_logger()
 
-    logger.info("beginning level 1 core flow")
+    logger.info("beginning level 1 early core flow")
 
     output_data = []
     for i, this_data in enumerate(input_data):
@@ -169,6 +170,7 @@ def level1_core_flow(  # noqa: C901
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
+        product_code = "Q" + product_code[1:]
         new_meta = NormalizedMetadata.load_template(product_code, "1")
         # copy over the existing values
         for key in data.meta.keys(): # noqa: SIM118
@@ -187,8 +189,8 @@ def level1_core_flow(  # noqa: C901
             vignetting_function_path = vignetting_function_path.src_repr()
         new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
 
-        # TODO - Update this for both stray light models
-        new_meta["CALSL"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
+        new_meta["CALSL0"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
+        new_meta["CALSL1"] = os.path.basename(stray_light_after_path) if stray_light_after_path else ""
 
         if isinstance(quartic_coefficient_path, DataLoader):
             quartic_coefficient_path = quartic_coefficient_path.src_repr()
@@ -199,12 +201,15 @@ def level1_core_flow(  # noqa: C901
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
-        output_data.append(data)
+
+        if return_preliminary_stray_light_subtracted:
+            output_data.append(data)
 
         if return_with_stray_light:
             meta = deepcopy(new_meta)
             del meta["CALPSF"]
-            del meta["CALSL"]
+            del meta["CALSL0"]
+            del meta["CALSL1"]
             meta["TYPECODE"] = "X" + meta["TYPECODE"].value[1:]
             meta["TITLE"] = meta["TITLE"].value + " with Stray Light"
             meta.history.clear_entries_from_source("LEVEL1-correct_psf")
@@ -215,7 +220,67 @@ def level1_core_flow(  # noqa: C901
                                       uncertainty=StdDevUncertainty(uncertainty_with_stray_light),
                                       unit=data.unit)
             output_data.append(stray_light_cube)
-        logger.info("ending level 1 core flow")
+    logger.info("ending level 1 early core flow")
+    return output_data
+
+
+@punch_flow
+def level1_late_core_flow(
+    input_data: list[str] | list[NDCube],
+    stray_light_before_path: str | None = None,
+    stray_light_after_path: str | None = None,
+    psf_model_path: str | DataLoader | None = None,
+    mask_path: str | None = None,
+    output_filename: list[str] | None = None,
+    max_workers: int | None = None,
+) -> list[NDCube]:
+    """Core flow for level 1, applying final stray light subtraction."""
+    logger = get_run_logger()
+
+    logger.info("beginning level 1 late core flow")
+
+    output_data = []
+    for i, this_data in enumerate(input_data):
+        data = load_image_task(this_data) if isinstance(this_data, str) else this_data
+        data = remove_stray_light_task(data, stray_light_before_path, stray_light_after_path)
+        data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
+
+        if mask_path:
+            with open(mask_path, "rb") as f:
+                b = f.read()
+            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
+            data.data *= mask
+            data.uncertainty.array[mask==0] = np.inf
+
+        # Repackage data with proper metadata
+        product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
+        product_code = ("C" if product_code[1] == "R" else "P") + product_code[1:]
+        new_meta = NormalizedMetadata.load_template(product_code, "1")
+        # copy over the existing values
+        for key in data.meta.keys():  # noqa: SIM118
+            if key in L0_KEYS_TO_IGNORE:
+                continue
+            if key in new_meta.keys():  # noqa: SIM118
+                new_meta[key] = data.meta[key].value
+        new_meta.history = data.meta.history
+        new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
+
+        if isinstance(psf_model_path, DataLoader):
+            psf_model_path = psf_model_path.src_repr()
+        new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
+
+        new_meta["CALSL0"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
+        new_meta["CALSL1"] = os.path.basename(stray_light_after_path) if stray_light_after_path else ""
+
+        new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
+
+        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+
+        if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
+            output_image_task(data, output_filename[i])
+
+        output_data.append(data)
+    logger.info("ending level 1 late core flow")
     return output_data
 
 

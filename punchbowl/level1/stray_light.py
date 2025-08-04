@@ -1,6 +1,5 @@
 import os
 import pathlib
-import warnings
 from datetime import UTC, datetime
 
 import numpy as np
@@ -8,7 +7,7 @@ from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.exceptions import IncorrectPolarizationStateWarning, IncorrectTelescopeWarning, InvalidDataError
+from punchbowl.exceptions import IncorrectPolarizationStateError, IncorrectTelescopeError, InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import average_datetime, interpolate_data, nan_percentile
 
@@ -72,7 +71,7 @@ def estimate_stray_light(filepaths: list[str],
 
 
 @punch_task
-def remove_stray_light_task(data_object: NDCube, #noqa: C901
+def remove_stray_light_task(data_object: NDCube,
                             stray_light_before_path: pathlib.Path | str | NDCube,
                             stray_light_after_path: pathlib.Path | str | NDCube) -> NDCube:
     """
@@ -137,34 +136,26 @@ def remove_stray_light_task(data_object: NDCube, #noqa: C901
             raise InvalidDataError(msg)
         stray_light_after_model = load_ndcube_from_fits(stray_light_after_path)
 
-    if stray_light_before_model.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
-        msg=f"Incorrect TELESCOP value within {stray_light_before_path}"
-        warnings.warn(msg, IncorrectTelescopeWarning)
-    elif stray_light_before_model.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
-        msg=f"Incorrect polarization state within {stray_light_before_path}"
-        warnings.warn(msg, IncorrectPolarizationStateWarning)
-    elif stray_light_before_model.data.shape != data_object.data.shape:
-        msg = f"Incorrect stray light function shape within {stray_light_before_path}"
-        raise InvalidDataError(msg)
-    elif stray_light_after_model.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
-        msg=f"Incorrect TELESCOP value within {stray_light_after_path}"
-        warnings.warn(msg, IncorrectTelescopeWarning)
-    elif stray_light_after_model.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
-        msg=f"Incorrect polarization state within {stray_light_after_path}"
-        warnings.warn(msg, IncorrectPolarizationStateWarning)
-    elif stray_light_after_model.data.shape != data_object.data.shape:
-        msg = f"Incorrect stray light function shape within {stray_light_after_path}"
-        raise InvalidDataError(msg)
-    else:
-        stray_light_model = interpolate_data(stray_light_before_model,
-                                             stray_light_after_model,
-                                             data_object.meta.datetime)
-        data_object.data[:, :] -= stray_light_model
-        uncertainty = 0
-        # TODO: when we have real uncertainties, use them
-        # uncertainty = stray_light_model.uncertainty.array # noqa: ERA001
-        data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 + uncertainty**2)
-        data_object.meta.history.add_now("LEVEL1-remove_stray_light",
-                                         f"stray light removed with {os.path.basename(str(stray_light_before_path))}"
-                                         f"and {os.path.basename(str(stray_light_after_path))}")
+    for model in stray_light_before_model, stray_light_after_model:
+        if model.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
+            msg=f"Incorrect TELESCOP value within {model['FILENAME'].value}"
+            raise IncorrectTelescopeError(msg)
+        if model.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
+            msg=f"Incorrect polarization state within {model['FILENAME'].value}"
+            raise IncorrectPolarizationStateError(msg)
+        if model.data.shape != data_object.data.shape:
+            msg = f"Incorrect stray light function shape within {model['FILENAME'].value}"
+            raise InvalidDataError(msg)
+
+    stray_light_model = interpolate_data(stray_light_before_model,
+                                         stray_light_after_model,
+                                         data_object.meta.datetime)
+    data_object.data[:, :] -= stray_light_model
+    uncertainty = 0
+    # TODO: when we have real uncertainties, use them
+    # uncertainty = stray_light_model.uncertainty.array # noqa: ERA001
+    data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 + uncertainty**2)
+    data_object.meta.history.add_now("LEVEL1-remove_stray_light",
+                                     f"stray light removed with {os.path.basename(str(stray_light_before_path))}"
+                                     f"and {os.path.basename(str(stray_light_after_path))}")
     return data_object

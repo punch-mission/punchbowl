@@ -13,6 +13,12 @@ class MissingMetadataError(PUNCHBowlError):
 class IncorrectFileCountError(PUNCHBowlError):
     """Wrong number of files passed in."""
 
+class IncorrectPolarizationStateError(PUNCHBowlError):
+    """Mismatched polarization state detected but ignored."""
+
+class IncorrectTelescopeError(PUNCHBowlError):
+    """Mismatched telescope detected but ignored."""
+
 
 class PUNCHBowlWarning(Warning):
     """Base class for warnings in punchbowl."""

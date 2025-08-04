@@ -282,6 +282,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
+            TYPECODE: XM
 
     XZ?:
         kinds: [Polarized, PZ]
@@ -291,6 +292,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
+            TYPECODE: XZ
 
     XP?:
         kinds: [Polarized, PP]
@@ -300,6 +302,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
+            TYPECODE: XP
 
     XR?:
         kinds: [Unpolarized, CR]
@@ -309,3 +312,44 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
+            TYPECODE: XR
+
+    QR?:
+        kinds: [Unpolarized, CR]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Preliminary Clear Image (QuickPUNCH input)
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: QR
+
+    QM?:
+        kinds: [Polarized, PM]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Preliminary Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: QM
+
+    QZ?:
+        kinds: [Polarized, PZ]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Preliminary Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: QZ
+
+    QP?:
+        kinds: [Polarized, PP]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Preliminary Polarized Image
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: QP

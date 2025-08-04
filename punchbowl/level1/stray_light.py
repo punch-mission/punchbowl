@@ -72,9 +72,9 @@ def estimate_stray_light(filepaths: list[str],
 
 
 @punch_task
-def remove_stray_light_task(data_object: NDCube,
-                            stray_light_before_path: pathlib.Path | str,
-                            stray_light_after_path: pathlib.Path | str) -> NDCube:
+def remove_stray_light_task(data_object: NDCube, #noqa: C901
+                            stray_light_before_path: pathlib.Path | str | NDCube,
+                            stray_light_after_path: pathlib.Path | str | NDCube) -> NDCube:
     """
     Prefect task to remove stray light from an image.
 
@@ -116,13 +116,26 @@ def remove_stray_light_task(data_object: NDCube,
         data_object.meta.history.add_now("LEVEL1-remove_stray_light", "Stray light correction skipped")
         return data_object
 
-    stray_light_before_path = pathlib.Path(stray_light_before_path)
-    stray_light_after_path = pathlib.Path(stray_light_after_path)
-    if not stray_light_before_path.exists() or not stray_light_after_path.exists():
-        msg = f"File {stray_light_before_path} or {stray_light_after_path} does not exist."
-        raise InvalidDataError(msg)
-    stray_light_before_model = load_ndcube_from_fits(stray_light_before_path)
-    stray_light_after_model = load_ndcube_from_fits(stray_light_after_path)
+    if isinstance(stray_light_before_path, NDCube):
+        stray_light_before_model = stray_light_before_path
+        stray_light_before_path = stray_light_before_model.meta["FILENAME"].value
+    else:
+        stray_light_before_path = pathlib.Path(stray_light_before_path)
+        if not stray_light_before_path.exists():
+            msg = f"File {stray_light_before_path} does not exist."
+            raise InvalidDataError(msg)
+        stray_light_before_model = load_ndcube_from_fits(stray_light_before_path)
+        stray_light_before_path = stray_light_before_model.meta["FILENAME"].value
+
+    if isinstance(stray_light_after_path, NDCube):
+        stray_light_after_model = stray_light_after_path
+        stray_light_after_path = stray_light_after_model.meta["FILENAME"].value
+    else:
+        stray_light_after_path = pathlib.Path(stray_light_after_path)
+        if not stray_light_after_path.exists():
+            msg = f"File {stray_light_after_path} does not exist."
+            raise InvalidDataError(msg)
+        stray_light_after_model = load_ndcube_from_fits(stray_light_after_path)
 
     if stray_light_before_model.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
         msg=f"Incorrect TELESCOP value within {stray_light_before_path}"

@@ -1,15 +1,17 @@
 import os
 import pathlib
 
+import pytest
 from ndcube import NDCube
 
 from punchbowl.data.punch_io import write_ndcube_to_fits
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.level1.flow import level1_core_flow
+from punchbowl.level1.flow import level1_early_core_flow, level1_late_core_flow
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
-def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
+@pytest.mark.parametrize("return_x_file", [True, False])
+def test_early_core_flow_runs_with_filenames(sample_ndcube, tmpdir, return_x_file):
         input_name = os.path.join(tmpdir, "test_input.fits")
         output_name = os.path.join(tmpdir, "test_output.fits")
         sample_data = sample_ndcube(shape=(10, 10), code="CR1", level="1")
@@ -23,16 +25,19 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
 
         quartic_coefficient_path = THIS_DIRECTORY / "data" / "test_quartic_coeffs.fits"
         vignetting_path = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425_v1.fits"
-        output = level1_core_flow([input_name],
+        output = level1_early_core_flow([input_name],
                                   quartic_coefficient_path=quartic_coefficient_path,
                                   vignetting_function_path=vignetting_path,
-                                  output_filename=[output_name], do_align=False)
+                                  output_filename=[output_name], do_align=False,
+                                  return_with_stray_light=return_x_file)
         assert isinstance(output[0], NDCube)
         assert os.path.exists(output_name[0])
+        if return_x_file:
+            assert isinstance(output[1], NDCube)
 
 
 
-def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
+def test_early_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
     cube = sample_ndcube(shape=(10, 10), code="CR1", level="1")
     cube.meta["RAWBITS"] = 16
     cube.meta["COMPBITS"] = 10
@@ -43,7 +48,18 @@ def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
     quartic_coefficient_path = THIS_DIRECTORY / "data" / "test_quartic_coeffs.fits"
     vignetting_path = THIS_DIRECTORY / "data" / "PUNCH_L1_GR1_20240222163425_v1.fits"
 
-    output = level1_core_flow([cube],
+    output = level1_early_core_flow([cube],
                               quartic_coefficient_path=quartic_coefficient_path,
                               vignetting_function_path=vignetting_path, do_align=False)
     assert isinstance(output[0], NDCube)
+
+
+def test_late_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
+        input_name = os.path.join(tmpdir, "test_input.fits")
+        output_name = os.path.join(tmpdir, "test_output.fits")
+        sample_data = sample_ndcube(shape=(10, 10), code="CR1", level="1")
+        write_ndcube_to_fits(sample_data, input_name)
+
+        output = level1_late_core_flow([input_name], output_filename=[output_name])
+        assert isinstance(output[0], NDCube)
+        assert os.path.exists(output_name[0])

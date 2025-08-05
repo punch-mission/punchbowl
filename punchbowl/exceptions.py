@@ -40,3 +40,6 @@ class IncorrectTelescopeWarning(PUNCHBowlWarning):
 
 class DataValueWarning(PUNCHBowlWarning):
     """Data values may exceed expected values."""
+
+class MissingTimezoneWarning(PUNCHBowlWarning):
+    """Data values may exceed expected values."""

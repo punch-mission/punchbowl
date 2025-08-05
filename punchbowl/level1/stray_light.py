@@ -3,6 +3,7 @@ import pathlib
 from datetime import UTC, datetime
 
 import numpy as np
+from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from prefect import get_run_logger
 
@@ -71,7 +72,7 @@ def estimate_stray_light(filepaths: list[str],
 
 
 @punch_task
-def remove_stray_light_task(data_object: NDCube,
+def remove_stray_light_task(data_object: NDCube, #noqa: C901
                             stray_light_before_path: pathlib.Path | str | NDCube,
                             stray_light_after_path: pathlib.Path | str | NDCube) -> NDCube:
     """
@@ -147,15 +148,36 @@ def remove_stray_light_task(data_object: NDCube,
             msg = f"Incorrect stray light function shape within {model['FILENAME'].value}"
             raise InvalidDataError(msg)
 
+    # For the quickpunch case, our stray light models run right up to the current time, with their DATE-OBS likely days
+    # in the past. It feels reckless to interpolate the six-hour variation in the model over several days, so let's
+    # instead interpolate using the nearst of DATE-BEG, DATE-AVG, or DATE-END. (DATE-BEG will be the best choice when
+    # reprocessing.)
+    delta_dateavg = abs(parse_datetime(stray_light_before_model.meta["DATE-AVG"].value + " UTC")
+                        - data_object.meta.datetime)
+    delta_datebeg = abs(parse_datetime(stray_light_before_model.meta["DATE-BEG"].value + " UTC")
+                        - data_object.meta.datetime)
+    delta_dateend = abs(parse_datetime(stray_light_before_model.meta["DATE-END"].value + " UTC")
+                        - data_object.meta.datetime)
+
+    closest = min(delta_datebeg, delta_dateavg, delta_dateend)
+    if closest is delta_datebeg:
+        time_key = "DATE-BEG"
+    elif closest is delta_dateavg:
+        time_key = "DATE-AVG"
+    else:
+        time_key = "DATE-END"
+
     stray_light_model = interpolate_data(stray_light_before_model,
                                          stray_light_after_model,
-                                         data_object.meta.datetime)
+                                         data_object.meta.datetime,
+                                         time_key=time_key,
+                                         allow_extrapolation=True)
     data_object.data[:, :] -= stray_light_model
     uncertainty = 0
     # TODO: when we have real uncertainties, use them
     # uncertainty = stray_light_model.uncertainty.array # noqa: ERA001
     data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 + uncertainty**2)
     data_object.meta.history.add_now("LEVEL1-remove_stray_light",
-                                     f"stray light removed with {os.path.basename(str(stray_light_before_path))}"
+                                     f"stray light removed with {os.path.basename(str(stray_light_before_path))} "
                                      f"and {os.path.basename(str(stray_light_after_path))}")
     return data_object

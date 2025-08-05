@@ -1,0 +1,1 @@
+In stray light subtraction, mismatches in observatory or polarization state are now an error, not a warning.

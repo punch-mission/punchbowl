@@ -1,0 +1,1 @@
+The L1 flow has been split into 'early' and 'late' phases. Early writes an X{MZPR} file and, for clear inputs, a QR file. Late writes a CR or P{MZP}.

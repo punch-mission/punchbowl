@@ -1,0 +1,1 @@
+Updates data query example notebook to streamline download and execution.

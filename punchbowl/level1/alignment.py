@@ -336,9 +336,13 @@ def find_star_coordinates(image_data: np.ndarray,
     """
     image_copy = image_data.copy()
     image_copy[image_copy > saturation_limit] = 0
-    background = sep.Background(image_data, bw=background_size, bh=background_size)
-    image_sub = image_data - background
-    objects = sep.extract(image_sub, detection_threshold, err=background.globalrms)
+    if background_size > 0:
+        background = sep.Background(image_data, bw=background_size, bh=background_size)
+        image_sub = image_data - background
+        objects = sep.extract(image_sub, detection_threshold, err=background.globalrms)
+    else:
+        image_sub = image_data
+        objects = sep.extract(image_sub, detection_threshold)
     objects = pd.DataFrame(objects).sort_values("flux")
     observed_coords = np.stack([objects["x"], objects["y"]], axis=-1)
 
@@ -529,16 +533,30 @@ def solve_pointing(
     image_data: np.ndarray,
     image_wcs: WCS,
     distortion: WCS | None = None,
-    saturation_limit: float = np.inf) -> WCS:
+    saturation_limit: float = np.inf,
+    observatory: str = "wfi") -> WCS:
     """Carefully refine the pointing of an image based on a guess WCS."""
-    observed = find_star_coordinates(image_data, saturation_limit=saturation_limit)
     wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
+    if observatory == "wfi":
+        search_scales = (14, 15, 16)
+        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=5.0)
+    elif observatory == "nfi":
+        search_scales = (11, 12, 13, 14)
+        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=3.0)
+
+        # we mask false detections near the occulter
+        distances = np.sqrt(np.square(observed[:, 0] - 1024) + np.square(observed[:, 1] - 1024))
+        observed = observed[distances > 200]
+    else:
+        msg = f"Unknown observatory = {observatory}"
+        raise ValueError(msg)
     astrometry_net = astrometry_net_initial_solve(observed, image_wcs.deepcopy(),
+                                                  search_scales=search_scales,
                                                   lower_arcsec_per_pixel=wcs_arcsec_per_pixel - 10,
                                                   upper_arcsec_per_pixel=wcs_arcsec_per_pixel + 10)
     if astrometry_net is None:
-        msg = "Astrometry.net initial solution failed."
-        raise RuntimeError(msg)
+        warnings.warn("Astrometry.net initial solution failed. Falling back to spacecraft WCS.", RuntimeWarning)
+        astrometry_net = image_wcs.deepcopy()
 
     astrometry_net = convert_cd_matrix_to_pc_matrix(astrometry_net)
 
@@ -749,7 +767,9 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
     else:
         distortion = None
 
-    celestial_output = solve_pointing(refining_data, celestial_input, distortion, saturation_limit=60_000)
+    observatory = "nfi" if data_object.meta["OBSCODE"].value == "4" else "wfi"
+    celestial_output = solve_pointing(refining_data, celestial_input, distortion,
+                                      saturation_limit=60_000, observatory=observatory)
 
     recovered_wcs, _ = calculate_helio_wcs_from_celestial(celestial_output,
                                                        data_object.meta.astropy_time,

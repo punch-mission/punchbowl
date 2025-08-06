@@ -43,6 +43,9 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 
     logger.info("ending level 3 PIM/CIM flow")
 
+    for o in out_list:
+        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+
     if output_filename is not None:
         output_image_task(out_list[0], output_filename)
 
@@ -68,6 +71,8 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
         data_list = [convert_polarization(d) for d in data_list]
     logger.info("ending level 3 core flow")
 
+    for o in data_list:
+        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
 
     if output_filename is not None:
         output_image_task(data_list[0], output_filename)
@@ -84,6 +89,9 @@ def generate_level3_low_noise_flow(data_list: list[str] | list[NDCube],
     logger.info("Generating low noise products")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
     low_noise_image = create_low_noise_task(data_list)
+
+    provenance_list = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+    low_noise_image.meta.provenance = provenance_list
 
     if output_filename is not None:
         output_image_task(low_noise_image, output_filename)

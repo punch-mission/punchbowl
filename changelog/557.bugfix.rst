@@ -1,0 +1,1 @@
+NFI pointing was consistently failing. This improves it by changing the alignment search parameters and allowing astrometry.net to fail by falling back on the spacecraft WCS.

@@ -33,7 +33,7 @@ authors:
   orcid: "https://orcid.org/0000-0002-7164-2786"
 
 title: "punchbowl"
-version: 0.0.17
+version: 0.0.18
 doi: 10.5281/zenodo.14029123
 date-released: 2025-07-23
 url: "https://github.com/punch-mission/punchbowl"

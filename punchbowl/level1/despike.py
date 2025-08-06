@@ -2,6 +2,7 @@ import numpy as np
 from astroscrappy import detect_cosmics
 from ndcube import NDCube
 from scipy.signal import convolve2d, medfilt2d
+from threadpoolctl import threadpool_limits
 
 from punchbowl.level1.deficient_pixel import cell_neighbors
 from punchbowl.prefect import punch_task
@@ -97,7 +98,8 @@ def despike_task(data_object: NDCube,
                         niter:int=10,
                         gain:float=4.9,
                         readnoise:float=17,
-                        cleantype:str="meanmask")-> NDCube:
+                        cleantype:str="meanmask",
+                        max_workers: int | None = None)-> NDCube:
     """
     Despike an image using astroscrappy.detect_cosmics.
 
@@ -119,6 +121,8 @@ def despike_task(data_object: NDCube,
         Read noise of the image (electrons).
     cleantype : str, optional
         Type of cleaning algorithm: 'meanmask', 'medmask', or 'idw'.
+    max_workers : int, optional
+        Max number of threads to use
 
     Returns
     -------
@@ -126,15 +130,16 @@ def despike_task(data_object: NDCube,
         Despiked cube.
 
     """
-    spikes, data_object.data[...] = detect_cosmics(
-                                    data_object.data[...],
-                                    sigclip=sigclip,
-                                    sigfrac=sigfrac,
-                                    objlim=objlim,
-                                    niter=niter,
-                                    gain=gain,
-                                    readnoise=readnoise,
-                                    cleantype=cleantype)
+    with threadpool_limits(max_workers):
+        spikes, data_object.data[...] = detect_cosmics(
+                                        data_object.data[...],
+                                        sigclip=sigclip,
+                                        sigfrac=sigfrac,
+                                        objlim=objlim,
+                                        niter=niter,
+                                        gain=gain,
+                                        readnoise=readnoise,
+                                        cleantype=cleantype)
 
     data_object.uncertainty.array[spikes] = np.inf
     data_object.meta.history.add_now("LEVEL1-despike", "image despiked")

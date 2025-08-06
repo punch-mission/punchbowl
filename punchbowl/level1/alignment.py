@@ -407,7 +407,7 @@ def astrometry_net_initial_solve(observed_coords: np.ndarray,
 
 
 def _residual(params: Parameters,
-              subcatalog: pd.DataFrame,
+              catalog_stars: SkyCoord,
               observed_coords: np.ndarray,
               guess_wcs: WCS,
               max_error: float = 30) -> float:
@@ -418,10 +418,10 @@ def _residual(params: Parameters,
     ----------
     params : Parameters
         optimization parameters from lmfit
+    catalog_stars : SkyCoord
+        image catalog of stars to match against
     observed_coords : np.ndarray
         pixel coordinates of stars observed in the image, i.e. the coordinates found by sep of the actual star location
-    subcatalog : pd.DataFrame
-        image catalog of stars to match against
     guess_wcs : WCS
         initial guess of the world coordinate system, must overlap with the true WCS
     max_error: float
@@ -446,11 +446,7 @@ def _residual(params: Parameters,
     refined_wcs.cpdis2 = guess_wcs.cpdis2
 
     try:
-        xs, ys = SkyCoord(
-            ra=np.array(subcatalog["RAdeg"]) * u.degree,
-            dec=np.array(subcatalog["DEdeg"]) * u.degree,
-            distance=np.array(subcatalog["distance"]) * u.parsec,
-        ).to_pixel(refined_wcs, mode="all")
+        xs, ys = catalog_stars.to_pixel(refined_wcs, mode="all")
     except NoConvergence as e:
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
     refined_coords = np.stack([xs, ys], axis=-1)
@@ -507,8 +503,14 @@ def  refine_pointing_single_step(
     pv = guess_wcs.wcs.get_pv()[0][-1] if guess_wcs.wcs.get_pv() else 0.0
     params.add("pv", value=pv, min=0.0, max=1.0, vary=not fix_pv)
 
+    catalog_stars = SkyCoord(
+        np.array(subcatalog["RAdeg"]) * u.degree,
+        np.array(subcatalog["DEdeg"]) * u.degree,
+        np.array(subcatalog["distance"]) * u.parsec,
+    )
+
     out = minimize(_residual, params, method=method,
-                   args=(subcatalog, observed_coords, guess_wcs),
+                   args=(catalog_stars, observed_coords, guess_wcs),
                    max_nfev=100, calc_covar=False)
     result_wcs = guess_wcs.deepcopy()
     result_wcs.wcs.cdelt = (-out.params["platescale"].value, out.params["platescale"].value)

@@ -1,1 +1,0 @@
-Turns off ruff's EM101 check.

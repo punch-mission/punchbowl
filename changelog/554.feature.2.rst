@@ -1,1 +1,0 @@
-Stray light models can be interpolated or extrapolated to the image time. It will use either DATE-AVG, DATE-BEG, or DATE-END of the stray light models as the reference time for the models, so that in the quickpunch case, a 6-hour isn't extrapolated for days.

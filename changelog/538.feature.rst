@@ -1,1 +1,0 @@
-Stray light models have their date_obs set to the provided reference time and require much less RAM to generate.

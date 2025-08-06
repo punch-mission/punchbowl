@@ -1,1 +1,0 @@
-The ``on_completion`` debugging hook is only set if debugging is enabled, avoiding log messages after every Task run when debugging isn't enabled.

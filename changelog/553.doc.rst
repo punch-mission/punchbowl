@@ -1,1 +1,0 @@
-Improves the documentation about file versions.

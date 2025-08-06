@@ -1,1 +1,0 @@
-Provenance wasn't getting populated. This makes sure it's fully filled for all products.

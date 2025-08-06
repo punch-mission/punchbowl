@@ -1,1 +1,0 @@
-The PSF dilation was too small and resulting in artifacts. This expands it from 1 to 3 dilations.

@@ -1,16 +1,16 @@
 import os
 import pathlib
-import warnings
 from datetime import UTC, datetime
 
 import numpy as np
+from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.exceptions import IncorrectPolarizationStateWarning, IncorrectTelescopeWarning, InvalidDataError
+from punchbowl.exceptions import IncorrectPolarizationStateError, IncorrectTelescopeError, InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import interpolate_data, nan_percentile
+from punchbowl.util import average_datetime, interpolate_data, nan_percentile
 
 
 @punch_flow
@@ -25,12 +25,10 @@ def estimate_stray_light(filepaths: list[str],
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     data = None
     uncertainties = None
+    date_obses = []
     for i, path in enumerate(sorted(filepaths)):
         cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
-        if i == 0:
-            first_meta = cube.meta
-        if i == len(filepaths) - 1:
-            last_meta = cube.meta
+        date_obses.append(cube.meta.datetime)
         if data is None:
             data = np.empty((len(filepaths), *cube.data.shape))
         data[i] = cube.data
@@ -42,7 +40,8 @@ def estimate_stray_light(filepaths: list[str],
             else:
                 uncertainties[i] = 0
 
-    logger.info(f"Images loaded; they span {first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
+    logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
+                f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
 
     stray_light_estimate = nan_percentile(data, percentile, modify_arr_in_place=True).squeeze()
     # The values in `data` have been modified by the percentile calculation (which saves a bit of time and a lot of
@@ -51,11 +50,15 @@ def estimate_stray_light(filepaths: list[str],
 
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
-    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") or first_meta["DATE-OBS"].value
+    meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") or meta["DATE-AVG"].value
+    meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+    meta["DATE-END"] = max(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta.history.add_now("stray light",
                          f"Generated with {len(filepaths)} files running from "
-                         f"{first_meta['DATE-OBS'].value} to {last_meta['DATE-OBS'].value}")
-    meta["FILEVRSN"] = first_meta["FILEVRSN"].value
+                         f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
+                         f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
+    meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
 
     uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths) if do_uncertainty else None
 
@@ -69,9 +72,9 @@ def estimate_stray_light(filepaths: list[str],
 
 
 @punch_task
-def remove_stray_light_task(data_object: NDCube,
-                            stray_light_before_path: pathlib.Path | str,
-                            stray_light_after_path: pathlib.Path | str) -> NDCube:
+def remove_stray_light_task(data_object: NDCube, #noqa: C901
+                            stray_light_before_path: pathlib.Path | str | NDCube,
+                            stray_light_after_path: pathlib.Path | str | NDCube) -> NDCube:
     """
     Prefect task to remove stray light from an image.
 
@@ -113,42 +116,68 @@ def remove_stray_light_task(data_object: NDCube,
         data_object.meta.history.add_now("LEVEL1-remove_stray_light", "Stray light correction skipped")
         return data_object
 
-    stray_light_before_path = pathlib.Path(stray_light_before_path)
-    stray_light_after_path = pathlib.Path(stray_light_after_path)
-    if not stray_light_before_path.exists() or not stray_light_after_path.exists():
-        msg = f"File {stray_light_before_path} or {stray_light_after_path} does not exist."
-        raise InvalidDataError(msg)
-    stray_light_before_model = load_ndcube_from_fits(stray_light_before_path)
-    stray_light_after_model = load_ndcube_from_fits(stray_light_after_path)
-
-    if stray_light_before_model.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
-        msg=f"Incorrect TELESCOP value within {stray_light_before_path}"
-        warnings.warn(msg, IncorrectTelescopeWarning)
-    elif stray_light_before_model.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
-        msg=f"Incorrect polarization state within {stray_light_before_path}"
-        warnings.warn(msg, IncorrectPolarizationStateWarning)
-    elif stray_light_before_model.data.shape != data_object.data.shape:
-        msg = f"Incorrect stray light function shape within {stray_light_before_path}"
-        raise InvalidDataError(msg)
-    elif stray_light_after_model.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
-        msg=f"Incorrect TELESCOP value within {stray_light_after_path}"
-        warnings.warn(msg, IncorrectTelescopeWarning)
-    elif stray_light_after_model.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
-        msg=f"Incorrect polarization state within {stray_light_after_path}"
-        warnings.warn(msg, IncorrectPolarizationStateWarning)
-    elif stray_light_after_model.data.shape != data_object.data.shape:
-        msg = f"Incorrect stray light function shape within {stray_light_after_path}"
-        raise InvalidDataError(msg)
+    if isinstance(stray_light_before_path, NDCube):
+        stray_light_before_model = stray_light_before_path
+        stray_light_before_path = stray_light_before_model.meta["FILENAME"].value
     else:
-        stray_light_model = interpolate_data(stray_light_before_model,
-                                             stray_light_after_model,
-                                             data_object.meta.datetime)
-        data_object.data[:, :] -= stray_light_model
-        uncertainty = 0
-        # TODO: when we have real uncertainties, use them
-        # uncertainty = stray_light_model.uncertainty.array # noqa: ERA001
-        data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 + uncertainty**2)
-        data_object.meta.history.add_now("LEVEL1-remove_stray_light",
-                                         f"stray light removed with {os.path.basename(str(stray_light_before_path))}"
-                                         f"and {os.path.basename(str(stray_light_after_path))}")
+        stray_light_before_path = pathlib.Path(stray_light_before_path)
+        if not stray_light_before_path.exists():
+            msg = f"File {stray_light_before_path} does not exist."
+            raise InvalidDataError(msg)
+        stray_light_before_model = load_ndcube_from_fits(stray_light_before_path)
+        stray_light_before_path = stray_light_before_model.meta["FILENAME"].value
+
+    if isinstance(stray_light_after_path, NDCube):
+        stray_light_after_model = stray_light_after_path
+        stray_light_after_path = stray_light_after_model.meta["FILENAME"].value
+    else:
+        stray_light_after_path = pathlib.Path(stray_light_after_path)
+        if not stray_light_after_path.exists():
+            msg = f"File {stray_light_after_path} does not exist."
+            raise InvalidDataError(msg)
+        stray_light_after_model = load_ndcube_from_fits(stray_light_after_path)
+
+    for model in stray_light_before_model, stray_light_after_model:
+        if model.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
+            msg=f"Incorrect TELESCOP value within {model['FILENAME'].value}"
+            raise IncorrectTelescopeError(msg)
+        if model.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
+            msg=f"Incorrect polarization state within {model['FILENAME'].value}"
+            raise IncorrectPolarizationStateError(msg)
+        if model.data.shape != data_object.data.shape:
+            msg = f"Incorrect stray light function shape within {model['FILENAME'].value}"
+            raise InvalidDataError(msg)
+
+    # For the quickpunch case, our stray light models run right up to the current time, with their DATE-OBS likely days
+    # in the past. It feels reckless to interpolate the six-hour variation in the model over several days, so let's
+    # instead interpolate using the nearst of DATE-BEG, DATE-AVG, or DATE-END. (DATE-BEG will be the best choice when
+    # reprocessing.)
+    delta_dateavg = abs(parse_datetime(stray_light_before_model.meta["DATE-AVG"].value + " UTC")
+                        - data_object.meta.datetime)
+    delta_datebeg = abs(parse_datetime(stray_light_before_model.meta["DATE-BEG"].value + " UTC")
+                        - data_object.meta.datetime)
+    delta_dateend = abs(parse_datetime(stray_light_before_model.meta["DATE-END"].value + " UTC")
+                        - data_object.meta.datetime)
+
+    closest = min(delta_datebeg, delta_dateavg, delta_dateend)
+    if closest is delta_datebeg:
+        time_key = "DATE-BEG"
+    elif closest is delta_dateavg:
+        time_key = "DATE-AVG"
+    else:
+        time_key = "DATE-END"
+
+    stray_light_model = interpolate_data(stray_light_before_model,
+                                         stray_light_after_model,
+                                         data_object.meta.datetime,
+                                         time_key=time_key,
+                                         allow_extrapolation=True)
+    data_object.data[:, :] -= stray_light_model
+    uncertainty = 0
+    # TODO: when we have real uncertainties, use them
+    # uncertainty = stray_light_model.uncertainty.array # noqa: ERA001
+    data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 + uncertainty**2)
+    data_object.meta.history.add_now("LEVEL1-remove_stray_light",
+                                     f"stray light removed with {os.path.basename(str(stray_light_before_path))} "
+                                     f"and {os.path.basename(str(stray_light_after_path))}")
     return data_object

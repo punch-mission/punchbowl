@@ -100,7 +100,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 9,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,
 9,keyword,CALPSF,,PSF filename,str,TRUE,TRUE,
 9,keyword,CALPM,,bad pixel map filename,str,TRUE,TRUE,
-9,keyword,CALSL,,stray light model filename,str,TRUE,TRUE,
+9,keyword,CALSL0,,first stray light model,str,TRUE,TRUE,
+9,keyword,CALSL1,,second stray light model,str,TRUE,TRUE,
 10,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
 10,keyword,BUNIT,2.009e+07 W/(m2 sr),Units of observation,str,TRUE,TRUE,2.009e+07 W/(m2 sr)
 10,keyword,DATAZER,,number of pixels=0,int,TRUE,TRUE,

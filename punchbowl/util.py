@@ -1,13 +1,15 @@
 import os
 import abc
+import warnings
 from typing import Generic, TypeVar
 from datetime import UTC, datetime
 
 import numpy as np
+from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
-from punchbowl.exceptions import InvalidDataError
+from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning
 from punchbowl.prefect import punch_task
 
 
@@ -141,17 +143,20 @@ def nan_percentile(arr: np.ndarray, q: list[float] | float, modify_arr_in_place:
     return result
 
 
-def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime) -> np.ndarray:
+def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime, time_key: str = "DATE-OBS",
+                     allow_extrapolation: bool = False) -> np.ndarray:
     """Interpolates between two data objects."""
-    before_date = data_before.meta.datetime.timestamp()
-    after_date = data_after.meta.datetime.timestamp()
+    before_date = parse_datetime(data_before.meta[time_key].value + " UTC").timestamp()
+    after_date = parse_datetime(data_after.meta[time_key].value + " UTC").timestamp()
+    if reference_time.tzinfo is None:
+        warnings.warn("Reference time has no timezone, but should probably be set to UTC", MissingTimezoneWarning)
     observation_date = reference_time.timestamp()
 
-    if before_date > observation_date:
+    if before_date > observation_date and not allow_extrapolation:
         msg = "Before data was after the observation date"
         raise InvalidDataError(msg)
 
-    if after_date < observation_date:
+    if after_date < observation_date and not allow_extrapolation:
         msg = "After data was before the observation date"
         raise InvalidDataError(msg)
 

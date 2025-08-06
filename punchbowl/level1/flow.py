@@ -152,12 +152,14 @@ def level1_early_core_flow(  # noqa: C901
                                             max_window_size=deficient_pixel_max_window_size,
                                             method=deficient_pixel_method)
         if return_with_stray_light:
-            data_with_stray_light = data.data.copy()
+            data_with_stray_light = data.data.copy() # This will become the x file
             uncertainty_with_stray_light = data.uncertainty.array.copy()
-        data = remove_stray_light_task(data, stray_light_before_path, stray_light_after_path)
-        data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
-        if do_align:
-            data = align_task(data, distortion_path)
+        # This will become the Q file
+        if return_preliminary_stray_light_subtracted or do_align:
+            data = remove_stray_light_task(data, stray_light_before_path, stray_light_after_path)
+            data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
+            if do_align:
+                data = align_task(data, distortion_path)
 
         if mask_path:
             with open(mask_path, "rb") as f:

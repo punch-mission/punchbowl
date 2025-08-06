@@ -1,5 +1,6 @@
 import os
 import pathlib
+import warnings
 from datetime import UTC, datetime
 
 import numpy as np
@@ -8,7 +9,12 @@ from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.exceptions import IncorrectPolarizationStateError, IncorrectTelescopeError, InvalidDataError
+from punchbowl.exceptions import (
+    CantInterpolateWarning,
+    IncorrectPolarizationStateError,
+    IncorrectTelescopeError,
+    InvalidDataError,
+)
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import average_datetime, interpolate_data, nan_percentile
 
@@ -167,11 +173,16 @@ def remove_stray_light_task(data_object: NDCube, #noqa: C901
     else:
         time_key = "DATE-END"
 
-    stray_light_model = interpolate_data(stray_light_before_model,
-                                         stray_light_after_model,
-                                         data_object.meta.datetime,
-                                         time_key=time_key,
-                                         allow_extrapolation=True)
+    if stray_light_before_model.meta[time_key].value == stray_light_after_model.meta[time_key].value:
+        warnings.warn(
+            "Timestamps are identical for the stray light models; can't inter/extrapolate", CantInterpolateWarning)
+        stray_light_model = stray_light_before_model.data
+    else:
+        stray_light_model = interpolate_data(stray_light_before_model,
+                                             stray_light_after_model,
+                                             data_object.meta.datetime,
+                                             time_key=time_key,
+                                             allow_extrapolation=True)
     data_object.data[:, :] -= stray_light_model
     uncertainty = 0
     # TODO: when we have real uncertainties, use them

@@ -42,4 +42,7 @@ class DataValueWarning(PUNCHBowlWarning):
     """Data values may exceed expected values."""
 
 class MissingTimezoneWarning(PUNCHBowlWarning):
-    """Data values may exceed expected values."""
+    """Timezone problems."""
+
+class CantInterpolateWarning(PUNCHBowlWarning):
+    """Values to interpolate between are identical."""

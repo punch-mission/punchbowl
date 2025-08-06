@@ -134,6 +134,7 @@ lint.ignore = [
     "TC002",
     "TC003",
     "E731",
+    "EM101"
 ]
 
 [tool.ruff.lint.per-file-ignores]

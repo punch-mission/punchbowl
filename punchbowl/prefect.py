@@ -2,6 +2,7 @@ from typing import Any
 
 from ndcube import NDCube
 from prefect import Flow, Task, flow, get_run_logger, task
+from prefect.cache_policies import NO_CACHE
 from prefect.client.schemas.objects import TaskRun
 from prefect.states import State
 from prefect.variables import Variable
@@ -31,7 +32,8 @@ _debug_mode = Variable.get("debug", False)
 
 def punch_task(*args: Any, **kwargs: Any) -> Task:
     """Prefect task that does PUNCH special things."""
-    return task(*args, **kwargs, on_completion=[completion_debugger] if _debug_mode else [], on_failure=[failure_hook])
+    return task(*args, **kwargs, on_completion=[completion_debugger] if _debug_mode else [], on_failure=[failure_hook],
+                cache_policy=NO_CACHE)
 
 def punch_flow(*args: Any, **kwargs: Any) -> Flow:
     """Prefect flow that does PUNCH special things."""

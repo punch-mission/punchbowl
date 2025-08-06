@@ -138,7 +138,8 @@ def level1_early_core_flow(  # noqa: C901
                             despike_niter,
                             gain_bottom,  # TODO: despiking should handle the gain more completely
                             read_noise_level,
-                            despike_cleantype)
+                            despike_cleantype,
+                            max_workers=max_workers)
         data = destreak_task(data,
                              exposure_time=exposure_time,
                              reset_line_time=reset_line_time,

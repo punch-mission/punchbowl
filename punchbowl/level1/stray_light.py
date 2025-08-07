@@ -33,7 +33,11 @@ def estimate_stray_light(filepaths: list[str],
     uncertainties = None
     date_obses = []
     for i, path in enumerate(sorted(filepaths)):
-        cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
+        try:
+            cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
+        except:
+            logger.warning(f"Error reading {path}")
+            raise
         date_obses.append(cube.meta.datetime)
         if data is None:
             data = np.empty((len(filepaths), *cube.data.shape))

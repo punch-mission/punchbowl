@@ -15,7 +15,7 @@ from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.levelq.pca import pca_filter
 from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
 
-ORDER_QP = ["CR1", "CR2", "CR3", "CNN"]
+ORDER_QP = ["QR1", "QR2", "QR3", "CNN"]
 
 @flow(validate_parameters=False)
 def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802

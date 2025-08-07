@@ -64,6 +64,7 @@ def estimate_stray_light(filepaths: list[str],
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") or meta["DATE-AVG"].value
     meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-END"] = max(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+    meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
     meta.history.add_now("stray light",
                          f"Generated with {len(filepaths)} files running from "
                          f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "

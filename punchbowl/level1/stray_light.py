@@ -30,7 +30,7 @@ def estimate_stray_light(filepaths: list[str],
     if isinstance(reference_time, str):
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
     data = None
-    uncertainties = None
+    uncertainty = None
     date_obses = []
     for i, path in enumerate(sorted(filepaths)):
         try:
@@ -43,12 +43,11 @@ def estimate_stray_light(filepaths: list[str],
             data = np.empty((len(filepaths), *cube.data.shape))
         data[i] = cube.data
         if do_uncertainty:
-            if uncertainties is None:
-                uncertainties = np.empty_like(data)
+            if uncertainty is None:
+                uncertainty = np.zeros_like(cube.data)
             if cube.uncertainty is not None:
-                uncertainties[i] = cube.uncertainty.array
-            else:
-                uncertainties[i] = 0
+                # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
+                uncertainty += cube.uncertainty.array ** 2
 
     logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                 f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
@@ -57,6 +56,9 @@ def estimate_stray_light(filepaths: list[str],
     # The values in `data` have been modified by the percentile calculation (which saves a bit of time and a lot of
     # memory usage), so let's make sure we don't accidentally use the array again later
     del data
+
+    if do_uncertainty:
+        uncertainty = np.sqrt(uncertainty) / len(filepaths) if do_uncertainty else None
 
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
@@ -70,8 +72,6 @@ def estimate_stray_light(filepaths: list[str],
                          f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                          f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
     meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
-
-    uncertainty = np.sqrt(np.sum(uncertainties ** 2, axis=0)) / len(filepaths) if do_uncertainty else None
 
     # Let's put in a valid, representative WCS, with the right scale and pointing, etc. But let's set the rotation to
     # zero---the rotation value is meaningless, so it should be an obvious filler value

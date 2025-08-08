@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
+import glob
 
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.exceptions import (
@@ -13,7 +14,9 @@ from punchbowl.exceptions import (
     InvalidDataError,
     LargeTimeDeltaWarning,
 )
-from punchbowl.level1.vignette import correct_vignetting_task, generate_vignetting_calibration
+from punchbowl.level1.vignette import (correct_vignetting_task,
+                                       generate_vignetting_calibration_wfi,
+                                       generate_vignetting_calibration_nfi)
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -118,6 +121,18 @@ def test_vignetting_correction(sample_ndcube) -> None:
 
 def test_generate_vignetting_calibration() -> None:
     """Test that vignetting calibration data is generated"""
-    vignetting_data = generate_vignetting_calibration("data.dat", "mask.bin", spacecraft="4")
+    vignetting_data = generate_vignetting_calibration_wfi("data.dat", "mask.bin", spacecraft="4")
     assert isinstance(vignetting_data, np.ndarray)
     assert vignetting_data.shape == (2048, 2048)
+
+
+def test_generate_vignetting_calibration_nfi() -> None:
+    """Test that vignetting calibration data is generated"""
+    input_files = glob.glob("/Users/clowder/data/punch/0/CR4/2025/07/**/*.fits", recursive=True)
+    vignetting_data = generate_vignetting_calibration_nfi(input_files = input_files[-500:],
+                                                          path_mask = "/Users/clowder/Downloads/speckle_mask_v2.fits",
+                                                          dark_path = "/Users/clowder/Downloads/nfi_dark.fits",
+                                                          polarizer = "R",
+                                                          output_path="/Users/clowder/Downloads/")
+
+    assert True

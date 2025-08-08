@@ -7,7 +7,7 @@ from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import get_base_file_name, write_ndcube_to_fits
-from punchbowl.level1.vignette import generate_vignetting_calibration
+from punchbowl.level1.vignette import generate_vignetting_calibration_wfi
 
 
 def main() -> None:
@@ -77,9 +77,7 @@ def create_calibration(level: str,
 
     match code:
         case "GR" | "GM" | "GZ" | "GP":
-            calibration_data = generate_vignetting_calibration(input_list[0],
-                                                               input_list[1],
-                                                               spacecraft=spacecraft)
+            calibration_data = generate_vignetting_calibration_wfi(input_list[0], input_list[1], spacecraft=spacecraft)
             calibration_cube = NDCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
         case _:
             raise RuntimeError(f"Calibration pipeline not written for this code: {code}.")

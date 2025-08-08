@@ -3,12 +3,15 @@ import pathlib
 import warnings
 
 import numpy as np
+from astropy.io import fits
 from astropy.wcs import WCS
 from ndcube import NDCube
 from reproject import reproject_adaptive
-from scipy.ndimage import binary_erosion
+from scipy.ndimage import binary_erosion, binary_dilation, grey_closing
 
 from punchbowl.data import load_ndcube_from_fits
+from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.punch_io import get_base_file_name
 from punchbowl.exceptions import (
     IncorrectPolarizationStateWarning,
     IncorrectTelescopeWarning,
@@ -16,8 +19,10 @@ from punchbowl.exceptions import (
     LargeTimeDeltaWarning,
     NoCalibrationDataWarning,
 )
+from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.prefect import punch_task
 from punchbowl.util import DataLoader
+from punchbowl.util import load_spacecraft_mask
 
 
 @punch_task
@@ -100,7 +105,7 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
     return data_object
 
 
-def generate_vignetting_calibration(path_vignetting: str,
+def generate_vignetting_calibration_wfi(path_vignetting: str,
                                     path_mask: str,
                                     spacecraft: str,
                                     vignetting_threshold: float = 1.2,
@@ -178,6 +183,110 @@ def generate_vignetting_calibration(path_vignetting: str,
 
         return vignetting_reprojected
     if spacecraft=="4":
-        # TODO: implement NFI speckle inclusion
-        return np.ones((2048,2048))
+        raise RuntimeError(f"Please use the NFI vignetting generator function.")
     raise RuntimeError(f"Unknown spacecraft {spacecraft}")
+
+
+def generate_vignetting_calibration_nfi(input_files: list[str],
+                                        path_mask: str,
+                                        dark_path: str,
+                                        polarizer: str,
+                                        output_path: str = None) -> None:
+    """
+    Create calibration data for vignetting for the NFI spacecraft.
+
+    Parameters
+    ----------
+    input_files : list[str]
+        Paths to input NFI files for processing
+    path_mask : str
+        Path to the speckle mask FITS file
+    dark_path : str
+        Path to the dark frame FITS file
+    polarizer : str
+        Polarizer name
+    output_path : str
+        Path to calibration file output
+    """
+
+    # Load NFI mask
+
+
+    # Load speckle mask and dark frame
+    with fits.open(path_mask) as hdul:
+        specklemask = np.fliplr(hdul[0].data)
+
+    with fits.open(dark_path) as hdul:
+        nfidark = hdul[1].data
+
+    # Load a WCS to use later on
+    # TODO - make this more cleverer
+    with fits.open(input_files[0]) as hdul:
+        cube_wcs = WCS(hdul[1].header)
+
+    # Load and square root decode input data
+    cubes = [
+        decode_sqrt_data.fn(cube)
+        for cube in (load_ndcube_from_fits(file) for file in input_files)
+        if 490 <= cube.meta["DATAMDN"].value <= 655 and cube.meta["DATAP99"].value != 4095
+           and not cube.meta.__setitem__("OFFSET", 400)
+    ]
+
+    # Subtract dark frame
+    for cube in cubes:
+        cube.data[...] -= nfidark
+
+    # Build speckle boundary mask
+    inverted_mask = 1 - specklemask
+    dilated = binary_dilation(inverted_mask, structure=np.ones((3, 3)))
+    boundary_mask = dilated & (~inverted_mask)
+
+    # Stack image data
+    images = np.array([cube.data for cube in cubes])
+    applied_images = images * boundary_mask
+    applied_speck = images * specklemask
+
+    # Compute averages and construct flatfield
+    avg_images = np.nanmean(applied_images, axis=0)
+    avg_img_darkremoved = np.nanmean(images, axis=0)
+    avg_speck = np.nanmean(applied_speck, axis=0)
+    avg_speckfilled = grey_closing(avg_images, structure=np.ones((7, 7)))
+
+    nficlean = avg_speckfilled * inverted_mask + avg_speck
+    nfiflat = avg_img_darkremoved / nficlean
+
+    # Multiply by mask
+    mask_nfi = load_spacecraft_mask("/Users/clowder/Downloads/mask_nfi.bin")
+
+    # Deal with infs and remask
+    nfiflat[np.isinf(nfiflat)] = 1.
+    nfiflat[mask_nfi == 0] = 1
+
+    # Generate an output metadata and NDCube
+    m = NormalizedMetadata.load_template(f"G{polarizer}4", "1")
+    # TODO - set these dynamically, or from passed in variables
+    m['DATE-OBS'] = '2025-07-31T00:00:00.000'
+    m['FILEVRSN'] = "0e"
+    h = m.to_fits_header(wcs = cube_wcs)
+
+    cube = NDCube(data=nfiflat.astype('float32'), wcs=cube_wcs, meta=m)
+
+    filename = f"{output_path}/{get_base_file_name(cube)}.fits"
+
+    full_header = cube.meta.to_fits_header(wcs=cube.wcs)
+    full_header["FILENAME"] = os.path.basename(filename)
+
+    hdu_data = fits.ImageHDU(data=cube.data,
+                                 header=full_header,
+                                 name="Primary data array")
+    hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
+        name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
+    hdu_provenance.name = "File provenance"
+
+    hdul = cube.wcs.to_fits()
+    hdul[0] = fits.PrimaryHDU()
+    hdul.insert(1, hdu_data)
+
+    hdul.append(hdu_provenance)
+    hdul.writeto(filename, overwrite=True, checksum=True)
+    hdul.close()

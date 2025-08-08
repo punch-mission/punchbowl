@@ -171,6 +171,12 @@ def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: dat
 
     return data_interpolated
 
+def load_spacecraft_mask(path_mask: str) -> np.ndarray:
+    """Loads the specified spacecraft mask."""
+    with open(path_mask, 'rb') as f:
+        byte_array = f.read()
+    mask = np.unpackbits(np.frombuffer(byte_array, dtype=np.uint8)).reshape(2048, 2048)
+    return mask.T
 
 def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
     """Find the first cube that's not None in a list of NDCubes."""

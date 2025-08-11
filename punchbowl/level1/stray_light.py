@@ -79,7 +79,7 @@ def estimate_stray_light(filepaths: list[str],
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
     meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
-    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") or meta["DATE-AVG"].value
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") if reference_time else meta["DATE-AVG"].value
     meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-END"] = max(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta.history.add_now("stray light",

@@ -7,6 +7,7 @@ import numpy as np
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from prefect import get_run_logger
+from scipy.special import erfinv
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.exceptions import (
@@ -55,8 +56,25 @@ def estimate_stray_light(filepaths: list[str],
 
     stray_light_estimate = nan_percentile(data, percentile, modify_arr_in_place=True).squeeze()
     # The values in `data` have been modified by the percentile calculation (which saves a bit of time and a lot of
-    # memory usage), so let's make sure we don't accidentally use the array again later
+    # memory usage), so let's make sure we don't accidentally use the array again later (deleted below)
+
+    # sort data and take away the top 10 percent of the data to remove stellar and cosmic ray spikes
+    # perhaps skip the nan_percentile(?) since we're sorting the data, and set nans to a maximum value
+    # to group them at the top?
+
+    # TODO - optimize and refactor
+
+    data_sorted = np.sort(data, axis=0)
     del data
+
+    index_90p = np.floor(len(filepaths) * 0.9).astype(int)
+
+    stray_light_std = np.std(data_sorted[0:index_90p, :, :], axis=0)
+
+    sigma_offset = -1 * erfinv(-1 + percentile / 50)
+
+    stray_light_estimate2 = stray_light_estimate + sigma_offset * stray_light_std
+
 
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
@@ -76,7 +94,7 @@ def estimate_stray_light(filepaths: list[str],
     # zero---the rotation value is meaningless, so it should be an obvious filler value
     wcs = cube.wcs
     wcs.wcs.pc = np.eye(2)
-    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=wcs, uncertainty=uncertainty)
+    out_cube = NDCube(data=stray_light_estimate2, meta=meta, wcs=wcs, uncertainty=uncertainty)
 
     return [out_cube]
 

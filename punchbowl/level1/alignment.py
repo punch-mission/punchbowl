@@ -459,7 +459,7 @@ def _residual(params: Parameters,
     out = np.empty(refined_coords.shape[0])
     for coord_i, coord in enumerate(refined_coords):
         dd, ii = observed_tree.query(coord, k=1)
-        out[coord_i] = np.linalg.norm(coord - dd)
+        out[coord_i] = dd
 
     out[out > max_error] = 0
     return np.nansum(out)

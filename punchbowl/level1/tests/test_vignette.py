@@ -1,3 +1,4 @@
+import glob
 import pathlib
 from datetime import datetime
 
@@ -5,7 +6,6 @@ import numpy as np
 import pytest
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
-import glob
 
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.exceptions import (
@@ -14,9 +14,11 @@ from punchbowl.exceptions import (
     InvalidDataError,
     LargeTimeDeltaWarning,
 )
-from punchbowl.level1.vignette import (correct_vignetting_task,
-                                       generate_vignetting_calibration_wfi,
-                                       generate_vignetting_calibration_nfi)
+from punchbowl.level1.vignette import (
+    correct_vignetting_task,
+    generate_vignetting_calibration_nfi,
+    generate_vignetting_calibration_wfi,
+)
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 

@@ -7,7 +7,7 @@ from astropy.io import fits
 from astropy.wcs import WCS
 from ndcube import NDCube
 from reproject import reproject_adaptive
-from scipy.ndimage import binary_erosion, binary_dilation, grey_closing
+from scipy.ndimage import binary_dilation, binary_erosion, grey_closing
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.meta import NormalizedMetadata
@@ -21,8 +21,7 @@ from punchbowl.exceptions import (
 )
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.prefect import punch_task
-from punchbowl.util import DataLoader
-from punchbowl.util import load_spacecraft_mask
+from punchbowl.util import DataLoader, load_spacecraft_mask
 
 
 @punch_task
@@ -106,13 +105,13 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
 
 
 def generate_vignetting_calibration_wfi(path_vignetting: str,
-                                    path_mask: str,
-                                    spacecraft: str,
-                                    vignetting_threshold: float = 1.2,
-                                    rows_ignore: tuple = (13,15),
-                                    rows_adjust: tuple = (15,16),
-                                    rows_adjust_source: tuple = (16,20),
-                                    mask_erosion: tuple = (6,6)) -> np.ndarray:
+                                        path_mask: str,
+                                        spacecraft: str,
+                                        vignetting_threshold: float = 1.2,
+                                        rows_ignore: tuple = (13,15),
+                                        rows_adjust: tuple = (15,16),
+                                        rows_adjust_source: tuple = (16,20),
+                                        mask_erosion: tuple = (6,6)) -> np.ndarray:
     """
     Create calibration data for vignetting.
 
@@ -183,15 +182,15 @@ def generate_vignetting_calibration_wfi(path_vignetting: str,
 
         return vignetting_reprojected
     if spacecraft=="4":
-        raise RuntimeError(f"Please use the NFI vignetting generator function.")
+        raise RuntimeError("Please use the NFI vignetting generator function.")
     raise RuntimeError(f"Unknown spacecraft {spacecraft}")
 
 
 def generate_vignetting_calibration_nfi(input_files: list[str],
-                                        path_mask: str,
                                         dark_path: str,
+                                        path_mask: str,
                                         polarizer: str,
-                                        output_path: str = None) -> None:
+                                        output_path: str | None = None) -> None | NDCube:
     """
     Create calibration data for vignetting for the NFI spacecraft.
 
@@ -205,13 +204,15 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         Path to the dark frame FITS file
     polarizer : str
         Polarizer name
-    output_path : str
+    output_path : str | None
         Path to calibration file output
+
+
+    Returns
+    -------
+    None | NDCube
+
     """
-
-    # Load NFI mask
-
-
     # Load speckle mask and dark frame
     with fits.open(path_mask) as hdul:
         specklemask = np.fliplr(hdul[0].data)
@@ -220,7 +221,6 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         nfidark = hdul[1].data
 
     # Load a WCS to use later on
-    # TODO - make this more cleverer
     with fits.open(input_files[0]) as hdul:
         cube_wcs = WCS(hdul[1].header)
 
@@ -255,8 +255,8 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     nficlean = avg_speckfilled * inverted_mask + avg_speck
     nfiflat = avg_img_darkremoved / nficlean
 
-    # Multiply by mask
-    mask_nfi = load_spacecraft_mask("/Users/clowder/Downloads/mask_nfi.bin")
+    # Load spacecraft mask
+    mask_nfi = load_spacecraft_mask(path_mask)
 
     # Deal with infs and remask
     nfiflat[np.isinf(nfiflat)] = 1.
@@ -265,28 +265,31 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     # Generate an output metadata and NDCube
     m = NormalizedMetadata.load_template(f"G{polarizer}4", "1")
     # TODO - set these dynamically, or from passed in variables
-    m['DATE-OBS'] = '2025-07-31T00:00:00.000'
-    m['FILEVRSN'] = "0e"
-    h = m.to_fits_header(wcs = cube_wcs)
+    m["DATE-OBS"] = "2025-07-31T00:00:00.000"
+    m["FILEVRSN"] = "0e"
 
-    cube = NDCube(data=nfiflat.astype('float32'), wcs=cube_wcs, meta=m)
+    cube = NDCube(data=nfiflat.astype("float32"), wcs=cube_wcs, meta=m)
 
-    filename = f"{output_path}/{get_base_file_name(cube)}.fits"
+    if output_path is not None:
+        filename = f"{output_path}/{get_base_file_name(cube)}.fits"
 
-    full_header = cube.meta.to_fits_header(wcs=cube.wcs)
-    full_header["FILENAME"] = os.path.basename(filename)
+        full_header = cube.meta.to_fits_header(wcs=cube.wcs)
+        full_header["FILENAME"] = os.path.basename(filename)
 
-    hdu_data = fits.ImageHDU(data=cube.data,
-                                 header=full_header,
-                                 name="Primary data array")
-    hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
-        name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
-    hdu_provenance.name = "File provenance"
+        hdu_data = fits.ImageHDU(data=cube.data,
+                                     header=full_header,
+                                     name="Primary data array")
+        hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
+            name="provenance", format="A40", array=np.char.array(cube.meta.provenance))]))
+        hdu_provenance.name = "File provenance"
 
-    hdul = cube.wcs.to_fits()
-    hdul[0] = fits.PrimaryHDU()
-    hdul.insert(1, hdu_data)
+        hdul = cube.wcs.to_fits()
+        hdul[0] = fits.PrimaryHDU()
+        hdul.insert(1, hdu_data)
 
-    hdul.append(hdu_provenance)
-    hdul.writeto(filename, overwrite=True, checksum=True)
-    hdul.close()
+        hdul.append(hdu_provenance)
+        hdul.writeto(filename, overwrite=True, checksum=True)
+        hdul.close()
+
+        return None
+    return cube.data

@@ -81,7 +81,7 @@ def create_calibration(level: str,
 
     match code:
         case "GR" | "GM" | "GZ" | "GP":
-            if spacecraft == "1":
+            if spacecraft == "4":
                 calibration_data = generate_vignetting_calibration_nfi(input_files,
                                                                        dark_path=input_list[0],
                                                                        path_mask=input_list[1],

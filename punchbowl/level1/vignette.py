@@ -85,7 +85,7 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
         vignetting_function_date = vignetting_function.meta.astropy_time
         observation_date = data_object.meta.astropy_time
         if abs((vignetting_function_date - observation_date).to("day").value) > 14:
-            msg = f"Calibration file {vignetting_path} contains data created greater than 2 weeks from the obsveration"
+            msg = f"Calibration file {vignetting_path} contains data created greater than 2 weeks from the observation"
             warnings.warn(msg, LargeTimeDeltaWarning)
         if vignetting_function.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
             msg = f"Incorrect TELESCOP value within {vignetting_path}"
@@ -141,6 +141,9 @@ def generate_vignetting_calibration_wfi(path_vignetting: str,
 
     """
     if spacecraft in ["1", "2", "3"]:
+        if not os.path.exists(path_vignetting):
+            return np.ones((2048,2048))
+
         with open(path_vignetting) as f:
             lines = f.readlines()
 
@@ -190,7 +193,7 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
                                         dark_path: str,
                                         path_mask: str,
                                         polarizer: str,
-                                        output_path: str | None = None) -> None | NDCube:
+                                        output_path: str | None = None) -> np.ndarray | None:
     """
     Create calibration data for vignetting for the NFI spacecraft.
 
@@ -198,10 +201,10 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     ----------
     input_files : list[str]
         Paths to input NFI files for processing
-    path_mask : str
-        Path to the speckle mask FITS file
     dark_path : str
         Path to the dark frame FITS file
+    path_mask : str
+        Path to the speckle mask FITS file
     polarizer : str
         Polarizer name
     output_path : str | None
@@ -210,9 +213,13 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
 
     Returns
     -------
-    None | NDCube
+    np.ndarray | None
+        vignetting function array
 
     """
+    if input_files is None:
+        return np.ones((2048,2048))
+
     # Load speckle mask and dark frame
     with fits.open(path_mask) as hdul:
         specklemask = np.fliplr(hdul[0].data)

@@ -120,21 +120,23 @@ def test_vignetting_correction(sample_ndcube) -> None:
 
     assert isinstance(corrected_punchdata, NDCube)
 
+# TODO - test these more thoroughly
 
-def test_generate_vignetting_calibration() -> None:
+def test_generate_vignetting_calibration_wfi() -> None:
     """Test that vignetting calibration data is generated"""
-    vignetting_data = generate_vignetting_calibration_wfi("data.dat", "mask.bin", spacecraft="4")
+    vignetting_data = generate_vignetting_calibration_wfi("data.dat", "mask.bin", spacecraft="2")
     assert isinstance(vignetting_data, np.ndarray)
     assert vignetting_data.shape == (2048, 2048)
+    assert np.allclose(vignetting_data, 1)
 
 
 def test_generate_vignetting_calibration_nfi() -> None:
     """Test that vignetting calibration data is generated"""
-    input_files = glob.glob("/Users/clowder/data/punch/0/CR4/2025/07/**/*.fits", recursive=True)
-    vignetting_data = generate_vignetting_calibration_nfi(input_files = input_files[-500:],
-                                                          path_mask = "/Users/clowder/Downloads/speckle_mask_v2.fits",
-                                                          dark_path = "/Users/clowder/Downloads/nfi_dark.fits",
+    vignetting_data = generate_vignetting_calibration_nfi(input_files = None,
+                                                          path_mask = "mask.bin",
+                                                          dark_path = "dark.fits",
                                                           polarizer = "R",
-                                                          output_path="/Users/clowder/Downloads/")
+                                                          output_path=None)
 
-    assert True
+    assert vignetting_data.shape == (2048, 2048)
+    assert np.allclose(vignetting_data, 1)

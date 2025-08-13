@@ -1,0 +1,1 @@
+Speeds up pointing determination by pre-computing a KDTree of distances instead of doing a search over all points.

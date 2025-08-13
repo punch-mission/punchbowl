@@ -15,6 +15,7 @@ from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
 from lmfit import Parameters, minimize
 from ndcube import NDCube
 from regularizepsf import ArrayPSFTransform
+from scipy.spatial import KDTree
 from skimage.transform import resize
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
@@ -412,7 +413,7 @@ def astrometry_net_initial_solve(observed_coords: np.ndarray,
 
 def _residual(params: Parameters,
               catalog_stars: SkyCoord,
-              observed_coords: np.ndarray,
+              observed_tree: KDTree,
               guess_wcs: WCS,
               max_error: float = 30) -> float:
     """
@@ -424,8 +425,8 @@ def _residual(params: Parameters,
         optimization parameters from lmfit
     catalog_stars : SkyCoord
         image catalog of stars to match against
-    observed_coords : np.ndarray
-        pixel coordinates of stars observed in the image, i.e. the coordinates found by sep of the actual star location
+    observed_tree : KDTree
+        a KDTree of the pixel coordinates of the observed stars
     guess_wcs : WCS
         initial guess of the world coordinate system, must overlap with the true WCS
     max_error: float
@@ -455,7 +456,11 @@ def _residual(params: Parameters,
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
     refined_coords = np.stack([xs, ys], axis=-1)
 
-    out = np.array([np.min(np.linalg.norm(observed_coords - coord, axis=-1)) for coord in refined_coords])
+    out = np.empty(refined_coords.shape[0])
+    for coord_i, coord in enumerate(refined_coords):
+        dd, ii = observed_tree.query(coord, k=1)
+        out[coord_i] = dd
+
     out[out > max_error] = 0
     return np.nansum(out)
 
@@ -513,8 +518,10 @@ def  refine_pointing_single_step(
         np.array(subcatalog["distance"]) * u.parsec,
     )
 
+    observed_tree = KDTree(observed_coords)
+
     out = minimize(_residual, params, method=method,
-                   args=(catalog_stars, observed_coords, guess_wcs),
+                   args=(catalog_stars, observed_tree, guess_wcs),
                    max_nfev=100, calc_covar=False)
     result_wcs = guess_wcs.deepcopy()
     result_wcs.wcs.cdelt = (-out.params["platescale"].value, out.params["platescale"].value)

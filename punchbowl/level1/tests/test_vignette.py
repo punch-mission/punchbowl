@@ -136,6 +136,8 @@ def test_generate_vignetting_calibration_nfi() -> None:
                                                           path_mask = "mask.bin",
                                                           dark_path = "dark.fits",
                                                           polarizer = "R",
+                                                          dateobs="2025-07-31T00:00:00.000",
+                                                          version="0",
                                                           output_path=None)
 
     assert vignetting_data.shape == (2048, 2048)

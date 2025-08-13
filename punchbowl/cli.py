@@ -85,7 +85,9 @@ def create_calibration(level: str,
                 calibration_data = generate_vignetting_calibration_nfi(input_files,
                                                                        dark_path=input_list[0],
                                                                        path_mask=input_list[1],
-                                                                       polarizer=code[1])
+                                                                       polarizer=code[1],
+                                                                       dateobs=timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3],
+                                                                       version=file_version)
                 calibration_cube = NDCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
             else:
                 calibration_data = generate_vignetting_calibration_wfi(input_list[0],

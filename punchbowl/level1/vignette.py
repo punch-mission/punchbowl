@@ -193,6 +193,8 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
                                         dark_path: str,
                                         path_mask: str,
                                         polarizer: str,
+                                        dateobs: str,
+                                        version: str,
                                         output_path: str | None = None) -> np.ndarray | None:
     """
     Create calibration data for vignetting for the NFI spacecraft.
@@ -207,6 +209,10 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         Path to the speckle mask FITS file
     polarizer : str
         Polarizer name
+    dateobs : str
+        Timestamp for calibration file
+    version : str
+        File version
     output_path : str | None
         Path to calibration file output
 
@@ -271,9 +277,8 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
 
     # Generate an output metadata and NDCube
     m = NormalizedMetadata.load_template(f"G{polarizer}4", "1")
-    # TODO - set these dynamically, or from passed in variables
-    m["DATE-OBS"] = "2025-07-31T00:00:00.000"
-    m["FILEVRSN"] = "0e"
+    m["DATE-OBS"] = dateobs
+    m["FILEVRSN"] = version
 
     cube = NDCube(data=nfiflat.astype("float32"), wcs=cube_wcs, meta=m)
 

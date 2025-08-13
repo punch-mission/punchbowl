@@ -4,6 +4,7 @@ import warnings
 from typing import Generic, TypeVar
 from datetime import UTC, datetime
 
+import numba
 import numpy as np
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
@@ -80,67 +81,51 @@ def average_datetime(datetimes: list[datetime]) -> datetime:
     return datetime.fromtimestamp(average_timestamp).astimezone(UTC)
 
 
-def _zvalue_from_index(arr, ind):  # noqa: ANN202, ANN001
+@numba.njit(parallel=True, cache=True)
+def nan_percentile(array: np.ndarray, percentile: float | list[float]) -> float | np.ndarray:
     """
-    Do math.
+    Calculate the nan percentile of a 3D cube. Isn't as fast as possible on a single core, but parallelizes very well.
 
-    Private helper function to work around the limitation of np.choose() by employing np.take().
-    arr has to be a 3D array
-    ind has to be a 2D array containing values for z-indicies to take from arr
-    See: http://stackoverflow.com/a/32091712/4169585
-    This is faster and more memory efficient than using the ogrid based solution with fancy indexing.
+    It's documented that numba's sort is slower than numpy's, and this runs ~half as fast as the old implementation
+    using numpy. But this parallelizes extremely well, even up to 128 cores for a 1kx2kx2k cube! Thread count can be
+    configured by setting numba.config.NUMBA_NUM_THREADS
+
+    The .copy() for each sequence means that, even though percentiling along the zeroth dimension seems wrong from a CPU
+    cache standpoint, transposing the input cube makes very little difference (much less than the time cost of copying
+    the cube into a transposed orientation!). Disabling the copy for a well-dimensioned array doesn't make a clear
+    difference to execution time.
+
+    The nan handling appears to add only negligible computation time
     """
-    # get number of columns and rows
-    _, n_rows, n_cols = arr.shape
+    percentiles = np.atleast_1d(np.array(percentile))
+    percentiles = percentiles / 100
 
-    # get linear indices and extract elements with np.take()
-    idx = n_cols*n_rows*ind + n_cols*np.arange(n_rows)[:,None] + np.arange(n_cols)
-    return np.take(arr, idx)
+    output = np.empty((len(percentiles), *array.shape[1:]))
+    for i in numba.prange(array.shape[1]):
+        for j in range(array.shape[2]):
+            sequence = array[:, i, j].copy()
+            n_valid_obs = len(sequence)
+            sequence_max = np.nanmax(sequence)
+            for index in range(len(sequence)):
+                if np.isnan(sequence[index]):
+                    sequence[index] = sequence_max
+                    n_valid_obs -= 1
+            sequence.sort()
 
+            for k in range(len(percentiles)):
+                index = (n_valid_obs - 1) * percentiles[k]
+                f = int(np.floor(index))
+                c = int(np.ceil(index))
+                if f == c:
+                    output[k, i, j] = sequence[f]
+                else:
+                    f_val = sequence[f]
+                    c_val = sequence[c]
+                    output[k, i, j] = f_val + (c_val - f_val) * (index - f)
 
-def nan_percentile(arr: np.ndarray, q: list[float] | float, modify_arr_in_place: bool = False) -> np.ndarray:
-    """Calculate the nan percentile faster of a 3D cube."""
-    # np.nanpercentile is slow so use this: https://krstn.eu/np.nanpercentile()-there-has-to-be-a-faster-way/
-
-    # valid (non NaN) observations along the first axis
-    is_good = np.isfinite(arr)
-    n_valid_obs = np.sum(is_good, axis=0)
-    if not modify_arr_in_place:
-        arr = arr.copy()
-    # replace NaN with maximum
-    arr[~is_good] = np.nanmax(arr)
-    # If arr is big, is_good will be big too. Let's cut our memory usage.
-    del is_good
-    # sort - former NaNs will move to the end
-    if modify_arr_in_place:
-        arr.sort(axis=0)
-    else:
-        arr = np.sort(arr, axis=0)
-
-    # loop over requested quantiles
-    qs = [q] if isinstance(q, float | int) else q
-
-    result = np.empty((len(qs), *arr.shape[1:]))
-    for i, quant in enumerate(qs):
-        # desired position as well as floor and ceiling of it
-        k_arr = (n_valid_obs - 1) * (quant / 100)
-        f_arr = np.floor(k_arr).astype(np.int32)
-        c_arr = np.ceil(k_arr).astype(np.int32)
-        fc_equal_k_mask = f_arr == c_arr
-
-        # linear interpolation (like numpy percentile) takes the fractional part of desired position
-        floor_val = _zvalue_from_index(arr=arr, ind=f_arr) * (c_arr - k_arr)
-        ceil_val = _zvalue_from_index(arr=arr, ind=c_arr) * (k_arr - f_arr)
-
-        quant_arr = floor_val + ceil_val
-        # if floor == ceiling take floor value
-        quant_arr[fc_equal_k_mask] = _zvalue_from_index(arr=arr, ind=k_arr.astype(np.int32))[fc_equal_k_mask]
-
-        result[i] = quant_arr
-
-    result[:, n_valid_obs == 0] = np.nan
-
-    return result
+    if isinstance(percentile, (int, float)):
+        return output[0]
+    return output
 
 
 def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime, time_key: str = "DATE-OBS",

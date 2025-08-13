@@ -33,6 +33,7 @@ dependencies = [
     "astroscrappy",
     "scikit-learn",
     "astrometry",
+    "numba",
 ]
 requires-python = ">=3.11"
 authors = [

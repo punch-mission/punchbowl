@@ -4,6 +4,7 @@ import reproject
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
+from prefect import get_run_logger
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from punchbowl.prefect import punch_flow, punch_task
@@ -63,13 +64,23 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
 
     # Now we transform them to the output frame
     xs, ys = astropy.wcs.utils.pixel_to_pixel(celestial_source, celestial_target, edgex, edgey)
-    # And we find that bounding box
-    xmin, xmax = int(np.floor(xs.min())), int(np.ceil(xs.max()))
-    ymin, ymax = int(np.floor(ys.min())), int(np.ceil(ys.max()))
-    xmin = np.max((xmin, 0))
-    ymin = np.max((ymin, 0))
-    xmax = np.min((xmax, output_shape[1]))
-    ymax = np.min((ymax, output_shape[0]))
+
+    if np.any(np.isnan(xs)) or np.any(np.isnan(ys)):
+        # If the input data is far enough outside the output frame that its coordinates aren't defined in the output
+        # projection, we'll get nans. In that case, fall back to reprojecting into the entire output frame. We'll get a
+        # lot of nothing, but at least we won't crash.
+        logger = get_run_logger()
+        logger.warning(f"For {input_cube.meta['FILENAME']}, got NaNs when finding input image's extent in output frame")
+        xmin, ymin = 0, 0
+        ymax, xmax = output_shape
+    else:
+        # And we find that bounding box
+        xmin, xmax = int(np.floor(xs.min())), int(np.ceil(xs.max()))
+        ymin, ymax = int(np.floor(ys.min())), int(np.ceil(ys.max()))
+        xmin = np.max((xmin, 0))
+        ymin = np.max((ymin, 0))
+        xmax = np.min((xmax, output_shape[1]))
+        ymax = np.min((ymax, output_shape[0]))
 
     output_array = np.full((2, *output_shape), np.nan)
     input_data = np.stack([input_cube.data, input_cube.uncertainty.array])

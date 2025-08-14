@@ -182,6 +182,8 @@ def level1_early_core_flow(  # noqa: C901
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
 
+        output_data.append(data)
+
     logger.info("ending level 1 early core flow")
     return output_data
 

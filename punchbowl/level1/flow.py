@@ -1,11 +1,9 @@
 import os
 import pathlib
-from copy import deepcopy
 from collections.abc import Generator
 
 import astropy.units as u
 import numpy as np
-from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
 from prefect import get_run_logger
 from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
@@ -26,7 +24,7 @@ from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import punch_flow
 from punchbowl.util import DataLoader, load_image_task, output_image_task
 
-L0_KEYS_TO_IGNORE = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE", "TYPECODE", "FILEVRSN"]
+KEYS_TO_NOT_COPY = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE", "TYPECODE", "FILEVRSN"]
 
 
 @punch_flow
@@ -69,20 +67,13 @@ def level1_early_core_flow(  # noqa: C901
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
     vignetting_function_path: str | DataLoader | None = None,
-    stray_light_before_path: str | None = None,
-    stray_light_after_path: str | None = None,
     deficient_pixel_map_path: str | None = None,
     deficient_pixel_method: str = "median",
     deficient_pixel_required_good_count: int = 3,
     deficient_pixel_max_window_size: int = 10,
-    psf_model_path: str | DataLoader | None = None,
-    distortion_path: str | None = None,
     output_filename: list[str] | None = None,
     max_workers: int | None = None,
     mask_path: str | None = None,
-    return_preliminary_stray_light_subtracted: bool = True,
-    return_with_stray_light: bool = False,
-    do_align: bool = True,
 ) -> list[NDCube]:
     """Core flow for level 1, doing preliminary stray light subtraction."""
     logger = get_run_logger()
@@ -151,15 +142,6 @@ def level1_early_core_flow(  # noqa: C901
                                             required_good_count=deficient_pixel_required_good_count,
                                             max_window_size=deficient_pixel_max_window_size,
                                             method=deficient_pixel_method)
-        if return_with_stray_light:
-            data_with_stray_light = data.data.copy() # This will become the x file
-            uncertainty_with_stray_light = data.uncertainty.array.copy()
-        # This will become the Q file
-        if return_preliminary_stray_light_subtracted or do_align:
-            data = remove_stray_light_task(data, stray_light_before_path, stray_light_after_path)
-            data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
-            if do_align:
-                data = align_task(data, distortion_path)
 
         if mask_path:
             with open(mask_path, "rb") as f:
@@ -167,33 +149,24 @@ def level1_early_core_flow(  # noqa: C901
             mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
             data.data *= mask
             data.uncertainty.array[mask==0] = np.inf
-            if return_with_stray_light:
-                data_with_stray_light *= mask
-                uncertainty_with_stray_light[mask==0] = np.inf
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
-        product_code = "Q" + product_code[1:]
+        product_code = "X" + product_code[1:]
         new_meta = NormalizedMetadata.load_template(product_code, "1")
+        new_meta["TITLE"] = new_meta["TITLE"].value + " with Stray Light"
         # copy over the existing values
         for key in data.meta.keys(): # noqa: SIM118
-            if key in L0_KEYS_TO_IGNORE:
+            if key in KEYS_TO_NOT_COPY:
                 continue
             if key in new_meta.keys(): # noqa: SIM118
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
 
-        if isinstance(psf_model_path, DataLoader):
-            psf_model_path = psf_model_path.src_repr()
-        new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
-
         if isinstance(vignetting_function_path, DataLoader):
             vignetting_function_path = vignetting_function_path.src_repr()
         new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
-
-        new_meta["CALSL0"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
-        new_meta["CALSL1"] = os.path.basename(stray_light_after_path) if stray_light_after_path else ""
 
         if isinstance(quartic_coefficient_path, DataLoader):
             quartic_coefficient_path = quartic_coefficient_path.src_repr()
@@ -209,24 +182,6 @@ def level1_early_core_flow(  # noqa: C901
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
 
-        if return_preliminary_stray_light_subtracted:
-            output_data.append(data)
-
-        if return_with_stray_light:
-            meta = deepcopy(new_meta)
-            del meta["CALPSF"]
-            del meta["CALSL0"]
-            del meta["CALSL1"]
-            meta["TYPECODE"] = "X" + meta["TYPECODE"].value[1:]
-            meta["TITLE"] = meta["TITLE"].value + " with Stray Light"
-            meta.history.clear_entries_from_source("LEVEL1-correct_psf")
-            meta.history.clear_entries_from_source("LEVEL1-remove_stray_light")
-            stray_light_cube = NDCube(data=data_with_stray_light,
-                                      meta=meta,
-                                      wcs=data.wcs,
-                                      uncertainty=StdDevUncertainty(uncertainty_with_stray_light),
-                                      unit=data.unit)
-            output_data.append(stray_light_cube)
     logger.info("ending level 1 early core flow")
     return output_data
 
@@ -237,7 +192,10 @@ def level1_late_core_flow(
     stray_light_before_path: str | None = None,
     stray_light_after_path: str | None = None,
     psf_model_path: str | DataLoader | None = None,
+    distortion_path: str | None = None,
     mask_path: str | None = None,
+    do_align: bool = True,
+    output_as_Q_file: bool = False, # noqa: N803
     output_filename: list[str] | None = None,
     max_workers: int | None = None,
 ) -> list[NDCube]:
@@ -251,6 +209,8 @@ def level1_late_core_flow(
         data = load_image_task(this_data) if isinstance(this_data, str) else this_data
         data = remove_stray_light_task(data, stray_light_before_path, stray_light_after_path)
         data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
+        if do_align:
+            data = align_task(data, distortion_path)
 
         if mask_path:
             with open(mask_path, "rb") as f:
@@ -261,11 +221,14 @@ def level1_late_core_flow(
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
-        product_code = ("C" if product_code[1] == "R" else "P") + product_code[1:]
+        if output_as_Q_file:
+            product_code = "Q" + product_code[1:]
+        else:
+            product_code = ("C" if product_code[1] == "R" else "P") + product_code[1:]
         new_meta = NormalizedMetadata.load_template(product_code, "1")
         # copy over the existing values
         for key in data.meta.keys():  # noqa: SIM118
-            if key in L0_KEYS_TO_IGNORE:
+            if key in KEYS_TO_NOT_COPY:
                 continue
             if key in new_meta.keys():  # noqa: SIM118
                 new_meta[key] = data.meta[key].value

@@ -3,7 +3,6 @@ import pathlib
 import warnings
 from datetime import UTC, datetime
 
-import numba
 import numpy as np
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
@@ -18,7 +17,7 @@ from punchbowl.exceptions import (
     InvalidDataError,
 )
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import average_datetime, interpolate_data, nan_percentile
+from punchbowl.util import average_datetime, interpolate_data
 
 
 @punch_flow
@@ -26,7 +25,8 @@ def estimate_stray_light(filepaths: list[str],
                          percentile: float = 1,
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
-                         num_workers: int | None = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+                         exclude_percentile: float = 50,
+                         erfinv_scale: float = 0.75) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
     logger = get_run_logger()
     logger.info(f"Running with {len(filepaths)} input files")
@@ -55,27 +55,15 @@ def estimate_stray_light(filepaths: list[str],
     logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                 f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
 
-    if num_workers:
-        numba.config.NUMBA_NUM_THREADS = num_workers
-    stray_light_estimate = nan_percentile(data, percentile).squeeze()
-
-    # The values in `data` have been modified by the percentile calculation (which saves a bit of time and a lot of
-    # memory usage), so let's make sure we don't accidentally use the array again later (deleted below)
-
-    # sort data and take away the top 10 percent of the data to remove stellar and cosmic ray spikes
-    # perhaps skip the nan_percentile(?) since we're sorting the data, and set nans to a maximum value
-    # to group them at the top?
-
-    # TODO - optimize and refactor
-
     data_sorted = np.sort(data, axis=0)
-    del data
 
-    index_90p = np.floor(len(filepaths) * 0.9).astype(int)
+    index_exclude = np.floor(len(filepaths) * exclude_percentile / 100).astype(int)
+    index_percentile = np.floor(len(filepaths) * percentile / 100).astype(int)
+    stray_light_estimate = data_sorted[index_percentile, :, :]
 
-    stray_light_std = np.std(data_sorted[0:index_90p, :, :], axis=0)
+    stray_light_std = np.std(data_sorted[0:index_exclude, :, :], axis=0)
 
-    sigma_offset = -1 * erfinv(-1 + percentile / 50)
+    sigma_offset = -1 * erfinv((-1 + percentile / 50) * erfinv_scale)
 
     stray_light_estimate2 = stray_light_estimate + sigma_offset * stray_light_std
 

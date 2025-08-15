@@ -50,7 +50,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     trim_edges_px : int
         Before reprojection, image edges are trimmed by this amount, and the masked region is expanded by this amount.
     alphas_file : str
-        The path to a file containing alpha scalings.
+        File path containing alpha scalings for relative instrument scaling.
     output_filename : str | None
         If provided, the resulting mosaic is written to this path.
 

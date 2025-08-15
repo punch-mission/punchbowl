@@ -7,6 +7,8 @@ from prefect import get_run_logger
 def trim_edges(data_list: list[NDCube], trim_edge_px: int = 0) -> None:
     """Trim the edges of the image, expanding the mask the same amount. Sets masked pixels to nan."""
     for cube in data_list:
+        if cube is None:
+            continue
         mask = (cube.data == 0) * (np.isinf(cube.uncertainty.array))
         if trim_edge_px:
             mask[:trim_edge_px] = 1
@@ -25,6 +27,8 @@ def apply_alpha(data_list: list[NDCube], alphas_file: str | None = None) -> None
         alpha_data = np.loadtxt(alphas_file, delimiter=",", skiprows=1, dtype=str)
         alphas = {code[1:]: float(alpha) for code, alpha in alpha_data}
         for cube in data_list:
+            if cube is None:
+                continue
             code = cube.meta["TYPECODE"].value[1:] + cube.meta["OBSCODE"].value
             try:
                 alpha = alphas[code]

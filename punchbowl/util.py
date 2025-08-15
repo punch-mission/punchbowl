@@ -86,9 +86,9 @@ def nan_percentile(array: np.ndarray, percentile: float | list[float]) -> float 
     """
     Calculate the nan percentile of a 3D cube. Isn't as fast as possible on a single core, but parallelizes very well.
 
-    It's documented that numba's sort is slower than numpy's, and this runs ~half as fast as the old implementation
-    using numpy. But this parallelizes extremely well, even up to 128 cores for a 1kx2kx2k cube! Thread count can be
-    configured by setting numba.config.NUMBA_NUM_THREADS
+    It's documented that numba's sort is slower than numpy's, and this runs single-threaded ~half as fast as the old
+    implementation using numpy. But this parallelizes extremely well, even up to 128 cores for a 1kx2kx2k cube! Thread
+    count can be configured by setting numba.config.NUMBA_NUM_THREADS
 
     The .copy() for each sequence means that, even though percentiling along the zeroth dimension seems wrong from a CPU
     cache standpoint, transposing the input cube makes very little difference (much less than the time cost of copying
@@ -125,6 +125,47 @@ def nan_percentile(array: np.ndarray, percentile: float | list[float]) -> float 
 
     if isinstance(percentile, (int, float)):
         return output[0]
+    return output
+
+
+@numba.njit(parallel=True, cache=True)
+def parallel_sort_first_axis(array: np.ndarray, handle_nans: bool = False, inplace: bool = False) -> np.ndarray:
+    """
+    Sorts a 3D cube along the first axis.
+
+    Parallelizes very well on punch190 and phoenix.
+
+    It's documented that numba's sort is slower than numpy's, but this parallelizes extremely well, even up to 64 cores
+    for a 1kx2kx2k cube! Thread count can be configured by setting numba.config.NUMBA_NUM_THREADS
+
+    The .copy() for each sequence means that, even though sorting along the zeroth dimension seems wrong from a CPU
+    cache standpoint, transposing the input cube makes very little difference (much less than the time cost of copying
+    the cube into a transposed orientation!).
+
+    If handle_nans is True, NaNs are explicitly sorted to the high end of the array. Numba's sort appears to do this
+    anyway and still sorts the rest of the array correctly, but the flag ensures this behavior with a speed penalty.
+
+    Sorting in-place offers a ~50% speed boost in a 1kx2kx2k test case.
+    """
+    output = array if inplace else np.empty_like(array)
+
+    for i in numba.prange(array.shape[1]):
+        for j in range(array.shape[2]):
+            sequence = array[:, i, j].copy()
+            if handle_nans:
+                bad_val = np.nanmax(sequence) + 1
+                for index in range(len(sequence)):
+                    if np.isnan(sequence[index]):
+                        sequence[index] = bad_val
+
+            sequence.sort()
+
+            if handle_nans:
+                for index in range(len(sequence)):
+                    if sequence[index] == bad_val:
+                        sequence[index] = np.nan
+
+            output[:, i, j] = sequence
     return output
 
 

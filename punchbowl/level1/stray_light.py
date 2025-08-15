@@ -17,7 +17,7 @@ from punchbowl.exceptions import (
     InvalidDataError,
 )
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import average_datetime, interpolate_data
+from punchbowl.util import average_datetime, interpolate_data, parallel_sort_first_axis
 
 
 @punch_flow
@@ -55,13 +55,13 @@ def estimate_stray_light(filepaths: list[str],
     logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                 f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
 
-    data_sorted = np.sort(data, axis=0)
+    parallel_sort_first_axis(data, inplace=True)
 
     index_exclude = np.floor(len(filepaths) * exclude_percentile / 100).astype(int)
     index_percentile = np.floor(len(filepaths) * percentile / 100).astype(int)
-    stray_light_estimate = data_sorted[index_percentile, :, :]
+    stray_light_estimate = data[index_percentile, :, :]
 
-    stray_light_std = np.std(data_sorted[0:index_exclude, :, :], axis=0)
+    stray_light_std = np.std(data[0:index_exclude, :, :], axis=0)
 
     sigma_offset = -1 * erfinv((-1 + percentile / 50) * erfinv_scale)
 

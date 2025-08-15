@@ -259,6 +259,10 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
 
     # Stack image data
     images = np.array([cube.data for cube in cubes])
+
+    if images.shape == 0:
+        return None
+
     applied_images = images * boundary_mask
     applied_speck = images * specklemask
 

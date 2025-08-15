@@ -11,6 +11,7 @@ from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_e
 from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
+from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.prefect import punch_flow
 from punchbowl.util import average_datetime, find_first_existing_file, load_image_task, output_image_task
@@ -27,6 +28,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
                      polarized: bool | None = None,
                      trefoil_wcs: WCS | None = None,
                      trefoil_shape: tuple[int, int] | None = None,
+                     trim_edges_px: int = 0,
+                     alphas_file: str | None = None,
                      output_filename: str | None = None) -> list[NDCube]:
     """
     Level 2 core flow.
@@ -44,6 +47,10 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         The frame to build the mosaic in. By default, the default trefoil mosaic is used.
     trefoil_shape : tuple[int, int] | None
         The size of the frame to build the mosaic in. By default, the default trefoil size is used.
+    trim_edges_px : int
+        Before reprojection, image edges are trimmed by this amount, and the masked region is expanded by this amount.
+    alphas_file : str
+        The path to a file containing alpha scalings.
     output_filename : str | None
         If provided, the resulting mosaic is written to this path.
 
@@ -88,6 +95,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         default_trefoil_wcs, default_trefoil_shape = load_trefoil_wcs()
         trefoil_wcs = trefoil_wcs or default_trefoil_wcs
         trefoil_shape = trefoil_shape or default_trefoil_shape
+
+        preprocess_trefoil_inputs(data_list, trim_edges_px, alphas_file)
 
         data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape)
         data_list = [identify_bright_structures_task(cube, this_voter_filenames)

@@ -3,6 +3,7 @@ import pathlib
 import warnings
 from datetime import UTC, datetime
 
+import numba
 import numpy as np
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
@@ -26,7 +27,8 @@ def estimate_stray_light(filepaths: list[str],
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
                          exclude_percentile: float = 50,
-                         erfinv_scale: float = 0.75) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+                         erfinv_scale: float = 0.75,
+                         num_workers: int | None = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
     logger = get_run_logger()
     logger.info(f"Running with {len(filepaths)} input files")
@@ -54,6 +56,9 @@ def estimate_stray_light(filepaths: list[str],
 
     logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                 f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
+
+    if num_workers:
+        numba.config.NUMBA_NUM_THREADS = num_workers
 
     parallel_sort_first_axis(data, inplace=True)
 

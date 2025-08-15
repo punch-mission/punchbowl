@@ -32,8 +32,8 @@ def apply_alpha(data_list: list[NDCube], alphas_file: str | None = None) -> None
             code = cube.meta["TYPECODE"].value[1:] + cube.meta["OBSCODE"].value
             try:
                 alpha = alphas[code]
-                cube.data /= alpha
-                cube.uncertainty.array /= alpha
+                cube.data[:] /= alpha
+                cube.uncertainty.array[:] /= alpha
             except KeyError:
                 logger.warning(f"Did not find alpha value for {cube.meta['FILENAME'].value}")
 

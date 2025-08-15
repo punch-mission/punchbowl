@@ -61,7 +61,7 @@ def create_calibration(level: str,
     input_list_path : str | None
         Path to a list of filenames to use for generating this specific calibration product.
         For WFI vignetting (GR, GM, GZ, GP): the first entry is the Tappin data file. The second entry is the mask.
-        For NFI vignetting (GR, GM, GZ, GP): the first entry is the dark path. The second entry is the mask.
+        For NFI vignetting (GR, GM, GZ, GP): ordered entries are the speckle mask, instrument mask path, and dark path
     input_files : str | None
         List of files used for generation
     out_path : str
@@ -83,8 +83,9 @@ def create_calibration(level: str,
         case "GR" | "GM" | "GZ" | "GP":
             if spacecraft == "4":
                 calibration_data = generate_vignetting_calibration_nfi(input_files,
-                                                                       dark_path=input_list[0],
+                                                                       path_speckle=input_list[0],
                                                                        path_mask=input_list[1],
+                                                                       path_dark=input_list[2],
                                                                        polarizer=code[1],
                                                                        dateobs=timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3],
                                                                        version=file_version)

@@ -7,7 +7,7 @@ from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import get_base_file_name, write_ndcube_to_fits
-from punchbowl.level1.vignette import generate_vignetting_calibration
+from punchbowl.level1.vignette import generate_vignetting_calibration_nfi, generate_vignetting_calibration_wfi
 
 
 def main() -> None:
@@ -40,7 +40,8 @@ def create_calibration(level: str,
                        spacecraft: str,
                        timestamp: datetime,
                        file_version: str,
-                       input_list_path: str,
+                       input_list_path: str | None,
+                       input_files: str | None,
                        out_path: str) -> None:
     """
     Create calibration products.
@@ -57,9 +58,12 @@ def create_calibration(level: str,
         Output file's DATE-OBS.
     file_version : str
         Output file's VERSION.
-    input_list_path : str
+    input_list_path : str | None
         Path to a list of filenames to use for generating this specific calibration product.
-        For vignetting (GR, GM, GZ, GP): the first entry is the Tappin data file. The second entry is the mask.
+        For WFI vignetting (GR, GM, GZ, GP): the first entry is the Tappin data file. The second entry is the mask.
+        For NFI vignetting (GR, GM, GZ, GP): the first entry is the dark path. The second entry is the mask.
+    input_files : str | None
+        List of files used for generation
     out_path : str
         Directory to write calibration product to.
 
@@ -77,10 +81,19 @@ def create_calibration(level: str,
 
     match code:
         case "GR" | "GM" | "GZ" | "GP":
-            calibration_data = generate_vignetting_calibration(input_list[0],
-                                                               input_list[1],
-                                                               spacecraft=spacecraft)
-            calibration_cube = NDCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
+            if spacecraft == "4":
+                calibration_data = generate_vignetting_calibration_nfi(input_files,
+                                                                       dark_path=input_list[0],
+                                                                       path_mask=input_list[1],
+                                                                       polarizer=code[1],
+                                                                       dateobs=timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3],
+                                                                       version=file_version)
+                calibration_cube = NDCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
+            else:
+                calibration_data = generate_vignetting_calibration_wfi(input_list[0],
+                                                                       input_list[1],
+                                                                       spacecraft=spacecraft)
+                calibration_cube = NDCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
         case _:
             raise RuntimeError(f"Calibration pipeline not written for this code: {code}.")
 

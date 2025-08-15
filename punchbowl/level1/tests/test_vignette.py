@@ -1,3 +1,4 @@
+import glob
 import pathlib
 from datetime import datetime
 
@@ -13,7 +14,11 @@ from punchbowl.exceptions import (
     InvalidDataError,
     LargeTimeDeltaWarning,
 )
-from punchbowl.level1.vignette import correct_vignetting_task, generate_vignetting_calibration
+from punchbowl.level1.vignette import (
+    correct_vignetting_task,
+    generate_vignetting_calibration_nfi,
+    generate_vignetting_calibration_wfi,
+)
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -115,9 +120,25 @@ def test_vignetting_correction(sample_ndcube) -> None:
 
     assert isinstance(corrected_punchdata, NDCube)
 
+# TODO - test these more thoroughly
 
-def test_generate_vignetting_calibration() -> None:
+def test_generate_vignetting_calibration_wfi() -> None:
     """Test that vignetting calibration data is generated"""
-    vignetting_data = generate_vignetting_calibration("data.dat", "mask.bin", spacecraft="4")
+    vignetting_data = generate_vignetting_calibration_wfi("data.dat", "mask.bin", spacecraft="2")
     assert isinstance(vignetting_data, np.ndarray)
     assert vignetting_data.shape == (2048, 2048)
+    assert np.allclose(vignetting_data, 1)
+
+
+def test_generate_vignetting_calibration_nfi() -> None:
+    """Test that vignetting calibration data is generated"""
+    vignetting_data = generate_vignetting_calibration_nfi(input_files = None,
+                                                          path_mask = "mask.bin",
+                                                          dark_path = "dark.fits",
+                                                          polarizer = "R",
+                                                          dateobs="2025-07-31T00:00:00.000",
+                                                          version="0",
+                                                          output_path=None)
+
+    assert vignetting_data.shape == (2048, 2048)
+    assert np.allclose(vignetting_data, 1)

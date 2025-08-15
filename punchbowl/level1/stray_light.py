@@ -8,6 +8,7 @@ import numpy as np
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from prefect import get_run_logger
+from scipy.special import erfinv
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.exceptions import (
@@ -17,7 +18,7 @@ from punchbowl.exceptions import (
     InvalidDataError,
 )
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import average_datetime, interpolate_data, nan_percentile
+from punchbowl.util import average_datetime, interpolate_data, parallel_sort_first_axis
 
 
 @punch_flow
@@ -25,6 +26,8 @@ def estimate_stray_light(filepaths: list[str],
                          percentile: float = 1,
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
+                         exclude_percentile: float = 50,
+                         erfinv_scale: float = 0.75,
                          num_workers: int | None = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
     logger = get_run_logger()
@@ -56,7 +59,18 @@ def estimate_stray_light(filepaths: list[str],
 
     if num_workers:
         numba.config.NUMBA_NUM_THREADS = num_workers
-    stray_light_estimate = nan_percentile(data, percentile)
+
+    parallel_sort_first_axis(data, inplace=True)
+
+    index_exclude = np.floor(len(filepaths) * exclude_percentile / 100).astype(int)
+    index_percentile = np.floor(len(filepaths) * percentile / 100).astype(int)
+    stray_light_estimate = data[index_percentile, :, :]
+
+    stray_light_std = np.std(data[0:index_exclude, :, :], axis=0)
+
+    sigma_offset = -1 * erfinv((-1 + percentile / 50) * erfinv_scale)
+
+    stray_light_estimate2 = stray_light_estimate + sigma_offset * stray_light_std
 
     if do_uncertainty:
         uncertainty = np.sqrt(uncertainty) / len(filepaths) if do_uncertainty else None
@@ -64,7 +78,7 @@ def estimate_stray_light(filepaths: list[str],
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
     meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
-    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") or meta["DATE-AVG"].value
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") if reference_time else meta["DATE-AVG"].value
     meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-END"] = max(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
@@ -78,7 +92,7 @@ def estimate_stray_light(filepaths: list[str],
     # zero---the rotation value is meaningless, so it should be an obvious filler value
     wcs = cube.wcs
     wcs.wcs.pc = np.eye(2)
-    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=wcs, uncertainty=uncertainty)
+    out_cube = NDCube(data=stray_light_estimate2, meta=meta, wcs=wcs, uncertainty=uncertainty)
 
     return [out_cube]
 

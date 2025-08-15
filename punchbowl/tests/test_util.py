@@ -6,7 +6,7 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.util import find_first_existing_file, interpolate_data
+from punchbowl.util import find_first_existing_file, interpolate_data, nan_percentile
 
 
 def test_find_first_existing_file():
@@ -33,3 +33,11 @@ def test_interpolate_data(sample_ndcube):
 
     assert isinstance(data_interpolated, np.ndarray)
     assert np.all(data_interpolated == 1.5)
+
+
+def test_nan_percentile():
+    array = np.arange(1000, dtype=float).reshape((10, 10, 10)).transpose((1, 0, 2))[::-1]
+    array[3] = np.nan
+    np_result = np.nanpercentile(array.copy(), 3, axis=0)
+    our_result = nan_percentile(array.copy(), 3)
+    np.testing.assert_allclose(np_result, our_result)

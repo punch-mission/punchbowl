@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
@@ -106,7 +107,10 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
 @flow(validate_parameters=False)
 def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
-                     output_filename: list[str] | None = None) -> list[NDCube]:
+                     output_filename: list[str] | None = None,
+                     trefoil_wcs: WCS | None = None,
+                     trefoil_shape: tuple[int, int] | None = None,
+                     ) -> list[NDCube]:
     """Level quickPUNCH core flow."""
     logger = get_run_logger()
     logger.info("beginning level quickPUNCH CTM core flow")
@@ -125,6 +129,10 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                     f"{[get_base_file_name(cube) if cube is not None else None for cube in ordered_data_list]}")
 
         quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_quickpunch_mosaic_wcs()
+        if trefoil_wcs is not None:
+            quickpunch_mosaic_wcs = trefoil_wcs
+        if trefoil_shape is not None:
+            quickpunch_mosaic_shape = trefoil_shape
 
         data_list_mosaic = reproject_many_flow(ordered_data_list, quickpunch_mosaic_wcs, quickpunch_mosaic_shape)
         output_dateobs = average_datetime(

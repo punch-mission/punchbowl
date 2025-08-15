@@ -10,7 +10,7 @@ from punchbowl.util import average_datetime
 
 
 @punch_task
-def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> NDCube:
+def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, maintain_nans: bool = False) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
     trefoil_data_layers, trefoil_uncertainty_layers = [], []
     for polarization in [-60, 0, 60]:
@@ -26,6 +26,9 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS) -> ND
             trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=2) /
                                        np.nansum(reprojected_weights, axis=2))
             trefoil_uncertainty_layers.append(1/np.nansum(np.sqrt(reprojected_weights), axis=2))
+            if maintain_nans:
+                was_nan = np.all(np.isnan(reprojected_data), axis=-1)
+                trefoil_data_layers[0][was_nan] = np.nan
         else:
             trefoil_data_layers.append(np.zeros((4096, 4096)))
             trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)

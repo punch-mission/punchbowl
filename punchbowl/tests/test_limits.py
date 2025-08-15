@@ -5,7 +5,7 @@ import pytest
 from astropy.io.fits import Header
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.levelq.limits import Limit, LimitSet
+from punchbowl.limits import Limit, LimitSet
 
 
 @pytest.mark.parametrize("type", [Header, NormalizedMetadata, Iterable])

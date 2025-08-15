@@ -247,8 +247,7 @@ def write_ndcube_to_fits(cube: NDCube,
         )
         raise ValueError(msg)
 
-    if not skip_stats:
-        meta = _update_statistics(cube)
+    meta = cube.meta if skip_stats else _update_statistics(cube)
 
     full_header = meta.to_fits_header(wcs=cube.wcs, write_celestial_wcs=not skip_wcs_conversion)
     full_header["FILENAME"] = os.path.basename(filename)
@@ -293,11 +292,13 @@ def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -
     return uncertainty_array
 
 
-def _update_statistics(cube: NDCube) -> NormalizedMetadata:
+def _update_statistics(cube: NDCube, modify_inplace: bool = False) -> NormalizedMetadata:
     """Update image statistics in metadata before writing to file."""
     # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
 
-    meta = deepcopy(cube.meta)
+    meta = cube.meta
+    if not modify_inplace:
+        meta = deepcopy(meta)
 
     meta["DATAZER"] = len(np.where(cube.data == 0)[0])
 

@@ -43,21 +43,21 @@ def test_that_pca_filter_runs():
     wcs.wcs.ctype = 'HPLN-ARC', 'HPLT-ARC'
     # These are values copied from a real image
     wcs.wcs.crval = 0.11492928582807, 0.088699676942111
-    wcs.wcs.crpix = 128.5, 128.5
-    wcs.wcs.cdelt = 0.0664, 0.0664
+    wcs.wcs.crpix = 64.5, 64.5
+    wcs.wcs.cdelt = 0.1328, 0.1328
     wcs.wcs.dateobs = '2025-07-05T12:56:21.706'
-    wcs.array_shape = (256, 256)
+    wcs.array_shape = (128, 128)
 
     meta = NormalizedMetadata.load_template('CR4', '1')
     meta['GEOD_LON'] = 75.80763246719741
     meta['GEOD_LAT'] = 2.6530022837437506
     meta['GEOD_ALT'] = 642990.3420114828
 
-    uncertainty = np.ones((256, 256))
+    uncertainty = np.ones((128, 128))
     # Generate input files that rotate so the same planet isn't in the same quarter for every image
-    for i in np.linspace(0, 2*np.pi, 300):
+    for i in np.linspace(0, 2*np.pi, 200):
         wcs.wcs.pc = np.array([[np.cos(i), -np.sin(i)], [np.sin(i), np.cos(i)]])
-        cube = NDCube(data=np.ones((256, 256)), meta=meta, wcs=wcs.deepcopy(),
+        cube = NDCube(data=np.ones((128, 128)), meta=meta, wcs=wcs.deepcopy(),
                       uncertainty=StdDevUncertainty(uncertainty))
         cubes.append(cube)
 

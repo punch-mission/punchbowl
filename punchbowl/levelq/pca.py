@@ -19,7 +19,6 @@ from sklearn.decomposition import PCA
 from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.levelq.limits import LimitSet
 from punchbowl.prefect import punch_task
 from punchbowl.util import DataLoader, load_image_task
 
@@ -30,13 +29,10 @@ _log_queue = None
 
 @punch_task
 def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader | str],
-               n_components: int=50, med_filt: int=5, outlier_limits: str | LimitSet = None,
+               n_components: int=50, med_filt: int=5,
                n_strides: int = 8, blend_size: int = 70) -> None:
     """Run PCA-based filtering."""
     logger = get_run_logger()
-
-    if isinstance(outlier_limits, str):
-        outlier_limits = LimitSet.from_file(outlier_limits)
 
     try:
         # We stash the loaded images in a global variable so that, when we fork for parallel processing,
@@ -44,7 +40,7 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
         # don't leak this memory.
         global _all_files_to_fit # noqa: PLW0603
         _all_files_to_fit, bodies_in_quarter, to_subtract, good_data_mask, is_outlier = load_files(
-            input_cubes, files_to_fit, outlier_limits, blend_size)
+            input_cubes, files_to_fit, blend_size)
         # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
         ctx = mp.get_context("fork")
         with (_log_forwarder(),
@@ -62,13 +58,7 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
     logger.info("PCA filtering finished")
 
 
-def check_file(meta: NormalizedMetadata, outlier_limits: LimitSet | None) -> bool:
-    """Check if a file should be used."""
-    return outlier_limits.is_good(meta) if outlier_limits is not None else True
-
-
 def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | DataLoader],
-               outlier_limits: LimitSet | None = None,
                blend_size: int = 70) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Load files."""
     logger = get_run_logger()
@@ -120,7 +110,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
             body_finding_input = (meta, wcs)
         else:
             raise TypeError(f"Invalid type {type(input_file)} for input file")
-        is_good = check_file(meta, outlier_limits)
+        is_good = not meta["OUTLIER"].value
         if is_good or input_list_index >= 0:
             loaded_input_list_indices.append(input_list_index)
             all_files_to_fit[index_to_insert] = data

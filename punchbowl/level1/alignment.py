@@ -14,6 +14,7 @@ from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
 from lmfit import Parameters, minimize
 from ndcube import NDCube
+from prefect import get_run_logger
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
@@ -323,7 +324,7 @@ def find_star_coordinates(image_data: np.ndarray,
     saturation_limit : float
         stars brighter than this are ignored
     max_distance_from_center: float
-        only returns stars at most this distance from the center of th eimage
+        only returns stars at most this distance from the center of the image
     background_size: int
         pixel size used by sep when building background model
     detection_threshold : float
@@ -403,6 +404,7 @@ def astrometry_net_initial_solve(observed_coords: np.ndarray,
             solution_parameters=astrometry.SolutionParameters(
                 sip_order=0,
                 tune_up_logodds_threshold=None,
+                parity=astrometry.Parity.NORMAL,
             ),
         )
 
@@ -545,6 +547,8 @@ def solve_pointing(
     saturation_limit: float = np.inf,
     observatory: str = "wfi") -> WCS:
     """Carefully refine the pointing of an image based on a guess WCS."""
+    logger = get_run_logger()
+
     wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
     if observatory == "wfi":
         search_scales = (14, 15, 16)
@@ -555,7 +559,10 @@ def solve_pointing(
 
         # we mask false detections near the occulter
         distances = np.sqrt(np.square(observed[:, 0] - 1024) + np.square(observed[:, 1] - 1024))
-        observed = observed[distances > 200]
+        distance_mask = distances > 200
+        pylon_mask = (observed[:, 0] > 850) * (observed[:, 0] < 1200) * (observed[:, 1] < 1024)
+        glint_mask = (observed[:, 0] > 475) * (observed[:, 0] < 1550) * (observed[:, 1] < 950) * (observed[:, 1] > 600)
+        observed = observed[distance_mask * ~pylon_mask * ~glint_mask]
     else:
         msg = f"Unknown observatory = {observatory}"
         raise ValueError(msg)
@@ -564,7 +571,7 @@ def solve_pointing(
                                                   lower_arcsec_per_pixel=wcs_arcsec_per_pixel - 10,
                                                   upper_arcsec_per_pixel=wcs_arcsec_per_pixel + 10)
     if astrometry_net is None:
-        warnings.warn("Astrometry.net initial solution failed. Falling back to spacecraft WCS.", RuntimeWarning)
+        logger.warning("Astrometry.net initial solution failed. Falling back to spacecraft WCS.")
         astrometry_net = image_wcs.deepcopy()
 
     astrometry_net = convert_cd_matrix_to_pc_matrix(astrometry_net)

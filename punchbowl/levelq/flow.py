@@ -22,7 +22,6 @@ ORDER_QP = ["QR1", "QR2", "QR3", "CNN"]
 def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                          output_filename: list[str] | None = None,
                          files_to_fit: list[str | NDCube | DataLoader] | None = None,
-                         outlier_limits: str | None = None,
                          data_root: str | None = None) -> list[NDCube]:
     """
     Run the LQ CNN flow.
@@ -37,8 +36,6 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
         Optional output paths at which the CNN files should be written
     files_to_fit : list[str | NDCube | DataLoader]
         Additional files to use for the PCA fitting, but not to actually be filtered or output
-    outlier_limits : str
-        A path to a `LimitSet` to use for outlier rejection in the PCA fitting
     data_root : str
         The root directory which the paths in ``data_list`` are relative to
 
@@ -68,7 +65,7 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
     logger.info("Loaded images to be subtracted")
 
-    pca_filter(data_cubes, files_to_fit, outlier_limits=outlier_limits)
+    pca_filter(data_cubes, files_to_fit)
 
     quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
     data_list_nfi = reproject_many_flow(data_cubes, quickpunch_nfi_wcs, quickpunch_nfi_shape)

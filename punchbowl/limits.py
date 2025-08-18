@@ -52,6 +52,9 @@ class Limit:
         else:
             x, y = point
 
+        if x is None or y is None or not np.isfinite(x) or not np.isfinite(y):
+            raise ValueError(f"Invalid value for limit checking, got {x} and {y}")
+
         limit_value = np.interp(x, self.xs, self.ys)
 
         match self.comp:

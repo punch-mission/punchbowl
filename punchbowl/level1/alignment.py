@@ -559,7 +559,10 @@ def solve_pointing(
 
         # we mask false detections near the occulter
         distances = np.sqrt(np.square(observed[:, 0] - 1024) + np.square(observed[:, 1] - 1024))
-        observed = observed[distances > 200]
+        distance_mask = distances > 200
+        pylon_mask = (observed[:, 0] > 850) * (observed[:, 0] < 1200) * (observed[:, 1] < 1024)
+        glint_mask = (observed[:, 0] > 475) * (observed[:, 0] < 1550) * (observed[:, 1] < 950) * (observed[:, 1] > 600)
+        observed = observed[distance_mask * ~pylon_mask * ~glint_mask]
     else:
         msg = f"Unknown observatory = {observatory}"
         raise ValueError(msg)

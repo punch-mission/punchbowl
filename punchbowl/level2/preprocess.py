@@ -16,6 +16,7 @@ def trim_edges(data_list: list[NDCube], trim_edge_px: int = 0) -> None:
             mask[:, :trim_edge_px] = 1
             mask[:, -trim_edge_px:] = 1
             mask = scipy.ndimage.binary_dilation(mask, iterations=trim_edge_px)
+            cube.meta.history.add_now("LEVEL2-preprocess", f"Edges pulled in by {trim_edge_px} pixels")
         cube.data[mask] = np.nan
         cube.uncertainty.array[mask] = np.inf
 
@@ -34,6 +35,7 @@ def apply_alpha(data_list: list[NDCube], alphas_file: str | None = None) -> None
                 alpha = alphas[code]
                 cube.data[:] /= alpha
                 cube.uncertainty.array[:] /= alpha
+                cube.meta.history.add_now("LEVEL2-preprocess", f"Image scaled by factor of {alpha}")
             except KeyError:
                 logger.warning(f"Did not find alpha value for {cube.meta['FILENAME'].value}")
 

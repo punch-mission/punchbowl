@@ -244,8 +244,7 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     cubes = [
         decode_sqrt_data.fn(cube)
         for cube in (load_ndcube_from_fits(file) for file in input_files)
-        if 490 <= cube.meta["DATAMDN"].value <= 655 and cube.meta["DATAP99"].value != 4095
-           and not cube.meta.__setitem__("OFFSET", 400)
+        if cube.meta["OUTLIER"].value == 0
     ]
 
     # Subtract dark frame

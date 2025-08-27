@@ -19,6 +19,12 @@ from punchbowl.util import DataLoader, average_datetime, find_first_existing_fil
 
 ORDER_QP = ["QR1", "QR2", "QR3", "CNN"]
 
+SPACECRAFT_OBSCODE = {"1": "WFI1",
+                      "2": "WFI2",
+                      "3": "WFI3",
+                      "4": "NFI4",
+                      "N": "NFI4"}
+
 @flow(validate_parameters=False)
 def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                          output_filename: list[str] | None = None,
@@ -146,6 +152,10 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                              ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs, level="Q")
+
+        for d in filter(None, data_list_mosaic):
+            spacecraft = SPACECRAFT_OBSCODE[d.meta["OBSCODE"].value]
+            output_data_mosaic.meta[f"HAS_{spacecraft}"] = 1
 
         output_data_mosaic.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs

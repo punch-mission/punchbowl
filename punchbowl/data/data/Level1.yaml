@@ -6,6 +6,7 @@ Level:
     Documentation, Contact, and Collection Metadata:
         overrides:
             DESCRPTN: PUNCH Level-1 data, Calibrated instrumental units in camera coordinates
+            DOI: https://doi.org/10.48322/enbf-rh75
     File Type and Provenance:
         omits: []
         overrides:

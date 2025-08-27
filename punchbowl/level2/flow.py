@@ -21,6 +21,11 @@ POLARIZED_FILE_ORDER = ["PM1", "PZ1", "PP1",
                         "PM3", "PZ3", "PP3",
                         "PM4", "PZ4", "PP4"]
 
+SPACECRAFT_OBSCODE = {"1": "WFI1",
+                      "2": "WFI2",
+                      "3": "WFI3",
+                      "4": "NFI4"}
+
 
 @punch_flow
 def level2_core_flow(data_list: list[str] | list[NDCube],
@@ -128,6 +133,10 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
 
     output_data.meta.provenance = [fname for d in data_list
         if d is not None and (fname := d.meta.get("FILENAME").value)]
+
+    for d in filter(None, data_list):
+        spacecraft = SPACECRAFT_OBSCODE[d.meta["OBSCODE"].value]
+        output_data.meta[f"HAS_{spacecraft}"] = 1
 
     if output_filename is not None:
         output_image_task(output_data, output_filename)

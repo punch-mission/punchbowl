@@ -40,6 +40,11 @@ def test_ctm_flow_runs_with_filenames(sample_ndcube, tmpdir):
     output = level2_core_flow(paths, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512))
     assert isinstance(output[0], NDCube)
     assert output[0].meta["TYPECODE"].value == "CT"
+    assert output[0].meta["HAS_WFI1"].value == 1
+    assert output[0].meta["HAS_WFI2"].value == 1
+    assert output[0].meta["HAS_WFI3"].value == 1
+    assert output[0].meta["HAS_NFI4"].value == 1
+
 
 @pytest.mark.parametrize("drop_indices", [[], [1], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]])
 def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube, drop_indices, tmpdir):

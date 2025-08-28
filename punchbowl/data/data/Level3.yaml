@@ -83,6 +83,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+            HAS_NFI4: 1
 
     CFM:
         kinds: [Unpolarized, Calibration]
@@ -105,6 +106,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+            HAS_NFI4: 1
 
     PSM:
         kinds: [Polarized]
@@ -157,6 +159,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+            HAS_NFI4: 1
     CIM:
         kinds: [ Unpolarized ]
         overrides:
@@ -188,6 +191,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+            HAS_NFI4: 1
 
     VAM:
         kinds: [Velocity]
@@ -206,6 +210,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+            HAS_NFI4: 1
 
     PAM:
         kinds: [Polarized]
@@ -228,6 +233,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+            HAS_NFI4: 1
 
     CAM:
         kinds: [Unpolarized]
@@ -250,6 +256,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+            HAS_NFI4: 1
 
     PLM:
         kinds: [Unpolarized]

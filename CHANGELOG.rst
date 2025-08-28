@@ -1,3 +1,34 @@
+0.0.19 (2025-08-28)
+===================
+
+New Features
+------------
+
+- Stray light models generate more quickly using less memory (`#568 <https://github.com/punch-mission/punchbowl/pull/568>`__)
+- Speeds up pointing determination by pre-computing a KDTree of distances instead of doing a search over all points. (`#570 <https://github.com/punch-mission/punchbowl/pull/570>`__)
+
+
+Bug Fixes
+---------
+
+- Fix LQ CTM to run from Q* input files. (`#563 <https://github.com/punch-mission/punchbowl/pull/563>`__)
+- Set DATE for stray light models (`#568 <https://github.com/punch-mission/punchbowl/pull/568>`__)
+- Avoid crash in reprojection if input pixels map to NaN in output frame (`#569 <https://github.com/punch-mission/punchbowl/pull/569>`__)
+
+
+Documentation
+-------------
+
+- Consolidates old and new changelogs. (`#585 <https://github.com/punch-mission/punchbowl/pull/585>`__)
+
+
+Internal Changes
+----------------
+
+- Speed up L1_early if not alignment or Q file is needed (`#562 <https://github.com/punch-mission/punchbowl/pull/562>`__)
+- `estimate_stray_light` reports file paths that cause loading errors. (`#564 <https://github.com/punch-mission/punchbowl/pull/564>`__)
+
+
 0.0.18 (2025-08-06)
 ===================
 

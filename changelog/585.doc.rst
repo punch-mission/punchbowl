@@ -1,1 +1,0 @@
-Consolidates old and new changelogs.

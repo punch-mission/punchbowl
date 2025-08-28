@@ -1,5 +1,6 @@
 import os
 import pathlib
+from datetime import UTC, datetime
 from collections.abc import Generator
 
 import astropy.units as u
@@ -163,6 +164,7 @@ def level1_early_core_flow(  # noqa: C901
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         if isinstance(vignetting_function_path, DataLoader):
             vignetting_function_path = vignetting_function_path.src_repr()
@@ -236,6 +238,7 @@ def level1_late_core_flow(
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         if isinstance(psf_model_path, DataLoader):
             psf_model_path = psf_model_path.src_repr()
@@ -294,6 +297,7 @@ def levelh_core_flow(
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
         new_meta = NormalizedMetadata.load_template(product_code, "H")
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         output_header = new_meta.to_fits_header(data.wcs)
         for key in output_header:

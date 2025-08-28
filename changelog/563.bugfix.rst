@@ -1,1 +1,0 @@
-Fix LQ CTM to run from Q* input files.

@@ -28,7 +28,7 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
     data_collection = NDCollection([(k, NDCube(data=input_collection[k].data,
                                  wcs=input_collection[k].wcs,
                                  meta={"POLAR": input_collection[k].meta["POLAR"].value * u.degree,
-                                       "POLAROFF": input_collection[k].meta["POLAROFF"].value * u.degree,
+                                       "POLAROFF": input_collection[k].meta["POLAROFF"].value,
                                        "POLARREF": str(input_collection[k].meta["POLARREF"])}))
                        for k in ["M", "Z", "P"]])
 

@@ -51,6 +51,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,HAS_WFI2,0,Includes WFI-2 data,int,TRUE,TRUE,0
 4,keyword,HAS_WFI3,0,Includes WFI-3 data,int,TRUE,TRUE,0
 4,keyword,HAS_NFI4,0,Includes NFI data,int,TRUE,TRUE,0
+4,keyword,ALL_INPT,0,Includes all expected mosaic components,int,TRUE,TRUE,0
 4,keyword,OBJECT,Heliosphere white light,Object observed,str,TRUE,TRUE,Heliosphere white light
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
 5,keyword,CROTA,,[deg] Human-readable solar north pole angle,float,TRUE,TRUE,

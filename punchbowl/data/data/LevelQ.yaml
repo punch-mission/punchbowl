@@ -79,6 +79,7 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: N
             HAS_NFI4: 1
+            ALL_INPT: 1
 
     CTM:
         kinds: [Unpolarized]
@@ -103,3 +104,4 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: N
             HAS_NFI4: 1
+            ALL_INPT: 1

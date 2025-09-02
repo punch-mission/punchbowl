@@ -157,6 +157,11 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
             spacecraft = SPACECRAFT_OBSCODE[d.meta["OBSCODE"].value]
             output_data_mosaic.meta[f"HAS_{spacecraft}"] = 1
 
+        output_data_mosaic.meta["ALL_INPT"] = {output_data_mosaic.meta["HAS_WFI1"],
+                                               output_data_mosaic.meta["HAS_WFI2"],
+                                               output_data_mosaic.meta["HAS_WFI3"],
+                                               output_data_mosaic.meta["HAS_NFI4"]} == {1}
+
         output_data_mosaic.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs
         output_data_mosaic.meta["DATE-OBS"] = output_dateobs

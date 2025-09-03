@@ -25,3 +25,8 @@ def test_ctm_flow_runs_with_filenames(sample_ndcube, tmpdir):
         output = levelq_CTM_core_flow.fn(paths, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512))
     assert isinstance(output[0], NDCube)
     assert output[0].meta["TYPECODE"].value == "CT"
+
+    assert output[0].meta["HAS_WFI1"].value == 1
+    assert output[0].meta["HAS_WFI2"].value == 1
+    assert output[0].meta["HAS_WFI3"].value == 1
+    assert output[0].meta["HAS_NFI4"].value == 1

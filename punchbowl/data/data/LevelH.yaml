@@ -11,7 +11,7 @@ Level:
             LEVEL: H
     Temporal Information:
     Instrument and Spacecraft State:
-        omits: [OBSLAYR2, OBSLAYR3]
+        omits: [OBSLAYR2, OBSLAYR3, HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT]
     World Coordinate System:
     Camera and Readout State:
     Onboard Image Processing:

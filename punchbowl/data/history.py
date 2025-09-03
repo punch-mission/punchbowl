@@ -156,7 +156,12 @@ class History:
             out = cls()
             entries = "".join([h for h in head["HISTORY"][1:]]).split("|")[:-1]  # noqa: C416
             for entry in entries:
-                dt, source, comment = entry.split(" => ")
+                pieces = entry.split(" => ")
+                if len(pieces) == 2:
+                    dt, comment = pieces
+                    source = ""
+                else:
+                    dt, source, comment = pieces
                 dt = parse_datetime(dt)
                 out.add_entry(HistoryEntry(dt, source, comment))
         return out

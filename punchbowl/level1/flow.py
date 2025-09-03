@@ -293,12 +293,19 @@ def levelh_core_flow(
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
         new_meta = NormalizedMetadata.load_template(product_code, "H")
+        # copy over the existing values
+        for key in data.meta.keys():  # noqa: SIM118
+            if key in KEYS_TO_NOT_COPY:
+                continue
+            if key in new_meta.keys():  # noqa: SIM118
+                new_meta[key] = data.meta[key].value
+        new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
 
-        output_header = new_meta.to_fits_header(data.wcs)
-        for key in output_header:
-            if (key in data.meta.keys()) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"): # noqa: SIM118
-                new_meta[key].value = data.meta[key].value
+        if isinstance(psf_model_path, DataLoader):
+            psf_model_path = psf_model_path.src_repr()
+        new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
+
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
         data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
 

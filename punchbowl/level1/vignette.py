@@ -241,11 +241,17 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         cube_wcs = WCS(hdul[1].header)
 
     # Load and square root decode input data
-    cubes = [
-        decode_sqrt_data.fn(cube)
-        for cube in (load_ndcube_from_fits(file) for file in input_files)
-        if cube.meta["OUTLIER"].value == 0
-    ]
+    cubes = []
+    for file in input_files:
+        cube = load_ndcube_from_fits(file)
+        if cube.meta["OFFSET"].value is None:
+            cube.meta["OFFSET"] = 400
+        if "OUTLIER" in cube.meta:
+            if cube.meta["OUTLIER"].value == 0:
+                cubes.append(decode_sqrt_data.fn(cube))
+        else:
+            if 490 <= cube.meta["DATAMDN"].value <= 655 and cube.meta["DATAP99"].value != 4095:
+                cubes.append(decode_sqrt_data.fn(cube))
 
     # Subtract dark frame
     for cube in cubes:

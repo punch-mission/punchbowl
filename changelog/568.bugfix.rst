@@ -1,1 +1,0 @@
-Set DATE for stray light models

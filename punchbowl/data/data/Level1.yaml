@@ -6,13 +6,14 @@ Level:
     Documentation, Contact, and Collection Metadata:
         overrides:
             DESCRPTN: PUNCH Level-1 data, Calibrated instrumental units in camera coordinates
+            DOI: https://doi.org/10.48322/enbf-rh75
     File Type and Provenance:
         omits: []
         overrides:
             LEVEL: 1
     Temporal Information:
     Instrument and Spacecraft State:
-        omits: [OBSLAYR2, OBSLAYR3]
+        omits: [OBSLAYR2, OBSLAYR3, HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT]
     World Coordinate System:
     Camera and Readout State:
     Onboard Image Processing:

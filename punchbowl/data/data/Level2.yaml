@@ -93,6 +93,8 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+            HAS_NFI4: 1
+            ALL_INPT: 1
 
     CTM:
         kinds: [Unpolarized]
@@ -115,3 +117,5 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N
+            HAS_NFI4: 1
+            ALL_INPT: 1

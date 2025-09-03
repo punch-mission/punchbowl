@@ -1,1 +1,0 @@
-Avoid crash in reprojection if input pixels map to NaN in output frame

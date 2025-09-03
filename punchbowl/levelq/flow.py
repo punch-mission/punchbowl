@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
@@ -11,17 +12,23 @@ from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_f
 from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_wcs
 from punchbowl.level2.merge import merge_many_clear_task
+from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import reproject_many_flow
 from punchbowl.levelq.pca import pca_filter
 from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
 
 ORDER_QP = ["QR1", "QR2", "QR3", "CNN"]
 
+SPACECRAFT_OBSCODE = {"1": "WFI1",
+                      "2": "WFI2",
+                      "3": "WFI3",
+                      "4": "NFI4",
+                      "N": "NFI4"}
+
 @flow(validate_parameters=False)
 def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                          output_filename: list[str] | None = None,
                          files_to_fit: list[str | NDCube | DataLoader] | None = None,
-                         outlier_limits: str | None = None,
                          data_root: str | None = None) -> list[NDCube]:
     """
     Run the LQ CNN flow.
@@ -36,8 +43,6 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
         Optional output paths at which the CNN files should be written
     files_to_fit : list[str | NDCube | DataLoader]
         Additional files to use for the PCA fitting, but not to actually be filtered or output
-    outlier_limits : str
-        A path to a `LimitSet` to use for outlier rejection in the PCA fitting
     data_root : str
         The root directory which the paths in ``data_list`` are relative to
 
@@ -67,7 +72,7 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
     logger.info("Loaded images to be subtracted")
 
-    pca_filter(data_cubes, files_to_fit, outlier_limits=outlier_limits)
+    pca_filter(data_cubes, files_to_fit)
 
     quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
     data_list_nfi = reproject_many_flow(data_cubes, quickpunch_nfi_wcs, quickpunch_nfi_shape)
@@ -106,7 +111,12 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
 @flow(validate_parameters=False)
 def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
-                     output_filename: list[str] | None = None) -> list[NDCube]:
+                         output_filename: list[str] | None = None,
+                         trim_edges_px: int = 0,
+                         alphas_file: str | None = None,
+                         trefoil_wcs: WCS | None = None,
+                         trefoil_shape: tuple[int, int] | None = None,
+                         ) -> list[NDCube]:
     """Level quickPUNCH core flow."""
     logger = get_run_logger()
     logger.info("beginning level quickPUNCH CTM core flow")
@@ -125,6 +135,12 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                     f"{[get_base_file_name(cube) if cube is not None else None for cube in ordered_data_list]}")
 
         quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_quickpunch_mosaic_wcs()
+        if trefoil_wcs is not None:
+            quickpunch_mosaic_wcs = trefoil_wcs
+        if trefoil_shape is not None:
+            quickpunch_mosaic_shape = trefoil_shape
+
+        preprocess_trefoil_inputs(data_list, trim_edges_px, alphas_file)
 
         data_list_mosaic = reproject_many_flow(ordered_data_list, quickpunch_mosaic_wcs, quickpunch_mosaic_shape)
         output_dateobs = average_datetime(
@@ -136,6 +152,15 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                              ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs, level="Q")
+
+        for d in filter(None, data_list_mosaic):
+            spacecraft = SPACECRAFT_OBSCODE[d.meta["OBSCODE"].value]
+            output_data_mosaic.meta[f"HAS_{spacecraft}"] = 1
+
+        output_data_mosaic.meta["ALL_INPT"] = {output_data_mosaic.meta["HAS_WFI1"],
+                                               output_data_mosaic.meta["HAS_WFI2"],
+                                               output_data_mosaic.meta["HAS_WFI3"],
+                                               output_data_mosaic.meta["HAS_NFI4"]} == {1}
 
         output_data_mosaic.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs

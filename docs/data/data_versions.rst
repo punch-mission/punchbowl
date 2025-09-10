@@ -17,6 +17,36 @@ The PUNCH mission and the SDAC data repository only supports the most recent ver
 
 A history of data version releases is given below.
 
+Version 0e
+----------
+- Released August 18, 2025
+- Incorporate new outlier rejection
+- Used alpha coefficients to inter-calibrate the WFIs
+- Created automatic NFI flat-fielding module
+- Sped up pointing refinement
+
+Version 0d
+----------
+- Released August 8, 2025
+- Fixed file provenance logging
+- Addressed rolling stray light issues
+- Dilated saturation in PSF correction more
+- Turned on PTM processing
+- Rigged up an automated reprocessing that is more ordered by time and dependencies
+- Split Level 1 processing at stray light subtraction
+
+Version 0c
+----------
+- Released July 24, 2025
+- Included new PSF models
+- Refined the pointing so it's more stable
+- Implemented rolling stray light models
+- Handled saturated pixels when building PSF model
+- Handled mask when building PSF model
+- Handled saturated pixels when correcting PSF
+- Handled mask when correcting PSF
+- Added lost in space pointing solver for when pointing isn't stable enough
+
 Version 0b
 ----------
 - Released June 1, 2025

@@ -3,7 +3,7 @@
 Overplotting Parker Solar Probe and Solar Orbiter Trajectories on PUNCH Images
 ===================
 
-This notebook demonstrates how to overplot spacecraft trajectories on a sample PUNCH image. 
+This notebook demonstrates how to overplot spacecraft trajectories on a sample PUNCH image.
 
 First, we project the spacecraft positions onto the images directly.
 
@@ -14,16 +14,16 @@ Second, we show how to plot in 3D the trajectories and the images assuming the p
 # Import Required Libraries
 
 import datetime
-import numpy as np
-import matplotlib.pyplot as plt
-import astropy.units as u
 
-import sunpy.map
-from sunpy.net import Fido, attrs as a
+import astropy.units as u
+import matplotlib.pyplot as plt
+import numpy as np
 import sunpy.coordinates
+import sunpy.map
+from sunpy.net import Fido
+from sunpy.net import attrs as a
 
 import punchbowl.data.sample as samples
-
 
 # %%
 # ### Load Sample PUNCH Map
@@ -32,7 +32,7 @@ pam_file = samples.PUNCH_PAM
 pam_map = sunpy.map.Map(pam_file)[0]
 
 
-# %% 
+# %%
 # ### Generate Spacecraft Trajectories
 # Uses `sunpy.coordinates.get_horizons_coord`
 
@@ -61,7 +61,7 @@ earth_stonyhurst = sunpy.coordinates.get_horizons_coord(399,
 
 # %%
 # ### Overplot Trajectories on PUNCH Field of View
-# 
+#
 # Distance from plane of sky is deprojected
 
 
@@ -84,7 +84,7 @@ plt.show()
 ### Downsample for feasible 3D plotting time/computation
 pam_map_lowres = pam_map.resample([512,512]*u.pix)
 
-### Get 3D Plane of Sky Cartesian Pixel Coordinates 
+### Get 3D Plane of Sky Cartesian Pixel Coordinates
 coords=sunpy.map.all_coordinates_from_map(pam_map_lowres)
 coords.representation_type='cartesian'
 
@@ -132,7 +132,7 @@ ax.plot(solo_stonyhurst.x.to("R_sun"),
        )
 
 ### Plot Earth
-ax.scatter(215,0,0,marker="o",color="green",ec="black",s=8,label="Earth") 
+ax.scatter(215,0,0,marker="o",color="green",ec="black",s=8,label="Earth")
 
 ### Point Camera
 ax.view_init(20,-5)

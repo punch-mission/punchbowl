@@ -84,7 +84,7 @@ plt.show()
 # %%
 # Plot Isometrically Assuming PUNCH Data is on the Thomson Sphere
 # ---------------------------------------------------------------
-# 
+#
 #First, produce the 3D pixel values
 
 ### Downsample for feasible 3D plotting time/computation

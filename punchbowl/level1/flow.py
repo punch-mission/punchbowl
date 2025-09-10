@@ -45,7 +45,7 @@ def generate_psf_model_core_flow(input_filepaths: list[str],
         return np.exp(-(np.square(row - x0) / (2 * np.square(sigma_x))
                         + np.square(col - y0) / (2 * np.square(sigma_y))))
 
-    image_psf, counts = ArrayPSFBuilder(psf_size).build(input_filepaths, hdu_choice=1, star_masks=masks)
+    image_psf, _ = ArrayPSFBuilder(psf_size).build(input_filepaths, hdu_choice=1, star_masks=masks)
     coords = calculate_covering(image_shape, psf_size)
     return ArrayPSFTransform.construct(image_psf, target.as_array_psf(coords, psf_size), alpha, epsilon)
 

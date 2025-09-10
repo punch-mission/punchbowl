@@ -42,7 +42,7 @@ def build_psf_transform(image_paths: list[str] | list[Path],
 
     """
     b = ArrayPSFBuilder(psf_size)
-    model, counts = b.build(image_paths)
+    model, _ = b.build(image_paths)
 
     first_cube = load_ndcube_from_fits(image_paths[0], key="A")
 

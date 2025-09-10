@@ -755,7 +755,7 @@ class NormalizedMetadata(Mapping):
 
         """
         if isinstance(key, tuple):
-            key, i = key
+            key, _ = key
         self._validate_key_is_str(key)
 
         for section_name, section in self._contents.items():

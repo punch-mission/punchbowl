@@ -26,14 +26,17 @@ from sunpy.net import attrs as a
 import punchbowl.data.sample as samples
 
 # %%
-# ### Load Sample PUNCH Map
+# Load Sample PUNCH Map
+# ---------------------
 
 pam_file = samples.PUNCH_PAM
 pam_map = sunpy.map.Map(pam_file)[0]
 
 
 # %%
-# ### Generate Spacecraft Trajectories
+# Generate Spacecraft Trajectories
+# --------------------------------
+#
 # Uses `sunpy.coordinates.get_horizons_coord`
 
 
@@ -60,7 +63,8 @@ earth_stonyhurst = sunpy.coordinates.get_horizons_coord(399,
 
 
 # %%
-# ### Overplot Trajectories on PUNCH Field of View
+# Overplot Trajectories on PUNCH Field of View
+# --------------------------------------------
 #
 # Distance from plane of sky is deprojected
 
@@ -78,8 +82,10 @@ plt.show()
 
 
 # %%
-# ### Plot Isometrically Assuming PUNCH Data is on the Thomson Sphere
-# First, produce the 3D pixel values
+# Plot Isometrically Assuming PUNCH Data is on the Thomson Sphere
+# ---------------------------------------------------------------
+# 
+#First, produce the 3D pixel values
 
 ### Downsample for feasible 3D plotting time/computation
 pam_map_lowres = pam_map.resample([512,512]*u.pix)

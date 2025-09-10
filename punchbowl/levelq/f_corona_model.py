@@ -1,3 +1,4 @@
+import multiprocessing as mp
 from datetime import UTC, datetime
 
 import numpy as np
@@ -5,15 +6,18 @@ from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from prefect import get_run_logger
 
-from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data import NormalizedMetadata
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs
-from punchbowl.level3.f_corona_model import fill_nans_with_interpolation, model_fcorona_for_cube
+from punchbowl.level3.f_corona_model import _load_one_file, fill_nans_with_interpolation, model_fcorona_for_cube
 from punchbowl.prefect import punch_flow
 
 
 @punch_flow(log_prints=True)
-def construct_qp_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
-                                       reference_time: str | None = None) -> list[NDCube]:
+def construct_qp_f_corona_model(filenames: list[str],
+                                clip_factor: float = 3.0,
+                                reference_time: str | None = None,
+                                num_workers: int = 8,
+                                fill_nans: bool = True) -> list[NDCube]:
     """Construct QuickPUNCH F corona model."""
     logger = get_run_logger()
 
@@ -35,28 +39,41 @@ def construct_qp_f_corona_model(filenames: list[str], smooth_level: float = 3.0,
     data_shape = trefoil_shape
 
     number_of_data_frames = len(filenames)
-    data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
-    uncertainty_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
+    data_cube = np.empty((*data_shape, number_of_data_frames), dtype=float)
 
     meta_list = []
     obs_times = []
 
     logger.info("beginning data loading")
-    for i, address_out in enumerate(filenames):
-        data_object = load_ndcube_from_fits(address_out)
-        data_cube[i, ...] = data_object.data
-        uncertainty_cube[i, ...] = data_object.uncertainty.array
-        obs_times.append(data_object.meta.datetime.timestamp())
-        meta_list.append(data_object.meta)
+    dates = []
+    with mp.Pool(processes=num_workers) as pool:
+        for i, (data, meta) in enumerate(pool.imap(_load_one_file, filenames)):
+            dates.append(meta.datetime)
+            data_cube[..., i] = data
+            obs_times.append(meta.datetime.timestamp())
+            meta_list.append(meta)
     logger.info("ending data loading")
+    output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     reference_xt = reference_time.timestamp()
-    model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube, clip_factor=smooth_level)
+    model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube,
+                                              num_workers=num_workers, clip_factor=clip_factor)
     model_fcorona[model_fcorona<=0] = np.nan
-    model_fcorona = fill_nans_with_interpolation(model_fcorona)
+    if fill_nans:
+            model_fcorona = fill_nans_with_interpolation(model_fcorona)
+
+
 
     meta = NormalizedMetadata.load_template("CFM", "Q")
-    meta["DATE-OBS"] = str(reference_time)
+
+    meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-AVG"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+    meta["DATE-BEG"] = output_datebeg
+    meta["DATE-END"] = output_dateend
+
     output_cube = NDCube(data=model_fcorona.squeeze(),
                                 meta=meta,
                                 wcs=trefoil_wcs)

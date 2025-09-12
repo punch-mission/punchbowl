@@ -1,13 +1,19 @@
 import os
+import time
 import pathlib
 import warnings
+import multiprocessing as mp
 
 import numpy as np
+import pandas as pd
+import regularizepsf
 from astropy.io import fits
 from astropy.wcs import WCS
 from ndcube import NDCube
+from prefect.logging import disable_run_logger
 from reproject import reproject_adaptive
 from scipy.ndimage import binary_dilation, binary_erosion, grey_closing
+from scipy.spatial import KDTree
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.meta import NormalizedMetadata
@@ -18,6 +24,12 @@ from punchbowl.exceptions import (
     InvalidDataError,
     LargeTimeDeltaWarning,
     NoCalibrationDataWarning,
+)
+from punchbowl.level1.alignment import (
+    filter_for_visible_stars,
+    find_catalog_in_image,
+    load_hipparcos_catalog,
+    solve_pointing,
 )
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.prefect import punch_task
@@ -305,3 +317,167 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
 
         return None
     return cube.data
+
+def measure_single_star(x: int, y: int, image: np.ndarray, width: int = 7) -> np.ndarray:
+    x, y = int(x), int(y)
+    half_width = width // 2
+    patch = image[x-half_width:x+half_width+1, y-half_width:y+half_width+1]
+    border = np.concatenate([patch[0, :], patch[-1, :], patch[:, 0], patch[:, -1]])
+    border_median = np.median(border)
+    return np.sum(patch - border_median)
+
+def measure_stars_in_one_image(cube, distortion_wcs, psf_model, catalog=None, width: int = 7) -> pd.DataFrame:
+    d = cube.data.astype(np.float64).copy()
+    d = d**2 / cube.meta["SCALE"].value  # TODO: do proper sqrt decoding
+    d = psf_model.apply(d, saturation_threshold=55_000, saturation_dilation=3)
+    d = d.copy()
+    w = solve_pointing(d, cube.wcs, distortion_wcs)
+    if catalog is None:
+        catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=8)
+    stars_found = find_catalog_in_image(catalog, w, d.shape)
+
+    results = []
+    for _, star in stars_found.iterrows():
+        try:
+            measurement = measure_single_star(star["y_pix"], star["x_pix"], d, width)
+            results.append({"hip": star["HIP"],
+                            "aperture_sum_bkgsub": measurement,
+                            "xcenter": star["x_pix"],
+                            "ycenter": star["y_pix"],
+                            "Vmag": star["Vmag"]})
+        except:  # if it fails for any reason, just move onto the next star
+            pass
+    return pd.DataFrame(results)
+
+def single_image_helper(path, distortion_wcs, psf_model):
+    try:
+        catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=6)
+        with disable_run_logger():
+            cube = load_ndcube_from_fits(path, key="A")
+            return measure_stars_in_one_image(cube, distortion_wcs, psf_model, catalog)
+    except Exception as e:
+        print(e)
+        return None
+
+def measure_stars_for_vignetting(level0_paths: list[str], distortion_path: str, psf_path: str, num_workers: int = -1) -> list[pd.DataFrame]:
+    with fits.open(distortion_path) as distortion:
+        distortion_wcs = WCS(distortion[0].header, distortion, key="A")
+    psf_transform = regularizepsf.ArrayPSFTransform.load(psf_path)
+
+    paths = [(p, distortion_wcs, psf_transform) for p in level0_paths]
+    with mp.Pool(num_workers) as pool:
+        tables = pool.starmap(single_image_helper, paths)
+    return tables
+
+def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_mask: np.ndarray) -> np.ndarray:
+    # image_mask = fits.open(paths[0])[1].data == 0
+    tables = [t for t in tables if t is not None]
+    all_hip = set()
+    for table in tables:
+        all_hip = all_hip.union(set([int(i) for i in np.array(table["hip"])]))
+
+    xcenters = {h: np.zeros(len(tables)) + np.nan for h in all_hip}
+    ycenters = {h: np.zeros(len(tables)) + np.nan for h in all_hip}
+    measurement = {h: np.zeros(len(tables)) + np.nan for h in all_hip}
+    mags = dict.fromkeys(all_hip, np.nan)
+    for i, table in enumerate(tables):
+        for _, row in table.iterrows():
+            h = row["hip"]
+            xcenters[h][i] = row["xcenter"]
+            ycenters[h][i] = row["ycenter"]
+            measurement[h][i] = row["aperture_sum_bkgsub"]
+            mags[h] = row["Vmag"]
+
+    num_nan = {h: np.sum(np.isnan(v)) for h, v in measurement.items()}
+    used_hip = [h for h, v in num_nan.items() if v < len(tables) - 500]
+    used_hip = np.array(used_hip)
+
+    rows = []
+    for h in used_hip:
+        for i in range(len(tables)):
+            if not np.isnan(measurement[h][i]):
+                this_dict = {"hip": h,
+                             "mag": mags[h],
+                             "x_center": xcenters[h][i],
+                             "y_center": ycenters[h][i],
+                             "measurement": measurement[h][i]}
+                rows.append(this_dict)
+    df = pd.DataFrame(rows)
+
+    neighborhood_size = 500
+
+    ls_used_hip = np.random.choice(np.array([h for h in used_hip if 6 > mags[h] > 3]), 500)
+    v_size = 10
+
+    ls_used_hip_mapping = {h: i for i, h in enumerate(ls_used_hip)}
+
+    subdf = df[df["hip"].isin(ls_used_hip)]
+    subdf = subdf[~image_mask[subdf["y_center"].values.astype(int), subdf["x_center"].values.astype(int)]]
+    tree = KDTree(np.stack([subdf["x_center"], subdf["y_center"]], axis=1))
+
+    window = 25
+    mask = (subdf["x_center"] > 1024 - window) * (subdf["x_center"] < 1024 + window) * (
+                subdf["y_center"] > 1024 - window) * (subdf["y_center"] < 1024 + window) * (
+                       subdf["measurement"] > 0)
+    centerdf = subdf[mask]
+    poly = np.polyfit(centerdf["mag"], np.log10(centerdf["measurement"]), 1)
+
+    initial_brightnesses = []
+    for h in ls_used_hip:
+        this_hip_df = df[df["hip"] == h]
+        mag = this_hip_df["mag"].iloc[0]
+        initial_brightnesses.append(10 ** np.polyval(poly, mag))
+
+    current_brightnesses = np.array(initial_brightnesses)
+
+    for iteration in range(1, 6): # TODO: make this not a hard coded value
+        v_size = 30 * iteration  # TODO: make this not a hard coded value
+        v_step = 2048 / v_size
+
+        from skimage.transform import resize
+        image_mask_resized = resize(image_mask, (v_size, v_size))
+
+        print(f"ITERATION {iteration}")
+        updated_vignetting = np.ones((v_size, v_size))
+        samples = np.zeros((v_size, v_size))
+
+        for i in range(v_size):
+            for j in range(v_size):
+                ii, jj = i * v_step, j * v_step
+                out = np.array(tree.query_ball_point(np.array([[ii, jj]]), neighborhood_size)[0])
+                if len(out):
+                    d = np.sqrt(
+                        (subdf["x_center"].values[out] - ii) ** 2 + (subdf["y_center"].values[out] - jj) ** 2)
+                    vignette_amount = np.clip(np.array([v / current_brightnesses[ls_used_hip_mapping[h]]
+                                                        for h, v in zip(subdf["hip"].values[out],
+                                                                        subdf["measurement"].values[out], strict=False)]), 1E-6,
+                                              1)
+                    low, high = np.nanpercentile(vignette_amount, (15, 95))  # TODO: make this not hard coed
+                    mask = (vignette_amount > low) * (vignette_amount < high)
+                    if np.sum(mask) < 500:  # TODO: make this not hard coded
+                        mask = np.ones(len(mask), dtype=bool)
+                    w = 1 / (d + neighborhood_size) ** 2
+                    w[d > neighborhood_size] = 0
+                    if np.sum(w) == 0:
+                        w = 1 / (d + neighborhood_size) ** 2
+                    try:
+                        new_value = np.average(vignette_amount[mask], weights=w[mask])
+                        samples[j, i] = len(vignette_amount[mask])
+                    except ZeroDivisionError:
+                        new_value = np.average(vignette_amount, weights=w)
+                        samples[j, i] = len(vignette_amount)
+                else:
+                    new_value = 0
+                updated_vignetting[j, i] = new_value
+        updated_vignetting[image_mask_resized] = 0
+
+        start = time.time()
+        for i, h in enumerate(ls_used_hip):
+            this_hip_df = subdf[subdf["hip"] == h]
+            xx = np.round(this_hip_df["x_center"].values / v_step).astype(int).clip(0, v_size - 1)
+            yy = np.round(this_hip_df["y_center"].values / v_step).astype(int).clip(0, v_size - 1)
+            mm = this_hip_df["measurement"] / updated_vignetting[yy, xx]
+            new_brightness = np.nanpercentile(mm[mm > 0], 50)
+            current_brightnesses[i] = new_brightness
+
+        return updated_vignetting

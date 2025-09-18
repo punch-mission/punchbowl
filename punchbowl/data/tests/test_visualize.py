@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
-from punchbowl.data.visualize import cmap_punch, radial_distance, radial_filter
+from punchbowl.data.visualize import cmap_punch, cmap_punch_r, radial_distance, radial_filter
 
 
 def test_radial_distance():
@@ -21,3 +21,7 @@ def test_radial_filter():
 
 def test_cmap_punch():
     assert isinstance(cmap_punch, LinearSegmentedColormap)
+
+
+def test_cmap_punch_r():
+    assert isinstance(cmap_punch_r, LinearSegmentedColormap)

@@ -25,7 +25,8 @@ from punchbowl.prefect import punch_task
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 HIPPARCOS_URL = "https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat"
 
-def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_size: float = 3) -> np.ndarray:
+def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_size: float = 3,
+                            mask: np.ndarray | None = None, window_width: int = 1) -> np.ndarray:
     """
     Filter a copy of the distortion lookup table.
 
@@ -56,50 +57,57 @@ def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_
     Modified from https://github.com/svank/wispr_analysis/blob/main/wispr_analysis/image_alignment.py
 
     """
+    if mask is None:
+        mask = np.ones_like(data, dtype=bool)
+
     data = data.copy()
+    data[~mask] = np.nan
 
-    # Trim empty (all-nan) rows and columns
+    # # Trim empty (all-nan) rows and columns
     trimmed = []
-    i = 0
-    while np.all(np.isnan(data[0])):
-        i += 1
-        data = data[1:]
-    trimmed.append(i)
-
-    i = 0
-    while np.all(np.isnan(data[-1])):
-        i += 1
-        data = data[:-1]
-    trimmed.append(i)
-
-    i = 0
-    while np.all(np.isnan(data[:, 0])):
-        i += 1
-        data = data[:, 1:]
-    trimmed.append(i)
-
-    i = 0
-    while np.all(np.isnan(data[:, -1])):
-        i += 1
-        data = data[:, :-1]
-    trimmed.append(i)
+    trimmed = [0, 0, 0, 0]
+    # i = 0
+    # while np.all(np.isnan(data[0])):
+    #     i += 1
+    #     data = data[1:]
+    # trimmed.append(i)
+    #
+    # i = 0
+    # while np.all(np.isnan(data[-1])):
+    #     i += 1
+    #     data = data[:-1]
+    # trimmed.append(i)
+    #
+    # i = 0
+    # while np.all(np.isnan(data[:, 0])):
+    #     i += 1
+    #     data = data[:, 1:]
+    # trimmed.append(i)
+    #
+    # i = 0
+    # while np.all(np.isnan(data[:, -1])):
+    #     i += 1
+    #     data = data[:, :-1]
+    # trimmed.append(i)
 
     # Replace interior nan values with the median of the surrounding values.
     # We're filling in from neighboring pixels, so if there are any nan pixels
     # fully surrounded by nan pixels, we need to iterate a few times.
+    counter = 0
     while np.any(np.isnan(data)):
         nans = np.nonzero(np.isnan(data))
         replacements = np.zeros_like(data)
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", message="All-NaN slice")
             for r, c in zip(*nans, strict=False):
-                r1, r2 = r - 1, r + 2
-                c1, c2 = c - 1, c + 2
+                r1, r2 = r - window_width, r + window_width + 1
+                c1, c2 = c - window_width, c + window_width + 1
                 r1, r2 = max(r1, 0), min(r2, data.shape[0])
                 c1, c2 = max(c1, 0), min(c2, data.shape[1])
 
-                replacements[r, c] = np.nanmedian(data[r1:r2, c1:c2])
+                replacements[r, c] = np.nanmedian(data[r1:r2, c1:c2] * mask[r1:r2, c1:c2])
         data[nans] = replacements[nans]
+        counter += 1
 
     # Median-filter the whole image
     if med_filter_size:
@@ -110,7 +118,7 @@ def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_
         data = scipy.ndimage.gaussian_filter(data, sigma=blur_sigma)
 
     # Replicate the edge rows/columns to replace those we trimmed earlier
-    return np.pad(data, [trimmed[0:2], trimmed[2:]], mode="edge")
+    return data #np.pad(data, [trimmed[0:2], trimmed[2:]], mode="edge")
 
 def get_data_path(path: str) -> str:
     """Get the path to the local data directory."""

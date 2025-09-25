@@ -28,7 +28,7 @@ def test_vignetting_creation_wfi(tmpdir):
 
 def test_vignetting_creation_nfi(tmpdir):
     with open("empty.txt", "w") as f:
-        f.write("dark.fits\nmask.bin\n")
+        f.write("speckle.fits\nmask.bin\ndark.fits\n")
     create_calibration(level = "1",
                        code = "GR",
                        spacecraft = "4",

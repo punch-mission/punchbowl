@@ -246,9 +246,11 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         cube = load_ndcube_from_fits(file)
         if cube.meta["OFFSET"].value is None:
             cube.meta["OFFSET"] = 400
+        # Reject outlier images in vignetting calculation if they have been flagged
         if "OUTLIER" in cube.meta:
             if cube.meta["OUTLIER"].value == 0:
                 cubes.append(decode_sqrt_data.fn(cube))
+        # If outlier rejection was not applied, manually reject outliers using these human-derived checks
         else:
             if 490 <= cube.meta["DATAMDN"].value <= 655 and cube.meta["DATAP99"].value != 4095:
                 cubes.append(decode_sqrt_data.fn(cube))
@@ -265,6 +267,7 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     # Stack image data
     images = np.array([cube.data for cube in cubes])
 
+    # If only one file exists in the datacube, do not create the vignetting correction
     if len(images.shape) != 3:
         return None
 

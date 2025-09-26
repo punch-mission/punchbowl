@@ -8,7 +8,6 @@ from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_e
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization
-from punchbowl.level3.stellar import subtract_starfield_background_task
 from punchbowl.level3.velocity import plot_flow_map, track_velocity
 from punchbowl.prefect import punch_flow
 from punchbowl.util import load_image_task, output_image_task
@@ -66,7 +65,7 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     data_list = [subtract_f_corona_background_task(d,
                                                    before_f_corona_model_path,
                                                    after_f_corona_model_path) for d in data_list]
-    data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
+    # data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
     if data_list[0].meta["TYPECODE"].value == "PT":
         data_list = [convert_polarization(d) for d in data_list]
     logger.info("ending level 3 core flow")

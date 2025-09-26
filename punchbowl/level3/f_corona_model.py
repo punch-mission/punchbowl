@@ -10,7 +10,6 @@ from numpy.polynomial import polynomial
 from prefect import get_run_logger
 from quadprog import solve_qp
 from scipy.interpolate import griddata
-from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import load_trefoil_wcs
@@ -108,39 +107,44 @@ def model_fcorona_for_cube(xt: np.ndarray,
         The smoothed data cube. Returned only if return_full_curves is True.
 
     """
-    stride = 32
-    def args() -> tuple:
-        # Generate a set of args for one task
-        for i in range(0, cube.shape[0], stride):
-            for j in range(0, cube.shape[1], stride):
-                yield (xt, reference_xt, cube[i:i+stride, j:j+stride, :], min_brightness, clip_factor,
-                       return_full_curves, detrend)
+    # TODO : re-enable F corona modeling
+    # stride = 32
+    # def args() -> tuple:
+    #     # Generate a set of args for one task
+    #     for i in range(0, cube.shape[0], stride):
+    #         for j in range(0, cube.shape[1], stride):
+    #             yield (xt, reference_xt, cube[i:i+stride, j:j+stride, :], min_brightness, clip_factor,
+    #                    return_full_curves, detrend)
+    #
+    # def reassemble(inputs: tuple) -> np.ndarray:
+    #     output = np.empty((cube.shape[0], cube.shape[1], *inputs[0].shape[2:]), dtype=inputs[0].dtype)
+    #     k = 0
+    #     for i in range(0, cube.shape[0], stride):
+    #         for j in range(0, cube.shape[1], stride):
+    #             output[i:i+stride, j:j+stride] = inputs[k]
+    #             k += 1
+    #     return output
+    #
+    #
+    # # Since we're parallelizing with processes, we shouldn't run a lot of threads
+    # with threadpool_limits(2), mp.Pool(processes=num_workers) as pool:
+    #     chunks = pool.starmap(_model_fcorona_for_cube_inner, args(), chunksize=4)
+    #
+    # # Combine the outputs of each task into final output arrays
+    # if return_full_curves:
+    #     curves, counts, cubes = zip(*chunks, strict=False)
+    #     curves = reassemble(curves)
+    #     counts = reassemble(counts)
+    #     cubes = reassemble(cubes)
+    #     return curves, counts, cubes
+    # model, counts = zip(*chunks, strict=False)
+    # model = reassemble(model)
+    # counts = reassemble(counts)
+    #
+    # return model, counts
 
-    def reassemble(inputs: tuple) -> np.ndarray:
-        output = np.empty((cube.shape[0], cube.shape[1], *inputs[0].shape[2:]), dtype=inputs[0].dtype)
-        k = 0
-        for i in range(0, cube.shape[0], stride):
-            for j in range(0, cube.shape[1], stride):
-                output[i:i+stride, j:j+stride] = inputs[k]
-                k += 1
-        return output
+    return nan_percentile(cube, 3), None
 
-
-    # Since we're parallelizing with processes, we shouldn't run a lot of threads
-    with threadpool_limits(2), mp.Pool(processes=num_workers) as pool:
-        chunks = pool.starmap(_model_fcorona_for_cube_inner, args(), chunksize=4)
-
-    # Combine the outputs of each task into final output arrays
-    if return_full_curves:
-        curves, counts, cubes = zip(*chunks, strict=False)
-        curves = reassemble(curves)
-        counts = reassemble(counts)
-        cubes = reassemble(cubes)
-        return curves, counts, cubes
-    model, counts = zip(*chunks, strict=False)
-    model = reassemble(model)
-    counts = reassemble(counts)
-    return model, counts
 
 
 def _model_fcorona_for_cube_inner(xt: np.ndarray,

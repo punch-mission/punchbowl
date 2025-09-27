@@ -143,7 +143,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
     #
     # return model, counts
     cube[cube == 0] = np.nan
-    return nan_percentile(cube.transpose(2, 0, 1), 10), None
+    return nan_percentile(cube.transpose(2, 0, 1), 3), None
 
 
 

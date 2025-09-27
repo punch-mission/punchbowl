@@ -60,10 +60,10 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     """Level 3 core flow."""
     logger = get_run_logger()
 
-    is_polarized = data_list[0].meta["TYPECODE"].value == "PT"
 
     logger.info("beginning level 3 core flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+    is_polarized = data_list[0].meta["TYPECODE"].value == "PT"
     data_list = [subtract_f_corona_background_task(d,
                                                    before_f_corona_model_path,
                                                    after_f_corona_model_path) for d in data_list]

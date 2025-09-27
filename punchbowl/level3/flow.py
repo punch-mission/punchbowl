@@ -55,7 +55,7 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 def level3_core_flow(data_list: list[str] | list[NDCube],
                      before_f_corona_model_path: str,
                      after_f_corona_model_path: str,
-                     starfield_background_path: str | None,
+                     # starfield_background_path: str | None,
                      output_filename: str | None = None) -> list[NDCube]:
     """Level 3 core flow."""
     logger = get_run_logger()

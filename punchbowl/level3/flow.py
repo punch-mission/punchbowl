@@ -60,23 +60,41 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     """Level 3 core flow."""
     logger = get_run_logger()
 
+    is_polarized = data_list[0].meta["TYPECODE"].value == "PT"
+
     logger.info("beginning level 3 core flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
     data_list = [subtract_f_corona_background_task(d,
                                                    before_f_corona_model_path,
                                                    after_f_corona_model_path) for d in data_list]
     # data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
-    if data_list[0].meta["TYPECODE"].value == "PT":
+    if is_polarized:
         data_list = [convert_polarization(d) for d in data_list]
     logger.info("ending level 3 core flow")
 
+
+    out_data_list = []
     for o in data_list:
-        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+        meta = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3"),
+        meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+        meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        meta["DATE-AVG"] = o.meta["DATE-AVG"].value
+        meta["DATE-OBS"] = o.meta["DATE-OBS"].value
+        meta["DATE-BEG"] = o.meta["DATE-BEG"].value
+        meta["DATE-END"] = o.meta["DATE-END"].value
+        output_data = NDCube(
+            data=o.data,
+            uncertainty=o.uncertainty,
+            wcs=o.wcs,
+            meta=meta,
+        )
+        output_data = set_spacecraft_location_to_earth(output_data)
+        out_data_list.append(output_data)
 
     if output_filename is not None:
-        output_image_task(data_list[0], output_filename)
+        output_image_task(out_data_list[0], output_filename)
 
-    return data_list
+    return out_data_list
 
 
 @punch_flow

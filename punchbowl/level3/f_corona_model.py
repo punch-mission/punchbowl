@@ -142,8 +142,8 @@ def model_fcorona_for_cube(xt: np.ndarray,
     # counts = reassemble(counts)
     #
     # return model, counts
-
-    return nan_percentile(cube, 3), None
+    cube[cube == 0] = np.nan
+    return nan_percentile(cube.transpose(2, 0, 1), 10), None
 
 
 
@@ -240,7 +240,7 @@ def construct_f_corona_model(filenames: list[str],
                              clip_factor: float = 3.0,
                              reference_time: str | None = None,
                              num_workers: int = 8,
-                             fill_nans: bool = True,
+                             fill_nans: bool = False,
                              polarized: bool = False) -> list[NDCube]:
     """Construct a full F corona model."""
     logger = get_run_logger()
@@ -318,7 +318,7 @@ def construct_f_corona_model(filenames: list[str],
                                                   data_cube,
                                                   num_workers=num_workers,
                                                   clip_factor=clip_factor)
-        model_fcorona[model_fcorona==0] = np.nan
+        # model_fcorona[model_fcorona==0] = np.nan
         if fill_nans:
             model_fcorona = fill_nans_with_interpolation(model_fcorona)
 

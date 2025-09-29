@@ -28,7 +28,7 @@ from punchbowl.exceptions import (
 from punchbowl.level1.alignment import (
     filter_for_visible_stars,
     find_catalog_in_image,
-    load_hipparcos_catalog,
+    load_gaia_catalog,
     solve_pointing,
 )
 from punchbowl.level1.sqrt import decode_sqrt_data
@@ -331,27 +331,27 @@ def measure_stars_in_one_image(cube, distortion_wcs, psf_model, catalog=None, wi
     d = d**2 / cube.meta["SCALE"].value  # TODO: do proper sqrt decoding
     d = psf_model.apply(d, saturation_threshold=55_000, saturation_dilation=3)
     d = d.copy()
-    w = solve_pointing(d, cube.wcs, distortion_wcs)
+    w = solve_pointing(d, cube.wcs, cube.meta, distortion_wcs)
     if catalog is None:
-        catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=8)
+        catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=8)
     stars_found = find_catalog_in_image(catalog, w, d.shape)
 
     results = []
     for _, star in stars_found.iterrows():
         try:
             measurement = measure_single_star(star["y_pix"], star["x_pix"], d, width)
-            results.append({"hip": star["HIP"],
+            results.append({"source_id": star["source_id"],
                             "aperture_sum_bkgsub": measurement,
                             "xcenter": star["x_pix"],
                             "ycenter": star["y_pix"],
-                            "Vmag": star["Vmag"]})
+                            "Gmag": star["Gmag"]})
         except:  # if it fails for any reason, just move onto the next star
             pass
     return pd.DataFrame(results)
 
 def single_image_helper(path, distortion_wcs, psf_model):
     try:
-        catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=6)
+        catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=6)
         with disable_run_logger():
             cube = load_ndcube_from_fits(path, key="A")
             return measure_stars_in_one_image(cube, distortion_wcs, psf_model, catalog)
@@ -372,46 +372,46 @@ def measure_stars_for_vignetting(level0_paths: list[str], distortion_path: str, 
 def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_mask: np.ndarray) -> np.ndarray:
     # image_mask = fits.open(paths[0])[1].data == 0
     tables = [t for t in tables if t is not None]
-    all_hip = set()
+    all_source_ids = set()
     for table in tables:
-        all_hip = all_hip.union(set([int(i) for i in np.array(table["hip"])]))
+        all_source_ids = all_source_ids.union(set([int(i) for i in np.array(table["source_id"])]))
 
-    xcenters = {h: np.zeros(len(tables)) + np.nan for h in all_hip}
-    ycenters = {h: np.zeros(len(tables)) + np.nan for h in all_hip}
-    measurement = {h: np.zeros(len(tables)) + np.nan for h in all_hip}
-    mags = dict.fromkeys(all_hip, np.nan)
+    xcenters = {h: np.zeros(len(tables)) + np.nan for h in all_source_ids}
+    ycenters = {h: np.zeros(len(tables)) + np.nan for h in all_source_ids}
+    measurement = {h: np.zeros(len(tables)) + np.nan for h in all_source_ids}
+    mags = dict.fromkeys(all_source_ids, np.nan)
     for i, table in enumerate(tables):
         for _, row in table.iterrows():
-            h = row["hip"]
-            xcenters[h][i] = row["xcenter"]
-            ycenters[h][i] = row["ycenter"]
-            measurement[h][i] = row["aperture_sum_bkgsub"]
-            mags[h] = row["Vmag"]
+            source_id = row["source_id"]
+            xcenters[source_id][i] = row["xcenter"]
+            ycenters[source_id][i] = row["ycenter"]
+            measurement[source_id][i] = row["aperture_sum_bkgsub"]
+            mags[source_id] = row["Gmag"]
 
     num_nan = {h: np.sum(np.isnan(v)) for h, v in measurement.items()}
-    used_hip = [h for h, v in num_nan.items() if v < len(tables) - 500]
-    used_hip = np.array(used_hip)
+    used_source_ids = [h for h, v in num_nan.items() if v < len(tables) - 500]
+    used_source_ids = np.array(used_source_ids)
 
     rows = []
-    for h in used_hip:
+    for source_id in used_source_ids:
         for i in range(len(tables)):
-            if not np.isnan(measurement[h][i]):
-                this_dict = {"hip": h,
-                             "mag": mags[h],
-                             "x_center": xcenters[h][i],
-                             "y_center": ycenters[h][i],
-                             "measurement": measurement[h][i]}
+            if not np.isnan(measurement[source_id][i]):
+                this_dict = {"source_id": source_id,
+                             "mag": mags[source_id],
+                             "x_center": xcenters[source_id][i],
+                             "y_center": ycenters[source_id][i],
+                             "measurement": measurement[source_id][i]}
                 rows.append(this_dict)
     df = pd.DataFrame(rows)
 
     neighborhood_size = 500
 
-    ls_used_hip = np.random.choice(np.array([h for h in used_hip if 6 > mags[h] > 3]), 500)
+    ls_used_source = np.random.choice(np.array([h for h in used_source_ids if 6 > mags[h] > 3]), 500)
     v_size = 10
 
-    ls_used_hip_mapping = {h: i for i, h in enumerate(ls_used_hip)}
+    ls_used_id_mapping = {h: i for i, h in enumerate(ls_used_source)}
 
-    subdf = df[df["hip"].isin(ls_used_hip)]
+    subdf = df[df["source_id"].isin(ls_used_source)]
     subdf = subdf[~image_mask[subdf["y_center"].values.astype(int), subdf["x_center"].values.astype(int)]]
     tree = KDTree(np.stack([subdf["x_center"], subdf["y_center"]], axis=1))
 
@@ -423,9 +423,9 @@ def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_ma
     poly = np.polyfit(centerdf["mag"], np.log10(centerdf["measurement"]), 1)
 
     initial_brightnesses = []
-    for h in ls_used_hip:
-        this_hip_df = df[df["hip"] == h]
-        mag = this_hip_df["mag"].iloc[0]
+    for source_id in ls_used_source:
+        this_source_df = df[df["source_id"] == source_id]
+        mag = this_source_df["mag"].iloc[0]
         initial_brightnesses.append(10 ** np.polyval(poly, mag))
 
     current_brightnesses = np.array(initial_brightnesses)
@@ -448,8 +448,8 @@ def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_ma
                 if len(out):
                     d = np.sqrt(
                         (subdf["x_center"].values[out] - ii) ** 2 + (subdf["y_center"].values[out] - jj) ** 2)
-                    vignette_amount = np.clip(np.array([v / current_brightnesses[ls_used_hip_mapping[h]]
-                                                        for h, v in zip(subdf["hip"].values[out],
+                    vignette_amount = np.clip(np.array([v / current_brightnesses[ls_used_id_mapping[h]]
+                                                        for h, v in zip(subdf["source_id"].values[out],
                                                                         subdf["measurement"].values[out], strict=False)]), 1E-6,
                                               1)
                     low, high = np.nanpercentile(vignette_amount, (15, 95))  # TODO: make this not hard coed
@@ -472,11 +472,11 @@ def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_ma
         updated_vignetting[image_mask_resized] = 0
 
         start = time.time()
-        for i, h in enumerate(ls_used_hip):
-            this_hip_df = subdf[subdf["hip"] == h]
-            xx = np.round(this_hip_df["x_center"].values / v_step).astype(int).clip(0, v_size - 1)
-            yy = np.round(this_hip_df["y_center"].values / v_step).astype(int).clip(0, v_size - 1)
-            mm = this_hip_df["measurement"] / updated_vignetting[yy, xx]
+        for i, source_id in enumerate(ls_used_source):
+            this_source_df = subdf[subdf["source_id"] == source_id]
+            xx = np.round(this_source_df["x_center"].values / v_step).astype(int).clip(0, v_size - 1)
+            yy = np.round(this_source_df["y_center"].values / v_step).astype(int).clip(0, v_size - 1)
+            mm = this_source_df["measurement"] / updated_vignetting[yy, xx]
             new_brightness = np.nanpercentile(mm[mm > 0], 50)
             current_brightnesses[i] = new_brightness
 

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import sep
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
 from lmfit import Parameters, minimize
@@ -20,6 +20,7 @@ from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
 
+from punchbowl.data import NormalizedMetadata
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
 from punchbowl.prefect import punch_task
 
@@ -232,6 +233,7 @@ def find_catalog_in_image(
     reduced_catalog["y_pix"] = ys[bounds_mask]
     return reduced_catalog
 
+
 def find_star_coordinates(image_data: np.ndarray,
                           saturation_limit: float = np.inf,
                           max_distance_from_center: float = 700,
@@ -416,7 +418,7 @@ def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
 
 
 def refine_pointing_single_step(
-    guess_wcs: WCS, observed_coords: np.ndarray, subcatalog: pd.DataFrame, method: str = "least_squares",
+    guess_wcs: WCS, observed_coords: np.ndarray, catalog_stars: SkyCoord, method: str = "least_squares",
                                 ra_tolerance: float = 10, dec_tolerance: float = 5,
                                 fix_crval: bool = False,
                                 fix_crota: bool = False,
@@ -466,12 +468,6 @@ def refine_pointing_single_step(
     pv = guess_wcs.wcs.get_pv()[0][-1] if guess_wcs.wcs.get_pv() else 0.0
     params.add("pv", value=pv, min=0.0, max=1.0, vary=not fix_pv)
 
-    catalog_stars = SkyCoord(
-        np.array(subcatalog["RAdeg"]) * u.degree,
-        np.array(subcatalog["DEdeg"]) * u.degree,
-        np.array(subcatalog["Dist_ly"]) * u.lyr,
-    )
-
     observed_tree = KDTree(observed_coords)
 
     out = minimize(_residual, params, method=method,
@@ -495,6 +491,7 @@ def refine_pointing_single_step(
 def solve_pointing( # noqa: C901
     image_data: np.ndarray,
     image_wcs: WCS,
+    image_header: NormalizedMetadata,
     distortion: WCS | None = None,
     saturation_limit: float = np.inf,
     observatory: str = "wfi",
@@ -583,10 +580,25 @@ def solve_pointing( # noqa: C901
     ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
     stars_in_image = stars_in_image[ok_stars]
 
+    # Convert stellar coordinates to GCRS centered on the spacecraft location
+    sc_location = EarthLocation.from_geodetic(lon=image_header["GEOD_LON"].value * u.deg,
+                                              lat=image_header["GEOD_LAT"].value * u.deg,
+                                              height=image_header["GEOD_LAT"].value * u.m)
+    geoloc, geovel = sc_location.get_gcrs_posvel(image_header.astropy_time)
+    catalog_stars = SkyCoord(
+        np.array(stars_in_image["RAdeg"]) * u.degree,
+        np.array(stars_in_image["DEdeg"]) * u.degree,
+        np.array(stars_in_image["Dist_ly"]) * u.lyr,
+        frame="icrs", obsgeoloc=geoloc, obsgeovel=geovel, obstime=image_header.astropy_time,
+    ).transform_to("gcrs")
+    catalog_stars = SkyCoord(catalog_stars.ra, catalog_stars.dec, frame="icrs")
+
+    indices = np.arange(len(catalog_stars))
+    rng = np.random.default_rng(seed=1)
     candidate_wcs = []
-    samples = [stars_in_image.sample(n=30, random_state=i) for i in range(n_rounds)]
     with ProcessPoolExecutor(n_workers) as p:
-        for sample in samples:
+        for _ in range(n_rounds):
+            sample = catalog_stars[rng.choice(indices, 30, replace=False)]
             candidate_wcs.append(p.submit(refine_pointing_single_step, guess_wcs, observed, sample, fix_pv=True))
     candidate_wcs = [w.result() for w in candidate_wcs]
 
@@ -665,7 +677,7 @@ def build_distortion_model(
             image_wcs = WCS(hdul[1].header, hdul, key="A")
             mask = image_data != 0
 
-        solved_wcs = solve_pointing(image_data, image_wcs)
+        solved_wcs = solve_pointing(image_data, image_wcs, NormalizedMetadata.from_fits_header(image_head))
 
         image_cube.append(image_data)
         refined_wcses.append(solved_wcs)
@@ -780,7 +792,7 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
         distortion = None
 
     observatory = "nfi" if data_object.meta["OBSCODE"].value == "4" else "wfi"
-    celestial_output = solve_pointing(refining_data, celestial_input, distortion,
+    celestial_output = solve_pointing(refining_data, celestial_input, data_object.meta, distortion,
                                       saturation_limit=60_000, observatory=observatory)
 
     recovered_wcs, _ = calculate_helio_wcs_from_celestial(celestial_output,

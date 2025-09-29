@@ -1,5 +1,4 @@
 import os
-import time
 import pathlib
 import warnings
 import multiprocessing as mp
@@ -374,7 +373,7 @@ def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_ma
     tables = [t for t in tables if t is not None]
     all_source_ids = set()
     for table in tables:
-        all_source_ids = all_source_ids.union(set([int(i) for i in np.array(table["source_id"])]))
+        all_source_ids = all_source_ids.union({int(i) for i in np.array(table["source_id"])})
 
     xcenters = {h: np.zeros(len(tables)) + np.nan for h in all_source_ids}
     ycenters = {h: np.zeros(len(tables)) + np.nan for h in all_source_ids}
@@ -412,7 +411,7 @@ def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_ma
     ls_used_id_mapping = {h: i for i, h in enumerate(ls_used_source)}
 
     subdf = df[df["source_id"].isin(ls_used_source)]
-    subdf = subdf[~image_mask[subdf["y_center"].values.astype(int), subdf["x_center"].values.astype(int)]]
+    subdf = subdf[~image_mask[subdf["y_center"].to_numpy().astype(int), subdf["x_center"].to_numpy().astype(int)]]
     tree = KDTree(np.stack([subdf["x_center"], subdf["y_center"]], axis=1))
 
     window = 25
@@ -434,10 +433,10 @@ def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_ma
         v_size = 30 * iteration  # TODO: make this not a hard coded value
         v_step = 2048 / v_size
 
-        from skimage.transform import resize
+        from skimage.transform import resize  # noqa: PLC0415
         image_mask_resized = resize(image_mask, (v_size, v_size))
 
-        print(f"ITERATION {iteration}")
+        print(f"ITERATION {iteration}") # noqa: T201
         updated_vignetting = np.ones((v_size, v_size))
         samples = np.zeros((v_size, v_size))
 
@@ -447,10 +446,11 @@ def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_ma
                 out = np.array(tree.query_ball_point(np.array([[ii, jj]]), neighborhood_size)[0])
                 if len(out):
                     d = np.sqrt(
-                        (subdf["x_center"].values[out] - ii) ** 2 + (subdf["y_center"].values[out] - jj) ** 2)
+                        (subdf["x_center"].to_numpy()[out] - ii) ** 2 + (subdf["y_center"].to_numpy()[out] - jj) ** 2)
                     vignette_amount = np.clip(np.array([v / current_brightnesses[ls_used_id_mapping[h]]
-                                                        for h, v in zip(subdf["source_id"].values[out],
-                                                                        subdf["measurement"].values[out], strict=False)]), 1E-6,
+                                                        for h, v in zip(subdf["source_id"].to_numpy()[out],
+                                                                        subdf["measurement"].to_numpy()[out],
+                                                                        strict=False)]), 1E-6,
                                               1)
                     low, high = np.nanpercentile(vignette_amount, (15, 95))  # TODO: make this not hard coed
                     mask = (vignette_amount > low) * (vignette_amount < high)
@@ -471,11 +471,10 @@ def convert_star_measurements_to_vignetting(tables: list[pd.DataFrame], image_ma
                 updated_vignetting[j, i] = new_value
         updated_vignetting[image_mask_resized] = 0
 
-        start = time.time()
         for i, source_id in enumerate(ls_used_source):
             this_source_df = subdf[subdf["source_id"] == source_id]
-            xx = np.round(this_source_df["x_center"].values / v_step).astype(int).clip(0, v_size - 1)
-            yy = np.round(this_source_df["y_center"].values / v_step).astype(int).clip(0, v_size - 1)
+            xx = np.round(this_source_df["x_center"].to_numpy() / v_step).astype(int).clip(0, v_size - 1)
+            yy = np.round(this_source_df["y_center"].to_numpy() / v_step).astype(int).clip(0, v_size - 1)
             mm = this_source_df["measurement"] / updated_vignetting[yy, xx]
             new_brightness = np.nanpercentile(mm[mm > 0], 50)
             current_brightnesses[i] = new_brightness

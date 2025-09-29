@@ -8,6 +8,7 @@ from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_e
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization
+from punchbowl.level3.stellar import subtract_starfield_background_task
 from punchbowl.level3.velocity import plot_flow_map, track_velocity
 from punchbowl.prefect import punch_flow
 from punchbowl.util import load_image_task, output_image_task
@@ -53,24 +54,17 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 
 @punch_flow
 def level3_core_flow(data_list: list[str] | list[NDCube],
-                     before_f_corona_model_path: str,
-                     after_f_corona_model_path: str,
-                     # starfield_background_path: str | None,
+                     starfield_background_path: str | None,
                      output_filename: str | None = None) -> list[NDCube]:
-    """Level 3 core flow."""
+    """Level 3 CTM flow."""
     logger = get_run_logger()
 
-
-    logger.info("beginning level 3 core flow")
+    logger.info("beginning level 3 CTM flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
     is_polarized = data_list[0].meta["TYPECODE"].value == "PT"
-    data_list = [subtract_f_corona_background_task(d,
-                                                   before_f_corona_model_path,
-                                                   after_f_corona_model_path) for d in data_list]
-    # data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
+    data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
     if is_polarized:
         data_list = [convert_polarization(d) for d in data_list]
-    logger.info("ending level 3 core flow")
 
 
     out_data_list = []
@@ -93,6 +87,8 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
 
     if output_filename is not None:
         output_image_task(out_data_list[0], output_filename)
+
+    logger.info("ending level 3 CTM core flow")
 
     return out_data_list
 

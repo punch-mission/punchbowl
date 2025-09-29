@@ -96,6 +96,98 @@ def estimate_stray_light(filepaths: list[str],
 
     return [out_cube]
 
+@punch_flow
+def estimate_polarized_stray_light(
+                mfilepaths: list[str],
+                zfilepaths: list[str],
+                pfilepaths: list[str],
+                do_uncertainty: bool = True,
+                reference_time: datetime | str | None = None
+                ) -> tuple[NDCube, NDCube, NDCube]:
+    """Estimate the polarized stray light pattern using minimum indexing method."""
+    logger = get_run_logger()
+    logger.info(f"Running with {len(mfilepaths)} input triplets")
+
+    if isinstance(reference_time, str):
+        reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S")
+
+    mcube_list, zcube_list, pcube_list = [], [], []
+    date_obses = []
+    uncertainty = None
+
+    for mpath, zpath, ppath in zip(sorted(mfilepaths), sorted(zfilepaths), sorted(pfilepaths)):
+        try:
+            cubes = [
+                load_ndcube_from_fits(p, include_provenance=False, include_uncertainty=do_uncertainty)
+                for p in [mpath, zpath, ppath]
+            ]
+        except Exception as e:
+            logger.warning(f"Error reading {mpath}, {zpath}, or {ppath}: {e}")
+            raise
+
+        mcube, zcube, pcube = cubes
+        date_obses.append(mcube.meta.datetime)
+        mcube_list.append(mcube.data)
+        zcube_list.append(zcube.data)
+        pcube_list.append(pcube.data)
+
+        if do_uncertainty:
+            if uncertainty is None:
+                uncertainty = np.zeros_like(mcube.data)
+            for cube in cubes:
+                if cube.uncertainty is not None:
+                    uncertainty += cube.uncertainty.array ** 2
+        else:
+            uncertainty = None
+
+    logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
+                f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
+
+    mdata = np.stack(mcube_list)
+    zdata = np.stack(zcube_list)
+    pdata = np.stack(pcube_list)
+
+    # Estimate total brightness and find index of minimum
+    tbcube = 2 / 3 * (mdata + zdata + pdata)
+    min_tb_index = np.nanargmin(np.where(np.isnan(tbcube), np.inf, tbcube), axis=0)[None, :, :]
+
+    # Estimate MZP background based on index
+    m_background = np.take_along_axis(mdata, min_tb_index, axis=0)[0]
+    z_background = np.take_along_axis(zdata, min_tb_index, axis=0)[0]
+    p_background = np.take_along_axis(pdata, min_tb_index, axis=0)[0]
+
+    if do_uncertainty:
+        uncertainty = np.sqrt(uncertainty) / len(mfilepaths)
+
+    output_cubes = {}
+    for label, cube, background, paths in zip(
+        ["M", "Z", "P"], [mcube, zcube, pcube], [m_background, z_background, p_background],
+            [mfilepaths, zfilepaths, pfilepaths]
+    ):
+        out_type = "S" + cube.meta.product_code[1:]
+        meta = NormalizedMetadata.load_template(out_type, "1")
+
+        meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+        meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") \
+            if reference_time else meta["DATE-AVG"].value
+        meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+        meta["DATE-END"] = max(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+        meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
+
+        meta.history.add_now(
+            "stray light",
+            f"Generated with {len(paths)} files running from "
+            f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
+            f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}"
+        )
+        meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
+
+        wcs = cube.wcs
+        wcs.wcs.pc = np.eye(2)
+
+        output_cubes[label] = NDCube(data=background, meta=meta, wcs=wcs, uncertainty=uncertainty)
+
+    return output_cubes
 
 @punch_task
 def remove_stray_light_task(data_object: NDCube, #noqa: C901

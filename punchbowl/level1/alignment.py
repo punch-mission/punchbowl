@@ -584,7 +584,7 @@ def solve_pointing( # noqa: C901
     stars_in_image = stars_in_image[ok_stars]
 
     candidate_wcs = []
-    samples = [stars_in_image.sample(n=30) for _ in range(n_rounds)]
+    samples = [stars_in_image.sample(n=30, random_state=i) for i in range(n_rounds)]
     with ProcessPoolExecutor(n_workers) as p:
         for sample in samples:
             candidate_wcs.append(p.submit(refine_pointing_single_step, guess_wcs, observed, sample, fix_pv=True))

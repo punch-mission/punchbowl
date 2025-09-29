@@ -2,6 +2,7 @@ import os
 import copy
 import warnings
 from collections.abc import Callable
+from concurrent.futures import ProcessPoolExecutor
 
 import astrometry
 import astropy.units as u
@@ -492,7 +493,7 @@ def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
     return new_wcs
 
 
-def  refine_pointing_single_step(
+def refine_pointing_single_step(
     guess_wcs: WCS, observed_coords: np.ndarray, subcatalog: pd.DataFrame, method: str = "least_squares",
                                 ra_tolerance: float = 10, dec_tolerance: float = 5,
                                 fix_crval: bool = False,
@@ -574,7 +575,9 @@ def solve_pointing( # noqa: C901
     image_wcs: WCS,
     distortion: WCS | None = None,
     saturation_limit: float = np.inf,
-    observatory: str = "wfi") -> WCS:
+    observatory: str = "wfi",
+    n_rounds: int = 175,
+    n_workers: int = 8) -> WCS:
     """
     Carefully determine the pointing of an image using the starfield.
 
@@ -655,13 +658,15 @@ def solve_pointing( # noqa: C901
     catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=8.0)
     stars_in_image = find_catalog_in_image(catalog, guess_wcs, (2048, 2048))
 
-    ok_stars = mask(np.stack((stars_in_image['x_pix'], stars_in_image['y_pix'])).T)
+    ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
     stars_in_image = stars_in_image[ok_stars]
 
     candidate_wcs = []
-    for _ in range(50):
-        sample = stars_in_image.sample(n=15)
-        candidate_wcs.append(refine_pointing_single_step(guess_wcs, observed, sample, fix_pv=True))
+    samples = [stars_in_image.sample(n=30) for _ in range(n_rounds)]
+    with ProcessPoolExecutor(n_workers) as p:
+        for sample in samples:
+            candidate_wcs.append(p.submit(refine_pointing_single_step, guess_wcs, observed, sample, fix_pv=True))
+    candidate_wcs = [w.result() for w in candidate_wcs]
 
     ras = [w.wcs.crval[0] for w in candidate_wcs]
     decs = [w.wcs.crval[1] for w in candidate_wcs]

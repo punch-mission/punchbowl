@@ -24,7 +24,35 @@ from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_hel
 from punchbowl.prefect import punch_task
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-HIPPARCOS_URL = "https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat"
+
+def download_gaia_data(out_path: str, dimmest_mag: float = 9) -> None:
+    """Download and pre-process Gaia data."""
+    from astroquery.gaia import Gaia  # noqa: PLC0415
+    query = f"""SELECT source_id, ra, dec, phot_g_mean_mag, parallax from gaiadr3.gaia_source
+                WHERE phot_g_mean_mag < {dimmest_mag}
+                 AND dec > -70
+                 AND dec < 70
+            """ # noqa: S608
+    job = Gaia.launch_job_async(query)
+    results = job.get_results()
+
+    # Remove the few records with no parallax
+    results = results[~results["parallax"].mask]
+
+    results["Dist_ly"] = np.round(3.26 / (results["parallax"] / 1000), 2)
+    results.remove_column("parallax")
+    results = results[results["Dist_ly"] > 2]
+
+    results.rename_column("ra", "RAdeg")
+    results.rename_column("dec", "DEdeg")
+    results.rename_column("phot_g_mean_mag", "Gmag")
+
+    # Removing digits we don't need to cut the file size
+    results["Gmag"] = np.round(results["Gmag"], 1)
+    results["RAdeg"] = np.round(results["RAdeg"], 7)
+    results["DEdeg"] = np.round(results["DEdeg"], 7)
+    results.to_pandas(index="source_id").to_csv(out_path)
+
 
 def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_size: float = 3) -> np.ndarray:
     """
@@ -113,14 +141,15 @@ def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_
     # Replicate the edge rows/columns to replace those we trimmed earlier
     return np.pad(data, [trimmed[0:2], trimmed[2:]], mode="edge")
 
+
 def get_data_path(path: str) -> str:
     """Get the path to the local data directory."""
     return os.path.join(_ROOT, "data", path)
 
 
-def load_hipparcos_catalog(catalog_path: str = get_data_path("reduced_hip.csv")) -> pd.DataFrame:
+def load_gaia_catalog(catalog_path: str = get_data_path("gaia_catalog.csv")) -> pd.DataFrame:
     """
-    Load the Hipparcos catalog from the local, reduced version. This version only keeps necessary columns.
+    Load the Gaia catalog from the local stash.
 
     Parameters
     ----------
@@ -136,113 +165,6 @@ def load_hipparcos_catalog(catalog_path: str = get_data_path("reduced_hip.csv"))
     return pd.read_csv(catalog_path)
 
 
-def load_raw_hipparcos_catalog(catalog_path: str = HIPPARCOS_URL) -> pd.DataFrame:
-    """
-    Download hipparcos catalog from the website. Not recommended for routine use.
-
-    Parameters
-    ----------
-    catalog_path : str
-        path to the Hipparcos catalog
-
-    Returns
-    -------
-    pd.DataFrame
-        loaded catalog with selected columns
-
-    """
-    column_names = (
-        "Catalog",
-        "HIP",
-        "Proxy",
-        "RAhms",
-        "DEdms",
-        "Vmag",
-        "VarFlag",
-        "r_Vmag",
-        "RAdeg",
-        "DEdeg",
-        "AstroRef",
-        "Plx",
-        "pmRA",
-        "pmDE",
-        "e_RAdeg",
-        "e_DEdeg",
-        "e_Plx",
-        "e_pmRA",
-        "e_pmDE",
-        "DE:RA",
-        "Plx:RA",
-        "Plx:DE",
-        "pmRA:RA",
-        "pmRA:DE",
-        "pmRA:Plx",
-        "pmDE:RA",
-        "pmDE:DE",
-        "pmDE:Plx",
-        "pmDE:pmRA",
-        "F1",
-        "F2",
-        "---",
-        "BTmag",
-        "e_BTmag",
-        "VTmag",
-        "e_VTmag",
-        "m_BTmag",
-        "B-V",
-        "e_B-V",
-        "r_B-V",
-        "V-I",
-        "e_V-I",
-        "r_V-I",
-        "CombMag",
-        "Hpmag",
-        "e_Hpmag",
-        "Hpscat",
-        "o_Hpmag",
-        "m_Hpmag",
-        "Hpmax",
-        "HPmin",
-        "Period",
-        "HvarType",
-        "moreVar",
-        "morePhoto",
-        "CCDM",
-        "n_CCDM",
-        "Nsys",
-        "Ncomp",
-        "MultFlag",
-        "Source",
-        "Qual",
-        "m_HIP",
-        "theta",
-        "rho",
-        "e_rho",
-        "dHp",
-        "e_dHp",
-        "Survey",
-        "Chart",
-        "Notes",
-        "HD",
-        "BD",
-        "CoD",
-        "CPD",
-        "(V-I)red",
-        "SpType",
-        "r_SpType",
-    )
-    df = pd.read_csv(
-        catalog_path,
-        sep="|",
-        names=column_names,
-        usecols=["HIP", "Vmag", "RAdeg", "DEdeg", "Plx"],
-        na_values=["     ", "       ", "        ", "            "],
-    )
-    df["distance"] = 1000 / df["Plx"]
-    df = df[df["distance"] > 0]
-    return df.iloc[np.argsort(df["Vmag"])]
-
-
 def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6) -> pd.DataFrame:
     """
     Filter to only include stars brighter than a given magnitude.
@@ -250,7 +172,7 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
     Parameters
     ----------
     catalog : pd.DataFrame
-        a catalog loaded from `~load_hipparcos_catalog` or `~load_raw_hipparcos_catalog`
+        a catalog loaded from `~load_gaia_catalog` or `~load_raw_gaia_catalog`
 
     dimmest_magnitude : float
         the dimmest magnitude to keep
@@ -261,7 +183,7 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
         a catalog with stars dimmer than the `dimmest_magnitude` removed
 
     """
-    return catalog[catalog["Vmag"] < dimmest_magnitude]
+    return catalog[catalog["Gmag"] < dimmest_magnitude]
 
 
 def find_catalog_in_image(
@@ -274,7 +196,7 @@ def find_catalog_in_image(
     Parameters
     ----------
     catalog : pd.DataFrame
-        a catalog loaded from `~thuban.catalog.load_hipparcos_catalog` or `~thuban.catalog.load_raw_hipparcos_catalog`
+        a catalog loaded from `~load_gaia_catalog`
     wcs : WCS
         the world coordinate system of a given image
     image_shape: (int, int)
@@ -296,7 +218,7 @@ def find_catalog_in_image(
         xs, ys = SkyCoord(
             ra=np.array(catalog["RAdeg"]) * u.degree,
             dec=np.array(catalog["DEdeg"]) * u.degree,
-            distance=np.array(catalog["distance"]) * u.parsec,
+            distance=np.array(catalog["Dist_ly"]) * u.lyr,
         ).to_pixel(wcs, mode=mode)
     except NoConvergence as e:
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
@@ -547,7 +469,7 @@ def refine_pointing_single_step(
     catalog_stars = SkyCoord(
         np.array(subcatalog["RAdeg"]) * u.degree,
         np.array(subcatalog["DEdeg"]) * u.degree,
-        np.array(subcatalog["distance"]) * u.parsec,
+        np.array(subcatalog["Dist_ly"]) * u.lyr,
     )
 
     observed_tree = KDTree(observed_coords)
@@ -577,7 +499,7 @@ def solve_pointing( # noqa: C901
     saturation_limit: float = np.inf,
     observatory: str = "wfi",
     n_rounds: int = 175,
-    n_workers: int = 8) -> WCS:
+    n_workers: int = 4) -> WCS:
     """
     Carefully determine the pointing of an image using the starfield.
 
@@ -655,7 +577,7 @@ def solve_pointing( # noqa: C901
             pv = distortion.wcs.get_pv()[0][-1]
             guess_wcs.wcs.set_pv([(2, 1, pv)])
 
-    catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=8.0)
+    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=9)
     stars_in_image = find_catalog_in_image(catalog, guess_wcs, (2048, 2048))
 
     ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
@@ -700,13 +622,13 @@ def measure_wcs_error(
     dimmest_magnitude: float = 6.0,
     max_error: float = 15.0) -> float:
     """Estimate the error in the WCS based on an image."""
-    catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=dimmest_magnitude)
+    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
     stars_in_image = find_catalog_in_image(catalog, w, image_data.shape)
     try:
         xs, ys = SkyCoord(
             ra=np.array(stars_in_image["RAdeg"]) * u.degree,
             dec=np.array(stars_in_image["DEdeg"]) * u.degree,
-            distance=np.array(stars_in_image["distance"]) * u.parsec,
+            distance=np.array(stars_in_image["Dist_ly"]) * u.lyr,
         ).to_pixel(w, mode="all")
     except NoConvergence as e:
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
@@ -748,7 +670,7 @@ def build_distortion_model(
         image_cube.append(image_data)
         refined_wcses.append(solved_wcs)
 
-    catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=dimmest_magnitude)
+    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
     all_distortions = []
 
     for image_data, new_wcs in zip(image_cube, refined_wcses, strict=False):

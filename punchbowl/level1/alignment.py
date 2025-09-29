@@ -569,7 +569,7 @@ def  refine_pointing_single_step(
 
     return result_wcs
 
-def solve_pointing(
+def solve_pointing( # noqa: C901
     image_data: np.ndarray,
     image_wcs: WCS,
     distortion: WCS | None = None,
@@ -667,8 +667,13 @@ def solve_pointing(
     decs = [w.wcs.crval[1] for w in candidate_wcs]
     crotas = [extract_crota_from_wcs(w) for w in candidate_wcs]
 
+    # If we're closer to RA=0 than RA=180, wrap the RAs to avoid trouble if we're straddling the RA=0 line
+    if np.abs(ras[0] - 180) > 90:
+        ras = np.array(ras)
+        ras[ras > 180] -= 360
+
     solved_wcs = image_wcs.deepcopy()
-    solved_wcs.wcs.crval = (np.median(ras), np.median(decs))
+    solved_wcs.wcs.crval = (np.median(ras) % 360, np.median(decs))
     mean_crota = np.median([c.value for c in crotas])
     cdelt1, cdelt2 = image_wcs.wcs.cdelt
     solved_wcs.wcs.pc = np.array(

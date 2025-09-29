@@ -299,7 +299,7 @@ def find_catalog_in_image(
         ).to_pixel(wcs, mode=mode)
     except NoConvergence as e:
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
-    bounds_mask = (xs >= 0) * (xs < image_shape[0]) * (ys >= 0) * (ys < image_shape[1])
+    bounds_mask = (xs >= 0) * (xs < image_shape[1]) * (ys >= 0) * (ys < image_shape[0])
 
     if mask is not None:
         bounds_mask *= mask(xs, ys)
@@ -602,17 +602,28 @@ def solve_pointing(
     wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
     if observatory == "wfi":
         search_scales = (14, 15, 16)
-        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=5.0)
+        max_distance = 700
+        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=5.0,
+                                         max_distance_from_center=max_distance)
+        def mask(observed: np.ndarray) -> np.ndarray:
+            distances = np.sqrt(np.square(observed[:, 0] - 1024) + np.square(observed[:, 1] - 1024))
+            return distances < max_distance
     elif observatory == "nfi":
         search_scales = (11, 12, 13, 14)
-        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=3.0)
+        # We handle max_distance_from_center separately in our mask function, to do it relative to the occulter center
+        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=3.0,
+                                         max_distance_from_center=9999)
+        def mask(observed:np.ndarray) -> np.ndarray:
+            distances = np.sqrt(np.square(observed[:, 0] - 1013.5) + np.square(observed[:, 1] - 1036.4))
+            distance_mask = distances > 220
+            distance_mask *= distances < 930
+            donut_edge_mask = (distances > 830) * (distances < 870)
+            pylon_mask = (observed[:, 0] > 850) * (observed[:, 0] < 1200) * (observed[:, 1] < 1024)
+            glint_mask = (observed[:, 0] > 475) * (observed[:, 0] < 1550) * (observed[:, 1] < 950) * (
+                        observed[:, 1] > 600)
+            return distance_mask * ~pylon_mask * ~glint_mask * ~donut_edge_mask
 
-        # we mask false detections near the occulter
-        distances = np.sqrt(np.square(observed[:, 0] - 1024) + np.square(observed[:, 1] - 1024))
-        distance_mask = distances > 200
-        pylon_mask = (observed[:, 0] > 850) * (observed[:, 0] < 1200) * (observed[:, 1] < 1024)
-        glint_mask = (observed[:, 0] > 475) * (observed[:, 0] < 1550) * (observed[:, 1] < 950) * (observed[:, 1] > 600)
-        observed = observed[distance_mask * ~pylon_mask * ~glint_mask]
+        observed = observed[mask(observed)]
     else:
         msg = f"Unknown observatory = {observatory}"
         raise ValueError(msg)
@@ -643,6 +654,9 @@ def solve_pointing(
 
     catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=8.0)
     stars_in_image = find_catalog_in_image(catalog, guess_wcs, (2048, 2048))
+
+    ok_stars = mask(np.stack((stars_in_image['x_pix'], stars_in_image['y_pix'])).T)
+    stars_in_image = stars_in_image[ok_stars]
 
     candidate_wcs = []
     for _ in range(50):

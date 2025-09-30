@@ -109,7 +109,7 @@ def estimate_polarized_stray_light(
     logger.info(f"Running with {len(mfilepaths)} input triplets")
 
     if isinstance(reference_time, str):
-        reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S")
+        reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
 
     mcube_list, zcube_list, pcube_list = [], [], []
     date_obses = []

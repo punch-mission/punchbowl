@@ -54,30 +54,42 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 
 @punch_flow
 def level3_core_flow(data_list: list[str] | list[NDCube],
-                     before_f_corona_model_path: str,
-                     after_f_corona_model_path: str,
                      starfield_background_path: str | None,
                      output_filename: str | None = None) -> list[NDCube]:
-    """Level 3 core flow."""
+    """Level 3 CTM flow."""
     logger = get_run_logger()
 
-    logger.info("beginning level 3 core flow")
+    logger.info("beginning level 3 CTM flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
-    data_list = [subtract_f_corona_background_task(d,
-                                                   before_f_corona_model_path,
-                                                   after_f_corona_model_path) for d in data_list]
+    is_polarized = data_list[0].meta["TYPECODE"].value == "PT"
     data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
-    if data_list[0].meta["TYPECODE"].value == "PT":
+    if is_polarized:
         data_list = [convert_polarization(d) for d in data_list]
-    logger.info("ending level 3 core flow")
 
+    out_data_list = []
     for o in data_list:
-        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+        out_meta: NormalizedMetadata = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3")
+        out_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        out_meta["DATE-AVG"] = o.meta["DATE-AVG"].value
+        out_meta["DATE-OBS"] = o.meta["DATE-OBS"].value
+        out_meta["DATE-BEG"] = o.meta["DATE-BEG"].value
+        out_meta["DATE-END"] = o.meta["DATE-END"].value
+        out_meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+        output_data = NDCube(
+            data=o.data,
+            uncertainty=o.uncertainty,
+            wcs=o.wcs,
+            meta=out_meta,
+        )
+        output_data = set_spacecraft_location_to_earth(output_data)
+        out_data_list.append(output_data)
 
     if output_filename is not None:
-        output_image_task(data_list[0], output_filename)
+        output_image_task(out_data_list[0], output_filename)
 
-    return data_list
+    logger.info("ending level 3 CTM core flow")
+
+    return out_data_list
 
 
 @punch_flow

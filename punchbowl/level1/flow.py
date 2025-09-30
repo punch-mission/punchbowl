@@ -191,7 +191,7 @@ def level1_early_core_flow(  # noqa: C901
 
 
 @punch_flow
-def level1_late_core_flow(
+def level1_late_core_flow( # noqa: C901
     input_data: list[str] | list[NDCube],
     stray_light_before_path: str | None = None,
     stray_light_after_path: str | None = None,
@@ -212,16 +212,23 @@ def level1_late_core_flow(
     for i, this_data in enumerate(input_data):
         data = load_image_task(this_data) if isinstance(this_data, str) else this_data
         data = remove_stray_light_task(data, stray_light_before_path, stray_light_after_path)
-        data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
-        if do_align:
-            data = align_task(data, distortion_path)
 
         if mask_path:
             with open(mask_path, "rb") as f:
                 b = f.read()
             mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
-            data.data *= mask
-            data.uncertainty.array[mask==0] = np.inf
+            data.data[~mask] = 0
+            data.uncertainty.array[~mask] = np.inf
+        else:
+            mask = None
+
+        data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
+        if do_align:
+            data = align_task(data, distortion_path)
+
+        if mask is not None:
+            data.data[~mask] = 0
+            data.uncertainty.array[~mask] = np.inf
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value

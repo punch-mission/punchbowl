@@ -66,7 +66,6 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     if is_polarized:
         data_list = [convert_polarization(d) for d in data_list]
 
-
     out_data_list = []
     for o in data_list:
         out_meta: NormalizedMetadata = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3")

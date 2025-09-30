@@ -102,7 +102,7 @@ def estimate_polarized_stray_light(
                 zfilepaths: list[str],
                 pfilepaths: list[str],
                 do_uncertainty: bool = True,
-                reference_time: datetime | str | None = None
+                reference_time: datetime | str | None = None,
                 ) -> tuple[NDCube, NDCube, NDCube]:
     """Estimate the polarized stray light pattern using minimum indexing method."""
     logger = get_run_logger()
@@ -115,7 +115,7 @@ def estimate_polarized_stray_light(
     date_obses = []
     uncertainty = None
 
-    for mpath, zpath, ppath in zip(sorted(mfilepaths), sorted(zfilepaths), sorted(pfilepaths)):
+    for mpath, zpath, ppath in zip(sorted(mfilepaths), sorted(zfilepaths), sorted(pfilepaths), strict=True):
         try:
             cubes = [
                 load_ndcube_from_fits(p, include_provenance=False, include_uncertainty=do_uncertainty)
@@ -162,8 +162,7 @@ def estimate_polarized_stray_light(
     output_cubes = {}
     for label, cube, background, paths in zip(
         ["M", "Z", "P"], [mcube, zcube, pcube], [m_background, z_background, p_background],
-            [mfilepaths, zfilepaths, pfilepaths]
-    ):
+            [mfilepaths, zfilepaths, pfilepaths], strict=True):
         out_type = "S" + cube.meta.product_code[1:]
         meta = NormalizedMetadata.load_template(out_type, "1")
 
@@ -178,8 +177,7 @@ def estimate_polarized_stray_light(
             "stray light",
             f"Generated with {len(paths)} files running from "
             f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
-            f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}"
-        )
+            f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
         meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
 
         wcs = cube.wcs

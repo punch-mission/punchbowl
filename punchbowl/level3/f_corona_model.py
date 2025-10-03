@@ -10,6 +10,7 @@ from numpy.polynomial import polynomial
 from prefect import get_run_logger
 from quadprog import solve_qp
 from scipy.interpolate import griddata
+from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import load_trefoil_wcs
@@ -61,7 +62,7 @@ def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
     return np.asarray(solution), num_inputs
 
 
-def model_fcorona_for_cube(xt: np.ndarray,
+def model_fcorona_for_cube_real(xt: np.ndarray,
                            reference_xt: float,
                            cube: np.ndarray,
                            min_brightness: float = 1E-18,
@@ -108,43 +109,74 @@ def model_fcorona_for_cube(xt: np.ndarray,
 
     """
     # TODO : re-enable F corona modeling
-    # stride = 32
-    # def args() -> tuple:
-    #     # Generate a set of args for one task
-    #     for i in range(0, cube.shape[0], stride):
-    #         for j in range(0, cube.shape[1], stride):
-    #             yield (xt, reference_xt, cube[i:i+stride, j:j+stride, :], min_brightness, clip_factor,
-    #                    return_full_curves, detrend)
-    #
-    # def reassemble(inputs: tuple) -> np.ndarray:
-    #     output = np.empty((cube.shape[0], cube.shape[1], *inputs[0].shape[2:]), dtype=inputs[0].dtype)
-    #     k = 0
-    #     for i in range(0, cube.shape[0], stride):
-    #         for j in range(0, cube.shape[1], stride):
-    #             output[i:i+stride, j:j+stride] = inputs[k]
-    #             k += 1
-    #     return output
-    #
-    #
-    # # Since we're parallelizing with processes, we shouldn't run a lot of threads
-    # with threadpool_limits(2), mp.Pool(processes=num_workers) as pool:
-    #     chunks = pool.starmap(_model_fcorona_for_cube_inner, args(), chunksize=4)
-    #
-    # # Combine the outputs of each task into final output arrays
-    # if return_full_curves:
-    #     curves, counts, cubes = zip(*chunks, strict=False)
-    #     curves = reassemble(curves)
-    #     counts = reassemble(counts)
-    #     cubes = reassemble(cubes)
-    #     return curves, counts, cubes
-    # model, counts = zip(*chunks, strict=False)
-    # model = reassemble(model)
-    # counts = reassemble(counts)
-    #
-    # return model, counts
-    cube[cube == 0] = np.nan
-    return nan_percentile(cube.transpose(2, 0, 1), 3), None
+    stride = 32
+    def args() -> tuple:
+        # Generate a set of args for one task
+        for i in range(0, cube.shape[0], stride):
+            for j in range(0, cube.shape[1], stride):
+                yield (xt, reference_xt, cube[i:i+stride, j:j+stride, :], min_brightness, clip_factor,
+                       return_full_curves, detrend)
 
+    def reassemble(inputs: tuple) -> np.ndarray:
+        output = np.empty((cube.shape[0], cube.shape[1], *inputs[0].shape[2:]), dtype=inputs[0].dtype)
+        k = 0
+        for i in range(0, cube.shape[0], stride):
+            for j in range(0, cube.shape[1], stride):
+                output[i:i+stride, j:j+stride] = inputs[k]
+                k += 1
+        return output
+
+
+    # Since we're parallelizing with processes, we shouldn't run a lot of threads
+    with threadpool_limits(2), mp.Pool(processes=num_workers) as pool:
+        chunks = pool.starmap(_model_fcorona_for_cube_inner, args(), chunksize=4)
+
+    # Combine the outputs of each task into final output arrays
+    if return_full_curves:
+        curves, counts, cubes = zip(*chunks, strict=False)
+        curves = reassemble(curves)
+        counts = reassemble(counts)
+        cubes = reassemble(cubes)
+        return curves, counts, cubes
+    model, counts = zip(*chunks, strict=False)
+    model = reassemble(model)
+    counts = reassemble(counts)
+
+    return model, counts
+
+
+def model_fcorona_for_cube(xt: np.ndarray, # noqa: ARG001
+                           reference_xt: float, # noqa: ARG001
+                           cube: np.ndarray,
+                           *args: list, **kwargs: dict, # noqa: ARG001
+                           ) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Model the F corona given a list of times and a corresponding data cube.
+
+    Parameters
+    ----------
+    xt : np.ndarray
+        Unused
+    reference_xt: float
+        Unused
+    cube : np.ndarray
+        observation array
+    args : list
+        Kept for signature compatibility
+    kwargs : dict
+        Kept for signature compatibility
+
+    Returns
+    -------
+    np.ndarray
+        The F-corona model at the central point in time. If return_full_curves is True, this is
+        instead the F-corona model at all points in time covered by the data cube
+    None
+        Nothing
+
+    """
+    cube[cube == 0] = np.nan
+    return nan_percentile(cube, 3), None
 
 
 def _model_fcorona_for_cube_inner(xt: np.ndarray,
@@ -230,13 +262,16 @@ def _load_one_file(filename: str) -> NDCube:
         The loaded data
 
     """
-    cube = load_ndcube_from_fits(filename)
+    try:
+        cube = load_ndcube_from_fits(filename)
+    except: # noqa: E722
+        return None, filename
     data = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
     return data, cube.meta
 
 
 @punch_flow(log_prints=True)
-def construct_f_corona_model(filenames: list[str],
+def construct_f_corona_model(filenames: list[str], # noqa: C901
                              clip_factor: float = 3.0,
                              reference_time: str | None = None,
                              num_workers: int = 8,
@@ -263,19 +298,29 @@ def construct_f_corona_model(filenames: list[str],
     data_shape = (3, *trefoil_shape) if polarized else trefoil_shape
 
     number_of_data_frames = len(filenames)
-    data_cube = np.empty((*data_shape, number_of_data_frames), dtype=float)
+    data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
 
     meta_list = []
     obs_times = []
 
     logger.info("beginning data loading")
     dates = []
+    n_failed = 0
     with mp.Pool(processes=num_workers) as pool:
-        for i, (data, meta) in enumerate(pool.imap(_load_one_file, filenames)):
+        for i, result in enumerate(pool.imap(_load_one_file, filenames)):
+            if result[0] is None:
+                logger.warning(f"Loading {result[1]} failed")
+                n_failed += 1
+                if n_failed > 10:
+                    raise RuntimeError(f"{n_failed} files failed to load, stopping")
+                continue
+            data, meta = result
             dates.append(meta.datetime)
-            data_cube[..., i] = data
+            data_cube[i] = data
             obs_times.append(meta.datetime.timestamp())
             meta_list.append(meta)
+            if i % 50 == 0:
+                logger.info(f"Loaded {i}/{len(filenames)} files")
     logger.info("ending data loading")
     output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -318,7 +363,7 @@ def construct_f_corona_model(filenames: list[str],
                                                   data_cube,
                                                   num_workers=num_workers,
                                                   clip_factor=clip_factor)
-        # model_fcorona[model_fcorona==0] = np.nan
+        # model_fcorona[model_fcorona==0] = np.nan # noqa: ERA001
         if fill_nans:
             model_fcorona = fill_nans_with_interpolation(model_fcorona)
 

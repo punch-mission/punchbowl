@@ -1,6 +1,7 @@
 import os
 import pathlib
 import warnings
+from pathlib import Path
 
 import numpy as np
 from astropy.io import fits
@@ -298,7 +299,7 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     cube = NDCube(data=nfiflat.astype("float32"), wcs=cube_wcs, meta=m)
 
     if output_path is not None:
-        filename = f"{output_path}{get_base_file_name(cube)}.fits"
+        filename = Path(output_path) / f"{get_base_file_name(cube)}.fits"
 
         full_header = cube.meta.to_fits_header(wcs=cube.wcs)
         full_header["FILENAME"] = os.path.basename(filename)

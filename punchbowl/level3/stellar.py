@@ -237,9 +237,10 @@ def subtract_starfield_background_task(data_object: NDCube,
     ----------
     data_object : NDCube
         A NDCube data frame to be background subtracted
-
     starfield_background_path : str
         path to a NDCube background starfield map
+    is_polarized : bool
+        whether the data is polarized
 
     Returns
     -------
@@ -267,10 +268,7 @@ def subtract_starfield_background_task(data_object: NDCube,
         data_object.data[...] = subtracted.subtracted[0]
         data_object.uncertainty.array[...] -= subtracted.subtracted[1]
         data_object.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
-        if is_polarized:
-            output = from_celestial(data_object)
-        else:
-            output = data_object
+        output = from_celestial(data_object) if is_polarized else data_object
     logger.info("subtract_starfield_background finished")
 
     return output

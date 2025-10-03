@@ -230,9 +230,12 @@ def _load_one_file(filename: str) -> NDCube:
         The loaded data
 
     """
-    cube = load_ndcube_from_fits(filename)
-    data = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
-    return data, cube.meta
+    try:
+        cube = load_ndcube_from_fits(filename)
+        data = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
+        return data, cube.meta
+    except:
+        return None, filename
 
 
 @punch_flow(log_prints=True)
@@ -270,12 +273,22 @@ def construct_f_corona_model(filenames: list[str],
 
     logger.info("beginning data loading")
     dates = []
+    n_failed = 0
     with mp.Pool(processes=num_workers) as pool:
-        for i, (data, meta) in enumerate(pool.imap(_load_one_file, filenames)):
+        for i, result in enumerate(pool.imap(_load_one_file, filenames)):
+            if result[0] is None:
+                logger.warning(f"Loading {result[1]} failed")
+                n_failed += 1
+                if n_failed > 10:
+                    raise RuntimeError(f"{n_failed} files failed to load, stopping")
+                continue
+            data, meta = result
             dates.append(meta.datetime)
             data_cube[..., i] = data
             obs_times.append(meta.datetime.timestamp())
             meta_list.append(meta)
+            if i % 50 == 0:
+                logger.info(f"Loaded {i}/{len(filenames)} files")
     logger.info("ending data loading")
     output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

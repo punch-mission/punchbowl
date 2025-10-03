@@ -143,7 +143,7 @@ def model_fcorona_for_cube(xt: np.ndarray,
     #
     # return model, counts
     cube[cube == 0] = np.nan
-    return nan_percentile(cube.transpose(2, 0, 1), 3), None
+    return nan_percentile(cube, 3), None
 
 
 
@@ -266,7 +266,7 @@ def construct_f_corona_model(filenames: list[str],
     data_shape = (3, *trefoil_shape) if polarized else trefoil_shape
 
     number_of_data_frames = len(filenames)
-    data_cube = np.empty((*data_shape, number_of_data_frames), dtype=float)
+    data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
 
     meta_list = []
     obs_times = []
@@ -284,7 +284,7 @@ def construct_f_corona_model(filenames: list[str],
                 continue
             data, meta = result
             dates.append(meta.datetime)
-            data_cube[..., i] = data
+            data_cube[i] = data
             obs_times.append(meta.datetime.timestamp())
             meta_list.append(meta)
             if i % 50 == 0:

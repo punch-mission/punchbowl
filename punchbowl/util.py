@@ -2,12 +2,13 @@ import os
 import abc
 import warnings
 from typing import Generic, TypeVar
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import numba
 import numpy as np
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
+from astropy.io import fits
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning
@@ -211,6 +212,28 @@ def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
             return cube
     msg = "No cube found. All inputs are None."
     raise RuntimeError(msg)
+
+def bundle_matched_mzp(m_paths, z_paths, p_paths, threshold=75):
+
+    m_dateobs = [parse_datetime(fits.getheader(path, ext=2)['DATE-OBS']) for path in m_paths]
+    z_dateobs = [parse_datetime(fits.getheader(path, ext=2)['DATE-OBS']) for path in z_paths]
+    p_dateobs = [parse_datetime(fits.getheader(path, ext=2)['DATE-OBS']) for path in p_paths]
+
+    # use Z as the reference
+    triplets = []
+    for z_index, z_datetime in enumerate(z_dateobs):
+        m_deltas = [abs((z_datetime - m_datetime).total_seconds()) for m_datetime in m_dateobs]
+        p_deltas = [abs((z_datetime - p_datetime).total_seconds()) for p_datetime in p_dateobs]
+        matching_m = np.argmin(m_deltas)
+        matching_p = np.argmin(p_deltas)
+        if m_deltas[matching_m] > threshold:
+            warnings.warn("No matching M")
+        elif p_deltas[matching_p] > threshold:
+            warnings.warn("No matching P")
+        else:
+            triplets.append((m_paths[matching_m], z_paths[z_index], p_paths[matching_p]))
+
+    return triplets
 
 
 T = TypeVar("T")

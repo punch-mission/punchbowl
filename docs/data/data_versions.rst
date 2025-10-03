@@ -23,8 +23,12 @@ Version 0g
 - Improved vignetting functions
 - Improved PSF regularization resulting in a tighter output PSF
 - NFI pointing "wobble" has been reduced via an improved optical distortion map
-- Coming soon: experimental L3 images
-- Known problems: L1 and L2 images can contain blocky edges due to an incomplete application of the instrument mask
+- Experimental L3 CIM and PIM images are now available, with preliminary F-corona subtraction. Starfield subtraction and low-noise mosaics are deferred to a later release.
+- Known problems:
+
+  + Images can contain blocky edges due to an incomplete application of the instrument mask
+  + The OUTLIER flag is incorrectly set to True for many NFI images
+  + Stray light subtraction for polarized images is computed inconsistently
 
 Version 0f
 ----------
@@ -35,6 +39,7 @@ Version 0f
 - The DATE header keyword is set correctly in L1 files (`Pull request <https://github.com/punch-mission/punchbowl/pull/586>`_)
 - L2 and LQ CTM and PTM headers include "HAS_*" keywords indicating which imagers contributed to the mosaic. (`Pull request <https://github.com/punch-mission/punchbowl/pull/584>`_)
 - L1 files contain a SPASE DOI (`Pull request <https://github.com/punch-mission/punchbowl/pull/583>`_)
+- An error in polarization calculations was corrected
 
 Version 0e
 ----------

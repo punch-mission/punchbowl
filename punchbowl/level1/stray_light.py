@@ -18,7 +18,7 @@ from punchbowl.exceptions import (
     InvalidDataError,
 )
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import average_datetime, interpolate_data, parallel_sort_first_axis
+from punchbowl.util import average_datetime, interpolate_data, parallel_sort_first_axis, bundle_matched_mzp
 
 
 @punch_flow
@@ -115,12 +115,14 @@ def estimate_polarized_stray_light(
     date_obses = []
     uncertainty = None
 
-    for mpath, zpath, ppath in zip(sorted(mfilepaths), sorted(zfilepaths), sorted(pfilepaths), strict=True):
+    triplets_path = bundle_matched_mzp(mfilepaths, zfilepaths, pfilepaths)
+    col0, col1, col2 = zip(*triplets_path)
+
+    for mpath, zpath, ppath in zip(col0, col1, col2, strict=True):
         try:
-            cubes = [
-                load_ndcube_from_fits(p, include_provenance=False, include_uncertainty=do_uncertainty)
-                for p in [mpath, zpath, ppath]
-            ]
+            cubes = [load_ndcube_from_fits(p, include_provenance=False,
+                                           include_uncertainty=do_uncertainty)
+                for p in [mpath, zpath, ppath]]
         except Exception as e:
             logger.warning(f"Error reading {mpath}, {zpath}, or {ppath}: {e}")
             raise

@@ -2,7 +2,7 @@ import os
 import abc
 import warnings
 from typing import Generic, TypeVar
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import numba
 import numpy as np
@@ -213,11 +213,15 @@ def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
     msg = "No cube found. All inputs are None."
     raise RuntimeError(msg)
 
-def bundle_matched_mzp(m_paths, z_paths, p_paths, threshold=75):
+def bundle_matched_mzp(m_paths: list[str],
+                       z_paths: list[str],
+                       p_paths: list[str],
+                       threshold: float = 75.0) -> np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Search and bundle MZP triplets closest in time"""
 
-    m_dateobs = [parse_datetime(fits.getheader(path, ext=2)['DATE-OBS']) for path in m_paths]
-    z_dateobs = [parse_datetime(fits.getheader(path, ext=2)['DATE-OBS']) for path in z_paths]
-    p_dateobs = [parse_datetime(fits.getheader(path, ext=2)['DATE-OBS']) for path in p_paths]
+    m_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in m_paths]
+    z_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in z_paths]
+    p_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in p_paths]
 
     # use Z as the reference
     triplets = []

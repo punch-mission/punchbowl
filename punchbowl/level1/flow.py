@@ -1,5 +1,6 @@
 import os
 import pathlib
+from datetime import UTC, datetime
 from collections.abc import Generator
 
 import astropy.units as u
@@ -44,7 +45,7 @@ def generate_psf_model_core_flow(input_filepaths: list[str],
         return np.exp(-(np.square(row - x0) / (2 * np.square(sigma_x))
                         + np.square(col - y0) / (2 * np.square(sigma_y))))
 
-    image_psf, counts = ArrayPSFBuilder(psf_size).build(input_filepaths, hdu_choice=1, star_masks=masks)
+    image_psf, _ = ArrayPSFBuilder(psf_size).build(input_filepaths, hdu_choice=1, star_masks=masks)
     coords = calculate_covering(image_shape, psf_size)
     return ArrayPSFTransform.construct(image_psf, target.as_array_psf(coords, psf_size), alpha, epsilon)
 
@@ -163,6 +164,7 @@ def level1_early_core_flow(  # noqa: C901
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         if isinstance(vignetting_function_path, DataLoader):
             vignetting_function_path = vignetting_function_path.src_repr()
@@ -189,7 +191,7 @@ def level1_early_core_flow(  # noqa: C901
 
 
 @punch_flow
-def level1_late_core_flow(
+def level1_late_core_flow( # noqa: C901
     input_data: list[str] | list[NDCube],
     stray_light_before_path: str | None = None,
     stray_light_after_path: str | None = None,
@@ -210,16 +212,23 @@ def level1_late_core_flow(
     for i, this_data in enumerate(input_data):
         data = load_image_task(this_data) if isinstance(this_data, str) else this_data
         data = remove_stray_light_task(data, stray_light_before_path, stray_light_after_path)
-        data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
-        if do_align:
-            data = align_task(data, distortion_path)
 
         if mask_path:
             with open(mask_path, "rb") as f:
                 b = f.read()
             mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
-            data.data *= mask
-            data.uncertainty.array[mask==0] = np.inf
+            data.data[~mask] = 0
+            data.uncertainty.array[~mask] = np.inf
+        else:
+            mask = None
+
+        data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
+        if do_align:
+            data = align_task(data, distortion_path)
+
+        if mask is not None:
+            data.data[~mask] = 0
+            data.uncertainty.array[~mask] = np.inf
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -236,6 +245,7 @@ def level1_late_core_flow(
                 new_meta[key] = data.meta[key].value
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         if isinstance(psf_model_path, DataLoader):
             psf_model_path = psf_model_path.src_repr()
@@ -294,6 +304,7 @@ def levelh_core_flow(
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
         new_meta = NormalizedMetadata.load_template(product_code, "H")
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
         output_header = new_meta.to_fits_header(data.wcs)
         for key in output_header:

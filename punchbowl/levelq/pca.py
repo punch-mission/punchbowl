@@ -182,7 +182,7 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
     # The quartering approach that protects from planets/the Moon wrecking the PCA components can leave seams. To
     # reduce that, we have a small blend region at those seams. Here we define a mask that's 1 in the core of a
     # quarter and tapers to 0 through the blend region.
-    yy, xx = np.indices(images_to_subtract.shape[1:])
+    yy, _ = np.indices(images_to_subtract.shape[1:])
     blend_mask = np.clip(((_all_files_to_fit.shape[1] / 2 - 1 + blend_size / 2) - yy) / blend_size, 0, 1)
     blend_mask = blend_mask * blend_mask.T
     # Flip it around to make one for each quarter

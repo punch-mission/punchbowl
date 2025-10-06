@@ -28,6 +28,8 @@ def _cmap_punch() -> LinearSegmentedColormap:
     return LinearSegmentedColormap.from_list("PUNCH", rgb_colors, N=n)
 
 cmap_punch = _cmap_punch()
+cmap_punch_r = _cmap_punch().reversed()
+
 
 def radial_distance(h: int, w: int, center: tuple[int, int] | None = None, radius: float | None = None) -> np.ndarray:
     """Create radial distance array."""

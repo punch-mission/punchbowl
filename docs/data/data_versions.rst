@@ -17,6 +17,60 @@ The PUNCH mission and the SDAC data repository only supports the most recent ver
 
 A history of data version releases is given below.
 
+Version 0g
+----------
+- Released October 1, 2025
+- Improved vignetting functions
+- Improved PSF regularization resulting in a tighter output PSF
+- NFI pointing "wobble" has been reduced via an improved optical distortion map
+- Experimental L3 CIM and PIM images are now available, with preliminary F-corona subtraction. Starfield subtraction and low-noise mosaics are deferred to a later release.
+- Known problems:
+
+  + Images can contain blocky edges due to an incomplete application of the instrument mask
+  + The OUTLIER flag is incorrectly set to True for many NFI images
+  + Stray light subtraction for polarized images is computed inconsistently
+
+Version 0f
+----------
+- Released September 16, 2025
+- Reduced seams in L2 CTM/PTM mosaics
+  - Benefiting from improved vignetting functions
+  - The seams roll off smoothly from one image to another (`Pull request <https://github.com/punch-mission/punchbowl/pull/592>`_)
+- The DATE header keyword is set correctly in L1 files (`Pull request <https://github.com/punch-mission/punchbowl/pull/586>`_)
+- L2 and LQ CTM and PTM headers include "HAS_*" keywords indicating which imagers contributed to the mosaic. (`Pull request <https://github.com/punch-mission/punchbowl/pull/584>`_)
+- L1 files contain a SPASE DOI (`Pull request <https://github.com/punch-mission/punchbowl/pull/583>`_)
+- An error in polarization calculations was corrected
+
+Version 0e
+----------
+- Released August 18, 2025
+- Incorporate new outlier rejection
+- Used alpha coefficients to inter-calibrate the WFIs
+- Created automatic NFI flat-fielding module
+- Sped up pointing refinement
+
+Version 0d
+----------
+- Released August 8, 2025
+- Fixed file provenance logging
+- Addressed rolling stray light issues
+- Dilated saturation in PSF correction more
+- Turned on PTM processing
+- Rigged up an automated reprocessing that is more ordered by time and dependencies
+- Split Level 1 processing at stray light subtraction
+
+Version 0c
+----------
+- Released July 24, 2025
+- Included new PSF models
+- Refined the pointing so it's more stable
+- Implemented rolling stray light models
+- Handled saturated pixels when building PSF model
+- Handled mask when building PSF model
+- Handled saturated pixels when correcting PSF
+- Handled mask when correcting PSF
+- Added lost in space pointing solver for when pointing isn't stable enough
+
 Version 0b
 ----------
 - Released June 1, 2025

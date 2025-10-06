@@ -5,6 +5,7 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import get_run_logger
+from scipy.ndimage import distance_transform_edt
 
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from punchbowl.prefect import punch_flow, punch_task
@@ -83,7 +84,14 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         ymax = np.min((ymax, output_shape[0]))
 
     output_array = np.full((2, *output_shape), np.nan)
-    input_data = np.stack([input_cube.data, input_cube.uncertainty.array])
+
+    # We will roll off the uncertainty by the inverse of the distance to the edge of the mask.
+    # This allows pixels closer to the center to be weighted more than those on the edge.
+    # Note. We add 1 to the distance to edge to avoid division by zero errors.
+    image_mask = input_cube.data == 0
+    distance_to_edge = distance_transform_edt(~image_mask, return_indices=False)
+    input_data = np.stack([input_cube.data, input_cube.uncertainty.array / (distance_to_edge + 1)])
+
     # Reproject will complain if the input and output arrays have different dtypes
     input_data = np.asarray(input_data, dtype=float)
 

@@ -7,7 +7,7 @@ This list may not be exhaustive. If you see additional issues, please report the
 NFI
 ---
 
-- **June 18, 2025 - present**: many images being lost due to spacecraft software issue
+- **June 18, 2025 - June 30, 2025**: many images being lost due to spacecraft software issue
 - **May 21, 2025 - present**: NFI images saturate periodically over Antarctica due to orbit alignment
 
 WFI-1

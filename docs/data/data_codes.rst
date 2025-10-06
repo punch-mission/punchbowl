@@ -62,7 +62,7 @@ Data Product Codes
      - Clear low-noise NFI science image, bkg-sub & resolved into B & uncertainty layer
    * - 3
      - PIM
-     - Polarized K PUNCH science mosaics (Trefoil), without starfield subtraction and still in the MZP system
+     - Polarized science mosaics (trefoils), with F-corona subtraction, without starfield subtraction, and still in the MZP system
    * - 3
      - CIM
      - Clear K science mosaics (Trefoil), without starfield subtraction

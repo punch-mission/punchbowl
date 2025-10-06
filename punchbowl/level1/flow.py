@@ -143,10 +143,10 @@ def level1_early_core_flow(  # noqa: C901
         if mask_path:
             with open(mask_path, "rb") as f:
                 b = f.read()
-            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
-            data.data *= mask
-            data.uncertainty.array[mask==0] = np.inf
-            data.mask[mask==0] = 1
+            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T.astype(bool)
+            data.data[~mask] = 0
+            data.uncertainty.array[~mask] = np.inf
+            data.mask[~mask] = 1
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -219,7 +219,7 @@ def level1_late_core_flow( # noqa: C901
         if mask_path:
             with open(mask_path, "rb") as f:
                 b = f.read()
-            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
+            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T.astype(bool)
             data.data[~mask] = 0
             data.uncertainty.array[~mask] = np.inf
         else:

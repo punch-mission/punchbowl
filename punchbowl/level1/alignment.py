@@ -498,7 +498,36 @@ def  refine_pointing_single_step(
                                 fix_crval: bool = False,
                                 fix_crota: bool = False,
                                 fix_pv: bool = True) -> WCS:
-    """Perform a single step of pointing refinement."""
+    """
+    Perform a single step of pointing refinement.
+
+    Parameters
+    ----------
+    guess_wcs : WCS
+        the initial guess for the world coordinate system
+    observed_coords : np.ndarray
+        coordinates of the observed star positions extracted from the image
+    subcatalog : pd.DataFrame
+        the catalog subset used for this resolution
+    method : str
+        method used by lmfit for minimization
+    ra_tolerance : float
+        how many degrees the guess WCS is allowed to be incorrect by in right ascension
+    dec_tolerance : float
+        how many degrees the guess WCS is allowed to be incorrect by in declination
+    fix_crval : bool
+        if True the crval is not allowed to vary, otherwise it can be fit
+    fix_crota : bool
+        if True the crota is not allowed to vary, otherwise it can be fit
+    fix_pv : bool
+        if True the pv is not allowed to vary, otherwise it can be fit
+
+    Returns
+    -------
+    WCS
+        the new world coordinate system
+
+    """
     # set up the optimization
     params = Parameters()
     initial_crota = extract_crota_from_wcs(guess_wcs)
@@ -546,7 +575,28 @@ def solve_pointing(
     distortion: WCS | None = None,
     saturation_limit: float = np.inf,
     observatory: str = "wfi") -> WCS:
-    """Carefully refine the pointing of an image based on a guess WCS."""
+    """
+    Carefully determine the pointing of an image using the starfield.
+
+    Parameters
+    ----------
+    image_data : np.ndarray
+        a 2D image, preferably with cosmic rays reduced
+    image_wcs : WCS
+        a guess world coordinate system
+    distortion : WCS | None
+        a distortion WCS to use when fitting
+    saturation_limit : float
+        the maximum star brightness to utilize
+    observatory : str
+        "wfi" or "nfi"
+
+    Returns
+    -------
+    WCS
+        the new world coordinate system
+
+    """
     logger = get_run_logger()
 
     wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600

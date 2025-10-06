@@ -26,3 +26,11 @@ The correction is carried out primarily in the ``punchbowl.level1.psf.correct_ps
 
 If you wish to incorporate this as a Prefect task in a custom pipeline,
 using something like the ``punchbowl.level1.psf.correct_psf_task`` is recommended.
+
+Deriving correction
+-------------------
+
+We derive the PSF model from thousands of stars in each region of the image.
+We pay careful attention to subtracting off the background light by fitting a plane
+to each star patch before normalizing and stacking the patches. After patches are averaged together,
+we do some final cleaning by subtracting off a planar background again.

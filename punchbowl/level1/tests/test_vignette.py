@@ -133,8 +133,9 @@ def test_generate_vignetting_calibration_wfi() -> None:
 def test_generate_vignetting_calibration_nfi() -> None:
     """Test that vignetting calibration data is generated"""
     vignetting_data = generate_vignetting_calibration_nfi(input_files = None,
+                                                          path_speckle = "speckle_mask.fits",
                                                           path_mask = "mask.bin",
-                                                          dark_path = "dark.fits",
+                                                          path_dark = "dark.fits",
                                                           polarizer = "R",
                                                           dateobs="2025-07-31T00:00:00.000",
                                                           version="0",

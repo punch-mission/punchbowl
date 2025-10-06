@@ -1,6 +1,7 @@
 import os
 import pathlib
 import warnings
+from pathlib import Path
 
 import numpy as np
 from astropy.io import fits
@@ -190,12 +191,13 @@ def generate_vignetting_calibration_wfi(path_vignetting: str,
 
 
 def generate_vignetting_calibration_nfi(input_files: list[str],
-                                        dark_path: str,
+                                        path_speckle: str,
                                         path_mask: str,
+                                        path_dark: str,
                                         polarizer: str,
                                         dateobs: str,
                                         version: str,
-                                        output_path: str | None = None) -> np.ndarray | None:
+                                        output_path: str | None = None) -> np.ndarray | str:
     """
     Create calibration data for vignetting for the NFI spacecraft.
 
@@ -203,10 +205,12 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     ----------
     input_files : list[str]
         Paths to input NFI files for processing
-    dark_path : str
-        Path to the dark frame FITS file
-    path_mask : str
+    path_speckle : str
         Path to the speckle mask FITS file
+    path_mask : str
+        Path to the NFI mask bin file
+    path_dark : str
+        Path to the dark frame FITS file
     polarizer : str
         Polarizer name
     dateobs : str
@@ -219,18 +223,18 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
 
     Returns
     -------
-    np.ndarray | None
-        vignetting function array
+    np.ndarray | str
+        vignetting function array or written file path
 
     """
     if input_files is None:
         return np.ones((2048,2048))
 
     # Load speckle mask and dark frame
-    with fits.open(path_mask) as hdul:
+    with fits.open(path_speckle) as hdul:
         specklemask = np.fliplr(hdul[0].data)
 
-    with fits.open(dark_path) as hdul:
+    with fits.open(path_dark) as hdul:
         nfidark = hdul[1].data
 
     # Load a WCS to use later on
@@ -238,12 +242,19 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         cube_wcs = WCS(hdul[1].header)
 
     # Load and square root decode input data
-    cubes = [
-        decode_sqrt_data.fn(cube)
-        for cube in (load_ndcube_from_fits(file) for file in input_files)
-        if 490 <= cube.meta["DATAMDN"].value <= 655 and cube.meta["DATAP99"].value != 4095
-           and not cube.meta.__setitem__("OFFSET", 400)
-    ]
+    cubes = []
+    for file in input_files:
+        cube = load_ndcube_from_fits(file)
+        if cube.meta["OFFSET"].value is None:
+            cube.meta["OFFSET"] = 400
+        # Reject outlier images in vignetting calculation if they have been flagged
+        if "OUTLIER" in cube.meta:
+            if cube.meta["OUTLIER"].value == 0:
+                cubes.append(decode_sqrt_data.fn(cube))
+        # If outlier rejection was not applied, manually reject outliers using these human-derived checks
+        else:
+            if 490 <= cube.meta["DATAMDN"].value <= 655 and cube.meta["DATAP99"].value != 4095:
+                cubes.append(decode_sqrt_data.fn(cube))
 
     # Subtract dark frame
     for cube in cubes:
@@ -256,6 +267,11 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
 
     # Stack image data
     images = np.array([cube.data for cube in cubes])
+
+    # If only one file exists in the datacube, do not create the vignetting correction
+    if len(images.shape) != 3:
+        return None
+
     applied_images = images * boundary_mask
     applied_speck = images * specklemask
 
@@ -283,7 +299,7 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     cube = NDCube(data=nfiflat.astype("float32"), wcs=cube_wcs, meta=m)
 
     if output_path is not None:
-        filename = f"{output_path}/{get_base_file_name(cube)}.fits"
+        filename = Path(output_path) / f"{get_base_file_name(cube)}.fits"
 
         full_header = cube.meta.to_fits_header(wcs=cube.wcs)
         full_header["FILENAME"] = os.path.basename(filename)
@@ -303,5 +319,5 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         hdul.writeto(filename, overwrite=True, checksum=True)
         hdul.close()
 
-        return None
+        return filename
     return cube.data

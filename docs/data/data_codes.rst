@@ -65,7 +65,7 @@ Data Product Codes
      - Polarized science mosaics (trefoils), with F-corona subtraction, without starfield subtraction, and still in the MZP system
    * - 3
      - CIM
-     - Clear K science mosaics (Trefoil), without starfield subtraction
+     - Clear science mosaics (trefoils), with F-corona subtraction and without starfield subtraction
    * - 3
      - PTM
      - Polarized K PUNCH science mosaics (Trefoil), bkg-sub & resolved into B, pB, & uncertainty layer

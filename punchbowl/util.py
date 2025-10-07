@@ -217,26 +217,29 @@ def bundle_matched_mzp(m_paths: list[str],
                        z_paths: list[str],
                        p_paths: list[str],
                        threshold: float = 75.0) -> np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Search and bundle MZP triplets closest in time"""
-
+    """Search and bundle MZP triplets closest in time."""
     m_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in m_paths]
     z_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in z_paths]
-    p_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in p_paths]
+    p_dateobs = [parse_datetime(fits.gethe6ader(path, ext=2)["DATE-OBS"]) for path in p_paths]
 
     # use Z as the reference
     triplets = []
     for z_index, z_datetime in enumerate(z_dateobs):
         m_deltas = [abs((z_datetime - m_datetime).total_seconds()) for m_datetime in m_dateobs]
         p_deltas = [abs((z_datetime - p_datetime).total_seconds()) for p_datetime in p_dateobs]
-        matching_m = np.argmin(m_deltas)
-        matching_p = np.argmin(p_deltas)
-        if m_deltas[matching_m] > threshold:
-            warnings.warn("No matching M")
-        elif p_deltas[matching_p] > threshold:
-            warnings.warn("No matching P")
+        matching_m = m_deltas[np.argmin(m_deltas)]
+        matching_p = p_deltas[np.argmin(p_deltas)]
+        m_time_diff = m_deltas[matching_m]
+        p_time_diff = p_deltas[matching_p]
+
+        if m_time_diff > threshold or p_time_diff > threshold:
+            msg = (f"No matching {'M' if m_time_diff > threshold else ''}"
+                   f"{' and ' if m_time_diff > threshold and p_time_diff > threshold else ''}"
+                   f"{'P' if p_time_diff > threshold else ''} for Z at time = {z_datetime.isoformat()}"
+                   )
+            warnings.warn(msg)
         else:
             triplets.append((m_paths[matching_m], z_paths[z_index], p_paths[matching_p]))
-
     return triplets
 
 

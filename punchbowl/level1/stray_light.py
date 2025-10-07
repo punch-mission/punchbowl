@@ -116,7 +116,7 @@ def estimate_polarized_stray_light(
     uncertainty = None
 
     triplets_path = bundle_matched_mzp(mfilepaths, zfilepaths, pfilepaths)
-    col0, col1, col2 = zip(*triplets_path)
+    col0, col1, col2 = zip(*triplets_path, strict=True)
 
     for mpath, zpath, ppath in zip(col0, col1, col2, strict=True):
         try:

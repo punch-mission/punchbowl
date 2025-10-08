@@ -35,3 +35,4 @@ Deriving stray light model
 --------------------------
 
 Stray light parameters will be derived from spacecraft observations on orbit.
+We measure the stray light by taking a low percentile of images in the instrument frame.

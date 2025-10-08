@@ -377,19 +377,28 @@ def _residual(params: Parameters,
     refined_wcs.cpdis1 = guess_wcs.cpdis1
     refined_wcs.cpdis2 = guess_wcs.cpdis2
 
+    errors = get_errors(refined_wcs, catalog_stars, observed_tree, max_error)
+    return np.nansum(errors)
+
+
+def get_errors(wcs: WCS, catalog_stars: SkyCoord,
+               observed_stars: np.ndarray | KDTree, max_error: float = 30) -> np.ndarray:
+    """Compute errors between expected and observed star locations."""
+    if isinstance(observed_stars, np.ndarray):
+        observed_stars = KDTree(observed_stars)
     try:
-        xs, ys = catalog_stars.to_pixel(refined_wcs, mode="all")
+        xs, ys = catalog_stars.to_pixel(wcs, mode="all")
     except NoConvergence as e:
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
     refined_coords = np.stack([xs, ys], axis=-1)
 
-    out = np.empty(refined_coords.shape[0])
+    errors = np.empty(refined_coords.shape[0])
     for coord_i, coord in enumerate(refined_coords):
-        dd, _ = observed_tree.query(coord, k=1)
-        out[coord_i] = dd
+        dd, _ = observed_stars.query(coord, k=1)
+        errors[coord_i] = dd
 
-    out[out > max_error] = 0
-    return np.nansum(out)
+    return errors[errors <= max_error]
+
 
 def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
     """Extract CROTA from a WCS."""

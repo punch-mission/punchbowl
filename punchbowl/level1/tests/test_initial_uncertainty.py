@@ -8,7 +8,7 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.level1.initial_uncertainty import flag_saturated_pixels
+from punchbowl.level1.initial_uncertainty import fill_saturated_pixels
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -49,6 +49,6 @@ def test_flag_saturated_pixels(sample_punchdata: NDCube) -> None:
     cube.data[x_coords, y_coords] = cube.meta["DSATVAL"].value
     saturated_pixels = cube.data >= cube.meta["DSATVAL"].value
 
-    cube = flag_saturated_pixels(cube, saturated_pixels)
+    cube = fill_saturated_pixels(cube, saturated_pixels)
 
     assert np.all(np.isposinf(cube.uncertainty.array[x_coords, y_coords]))

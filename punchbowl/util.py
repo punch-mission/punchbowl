@@ -8,6 +8,7 @@ import numba
 import numpy as np
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
+from scipy.signal import convolve2d
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning
@@ -226,3 +227,38 @@ class DataLoader(abc.ABC, Generic[T]):
     @abc.abstractmethod
     def src_repr(self) -> str:
         """Return a string representation of the data source."""
+
+def inpaint_nans(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
+    """
+    Fill nans in an image with a neighborhood value.
+
+    Parameters
+    ----------
+    image : np.ndarray
+        image with nans
+    kernel_size : int
+        odd integer size for the smoothing kernel
+
+    Returns
+    -------
+    np.ndarray
+        image with nans filled
+
+    """
+    image = image.copy()  # don't mutate the original image
+
+    if kernel_size % 2 == 0:
+        msg = "Kernel size must be odd."
+        raise RuntimeError(msg)
+    kernel = np.ones((kernel_size, kernel_size))
+    kernel[kernel_size//2, kernel_size//2] = 0
+    while np.any(np.isnan(image)):
+        nan_mask = np.isnan(image)
+        image[nan_mask] = 0
+        neighbors = convolve2d(~nan_mask, kernel, mode="same", boundary="symm")
+        convolved = convolve2d(image, kernel, mode="same", boundary="symm")
+        convolved[neighbors>0] = convolved[neighbors>0]/neighbors[neighbors>0]
+        convolved[neighbors==0] = np.nan
+        convolved[~nan_mask] = image[~nan_mask]
+        image = convolved
+    return image

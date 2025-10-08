@@ -1,9 +1,11 @@
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from ndcube import NDCube
+from scipy.ndimage import binary_dilation
 
 from punchbowl.data.units import split_ccd_array
 from punchbowl.prefect import punch_task
+from punchbowl.util import inpaint_nans
 
 
 def dn_to_photons(data_array: np.ndarray, gain_bottom: float = 4.9, gain_top: float = 4.9) -> np.ndarray:
@@ -100,11 +102,38 @@ def compute_uncertainty(data_array: np.ndarray,
     return np.sqrt(noise_photon**2 + noise_dark**2 + noise_read**2)
 
 
-def flag_saturated_pixels(data_object: NDCube,
-                          saturated_pixels: np.ndarray) -> NDCube:
-    """Flag saturated pixels in the uncertainty layer."""
+def fill_saturated_pixels(data_object: NDCube,
+                          saturated_pixels: np.ndarray,
+                          row_threshold: int = 300) -> NDCube:
+    """
+    Flag saturated pixels with neighborhood and flag in the uncertainty layer.
+
+    Parameters
+    ----------
+    data_object : NDCube
+        input data cube
+    saturated_pixels : np.ndarray
+        mask where saturated pixels are True
+    row_threshold : int
+        if this many pixels are flagged as saturated in a row, the whole row is filled with neighborhood values
+
+    Returns
+    -------
+    NDCube
+        a cleaned NDCube with saturated pixels filled
+
+    """
     if saturated_pixels is not None:
+        saturated_pixels = binary_dilation(saturated_pixels, iterations=1)
+        row_counts = np.sum(saturated_pixels, axis=1)
+        saturated_pixels[row_counts > row_threshold, :] = True
+
         data_object.uncertainty.array[saturated_pixels] = np.inf
+        image = data_object.data
+        image[saturated_pixels] = np.nan
+        filled_data = inpaint_nans(image, kernel_size=5)
+        data_object.data[...] = filled_data[...]
+        data_object.mask = saturated_pixels
     return data_object
 
 
@@ -125,7 +154,7 @@ def update_initial_uncertainty_task(data_object: NDCube,
                                             )
     data_object.uncertainty = StdDevUncertainty(uncertainty_array)
 
-    flag_saturated_pixels(data_object, saturated_pixels)
+    fill_saturated_pixels(data_object, saturated_pixels)
 
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", "Initial uncertainty computed with:")
     data_object.meta.history.add_now("LEVEL1-initial_uncertainty", f"dark_level={dark_level}")

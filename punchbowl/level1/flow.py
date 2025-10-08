@@ -110,12 +110,8 @@ def level1_early_core_flow(  # noqa: C901
                        "wavelength": 530. * u.nm,
                        "exposure": data.meta["EXPTIME"].value * u.s,
                        "aperture": 34 * u.mm ** 2}
-        pixel_scale = calculate_image_pixel_area(data.wcs, data.data.shape).to(u.sr) / u.pixel
-        scaling["pixel_scale"] = pixel_scale
+        scaling["pixel_scale"] = calculate_image_pixel_area(data.wcs, data.data.shape).to(u.sr) / u.pixel
 
-        # TODO - In dealing with converting the DSATVAL to MSB...
-        # subtract bias, work with MSB conversion
-        # watch out for linearization blowing up these values
         dsatval_msb = np.clip(dn_to_msb(np.zeros_like(data.data)+data.meta["DSATVAL"].value,
                                         data.wcs, **scaling), a_min=0, a_max=None)
         data.meta["DSATVAL"] = np.nanmin(dsatval_msb)
@@ -150,6 +146,7 @@ def level1_early_core_flow(  # noqa: C901
             mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
             data.data *= mask
             data.uncertainty.array[mask==0] = np.inf
+            data.mask[mask==0] = 1
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -179,7 +176,13 @@ def level1_early_core_flow(  # noqa: C901
         if filename:
             new_meta.provenance = [filename]
 
-        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+        data = NDCube(
+            data=data.data,
+            meta=new_meta,
+            wcs=data.wcs,
+            unit=data.unit,
+            mask=data.mask,
+            uncertainty=data.uncertainty)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])

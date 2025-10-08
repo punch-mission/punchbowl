@@ -279,8 +279,9 @@ def write_ndcube_to_fits(cube: NDCube,
 
 def _pack_uncertainty(cube: NDCube) -> np.ndarray:
     """Compress the uncertainty for writing to file."""
-    return np.zeros_like(cube.data) - 999 if cube.uncertainty is None else 1 / (cube.uncertainty.array / cube.data)
-
+    output = np.zeros_like(cube.data) - 999 if cube.uncertainty is None else 1 / (cube.uncertainty.array / cube.data)
+    output[cube.mask] = 0
+    return output
 
 def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -> np.ndarray:
     """Uncompress the uncertainty when reading from a file."""
@@ -294,8 +295,6 @@ def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -
 
 def _update_statistics(cube: NDCube, modify_inplace: bool = False) -> NormalizedMetadata:
     """Update image statistics in metadata before writing to file."""
-    # TODO - Determine DSATVAL omniheader value in calibrated units for L1+
-
     meta = cube.meta
     if not modify_inplace:
         meta = deepcopy(meta)
@@ -361,9 +360,11 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
         if include_uncertainty and len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
             secondary_hdu = hdul[2]
             uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data)
+            mask = np.isinf(uncertainty)
             uncertainty = StdDevUncertainty(uncertainty)
         else:
             uncertainty = None
+            mask = None
 
     return NDCube(
         data.view(dtype=data.dtype.newbyteorder()).byteswap().astype(float),
@@ -371,4 +372,5 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
         uncertainty=uncertainty,
         meta=meta,
         unit=unit,
+        mask=mask,
     )

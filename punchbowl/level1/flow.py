@@ -22,7 +22,7 @@ from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import punch_flow
-from punchbowl.util import DataLoader, load_image_task, output_image_task
+from punchbowl.util import DataLoader, load_image_task, load_mask_file, output_image_task
 
 KEYS_TO_NOT_COPY = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE", "TYPECODE", "FILEVRSN"]
 
@@ -144,9 +144,7 @@ def level1_early_core_flow(  # noqa: C901
                                             method=deficient_pixel_method)
 
         if mask_path:
-            with open(mask_path, "rb") as f:
-                b = f.read()
-            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
+            mask = load_mask_file(mask_path)
             data.data *= mask
             data.uncertainty.array[mask==0] = np.inf
 
@@ -215,9 +213,7 @@ def level1_late_core_flow(
             data = align_task(data, distortion_path)
 
         if mask_path:
-            with open(mask_path, "rb") as f:
-                b = f.read()
-            mask = np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T
+            mask = load_mask_file(mask_path)
             data.data *= mask
             data.uncertainty.array[mask==0] = np.inf
 

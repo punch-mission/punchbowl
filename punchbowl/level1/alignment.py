@@ -1,6 +1,7 @@
 import os
 import copy
-import warnings
+from itertools import repeat
+from collections import namedtuple
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
 
@@ -10,6 +11,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import sep
+import skimage
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
@@ -20,9 +22,11 @@ from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
 
-from punchbowl.data import NormalizedMetadata
+from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
+from punchbowl.level1 import sqrt
 from punchbowl.prefect import punch_task
+from punchbowl.util import interpolate_data, load_mask_file
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -55,7 +59,8 @@ def download_gaia_data(out_path: str, dimmest_mag: float = 9) -> None:
     results.to_pandas(index="source_id").to_csv(out_path)
 
 
-def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_size: float = 3) -> np.ndarray:
+def filter_distortion_table(data: np.ndarray, mask: np.ndarray | None = None, blur_sigma: float = 4,
+                            med_filter_size: float = 3) -> np.ndarray:
     """
     Filter a copy of the distortion lookup table.
 
@@ -74,6 +79,8 @@ def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_
     ----------
     data
         The distortion map to be filtered
+    mask : np.ndarray
+        A mask of regions to be inpainted
     blur_sigma : float
         The number of pixels constituting one standard deviation of the
         Gaussian kernel. Set to 0 to disable Gaussian blurring.
@@ -86,61 +93,20 @@ def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_
     Modified from https://github.com/svank/wispr_analysis/blob/main/wispr_analysis/image_alignment.py
 
     """
-    data = data.copy()
-
-    # Trim empty (all-nan) rows and columns
-    trimmed = []
-    i = 0
-    while np.all(np.isnan(data[0])):
-        i += 1
-        data = data[1:]
-    trimmed.append(i)
-
-    i = 0
-    while np.all(np.isnan(data[-1])):
-        i += 1
-        data = data[:-1]
-    trimmed.append(i)
-
-    i = 0
-    while np.all(np.isnan(data[:, 0])):
-        i += 1
-        data = data[:, 1:]
-    trimmed.append(i)
-
-    i = 0
-    while np.all(np.isnan(data[:, -1])):
-        i += 1
-        data = data[:, :-1]
-    trimmed.append(i)
-
-    # Replace interior nan values with the median of the surrounding values.
-    # We're filling in from neighboring pixels, so if there are any nan pixels
-    # fully surrounded by nan pixels, we need to iterate a few times.
-    while np.any(np.isnan(data)):
-        nans = np.nonzero(np.isnan(data))
-        replacements = np.zeros_like(data)
-        with warnings.catch_warnings():
-            warnings.filterwarnings(action="ignore", message="All-NaN slice")
-            for r, c in zip(*nans, strict=False):
-                r1, r2 = r - 1, r + 2
-                c1, c2 = c - 1, c + 2
-                r1, r2 = max(r1, 0), min(r2, data.shape[0])
-                c1, c2 = max(c1, 0), min(c2, data.shape[1])
-
-                replacements[r, c] = np.nanmedian(data[r1:r2, c1:c2])
-        data[nans] = replacements[nans]
-
     # Median-filter the whole image
-    if med_filter_size:
-        data = scipy.ndimage.median_filter(data, size=med_filter_size, mode="reflect")
+    if med_filter_size > 1:
+        data = scipy.ndimage.generic_filter(data, np.nanmedian, size=med_filter_size, mode="reflect")
 
     # Gaussian-blur the whole image
     if blur_sigma > 0:
-        data = scipy.ndimage.gaussian_filter(data, sigma=blur_sigma)
+        real_weights = scipy.ndimage.gaussian_filter(np.isfinite(data).astype(float), sigma=blur_sigma)
+        data = scipy.ndimage.gaussian_filter(np.nan_to_num(data), sigma=blur_sigma)
+        data /= real_weights
 
-    # Replicate the edge rows/columns to replace those we trimmed earlier
-    return np.pad(data, [trimmed[0:2], trimmed[2:]], mode="edge")
+    if mask is not None:
+        data = skimage.restoration.inpaint_biharmonic(np.nan_to_num(data, posinf=0, neginf=0), mask)
+
+    return data
 
 
 def get_data_path(path: str) -> str:
@@ -624,56 +590,94 @@ def measure_wcs_error(
     return np.sqrt(np.mean(np.square(errors)))
 
 
+_distortion_modeling_vignetting_functions = None
+_distortion_modeling_psf_transform = None
+_distortion_modeling_catalog = None
+def _init_for_distortion_model(vignetting_functions: list, psf_transform: ArrayPSFTransform,
+                               catalog: pd.DataFrame) -> None:
+    global _distortion_modeling_vignetting_functions, _distortion_modeling_psf_transform # noqa: PLW0603
+    global _distortion_modeling_catalog  # noqa: PLW0603
+    _distortion_modeling_vignetting_functions = vignetting_functions
+    _distortion_modeling_psf_transform = psf_transform
+    _distortion_modeling_catalog = catalog
+
+
+def _process_one_image_for_distortion_model(path: str, percentile_filter: bool) -> list:
+    cube = load_ndcube_from_fits(path, include_uncertainty=False, include_provenance=False, key="A")
+    if cube.meta["OUTLIER"].value:
+        return []
+    if cube.meta["GAINTOP"].value is None:
+        return []
+    cube = sqrt.decode_sqrt_data.fn(cube)
+
+    if _distortion_modeling_vignetting_functions is not None:
+        possible_functions = _distortion_modeling_vignetting_functions[:]
+        possible_functions.sort(key=lambda v: np.abs((v.meta.datetime - cube.meta.datetime).total_seconds()))
+        vignetting_function = interpolate_data(possible_functions[0], possible_functions[1], cube.meta.datetime,
+                                               allow_extrapolation=True)
+        cube.data[...] /= vignetting_function
+
+    if _distortion_modeling_psf_transform is not None:
+        saturation_threshold = cube.meta["DSATVAL"].value ** 2 / cube.meta["SCALE"].value * 0.9
+        cube.data[...] = _distortion_modeling_psf_transform.apply(cube.data,
+                                         saturation_threshold=saturation_threshold).copy()
+    if percentile_filter:
+        cube.data[...] = cube.data - scipy.ndimage.percentile_filter(cube.data, 5, size=9)
+
+    meta = cube.meta
+    observatory = "nfi" if cube.meta["OBSCODE"].value == "4" else "wfi"
+    new_wcs = solve_pointing(cube.data, cube.wcs, meta, observatory=observatory, saturation_limit=60_000)
+
+    stars_in_image = find_catalog_in_image(_distortion_modeling_catalog, new_wcs, cube.data.shape)
+    catalog_stars = prep_star_coords(stars_in_image, meta)
+    expected_coords = catalog_stars.to_pixel(new_wcs)
+
+    observed_coords = find_star_coordinates(cube.data,
+                                            max_distance_from_center=1100,
+                                            detection_threshold=10.0,
+                                            saturation_limit=1000)
+
+    distances, matched_stars = get_errors(new_wcs, expected_coords, observed_coords)
+
+    all_distortions = []
+    for i in range(len(matched_stars)):
+        if distances[i] < 20:
+            all_distortions.append(star_matching_result(
+                distance=distances[i],
+                ox=matched_stars[i][0],
+                oy=matched_stars[i][1],
+                nx=expected_coords[0][i],
+                ny=expected_coords[1][i],
+                mag=stars_in_image["Gmag"][i],
+            ))
+    return all_distortions
+
+
+star_matching_result = namedtuple("star_matching_result", ("distance", "ox", "oy", "nx", "ny", "mag"))
+
+
 def build_distortion_model(
-    l0_paths: list[str],
-    dimmest_magnitude: float = 6.5,
-    num_bins: int = 60,
-    psf_transform: ArrayPSFTransform | None = None) -> WCS:
+        l0_paths: list[str],
+        dimmest_magnitude: float = 8.5,
+        num_bins: int = 60,
+        psf_transform: ArrayPSFTransform | None = None,
+        vignetting_functions: list[NDCube] | None = None,
+        percentile_filter: bool = False,
+        mask_path: str | None = None,
+        n_workers: int | None = None) -> WCS:
     """Create a distortion model from a set of PUNCH L0 images."""
-    refined_wcses = []
-    image_cube = []
-    image_metas = []
-    for path in l0_paths:
-        with fits.open(path) as hdul:
-            image_head = hdul[1].header
-            image_data = hdul[1].data.astype(float)
-            image_data = image_data ** 2 / image_head["SCALE"]
-            if psf_transform is not None:
-                saturation_threshold = image_head["DSATVAL"]**2/image_head["SCALE"]*0.9
-                image_data = psf_transform.apply(image_data,
-                                                 saturation_threshold=saturation_threshold).copy()
-            img_shape = image_data.shape
-            image_wcs = WCS(hdul[1].header, hdul, key="A")
-            mask = image_data != 0
-
-        meta = NormalizedMetadata.from_fits_header(image_head)
-        solved_wcs = solve_pointing(image_data, image_wcs, meta)
-
-        image_cube.append(image_data)
-        refined_wcses.append(solved_wcs)
-        image_metas.append(meta)
+    image_shape = load_ndcube_from_fits(l0_paths[0], include_provenance=False, include_uncertainty=False).data.shape
+    mask = load_mask_file(mask_path) if mask_path else np.ones(image_shape, dtype=bool)
 
     catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
+
     all_distortions = []
+    with ProcessPoolExecutor(max_workers=n_workers, initializer=_init_for_distortion_model,
+                             initargs=(vignetting_functions, psf_transform, catalog)) as executor:
+        for distortions in executor.map(_process_one_image_for_distortion_model,
+                                       l0_paths, repeat(percentile_filter)):
+            all_distortions.extend(distortions)
 
-    for image_data, new_wcs, meta in zip(image_cube, refined_wcses, image_metas, strict=False):
-        stars_in_image = find_catalog_in_image(catalog, new_wcs, image_data.shape)
-        catalog_stars = prep_star_coords(stars_in_image, meta)
-        expected_coords = catalog_stars.to_pixel(new_wcs)
-
-        observed_coords = find_star_coordinates(image_data,
-            max_distance_from_center=1100,
-            detection_threshold=25.0,
-            saturation_limit=1000)
-
-        distances, matched_stars = get_errors(new_wcs, expected_coords, observed_coords)
-
-        for i in range(len(expected_coords)):
-            all_distortions.append({"distance": distances[i],
-                                    "ox": matched_stars[i][0],
-                                    "oy": matched_stars[i][1],
-                                    "nx": expected_coords[i][0],
-                                    "ny": expected_coords[i][1]})
     df = pd.DataFrame(all_distortions)
 
     xbins, r, c, _ = scipy.stats.binned_statistic_2d(
@@ -683,7 +687,7 @@ def build_distortion_model(
         "median",
         (num_bins, num_bins),
         expand_binnumbers=True,
-        range=((0, img_shape[1]), (0, img_shape[0])),
+        range=((0, image_shape[1]), (0, image_shape[0])),
     )
 
     ybins, _, _, _ = scipy.stats.binned_statistic_2d(
@@ -693,19 +697,27 @@ def build_distortion_model(
         "median",
         (num_bins, num_bins),
         expand_binnumbers=True,
-        range=((0, img_shape[1]), (0, img_shape[0])),
+        range=((0, image_shape[1]), (0, image_shape[0])),
+    )
+
+    count, _, _, _ = scipy.stats.binned_statistic_2d(
+        df["oy"],
+        df["ox"],
+        df["oy"] - df["ny"],
+        "count",
+        (num_bins, num_bins),
+        expand_binnumbers=True,
+        range=((0, image_shape[1]), (0, image_shape[0])),
     )
 
     mask = resize(mask, (num_bins, num_bins))
+    fmask = scipy.ndimage.binary_erosion(mask) * (count > 25)
 
-    xbins *= mask
-    ybins *= mask
+    xbins = filter_distortion_table(xbins, ~fmask, 2.1, 3)
+    ybins = filter_distortion_table(ybins, ~fmask, 2.1, 3)
 
-    xbins = filter_distortion_table(xbins, 1.1, 1) * mask
-    ybins = filter_distortion_table(ybins, 1.1, 1) * mask
-
-    r = np.linspace(0, 2048, num_bins + 1)
-    c = np.linspace(0, 2048, num_bins + 1)
+    r = np.linspace(0, image_shape[0], num_bins + 1)
+    c = np.linspace(0, image_shape[1], num_bins + 1)
     r = (r[1:] + r[:-1]) / 2
     c = (c[1:] + c[:-1]) / 2
 
@@ -719,7 +731,7 @@ def build_distortion_model(
         ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
     )
 
-    out_wcs = solved_wcs.copy()
+    out_wcs = WCS(naxis=2)
     out_wcs.cpdis1 = cpdis1
     out_wcs.cpdis2 = cpdis2
 

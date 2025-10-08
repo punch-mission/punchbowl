@@ -15,7 +15,7 @@ After the rough solving by Astrometry.net we refine the pointing using our known
 We select many asterisms of stars and simultaneously adjust the pointing parameters
 (CROTA, CRVAL1, CRVAL2, platescale, and PV values) to match the catalog
 expected position to the extracted position of stars in the image.
-The algorithms executes many of these fitting steps and then takes the median of each parameter as the average
+The algorithms execute many of these fitting steps and then take the median of each parameter as the average
 world coordinate system to adopt.
 
 Applying correction

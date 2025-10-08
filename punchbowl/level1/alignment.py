@@ -377,27 +377,33 @@ def _residual(params: Parameters,
     refined_wcs.cpdis1 = guess_wcs.cpdis1
     refined_wcs.cpdis2 = guess_wcs.cpdis2
 
-    errors = get_errors(refined_wcs, catalog_stars, observed_tree, max_error)
+    errors, _ = get_errors(refined_wcs, catalog_stars, observed_tree)
+    errors = errors[errors < max_error]
     return np.nansum(errors)
 
 
-def get_errors(wcs: WCS, catalog_stars: SkyCoord,
-               observed_stars: np.ndarray | KDTree, max_error: float = 30) -> np.ndarray:
+def get_errors(wcs: WCS, catalog_stars: SkyCoord | tuple[np.ndarray, np.ndarray],
+               observed_stars: np.ndarray | KDTree) -> tuple[np.ndarray, np.ndarray]:
     """Compute errors between expected and observed star locations."""
     if isinstance(observed_stars, np.ndarray):
         observed_stars = KDTree(observed_stars)
-    try:
-        xs, ys = catalog_stars.to_pixel(wcs, mode="all")
-    except NoConvergence as e:
-        xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
+    if isinstance(catalog_stars, SkyCoord):
+        try:
+            xs, ys = catalog_stars.to_pixel(wcs, mode="all")
+        except NoConvergence as e:
+            xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
+    else:
+        xs, ys = catalog_stars
     refined_coords = np.stack([xs, ys], axis=-1)
 
     errors = np.empty(refined_coords.shape[0])
+    closest_stars = np.empty(refined_coords.shape)
     for coord_i, coord in enumerate(refined_coords):
         dd, _ = observed_stars.query(coord, k=1)
         errors[coord_i] = dd
+        closest_stars[coord_i] = observed_stars.data[ii]
 
-    return errors[errors <= max_error]
+    return errors, closest_stars
 
 
 def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
@@ -427,11 +433,9 @@ def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
 
 
 def refine_pointing_single_step(
-    guess_wcs: WCS, observed_coords: np.ndarray, catalog_stars: SkyCoord, method: str = "least_squares",
-                                ra_tolerance: float = 10, dec_tolerance: float = 5,
-                                fix_crval: bool = False,
-                                fix_crota: bool = False,
-                                fix_pv: bool = True) -> WCS:
+        guess_wcs: WCS, observed_tree: KDTree, catalog_stars: SkyCoord, method: str = "least_squares",
+        ra_tolerance: float = 10, dec_tolerance: float = 5,
+        fix_crval: bool = False, fix_crota: bool = False, fix_pv: bool = True) -> WCS:
     """
     Perform a single step of pointing refinement.
 
@@ -476,8 +480,6 @@ def refine_pointing_single_step(
     params.add("platescale", value=abs(guess_wcs.wcs.cdelt[0]), min=0, max=1, vary=False)
     pv = guess_wcs.wcs.get_pv()[0][-1] if guess_wcs.wcs.get_pv() else 0.0
     params.add("pv", value=pv, min=0.0, max=1.0, vary=not fix_pv)
-
-    observed_tree = KDTree(observed_coords)
 
     out = minimize(_residual, params, method=method,
                    args=(catalog_stars, observed_tree, guess_wcs),
@@ -589,26 +591,16 @@ def solve_pointing( # noqa: C901
     ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
     stars_in_image = stars_in_image[ok_stars]
 
-    # Convert stellar coordinates to GCRS centered on the spacecraft location
-    sc_location = EarthLocation.from_geodetic(lon=image_header["GEOD_LON"].value * u.deg,
-                                              lat=image_header["GEOD_LAT"].value * u.deg,
-                                              height=image_header["GEOD_LAT"].value * u.m)
-    geoloc, geovel = sc_location.get_gcrs_posvel(image_header.astropy_time)
-    catalog_stars = SkyCoord(
-        np.array(stars_in_image["RAdeg"]) * u.degree,
-        np.array(stars_in_image["DEdeg"]) * u.degree,
-        np.array(stars_in_image["Dist_ly"]) * u.lyr,
-        frame="icrs", obsgeoloc=geoloc, obsgeovel=geovel, obstime=image_header.astropy_time,
-    ).transform_to("gcrs")
-    catalog_stars = SkyCoord(catalog_stars.ra, catalog_stars.dec, frame="icrs")
+    catalog_stars = prep_star_coords(stars_in_image, image_header)
 
     indices = np.arange(len(catalog_stars))
     rng = np.random.default_rng(seed=1)
     candidate_wcs = []
+    observed_tree = KDTree(observed)
     with ProcessPoolExecutor(n_workers) as p:
         for _ in range(n_rounds):
             sample = catalog_stars[rng.choice(indices, 30, replace=False)]
-            candidate_wcs.append(p.submit(refine_pointing_single_step, guess_wcs, observed, sample, fix_pv=True))
+            candidate_wcs.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))
     candidate_wcs = [w.result() for w in candidate_wcs]
 
     ras = [w.wcs.crval[0] for w in candidate_wcs]
@@ -637,23 +629,38 @@ def solve_pointing( # noqa: C901
     return solved_wcs
 
 
+def prep_star_coords(stars_in_image: pd.DataFrame, image_header: NormalizedMetadata) -> SkyCoord:
+    """
+    Convert ICRS coordinates to GCRS and put in a SkyCoord that says its ICRS.
+
+    That last bit is for compatibility with the fact that we can't have a "true" GCRS WCS, only RA-DEC that are
+    assumed to be ICRS. But as long as it's a consistent set of RA-Dec values, it doesn't matter what frame the
+    coordinates think they're in.
+    """
+    # Convert stellar coordinates to GCRS centered on the spacecraft location
+    sc_location = EarthLocation.from_geodetic(lon=image_header["GEOD_LON"].value * u.deg,
+                                              lat=image_header["GEOD_LAT"].value * u.deg,
+                                              height=image_header["GEOD_LAT"].value * u.m)
+    geoloc, geovel = sc_location.get_gcrs_posvel(image_header.astropy_time)
+    catalog_stars = SkyCoord(
+        np.array(stars_in_image["RAdeg"]) * u.degree,
+        np.array(stars_in_image["DEdeg"]) * u.degree,
+        np.array(stars_in_image["Dist_ly"]) * u.lyr,
+        frame="icrs", obsgeoloc=geoloc, obsgeovel=geovel, obstime=image_header.astropy_time,
+    ).transform_to("gcrs")
+    return SkyCoord(catalog_stars.ra, catalog_stars.dec, frame="icrs")
+
+
 def measure_wcs_error(
-    image_data: np.ndarray,
-    w: WCS,
-    dimmest_magnitude: float = 6.0,
-    max_error: float = 15.0) -> float:
+        image_data: np.ndarray,
+        wcs: WCS,
+        image_header: NormalizedMetadata,
+        dimmest_magnitude: float = 6.0,
+        max_error: float = 15.0) -> float:
     """Estimate the error in the WCS based on an image."""
     catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
-    stars_in_image = find_catalog_in_image(catalog, w, image_data.shape)
-    try:
-        xs, ys = SkyCoord(
-            ra=np.array(stars_in_image["RAdeg"]) * u.degree,
-            dec=np.array(stars_in_image["DEdeg"]) * u.degree,
-            distance=np.array(stars_in_image["Dist_ly"]) * u.lyr,
-        ).to_pixel(w, mode="all")
-    except NoConvergence as e:
-        xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
-    refined_coords = np.stack([xs, ys], axis=-1)
+    stars_in_image = find_catalog_in_image(catalog, wcs, image_data.shape)
+    catalog_stars = prep_star_coords(stars_in_image, image_header)
 
     observed_coords = find_star_coordinates(
         image_data,
@@ -661,9 +668,11 @@ def measure_wcs_error(
         max_distance_from_center=800,
         saturation_limit=1000)
 
-    out = np.array([np.min(np.linalg.norm(observed_coords - coord, axis=-1)) for coord in refined_coords])
-    out[out > max_error] = np.nan
-    return np.sqrt(np.nanmean(np.square(out)))
+    errors, _ = get_errors(wcs, catalog_stars, observed_coords)
+
+    errors = errors[errors <= max_error]
+    return np.sqrt(np.mean(np.square(errors)))
+
 
 def build_distortion_model(
     l0_paths: list[str],
@@ -673,6 +682,7 @@ def build_distortion_model(
     """Create a distortion model from a set of PUNCH L0 images."""
     refined_wcses = []
     image_cube = []
+    image_metas = []
     for path in l0_paths:
         with fits.open(path) as hdul:
             image_head = hdul[1].header
@@ -686,38 +696,34 @@ def build_distortion_model(
             image_wcs = WCS(hdul[1].header, hdul, key="A")
             mask = image_data != 0
 
-        solved_wcs = solve_pointing(image_data, image_wcs, NormalizedMetadata.from_fits_header(image_head))
+        meta = NormalizedMetadata.from_fits_header(image_head)
+        solved_wcs = solve_pointing(image_data, image_wcs, meta)
 
         image_cube.append(image_data)
         refined_wcses.append(solved_wcs)
+        image_metas.append(meta)
 
     catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
     all_distortions = []
 
-    for image_data, new_wcs in zip(image_cube, refined_wcses, strict=False):
+    for image_data, new_wcs, meta in zip(image_cube, refined_wcses, image_metas, strict=False):
         stars_in_image = find_catalog_in_image(catalog, new_wcs, image_data.shape)
-        subcoords = np.column_stack([[stars_in_image["RAdeg"], stars_in_image["DEdeg"]]]).T
-        refined_coords = new_wcs.all_world2pix(subcoords, 0)
-
-        refined_coords = refined_coords[
-            image_data[refined_coords[:, 1].astype(int),
-            refined_coords[:, 0].astype(int)] > 10]
+        catalog_stars = prep_star_coords(stars_in_image, meta)
+        expected_coords = catalog_stars.to_pixel(new_wcs)
 
         observed_coords = find_star_coordinates(image_data,
             max_distance_from_center=1100,
             detection_threshold=25.0,
             saturation_limit=1000)
 
-        closest_star = np.array([np.argmin(np.linalg.norm(observed_coords - coord, axis=-1))
-                                 for coord in refined_coords])
-        distance = np.array([np.min(np.linalg.norm(observed_coords - coord, axis=-1))
-                                 for coord in refined_coords])
-        for i in range(len(closest_star)):
-            all_distortions.append({"distance": distance[i],
-                                    "ox": observed_coords[closest_star[i]][0],
-                                    "oy": observed_coords[closest_star[i]][1],
-                                    "nx": refined_coords[i][0],
-                                    "ny": refined_coords[i][1]})
+        distances, matched_stars = get_errors(new_wcs, expected_coords, observed_coords)
+
+        for i in range(len(expected_coords)):
+            all_distortions.append({"distance": distances[i],
+                                    "ox": matched_stars[i][0],
+                                    "oy": matched_stars[i][1],
+                                    "nx": expected_coords[i][0],
+                                    "ny": expected_coords[i][1]})
     df = pd.DataFrame(all_distortions)
 
     xbins, r, c, _ = scipy.stats.binned_statistic_2d(

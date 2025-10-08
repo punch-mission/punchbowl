@@ -198,7 +198,7 @@ def generate_starfield_background(
         logger.info("Ending p starfield")
 
         out_data = np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0)
-        out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
+        out_wcs = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     else:
         logger.info("Starting clear starfield")
         starfield_clear = remove_starfield.build_starfield_estimate(

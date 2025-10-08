@@ -1,0 +1,1 @@
+`ALL_INPUT` is set correctly for L2 files.

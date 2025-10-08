@@ -1,0 +1,1 @@
+Masks are applied correctly when the image pixel is NaN.

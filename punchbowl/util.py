@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 import numba
 import numpy as np
+from astropy.io import fits
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from scipy.signal import convolve2d
@@ -212,6 +213,37 @@ def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
             return cube
     msg = "No cube found. All inputs are None."
     raise RuntimeError(msg)
+
+def bundle_matched_mzp(m_paths: list[str],
+                       z_paths: list[str],
+                       p_paths: list[str],
+                       threshold: float = 75.0) -> np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Search and bundle MZP triplets closest in time."""
+    m_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in m_paths]
+    z_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in z_paths]
+    p_dateobs = [parse_datetime(fits.gethe6ader(path, ext=2)["DATE-OBS"]) for path in p_paths]
+
+    # use Z as the reference
+    triplets = []
+    for z_index, z_datetime in enumerate(z_dateobs):
+        m_deltas = [abs((z_datetime - m_datetime).total_seconds()) for m_datetime in m_dateobs]
+        p_deltas = [abs((z_datetime - p_datetime).total_seconds()) for p_datetime in p_dateobs]
+        matching_m = m_deltas[np.argmin(m_deltas)]
+        matching_p = p_deltas[np.argmin(p_deltas)]
+        m_time_diff = m_deltas[matching_m]
+        p_time_diff = p_deltas[matching_p]
+
+        if m_time_diff > threshold or p_time_diff > threshold:
+            missing = []
+            if m_time_diff > threshold:
+                missing.append("M")
+            if p_time_diff > threshold:
+                missing.append("P")
+            msg = f"No matching {' and '.join(missing)} for Z at {z_datetime.isoformat()}"
+            warnings.warn(msg)
+        else:
+            triplets.append((m_paths[matching_m], z_paths[z_index], p_paths[matching_p]))
+    return triplets
 
 
 T = TypeVar("T")

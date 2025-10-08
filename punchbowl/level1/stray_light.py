@@ -106,7 +106,6 @@ def estimate_polarized_stray_light(
                 ) -> tuple[NDCube, NDCube, NDCube]:
     """Estimate the polarized stray light pattern using minimum indexing method."""
     logger = get_run_logger()
-    logger.info(f"Running with {len(mfilepaths)} input triplets")
 
     if isinstance(reference_time, str):
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
@@ -116,9 +115,9 @@ def estimate_polarized_stray_light(
     uncertainty = None
 
     triplets_path = bundle_matched_mzp(mfilepaths, zfilepaths, pfilepaths)
-    col0, col1, col2 = zip(*triplets_path, strict=True)
+    logger.info(f"Matched {len(triplets_path)} MZP triplets from input paths")
 
-    for mpath, zpath, ppath in zip(col0, col1, col2, strict=True):
+    for mpath, zpath, ppath in zip(*triplets_path, strict=True):
         try:
             cubes = [load_ndcube_from_fits(p, include_provenance=False,
                                            include_uncertainty=do_uncertainty)
@@ -164,10 +163,11 @@ def estimate_polarized_stray_light(
     output_cubes = {}
     for label, cube, background, paths in zip(
         ["M", "Z", "P"], [mcube, zcube, pcube], [m_background, z_background, p_background],
-            [mfilepaths, zfilepaths, pfilepaths], strict=True):
+            zip(*triplets_path, strict=True), strict=True):
         out_type = "S" + cube.meta.product_code[1:]
         meta = NormalizedMetadata.load_template(out_type, "1")
 
+        meta.provenance = [os.path.basename(path) for path in paths]
         meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
         meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") \
             if reference_time else meta["DATE-AVG"].value
@@ -176,7 +176,7 @@ def estimate_polarized_stray_light(
         meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S")
 
         meta.history.add_now(
-            "stray light",
+            "polarized stray light",
             f"Generated with {len(paths)} files running from "
             f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
             f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")

@@ -233,10 +233,12 @@ def bundle_matched_mzp(m_paths: list[str],
         p_time_diff = p_deltas[matching_p]
 
         if m_time_diff > threshold or p_time_diff > threshold:
-            msg = (f"No matching {'M' if m_time_diff > threshold else ''}"
-                   f"{' and ' if m_time_diff > threshold and p_time_diff > threshold else ''}"
-                   f"{'P' if p_time_diff > threshold else ''} for Z at time = {z_datetime.isoformat()}"
-                   )
+            missing = []
+            if m_time_diff > threshold:
+                missing.append("M")
+            if p_time_diff > threshold:
+                missing.append("P")
+            msg = f"No matching {' and '.join(missing)} for Z at {z_datetime.isoformat()}"
             warnings.warn(msg)
         else:
             triplets.append((m_paths[matching_m], z_paths[z_index], p_paths[matching_p]))

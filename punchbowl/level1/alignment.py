@@ -804,7 +804,7 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
     celestial_output = solve_pointing(refining_data, celestial_input, data_object.meta, distortion,
                                       saturation_limit=60_000, observatory=observatory)
 
-    recovered_wcs, _ = calculate_helio_wcs_from_celestial(celestial_output,
+    recovered_wcs = calculate_helio_wcs_from_celestial(celestial_output,
                                                        data_object.meta.astropy_time,
                                                        data_object.data.shape)
 

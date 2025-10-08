@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 
 import numba
 import numpy as np
+from astropy.io import fits
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
-from astropy.io import fits
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning

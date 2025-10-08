@@ -29,6 +29,13 @@ def validate_image_is_square(image: np.ndarray) -> None:
         raise ValueError(msg)
 
 
+def load_mask_file(path: str) -> np.ndarray:
+    """Load a PUNCH instrument mask."""
+    with open(path, "rb") as f:
+        b = f.read()
+    return np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T.astype(bool)
+
+
 @punch_task
 def output_image_task(data: NDCube, output_filename: str) -> None:
     """

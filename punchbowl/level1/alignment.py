@@ -230,16 +230,16 @@ def load_raw_hipparcos_catalog(catalog_path: str = HIPPARCOS_URL) -> pd.DataFram
         "SpType",
         "r_SpType",
     )
-    df = pd.read_csv(
+    catalog_df = pd.read_csv(
         catalog_path,
         sep="|",
         names=column_names,
         usecols=["HIP", "Vmag", "RAdeg", "DEdeg", "Plx"],
         na_values=["     ", "       ", "        ", "            "],
     )
-    df["distance"] = 1000 / df["Plx"]
-    df = df[df["distance"] > 0]
-    return df.iloc[np.argsort(df["Vmag"])]
+    catalog_df["distance"] = 1000 / catalog_df["Plx"]
+    catalog_df = catalog_df[catalog_df["distance"] > 0]
+    return catalog_df.iloc[np.argsort(catalog_df["Vmag"])]
 
 
 def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6) -> pd.DataFrame:
@@ -751,12 +751,12 @@ def build_distortion_model(
                                     "oy": observed_coords[closest_star[i]][1],
                                     "nx": refined_coords[i][0],
                                     "ny": refined_coords[i][1]})
-    df = pd.DataFrame(all_distortions)
+    distortion_df = pd.DataFrame(all_distortions)
 
     xbins, r, c, _ = scipy.stats.binned_statistic_2d(
-        df["oy"],
-        df["ox"],
-        df["ox"] - df["nx"],
+        distortion_df["oy"],
+        distortion_df["ox"],
+        distortion_df["ox"] - distortion_df["nx"],
         "median",
         (num_bins, num_bins),
         expand_binnumbers=True,
@@ -764,9 +764,9 @@ def build_distortion_model(
     )
 
     ybins, _, _, _ = scipy.stats.binned_statistic_2d(
-        df["oy"],
-        df["ox"],
-        df["oy"] - df["ny"],
+        distortion_df["oy"],
+        distortion_df["ox"],
+        distortion_df["oy"] - distortion_df["ny"],
         "median",
         (num_bins, num_bins),
         expand_binnumbers=True,

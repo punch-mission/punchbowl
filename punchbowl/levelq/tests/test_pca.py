@@ -36,6 +36,7 @@ def test_find_bodies_in_image_quarters():
 
 
 @pytest.mark.skipif(sys.platform == "darwin", reason="Skipping PCA test on macOS.")
+@pytest.mark.skipif(sys.platform == "linux", reason="Skipping PCA test on linux by default because of GitHub Actions.")
 def test_that_pca_filter_runs():
     cubes = []
 

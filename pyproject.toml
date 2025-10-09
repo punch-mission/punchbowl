@@ -84,7 +84,6 @@ docs = [
     "ipykernel",
     "sphinxcontrib-mermaid",
 ]
-gpu = ["cupy"]
 dev = ["punchbowl[docs,test]"]
 
 [project.scripts]

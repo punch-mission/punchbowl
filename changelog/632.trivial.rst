@@ -1,0 +1,1 @@
+Tests are updated to use uv on GitHub Actions and skip a test not good for the GitHub environment.

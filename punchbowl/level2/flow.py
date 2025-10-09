@@ -138,10 +138,10 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         spacecraft = SPACECRAFT_OBSCODE[d.meta["OBSCODE"].value]
         output_data.meta[f"HAS_{spacecraft}"] = 1
 
-    output_data.meta["ALL_INPT"] = {output_data.meta["HAS_WFI1"],
-                                    output_data.meta["HAS_WFI2"],
-                                    output_data.meta["HAS_WFI3"],
-                                    output_data.meta["HAS_NFI4"]} == {1}
+    output_data.meta["ALL_INPT"] = {output_data.meta["HAS_WFI1"].value,
+                                    output_data.meta["HAS_WFI2"].value,
+                                    output_data.meta["HAS_WFI3"].value,
+                                    output_data.meta["HAS_NFI4"].value} == {1}
 
     if output_filename is not None:
         output_image_task(output_data, output_filename)

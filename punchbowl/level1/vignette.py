@@ -1,8 +1,8 @@
 import os
 import pathlib
 import warnings
-from datetime import UTC, datetime
 from pathlib import Path
+from datetime import UTC, datetime
 
 import numpy as np
 from astropy.io import fits

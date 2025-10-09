@@ -29,15 +29,11 @@ jobs:
       uses: astral-sh/setup-uv@v6
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        uv pip install ".[test]"
-      env:
-        UV_SYSTEM_PYTHON: 1
+    - name: Install the project
+      run: uv sync --locked --all-extras --dev
     - name: Lint with ruff
       run: |
-        ruff check .
+        uv ruff check .
     - name: Run codespell on source code
       uses: codespell-project/actions-codespell@v2
       with:
@@ -52,10 +48,7 @@ jobs:
         path: docs
     - name: Test with pytest
       run: |
-        uv pip install .
-        NUMBA_DISABLE_JIT=1 pytest --cov=punchbowl/
-      env:
-        UV_SYSTEM_PYTHON: 1
+        NUMBA_DISABLE_JIT=1 uv run pytest --cov=punchbowl/
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       env:

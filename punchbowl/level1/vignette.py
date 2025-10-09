@@ -1,6 +1,7 @@
 import os
 import pathlib
 import warnings
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -295,6 +296,7 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     m = NormalizedMetadata.load_template(f"G{polarizer}4", "1")
     m["DATE-OBS"] = dateobs
     m["FILEVRSN"] = version
+    m["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     cube = NDCube(data=nfiflat.astype("float32"), wcs=cube_wcs, meta=m)
 

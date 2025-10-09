@@ -1,0 +1,1 @@
+Adds a noise correction factor to stray light generation to reduce blocky banding from square root digital transitions in the outer limits of the WFI FOV.

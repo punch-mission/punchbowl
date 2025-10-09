@@ -46,6 +46,8 @@ def estimate_stray_light(filepaths: list[str],
         date_obses.append(cube.meta.datetime)
         if data is None:
             data = np.empty((len(filepaths), *cube.data.shape))
+        noise = np.random.normal(scale=np.sqrt(cube.data)/2.2)
+        cube.data[...] = cube.data + noise
         data[i] = cube.data
         if do_uncertainty:
             if uncertainty is None:

@@ -1,0 +1,1 @@
+`DATE` is formatted the same in stray light models as for other files.

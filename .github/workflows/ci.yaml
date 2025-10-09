@@ -33,7 +33,7 @@ jobs:
       run: uv sync --locked --all-extras --dev
     - name: Lint with ruff
       run: |
-        uv ruff check .
+        uv run ruff check .
     - name: Run codespell on source code
       uses: codespell-project/actions-codespell@v2
       with:

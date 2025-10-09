@@ -48,7 +48,7 @@ jobs:
         path: docs
     - name: Test with pytest
       run: |
-        NUMBA_DISABLE_JIT=1 uv run pytest --cov=punchbowl/
+        NUMBA_DISABLE_JIT=1 uv run pytest --cov=punchbowl/ --cov-report xml:coverage.xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       env:

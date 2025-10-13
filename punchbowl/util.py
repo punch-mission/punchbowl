@@ -221,7 +221,7 @@ def bundle_matched_mzp(m_paths: list[str],
     """Search and bundle MZP triplets closest in time."""
     m_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in m_paths]
     z_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in z_paths]
-    p_dateobs = [parse_datetime(fits.gethe6ader(path, ext=2)["DATE-OBS"]) for path in p_paths]
+    p_dateobs = [parse_datetime(fits.getheader(path, ext=2)["DATE-OBS"]) for path in p_paths]
 
     # use Z as the reference
     triplets = []

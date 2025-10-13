@@ -117,7 +117,7 @@ def estimate_polarized_stray_light(
     triplets_path = bundle_matched_mzp(mfilepaths, zfilepaths, pfilepaths)
     logger.info(f"Matched {len(triplets_path)} MZP triplets from input paths")
 
-    for mpath, zpath, ppath in zip(*triplets_path, strict=True):
+    for mpath, zpath, ppath in triplets_path:
         try:
             cubes = [load_ndcube_from_fits(p, include_provenance=False,
                                            include_uncertainty=do_uncertainty)
@@ -188,6 +188,7 @@ def estimate_polarized_stray_light(
         output_cubes[label] = NDCube(data=background, meta=meta, wcs=wcs, uncertainty=uncertainty)
 
     return output_cubes
+# TODO: Convert output to list of cubes
 
 @punch_task
 def remove_stray_light_task(data_object: NDCube, #noqa: C901

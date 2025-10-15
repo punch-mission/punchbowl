@@ -11,6 +11,7 @@ from prefect import get_run_logger
 from scipy.special import erfinv
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data.punch_io import load_many_cubes_iterable
 from punchbowl.exceptions import (
     CantInterpolateWarning,
     IncorrectPolarizationStateError,
@@ -22,7 +23,7 @@ from punchbowl.util import average_datetime, bundle_matched_mzp, interpolate_dat
 
 
 @punch_flow
-def estimate_stray_light(filepaths: list[str],
+def estimate_stray_light(filepaths: list[str], # noqa: C901
                          percentile: float = 1,
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
@@ -37,22 +38,30 @@ def estimate_stray_light(filepaths: list[str],
     data = None
     uncertainty = None
     date_obses = []
-    for i, path in enumerate(sorted(filepaths)):
-        try:
-            cube = load_ndcube_from_fits(path, include_provenance=False, include_uncertainty=do_uncertainty)
-        except:
-            logger.warning(f"Error reading {path}")
-            raise
+    n_failed = 0
+    j = 0
+    for i, result in enumerate(load_many_cubes_iterable(filepaths, n_workers=num_workers, allow_errors=True)):
+        if isinstance(result, str):
+            logger.warning(f"Loading {filepaths[i]} failed")
+            logger.warning(result)
+            n_failed += 1
+            if n_failed > 10:
+                raise RuntimeError(f"{n_failed} files failed to load, stopping")
+            continue
+        cube = result
         date_obses.append(cube.meta.datetime)
         if data is None:
             data = np.empty((len(filepaths), *cube.data.shape))
-        data[i] = cube.data
+        data[j] = cube.data
+        j += 1
         if do_uncertainty:
             if uncertainty is None:
                 uncertainty = np.zeros_like(cube.data)
             if cube.uncertainty is not None:
                 # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
                 uncertainty += cube.uncertainty.array ** 2
+    # Crop the unused end of the array if we had a few files that errored out
+    data = data[:j+1]
 
     logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                 f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")

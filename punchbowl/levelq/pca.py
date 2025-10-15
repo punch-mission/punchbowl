@@ -1,11 +1,9 @@
 import os
 import logging
-import threading
-import contextlib
-import contextvars
 import multiprocessing as mp
 import logging.handlers
 from itertools import repeat
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import scipy.signal
@@ -22,10 +20,6 @@ from punchbowl.data import NormalizedMetadata
 from punchbowl.prefect import punch_task
 from punchbowl.util import DataLoader, load_image_task
 
-# We're suffering two global variables, to facilitate passing information to forker worker processes
-_all_files_to_fit = None
-_log_queue = None
-
 
 @punch_task
 def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader | str],
@@ -33,27 +27,16 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
                n_strides: int = 8, blend_size: int = 70) -> None:
     """Run PCA-based filtering."""
     logger = get_run_logger()
-
-    try:
-        # We stash the loaded images in a global variable so that, when we fork for parallel processing,
-        # those images don't have to be individually copied to each worker process. The try/finally block ensures we
-        # don't leak this memory.
-        global _all_files_to_fit # noqa: PLW0603
-        _all_files_to_fit, bodies_in_quarter, to_subtract, good_data_mask, is_outlier = load_files(
-            input_cubes, files_to_fit, blend_size)
-        # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
-        ctx = mp.get_context("fork")
-        with (_log_forwarder(),
-              threadpool_limits(min(25, os.cpu_count())),
-              ctx.Pool(min(n_strides, os.cpu_count())) as p):
-            for subtracted_cube_indices, subtracted_images in p.starmap(
-                    _call_pca_filter_one_stride, zip(range(n_strides), repeat(n_strides), repeat(bodies_in_quarter),
-                                               repeat(to_subtract), repeat(n_components), repeat(med_filt),
-                                               repeat(blend_size), repeat(good_data_mask), repeat(is_outlier))):
-                for index, image in zip(subtracted_cube_indices, subtracted_images, strict=False):
-                    input_cubes[index].data[...] = image
-    finally:
-        _all_files_to_fit = None
+    all_files_to_fit, bodies_in_quarter, to_subtract, good_data_mask, is_outlier = load_files(
+        input_cubes, files_to_fit, blend_size)
+    # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
+    with threadpool_limits(min(25, os.cpu_count())), ThreadPoolExecutor(min(n_strides, os.cpu_count())) as p:
+        for subtracted_cube_indices, subtracted_images in p.map(
+                pca_filter_one_stride, repeat(all_files_to_fit), range(n_strides), repeat(n_strides),
+                repeat(bodies_in_quarter), repeat(to_subtract), repeat(n_components), repeat(med_filt),
+                repeat(blend_size), repeat(good_data_mask), repeat(is_outlier), repeat(logger)):
+            for index, image in zip(subtracted_cube_indices, subtracted_images, strict=False):
+                input_cubes[index].data[...] = image
 
     logger.info("PCA filtering finished")
 
@@ -146,36 +129,19 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     return all_files_to_fit, bodies_in_quarter, loaded_input_list_indices, good_data_mask, is_outlier
 
 
-def _call_pca_filter_one_stride(*args: list, **kwargs: dict) -> tuple[np.ndarray, np.ndarray]:
-    logger = kwargs.get("logger")
-    if logger is None:
-        # This sets up a logger that forwards entries through a queue to the main process, where they can be forwarded
-        # to Prefect. This is required because Prefect can't log from forked worker processes.
-        logger = logging.getLogger()
-        logger.addHandler(logging.handlers.QueueHandler(_log_queue))
-        logger.setLevel(logging.INFO)
-        kwargs["logger"] = logger
-
-    try:
-        return pca_filter_one_stride(*args, **kwargs)
-    except Exception:
-        logger.exception("Exception in worker process")
-        raise
-
-
-def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.ndarray, input_list_indices: np.ndarray,
-                          n_components: int, med_filt: int, blend_size: int, good_data_mask: np.ndarray,
-                          is_outlier: np.ndarray, logger: logging.Logger,
+def pca_filter_one_stride(all_files_to_fit: np.ndarray, stride: int, n_strides: int, bodies_in_quarter: np.ndarray,
+                          input_list_indices: np.ndarray, n_components: int, med_filt: int, blend_size: int,
+                          good_data_mask: np.ndarray, is_outlier: np.ndarray, logger: logging.Logger,
                           ) -> tuple[np.ndarray, np.ndarray]:
     """Run PCA-based filtering for one stride position."""
-    stride_filter = np.arange(len(_all_files_to_fit)) % n_strides == stride
+    stride_filter = np.arange(len(all_files_to_fit)) % n_strides == stride
     # This will mark the images we'll be subtracting from---those are the only ones we'll drop from the fitting
     to_subtract_filter = stride_filter * (input_list_indices >= 0)
     if not np.any(to_subtract_filter):
         logger.info(f"Stride {stride} has no images to subtract")
         return [], []
 
-    images_to_subtract = _all_files_to_fit[to_subtract_filter]
+    images_to_subtract = all_files_to_fit[to_subtract_filter]
     # This tracks where each image-to-be-subtracted is in the main list of NDCubes
     subtracted_cube_indices = input_list_indices[to_subtract_filter]
 
@@ -183,7 +149,7 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
     # reduce that, we have a small blend region at those seams. Here we define a mask that's 1 in the core of a
     # quarter and tapers to 0 through the blend region.
     yy, _ = np.indices(images_to_subtract.shape[1:])
-    blend_mask = np.clip(((_all_files_to_fit.shape[1] / 2 - 1 + blend_size / 2) - yy) / blend_size, 0, 1)
+    blend_mask = np.clip(((all_files_to_fit.shape[1] / 2 - 1 + blend_size / 2) - yy) / blend_size, 0, 1)
     blend_mask = blend_mask * blend_mask.T
     # Flip it around to make one for each quarter
     blend_masks = [blend_mask, blend_mask[:, ::-1], blend_mask[::-1], blend_mask[::-1, ::-1]]
@@ -193,7 +159,7 @@ def pca_filter_one_stride(stride: int, n_strides: int, bodies_in_quarter: np.nda
         # We mark the images that don't have any planets in the quarter we're filtering for (since those can
         # contaminate the PCA components)
         no_bodies_in_quarter = np.all(bodies_in_quarter[:, :, i] == False, axis=1) # noqa: E712
-        images_to_fit = _all_files_to_fit[no_bodies_in_quarter * ~to_subtract_filter * ~is_outlier]
+        images_to_fit = all_files_to_fit[no_bodies_in_quarter * ~to_subtract_filter * ~is_outlier]
         tag = f"stride {stride}, quarter {i+1}"
         logger.info(f"Starting to filter {tag}, fitting {len(images_to_fit)} images")
         filtered_by_quarter = run_pca_filtering(images_to_subtract, images_to_fit, n_components, med_filt, tag,
@@ -266,49 +232,3 @@ def find_bodies_in_image_quarters(frame: str | NDCube | tuple[NormalizedMetadata
             in_right and in_top]
         results.append(body_in_quarter)
     return results
-
-
-@contextlib.contextmanager
-def _log_forwarder() -> None:
-    # This logging situation is kind of a mess. We really want to parallelize with multiprocessing so we can fork and
-    # not copy all the images to each worker. But Prefect logging from those forked processes doesn't work (nor does
-    # logging print statements), so in the workers we need to set up a logger than puts log entries in a
-    # shared-memory Queue, and then on the main process side we need to spawn a thread that monitors the queue and
-    # forwards log entries to Prefect.
-
-    # The log queue has to be a global variable so the worker processes can retrieve it
-    global _log_queue # noqa: PLW0603
-
-    def _logger_consumer_thread(logging_q: mp.Queue) -> None:
-        # This gets the right Prefect metadata attached to our forwarded log entries
-        current_thread_context = dict(contextvars.copy_context().items())
-
-        logger = get_run_logger()
-
-        while True:
-            record = logging_q.get()
-            if record is None:
-                break
-            logger.log(level=record.levelno, msg=record.msg, extra=current_thread_context)
-
-    try:
-        _log_queue = mp.Queue()
-        # This is part of getting the right Prefect metadata attached to our forwarded log entries
-        current_thread_context = contextvars.copy_context()
-
-        logging_q_consumer_thread = threading.Thread(
-            target=current_thread_context.run,
-            args=(lambda: _logger_consumer_thread(_log_queue),),
-            # Daemonizing the thread allows the Python process to quit when all non-daemonized threads terminate
-            daemon=True,
-        )
-        logging_q_consumer_thread.start()
-        yield
-    finally:
-        try: # noqa: SIM105
-            # Signal to the thread it can quit
-            _log_queue.put(None)
-        except: # noqa: S110, E722
-            # Don't let problems here stop us from clearing the global variable
-            pass
-        _log_queue = None

@@ -13,6 +13,7 @@ from scipy.interpolate import griddata
 from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data.punch_io import load_many_cubes_iterable
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
@@ -247,29 +248,6 @@ def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
     return griddata((x, y), known_values, (grid_x, grid_y), method="cubic")
 
 
-def _load_one_file(filename: str) -> NDCube:
-    """
-    Support for loading files in parallel via multiprocessing.
-
-    Parameters
-    ----------
-    filename : str
-        The file to load
-
-    Returns
-    -------
-    data_object : `NDCube`
-        The loaded data
-
-    """
-    try:
-        cube = load_ndcube_from_fits(filename)
-    except: # noqa: E722
-        return None, filename
-    data = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
-    return data, cube.meta
-
-
 @punch_flow(log_prints=True)
 def construct_f_corona_model(filenames: list[str], # noqa: C901
                              clip_factor: float = 3.0,
@@ -306,22 +284,26 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     logger.info("beginning data loading")
     dates = []
     n_failed = 0
-    with mp.Pool(processes=num_workers) as pool:
-        for i, result in enumerate(pool.imap(_load_one_file, filenames)):
-            if result[0] is None:
-                logger.warning(f"Loading {result[1]} failed")
-                n_failed += 1
-                if n_failed > 10:
-                    raise RuntimeError(f"{n_failed} files failed to load, stopping")
-                continue
-            data, meta = result
-            dates.append(meta.datetime)
-            data_cube[i] = data
-            obs_times.append(meta.datetime.timestamp())
-            meta_list.append(meta)
-            if i % 50 == 0:
-                logger.info(f"Loaded {i}/{len(filenames)} files")
-    logger.info("ending data loading")
+    j = 0
+    for i, result in enumerate(load_many_cubes_iterable(filenames, allow_errors=True, n_workers=num_workers)):
+        if isinstance(result, str):
+            logger.warning(f"Loading {filenames[i]} failed")
+            logger.warning(result)
+            n_failed += 1
+            if n_failed > 10:
+                raise RuntimeError(f"{n_failed} files failed to load, stopping")
+            continue
+        cube = result
+        dates.append(cube.meta.datetime)
+        data_cube[j] = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
+        j += 1
+        obs_times.append(cube.meta.datetime.timestamp())
+        meta_list.append(cube.meta)
+        if i % 50 == 0:
+            logger.info(f"Loaded {i}/{len(filenames)} files")
+    # Crop the unused end of the array if we had a few files that errored out
+    data_cube = data_cube[:j+1]
+    logger.info("end of data loading")
     output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 

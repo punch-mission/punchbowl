@@ -1,5 +1,4 @@
 import os
-import multiprocessing
 from datetime import UTC, datetime
 
 import numpy as np
@@ -8,8 +7,9 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import flow, get_run_logger
 
-from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits
+from punchbowl.data import NormalizedMetadata, get_base_file_name
 from punchbowl.data.meta import set_spacecraft_location_to_earth
+from punchbowl.data.punch_io import load_many_cubes
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_wcs
 from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
@@ -63,12 +63,7 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     if data_root is not None:
         input_paths = [os.path.join(data_root, path) for path in input_paths]
 
-    # This parallelizes more effectively than running a lot of load_image_task in parallel, due to how Prefect would
-    # schedule those tasks. Experience shows that the main thread quickly gets overwhelmed by workers sending back
-    # loaded images, so more than a few worker processes doesn't help anything (but this is still faster than loading
-    # images in series!)
-    with multiprocessing.Pool(3) as p:
-        data_cubes += p.map(load_ndcube_from_fits, input_paths, chunksize=10)
+    data_cubes += load_many_cubes(input_paths, n_workers=3)
 
     logger.info("Loaded images to be subtracted")
 

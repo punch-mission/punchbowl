@@ -253,6 +253,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
                              clip_factor: float = 3.0,
                              reference_time: str | None = None,
                              num_workers: int = 8,
+                             num_loaders: int | None = None,
                              fill_nans: bool = False,
                              polarized: bool = False) -> list[NDCube]:
     """Construct a full F corona model."""
@@ -285,7 +286,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     dates = []
     n_failed = 0
     j = 0
-    for i, result in enumerate(load_many_cubes_iterable(filenames, allow_errors=True, n_workers=num_workers)):
+    for i, result in enumerate(load_many_cubes_iterable(filenames, allow_errors=True, n_workers=num_loaders)):
         if isinstance(result, str):
             logger.warning(f"Loading {filenames[i]} failed")
             logger.warning(result)

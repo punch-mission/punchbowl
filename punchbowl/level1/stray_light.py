@@ -29,7 +29,8 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                          reference_time: datetime | str | None = None,
                          exclude_percentile: float = 50,
                          erfinv_scale: float = 0.75,
-                         num_workers: int | None = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+                         num_workers: int | None = None,
+                         num_loaders: int | None = None) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Estimate the fixed stray light pattern using a percentile."""
     logger = get_run_logger()
     logger.info(f"Running with {len(filepaths)} input files")
@@ -40,7 +41,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     date_obses = []
     n_failed = 0
     j = 0
-    for i, result in enumerate(load_many_cubes_iterable(filepaths, n_workers=num_workers, allow_errors=True)):
+    for i, result in enumerate(load_many_cubes_iterable(filepaths, n_workers=num_loaders, allow_errors=True)):
         if isinstance(result, str):
             logger.warning(f"Loading {filepaths[i]} failed")
             logger.warning(result)

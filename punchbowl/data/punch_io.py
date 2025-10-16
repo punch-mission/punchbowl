@@ -18,7 +18,7 @@ from astropy.io.fits import Header
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, FITSFixedWarning
 from glymur import Jp2k, jp2box
-from matplotlib.colors import LogNorm
+from matplotlib.colors import PowerNorm
 from ndcube import NDCube
 from PIL import Image, ImageDraw, ImageFont
 
@@ -140,7 +140,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
                f"Found: {os.path.splitext(filename)[1]}")
         raise ValueError(msg)
 
-    norm = LogNorm(vmin=vmin, vmax=vmax)
+    norm = PowerNorm(gamma = 1/2.2, vmin=vmin, vmax=vmax)
 
     if layer is not None:  # noqa: SIM108
         image = cube.data[layer, :, :]

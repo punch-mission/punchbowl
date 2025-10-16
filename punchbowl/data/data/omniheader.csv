@@ -109,6 +109,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 9,keyword,CALSL1,,second stray light model,str,TRUE,TRUE,
 10,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
 10,keyword,OUTLIER,,Probable bad-image status,int,TRUE,TRUE,0
+10,keyword,BADPKTS,,Whether image data suffers from corrupted packets,int,TRUE,TRUE,0
 10,keyword,BUNIT,2.009e+07 W/(m2 sr),Units of observation,str,TRUE,TRUE,2.009e+07 W/(m2 sr)
 10,keyword,DATAZER,,number of pixels=0,int,TRUE,TRUE,
 10,keyword,DATASAT,,number of saturated pixels,int,TRUE,TRUE,

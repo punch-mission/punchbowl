@@ -1,4 +1,3 @@
-import multiprocessing as mp
 from datetime import UTC, datetime
 
 import numpy as np
@@ -7,8 +6,9 @@ from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punch_io import load_many_cubes_iterable
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs
-from punchbowl.level3.f_corona_model import _load_one_file, fill_nans_with_interpolation, model_fcorona_for_cube
+from punchbowl.level3.f_corona_model import fill_nans_with_interpolation, model_fcorona_for_cube
 from punchbowl.prefect import punch_flow
 
 
@@ -17,6 +17,7 @@ def construct_qp_f_corona_model(filenames: list[str],
                                 clip_factor: float = 3.0,
                                 reference_time: str | None = None,
                                 num_workers: int = 8,
+                                num_loaders: int = 8,
                                 fill_nans: bool = True) -> list[NDCube]:
     """Construct QuickPUNCH F corona model."""
     logger = get_run_logger()
@@ -46,12 +47,26 @@ def construct_qp_f_corona_model(filenames: list[str],
 
     logger.info("beginning data loading")
     dates = []
-    with mp.Pool(processes=num_workers) as pool:
-        for i, (data, meta) in enumerate(pool.imap(_load_one_file, filenames)):
-            dates.append(meta.datetime)
-            data_cube[..., i] = data
-            obs_times.append(meta.datetime.timestamp())
-            meta_list.append(meta)
+    n_failed = 0
+    j = 0
+    for i, result in enumerate(load_many_cubes_iterable(filenames, allow_errors=True, n_workers=num_loaders)):
+        if isinstance(result, str):
+            logger.warning(f"Loading {filenames[i]} failed")
+            logger.warning(result)
+            n_failed += 1
+            if n_failed > 10:
+                raise RuntimeError(f"{n_failed} files failed to load, stopping")
+            continue
+        cube = result
+        dates.append(cube.meta.datetime)
+        data_cube[..., j] = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
+        j += 1
+        obs_times.append(cube.meta.datetime.timestamp())
+        meta_list.append(cube.meta)
+        if i % 50 == 0:
+            logger.info(f"Loaded {i}/{len(filenames)} files")
+    # Crop the unused end of the array if we had a few files that errored out
+    data_cube = data_cube[:j+1]
     logger.info("ending data loading")
     output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

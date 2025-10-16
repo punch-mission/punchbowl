@@ -107,60 +107,87 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     return [out_cube]
 
 @punch_flow
-def estimate_polarized_stray_light(
+def estimate_polarized_stray_light( # noqa: C901
                 mfilepaths: list[str],
                 zfilepaths: list[str],
                 pfilepaths: list[str],
                 do_uncertainty: bool = True,
                 reference_time: datetime | str | None = None,
-                ) -> tuple[NDCube, NDCube, NDCube]:
+                num_loaders: int | None = None,
+                ) -> list[NDCube]:
     """Estimate the polarized stray light pattern using minimum indexing method."""
     logger = get_run_logger()
 
     if isinstance(reference_time, str):
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
 
+    n_failed = 0
     mcube_list, zcube_list, pcube_list = [], [], []
+    for i, result in enumerate(load_many_cubes_iterable(mfilepaths, n_workers=num_loaders, allow_errors=True,
+                                                        include_provenance=False, include_uncertainty=do_uncertainty)):
+        if isinstance(result, str):
+            logger.warning(f"Loading {mfilepaths[i]} failed")
+            logger.warning(result)
+            n_failed += 1
+            if n_failed > 10:
+                raise RuntimeError(f"{n_failed} files failed to load, stopping")
+            continue
+        mcube_list.append(result)
+        if i % 50 == 0:
+            logger.info(f"Loaded {i+1}/{len(mfilepaths)} M files")
+
+    for i, result in enumerate(load_many_cubes_iterable(zfilepaths, n_workers=num_loaders, allow_errors=True,
+                                                        include_provenance=False, include_uncertainty=do_uncertainty)):
+        if isinstance(result, str):
+            logger.warning(f"Loading {zfilepaths[i]} failed")
+            logger.warning(result)
+            n_failed += 1
+            if n_failed > 10:
+                raise RuntimeError(f"{n_failed} files failed to load, stopping")
+            continue
+        zcube_list.append(result)
+        if i % 50 == 0:
+            logger.info(f"Loaded {i+1}/{len(zfilepaths)} Z files")
+
+    for i, result in enumerate(load_many_cubes_iterable(pfilepaths, n_workers=num_loaders, allow_errors=True,
+                                                        include_provenance=False, include_uncertainty=do_uncertainty)):
+        if isinstance(result, str):
+            logger.warning(f"Loading {pfilepaths[i]} failed")
+            logger.warning(result)
+            n_failed += 1
+            if n_failed > 10:
+                raise RuntimeError(f"{n_failed} files failed to load, stopping")
+            continue
+        pcube_list.append(result)
+        if i % 50 == 0:
+            logger.info(f"Loaded {i+1}/{len(pfilepaths)} P files")
+
     date_obses = []
     uncertainty = None
 
-    triplets_path = bundle_matched_mzp(mfilepaths, zfilepaths, pfilepaths)
-    logger.info(f"Matched {len(triplets_path)} MZP triplets from input paths")
+    triplets = bundle_matched_mzp(mcube_list, zcube_list, pcube_list)
+    logger.info(f"Matched {len(triplets)} MZP triplets")
 
-    for mpath, zpath, ppath in zip(*triplets_path, strict=True):
-        try:
-            cubes = [load_ndcube_from_fits(p, include_provenance=False,
-                                           include_uncertainty=do_uncertainty)
-                for p in [mpath, zpath, ppath]]
-        except Exception as e:
-            logger.warning(f"Error reading {mpath}, {zpath}, or {ppath}: {e}")
-            raise
-
-        mcube, zcube, pcube = cubes
+    for mcube, zcube, pcube in triplets:
         date_obses.append(mcube.meta.datetime)
-        mcube_list.append(mcube.data)
-        zcube_list.append(zcube.data)
-        pcube_list.append(pcube.data)
-
         if do_uncertainty:
             if uncertainty is None:
                 uncertainty = np.zeros_like(mcube.data)
-            for cube in cubes:
+            for cube in [mcube, zcube, pcube]:
                 if cube.uncertainty is not None:
                     uncertainty += cube.uncertainty.array ** 2
-        else:
-            uncertainty = None
 
     logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                 f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
 
-    mdata = np.stack(mcube_list)
-    zdata = np.stack(zcube_list)
-    pdata = np.stack(pcube_list)
+    mdata = np.stack([cube.data for cube in mcube_list])
+    zdata = np.stack([cube.data for cube in pcube_list])
+    pdata = np.stack([cube.data for cube in zcube_list])
 
     # Estimate total brightness and find index of minimum
     tbcube = 2 / 3 * (mdata + zdata + pdata)
-    min_tb_index = np.nanargmin(np.where(np.isnan(tbcube), np.inf, tbcube), axis=0)[None, :, :]
+    np.nan_to_num(tbcube, nan=np.inf, copy=False)
+    min_tb_index = np.argmin(tbcube, axis=0)[None, :, :]
 
     # Estimate MZP background based on index
     m_background = np.take_along_axis(mdata, min_tb_index, axis=0)[0]
@@ -170,14 +197,14 @@ def estimate_polarized_stray_light(
     if do_uncertainty:
         uncertainty = np.sqrt(uncertainty) / len(mfilepaths)
 
-    output_cubes = {}
-    for label, cube, background, paths in zip(
-        ["M", "Z", "P"], [mcube, zcube, pcube], [m_background, z_background, p_background],
-            zip(*triplets_path, strict=True), strict=True):
-        out_type = "S" + cube.meta.product_code[1:]
-        meta = NormalizedMetadata.load_template(out_type, "1")
+    output_cubes = []
+    for label, background, cubes in zip(
+        ["M", "Z", "P"], [m_background, z_background, p_background],
+            (mcube_list, zcube_list, pcube_list), strict=True):
+        out_type = "S" + label
+        meta = NormalizedMetadata.load_template(out_type + cubes[0].meta["OBSCODE"].value, "1")
 
-        meta.provenance = [os.path.basename(path) for path in paths]
+        meta.provenance = [cube.meta["FILENAME"].value for cube in cubes]
         meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
         meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") \
             if reference_time else meta["DATE-AVG"].value
@@ -187,15 +214,15 @@ def estimate_polarized_stray_light(
 
         meta.history.add_now(
             "polarized stray light",
-            f"Generated with {len(paths)} files running from "
+            f"Generated with {len(cubes)} files running from "
             f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
             f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
-        meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
+        meta["FILEVRSN"] = cubes[0].meta["FILEVRSN"].value
 
-        wcs = cube.wcs
+        wcs = cubes[0].wcs.deepcopy()
         wcs.wcs.pc = np.eye(2)
 
-        output_cubes[label] = NDCube(data=background, meta=meta, wcs=wcs, uncertainty=uncertainty)
+        output_cubes.append(NDCube(data=background, meta=meta, wcs=wcs, uncertainty=uncertainty))
 
     return output_cubes
 

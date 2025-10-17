@@ -61,6 +61,8 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
             if cube.uncertainty is not None:
                 # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
                 uncertainty += cube.uncertainty.array ** 2
+        if (i+1) % 50 == 0:
+            logger.info(f"Loaded {i+1}/{len(filepaths)} files")
     # Crop the unused end of the array if we had a few files that errored out
     data = data[:j+1]
 
@@ -133,7 +135,7 @@ def estimate_polarized_stray_light( # noqa: C901
                 raise RuntimeError(f"{n_failed} files failed to load, stopping")
             continue
         mcube_list.append(result)
-        if i % 50 == 0:
+        if (i + 1) % 50 == 0:
             logger.info(f"Loaded {i+1}/{len(mfilepaths)} M files")
 
     for i, result in enumerate(load_many_cubes_iterable(zfilepaths, n_workers=num_loaders, allow_errors=True,
@@ -146,7 +148,7 @@ def estimate_polarized_stray_light( # noqa: C901
                 raise RuntimeError(f"{n_failed} files failed to load, stopping")
             continue
         zcube_list.append(result)
-        if i % 50 == 0:
+        if (i + 1) % 50 == 0:
             logger.info(f"Loaded {i+1}/{len(zfilepaths)} Z files")
 
     for i, result in enumerate(load_many_cubes_iterable(pfilepaths, n_workers=num_loaders, allow_errors=True,
@@ -159,7 +161,7 @@ def estimate_polarized_stray_light( # noqa: C901
                 raise RuntimeError(f"{n_failed} files failed to load, stopping")
             continue
         pcube_list.append(result)
-        if i % 50 == 0:
+        if (i + 1) % 50 == 0:
             logger.info(f"Loaded {i+1}/{len(pfilepaths)} P files")
 
     date_obses = []

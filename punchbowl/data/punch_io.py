@@ -18,7 +18,7 @@ from astropy.io.fits import Header
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, FITSFixedWarning
 from glymur import Jp2k, jp2box
-from matplotlib.colors import LogNorm
+from matplotlib.colors import PowerNorm
 from ndcube import NDCube
 from PIL import Image, ImageDraw, ImageFont
 
@@ -102,7 +102,8 @@ def write_ndcube_to_quicklook(cube: NDCube,
                               vmax: float = 8e-12,
                               include_meta: bool = True,
                               annotation: str | None = None,
-                              color: bool = False) -> None:
+                              color: bool = False,
+                              gamma: float = 1/2.2) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
 
@@ -125,6 +126,8 @@ def write_ndcube_to_quicklook(cube: NDCube,
         can access metadata by key, e.g. "typecode={TYPECODE}" would write the data's typecode into the image
     color : bool
         flag to generate RGB quicklook files, grayscale by default
+    gamma : float
+        power law exponent used for color normalization
 
     Returns
     -------
@@ -140,7 +143,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
                f"Found: {os.path.splitext(filename)[1]}")
         raise ValueError(msg)
 
-    norm = LogNorm(vmin=vmin, vmax=vmax)
+    norm = PowerNorm(gamma = gamma, vmin=vmin, vmax=vmax)
 
     if layer is not None:  # noqa: SIM108
         image = cube.data[layer, :, :]

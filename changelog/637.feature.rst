@@ -1,0 +1,1 @@
+Updates the quicklook image generation to use a power normalization with a gamma of 2.2 rather than the original log normalization.

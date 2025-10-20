@@ -114,7 +114,8 @@ def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_sha
     # https://github.com/astropy/astropy/issues/16244
     # https://github.com/astropy/astropy/issues/16245
     # To work around this, deep copy the trefoil WCS, which is common to each reprojection
-    out_layers = [reproject_cube.submit(d, trefoil_wcs.deepcopy(), trefoil_shape) if d is not None else None for d in data]
+    out_layers = [reproject_cube.submit(d, trefoil_wcs.deepcopy(), trefoil_shape) if d is not None else None
+                  for d in data]
 
     return [NDCube(data=out_layers[i].result()[0],
                    uncertainty=StdDevUncertainty(out_layers[i].result()[1]),

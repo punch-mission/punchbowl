@@ -20,6 +20,7 @@ def decode_sqrt(
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
     overwrite_table: bool = False,
+    reconstitute_noise: bool = True,
 ) -> np.ndarray:
     """
     Square root decode between specified bitrate values.
@@ -42,6 +43,8 @@ def decode_sqrt(
         CCD read noise level [DN]
     overwrite_table
         Toggle to regenerate and overwrite existing decoding table
+    reconstitute_noise
+        If True, adds appropriate noise after decoding. Otherwise, only square root decodes.
 
     Returns
     -------
@@ -106,6 +109,9 @@ def decode_sqrt(
     else:
         out_data = decode_sqrt_by_table(data, table_bottom)
 
+    if reconstitute_noise:
+        noise = np.random.normal(scale=np.sqrt(out_data) / 2.2)
+        return out_data + noise
     return out_data
 
 

@@ -27,6 +27,12 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
     new_type = "CIM" if data_list[0].meta["TYPECODE"].value == "CT" else "PIM"
 
+    for cube in data_list:
+        # We'll want to grab the history we accumulate through this flow and put it in the final product,
+        # but the per-file history up to now is kind of meaningless for the merged final product.
+        if cube is not None:
+            cube.meta.history.clear()
+
     data_list = [subtract_f_corona_background_task(d,
                                                    before_f_corona_model_path,
                                                    after_f_corona_model_path) for d in data_list]
@@ -35,10 +41,12 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
     out_list = [NDCube(data=d.data, wcs=d.wcs, meta=output_meta) for d in data_list]
     for o, d in zip(out_list, data_list, strict=True):
         o.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        o.meta["DATE-AVG"] = d.meta["DATE-AVG"].value
-        o.meta["DATE-OBS"] = d.meta["DATE-OBS"].value
-        o.meta["DATE-BEG"] = d.meta["DATE-BEG"].value
-        o.meta["DATE-END"] = d.meta["DATE-END"].value
+        o.meta.history = d.meta.history
+        o.meta["CALFCOR1"] = os.path.basename(before_f_corona_model_path)
+        o.meta["CALFCOR2"] = os.path.basename(after_f_corona_model_path)
+        for key in ["FILEVRSN", "ALL_INPT", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4", "DATE-AVG", "DATE-OBS",
+                    "DATE-BEG", "DATE-END"]:
+            o.meta[key] = d.meta[key].value
         o = set_spacecraft_location_to_earth(o)   # noqa: PLW2901
 
     logger.info("ending level 3 PIM/CIM flow")
@@ -70,11 +78,12 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     for o in data_list:
         out_meta: NormalizedMetadata = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3")
         out_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        out_meta["DATE-AVG"] = o.meta["DATE-AVG"].value
-        out_meta["DATE-OBS"] = o.meta["DATE-OBS"].value
-        out_meta["DATE-BEG"] = o.meta["DATE-BEG"].value
-        out_meta["DATE-END"] = o.meta["DATE-END"].value
         out_meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+        out_meta.history = o.meta.history
+        out_meta["CALSTAR1"] = starfield_background_path
+        for key in ["FILEVRSN", "ALL_INPT", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4", "DATE-AVG", "DATE-OBS",
+                    "DATE-BEG", "DATE-END"]:
+            out_meta[key] = o.meta[key].value
         output_data = NDCube(
             data=o.data,
             uncertainty=o.uncertainty,

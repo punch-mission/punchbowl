@@ -28,7 +28,7 @@ SPACECRAFT_OBSCODE = {"1": "WFI1",
 
 
 @punch_flow
-def level2_core_flow(data_list: list[str] | list[NDCube],
+def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
                      voter_filenames: list[list[str]],
                      polarized: bool | None = None,
                      trefoil_wcs: WCS | None = None,
@@ -71,6 +71,11 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
 
     if data_list and not all(cube is None for cube in data_list):
+        for cube in data_list:
+            # We'll want to grab the history we accumulate through this flow and put it in the final product,
+            # but the per-file history up to now is kind of meaningless for the merged final product.
+            if cube is not None:
+                cube.meta.history.clear()
         if polarized is None:
             polarized = data_list[0].meta["TYPECODE"].value[0] == "P"
 
@@ -109,6 +114,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube],
         merger = merge_many_polarized_task if polarized else merge_many_clear_task
         output_data = merger(data_list, trefoil_wcs)
         output_data.meta["FILEVRSN"] = find_first_existing_file(data_list).meta["FILEVRSN"].value
+        history_src = next(d for d in data_list if d is not None)
+        output_data.meta.history = history_src.meta.history
     else:
         if polarized is None:
             msg = "A polarization state must be provided"

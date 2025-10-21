@@ -284,8 +284,14 @@ def inpaint_nans(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
         raise RuntimeError(msg)
     kernel = np.ones((kernel_size, kernel_size))
     kernel[kernel_size//2, kernel_size//2] = 0
+    last_nan_mask = np.zeros(image.shape, dtype=bool)
     while np.any(np.isnan(image)):
         nan_mask = np.isnan(image)
+        if np.all(nan_mask == last_nan_mask):
+            # Nothing's changed, so let's bail out. This can happen if an image has corrupted packets, causing every
+            # row to pass the row threshold and thus every pixel is NaN
+            break
+        last_nan_mask = nan_mask
         image[nan_mask] = 0
         neighbors = convolve2d(~nan_mask, kernel, mode="same", boundary="symm")
         convolved = convolve2d(image, kernel, mode="same", boundary="symm")

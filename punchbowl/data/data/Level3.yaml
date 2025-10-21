@@ -14,6 +14,8 @@ Level:
     Temporal Information:
     Instrument and Spacecraft State:
     World Coordinate System:
+    Calibration Data:
+        omits: [CALCF, CALVI, CALPSF, CALPM, CALSL0, CALSL1]
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
@@ -50,14 +52,14 @@ Kinds:
             NAXIS: 2
             NAXIS1: 4096
             NAXIS2: 4096
-        omits: [Velocity, Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [Velocity, Calibration Data, Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
     Velocity:
         overrides:
             NAXIS: 2
             NAXIS1: 1440
             NAXIS2: 4
-        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, POLAR]
+        omits: [Calibration Data, NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, POLAR]
 
 
 # Product specifications

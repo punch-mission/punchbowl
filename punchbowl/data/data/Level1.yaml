@@ -18,6 +18,7 @@ Level:
     Camera and Readout State:
     Onboard Image Processing:
     Calibration Data:
+        omits: [CALFCOR1, CALFCOR2, CALSTAR1, CALSTAR2]
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:

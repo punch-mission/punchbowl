@@ -280,7 +280,8 @@ def write_ndcube_to_fits(cube: NDCube,
 def _pack_uncertainty(cube: NDCube) -> np.ndarray:
     """Compress the uncertainty for writing to file."""
     output = np.zeros_like(cube.data) - 999 if cube.uncertainty is None else 1 / (cube.uncertainty.array / cube.data)
-    output[cube.mask] = 0
+    if cube.mask is not None:
+        output[cube.mask] = 0
     return output
 
 def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -> np.ndarray:

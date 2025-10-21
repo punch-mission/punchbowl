@@ -5,10 +5,14 @@ import string
 import hashlib
 import os.path
 import warnings
+import traceback
 import subprocess
+import multiprocessing as mp
 from copy import deepcopy
 from typing import Any
 from pathlib import Path
+from itertools import repeat
+from concurrent.futures import ProcessPoolExecutor
 
 import astropy.units as u
 import lxml.etree as et
@@ -378,3 +382,68 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
         unit=unit,
         mask=mask,
     )
+
+
+def _load_many_cubes_caller(path: str | Path, kwargs: dict, allow_errors: bool) -> NDCube | str:
+    try:
+        return load_ndcube_from_fits(path, **kwargs)
+    except:
+        if allow_errors:
+            return traceback.format_exc()
+        raise
+
+
+def load_many_cubes_iterable(paths: list[str | Path], n_workers: int | None = None, allow_errors: bool = False,
+                             **kwargs: dict) -> list[NDCube | str]:
+    """
+    Load many NDCubes in parallel.
+
+    Does not fork so as to be Prefect-compatible.
+
+    When used as an iterator, cubes are yielded as they are loaded, allowing e.g. progress messages to be printed
+
+    Parameters
+    ----------
+    paths
+        File paths to load.
+    n_workers
+        Number of parallel workers to use. A large number may overwhelm the main thread (which has to receive each
+        loaded cube), limiting the speed benefits of using many workers.
+    allow_errors
+        If True, if an exception is raised when loading a cube, the traceback is yielded rather than an NDCube. If
+        False, exceptions are raised in the normal way.
+    kwargs
+        Extra args are passed to `load_NDCube_from_fits`
+
+    """
+    context = mp.get_context("forkserver")
+    with ProcessPoolExecutor(n_workers, mp_context=context) as p:
+        yield from p.map(_load_many_cubes_caller, paths, repeat(kwargs), repeat(allow_errors))
+
+
+def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow_errors: bool = False,
+                    **kwargs: dict) -> list[NDCube | str]:
+    """
+    Load many NDCubes in parallel.
+
+    Does not fork so as to be Prefect-compatible.
+
+    Parameters
+    ----------
+    paths
+        File paths to load.
+    n_workers
+        Number of parallel workers to use. A large number may overwhelm the main thread (which has to receive each
+        loaded cube), limiting the speed benefits of using many workers.
+    allow_errors
+        If True, if an exception is raised when loading a cube, the traceback is yielded rather than an NDCube. If
+        False, exceptions are raised in the normal way.
+    kwargs
+        Extra args are passed to `load_NDCube_from_fits`
+
+    Returns
+    -------
+    A list of NDCubes (or traceback strings)
+
+    """
+    return list(load_many_cubes_iterable(paths, n_workers, allow_errors, **kwargs))

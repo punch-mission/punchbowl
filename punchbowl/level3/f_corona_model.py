@@ -300,8 +300,8 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         j += 1
         obs_times.append(cube.meta.datetime.timestamp())
         meta_list.append(cube.meta)
-        if i % 50 == 0:
-            logger.info(f"Loaded {i}/{len(filenames)} files")
+        if (i + 1) % 50 == 0:
+            logger.info(f"Loaded {i+1}/{len(filenames)} files")
     # Crop the unused end of the array if we had a few files that errored out
     data_cube = data_cube[:j+1]
     logger.info("end of data loading")

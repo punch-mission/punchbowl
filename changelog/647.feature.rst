@@ -1,0 +1,1 @@
+Added capability to reconstitute noise with sqrt decoding. Defaulted to always add noise.

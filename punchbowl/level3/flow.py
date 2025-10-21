@@ -41,13 +41,13 @@ def level3_PIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
     out_list = [NDCube(data=d.data, wcs=d.wcs, meta=output_meta) for d in data_list]
     for o, d in zip(out_list, data_list, strict=True):
         o.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        o = set_spacecraft_location_to_earth(o)   # noqa: PLW2901
         o.meta.history = d.meta.history
         o.meta["CALFCOR1"] = os.path.basename(before_f_corona_model_path)
         o.meta["CALFCOR2"] = os.path.basename(after_f_corona_model_path)
         for key in ["FILEVRSN", "ALL_INPT", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4", "DATE-AVG", "DATE-OBS",
                     "DATE-BEG", "DATE-END"]:
             o.meta[key] = d.meta[key].value
+        o = set_spacecraft_location_to_earth(o)   # noqa: PLW2901
 
     logger.info("ending level 3 PIM/CIM flow")
 

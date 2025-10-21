@@ -100,7 +100,7 @@ def test_decoding_exceed_table():
     arr = np.random.random([arr_dim, arr_dim]) * (2 ** 10) + 1
 
     with pytest.warns(DataValueWarning):
-        decoded_arr = decode_sqrt(arr, from_bits=16, to_bits=10)
+        decoded_arr = decode_sqrt(arr, from_bits=16, to_bits=10, reconstitute_noise=False)
         assert decoded_arr.shape == arr.shape
         assert np.max(decoded_arr) <= 2 ** 16
 
@@ -122,7 +122,8 @@ def test_encode_then_decode(from_bits, to_bits):
                               ccd_gain_bottom=ccd_gain_bottom,
                               ccd_gain_top=ccd_gain_top,
                               ccd_offset=ccd_offset,
-                              ccd_read_noise=ccd_read_noise)
+                              ccd_read_noise=ccd_read_noise,
+                              reconstitute_noise=False)
 
     ccd_gain = split_ccd_array(original_arr.shape, ccd_gain_bottom, ccd_gain_top)
 

@@ -29,7 +29,6 @@ from punchbowl.exceptions import MissingMetadataError
 ValueType = int | str | float
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 REQUIRED_HEADER_KEYWORDS = ["SIMPLE", "BITPIX", "NAXIS", "EXTEND"]
-DISTORTION_KEYWORDS = ["CPDIS1", "CPDIS2", "DP1", "DP2"]
 WCS_OMITTED_KEYWORDS = ["TIMESYS", "DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "TELAPSE",
                         "RSUN_REF", "DSUN_OBS", "CRLN_OBS", "CRLT_OBS", "HGLN_OBS", "HGLT_OBS"]
 
@@ -339,13 +338,19 @@ class NormalizedMetadata(Mapping):
                     else:
                         wcs_header = this_wcs.to_header()
                     for card in wcs_header.cards:
-                        if ((key == "" and card[0] not in WCS_OMITTED_KEYWORDS)
-                                or (key != "" and card[0][-1].isnumeric() and
-                                    card[0] not in DISTORTION_KEYWORDS and
-                                    card[0] not in WCS_OMITTED_KEYWORDS)):
+                        if card[0] not in WCS_OMITTED_KEYWORDS:
+
+                            # The distortion keywords are special and contain periods. We split on the period if they
+                            # exist so that we can inject the A in the correct position.
+                            keyword_parts = card[0].split(".")
+                            if len(keyword_parts) == 1:
+                                new_keyword = keyword_parts[0] + key
+                            else:
+                                new_keyword = keyword_parts[0] + key + "." + ".".join(keyword_parts[1:])
+
                             hdr.append(
                                 (
-                                card[0] + key,
+                                new_keyword,
                                 card[1],
                                 card[2],
                                 ),

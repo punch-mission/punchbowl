@@ -1,3 +1,4 @@
+import pathlib
 from datetime import datetime, timezone
 
 import numpy as np
@@ -6,7 +7,9 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.util import find_first_existing_file, interpolate_data, nan_percentile
+from punchbowl.util import find_first_existing_file, interpolate_data, load_mask_file, nan_percentile
+
+THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
 def test_find_first_existing_file():
@@ -41,3 +44,10 @@ def test_nan_percentile():
     np_result = np.nanpercentile(array.copy(), 3, axis=0)
     our_result = nan_percentile(array.copy(), 3)
     np.testing.assert_allclose(np_result, our_result)
+
+
+def test_load_mask_file():
+    path = THIS_DIRECTORY / 'data' / "PUNCH_L1_MS3_20250311000000_v0c.bin"
+    mask = load_mask_file(path)
+    assert mask.dtype == np.bool
+    assert mask.shape == (2048, 2048)

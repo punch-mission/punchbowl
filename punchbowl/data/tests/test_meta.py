@@ -2,9 +2,10 @@ import os
 from datetime import UTC, datetime
 from collections import Counter
 
+import numpy as np
 import pytest
 from astropy.io import fits
-from astropy.wcs import WCS
+from astropy.wcs import WCS, DistortionLookupTable
 
 from punchbowl.data.history import HistoryEntry
 from punchbowl.data.meta import MetaField, NormalizedMetadata, construct_all_product_codes, load_spacecraft_def
@@ -250,3 +251,52 @@ def test_fits_header_compliance():
     keyword_counts = Counter(key for key in h.keys() if key not in allowed_duplicates)
     keyword_duplicates = [keyword for keyword, count in keyword_counts.items() if count > 1]
     assert not keyword_duplicates
+
+def test_fits_header_has_both_distortion_models():
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.1, 0.1
+    wcs.wcs.crpix = 0, 0
+    wcs.wcs.crval = 1, 1
+    wcs.wcs.cname = "HPC lon", "HPC lat"
+
+    num_bins = 100
+    xbins = np.random.random((num_bins, num_bins))
+    ybins = np.random.random((num_bins, num_bins))
+
+    r = np.linspace(0, 2048, num_bins + 1)
+    c = np.linspace(0, 2048, num_bins + 1)
+    r = (r[1:] + r[:-1]) / 2
+    c = (c[1:] + c[:-1]) / 2
+    err_px, err_py = r, c
+
+    cpdis1 = DistortionLookupTable(
+            -xbins.astype(np.float32), (0, 0), (err_px[0], err_py[0]),
+            ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
+        )
+    cpdis2 = DistortionLookupTable(
+        -ybins.astype(np.float32), (0, 0), (err_px[0], err_py[0]),
+        ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
+    )
+
+    wcs.cpdis1 = cpdis1
+    wcs.cpdis2 = cpdis2
+
+    code, level = "PM1", "1"
+    m = NormalizedMetadata.load_template(code, level)
+
+    m["DATE-OBS"] = str(datetime.now(UTC))
+    m["DATE-END"] = str(datetime.now(UTC))
+
+    h = m.to_fits_header(wcs = wcs)
+
+    assert "CPDIS1" in h
+    assert "CPDIS2" in h
+    assert "CPDIS1A" in h
+    assert "CPDIS2A" in h
+
+    assert "DP1" in h
+    assert "DP2" in h
+    assert "DP1A" in h
+    assert "DP2A" in h

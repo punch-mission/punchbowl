@@ -1,5 +1,6 @@
 import os
 import pathlib
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -86,3 +87,33 @@ def test_estimate_polarized_stray_light(dummy_fits_paths) -> None:
             assert isinstance(cube, NDCube)
             assert cube.data.shape == (3, 3)
             assert np.allclose(cube.data, 5.0)
+
+
+def test_estimate_polarized_stray_light_runs(tmpdir, sample_ndcube):
+    dates = [datetime(2025, 1, d, 1, 2, 3).strftime('%Y-%m-%dT%H:%M:%S') for d in range(1, 11)]
+    m_cubes = [sample_ndcube(shape=(10, 10), code='XM1', level="1", date_obs=date) for date in dates]
+    z_cubes = [sample_ndcube(shape=(10, 10), code='XZ1', level="1", date_obs=date) for date in dates]
+    p_cubes = [sample_ndcube(shape=(10, 10), code='XP1', level="1", date_obs=date) for date in dates]
+
+    mpaths, zpaths, ppaths = [], [], []
+    for i, cube in enumerate(m_cubes):
+        path = os.path.join(tmpdir, f"test_input_M_{i}.fits")
+        write_ndcube_to_fits(cube, path)
+        mpaths.append(path)
+    for i, cube in enumerate(z_cubes):
+        path = os.path.join(tmpdir, f"test_input_Z_{i}.fits")
+        write_ndcube_to_fits(cube, path)
+        zpaths.append(path)
+    for i, cube in enumerate(p_cubes):
+        path = os.path.join(tmpdir, f"test_input_P_{i}.fits")
+        write_ndcube_to_fits(cube, path)
+        ppaths.append(path)
+
+    with disable_run_logger():
+        cubes = estimate_polarized_stray_light.fn(mpaths, zpaths, ppaths, num_loaders=1)
+
+    assert cubes[0].meta['TYPECODE'].value == 'SM'
+    assert cubes[1].meta['TYPECODE'].value == 'SZ'
+    assert cubes[2].meta['TYPECODE'].value == 'SP'
+    for cube in cubes:
+        assert cube.meta['OBSCODE'].value == '1'

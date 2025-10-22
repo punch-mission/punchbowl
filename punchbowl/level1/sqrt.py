@@ -1,6 +1,7 @@
 import os.path
 import warnings
 from math import ceil
+from datetime import datetime
 
 import numpy as np
 from ndcube import NDCube
@@ -20,6 +21,8 @@ def decode_sqrt(
     ccd_offset: float = 100,
     ccd_read_noise: float = 17,
     overwrite_table: bool = False,
+    reconstitute_noise: bool = True,
+    dateobs: datetime | None = None,
 ) -> np.ndarray:
     """
     Square root decode between specified bitrate values.
@@ -42,6 +45,10 @@ def decode_sqrt(
         CCD read noise level [DN]
     overwrite_table
         Toggle to regenerate and overwrite existing decoding table
+    reconstitute_noise
+        If True, adds appropriate noise after decoding. Otherwise, only square root decodes.
+    dateobs
+        The reference time to use as the random noise seed. If None, then the result is random and not reproducible.
 
     Returns
     -------
@@ -106,6 +113,15 @@ def decode_sqrt(
     else:
         out_data = decode_sqrt_by_table(data, table_bottom)
 
+    if reconstitute_noise:
+        scale = np.sqrt(out_data) / 2.2
+        if dateobs is None:
+            noise = np.random.normal(scale=scale)
+        else:
+            seed = int(dateobs.timestamp())
+            rng = np.random.default_rng(seed)
+            noise = rng.normal(scale=scale)
+        return out_data + noise
     return out_data
 
 
@@ -425,6 +441,8 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
         ccd_offset=ccd_offset,
         ccd_read_noise=ccd_read_noise,
         overwrite_table=overwrite_table,
+        reconstitute_noise=True,
+        dateobs = data_object.meta.datetime,
     )
 
     decoded_saturation_value = decode_sqrt(
@@ -436,6 +454,7 @@ def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCu
         ccd_offset=ccd_offset,
         ccd_read_noise=ccd_read_noise,
         overwrite_table=overwrite_table,
+        reconstitute_noise=False,
     )
     data_object.meta["DSATVAL"] = decoded_saturation_value
 

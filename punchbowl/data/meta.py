@@ -29,7 +29,7 @@ from punchbowl.exceptions import MissingMetadataError
 ValueType = int | str | float
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 REQUIRED_HEADER_KEYWORDS = ["SIMPLE", "BITPIX", "NAXIS", "EXTEND"]
-DISTORTION_KEYWORDS = ["CPDIS1", "CPDIS2", "DP1", "DP2"]
+DISTORTION_KEYWORDS = ["CPDIS1", "CPDIS2", "DP1", "DP2", "CPDIS1A", "CPDIS2A", "DP1A", "DP2A"]
 WCS_OMITTED_KEYWORDS = ["TIMESYS", "DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "TELAPSE",
                         "RSUN_REF", "DSUN_OBS", "CRLN_OBS", "CRLT_OBS", "HGLN_OBS", "HGLT_OBS"]
 

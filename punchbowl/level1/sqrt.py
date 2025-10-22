@@ -114,12 +114,13 @@ def decode_sqrt(
         out_data = decode_sqrt_by_table(data, table_bottom)
 
     if reconstitute_noise:
+        scale = np.sqrt(out_data) / 2.2
         if dateobs is None:
-            noise = np.random.normal(scale=np.sqrt(out_data) / 2.2)
+            noise = np.random.normal(scale=scale)
         else:
             seed = int(dateobs.timestamp())
             rng = np.random.default_rng(seed)
-            noise = rng.normal(scale=np.sqrt(out_data) / 2.2)
+            noise = rng.normal(scale=scale)
         return out_data + noise
     return out_data
 

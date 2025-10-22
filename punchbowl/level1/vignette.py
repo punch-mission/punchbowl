@@ -22,7 +22,7 @@ from punchbowl.exceptions import (
 )
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.prefect import punch_task
-from punchbowl.util import DataLoader, load_spacecraft_mask
+from punchbowl.util import DataLoader, load_mask_file
 
 
 @punch_task
@@ -285,7 +285,7 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     nfiflat = avg_img_darkremoved / nficlean
 
     # Load spacecraft mask
-    mask_nfi = load_spacecraft_mask(path_mask)
+    mask_nfi = load_mask_file(path_mask)
 
     # Deal with infs and remask
     nfiflat[np.isinf(nfiflat)] = 1.

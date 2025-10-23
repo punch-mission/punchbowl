@@ -73,6 +73,11 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            OBSLAYR2: Polar_Z
+            OBSLAYR3: Polar_P
+            POLARREF: 'Solar'
 
     PFN:
         kinds: [Polarized]
@@ -86,6 +91,11 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: N
             HAS_NFI4: 1
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            OBSLAYR2: Polar_Z
+            OBSLAYR3: Polar_P
+            POLARREF: 'Solar'
 
     CFM:
         kinds: [Unpolarized, Calibration]
@@ -150,6 +160,11 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M
+            OBS-MODE: Polar_MZP
+            OBSLAYR1: Polar_M
+            OBSLAYR2: Polar_Z
+            OBSLAYR3: Polar_P
+            POLARREF: 'Solar'
 
     PNN:
         kinds: [Polarized]

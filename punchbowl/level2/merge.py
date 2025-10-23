@@ -27,12 +27,14 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, maint
             reprojected_weights = 1 / np.square(reprojected_uncertainties)
             reprojected_weights[np.isnan(reprojected_uncertainties)] = np.nan
 
-            trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=2) /
+            merged_data = (np.nansum(reprojected_data * reprojected_weights, axis=2) /
                                        np.nansum(reprojected_weights, axis=2))
+            merged_data[np.isnan(merged_data)] = 0
+            trefoil_data_layers.append(merged_data)
             trefoil_uncertainty_layers.append(1/np.nansum(np.sqrt(reprojected_weights), axis=2))
             if maintain_nans:
                 was_nan = np.all(np.isnan(reprojected_data), axis=-1)
-                trefoil_data_layers[0][was_nan] = np.nan
+                merged_data[was_nan] = np.nan
         else:
             trefoil_data_layers.append(np.zeros((4096, 4096)))
             trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
@@ -73,12 +75,14 @@ def merge_many_clear_task(
         reprojected_weights = 1/np.square(reprojected_uncertainties)
         reprojected_weights[np.isnan(reprojected_uncertainties)] = np.nan
 
-        trefoil_data_layers.append(np.nansum(reprojected_data * reprojected_weights, axis=-1) /
-                                   np.nansum(reprojected_weights, axis=-1))
+        merged_data = (np.nansum(reprojected_data * reprojected_weights, axis=-1)
+                       / np.nansum(reprojected_weights, axis=-1))
+        merged_data[np.isnan(merged_data)] = 0
+        trefoil_data_layers.append(merged_data)
         trefoil_uncertainty_layers.append(1/np.sqrt(np.nansum(reprojected_weights, axis=-1)))
         if maintain_nans:
             was_nan = np.all(np.isnan(reprojected_data), axis=-1)
-            trefoil_data_layers[0][was_nan] = np.nan
+            merged_data[was_nan] = np.nan
     else:
         trefoil_data_layers.append(np.zeros((4096, 4096)))
         trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)

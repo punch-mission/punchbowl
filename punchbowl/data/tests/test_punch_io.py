@@ -29,7 +29,7 @@ SAMPLE_SPACECRAFT_DEF_PATH = os.path.join(TESTDATA_DIR, "spacecraft.yaml")
 
 @pytest.fixture
 def sample_ndcube():
-    def _sample_ndcube(shape, code="PM1", level="0"):
+    def _sample_ndcube(shape, code="PM1", level="0", date_obs=None):
         data = np.random.random(shape).astype(np.float32)
         uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
         wcs = WCS(naxis=2)
@@ -44,8 +44,16 @@ def sample_ndcube():
             wcs = add_stokes_axis_to_wcs(wcs, 2)
 
         meta = NormalizedMetadata.load_template(code, level)
-        meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1))
+        meta['DATE-OBS'] = date_obs or str(datetime(2024, 2, 22, 16, 0, 1))
         meta['FILEVRSN'] = "1"
+
+        # Setting these avoids FITSFixedWarnings if these files are written and then read in
+        if 'HGLT_OBS' in meta:
+            meta['HGLT_OBS'] = 1.6391084786225854
+            meta['HGLN_OBS'] = 0.0
+            meta['CRLT_OBS'] = 1.6391084786225854
+            meta['CRLN_OBS'] = 131.07429379735413
+            meta['DSUN_OBS'] = 152011862324.1987
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 

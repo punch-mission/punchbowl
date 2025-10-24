@@ -241,10 +241,6 @@ def generate_vignetting_calibration_nfi(input_files: list[str], # noqa: C901
     with fits.open(path_dark) as hdul:
         nfidark = hdul[1].data
 
-    # Load a WCS to use later on
-    with fits.open(input_files[0]) as hdul:
-        cube_wcs = WCS(hdul[1].header)
-
     # Load and square root decode input data
     cubes = []
     for file in input_files:
@@ -307,7 +303,7 @@ def generate_vignetting_calibration_nfi(input_files: list[str], # noqa: C901
     m["FILEVRSN"] = version
     m["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    cube = NDCube(data=nfiflat.astype("float32"), wcs=cube_wcs, meta=m)
+    cube = NDCube(data=nfiflat.astype("float32"), wcs=cube.wcs, meta=m)
 
     if output_path is not None:
         filename = Path(output_path) / f"{get_base_file_name(cube)}.fits"

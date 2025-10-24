@@ -164,27 +164,43 @@ def estimate_polarized_stray_light( # noqa: C901
         if (i + 1) % 50 == 0:
             logger.info(f"Loaded {i+1}/{len(pfilepaths)} P files")
 
-    date_obses = []
-    uncertainty = None
-
     triplets = bundle_matched_mzp(mcube_list, zcube_list, pcube_list)
     logger.info(f"Matched {len(triplets)} MZP triplets")
+    # This is a RAM-intensive operation. To reduce memory usage, we'll be deleting the cubes as we iterate through
+    # the list of triplets. We also need the raw cube lists gone for the cubes to be deleted
+    del mcube_list, zcube_list, pcube_list
 
-    for mcube, zcube, pcube in triplets:
-        date_obses.append(mcube.meta.datetime)
+    mdata = np.empty((len(triplets), *triplets[0][0].data.shape), dtype=triplets[0][0].data.dtype)
+    zdata = np.empty_like(mdata)
+    pdata = np.empty_like(mdata)
+    mmetas, zmetas, pmetas = [], [], []
+    date_obses = []
+    uncertainty = np.zeros_like(triplets[0][0].data) if do_uncertainty else None
+    i = 0
+    while triplets:
+        # Remove the cubes from the triplets list, so they'll be deleted on the next iteration.
+        mcube, zcube, pcube = triplets.pop(0)
+        mdata[i] = mcube.data
+        zdata[i] = zcube.data
+        pdata[i] = pcube.data
+        mmetas.append(mcube.meta)
+        zmetas.append(zcube.meta)
+        pmetas.append(pcube.meta)
+        mwcs, zwcs, pwcs = mcube.wcs, zcube.wcs, pcube.wcs
+
+        date_obses.extend([cube.meta.datetime for cube in (mcube, zcube, pcube)])
+
         if do_uncertainty:
-            if uncertainty is None:
-                uncertainty = np.zeros_like(mcube.data)
             for cube in [mcube, zcube, pcube]:
                 if cube.uncertainty is not None:
                     uncertainty += cube.uncertainty.array ** 2
 
+        i += 1
+    # triplets is now empty and useless. To be clear about that, let's delete it
+    del triplets
+
     logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                 f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
-
-    mdata = np.stack([cube.data for cube in mcube_list])
-    zdata = np.stack([cube.data for cube in pcube_list])
-    pdata = np.stack([cube.data for cube in zcube_list])
 
     # Estimate total brightness and find index of minimum
     tbcube = 2 / 3 * (mdata + zdata + pdata)
@@ -200,13 +216,13 @@ def estimate_polarized_stray_light( # noqa: C901
         uncertainty = np.sqrt(uncertainty) / len(mfilepaths)
 
     output_cubes = []
-    for label, background, cubes in zip(
+    for label, background, metas, sample_wcs in zip(
         ["M", "Z", "P"], [m_background, z_background, p_background],
-            (mcube_list, zcube_list, pcube_list), strict=True):
+            (mmetas, zmetas, pmetas), (mwcs, zwcs, pwcs), strict=True):
         out_type = "S" + label
-        meta = NormalizedMetadata.load_template(out_type + cubes[0].meta["OBSCODE"].value, "1")
+        meta = NormalizedMetadata.load_template(out_type + metas[0]["OBSCODE"].value, "1")
 
-        meta.provenance = [cube.meta["FILENAME"].value for cube in cubes]
+        meta.provenance = [meta["FILENAME"].value for meta in metas]
         meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
         meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") \
             if reference_time else meta["DATE-AVG"].value
@@ -216,12 +232,12 @@ def estimate_polarized_stray_light( # noqa: C901
 
         meta.history.add_now(
             "polarized stray light",
-            f"Generated with {len(cubes)} files running from "
+            f"Generated with {len(metas)} files running from "
             f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
             f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
-        meta["FILEVRSN"] = cubes[0].meta["FILEVRSN"].value
+        meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
 
-        wcs = cubes[0].wcs.deepcopy()
+        wcs = sample_wcs.deepcopy()
         wcs.wcs.pc = np.eye(2)
 
         output_cubes.append(NDCube(data=background, meta=meta, wcs=wcs, uncertainty=uncertainty))

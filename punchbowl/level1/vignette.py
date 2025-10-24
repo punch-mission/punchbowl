@@ -248,7 +248,11 @@ def generate_vignetting_calibration_nfi(input_files: list[str], # noqa: C901
     # Load and square root decode input data
     cubes = []
     for file in input_files:
-        cube = load_ndcube_from_fits(file)
+        try:
+            cube = load_ndcube_from_fits(file)
+        except: # noqa: E722
+            print(f"Error loading {file}") # noqa: T201
+            continue
         if cube.meta["OFFSET"].value is None:
             cube.meta["OFFSET"] = 400
         # Reject outlier images in vignetting calculation if they have been flagged

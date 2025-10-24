@@ -1,0 +1,1 @@
+generate_vignetting_calibration_nfi accepts a maximum number of files to load.

@@ -180,6 +180,63 @@ def parallel_sort_first_axis(array: np.ndarray, handle_nans: bool = False, inpla
     return output
 
 
+@numba.njit(parallel=True, cache=True)
+def nan_percentile_2d(array: np.ndarray, percentile: float | list[float], # noqa: C901
+                      window_size: int, preserve_nans: bool = True) -> float | np.ndarray:
+    """
+    Percentile-filter a 2D cube with NaN awareness. Parallelizes well.
+
+    Each pixel is replaced with a percentile of the non-NaN pixels in a local window.
+
+    See nan_percentile for performance notes
+
+    When preserve_nans is True, NaN pixels will remain NaN. Otherwise they will be replaced with the percentile value.
+    """
+    percentiles = np.atleast_1d(np.array(percentile))
+    percentiles = percentiles / 100
+
+    half_window_size = window_size // 2
+
+    output = np.empty((len(percentiles), *array.shape))
+    for i in numba.prange(array.shape[0]):
+        for j in range(array.shape[1]):
+            if preserve_nans and np.isnan(array[i, j]):
+                for k in range(len(percentiles)):
+                    output[k, i, j] = np.nan
+                continue
+            imin = max(0, i - half_window_size)
+            jmin = max(0, j - half_window_size)
+            imax = min(array.shape[0], i + half_window_size + 1)
+            jmax = min(array.shape[1], j + half_window_size + 1)
+            sequence = array[imin:imax, jmin:jmax].flatten()
+            n_valid_obs = len(sequence)
+            sequence_max = np.nanmax(sequence)
+            for index in range(len(sequence)):
+                if np.isnan(sequence[index]):
+                    sequence[index] = sequence_max
+                    n_valid_obs -= 1
+            if n_valid_obs == 0:
+                for k in range(len(percentiles)):
+                    output[k, i, j] = np.nan
+                continue
+            sequence.sort()
+
+            for k in range(len(percentiles)):
+                index = (n_valid_obs - 1) * percentiles[k]
+                f = int(np.floor(index))
+                c = int(np.ceil(index))
+                if f == c:
+                    output[k, i, j] = sequence[f]
+                else:
+                    f_val = sequence[f]
+                    c_val = sequence[c]
+                    output[k, i, j] = f_val + (c_val - f_val) * (index - f)
+
+    if isinstance(percentile, (int, float)):
+        return output[0]
+    return output
+
+
 def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime, time_key: str = "DATE-OBS",
                      allow_extrapolation: bool = False) -> np.ndarray:
     """Interpolates between two data objects."""

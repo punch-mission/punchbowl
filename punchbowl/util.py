@@ -118,6 +118,9 @@ def nan_percentile(array: np.ndarray, percentile: float | list[float]) -> float 
                 if np.isnan(sequence[index]):
                     sequence[index] = sequence_max
                     n_valid_obs -= 1
+            if n_valid_obs == 0:
+                for k in range(len(percentiles)):
+                    output[k, i, j] = np.nan
             sequence.sort()
 
             for k in range(len(percentiles)):

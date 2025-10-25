@@ -122,6 +122,8 @@ def correct_vignetting_task(data_object: NDCube, # noqa: C901
                 msg = f"Incorrect vignetting function shape within {path}"
                 raise InvalidDataError(msg)
 
+        history_message = f"Vignetting corrected using {os.path.basename(str(vignetting_path))}"
+
         if second_vignetting_function is not None:
             if second_vignetting_function.meta.astropy_time < vignetting_function.meta.astropy_time:
                 vignetting_function, second_vignetting_function = second_vignetting_function, vignetting_function
@@ -134,19 +136,19 @@ def correct_vignetting_task(data_object: NDCube, # noqa: C901
                 msg = "Data is after second vignetting function and extrapolation is not allowed; clamping."
                 warnings.warn(msg)
                 final_vignetting = second_vignetting_function.data
+                history_message = f"Vignetting corrected using {os.path.basename(str(second_vignetting_path))}"
             else:
                 final_vignetting = interpolate_data(vignetting_function, second_vignetting_function,
                                                     data_object.meta.datetime,
                                                     allow_extrapolation=allow_extrapolation)
+                history_message += f" and {os.path.basename(str(second_vignetting_path))}"
 
         else:
             final_vignetting = vignetting_function.data
 
         data_object.data[:, :] /= final_vignetting[:, :]
         data_object.uncertainty.array[:, :] /= final_vignetting[:, :]
-        history_message = f"Vignetting corrected using {os.path.basename(str(vignetting_path))}"
-        if second_vignetting_path is not None:
-            history_message += f"and {os.path.basename(str(second_vignetting_path))}"
+
         data_object.meta.history.add_now("LEVEL1-correct_vignetting", history_message)
     return data_object
 

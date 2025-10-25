@@ -103,6 +103,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 9,section,COMMENT,Calibration Data,,str,TRUE,TRUE,Calibration Data
 9,keyword,CALCF,,quartic fit filename,str,TRUE,TRUE,
 9,keyword,CALVI,,vignetting filename,str,TRUE,TRUE,
+9,keyword,CALVI2,,second vignetting filename,str,TRUE,TRUE,
 9,keyword,CALPSF,,PSF filename,str,TRUE,TRUE,
 9,keyword,CALPM,,bad pixel map filename,str,TRUE,TRUE,
 9,keyword,CALSL0,,first stray light model,str,TRUE,TRUE,

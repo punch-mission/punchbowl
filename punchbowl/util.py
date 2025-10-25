@@ -186,7 +186,8 @@ def nan_percentile_2d(array: np.ndarray, percentile: float | list[float], # noqa
     """
     Percentile-filter a 2D cube with NaN awareness. Parallelizes well.
 
-    Each pixel is replaced with a percentile of the non-NaN pixels in a local window.
+    Each pixel is replaced with a percentile of the non-NaN pixels in a local window. At the image edges, the local
+    window is clamped at the image boundary.
 
     See nan_percentile for performance notes
 

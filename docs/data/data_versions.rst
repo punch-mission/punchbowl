@@ -28,9 +28,9 @@ Version 0h
 - Handled merging images properly where inf uncertainties and nan values are mixed
 - Added noise reconstiution as part of square root decoding
 - Properly set metadata for traceability in levels 2 and 3
-- Changed ot use powernorm for quicklook images
+- Changed to use powernorm for quicklook images
 - Implemented new indexed background method for polarization
-- Suppress saturated pixels by filling with neighbhorhood values
+- Suppress saturated pixels by filling with neighborhood values
 
 Version 0g
 ----------

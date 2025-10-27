@@ -22,11 +22,28 @@ from punchbowl.exceptions import (
 )
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.prefect import punch_task
-from punchbowl.util import DataLoader, load_spacecraft_mask
+from punchbowl.util import DataLoader, interpolate_data, load_spacecraft_mask
+
+
+def _load_vignetting_function(vignetting_path: str | pathlib.Path | DataLoader | None) -> NDCube:
+    if isinstance(vignetting_path, DataLoader):
+        vignetting_function = vignetting_path.load()
+        vignetting_path = vignetting_path.src_repr()
+    else:
+        if isinstance(vignetting_path, str):
+            vignetting_path = pathlib.Path(vignetting_path)
+        if not vignetting_path.exists():
+            msg = f"File {vignetting_path} does not exist."
+            raise InvalidDataError(msg)
+        vignetting_function = load_ndcube_from_fits(vignetting_path, include_provenance=False)
+    return vignetting_function, vignetting_path
 
 
 @punch_task
-def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.Path | DataLoader | None) -> NDCube:
+def correct_vignetting_task(data_object: NDCube, # noqa: C901
+                            vignetting_path: str | pathlib.Path | DataLoader | None,
+                            second_vignetting_path: str | pathlib.Path | DataLoader | None = None,
+                            allow_extrapolation: bool = False) -> NDCube:
     """
     Prefect task to correct the vignetting of an image.
 
@@ -59,8 +76,16 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
     data_object : PUNCHData
         data on which to operate
 
-    vignetting_path : pathlib
+    vignetting_path : str | Path | DataLoader
         path to vignetting function to apply to input data
+
+    second_vignetting_path : str | Path | DataLoader | None
+        if provided, the two vignetting functions will be interpolated between
+
+    allow_extrapolation : bool
+        if second_vignetting_path is provided, whether to allow extrapolation beyond the two vignetting files. If False
+        and data_object's date_obs is outside this range, the interpolation will be "clamped" to one of the two files,
+        rather than extrapolating.
 
     Returns
     -------
@@ -73,35 +98,58 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
         msg=f"Calibration file {vignetting_path} is unavailable, vignetting correction not applied"
         warnings.warn(msg, NoCalibrationDataWarning)
     else:
-        if isinstance(vignetting_path, DataLoader):
-            vignetting_function = vignetting_path.load()
-            vignetting_path = vignetting_path.src_repr()
+        vignetting_function, vignetting_path = _load_vignetting_function(vignetting_path)
+        if second_vignetting_path is None:
+            second_vignetting_function = None
         else:
-            if isinstance(vignetting_path, str):
-                vignetting_path = pathlib.Path(vignetting_path)
-            if not vignetting_path.exists():
-                msg = f"File {vignetting_path} does not exist."
+            second_vignetting_function, second_vignetting_path = _load_vignetting_function(second_vignetting_path)
+        for function, path in ([vignetting_function, vignetting_path],
+                               [second_vignetting_function, second_vignetting_path]):
+            if function is None:
+                continue
+            vignetting_function_date = function.meta.astropy_time
+            observation_date = data_object.meta.astropy_time
+            if abs((vignetting_function_date - observation_date).to("day").value) > 14:
+                msg = f"Calibration file {path} contains data created greater than 2 weeks from the observation"
+                warnings.warn(msg, LargeTimeDeltaWarning)
+            if function.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
+                msg = f"Incorrect TELESCOP value within {path}"
+                warnings.warn(msg, IncorrectTelescopeWarning)
+            if function.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
+                msg = f"Incorrect polarization state within {path}"
+                warnings.warn(msg, IncorrectPolarizationStateWarning)
+            if function.data.shape != data_object.data.shape:
+                msg = f"Incorrect vignetting function shape within {path}"
                 raise InvalidDataError(msg)
-            vignetting_function = load_ndcube_from_fits(vignetting_path, include_provenance=False)
-        vignetting_function_date = vignetting_function.meta.astropy_time
-        observation_date = data_object.meta.astropy_time
-        if abs((vignetting_function_date - observation_date).to("day").value) > 14:
-            msg = f"Calibration file {vignetting_path} contains data created greater than 2 weeks from the observation"
-            warnings.warn(msg, LargeTimeDeltaWarning)
-        if vignetting_function.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
-            msg = f"Incorrect TELESCOP value within {vignetting_path}"
-            warnings.warn(msg, IncorrectTelescopeWarning)
-        if vignetting_function.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
-            msg = f"Incorrect polarization state within {vignetting_path}"
-            warnings.warn(msg, IncorrectPolarizationStateWarning)
-        if vignetting_function.data.shape != data_object.data.shape:
-            msg = f"Incorrect vignetting function shape within {vignetting_path}"
-            raise InvalidDataError(msg)
 
-        data_object.data[:, :] /= vignetting_function.data[:, :]
-        data_object.uncertainty.array[:, :] /= vignetting_function.data[:, :]
-        data_object.meta.history.add_now("LEVEL1-correct_vignetting",
-                                         f"Vignetting corrected using {os.path.basename(str(vignetting_path))}")
+        history_message = f"Vignetting corrected using {os.path.basename(str(vignetting_path))}"
+
+        if second_vignetting_function is not None:
+            if second_vignetting_function.meta.astropy_time < vignetting_function.meta.astropy_time:
+                vignetting_function, second_vignetting_function = second_vignetting_function, vignetting_function
+            if not allow_extrapolation and data_object.meta.astropy_time < vignetting_function.meta.astropy_time:
+                msg = "Data is before first vignetting function and extrapolation is not allowed; clamping."
+                warnings.warn(msg)
+                final_vignetting = vignetting_function.data
+            elif (not allow_extrapolation
+                  and data_object.meta.astropy_time > second_vignetting_function.meta.astropy_time):
+                msg = "Data is after second vignetting function and extrapolation is not allowed; clamping."
+                warnings.warn(msg)
+                final_vignetting = second_vignetting_function.data
+                history_message = f"Vignetting corrected using {os.path.basename(str(second_vignetting_path))}"
+            else:
+                final_vignetting = interpolate_data(vignetting_function, second_vignetting_function,
+                                                    data_object.meta.datetime,
+                                                    allow_extrapolation=allow_extrapolation)
+                history_message += f" and {os.path.basename(str(second_vignetting_path))}"
+
+        else:
+            final_vignetting = vignetting_function.data
+
+        data_object.data[:, :] /= final_vignetting[:, :]
+        data_object.uncertainty.array[:, :] /= final_vignetting[:, :]
+
+        data_object.meta.history.add_now("LEVEL1-correct_vignetting", history_message)
     return data_object
 
 

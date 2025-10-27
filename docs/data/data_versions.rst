@@ -17,6 +17,21 @@ The PUNCH mission and the SDAC data repository only supports the most recent ver
 
 A history of data version releases is given below.
 
+Version 0h
+----------
+- Released October 27, 2025
+- Improved vignetting functions derived from diffuse light instead of stars
+- Recalculated PSF models to avoid artifacts and poor correction at edges of images
+- Upgraded all level 0 files to 0h to support new BADPKTS keyword
+- Fixed the observation layer keywrods for PFM and PIM
+- Updated so distortion lookup table keywords are written for both WCS types
+- Handled merging images properly where inf uncertainties and nan values are mixed
+- Added noise reconstiution as part of square root decoding
+- Properly set metadata for traceability in levels 2 and 3
+- Changed ot use powernorm for quicklook images
+- Implemented new indexed background method for polarization
+- Suppress saturated pixels by filling with neighbhorhood values
+
 Version 0g
 ----------
 - Released October 1, 2025

@@ -19,7 +19,7 @@ from punchbowl.exceptions import (
     InvalidDataError,
 )
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import average_datetime, bundle_matched_mzp, interpolate_data, parallel_sort_first_axis
+from punchbowl.util import average_datetime, bundle_matched_mzp, interpolate_data, parallel_sort_first_axis, masked_mean
 
 
 @punch_flow
@@ -113,6 +113,7 @@ def estimate_polarized_stray_light( # noqa: C901
                 mfilepaths: list[str],
                 zfilepaths: list[str],
                 pfilepaths: list[str],
+                percentile: float = 2,
                 do_uncertainty: bool = True,
                 reference_time: datetime | str | None = None,
                 num_loaders: int | None = None,
@@ -205,12 +206,17 @@ def estimate_polarized_stray_light( # noqa: C901
     # Estimate total brightness and find index of minimum
     tbcube = 2 / 3 * (mdata + zdata + pdata)
     np.nan_to_num(tbcube, nan=np.inf, copy=False)
-    min_tb_index = np.argmin(tbcube, axis=0)[None, :, :]
+
+    # Per-pixel percentile threshold of tbcube over time (T axis)
+    tb_thresh = np.nanpercentile(tbcube, percentile, axis=0, keepdims=True)
+    mask = (tbcube <= tb_thresh)  # shape: (T, H, W)
+
+    # min_tb_index = np.argmin(tbcube, axis=0)[None, :, :]
 
     # Estimate MZP background based on index
-    m_background = np.take_along_axis(mdata, min_tb_index, axis=0)[0]
-    z_background = np.take_along_axis(zdata, min_tb_index, axis=0)[0]
-    p_background = np.take_along_axis(pdata, min_tb_index, axis=0)[0]
+    m_background = masked_mean(mdata, mask)
+    z_background = masked_mean(zdata, mask)
+    p_background = masked_mean(pdata, mask)
 
     if do_uncertainty:
         uncertainty = np.sqrt(uncertainty) / len(mfilepaths)

@@ -312,6 +312,19 @@ def bundle_matched_mzp(m_cubes: list[NDCube],
             triplets.append((m_cubes[matching_m], z_cubes[z_index], p_cubes[matching_p]))
     return triplets
 
+def masked_mean(data, mask):
+    """
+    Masked nanmean with entries where both mask is True and data is finite.
+    """
+    valid = mask & np.isfinite(data)
+    count = valid.sum(axis=0)
+
+    sumvalid = np.where(valid, data, 0.0).sum(axis=0)
+
+    # Safe divide; pixels with count==0 become NaN
+    outdata = np.full(sumvalid.shape, np.nan, dtype=np.result_type(data, np.float32))
+    np.divide(sumvalid, count, out=outdata, where=(count > 0))
+    return outdata
 
 T = TypeVar("T")
 

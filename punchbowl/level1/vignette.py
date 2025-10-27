@@ -2,6 +2,7 @@ import os
 import pathlib
 import warnings
 from pathlib import Path
+from datetime import UTC, datetime
 
 import numpy as np
 from astropy.io import fits
@@ -238,14 +239,15 @@ def generate_vignetting_calibration_wfi(path_vignetting: str,
     raise RuntimeError(f"Unknown spacecraft {spacecraft}")
 
 
-def generate_vignetting_calibration_nfi(input_files: list[str],
+def generate_vignetting_calibration_nfi(input_files: list[str], # noqa: C901
                                         path_speckle: str,
                                         path_mask: str,
                                         path_dark: str,
                                         polarizer: str,
                                         dateobs: str,
                                         version: str,
-                                        output_path: str | None = None) -> np.ndarray | str:
+                                        output_path: str | None = None,
+                                        max_files: int = -1) -> np.ndarray | str:
     """
     Create calibration data for vignetting for the NFI spacecraft.
 
@@ -267,6 +269,8 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         File version
     output_path : str | None
         Path to calibration file output
+    max_files : int
+        If set, only the first this many non-outlier files will be loaded and used
 
 
     Returns
@@ -285,14 +289,14 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     with fits.open(path_dark) as hdul:
         nfidark = hdul[1].data
 
-    # Load a WCS to use later on
-    with fits.open(input_files[0]) as hdul:
-        cube_wcs = WCS(hdul[1].header)
-
     # Load and square root decode input data
     cubes = []
     for file in input_files:
-        cube = load_ndcube_from_fits(file)
+        try:
+            cube = load_ndcube_from_fits(file)
+        except: # noqa: E722
+            print(f"Error loading {file}") # noqa: T201
+            continue
         if cube.meta["OFFSET"].value is None:
             cube.meta["OFFSET"] = 400
         # Reject outlier images in vignetting calculation if they have been flagged
@@ -303,6 +307,8 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         else:
             if 490 <= cube.meta["DATAMDN"].value <= 655 and cube.meta["DATAP99"].value != 4095:
                 cubes.append(decode_sqrt_data.fn(cube))
+        if max_files > 0 and len(cubes) >= max_files:
+            break
 
     # Subtract dark frame
     for cube in cubes:
@@ -343,8 +349,9 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     m = NormalizedMetadata.load_template(f"G{polarizer}4", "1")
     m["DATE-OBS"] = dateobs
     m["FILEVRSN"] = version
+    m["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    cube = NDCube(data=nfiflat.astype("float32"), wcs=cube_wcs, meta=m)
+    cube = NDCube(data=nfiflat.astype("float32"), wcs=cube.wcs, meta=m)
 
     if output_path is not None:
         filename = Path(output_path) / f"{get_base_file_name(cube)}.fits"

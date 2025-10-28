@@ -19,7 +19,9 @@ from punchbowl.exceptions import (
     InvalidDataError,
 )
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import average_datetime, bundle_matched_mzp, interpolate_data, parallel_sort_first_axis, masked_mean
+from punchbowl.util import (average_datetime, bundle_matched_mzp,
+                            interpolate_data, parallel_sort_first_axis,
+                            masked_mean, nan_percentile)
 
 
 @punch_flow
@@ -203,15 +205,12 @@ def estimate_polarized_stray_light( # noqa: C901
     logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                 f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
 
-    # Estimate total brightness and find index of minimum
+    # Estimate total brightness
     tbcube = 2 / 3 * (mdata + zdata + pdata)
-    np.nan_to_num(tbcube, nan=np.inf, copy=False)
 
     # Per-pixel percentile threshold of tbcube over time (T axis)
-    tb_thresh = np.nanpercentile(tbcube, percentile, axis=0, keepdims=True)
+    tb_thresh = nan_percentile(tbcube, percentile, axis=0, keepdims=True)
     mask = (tbcube <= tb_thresh)  # shape: (T, H, W)
-
-    # min_tb_index = np.argmin(tbcube, axis=0)[None, :, :]
 
     # Estimate MZP background based on index
     m_background = masked_mean(mdata, mask)

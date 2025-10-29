@@ -12,7 +12,9 @@ from punchbowl.prefect import punch_flow, punch_task
 
 
 @punch_task(tags=["reproject"])
-def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int, int]) -> np.ndarray:
+def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int, int],
+                   rolloff_strength: float | list[float] = 1,
+                   rolloff_width: float | list[float] = .25) -> np.ndarray:
     """
     Core reprojection function.
 
@@ -30,6 +32,14 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         astropy WCS object describing the coordinate system to transform to
     output_shape
         pixel shape of the reprojected output array
+    rolloff_width : float | list[float]
+        Image uncertainties are enhanced at the edges, to provide a smooth rolloff in merging. This controls the
+        width of that rolloff. The rolloff width will be this number, times the shortest distance from image-center
+        to image-mask-edge. A list can be provided to give one value for each spacecraft.
+    rolloff_strength : float | list[float]
+        Image uncertainties are enhanced at the edges, to provide a smooth rolloff in merging. This controls the
+        strength of that rolloff. Merging weights at the mask edge will be reduced by this fractional amount. A
+        strength of zero means no rolloff. A list can be provided to give one value for each spacecraft.
 
     Returns
     -------
@@ -88,9 +98,19 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     # We will roll off the uncertainty by the inverse of the distance to the edge of the mask.
     # This allows pixels closer to the center to be weighted more than those on the edge.
     # Note. We add 1 to the distance to edge to avoid division by zero errors.
-    image_mask = input_cube.data == 0
-    distance_to_edge = distance_transform_edt(~image_mask, return_indices=False)
-    input_data = np.stack([input_cube.data, input_cube.uncertainty.array / (distance_to_edge + 1)])
+    if isinstance(rolloff_strength, list):
+        rolloff_strength = rolloff_strength[int(input_cube.meta["OBSCODE"].value) - 1]
+    if isinstance(rolloff_width, list):
+        rolloff_width = rolloff_width[int(input_cube.meta["OBSCODE"].value) - 1]
+
+    image_mask = ((np.isnan(input_cube.data) + (input_cube.data == 0))
+                  * (~np.isfinite(input_cube.uncertainty.array)))
+    distance_to_edge = distance_transform_edt(~image_mask, return_indices=False) + 1
+    cap = rolloff_width * distance_to_edge.max()
+    distance_to_edge[distance_to_edge > cap] = cap
+    rolloff_fractions = distance_to_edge / cap
+    rolloff_fractions = (1 - rolloff_strength) + rolloff_fractions * rolloff_strength
+    input_data = np.stack([input_cube.data, input_cube.uncertainty.array / np.sqrt(rolloff_fractions)])
 
     # Reproject will complain if the input and output arrays have different dtypes
     input_data = np.asarray(input_data, dtype=float)
@@ -108,13 +128,17 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
 
 
 @punch_flow
-def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_shape: np.ndarray) -> list[NDCube | None]:
+def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_shape: np.ndarray,
+                        rolloff_strength: float | list[float] = 1,
+                        rolloff_width: float | list[float] = .25,
+                        ) -> list[NDCube | None]:
     """Reproject many flow."""
     # The WCS class from astropy is not thread-safe, see e.g.
     # https://github.com/astropy/astropy/issues/16244
     # https://github.com/astropy/astropy/issues/16245
     # To work around this, deep copy the trefoil WCS, which is common to each reprojection
-    out_layers = [reproject_cube.submit(d, trefoil_wcs.deepcopy(), trefoil_shape) if d is not None else None
+    out_layers = [reproject_cube.submit(d, trefoil_wcs.deepcopy(), trefoil_shape, rolloff_strength=rolloff_strength,
+                                        rolloff_width=rolloff_width) if d is not None else None
                   for d in data]
 
     return [NDCube(data=out_layers[i].result()[0],

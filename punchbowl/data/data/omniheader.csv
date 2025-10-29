@@ -52,6 +52,14 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,HAS_WFI3,0,Includes WFI-3 data,int,TRUE,TRUE,0
 4,keyword,HAS_NFI4,0,Includes NFI data,int,TRUE,TRUE,0
 4,keyword,ALL_INPT,0,Includes all expected mosaic components,int,TRUE,TRUE,0
+4,keyword,CTRXWFI1,,X coord of WFI-1 center in mosaic,float,TRUE,TRUE,-1
+4,keyword,CTRYWFI1,,Y coord of WFI-1 center in mosaic,float,TRUE,TRUE,-1
+4,keyword,CTRXWFI2,,X coord of WFI-2 center in mosaic,float,TRUE,TRUE,-1
+4,keyword,CTRYWFI2,,Y coord of WFI-2 center in mosaic,float,TRUE,TRUE,-1
+4,keyword,CTRXWFI3,,X coord of WFI-3 center in mosaic,float,TRUE,TRUE,-1
+4,keyword,CTRYWFI3,,Y coord of WFI-3 center in mosaic,float,TRUE,TRUE,-1
+4,keyword,CTRXNFI4,,X coord of NFI center in mosaic,float,TRUE,TRUE,-1
+4,keyword,CTRYNFI4,,Y coord of NFI center in mosaic,float,TRUE,TRUE,-1
 4,keyword,OBJECT,Heliosphere white light,Object observed,str,TRUE,TRUE,Heliosphere white light
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
 5,keyword,CROTA,,[deg] Human-readable solar north pole angle,float,TRUE,TRUE,

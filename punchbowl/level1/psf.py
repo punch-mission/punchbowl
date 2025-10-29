@@ -8,6 +8,7 @@ from ndcube import NDCube
 from prefect import get_run_logger
 from regularizepsf import ArrayPSF, ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf, varied_functional_psf
 from regularizepsf.util import calculate_covering
+from scipy.ndimage import binary_dilation
 
 from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.prefect import punch_task
@@ -139,6 +140,12 @@ def correct_psf(
 
     data.data[...] = new_data[...]
     # TODO: uncertainty propagation
+
+    # Flag uncertainty for saturated regions:
+    saturation_mask = new_data > saturation_threshold
+    saturation_mask = binary_dilation(saturation_mask, iterations=saturation_dilation)
+    data.uncertainty.array[saturation_mask] = np.inf
+
     return data
 
 @punch_task

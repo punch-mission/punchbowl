@@ -8,6 +8,7 @@ from ndcube import NDCube
 from prefect import get_run_logger
 from regularizepsf import ArrayPSF, ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf, varied_functional_psf
 from regularizepsf.util import calculate_covering
+from scipy.ndimage import binary_dilation
 
 from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.prefect import punch_task
@@ -102,6 +103,9 @@ def correct_psf(
     data: NDCube,
     psf_transform: ArrayPSFTransform,
     max_workers: int | None = None,
+    saturation_threshold: float = 55_000,
+    saturation_dilation: int = 3,
+    neighborhood_width: int = 7,
 ) -> NDCube:
     """
     Correct the PSF.
@@ -114,6 +118,14 @@ def correct_psf(
         The PSF transform that corresponds to the input images
     max_workers : int | None
         The maximum number of concurrent processes to use when performing the PSF transform
+    saturation_threshold: float
+        Pixels brighter than this threshold are filled with their neighborhood average before PSF correction
+        and then refilled with the raw value after correction to avoid producing artifacts
+    saturation_dilation: int
+        A nonnegative number of times to morphologically dilate the saturation mask before application
+    neighborhood_width: int
+        An odd positive number indicating the size of the neighborhood used for filling saturated pixels
+
 
     Returns
     -------
@@ -121,10 +133,21 @@ def correct_psf(
         The corrected image
 
     """
-    new_data = psf_transform.apply(data.data, workers=max_workers, saturation_threshold=55_000, saturation_dilation=3)
+    new_data = psf_transform.apply(data.data, workers=max_workers,
+                                   saturation_threshold=saturation_threshold,
+                                   saturation_dilation=saturation_dilation,
+                                   neighborhood_width=neighborhood_width)
 
     data.data[...] = new_data[...]
-    # TODO: uncertainty propagation
+
+    if data.uncertainty is not None:
+        # TODO: full uncertainty propagation
+
+        # Flag uncertainty for saturated and affected regions
+        saturation_mask = new_data > saturation_threshold
+        saturation_mask = binary_dilation(saturation_mask, iterations=saturation_dilation)
+        data.uncertainty.array[saturation_mask] = np.inf
+
     return data
 
 @punch_task

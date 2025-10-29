@@ -74,7 +74,7 @@ def to_celestial_frame_cutout(data_cube: NDCube, cdelt: float = 0.02) -> NDCube:
 
     reprojected = reproject.reproject_adaptive((data, wcs.celestial), wcs_out, out_shape,
                                                return_footprint=False, roundtrip_coords=False,
-                                               boundary_mode="strict", conserve_flux=True, center_jacobian=True)
+                                               boundary_mode="strict", conserve_flux=False, center_jacobian=True)
     return NDCube(data=reprojected[0], uncertainty=StdDevUncertainty(reprojected[1]), wcs=wcs_out)
 
 

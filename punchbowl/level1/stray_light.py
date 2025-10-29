@@ -21,7 +21,7 @@ from punchbowl.exceptions import (
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import (average_datetime, bundle_matched_mzp,
                             interpolate_data, parallel_sort_first_axis,
-                            masked_mean, nan_percentile)
+                            masked_mean)
 
 
 @punch_flow
@@ -209,7 +209,7 @@ def estimate_polarized_stray_light( # noqa: C901
     tbcube = 2 / 3 * (mdata + zdata + pdata)
 
     # Per-pixel percentile threshold of tbcube over time (T axis)
-    tb_thresh = nan_percentile(tbcube, percentile, axis=0, keepdims=True)
+    tb_thresh = np.nanpercentile(tbcube, percentile, axis=0, keepdims=True)
     mask = (tbcube <= tb_thresh)  # shape: (T, H, W)
 
     # Estimate MZP background based on index

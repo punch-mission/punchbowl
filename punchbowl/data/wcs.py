@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from datetime import datetime
 
 import astropy.coordinates
@@ -12,7 +13,7 @@ import sunpy.coordinates
 import sunpy.map
 from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping, get_sun
 from astropy.time import Time
-from astropy.wcs import WCS
+from astropy.wcs import WCS, FITSFixedWarning
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from sunpy.coordinates import frames
 
@@ -413,7 +414,10 @@ def compute_hp_to_eq_rotation_angle(wcs_helio: WCS, date_obs: str | Time | None=
 
 def load_trefoil_wcs() -> tuple[astropy.wcs.WCS, tuple[int, int]]:
     """Load Level 2 trefoil world coordinate system and shape."""
-    trefoil_wcs = WCS(os.path.join(_ROOT, "data", "trefoil_wcs.fits"))
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", ".*The WCS transformation has more axes \\(2\\) than the image it is "
+                                          "associated with \\(0\\).*", FITSFixedWarning)
+        trefoil_wcs = WCS(os.path.join(_ROOT, "data", "trefoil_wcs.fits"))
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
     trefoil_shape = (4096, 4096)
 

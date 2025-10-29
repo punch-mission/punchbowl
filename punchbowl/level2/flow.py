@@ -33,7 +33,9 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
                      polarized: bool | None = None,
                      trefoil_wcs: WCS | None = None,
                      trefoil_shape: tuple[int, int] | None = None,
-                     trim_edges_px: int = 0,
+                     rolloff_width: float | list[float] = .25,
+                     rolloff_strength: float | list[float] = 1,
+                     trim_edges_px: int | list[int] = 0,
                      alphas_file: str | None = None,
                      output_filename: str | None = None) -> list[NDCube]:
     """
@@ -52,8 +54,17 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         The frame to build the mosaic in. By default, the default trefoil mosaic is used.
     trefoil_shape : tuple[int, int] | None
         The size of the frame to build the mosaic in. By default, the default trefoil size is used.
-    trim_edges_px : int
-        Before reprojection, image edges are trimmed by this amount, and the masked region is expanded by this amount.
+    rolloff_width : float | list[float]
+        Before reprojection, image uncertainties are enhanced at the edges, to provide a smooth rolloff in merging. This
+        controls the width of that rolloff. The rolloff width will be this number, times the shortest distance from
+        image-center to image-mask-edge. A list can be provided to give one value for each spacecraft.
+    rolloff_strength : float | list[float]
+        Before reprojection, image uncertainties are enhanced at the edges, to provide a smooth rolloff in merging. This
+        controls the strength of that rolloff. Merging weights at the mask edge will be reduced by this fractional
+        amount. A strength of zero means no rolloff. A list can be provided to give one value for each spacecraft.
+    trim_edges_px : int | list[int]
+        Before reprojection, image edges are trimmed by this amount, and the masked region is expanded by this amount. A
+         list can be provided to give one value for each spacecraft.
     alphas_file : str
         File path containing alpha scalings for relative instrument scaling.
     output_filename : str | None
@@ -108,7 +119,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
 
         preprocess_trefoil_inputs(data_list, trim_edges_px, alphas_file)
 
-        data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape)
+        data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape, rolloff_width=rolloff_width,
+                                        rolloff_strength=rolloff_strength)
         data_list = [identify_bright_structures_task(cube, this_voter_filenames)
                      for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
         merger = merge_many_polarized_task if polarized else merge_many_clear_task

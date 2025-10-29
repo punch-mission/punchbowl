@@ -139,12 +139,14 @@ def correct_psf(
                                    neighborhood_width=neighborhood_width)
 
     data.data[...] = new_data[...]
-    # TODO: uncertainty propagation
 
-    # Flag uncertainty for saturated regions:
-    saturation_mask = new_data > saturation_threshold
-    saturation_mask = binary_dilation(saturation_mask, iterations=saturation_dilation)
-    data.uncertainty.array[saturation_mask] = np.inf
+    if data.uncertainty is not None:
+        # TODO: full uncertainty propagation
+
+        # Flag uncertainty for saturated and affected regions
+        saturation_mask = new_data > saturation_threshold
+        saturation_mask = binary_dilation(saturation_mask, iterations=saturation_dilation)
+        data.uncertainty.array[saturation_mask] = np.inf
 
     return data
 

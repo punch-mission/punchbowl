@@ -2,6 +2,7 @@ import os
 import pathlib
 import warnings
 from pathlib import Path
+from datetime import UTC, datetime
 
 import numpy as np
 from astropy.io import fits
@@ -22,11 +23,28 @@ from punchbowl.exceptions import (
 )
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.prefect import punch_task
-from punchbowl.util import DataLoader, load_spacecraft_mask
+from punchbowl.util import DataLoader, interpolate_data, load_spacecraft_mask
+
+
+def _load_vignetting_function(vignetting_path: str | pathlib.Path | DataLoader | None) -> NDCube:
+    if isinstance(vignetting_path, DataLoader):
+        vignetting_function = vignetting_path.load()
+        vignetting_path = vignetting_path.src_repr()
+    else:
+        if isinstance(vignetting_path, str):
+            vignetting_path = pathlib.Path(vignetting_path)
+        if not vignetting_path.exists():
+            msg = f"File {vignetting_path} does not exist."
+            raise InvalidDataError(msg)
+        vignetting_function = load_ndcube_from_fits(vignetting_path, include_provenance=False)
+    return vignetting_function, vignetting_path
 
 
 @punch_task
-def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.Path | DataLoader | None) -> NDCube:
+def correct_vignetting_task(data_object: NDCube, # noqa: C901
+                            vignetting_path: str | pathlib.Path | DataLoader | None,
+                            second_vignetting_path: str | pathlib.Path | DataLoader | None = None,
+                            allow_extrapolation: bool = False) -> NDCube:
     """
     Prefect task to correct the vignetting of an image.
 
@@ -59,8 +77,16 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
     data_object : PUNCHData
         data on which to operate
 
-    vignetting_path : pathlib
+    vignetting_path : str | Path | DataLoader
         path to vignetting function to apply to input data
+
+    second_vignetting_path : str | Path | DataLoader | None
+        if provided, the two vignetting functions will be interpolated between
+
+    allow_extrapolation : bool
+        if second_vignetting_path is provided, whether to allow extrapolation beyond the two vignetting files. If False
+        and data_object's date_obs is outside this range, the interpolation will be "clamped" to one of the two files,
+        rather than extrapolating.
 
     Returns
     -------
@@ -73,35 +99,58 @@ def correct_vignetting_task(data_object: NDCube, vignetting_path: str | pathlib.
         msg=f"Calibration file {vignetting_path} is unavailable, vignetting correction not applied"
         warnings.warn(msg, NoCalibrationDataWarning)
     else:
-        if isinstance(vignetting_path, DataLoader):
-            vignetting_function = vignetting_path.load()
-            vignetting_path = vignetting_path.src_repr()
+        vignetting_function, vignetting_path = _load_vignetting_function(vignetting_path)
+        if second_vignetting_path is None:
+            second_vignetting_function = None
         else:
-            if isinstance(vignetting_path, str):
-                vignetting_path = pathlib.Path(vignetting_path)
-            if not vignetting_path.exists():
-                msg = f"File {vignetting_path} does not exist."
+            second_vignetting_function, second_vignetting_path = _load_vignetting_function(second_vignetting_path)
+        for function, path in ([vignetting_function, vignetting_path],
+                               [second_vignetting_function, second_vignetting_path]):
+            if function is None:
+                continue
+            vignetting_function_date = function.meta.astropy_time
+            observation_date = data_object.meta.astropy_time
+            if abs((vignetting_function_date - observation_date).to("day").value) > 14:
+                msg = f"Calibration file {path} contains data created greater than 2 weeks from the observation"
+                warnings.warn(msg, LargeTimeDeltaWarning)
+            if function.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
+                msg = f"Incorrect TELESCOP value within {path}"
+                warnings.warn(msg, IncorrectTelescopeWarning)
+            if function.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
+                msg = f"Incorrect polarization state within {path}"
+                warnings.warn(msg, IncorrectPolarizationStateWarning)
+            if function.data.shape != data_object.data.shape:
+                msg = f"Incorrect vignetting function shape within {path}"
                 raise InvalidDataError(msg)
-            vignetting_function = load_ndcube_from_fits(vignetting_path, include_provenance=False)
-        vignetting_function_date = vignetting_function.meta.astropy_time
-        observation_date = data_object.meta.astropy_time
-        if abs((vignetting_function_date - observation_date).to("day").value) > 14:
-            msg = f"Calibration file {vignetting_path} contains data created greater than 2 weeks from the observation"
-            warnings.warn(msg, LargeTimeDeltaWarning)
-        if vignetting_function.meta["TELESCOP"].value != data_object.meta["TELESCOP"].value:
-            msg = f"Incorrect TELESCOP value within {vignetting_path}"
-            warnings.warn(msg, IncorrectTelescopeWarning)
-        if vignetting_function.meta["OBSLAYR1"].value != data_object.meta["OBSLAYR1"].value:
-            msg = f"Incorrect polarization state within {vignetting_path}"
-            warnings.warn(msg, IncorrectPolarizationStateWarning)
-        if vignetting_function.data.shape != data_object.data.shape:
-            msg = f"Incorrect vignetting function shape within {vignetting_path}"
-            raise InvalidDataError(msg)
 
-        data_object.data[:, :] /= vignetting_function.data[:, :]
-        data_object.uncertainty.array[:, :] /= vignetting_function.data[:, :]
-        data_object.meta.history.add_now("LEVEL1-correct_vignetting",
-                                         f"Vignetting corrected using {os.path.basename(str(vignetting_path))}")
+        history_message = f"Vignetting corrected using {os.path.basename(str(vignetting_path))}"
+
+        if second_vignetting_function is not None:
+            if second_vignetting_function.meta.astropy_time < vignetting_function.meta.astropy_time:
+                vignetting_function, second_vignetting_function = second_vignetting_function, vignetting_function
+            if not allow_extrapolation and data_object.meta.astropy_time < vignetting_function.meta.astropy_time:
+                msg = "Data is before first vignetting function and extrapolation is not allowed; clamping."
+                warnings.warn(msg)
+                final_vignetting = vignetting_function.data
+            elif (not allow_extrapolation
+                  and data_object.meta.astropy_time > second_vignetting_function.meta.astropy_time):
+                msg = "Data is after second vignetting function and extrapolation is not allowed; clamping."
+                warnings.warn(msg)
+                final_vignetting = second_vignetting_function.data
+                history_message = f"Vignetting corrected using {os.path.basename(str(second_vignetting_path))}"
+            else:
+                final_vignetting = interpolate_data(vignetting_function, second_vignetting_function,
+                                                    data_object.meta.datetime,
+                                                    allow_extrapolation=allow_extrapolation)
+                history_message += f" and {os.path.basename(str(second_vignetting_path))}"
+
+        else:
+            final_vignetting = vignetting_function.data
+
+        data_object.data[:, :] /= final_vignetting[:, :]
+        data_object.uncertainty.array[:, :] /= final_vignetting[:, :]
+
+        data_object.meta.history.add_now("LEVEL1-correct_vignetting", history_message)
     return data_object
 
 
@@ -190,14 +239,15 @@ def generate_vignetting_calibration_wfi(path_vignetting: str,
     raise RuntimeError(f"Unknown spacecraft {spacecraft}")
 
 
-def generate_vignetting_calibration_nfi(input_files: list[str],
+def generate_vignetting_calibration_nfi(input_files: list[str], # noqa: C901
                                         path_speckle: str,
                                         path_mask: str,
                                         path_dark: str,
                                         polarizer: str,
                                         dateobs: str,
                                         version: str,
-                                        output_path: str | None = None) -> np.ndarray | str:
+                                        output_path: str | None = None,
+                                        max_files: int = -1) -> np.ndarray | str:
     """
     Create calibration data for vignetting for the NFI spacecraft.
 
@@ -219,6 +269,8 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         File version
     output_path : str | None
         Path to calibration file output
+    max_files : int
+        If set, only the first this many non-outlier files will be loaded and used
 
 
     Returns
@@ -237,14 +289,14 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     with fits.open(path_dark) as hdul:
         nfidark = hdul[1].data
 
-    # Load a WCS to use later on
-    with fits.open(input_files[0]) as hdul:
-        cube_wcs = WCS(hdul[1].header)
-
     # Load and square root decode input data
     cubes = []
     for file in input_files:
-        cube = load_ndcube_from_fits(file)
+        try:
+            cube = load_ndcube_from_fits(file)
+        except: # noqa: E722
+            print(f"Error loading {file}") # noqa: T201
+            continue
         if cube.meta["OFFSET"].value is None:
             cube.meta["OFFSET"] = 400
         # Reject outlier images in vignetting calculation if they have been flagged
@@ -255,6 +307,8 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
         else:
             if 490 <= cube.meta["DATAMDN"].value <= 655 and cube.meta["DATAP99"].value != 4095:
                 cubes.append(decode_sqrt_data.fn(cube))
+        if max_files > 0 and len(cubes) >= max_files:
+            break
 
     # Subtract dark frame
     for cube in cubes:
@@ -295,8 +349,9 @@ def generate_vignetting_calibration_nfi(input_files: list[str],
     m = NormalizedMetadata.load_template(f"G{polarizer}4", "1")
     m["DATE-OBS"] = dateobs
     m["FILEVRSN"] = version
+    m["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    cube = NDCube(data=nfiflat.astype("float32"), wcs=cube_wcs, meta=m)
+    cube = NDCube(data=nfiflat.astype("float32"), wcs=cube.wcs, meta=m)
 
     if output_path is not None:
         filename = Path(output_path) / f"{get_base_file_name(cube)}.fits"

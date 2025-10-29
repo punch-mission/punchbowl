@@ -68,6 +68,7 @@ def level1_early_core_flow(  # noqa: C901
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
     vignetting_function_path: str | DataLoader | None = None,
+    second_vignetting_function_path: str | DataLoader | None = None,
     deficient_pixel_map_path: str | None = None,
     deficient_pixel_method: str = "median",
     deficient_pixel_required_good_count: int = 3,
@@ -133,7 +134,8 @@ def level1_early_core_flow(  # noqa: C901
                              reset_line_time=reset_line_time,
                              readout_line_time=readout_line_time,
                              max_workers=max_workers)
-        data = correct_vignetting_task(data, vignetting_function_path)
+        data = correct_vignetting_task(data, vignetting_function_path, second_vignetting_function_path,
+                                       allow_extrapolation=False)
         data = remove_deficient_pixels_task(data,
                                             deficient_pixel_map_path,
                                             required_good_count=deficient_pixel_required_good_count,
@@ -164,6 +166,11 @@ def level1_early_core_flow(  # noqa: C901
         if isinstance(vignetting_function_path, DataLoader):
             vignetting_function_path = vignetting_function_path.src_repr()
         new_meta["CALVI"] = os.path.basename(vignetting_function_path) if vignetting_function_path else ""
+
+        if isinstance(second_vignetting_function_path, DataLoader):
+            second_vignetting_function_path = second_vignetting_function_path.src_repr()
+        new_meta["CALVI2"] = (os.path.basename(second_vignetting_function_path)
+                              if second_vignetting_function_path else "")
 
         if isinstance(quartic_coefficient_path, DataLoader):
             quartic_coefficient_path = quartic_coefficient_path.src_repr()

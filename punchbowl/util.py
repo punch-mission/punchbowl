@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 import numba
 import numpy as np
+from numpy.typing import ArrayLike
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from scipy.signal import convolve2d
@@ -312,10 +313,9 @@ def bundle_matched_mzp(m_cubes: list[NDCube],
             triplets.append((m_cubes[matching_m], z_cubes[z_index], p_cubes[matching_p]))
     return triplets
 
-def masked_mean(data, mask):
-    """
-    Masked nanmean with entries where both mask is True and data is finite.
-    """
+def masked_mean(data: ArrayLike,
+                mask: ArrayLike)-> np.ndarray:
+    """Masked nanmean with entries where both mask is True and data is finite."""
     valid = mask & np.isfinite(data)
     count = valid.sum(axis=0)
 

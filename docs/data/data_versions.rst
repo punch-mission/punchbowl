@@ -19,8 +19,8 @@ A history of data version releases is given below.
 
 Version 0h
 ----------
-- Released October 27, 2025
-- Improved vignetting functions derived from diffuse light instead of stars
+- Released October 29, 2025
+- Fixed a double counting of pixel area that was making vignetting correction not work properly
 - Recalculated PSF models to avoid artifacts and poor correction at edges of images
 - Upgraded all level 0 files to 0h to support new BADPKTS keyword
 - Fixed the observation layer keywrods for PFM and PIM

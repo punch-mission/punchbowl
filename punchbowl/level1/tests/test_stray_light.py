@@ -1,12 +1,18 @@
 import os
 import pathlib
+import numpy as np
+import pytest
 
+from pathlib import Path
+from astropy.io import fits
+from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
-
-from punchbowl.data import write_ndcube_to_fits
+from punchbowl.data import write_ndcube_to_fits, punch_io
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.level1.stray_light import estimate_stray_light, remove_stray_light_task
+from punchbowl.level1.stray_light import (estimate_stray_light,
+                                          estimate_polarized_stray_light,
+                                          remove_stray_light_task)
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -40,3 +46,45 @@ def test_estimate_stray_light_runs(tmpdir, sample_ndcube):
 
     assert cube[0].meta['TYPECODE'].value == 'SR'
     assert cube[0].meta['OBSCODE'].value == '1'
+
+
+@pytest.fixture
+def dummy_fits_paths(tmp_path: Path):
+    """Create dummy fits files for testing."""
+    values = [10.0, 5.0, 25.0]
+    mfiles, zfiles, pfiles = [], [], []
+
+    wcs = WCS(naxis=2)
+    wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    wcs.wcs.cunit = "deg", "deg"
+    wcs.wcs.cdelt = 0.01, 0.01
+    wcs.wcs.crpix = 1024, 1024
+    wcs.wcs.crval = 0, 0
+    wcs.wcs.cname = "HPC lon", "HPC lat"
+    base_header = wcs.to_header()
+
+    for i, val in enumerate(values):
+        arr = np.full((3, 3), val, dtype=float)
+
+        for prefix, out_list in (("m", mfiles), ("z", zfiles), ("p", pfiles)):
+            path = tmp_path / f"{prefix}{i}.fits"
+
+            hdr = base_header.copy()
+            hdr["OBSCODE"]  = "TESTOBS"
+            hdr["FILEVRSN"] = "1"
+            hdr["DATE-OBS"] = "2020-01-01T00:00:00"
+            hdr["FILENAME"] = path.name
+
+            fits.writeto(path, arr, hdr, overwrite=True)
+            out_list.append(str(path))
+
+    return mfiles, zfiles, pfiles
+
+def test_estimate_polarized_stray_light(dummy_fits_paths) -> None:
+    mfiles, zfiles, pfiles = dummy_fits_paths
+    with disable_run_logger():
+        result = estimate_polarized_stray_light.fn(mfiles, zfiles, pfiles, do_uncertainty=False)
+        for cube in result:
+            assert isinstance(cube, NDCube)
+            assert cube.data.shape == (3, 3)
+            assert np.allclose(cube.data, 5.2)

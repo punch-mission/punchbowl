@@ -1,18 +1,17 @@
 import os
 import pathlib
+from pathlib import Path
+
 import numpy as np
 import pytest
-
-from pathlib import Path
 from astropy.io import fits
 from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
-from punchbowl.data import write_ndcube_to_fits, punch_io
+
+from punchbowl.data import punch_io, write_ndcube_to_fits
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.level1.stray_light import (estimate_stray_light,
-                                          estimate_polarized_stray_light,
-                                          remove_stray_light_task)
+from punchbowl.level1.stray_light import estimate_polarized_stray_light, estimate_stray_light, remove_stray_light_task
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 

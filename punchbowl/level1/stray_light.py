@@ -19,9 +19,7 @@ from punchbowl.exceptions import (
     InvalidDataError,
 )
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import (average_datetime, bundle_matched_mzp,
-                            interpolate_data, parallel_sort_first_axis,
-                            masked_mean)
+from punchbowl.util import average_datetime, bundle_matched_mzp, interpolate_data, masked_mean, parallel_sort_first_axis
 
 
 @punch_flow

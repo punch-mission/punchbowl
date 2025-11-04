@@ -85,5 +85,4 @@ def test_estimate_polarized_stray_light(dummy_fits_paths) -> None:
         for cube in result:
             assert isinstance(cube, NDCube)
             assert cube.data.shape == (3, 3)
-            print("value", cube.data[0, 0])
             assert np.allclose(cube.data, 5.0)

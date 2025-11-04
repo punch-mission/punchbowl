@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 
 import numba
 import numpy as np
-from numpy.typing import ArrayLike
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
+from numpy.typing import ArrayLike
 from scipy.signal import convolve2d
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits

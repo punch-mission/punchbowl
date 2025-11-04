@@ -84,7 +84,7 @@ def test_shift_image_onto(tmp_path, shift1, shift2, is_overlap):
     d1_reprojected_to_2 = reproject.reproject_adaptive((data, cube1.wcs.celestial), reproj_data_2.wcs,
                                                        reproj_data_2.data.shape, return_footprint=False,
                                                        roundtrip_coords=False, boundary_mode='strict',
-                                                       conserve_flux=True, center_jacobian=True)
+                                                       conserve_flux=False, center_jacobian=True)
 
     # We should be getting the same thing, to a part in 10^8
     np.testing.assert_allclose(d1_shifted_to_2.data, d1_reprojected_to_2[0], equal_nan=True, rtol=1e-8)
@@ -98,7 +98,7 @@ def test_shift_image_onto(tmp_path, shift1, shift2, is_overlap):
     d2_reprojected_to_1 = reproject.reproject_adaptive((data, cube2.wcs.celestial), reproj_data_1.wcs,
                                                        reproj_data_1.data.shape, return_footprint=False,
                                                        roundtrip_coords=False, boundary_mode='strict',
-                                                       conserve_flux=True, center_jacobian=True)
+                                                       conserve_flux=False, center_jacobian=True)
 
     # We should be getting the same thing, to a part in 10^8
     np.testing.assert_allclose(d2_shifted_to_1.data, d2_reprojected_to_1[0], equal_nan=True, rtol=1e-8)
@@ -144,7 +144,7 @@ def test_shift_image_onto_3d_cube(tmp_path):
     d1_reprojected_to_2 = reproject.reproject_adaptive((data, cube1.wcs.celestial), reproj_data_2.wcs,
                                                        reproj_data_2.data.shape[1:], return_footprint=False,
                                                        roundtrip_coords=False, boundary_mode='strict',
-                                                       conserve_flux=True, center_jacobian=True)
+                                                       conserve_flux=False, center_jacobian=True)
 
     # We should be getting the same thing, to a part in 10^8
     np.testing.assert_allclose(d1_shifted_to_2.data, d1_reprojected_to_2[0], equal_nan=True, rtol=1e-8)
@@ -158,7 +158,7 @@ def test_shift_image_onto_3d_cube(tmp_path):
     d2_reprojected_to_1 = reproject.reproject_adaptive((data, cube2.wcs.celestial), reproj_data_1.wcs,
                                                        reproj_data_1.data.shape[1:], return_footprint=False,
                                                        roundtrip_coords=False, boundary_mode='strict',
-                                                       conserve_flux=True, center_jacobian=True)
+                                                       conserve_flux=False, center_jacobian=True)
 
     # We should be getting the same thing, to a part in 10^8
     np.testing.assert_allclose(d2_shifted_to_1.data, d2_reprojected_to_1[0], equal_nan=True, rtol=1e-8)

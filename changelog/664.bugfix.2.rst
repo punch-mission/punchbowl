@@ -1,0 +1,1 @@
+Fixes detection of image edges for cropping and rolloffs in L2 mosaics

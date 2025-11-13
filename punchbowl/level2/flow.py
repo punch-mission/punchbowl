@@ -12,7 +12,7 @@ from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
-from punchbowl.level2.resample import reproject_many_flow
+from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
 from punchbowl.prefect import punch_flow
 from punchbowl.util import average_datetime, find_first_existing_file, load_image_task, output_image_task
 
@@ -112,6 +112,10 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             data_list = [entry.result() for entry in data_list]
             data_list = [j for i in data_list for j in i]
             voter_filenames = ordered_voters
+            # Use the Z state for each file
+            center_inputs = [cube for cube in ordered_data_list if cube.meta["POLAR"].value == 0]
+        else:
+            center_inputs = data_list
 
         default_trefoil_wcs, default_trefoil_shape = load_trefoil_wcs()
         trefoil_wcs = trefoil_wcs or default_trefoil_wcs
@@ -128,6 +132,16 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         output_data.meta["FILEVRSN"] = find_first_existing_file(data_list).meta["FILEVRSN"].value
         history_src = next(d for d in data_list if d is not None)
         output_data.meta.history = history_src.meta.history
+
+        centers = find_central_pixel(center_inputs, trefoil_wcs)
+        for center, cube in zip(centers, center_inputs, strict=False):
+            if center is None:
+                continue
+            cx, cy = center
+            obs_no = cube.meta["OBSCODE"].value
+            obs = "NFI" if obs_no == "4" else "WFI"
+            output_data.meta[f"CTRX{obs}{obs_no}"] = cx
+            output_data.meta[f"CTRY{obs}{obs_no}"] = cy
     else:
         if polarized is None:
             msg = "A polarization state must be provided"

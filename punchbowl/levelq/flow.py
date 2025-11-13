@@ -13,7 +13,7 @@ from punchbowl.data.punch_io import load_many_cubes
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_wcs
 from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
-from punchbowl.level2.resample import reproject_many_flow
+from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
 from punchbowl.levelq.pca import pca_filter
 from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
 
@@ -105,7 +105,7 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
 
 @flow(validate_parameters=False)
-def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
+def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
                          output_filename: list[str] | None = None,
                          trim_edges_px: int = 0,
                          alphas_file: str | None = None,
@@ -156,6 +156,16 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                                                output_data_mosaic.meta["HAS_WFI2"],
                                                output_data_mosaic.meta["HAS_WFI3"],
                                                output_data_mosaic.meta["HAS_NFI4"]} == {1}
+
+        centers = find_central_pixel(ordered_data_list, trefoil_wcs)
+        for center, cube in zip(centers, ordered_data_list, strict=False):
+            if center is None:
+                continue
+            cx, cy = center
+            obs_no = cube.meta["OBSCODE"].value
+            obs = "NFI" if obs_no == "4" else "WFI"
+            output_data_mosaic.meta[f"CTRX{obs}{obs_no}"] = cx
+            output_data_mosaic.meta[f"CTRY{obs}{obs_no}"] = cy
 
         output_data_mosaic.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_data_mosaic.meta["DATE-AVG"] = output_dateobs

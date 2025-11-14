@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 import astropy
 import numpy as np
 import scipy.optimize
+from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from numpy.polynomial import polynomial
@@ -339,6 +340,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         output_data = np.stack([m_model_fcorona,
                                 z_model_fcorona,
                                 p_model_fcorona], axis=0)
+        uncertainty = np.sqrt(output_data) / np.sqrt(obs_times)
         meta = NormalizedMetadata.load_template("PFM", "3")
         trefoil_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
     else:
@@ -351,6 +353,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
             model_fcorona = fill_nans_with_interpolation(model_fcorona)
 
         output_data = model_fcorona
+        uncertainty = np.sqrt(model_fcorona) / np.sqrt(len(obs_times))
         meta = NormalizedMetadata.load_template("CFM", "3")
 
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -362,7 +365,8 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
 
     output_cube = NDCube(data=output_data,
                          meta=meta,
-                         wcs=trefoil_wcs)
+                         wcs=trefoil_wcs,
+                         uncertainty=StdDevUncertainty(uncertainty))
 
 
     return [output_cube]
@@ -394,17 +398,18 @@ def subtract_f_corona_background(data_object: NDCube,
             msg,
         )
 
-    interpolated_model = interpolate_data(before_f_background_model,
-                                          after_f_background_model,
-                                          data_object.meta.datetime)
+    interpolated_model, interpolated_uncertainty = interpolate_data(
+            before_f_background_model,
+            after_f_background_model,
+            data_object.meta.datetime,
+            and_uncertainty=True)
 
     interpolated_model[np.isinf(data_object.uncertainty.array)] = 0
 
-    original_mask = data_object.data[...] == 0
-    data_object.data[...] = data_object.data[...] - interpolated_model
+    original_mask = (data_object.data == 0) * np.isinf(data_object.uncertainty.array)
+    data_object.data[...] -= interpolated_model
     data_object.data[original_mask] = 0
-    data_object.uncertainty.array[:, :] -= interpolated_model
-    data_object.uncertainty.array[original_mask] = 0
+    data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 + interpolated_uncertainty**2)
     return data_object
 
 @punch_task

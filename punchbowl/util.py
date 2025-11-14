@@ -240,7 +240,8 @@ def nan_percentile_2d(array: np.ndarray, percentile: float | list[float], # noqa
 
 
 def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime, time_key: str = "DATE-OBS",
-                     allow_extrapolation: bool = False) -> np.ndarray:
+                     allow_extrapolation: bool = False, and_uncertainty: bool = False,
+                     ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Interpolates between two data objects."""
     before_date = parse_datetime(data_before.meta[time_key].value + " UTC").timestamp()
     after_date = parse_datetime(data_after.meta[time_key].value + " UTC").timestamp()
@@ -257,14 +258,22 @@ def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: dat
         raise InvalidDataError(msg)
 
     if before_date == observation_date:
-        data_interpolated = data_before
+        data_interpolated = data_before.data
+        uncert_interpolated = data_before.uncertainty.array
     elif after_date == observation_date:
-        data_interpolated = data_after
+        data_interpolated = data_after.data
+        uncert_interpolated = data_after.uncertainty.array
     else:
         data_interpolated = ((data_after.data - data_before.data)
                               * (observation_date - before_date) / (after_date - before_date)
                               + data_before.data)
+        if and_uncertainty:
+            uncert_interpolated = ((data_after.uncertainty.array - data_before.uncertainty.array)
+                                  * (observation_date - before_date) / (after_date - before_date)
+                                  + data_before.uncertainty.array)
 
+    if and_uncertainty:
+        return data_interpolated, uncert_interpolated
     return data_interpolated
 
 def load_spacecraft_mask(path_mask: str) -> np.ndarray:

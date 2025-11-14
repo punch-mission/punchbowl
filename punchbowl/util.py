@@ -322,18 +322,27 @@ def bundle_matched_mzp(m_cubes: list[NDCube],
             triplets.append((m_cubes[matching_m], z_cubes[z_index], p_cubes[matching_p]))
     return triplets
 
-def masked_mean(data: ArrayLike,
+
+@numba.njit(cache=True, parallel=True)
+def masked_mean(array: ArrayLike,
                 mask: ArrayLike)-> np.ndarray:
-    """Masked nanmean with entries where both mask is True and data is finite."""
-    valid = mask & np.isfinite(data)
-    count = valid.sum(axis=0)
+    """Masked nanmean along the first axis of entries where both mask is True and data is finite."""
+    output = np.empty(array.shape[1:])
 
-    sumvalid = np.where(valid, data, 0.0).sum(axis=0)
-
-    # Safe divide; pixels with count==0 become NaN
-    outdata = np.full(sumvalid.shape, np.nan, dtype=np.result_type(data, np.float32))
-    np.divide(sumvalid, count, out=outdata, where=(count > 0))
-    return outdata
+    for i in numba.prange(array.shape[1]):
+        for j in range(array.shape[2]):
+            sequence = array[:, i, j].copy()
+            n_good = 0
+            for k in range(len(sequence)):
+                if not np.isfinite(sequence[k]) or not mask[k, i, j]:
+                    sequence[k] = 0
+                else:
+                    n_good += 1
+            if n_good == 0:
+                output[i, j] = np.nan
+            else:
+                output[i, j] = np.sum(sequence) / n_good
+    return output
 
 T = TypeVar("T")
 

@@ -192,11 +192,14 @@ def model_polarized_fcorona_for_cube( xt: np.ndarray, # noqa: ARG001
     zdata = cube[:, 1, :, :]
     pdata = cube[:, 2, :, :]
     # Estimate total brightness
-    tbcube = 2 / 3 * (mdata + zdata + pdata)
+    tbcube = 2 / 3 * np.sum(cube, axis=1)
 
     # Per-pixel percentile threshold of tbcube over time (T axis)
-    tb_thresh = np.nanpercentile(tbcube, percentile, axis=0, keepdims=True)
+    tb_thresh = nan_percentile(tbcube, percentile)
     mask = (tbcube <= tb_thresh)  # shape: (T, H, W)
+
+    # We don't need this anymore and we're holding a lot of RAM, so release some
+    del tbcube
 
     # Estimate MZP background based on index
     m_background = masked_mean(mdata, mask)

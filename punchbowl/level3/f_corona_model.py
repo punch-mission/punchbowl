@@ -17,7 +17,7 @@ from punchbowl.data.punch_io import load_many_cubes_iterable
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import interpolate_data, nan_percentile, masked_mean
+from punchbowl.util import interpolate_data, masked_mean, nan_percentile
 
 
 def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,

@@ -362,6 +362,12 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
             else:
                 msg = "Provenance HDU does not appear to be BinTableHDU type."
                 raise ValueError(msg)
+        if "CPDIS1A" in header:
+            # Work around a possible astropy bug, see https://github.com/astropy/astropy/issues/18914
+            del header["CPDIS1A"]
+            del header["CPDIS2A"]
+            del header["DP1A"]
+            del header["DP2A"]
         wcs = WCS(header, hdul, key=key)
         unit = u.ct
 

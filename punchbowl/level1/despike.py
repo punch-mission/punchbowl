@@ -1,10 +1,13 @@
 import numpy as np
-from astroscrappy import detect_cosmics
+import numpy.ma as ma  # DAL
+from astroscrappy import detect_cosmics  # DAL remove
 from ndcube import NDCube
+from scipy.ndimage import gaussian_filter  # DAL
 from scipy.signal import convolve2d, medfilt2d
 from threadpoolctl import threadpool_limits
 
-from punchbowl.level1.deficient_pixel import cell_neighbors
+from punchbowl.level1.deficient_pixel import cell_neighbors  # needed for spikejones
+from punchbowl.level1.deficient_pixel import mean_correct  # DAL
 from punchbowl.prefect import punch_task
 
 
@@ -89,6 +92,115 @@ def spikejones(
 
     return output, spikes
 
+@punch_task
+def despike_polseq(
+    sequence: np.ndarray, sat_ratio: float=0.99, filter_width: float=25.0, hpf_zscore_thresh: float=20.0,
+    )->tuple[np.ndarray,np.ndarray]:
+    """
+    Remove cosmic ray spikes from a single polarization sequence of images.
+
+    This code takes as input multiple (N) images from the same roll sequence. It
+    constructs a high-pass-filtered version of the input images. At each pixel, it
+    computes the median and standard deviation of the (N-1) dimmest pixels, and
+    then the z-score of each pixel. If the z-score exceeds a threshold, a cosmic
+    ray is assumed and the pixel is filled in with the mean of its neighbors.
+
+    Parameters
+    ----------
+    sequence : np.ndarray
+        an array representing an image sequence
+    sat_ratio: float
+        pixels greater than this fraction of the saturation value are set to NaN
+    filter_width: float
+        width of the gaussian filter used in created the high-pass-filtered image
+    hpf_zscore_thresh: float
+        number of standard deviations above the sequence median[sic] that causes a pixel to be marked as a cosmic ray.
+
+    Returns
+    -------
+    (np.ndarray, np.ndarray)
+        an image with spikes replaced by the average of their neighbors and the locations of all spikes
+
+    """
+    seq_len = sequence.shape[0]
+    dsatval = 65535 #DAL this assumes we move cosmic removal before the DN->MSB conversion
+    sequence[sequence>=sat_ratio*dsatval]=np.nan
+
+    #create the high-pass-filtered images
+    lpf_decoded = gaussian_filter(sequence,[1,filter_width,filter_width],mode="nearest")
+    lpf_decoded = ma.filled(lpf_decoded,np.nan)
+    hpf = sequence-lpf_decoded #DAL need to make sure hpf gets to be a signed datatype
+
+    hpf_sorted = np.sort(hpf,axis=0)
+
+    match(seq_len):
+        case(7):
+            hpf_median_s = np.mean(hpf_sorted[2:3],axis=0)
+        case(6):
+            hpf_median_s = hpf_sorted[2]
+        case(5):
+            hpf_median_s = np.mean(hpf_sorted[1:2],axis=0)
+        case(4):
+            hpf_median_s = hpf_sorted[1]
+        case(3):
+            hpf_median_s = np.mean(hpf_sorted[0:1],axis=0)
+
+    hpf_stdev = np.std(hpf_sorted[0:-1],axis=0,ddof=0)
+    hpf_zscore = (hpf - hpf_median_s)/hpf_stdev
+
+    sequence_replaced = np.array(sequence)
+    cosmic_sequence = np.zeroes(sequence_replaced)
+    cosmic_sequence[hpf_zscore>=hpf_zscore_thresh]=1
+    sequence_replaced[hpf_zscore>=hpf_zscore_thresh]=np.nan
+
+    sequence_replaced = [mean_correct(data_array=sequence_replaced[_],mask_array=
+                                      np.logical_not(np.isnan(sequence_replaced[_]))) for _ in range(seq_len)]
+
+    return sequence_replaced, cosmic_sequence
+
+
+@punch_task
+def despike_polseq_task(data_object: NDCube,
+                            sat_ratio: float=0.99,
+                            filter_width: float=25.0,
+                            hpf_zscore_thresh: float=20.0,
+                            max_workers: int | None = None)-> NDCube:
+    """
+    Despike a polarization sequence of images using a simple statistical test.
+
+    Parameters
+    ----------
+    data_object : NDCube
+        Sequence of images to be despiked. Must be from the same spacecraft and roll sequence.
+    sat_ratio: float, optional
+        Pixels greater than sat_ratio times the saturation value are set to NaN.
+    filter_width : float, optional
+        width of the gaussian filter used to construct the high-pass-filtered image, in pixels.
+    hpf_zscore_thresh: float, optional
+        number of standard deviations above the sequence median[sic] that causes a pixel to be marked as a cosmic ray.
+    max_workers : int, optional
+        Max number of threads to use
+
+    Returns
+    -------
+    NDCube
+        Despiked cube.
+
+    """
+    with threadpool_limits(max_workers):
+        data_object.data[...], spikes = despike_polseq(
+                                        data_object.data[...],
+                                        sat_ratio=sat_ratio,
+                                        filter_width=filter_width,
+                                        hpf_zscore_thresh=hpf_zscore_thresh)
+
+    data_object.uncertainty.array[spikes] = np.inf
+    data_object.meta.history.add_now("LEVEL1-despike", "image despiked")
+    data_object.meta.history.add_now("LEVEL1-despike", f"saturation_ratio={sat_ratio}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"filter_width={filter_width}")
+    data_object.meta.history.add_now("LEVEL1-despike", f"zscore_thresh={hpf_zscore_thresh}")
+
+    return data_object
 
 @punch_task
 def despike_task(data_object: NDCube,

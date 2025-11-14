@@ -145,3 +145,32 @@ def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_sha
                    uncertainty=StdDevUncertainty(out_layers[i].result()[1]),
                    wcs=trefoil_wcs,
                    meta=d.meta) if d is not None else None for i, d in enumerate(data)]
+
+
+def find_central_pixel(data_list: list[NDCube | None], trefoil_wcs: WCS) -> list[tuple[float, float]]:
+    """
+    Find the location of the central pixel of each cube in the mosaic frame.
+
+    Parameters
+    ----------
+    data_list
+        A list of data cubes
+    trefoil_wcs
+        The mosaic frame
+
+    Returns
+    -------
+    centers
+        The (x, y) center of each data cube in the mosaic frame. Contains ``None`` wherever the input cube was ``None``.
+
+    """
+    centers = []
+    for cube in data_list:
+        if cube is None:
+            centers.append(None)
+            continue
+        center = cube.data.shape[1] / 2, cube.data.shape[0] / 2
+        location = trefoil_wcs.world_to_pixel(cube.wcs.pixel_to_world(*center))
+        # Convert from 0D numpy arrays to Python floats
+        centers.append((location[0].item(), location[1].item()))
+    return centers

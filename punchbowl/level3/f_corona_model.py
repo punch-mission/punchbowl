@@ -17,7 +17,7 @@ from punchbowl.data.punch_io import load_many_cubes_iterable
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import interpolate_data, nan_percentile
+from punchbowl.util import interpolate_data, nan_percentile, average_datetime, bundle_matched_mzp, masked_mean
 
 
 def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
@@ -180,6 +180,30 @@ def model_fcorona_for_cube(xt: np.ndarray, # noqa: ARG001
     return nan_percentile(cube, 3), None
 
 
+def model_polarized_fcorona_for_cube( xt: np.ndarray, # noqa: ARG001
+                           reference_xt: float, # noqa: ARG001
+                           cube: np.ndarray,
+                           percentile: float = 3.0,
+                           *args: list, **kwargs: dict, # noqa: ARG001
+                            ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Estimate the polarized f corona model using indexing method."""
+    mdata = cube[:, 0, :, :]
+    zdata = cube[:, 1, :, :]
+    pdata = cube[:, 2, :, :]
+    # Estimate total brightness
+    tbcube = 2 / 3 * (mdata + zdata + pdata)
+
+    # Per-pixel percentile threshold of tbcube over time (T axis)
+    tb_thresh = np.nanpercentile(tbcube, percentile, axis=0, keepdims=True)
+    mask = (tbcube <= tb_thresh)  # shape: (T, H, W)
+
+    # Estimate MZP background based on index
+    m_background = masked_mean(mdata, mask)
+    z_background = masked_mean(zdata, mask)
+    p_background = masked_mean(pdata, mask)
+
+    return m_background, z_background, p_background
+
 def _model_fcorona_for_cube_inner(xt: np.ndarray,
                                   reference_xt: float,
                                   cube: np.ndarray,
@@ -310,30 +334,18 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
 
     reference_xt = reference_time.timestamp()
     if polarized:
-        m_model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt,
-                                                    data_cube[:, 0, :, :],
+        m_model_fcorona, z_model_fcorona, p_model_fcorona = model_polarized_fcorona_for_cube(
+                                                    obs_times, reference_xt,
+                                                    data_cube,
                                                     num_workers=num_workers,
-                                                    clip_factor=clip_factor)
-        m_model_fcorona[m_model_fcorona==0] = np.nan
+                                                    percentile=clip_factor)
+
+        m_model_fcorona[m_model_fcorona == 0] = np.nan
+        z_model_fcorona[z_model_fcorona == 0] = np.nan
+        p_model_fcorona[p_model_fcorona == 0] = np.nan
         if fill_nans:
             m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona)
-
-        z_model_fcorona, _ = model_fcorona_for_cube(obs_times,
-                                                    reference_xt,
-                                                    data_cube[:, 1, :, :],
-                                                    num_workers=num_workers,
-                                                    clip_factor=clip_factor)
-        z_model_fcorona[z_model_fcorona==0] = np.nan
-        if fill_nans:
             z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona)
-
-        p_model_fcorona, _ = model_fcorona_for_cube(obs_times,
-                                                    reference_xt,
-                                                    data_cube[:, 2, :, :],
-                                                    num_workers=num_workers,
-                                                    clip_factor=clip_factor)
-        p_model_fcorona[p_model_fcorona==0] = np.nan
-        if fill_nans:
             p_model_fcorona = fill_nans_with_interpolation(p_model_fcorona)
 
         output_data = np.stack([m_model_fcorona,

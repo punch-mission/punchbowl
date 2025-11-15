@@ -1,6 +1,7 @@
 import os
 import copy
 import warnings
+import multiprocessing
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
 
@@ -597,7 +598,8 @@ def solve_pointing( # noqa: C901
     rng = np.random.default_rng(seed=1)
     candidate_wcs = []
     observed_tree = KDTree(observed)
-    with ProcessPoolExecutor(n_workers) as p:
+    mp_context = multiprocessing.get_context("forkserver")
+    with ProcessPoolExecutor(n_workers, mp_context) as p:
         for _ in range(n_rounds):
             sample = catalog_stars[rng.choice(indices, 30, replace=False)]
             candidate_wcs.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))

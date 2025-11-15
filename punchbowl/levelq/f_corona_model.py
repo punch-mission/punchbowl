@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
 from prefect import get_run_logger
@@ -78,7 +79,7 @@ def construct_qp_f_corona_model(filenames: list[str],
     if fill_nans:
             model_fcorona = fill_nans_with_interpolation(model_fcorona)
 
-
+    uncertainty = np.sqrt(model_fcorona) / np.sqrt(obs_times)
 
     meta = NormalizedMetadata.load_template("CFM", "Q")
 
@@ -90,7 +91,8 @@ def construct_qp_f_corona_model(filenames: list[str],
     meta["DATE-END"] = output_dateend
 
     output_cube = NDCube(data=model_fcorona.squeeze(),
-                                meta=meta,
-                                wcs=trefoil_wcs)
+                         meta=meta,
+                         wcs=trefoil_wcs,
+                         uncertainty=StdDevUncertainty(uncertainty))
 
     return [output_cube]

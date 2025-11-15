@@ -113,7 +113,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             data_list = [j for i in data_list for j in i]
             voter_filenames = ordered_voters
             # Use the Z state for each file
-            center_inputs = [cube for cube in ordered_data_list if cube.meta["POLAR"].value == 0]
+            center_inputs = [cube for cube in ordered_data_list if cube is not None and cube.meta["POLAR"].value == 0]
         else:
             center_inputs = data_list
 

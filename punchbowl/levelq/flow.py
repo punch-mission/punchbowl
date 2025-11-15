@@ -157,7 +157,7 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
                                                output_data_mosaic.meta["HAS_WFI3"],
                                                output_data_mosaic.meta["HAS_NFI4"]} == {1}
 
-        centers = find_central_pixel(ordered_data_list, trefoil_wcs)
+        centers = find_central_pixel(ordered_data_list, quickpunch_mosaic_wcs)
         for center, cube in zip(centers, ordered_data_list, strict=False):
             if center is None:
                 continue

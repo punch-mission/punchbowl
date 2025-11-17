@@ -50,7 +50,7 @@ def spikejones(
     Returns
     -------
     (np.ndarray, np.ndarray)
-        an image with spikes replaced by the average of their neighbors and the locations of all spikes
+        an image with spikes replaced by the average of their neighbors and the spike locations of all spikes
 
     """
     image = image.copy()  # copy to avoid mutating the existing data
@@ -94,8 +94,8 @@ def spikejones(
 
 @punch_task
 def despike_polseq(
-    sequence: np.ndarray, sat_ratio: float=0.99, filter_width: float=25.0, hpf_zscore_thresh: float=20.0,
-    )->tuple[np.ndarray,np.ndarray]:
+    sequence: list[NDCube], sat_ratio: float=0.99, filter_width: float=25.0, hpf_zscore_thresh: float=20.0,
+    )->tuple[list[NDCube],list[np.ndarray]]:
     """
     Remove cosmic ray spikes from a single polarization sequence of images.
 
@@ -107,8 +107,8 @@ def despike_polseq(
 
     Parameters
     ----------
-    sequence : np.ndarray
-        an array representing an image sequence
+    sequence : List[NDCube]
+        a list of NDCube objects representing a polarization image sequence
     sat_ratio: float
         pixels greater than this fraction of the saturation value are set to NaN
     filter_width: float
@@ -118,8 +118,8 @@ def despike_polseq(
 
     Returns
     -------
-    (np.ndarray, np.ndarray)
-        an image with spikes replaced by the average of their neighbors and the locations of all spikes
+    (List[NDCube], List[np.ndarray])
+        a list of NDCubes with spikes replaced by the average of their neighbors, and a list of spike locations
 
     """
     seq_len = sequence.shape[0]

@@ -14,6 +14,7 @@ def trim_edges(data_list: list[NDCube], trim_edge_px: int | list[int] = 0) -> No
         else:
             trim_amount = trim_edge_px
         mask = (np.isnan(cube.data) + (cube.data == 0)) * (~np.isfinite(cube.uncertainty.array))
+        mask = ~scipy.ndimage.binary_fill_holes(~mask)
         if trim_amount:
             mask = scipy.ndimage.binary_dilation(mask, iterations=trim_amount)
             mask[:trim_amount] = 1

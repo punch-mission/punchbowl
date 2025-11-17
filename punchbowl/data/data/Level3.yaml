@@ -71,7 +71,7 @@ Kinds:
 # Product specifications
 Products:
     PFM:
-        kinds: [Polarized]
+        kinds: [Polarized, Calibration]
         overrides:
             TITLE: PUNCH Level-3 Polarized Mosaic F-Corona Model
             OBSTYPE: Polarized mosaic F-corona model

@@ -79,7 +79,7 @@ def construct_qp_f_corona_model(filenames: list[str],
     if fill_nans:
             model_fcorona = fill_nans_with_interpolation(model_fcorona)
 
-    uncertainty = np.sqrt(model_fcorona) / np.sqrt(obs_times)
+    uncertainty = np.sqrt(model_fcorona) / np.sqrt(len(obs_times))
 
     meta = NormalizedMetadata.load_template("CFM", "Q")
 

@@ -1,0 +1,1 @@
+Pixels in the interior of the image are no longer masked in the L2 pre-process step

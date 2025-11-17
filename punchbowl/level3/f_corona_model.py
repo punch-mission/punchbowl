@@ -188,6 +188,8 @@ def model_polarized_fcorona_for_cube( xt: np.ndarray, # noqa: ARG001
                            *args: list, **kwargs: dict, # noqa: ARG001
                             ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Estimate the polarized f corona model using indexing method."""
+    cube[cube == 0] = np.nan
+
     mdata = cube[:, 0, :, :]
     zdata = cube[:, 1, :, :]
     pdata = cube[:, 2, :, :]

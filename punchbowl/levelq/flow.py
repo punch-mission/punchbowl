@@ -163,7 +163,8 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
                 continue
             cx, cy = center
             obs_no = cube.meta["OBSCODE"].value
-            obs = "NFI" if obs_no == "4" else "WFI"
+            obs = "NFI" if obs_no == "N" else "WFI"
+            obs_no = "4" if obs_no == "N" else obs_no
             output_data_mosaic.meta[f"CTRX{obs}{obs_no}"] = cx
             output_data_mosaic.meta[f"CTRY{obs}{obs_no}"] = cy
 

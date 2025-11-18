@@ -24,19 +24,6 @@ Level:
 
 # Kind specifications
 Kinds:
-    Polarized:
-        overrides:
-            NAXIS: 3
-            NAXIS1: 4096
-            NAXIS2: 4096
-            NAXIS3: 3
-            OBS-MODE: Polar_MZP
-            OBSLAYR1: Polar_M
-            OBSLAYR2: Polar_Z
-            OBSLAYR3: Polar_P
-            POLARREF: 'Solar'
-        omits: [FILTER, POLAR]
-
     Unpolarized:
         overrides:
             NAXIS: 2
@@ -51,7 +38,10 @@ Kinds:
             NAXIS: 2
             NAXIS1: 4096
             NAXIS2: 4096
-        omits: [Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3,
+                Velocity, Calibration Data,
+                HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT, CTRXWFI1, CTRYWFI1, CTRXWFI2, CTRYWFI2, CTRXWFI3,
+                CTRYWFI3, CTRXNFI4, CTRYNFI4]
 
 
 # Product specifications
@@ -61,8 +51,8 @@ Products:
         overrides:
             NAXIS1: 1024
             NAXIS2: 1024
-            TITLE: PUNCH Level-2 Unpolarized QuickPUNCH Mosaic F-Corona Model
-            OBSTYPE: Unpolarized quicklook mosaic F-corona model
+            TITLE: PUNCH Level-Q Unpolarized QuickPUNCH Mosaic F-Corona Model
+            OBSTYPE: Unpolarized QuickPUNCH mosaic F-corona model
             TYPECODE: CF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
@@ -72,8 +62,8 @@ Products:
         overrides:
             NAXIS1: 1024
             NAXIS2: 1024
-            TITLE: PUNCH Level-2 Unpolarized QuickPUNCH NFI F-Corona Model
-            OBSTYPE: Unpolarized NFI quicklook F-corona model
+            TITLE: PUNCH Level-Q Unpolarized QuickPUNCH NFI F-Corona Model
+            OBSTYPE: Unpolarized NFI QuickPUNCH F-corona model
             TYPECODE: CF
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
@@ -86,8 +76,8 @@ Products:
         overrides:
             NAXIS1: 1024
             NAXIS2: 1024
-            TITLE: PUNCH Level-2 Unpolarized QuickPUNCH Mosaic
-            OBSTYPE: Unpolarized quicklook mosaic
+            TITLE: PUNCH Level-Q Unpolarized QuickPUNCH Mosaic
+            OBSTYPE: Unpolarized QuickPUNCH mosaic
             TYPECODE: CT
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
@@ -97,8 +87,8 @@ Products:
         overrides:
             NAXIS1: 1024
             NAXIS2: 1024
-            TITLE: PUNCH Level-2 Unpolarized QuickPUNCH NFI Image
-            OBSTYPE: Unpolarized NFI quicklook image
+            TITLE: PUNCH Level-Q Unpolarized QuickPUNCH NFI Image
+            OBSTYPE: Unpolarized NFI QuickPUNCH image
             TYPECODE: CN
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"

@@ -1,0 +1,1 @@
+For mosaics, the location of the central pixel of each input image is recorded in the header

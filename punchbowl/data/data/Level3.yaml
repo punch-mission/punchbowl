@@ -47,12 +47,18 @@ Kinds:
             POLAR: -999
         omits: [Velocity, NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
 
+    Low-noise:
+        omits: [HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT, CTRXWFI1, CTRYWFI1, CTRXWFI2, CTRYWFI2, CTRXWFI3,
+                CTRYWFI3, CTRXNFI4, CTRYNFI4]
+
     Calibration:
         overrides:
             NAXIS: 2
             NAXIS1: 4096
             NAXIS2: 4096
-        omits: [Velocity, Calibration Data, Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [Velocity, Calibration Data, Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3,
+                HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT, CTRXWFI1, CTRYWFI1, CTRXWFI2, CTRYWFI2, CTRXWFI3,
+                CTRYWFI3, CTRXNFI4, CTRYNFI4]
 
     Velocity:
         overrides:
@@ -65,7 +71,7 @@ Kinds:
 # Product specifications
 Products:
     PFM:
-        kinds: [Polarized]
+        kinds: [Polarized, Calibration]
         overrides:
             TITLE: PUNCH Level-3 Polarized Mosaic F-Corona Model
             OBSTYPE: Polarized mosaic F-corona model
@@ -234,7 +240,7 @@ Products:
             ALL_INPT: 1
 
     PAM:
-        kinds: [Polarized]
+        kinds: [Polarized, Low-noise]
         overrides:
             TITLE: PUNCH Level-3 Polarized Low Noise Mosaic
             OBSTYPE: Polarized low noise mosaic
@@ -258,7 +264,7 @@ Products:
             ALL_INPT: 1
 
     CAM:
-        kinds: [Unpolarized]
+        kinds: [Unpolarized, Low-noise]
         overrides:
             TITLE: PUNCH Level-3 Unpolarized Low Noise Mosaic
             OBSTYPE: Unpolarized low noise mosaic

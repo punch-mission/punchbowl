@@ -444,10 +444,10 @@ def refine_pointing_single_step(
     ----------
     guess_wcs : WCS
         the initial guess for the world coordinate system
-    observed_coords : np.ndarray
-        coordinates of the observed star positions extracted from the image
-    subcatalog : pd.DataFrame
-        the catalog subset used for this resolution
+    observed_tree: KDTree
+        coordinates of the observed star positions extracted from the image, as a tree
+    catalog_stars : SkyCoord
+        the coordinates of known stars to be matched with the observed stars
     method : str
         method used by lmfit for minimization
     ra_tolerance : float
@@ -518,12 +518,18 @@ def solve_pointing( # noqa: C901
         a 2D image, preferably with cosmic rays reduced
     image_wcs : WCS
         a guess world coordinate system
+    image_header : NormalizedMetadata
+        the image's metadata
     distortion : WCS | None
         a distortion WCS to use when fitting
     saturation_limit : float
         the maximum star brightness to utilize
     observatory : str
         "wfi" or "nfi"
+    n_rounds : int
+        the number of iterations to run for pointing refinement
+    n_workers : int
+        the number of parallel workers to use for pointing refinement
 
     Returns
     -------

@@ -19,7 +19,7 @@ def construct_qp_f_corona_model(filenames: list[str],
                                 reference_time: str | None = None,
                                 num_workers: int = 8,
                                 num_loaders: int = 8,
-                                fill_nans: bool = True) -> list[NDCube]:
+                                fill_nans: bool = False) -> list[NDCube]:
     """Construct QuickPUNCH F corona model."""
     logger = get_run_logger()
 
@@ -41,7 +41,7 @@ def construct_qp_f_corona_model(filenames: list[str],
     data_shape = trefoil_shape
 
     number_of_data_frames = len(filenames)
-    data_cube = np.empty((*data_shape, number_of_data_frames), dtype=float)
+    data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
 
     meta_list = []
     obs_times = []
@@ -60,7 +60,7 @@ def construct_qp_f_corona_model(filenames: list[str],
             continue
         cube = result
         dates.append(cube.meta.datetime)
-        data_cube[..., j] = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
+        data_cube[j] = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
         j += 1
         obs_times.append(cube.meta.datetime.timestamp())
         meta_list.append(cube.meta)
@@ -75,11 +75,10 @@ def construct_qp_f_corona_model(filenames: list[str],
     reference_xt = reference_time.timestamp()
     model_fcorona, _ = model_fcorona_for_cube(obs_times, reference_xt, data_cube,
                                               num_workers=num_workers, clip_factor=clip_factor)
-    model_fcorona[model_fcorona<=0] = np.nan
     if fill_nans:
             model_fcorona = fill_nans_with_interpolation(model_fcorona)
 
-    uncertainty = np.sqrt(model_fcorona) / np.sqrt(len(obs_times))
+    uncertainty = np.sqrt(np.abs(model_fcorona)) / np.sqrt(len(obs_times))
 
     meta = NormalizedMetadata.load_template("CFM", "Q")
 

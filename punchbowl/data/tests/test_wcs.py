@@ -164,7 +164,7 @@ def test_celestial_to_helio_wcs_many_points():
                          "PV2_1": 0,
                          })
 
-        wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial)
+        wcs_helio = calculate_helio_wcs_from_celestial(wcs_celestial)
 
         npoints = 20
         xs, ys = np.meshgrid(
@@ -293,7 +293,7 @@ def test_celestial_to_helio_wcs_many_points_3d():
                          "PV2_1": 0,
                          })
 
-        wcs_helio, _ = calculate_helio_wcs_from_celestial(wcs_celestial)
+        wcs_helio = calculate_helio_wcs_from_celestial(wcs_celestial)
 
         npoints = 20
         xs, ys = np.meshgrid(
@@ -346,7 +346,7 @@ def test_back_and_forth_wcs_from_celestial(starting_rotation):
     pc = calculate_pc_matrix(starting_rotation, wcs_celestial.wcs.cdelt)
     wcs_celestial.wcs.pc = pc
 
-    wcs_helio, p_angle = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, (10, 10))
+    wcs_helio = calculate_helio_wcs_from_celestial(wcs_celestial, date_obs, (10, 10))
     wcs_celestial_recovered = calculate_celestial_wcs_from_helio(wcs_helio, date_obs, (10, 10))
 
     assert np.allclose(wcs_celestial.wcs.crval, wcs_celestial_recovered.wcs.crval)
@@ -373,7 +373,7 @@ def test_back_and_forth_wcs_from_helio(starting_rotation):
     wcs_helio.wcs.pc = pc
 
     wcs_celestial = calculate_celestial_wcs_from_helio(wcs_helio.copy(), date_obs, (10, 10))
-    wcs_helio_recovered, p_angle = calculate_helio_wcs_from_celestial(wcs_celestial.copy(), date_obs, (10, 10))
+    wcs_helio_recovered = calculate_helio_wcs_from_celestial(wcs_celestial.copy(), date_obs, (10, 10))
 
     assert np.allclose(wcs_helio.wcs.crval, wcs_helio_recovered.wcs.crval)
     assert np.allclose(wcs_helio.wcs.crpix, wcs_helio_recovered.wcs.crpix)

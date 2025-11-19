@@ -82,9 +82,7 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
         wcs_helio = astropy.wcs.utils.add_stokes_axis_to_wcs(wcs_helio, 2)
     wcs_helio.array_shape = data_shape
 
-    p_angle = get_p_angle(date_obs)
-
-    return wcs_helio, p_angle
+    return wcs_helio
 
 
 def get_sun_ra_dec(dt: datetime) -> tuple[float, float]:

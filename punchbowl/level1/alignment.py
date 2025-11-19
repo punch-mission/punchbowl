@@ -1,7 +1,9 @@
 import os
 import copy
 import warnings
+import multiprocessing
 from collections.abc import Callable
+from concurrent.futures import ProcessPoolExecutor
 
 import astrometry
 import astropy.units as u
@@ -9,7 +11,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import sep
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
 from lmfit import Parameters, minimize
@@ -19,11 +21,40 @@ from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
 
+from punchbowl.data import NormalizedMetadata
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
 from punchbowl.prefect import punch_task
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
-HIPPARCOS_URL = "https://cdsarc.cds.unistra.fr/ftp/cats/I/239/hip_main.dat"
+
+def download_gaia_data(out_path: str, dimmest_mag: float = 9) -> None:
+    """Download and pre-process Gaia data."""
+    from astroquery.gaia import Gaia  # noqa: PLC0415
+    query = f"""SELECT source_id, ra, dec, phot_g_mean_mag, parallax from gaiadr3.gaia_source
+                WHERE phot_g_mean_mag < {dimmest_mag}
+                 AND dec > -70
+                 AND dec < 70
+            """ # noqa: S608
+    job = Gaia.launch_job_async(query)
+    results = job.get_results()
+
+    # Remove the few records with no parallax
+    results = results[~results["parallax"].mask]
+
+    results["Dist_ly"] = np.round(3.26 / (results["parallax"] / 1000), 2)
+    results.remove_column("parallax")
+    results = results[results["Dist_ly"] > 2]
+
+    results.rename_column("ra", "RAdeg")
+    results.rename_column("dec", "DEdeg")
+    results.rename_column("phot_g_mean_mag", "Gmag")
+
+    # Removing digits we don't need to cut the file size
+    results["Gmag"] = np.round(results["Gmag"], 1)
+    results["RAdeg"] = np.round(results["RAdeg"], 7)
+    results["DEdeg"] = np.round(results["DEdeg"], 7)
+    results.to_pandas(index="source_id").to_csv(out_path)
+
 
 def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_size: float = 3) -> np.ndarray:
     """
@@ -112,14 +143,15 @@ def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_
     # Replicate the edge rows/columns to replace those we trimmed earlier
     return np.pad(data, [trimmed[0:2], trimmed[2:]], mode="edge")
 
+
 def get_data_path(path: str) -> str:
     """Get the path to the local data directory."""
     return os.path.join(_ROOT, "data", path)
 
 
-def load_hipparcos_catalog(catalog_path: str = get_data_path("reduced_hip.csv")) -> pd.DataFrame:
+def load_gaia_catalog(catalog_path: str = get_data_path("gaia_catalog.csv")) -> pd.DataFrame:
     """
-    Load the Hipparcos catalog from the local, reduced version. This version only keeps necessary columns.
+    Load the Gaia catalog from the local stash.
 
     Parameters
     ----------
@@ -135,113 +167,6 @@ def load_hipparcos_catalog(catalog_path: str = get_data_path("reduced_hip.csv"))
     return pd.read_csv(catalog_path)
 
 
-def load_raw_hipparcos_catalog(catalog_path: str = HIPPARCOS_URL) -> pd.DataFrame:
-    """
-    Download hipparcos catalog from the website. Not recommended for routine use.
-
-    Parameters
-    ----------
-    catalog_path : str
-        path to the Hipparcos catalog
-
-    Returns
-    -------
-    pd.DataFrame
-        loaded catalog with selected columns
-
-    """
-    column_names = (
-        "Catalog",
-        "HIP",
-        "Proxy",
-        "RAhms",
-        "DEdms",
-        "Vmag",
-        "VarFlag",
-        "r_Vmag",
-        "RAdeg",
-        "DEdeg",
-        "AstroRef",
-        "Plx",
-        "pmRA",
-        "pmDE",
-        "e_RAdeg",
-        "e_DEdeg",
-        "e_Plx",
-        "e_pmRA",
-        "e_pmDE",
-        "DE:RA",
-        "Plx:RA",
-        "Plx:DE",
-        "pmRA:RA",
-        "pmRA:DE",
-        "pmRA:Plx",
-        "pmDE:RA",
-        "pmDE:DE",
-        "pmDE:Plx",
-        "pmDE:pmRA",
-        "F1",
-        "F2",
-        "---",
-        "BTmag",
-        "e_BTmag",
-        "VTmag",
-        "e_VTmag",
-        "m_BTmag",
-        "B-V",
-        "e_B-V",
-        "r_B-V",
-        "V-I",
-        "e_V-I",
-        "r_V-I",
-        "CombMag",
-        "Hpmag",
-        "e_Hpmag",
-        "Hpscat",
-        "o_Hpmag",
-        "m_Hpmag",
-        "Hpmax",
-        "HPmin",
-        "Period",
-        "HvarType",
-        "moreVar",
-        "morePhoto",
-        "CCDM",
-        "n_CCDM",
-        "Nsys",
-        "Ncomp",
-        "MultFlag",
-        "Source",
-        "Qual",
-        "m_HIP",
-        "theta",
-        "rho",
-        "e_rho",
-        "dHp",
-        "e_dHp",
-        "Survey",
-        "Chart",
-        "Notes",
-        "HD",
-        "BD",
-        "CoD",
-        "CPD",
-        "(V-I)red",
-        "SpType",
-        "r_SpType",
-    )
-    df = pd.read_csv(
-        catalog_path,
-        sep="|",
-        names=column_names,
-        usecols=["HIP", "Vmag", "RAdeg", "DEdeg", "Plx"],
-        na_values=["     ", "       ", "        ", "            "],
-    )
-    df["distance"] = 1000 / df["Plx"]
-    df = df[df["distance"] > 0]
-    return df.iloc[np.argsort(df["Vmag"])]
-
-
 def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6) -> pd.DataFrame:
     """
     Filter to only include stars brighter than a given magnitude.
@@ -249,7 +174,7 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
     Parameters
     ----------
     catalog : pd.DataFrame
-        a catalog loaded from `~load_hipparcos_catalog` or `~load_raw_hipparcos_catalog`
+        a catalog loaded from `~load_gaia_catalog` or `~load_raw_gaia_catalog`
 
     dimmest_magnitude : float
         the dimmest magnitude to keep
@@ -260,7 +185,7 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
         a catalog with stars dimmer than the `dimmest_magnitude` removed
 
     """
-    return catalog[catalog["Vmag"] < dimmest_magnitude]
+    return catalog[catalog["Gmag"] < dimmest_magnitude]
 
 
 def find_catalog_in_image(
@@ -273,7 +198,7 @@ def find_catalog_in_image(
     Parameters
     ----------
     catalog : pd.DataFrame
-        a catalog loaded from `~thuban.catalog.load_hipparcos_catalog` or `~thuban.catalog.load_raw_hipparcos_catalog`
+        a catalog loaded from `~load_gaia_catalog`
     wcs : WCS
         the world coordinate system of a given image
     image_shape: (int, int)
@@ -295,11 +220,11 @@ def find_catalog_in_image(
         xs, ys = SkyCoord(
             ra=np.array(catalog["RAdeg"]) * u.degree,
             dec=np.array(catalog["DEdeg"]) * u.degree,
-            distance=np.array(catalog["distance"]) * u.parsec,
+            distance=np.array(catalog["Dist_ly"]) * u.lyr,
         ).to_pixel(wcs, mode=mode)
     except NoConvergence as e:
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
-    bounds_mask = (xs >= 0) * (xs < image_shape[0]) * (ys >= 0) * (ys < image_shape[1])
+    bounds_mask = (xs >= 0) * (xs < image_shape[1]) * (ys >= 0) * (ys < image_shape[0])
 
     if mask is not None:
         bounds_mask *= mask(xs, ys)
@@ -308,6 +233,7 @@ def find_catalog_in_image(
     reduced_catalog["x_pix"] = xs[bounds_mask]
     reduced_catalog["y_pix"] = ys[bounds_mask]
     return reduced_catalog
+
 
 def find_star_coordinates(image_data: np.ndarray,
                           saturation_limit: float = np.inf,
@@ -452,19 +378,34 @@ def _residual(params: Parameters,
     refined_wcs.cpdis1 = guess_wcs.cpdis1
     refined_wcs.cpdis2 = guess_wcs.cpdis2
 
-    try:
-        xs, ys = catalog_stars.to_pixel(refined_wcs, mode="all")
-    except NoConvergence as e:
-        xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
+    errors, _ = get_errors(refined_wcs, catalog_stars, observed_tree)
+    errors = errors[errors < max_error]
+    return np.nansum(errors)
+
+
+def get_errors(wcs: WCS, catalog_stars: SkyCoord | tuple[np.ndarray, np.ndarray],
+               observed_stars: np.ndarray | KDTree) -> tuple[np.ndarray, np.ndarray]:
+    """Compute errors between expected and observed star locations."""
+    if isinstance(observed_stars, np.ndarray):
+        observed_stars = KDTree(observed_stars)
+    if isinstance(catalog_stars, SkyCoord):
+        try:
+            xs, ys = catalog_stars.to_pixel(wcs, mode="all")
+        except NoConvergence as e:
+            xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
+    else:
+        xs, ys = catalog_stars
     refined_coords = np.stack([xs, ys], axis=-1)
 
-    out = np.empty(refined_coords.shape[0])
+    errors = np.empty(refined_coords.shape[0])
+    closest_stars = np.empty(refined_coords.shape)
     for coord_i, coord in enumerate(refined_coords):
-        dd, _ = observed_tree.query(coord, k=1)
-        out[coord_i] = dd
+        dd, ii = observed_stars.query(coord, k=1)
+        errors[coord_i] = dd
+        closest_stars[coord_i] = observed_stars.data[ii]
 
-    out[out > max_error] = 0
-    return np.nansum(out)
+    return errors, closest_stars
+
 
 def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
     """Extract CROTA from a WCS."""
@@ -492,12 +433,10 @@ def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
     return new_wcs
 
 
-def  refine_pointing_single_step(
-    guess_wcs: WCS, observed_coords: np.ndarray, subcatalog: pd.DataFrame, method: str = "least_squares",
-                                ra_tolerance: float = 10, dec_tolerance: float = 5,
-                                fix_crval: bool = False,
-                                fix_crota: bool = False,
-                                fix_pv: bool = True) -> WCS:
+def refine_pointing_single_step(
+        guess_wcs: WCS, observed_tree: KDTree, catalog_stars: SkyCoord, method: str = "least_squares",
+        ra_tolerance: float = 10, dec_tolerance: float = 5,
+        fix_crval: bool = False, fix_crota: bool = False, fix_pv: bool = True) -> WCS:
     """
     Perform a single step of pointing refinement.
 
@@ -505,10 +444,10 @@ def  refine_pointing_single_step(
     ----------
     guess_wcs : WCS
         the initial guess for the world coordinate system
-    observed_coords : np.ndarray
-        coordinates of the observed star positions extracted from the image
-    subcatalog : pd.DataFrame
-        the catalog subset used for this resolution
+    observed_tree: KDTree
+        coordinates of the observed star positions extracted from the image, as a tree
+    catalog_stars : SkyCoord
+        the coordinates of known stars to be matched with the observed stars
     method : str
         method used by lmfit for minimization
     ra_tolerance : float
@@ -543,14 +482,6 @@ def  refine_pointing_single_step(
     pv = guess_wcs.wcs.get_pv()[0][-1] if guess_wcs.wcs.get_pv() else 0.0
     params.add("pv", value=pv, min=0.0, max=1.0, vary=not fix_pv)
 
-    catalog_stars = SkyCoord(
-        np.array(subcatalog["RAdeg"]) * u.degree,
-        np.array(subcatalog["DEdeg"]) * u.degree,
-        np.array(subcatalog["distance"]) * u.parsec,
-    )
-
-    observed_tree = KDTree(observed_coords)
-
     out = minimize(_residual, params, method=method,
                    args=(catalog_stars, observed_tree, guess_wcs),
                    max_nfev=100, calc_covar=False)
@@ -569,12 +500,15 @@ def  refine_pointing_single_step(
 
     return result_wcs
 
-def solve_pointing(
+def solve_pointing( # noqa: C901
     image_data: np.ndarray,
     image_wcs: WCS,
+    image_header: NormalizedMetadata,
     distortion: WCS | None = None,
     saturation_limit: float = np.inf,
-    observatory: str = "wfi") -> WCS:
+    observatory: str = "wfi",
+    n_rounds: int = 175,
+    n_workers: int = 4) -> WCS:
     """
     Carefully determine the pointing of an image using the starfield.
 
@@ -584,12 +518,18 @@ def solve_pointing(
         a 2D image, preferably with cosmic rays reduced
     image_wcs : WCS
         a guess world coordinate system
+    image_header : NormalizedMetadata
+        the image's metadata
     distortion : WCS | None
         a distortion WCS to use when fitting
     saturation_limit : float
         the maximum star brightness to utilize
     observatory : str
         "wfi" or "nfi"
+    n_rounds : int
+        the number of iterations to run for pointing refinement
+    n_workers : int
+        the number of parallel workers to use for pointing refinement
 
     Returns
     -------
@@ -602,17 +542,28 @@ def solve_pointing(
     wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
     if observatory == "wfi":
         search_scales = (14, 15, 16)
-        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=5.0)
+        max_distance = 700
+        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=5.0,
+                                         max_distance_from_center=max_distance)
+        def mask(observed: np.ndarray) -> np.ndarray:
+            distances = np.sqrt(np.square(observed[:, 0] - 1024) + np.square(observed[:, 1] - 1024))
+            return distances < max_distance
     elif observatory == "nfi":
         search_scales = (11, 12, 13, 14)
-        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=3.0)
+        # We handle max_distance_from_center separately in our mask function, to do it relative to the occulter center
+        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=3.0,
+                                         max_distance_from_center=9999)
+        def mask(observed:np.ndarray) -> np.ndarray:
+            distances = np.sqrt(np.square(observed[:, 0] - 1013.5) + np.square(observed[:, 1] - 1036.4))
+            distance_mask = distances > 220
+            distance_mask *= distances < 930
+            donut_edge_mask = (distances > 830) * (distances < 870)
+            pylon_mask = (observed[:, 0] > 850) * (observed[:, 0] < 1200) * (observed[:, 1] < 1024)
+            glint_mask = (observed[:, 0] > 475) * (observed[:, 0] < 1550) * (observed[:, 1] < 950) * (
+                        observed[:, 1] > 600)
+            return distance_mask * ~pylon_mask * ~glint_mask * ~donut_edge_mask
 
-        # we mask false detections near the occulter
-        distances = np.sqrt(np.square(observed[:, 0] - 1024) + np.square(observed[:, 1] - 1024))
-        distance_mask = distances > 200
-        pylon_mask = (observed[:, 0] > 850) * (observed[:, 0] < 1200) * (observed[:, 1] < 1024)
-        glint_mask = (observed[:, 0] > 475) * (observed[:, 0] < 1550) * (observed[:, 1] < 950) * (observed[:, 1] > 600)
-        observed = observed[distance_mask * ~pylon_mask * ~glint_mask]
+        observed = observed[mask(observed)]
     else:
         msg = f"Unknown observatory = {observatory}"
         raise ValueError(msg)
@@ -641,20 +592,36 @@ def solve_pointing(
             pv = distortion.wcs.get_pv()[0][-1]
             guess_wcs.wcs.set_pv([(2, 1, pv)])
 
-    catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=8.0)
+    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=9)
     stars_in_image = find_catalog_in_image(catalog, guess_wcs, (2048, 2048))
 
+    ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
+    stars_in_image = stars_in_image[ok_stars]
+
+    catalog_stars = prep_star_coords(stars_in_image, image_header)
+
+    indices = np.arange(len(catalog_stars))
+    rng = np.random.default_rng(seed=1)
     candidate_wcs = []
-    for _ in range(50):
-        sample = stars_in_image.sample(n=15)
-        candidate_wcs.append(refine_pointing_single_step(guess_wcs, observed, sample, fix_pv=True))
+    observed_tree = KDTree(observed)
+    mp_context = multiprocessing.get_context("forkserver")
+    with ProcessPoolExecutor(n_workers, mp_context) as p:
+        for _ in range(n_rounds):
+            sample = catalog_stars[rng.choice(indices, 30, replace=False)]
+            candidate_wcs.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))
+    candidate_wcs = [w.result() for w in candidate_wcs]
 
     ras = [w.wcs.crval[0] for w in candidate_wcs]
     decs = [w.wcs.crval[1] for w in candidate_wcs]
     crotas = [extract_crota_from_wcs(w) for w in candidate_wcs]
 
+    # If we're closer to RA=0 than RA=180, wrap the RAs to avoid trouble if we're straddling the RA=0 line
+    if np.abs(ras[0] - 180) > 90:
+        ras = np.array(ras)
+        ras[ras > 180] -= 360
+
     solved_wcs = image_wcs.deepcopy()
-    solved_wcs.wcs.crval = (np.median(ras), np.median(decs))
+    solved_wcs.wcs.crval = (np.median(ras) % 360, np.median(decs))
     mean_crota = np.median([c.value for c in crotas])
     cdelt1, cdelt2 = image_wcs.wcs.cdelt
     solved_wcs.wcs.pc = np.array(
@@ -670,23 +637,38 @@ def solve_pointing(
     return solved_wcs
 
 
+def prep_star_coords(stars_in_image: pd.DataFrame, image_header: NormalizedMetadata) -> SkyCoord:
+    """
+    Convert ICRS coordinates to GCRS and put in a SkyCoord that says its ICRS.
+
+    That last bit is for compatibility with the fact that we can't have a "true" GCRS WCS, only RA-DEC that are
+    assumed to be ICRS. But as long as it's a consistent set of RA-Dec values, it doesn't matter what frame the
+    coordinates think they're in.
+    """
+    # Convert stellar coordinates to GCRS centered on the spacecraft location
+    sc_location = EarthLocation.from_geodetic(lon=image_header["GEOD_LON"].value * u.deg,
+                                              lat=image_header["GEOD_LAT"].value * u.deg,
+                                              height=image_header["GEOD_LAT"].value * u.m)
+    geoloc, geovel = sc_location.get_gcrs_posvel(image_header.astropy_time)
+    catalog_stars = SkyCoord(
+        np.array(stars_in_image["RAdeg"]) * u.degree,
+        np.array(stars_in_image["DEdeg"]) * u.degree,
+        np.array(stars_in_image["Dist_ly"]) * u.lyr,
+        frame="icrs", obsgeoloc=geoloc, obsgeovel=geovel, obstime=image_header.astropy_time,
+    ).transform_to("gcrs")
+    return SkyCoord(catalog_stars.ra, catalog_stars.dec, frame="icrs")
+
+
 def measure_wcs_error(
-    image_data: np.ndarray,
-    w: WCS,
-    dimmest_magnitude: float = 6.0,
-    max_error: float = 15.0) -> float:
+        image_data: np.ndarray,
+        wcs: WCS,
+        image_header: NormalizedMetadata,
+        dimmest_magnitude: float = 6.0,
+        max_error: float = 15.0) -> float:
     """Estimate the error in the WCS based on an image."""
-    catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=dimmest_magnitude)
-    stars_in_image = find_catalog_in_image(catalog, w, image_data.shape)
-    try:
-        xs, ys = SkyCoord(
-            ra=np.array(stars_in_image["RAdeg"]) * u.degree,
-            dec=np.array(stars_in_image["DEdeg"]) * u.degree,
-            distance=np.array(stars_in_image["distance"]) * u.parsec,
-        ).to_pixel(w, mode="all")
-    except NoConvergence as e:
-        xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
-    refined_coords = np.stack([xs, ys], axis=-1)
+    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
+    stars_in_image = find_catalog_in_image(catalog, wcs, image_data.shape)
+    catalog_stars = prep_star_coords(stars_in_image, image_header)
 
     observed_coords = find_star_coordinates(
         image_data,
@@ -694,9 +676,11 @@ def measure_wcs_error(
         max_distance_from_center=800,
         saturation_limit=1000)
 
-    out = np.array([np.min(np.linalg.norm(observed_coords - coord, axis=-1)) for coord in refined_coords])
-    out[out > max_error] = np.nan
-    return np.sqrt(np.nanmean(np.square(out)))
+    errors, _ = get_errors(wcs, catalog_stars, observed_coords)
+
+    errors = errors[errors <= max_error]
+    return np.sqrt(np.mean(np.square(errors)))
+
 
 def build_distortion_model(
     l0_paths: list[str],
@@ -706,6 +690,7 @@ def build_distortion_model(
     """Create a distortion model from a set of PUNCH L0 images."""
     refined_wcses = []
     image_cube = []
+    image_metas = []
     for path in l0_paths:
         with fits.open(path) as hdul:
             image_head = hdul[1].header
@@ -719,38 +704,34 @@ def build_distortion_model(
             image_wcs = WCS(hdul[1].header, hdul, key="A")
             mask = image_data != 0
 
-        solved_wcs = solve_pointing(image_data, image_wcs)
+        meta = NormalizedMetadata.from_fits_header(image_head)
+        solved_wcs = solve_pointing(image_data, image_wcs, meta)
 
         image_cube.append(image_data)
         refined_wcses.append(solved_wcs)
+        image_metas.append(meta)
 
-    catalog = filter_for_visible_stars(load_hipparcos_catalog(), dimmest_magnitude=dimmest_magnitude)
+    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
     all_distortions = []
 
-    for image_data, new_wcs in zip(image_cube, refined_wcses, strict=False):
+    for image_data, new_wcs, meta in zip(image_cube, refined_wcses, image_metas, strict=False):
         stars_in_image = find_catalog_in_image(catalog, new_wcs, image_data.shape)
-        subcoords = np.column_stack([[stars_in_image["RAdeg"], stars_in_image["DEdeg"]]]).T
-        refined_coords = new_wcs.all_world2pix(subcoords, 0)
-
-        refined_coords = refined_coords[
-            image_data[refined_coords[:, 1].astype(int),
-            refined_coords[:, 0].astype(int)] > 10]
+        catalog_stars = prep_star_coords(stars_in_image, meta)
+        expected_coords = catalog_stars.to_pixel(new_wcs)
 
         observed_coords = find_star_coordinates(image_data,
             max_distance_from_center=1100,
             detection_threshold=25.0,
             saturation_limit=1000)
 
-        closest_star = np.array([np.argmin(np.linalg.norm(observed_coords - coord, axis=-1))
-                                 for coord in refined_coords])
-        distance = np.array([np.min(np.linalg.norm(observed_coords - coord, axis=-1))
-                                 for coord in refined_coords])
-        for i in range(len(closest_star)):
-            all_distortions.append({"distance": distance[i],
-                                    "ox": observed_coords[closest_star[i]][0],
-                                    "oy": observed_coords[closest_star[i]][1],
-                                    "nx": refined_coords[i][0],
-                                    "ny": refined_coords[i][1]})
+        distances, matched_stars = get_errors(new_wcs, expected_coords, observed_coords)
+
+        for i in range(len(expected_coords)):
+            all_distortions.append({"distance": distances[i],
+                                    "ox": matched_stars[i][0],
+                                    "oy": matched_stars[i][1],
+                                    "nx": expected_coords[i][0],
+                                    "ny": expected_coords[i][1]})
     df = pd.DataFrame(all_distortions)
 
     xbins, r, c, _ = scipy.stats.binned_statistic_2d(
@@ -834,10 +815,10 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
         distortion = None
 
     observatory = "nfi" if data_object.meta["OBSCODE"].value == "4" else "wfi"
-    celestial_output = solve_pointing(refining_data, celestial_input, distortion,
+    celestial_output = solve_pointing(refining_data, celestial_input, data_object.meta, distortion,
                                       saturation_limit=60_000, observatory=observatory)
 
-    recovered_wcs, _ = calculate_helio_wcs_from_celestial(celestial_output,
+    recovered_wcs = calculate_helio_wcs_from_celestial(celestial_output,
                                                        data_object.meta.astropy_time,
                                                        data_object.data.shape)
 

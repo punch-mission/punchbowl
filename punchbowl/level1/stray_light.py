@@ -1,4 +1,3 @@
-import os
 import pathlib
 import warnings
 from datetime import UTC, datetime
@@ -20,6 +19,7 @@ from punchbowl.exceptions import (
 )
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import (
+    DataLoader,
     average_datetime,
     bundle_matched_mzp,
     interpolate_data,
@@ -259,8 +259,8 @@ def estimate_polarized_stray_light( # noqa: C901
 
 @punch_task
 def remove_stray_light_task(data_object: NDCube, #noqa: C901
-                            stray_light_before_path: pathlib.Path | str | NDCube,
-                            stray_light_after_path: pathlib.Path | str | NDCube) -> NDCube:
+                            stray_light_before_path: pathlib.Path | str | NDCube | DataLoader,
+                            stray_light_after_path: pathlib.Path | str | NDCube | DataLoader) -> NDCube:
     """
     Prefect task to remove stray light from an image.
 
@@ -304,18 +304,19 @@ def remove_stray_light_task(data_object: NDCube, #noqa: C901
 
     if isinstance(stray_light_before_path, NDCube):
         stray_light_before_model = stray_light_before_path
-        stray_light_before_path = stray_light_before_model.meta["FILENAME"].value
+    elif isinstance(stray_light_before_path, DataLoader):
+        stray_light_before_model = stray_light_before_path.load()
     else:
         stray_light_before_path = pathlib.Path(stray_light_before_path)
         if not stray_light_before_path.exists():
             msg = f"File {stray_light_before_path} does not exist."
             raise InvalidDataError(msg)
         stray_light_before_model = load_ndcube_from_fits(stray_light_before_path)
-        stray_light_before_path = stray_light_before_model.meta["FILENAME"].value
 
     if isinstance(stray_light_after_path, NDCube):
         stray_light_after_model = stray_light_after_path
-        stray_light_after_path = stray_light_after_model.meta["FILENAME"].value
+    elif isinstance(stray_light_after_path, DataLoader):
+        stray_light_after_model = stray_light_after_path.load()
     else:
         stray_light_after_path = pathlib.Path(stray_light_after_path)
         if not stray_light_after_path.exists():
@@ -369,6 +370,6 @@ def remove_stray_light_task(data_object: NDCube, #noqa: C901
     # uncertainty = stray_light_model.uncertainty.array # noqa: ERA001
     data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 + uncertainty**2)
     data_object.meta.history.add_now("LEVEL1-remove_stray_light",
-                                     f"stray light removed with {os.path.basename(str(stray_light_before_path))} "
-                                     f"and {os.path.basename(str(stray_light_after_path))}")
+                                     f"stray light removed with {stray_light_before_model.meta['FILENAME'].value} "
+                                     f"and {stray_light_after_model.meta['FILENAME'].value}")
     return data_object

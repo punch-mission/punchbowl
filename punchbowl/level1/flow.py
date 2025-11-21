@@ -202,8 +202,8 @@ def level1_early_core_flow(  # noqa: C901
 @punch_flow
 def level1_middle_core_flow(
     input_data: list[str] | list[NDCube],
-    dynamic_stray_light_before_path: str | None = None,
-    dynamic_stray_light_after_path: str | None = None,
+    dynamic_stray_light_before_path: str | DataLoader | None = None,
+    dynamic_stray_light_after_path: str | DataLoader | None = None,
     output_filename: list[str] | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1, applying WFI dynamic stray light subtraction."""
@@ -230,6 +230,10 @@ def level1_middle_core_flow(
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
+        if isinstance(dynamic_stray_light_before_path, DataLoader):
+            dynamic_stray_light_before_path = dynamic_stray_light_before_path.src_repr()
+        if isinstance(dynamic_stray_light_after_path, DataLoader):
+            dynamic_stray_light_after_path = dynamic_stray_light_after_path.src_repr()
         new_meta["CALDSL0"] = (os.path.basename(dynamic_stray_light_before_path)
                                if dynamic_stray_light_before_path else "")
         new_meta["CALDSL1"] = (os.path.basename(dynamic_stray_light_after_path)
@@ -250,8 +254,8 @@ def level1_middle_core_flow(
 @punch_flow
 def level1_late_core_flow( # noqa: C901
     input_data: list[str] | list[NDCube],
-    stray_light_before_path: str | None = None,
-    stray_light_after_path: str | None = None,
+    stray_light_before_path: str | DataLoader | None = None,
+    stray_light_after_path: str | DataLoader | None = None,
     psf_model_path: str | DataLoader | None = None,
     distortion_path: str | None = None,
     mask_path: str | None = None,
@@ -306,6 +310,10 @@ def level1_late_core_flow( # noqa: C901
             psf_model_path = psf_model_path.src_repr()
         new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
 
+        if isinstance(stray_light_before_path, DataLoader):
+            stray_light_before_path = stray_light_before_path.src_repr()
+        if isinstance(stray_light_after_path, DataLoader):
+            stray_light_after_path = stray_light_after_path.src_repr()
         new_meta["CALSL0"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
         new_meta["CALSL1"] = os.path.basename(stray_light_after_path) if stray_light_after_path else ""
 

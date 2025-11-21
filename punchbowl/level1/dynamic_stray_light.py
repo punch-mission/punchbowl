@@ -5,11 +5,12 @@ from itertools import pairwise
 
 import numpy as np
 from ndcube import NDCube
+from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_many_cubes, load_ndcube_from_fits
 from punchbowl.exceptions import IncorrectPolarizationStateError, IncorrectTelescopeError, InvalidDataError
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import DataLoader, average_datetime, nan_percentile
 
 fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
@@ -71,31 +72,54 @@ def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) ->
             tj = fname_to_utime(phases[phase2][j])
         dt_min = (tj - ti) / 60
         if dt_min > 0 and dt_min < 8:
-            pairs += [phases[phase1][i], phases[phase2][j]]
+            pairs.append((phases[phase1][i], phases[phase2][j]))
     return pairs
 
 
-def construct_dynamic_stray_light_model(input_files: list[str], ref_date: datetime, n_crota_bins: int = 24) -> NDCube:
+@punch_flow
+def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: datetime | str, pol_state: str,
+                                        n_crota_bins: int = 24, n_loaders: int = 5) -> list[NDCube]:
     """Estimate time- and orbital-anomaly-dependent stray light."""
-    phases = make_phases(input_files)
-    i1 = sorted([1, 2, 3], key=lambda i: len(phases[i]))[-1]
-    i2 = sorted([5, 6, 7], key=lambda i: len(phases[i]))[-1]
+    logger = get_run_logger()
+
+    if isinstance(reference_time, str):
+        reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S") # noqa: DTZ007
+
+    phases = make_phases(filepaths)
+    if pol_state == "P":
+        i1, i2 = 1, 5
+    elif pol_state == "Z":
+        i1, i2 = 2, 6
+    elif pol_state == "M":
+        i1, i2 = 3, 7
+    else:
+        raise ValueError("Unrecognized polarization state")
+
+    logger.info(f"Phase bin sizes: {[len(p) for p in phases]}")
+
     pairs = collect_pairs_by_phase(phases, i1, i2)
 
-    pairs = list(
-        zip(load_many_cubes([p[0] for p in pairs], include_uncertainty=False, include_provenance=False, n_workers=20,
-                            allow_errors=True),
-            load_many_cubes([p[1] for p in pairs], include_uncertainty=False, include_provenance=False, n_workers=20,
-                            allow_errors=True), strict=False))
+    first_half = load_many_cubes([p[0] for p in pairs], include_uncertainty=False, include_provenance=False,
+                                 n_workers=n_loaders, allow_errors=True)
+    logger.info("Finished loading first half of files")
+    second_half = load_many_cubes([p[1] for p in pairs], include_uncertainty=False, include_provenance=False,
+                                  n_workers=n_loaders, allow_errors=True)
+    logger.info("Finished loading second half of files")
+
+    pairs = list(zip(first_half, second_half, strict=False))
     pairs = [p for p in pairs if not isinstance(p[0], str) and not isinstance(p[1], str)]
+
+    logger.info(f"{len(pairs)} pairs of files are ready")
 
     bin_edges = np.linspace(-180, 180, n_crota_bins + 1)
     binned_pairs = [[] for _ in range(n_crota_bins)]
     for pair in pairs:
-        for i, (start, stop) in enumerate(pairwise(bin_edges[:-1])):
+        for i, (start, stop) in enumerate(pairwise(bin_edges)):
             if start <= pair[0].meta["CROTA"].value <= stop:
                 binned_pairs[i].append(pair)
                 break
+
+    logger.info(f"Pairs per CROTA bin: {[len(bin) for bin in binned_pairs]}") # noqa: A001
 
     diff_maps = []
     for bin in binned_pairs: # noqa: A001
@@ -109,11 +133,11 @@ def construct_dynamic_stray_light_model(input_files: list[str], ref_date: dateti
         "T" + pairs[0][0].meta["TYPECODE"].value[1] + pairs[0][0].meta["OBSCODE"].value, "1")
     date_obses = [c.meta.datetime for pair in pairs for c in pair]
     meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
-    meta["DATE-OBS"] = ref_date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] if ref_date else meta["DATE-AVG"].value
+    meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-END"] = max(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    meta.history.add_now("stray light",
+    meta.history.add_now("dynamic stray light",
                          f"Generated with {2 * len(pairs)} files running from "
                          f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                          f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
@@ -121,7 +145,7 @@ def construct_dynamic_stray_light_model(input_files: list[str], ref_date: dateti
 
     wcs = pairs[0][0].wcs.deepcopy()
     wcs.wcs.pc = np.eye(2)
-    return NDCube(data=diff_maps, meta=meta, wcs=wcs)
+    return [NDCube(data=diff_maps, meta=meta, wcs=wcs)]
 
 
 @punch_task

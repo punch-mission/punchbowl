@@ -132,6 +132,7 @@ def estimate_polarized_stray_light( # noqa: C901
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
 
     n_failed = 0
+    n_skipped = 0
     mcube_list, zcube_list, pcube_list = [], [], []
     for i, result in enumerate(load_many_cubes_iterable(mfilepaths, n_workers=num_loaders, allow_errors=True,
                                                         include_provenance=False, include_uncertainty=do_uncertainty)):
@@ -141,6 +142,9 @@ def estimate_polarized_stray_light( # noqa: C901
             n_failed += 1
             if n_failed > 10:
                 raise RuntimeError(f"{n_failed} files failed to load, stopping")
+            continue
+        if -50 < result.meta["CROTA"].value < 35:
+            n_skipped += 1
             continue
         mcube_list.append(result)
         if (i + 1) % 50 == 0:
@@ -155,6 +159,9 @@ def estimate_polarized_stray_light( # noqa: C901
             if n_failed > 10:
                 raise RuntimeError(f"{n_failed} files failed to load, stopping")
             continue
+        if -50 < result.meta["CROTA"].value < 35:
+            n_skipped += 1
+            continue
         zcube_list.append(result)
         if (i + 1) % 50 == 0:
             logger.info(f"Loaded {i+1}/{len(zfilepaths)} Z files")
@@ -168,10 +175,15 @@ def estimate_polarized_stray_light( # noqa: C901
             if n_failed > 10:
                 raise RuntimeError(f"{n_failed} files failed to load, stopping")
             continue
+        if -50 < result.meta["CROTA"].value < 35:
+            n_skipped += 1
+            continue
         pcube_list.append(result)
         if (i + 1) % 50 == 0:
             logger.info(f"Loaded {i+1}/{len(pfilepaths)} P files")
 
+    logger.info(f"Skipped loading {n_skipped} files")
+    logger.info(f"Failed loading {n_failed} files")
     triplets = bundle_matched_mzp(mcube_list, zcube_list, pcube_list)
     logger.info(f"Matched {len(triplets)} MZP triplets")
     # This is a RAM-intensive operation. To reduce memory usage, we'll be deleting the cubes as we iterate through

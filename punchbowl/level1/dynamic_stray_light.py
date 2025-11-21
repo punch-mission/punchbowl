@@ -182,7 +182,7 @@ def remove_dynamic_stray_light_task(cube: NDCube, # noqa: C901
         if model.meta["OBSLAYR1"].value != cube.meta["OBSLAYR1"].value:
             msg=f"Incorrect polarization state within {model['FILENAME'].value}"
             raise IncorrectPolarizationStateError(msg)
-        if model.data.shape != cube.data.shape:
+        if model.data.shape[1:] != cube.data.shape:
             msg = f"Incorrect stray light function shape within {model['FILENAME'].value}"
             raise InvalidDataError(msg)
 

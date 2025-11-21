@@ -10,7 +10,7 @@ from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_many_cubes, load_ndcube_from_fits
 from punchbowl.exceptions import IncorrectPolarizationStateError, IncorrectTelescopeError, InvalidDataError
 from punchbowl.prefect import punch_task
-from punchbowl.util import average_datetime, nan_percentile
+from punchbowl.util import DataLoader, average_datetime, nan_percentile
 
 fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
 
@@ -125,20 +125,26 @@ def construct_dynamic_stray_light_model(input_files: list[str], ref_date: dateti
 
 
 @punch_task
-def remove_dynamic_stray_light_task(cube: NDCube, before_cube: NDCube | str, after_cube: NDCube | str, # noqa: C901
+def remove_dynamic_stray_light_task(cube: NDCube, # noqa: C901
+                                    before_cube: NDCube | str | DataLoader,
+                                    after_cube: NDCube | str | DataLoader,
                                     ) -> None:
     """Interpolate and remove time- and orbital-anomaly-dependent stray light."""
     if before_cube is None or after_cube is None:
         cube.meta.history.add_now("LEVEL1-remove_stray_light", "Stray light correction skipped")
 
-    if not isinstance(before_cube, NDCube):
+    if isinstance(before_cube, DataLoader):
+        before_cube = before_cube.load()
+    elif not isinstance(before_cube, NDCube):
         stray_light_before_path = pathlib.Path(before_cube)
         if not stray_light_before_path.exists():
             msg = f"File {stray_light_before_path} does not exist."
             raise InvalidDataError(msg)
         before_cube = load_ndcube_from_fits(stray_light_before_path)
 
-    if not isinstance(after_cube, NDCube):
+    if isinstance(after_cube, DataLoader):
+        after_cube = after_cube.load()
+    elif not isinstance(after_cube, NDCube):
         stray_light_after_path = pathlib.Path(after_cube)
         if not stray_light_after_path.exists():
             msg = f"File {stray_light_after_path} does not exist."

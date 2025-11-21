@@ -214,7 +214,7 @@ def level1_middle_core_flow(
     output_data = []
     for i, this_data in enumerate(input_data):
         data = load_image_task(this_data) if isinstance(this_data, str) else this_data
-        data = remove_dynamic_stray_light_task(data, dynamic_stray_light_before_path, dynamic_stray_light_after_path)
+        remove_dynamic_stray_light_task(data, dynamic_stray_light_before_path, dynamic_stray_light_after_path)
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value

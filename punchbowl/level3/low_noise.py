@@ -12,6 +12,8 @@ from punchbowl.prefect import punch_task
 @punch_task
 def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     """Create a low noise image from a set of inputs."""
+    cubes = [cube for cube in cubes if cube.meta["OUTLIER"].value != 1]
+
     ref_cube_index = len(cubes) // 2
 
     data_stack = np.stack([cube.data for cube in cubes], axis=0)

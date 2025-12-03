@@ -344,7 +344,7 @@ def _update_statistics(cube: NDCube, modify_inplace: bool = False) -> Normalized
 
 
 def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True,
-                          include_uncertainty: bool = True) -> NDCube:
+                          include_uncertainty: bool = True, dtype: type = float) -> NDCube:
     """Load an NDCube from a FITS file."""
     with warnings.catch_warnings(), fits.open(path) as hdul:
         warnings.filterwarnings(action="ignore", message=".*CROTA.*Human-readable solar north pole angle.*",
@@ -373,7 +373,7 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
 
         if include_uncertainty and len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
             secondary_hdu = hdul[2]
-            uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data)
+            uncertainty = _unpack_uncertainty(secondary_hdu.data.astype(float), data).astype(dtype)
             mask = np.isinf(uncertainty)
             uncertainty = StdDevUncertainty(uncertainty)
         else:
@@ -381,7 +381,7 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
             mask = None
 
     return NDCube(
-        data.view(dtype=data.dtype.newbyteorder()).byteswap().astype(float),
+        data.view(dtype=data.dtype.newbyteorder()).byteswap().astype(dtype),
         wcs=wcs,
         uncertainty=uncertainty,
         meta=meta,

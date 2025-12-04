@@ -1,9 +1,12 @@
 import re
 import pathlib
+import warnings
 from datetime import UTC, datetime
 from itertools import pairwise
 
 import numpy as np
+from astropy.io import fits
+from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import get_run_logger
 
@@ -77,8 +80,8 @@ def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) ->
 
 
 @punch_flow
-def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: datetime | str, pol_state: str,
-                                        n_crota_bins: int = 24, n_loaders: int = 5) -> list[NDCube]:
+def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: datetime | str, #noqa: C901
+                                        pol_state: str, n_crota_bins: int = 24, n_loaders: int = 5) -> list[NDCube]:
     """Estimate time- and orbital-anomaly-dependent stray light."""
     logger = get_run_logger()
 
@@ -99,51 +102,67 @@ def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: da
 
     pairs = collect_pairs_by_phase(phases, i1, i2)
 
-    first_half = load_many_cubes([p[0] for p in pairs], include_uncertainty=False, include_provenance=False,
-                                 n_workers=n_loaders, allow_errors=True)
-    logger.info("Finished loading first half of files")
-    second_half = load_many_cubes([p[1] for p in pairs], include_uncertainty=False, include_provenance=False,
-                                  n_workers=n_loaders, allow_errors=True)
-    logger.info("Finished loading second half of files")
-
-    pairs = list(zip(first_half, second_half, strict=False))
-    pairs = [p for p in pairs if not isinstance(p[0], str) and not isinstance(p[1], str)]
-
-    logger.info(f"{len(pairs)} pairs of files are ready")
+    logger.info(f"{len(pairs)} pairs of files found")
 
     bin_edges = np.linspace(-180, 180, n_crota_bins + 1)
     binned_pairs = [[] for _ in range(n_crota_bins)]
     for pair in pairs:
+        try:
+            header = fits.getheader(pair[0], 1)
+            crota = header["CROTA"]
+        except: # noqa: E722, S112
+            continue
         for i, (start, stop) in enumerate(pairwise(bin_edges)):
-            if start <= pair[0].meta["CROTA"].value <= stop:
+            if start <= crota <= stop:
                 binned_pairs[i].append(pair)
                 break
 
     logger.info(f"Pairs per CROTA bin: {[len(bin) for bin in binned_pairs]}") # noqa: A001
 
     diff_maps = []
-    for bin in binned_pairs: # noqa: A001
-        diffs = np.empty((len(bin), *bin[0][0].data.shape))
-        for i, pair in enumerate(bin):
-            diffs[i] = pair[1].data - pair[0].data
-        diff_maps.append(nan_percentile(diffs, 50))
+    date_obses = []
+    for i, this_bin in enumerate(binned_pairs):
+        first_half = load_many_cubes([pair[0] for pair in this_bin], include_uncertainty=False,
+                                     include_provenance=False, n_workers=n_loaders, allow_errors=True)
+        second_half = load_many_cubes([pair[1] for pair in this_bin], include_uncertainty=False,
+                                      include_provenance=False, n_workers=n_loaders, allow_errors=True)
+        this_bin = list(zip(first_half, second_half, strict=False)) # noqa: PLW2901
+        # Exclude any pairs that raised an exception during loading
+        this_bin = [p for p in this_bin if not isinstance(p[0], str) and not isinstance(p[1], str)] # noqa: PLW2901
+
+        date_obses.extend(c.meta.datetime for pair in this_bin for c in pair)
+
+        if len(this_bin) < 7:
+            logger.info(f"Bin {i + 1} only loaded {len(this_bin)} valid pairs---recording zero dynamic stray light")
+            diff_maps.append(np.zeros((2048, 2048)))
+            continue
+
+        diffs = np.empty((len(this_bin), *this_bin[0][0].data.shape))
+        for j, pair in enumerate(this_bin):
+            diffs[j] = pair[1].data - pair[0].data
+
+        diff_map = nan_percentile(diffs, 50)
+
+        diff_maps.append(diff_map)
+        logger.info(f"Finished bin {i+1}")
     diff_maps = np.array(diff_maps)
 
     meta = NormalizedMetadata.load_template(
-        "T" + pairs[0][0].meta["TYPECODE"].value[1] + pairs[0][0].meta["OBSCODE"].value, "1")
-    date_obses = [c.meta.datetime for pair in pairs for c in pair]
+        "T" + header["TYPECODE"][1] + header["OBSCODE"], "1")
     meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-END"] = max(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta.history.add_now("dynamic stray light",
-                         f"Generated with {2 * len(pairs)} files running from "
+                         f"Generated with {len(date_obses)} files running from "
                          f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                          f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
-    meta["FILEVRSN"] = pairs[0][0].meta["FILEVRSN"].value
+    meta["FILEVRSN"] = header["FILEVRSN"]
 
-    wcs = pairs[0][0].wcs.deepcopy()
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action="ignore", message=".*CROTA.*Human-readable solar north pole angle.*")
+        wcs = WCS(header)
     wcs.wcs.pc = np.eye(2)
     return [NDCube(data=diff_maps, meta=meta, wcs=wcs)]
 

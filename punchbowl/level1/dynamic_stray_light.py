@@ -14,7 +14,7 @@ from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_many_cubes, load_ndcube_from_fits
 from punchbowl.exceptions import IncorrectPolarizationStateError, IncorrectTelescopeError, InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import DataLoader, average_datetime, nan_percentile
+from punchbowl.util import DataLoader, average_datetime, nan_gaussian, nan_percentile, nan_percentile_2d
 
 fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
 
@@ -142,6 +142,9 @@ def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: da
             diffs[j] = pair[1].data - pair[0].data
 
         diff_map = nan_percentile(diffs, 50)
+
+        diff_map = nan_percentile_2d(diff_map, 50, 5)
+        diff_map = nan_gaussian(diff_map, 25)
 
         diff_maps.append(diff_map)
         logger.info(f"Finished bin {i+1}")

@@ -20,7 +20,7 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes])
 
     uncertainty_stack[uncertainty_stack <= 0] = np.inf
-    uncertainty_stack[~np.isfinite(uncertainty_stack)] = 1E64
+    uncertainty_stack[~np.isfinite(uncertainty_stack)] = 1E32
 
     uncertainty_stack[np.isnan(data_stack)] = np.inf
     uncertainty_stack[data_stack == 0] = np.inf

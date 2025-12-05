@@ -25,7 +25,9 @@ def sample_ndcube_polarized() -> NDCube:
         wcs.crval = 5, 1, 1
 
         meta = NormalizedMetadata.load_template(code, level)
-        meta["DATE-OBS"] = str(datetime(2024, 3, 21, 00, 00, 00))
+        meta["DATE-OBS"] = str(datetime(2024, 3, 21, 1, 00, 00))
+        meta["DATE-BEG"] = str(datetime(2024, 3, 21, 00, 59, 30))
+        meta["DATE-END"] = str(datetime(2024, 3, 21, 1, 00, 30))
         meta["FILEVRSN"] = "1"
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
@@ -47,7 +49,9 @@ def sample_ndcube_clear() -> NDCube:
         wcs.crval = 5, 1, 1
 
         meta = NormalizedMetadata.load_template(code, level)
-        meta["DATE-OBS"] = str(datetime(2024, 3, 21, 00, 00, 00))
+        meta["DATE-OBS"] = str(datetime(2024, 3, 21, 1, 00, 00))
+        meta["DATE-BEG"] = str(datetime(2024, 3, 21, 00, 59, 30))
+        meta["DATE-END"] = str(datetime(2024, 3, 21, 1, 00, 30))
         meta["FILEVRSN"] = "1"
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
@@ -61,7 +65,7 @@ def test_low_noise_polarized(sample_ndcube_polarized) -> NDCube:
                                             sample_ndcube_polarized((2,10,10))])
     assert isinstance(cube_low_noise, NDCube)
     assert cube_low_noise.data.shape == (2,10,10)
-    # TODO - other assertions
+    assert cube_low_noise.meta.product_code == "PAM"
 
 
 def test_low_noise_clear(sample_ndcube_clear) -> NDCube:
@@ -71,4 +75,4 @@ def test_low_noise_clear(sample_ndcube_clear) -> NDCube:
                                             sample_ndcube_clear((10,10))])
     assert isinstance(cube_low_noise, NDCube)
     assert cube_low_noise.data.shape == (10,10)
-    # TODO - other assertions
+    assert cube_low_noise.meta.product_code == "CAM"

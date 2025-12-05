@@ -14,7 +14,7 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     """Create a low noise image from a set of inputs."""
     cubes = [cube for cube in cubes if cube.meta["OUTLIER"].value != 1]
 
-    ref_cube_index = len(cubes) // 2
+    ref_cube_index = len(cubes)//2 - 1
 
     data_stack = np.stack([cube.data for cube in cubes], axis=0)
     uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes])
@@ -37,7 +37,6 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
 
     for k in cubes[0].meta.fits_keys:
         if k not in ("COMMENT", "HISTORY", "") and k in new_meta:
-            # TODO - which cube do we assume is the most representative here and below?
             new_meta[k] = cubes[ref_cube_index].meta[k].value
 
     times_obs = np.array([cube.meta.datetime.timestamp() for cube in cubes])
@@ -58,6 +57,5 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     new_meta["DATE-END"] = datetime.fromtimestamp(np.max(times_end),
                                                   tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    new_wcs = cubes[ref_cube_index].wcs
-
-    return NDCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty), wcs=new_wcs, meta=new_meta)
+    return NDCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty),
+                  wcs=cubes[ref_cube_index].wcs, meta=new_meta)

@@ -1,0 +1,1 @@
+Adds low noise data generation functions for CAM and PAM data products.

@@ -258,7 +258,8 @@ def remove_dynamic_stray_light_task(cube: NDCube, # noqa: C901
         data_interpolated[data_interpolated < 0] = 0
         cube.data[...] -= data_interpolated
 
-    cube.uncertainty.array[...] = np.sqrt(cube.uncertainty.array**2 + np.sqrt(np.abs(data_interpolated))**2)
+    # TODO: do correct uncertainty propagation
+
     cube.meta.history.add_now("LEVEL1-remove_dynamic_stray_light_task",
                                      f"stray light removed with {before_cube.meta['FILENAME'].value} "
                                      f"and {after_cube.meta['FILENAME'].value}")

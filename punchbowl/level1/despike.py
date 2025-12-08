@@ -76,7 +76,7 @@ def despike_polseq(
     hpf_zscore = (hpf - hpf_median_s)/hpf_stdev
 
     sequence_replaced = np.array(sequence)
-    cosmic_sequence = np.zeros_like(sequence_replaced)
+    cosmic_sequence = np.zeros_like(sequence_replaced, dtype=bool)
     cosmic_sequence[hpf_zscore>=hpf_zscore_thresh] = 1
 
     reference.data[(hpf_zscore>=hpf_zscore_thresh)[-1]] = np.nan

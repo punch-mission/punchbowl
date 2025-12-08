@@ -453,3 +453,13 @@ def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow
 
     """
     return list(load_many_cubes_iterable(paths, n_workers, allow_errors, **kwargs))
+
+
+def check_outlier(cube: NDCube) -> bool:
+    """Check the input data cube for outlier flagging."""
+    for flag in ["OUTLIER", "BADPKTS"]:
+        if flag not in cube.meta:
+            warnings.warn(f"Input cube does not contain {flag} keyword.")
+        elif cube.meta[flag].value == 1:
+            return True
+    return False

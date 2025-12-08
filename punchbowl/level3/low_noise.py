@@ -6,13 +6,14 @@ from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.punch_io import check_outlier
 from punchbowl.prefect import punch_task
 
 
 @punch_task
 def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     """Create a low noise image from a set of inputs."""
-    cubes = [cube for cube in cubes if cube.meta["OUTLIER"].value != 1]
+    cubes = [cube for cube in cubes if not check_outlier(cube)]
 
     ref_cube_index = len(cubes)//2 - 1
 

@@ -1,0 +1,1 @@
+The dtype of cubes loaded with `load_ndcube_from_fits` can be set.

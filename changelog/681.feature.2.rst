@@ -1,0 +1,1 @@
+Calling `str` on a `NormalizedMetadata` now returns the full contents of the header, allowing for easy printing.

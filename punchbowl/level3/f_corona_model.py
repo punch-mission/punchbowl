@@ -181,12 +181,13 @@ def model_fcorona_for_cube(xt: np.ndarray, # noqa: ARG001
     return nan_percentile(cube, 3), None
 
 
-def model_polarized_fcorona_for_cube( xt: np.ndarray, # noqa: ARG001
-                           reference_xt: float, # noqa: ARG001
-                           cube: np.ndarray,
-                           percentile: float = 3.0,
-                           *args: list, **kwargs: dict, # noqa: ARG001
-                            ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def model_polarized_fcorona_for_cube(xt: np.ndarray, # noqa: ARG001
+                                     reference_xt: float, # noqa: ARG001
+                                     cube: np.ndarray,
+                                     low_percentile: float = 5.0,
+                                     high_percentile: float = 10.0,
+                                     *args: list, **kwargs: dict, # noqa: ARG001
+                                     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Estimate the polarized f corona model using indexing method."""
     cube[cube == 0] = np.nan
 
@@ -197,8 +198,8 @@ def model_polarized_fcorona_for_cube( xt: np.ndarray, # noqa: ARG001
     tbcube = 2 / 3 * np.sum(cube, axis=1)
 
     # Per-pixel percentile threshold of tbcube over time (T axis)
-    tb_thresh = nan_percentile(tbcube, percentile)
-    mask = (tbcube <= tb_thresh)  # shape: (T, H, W)
+    low_thresh, high_thresh = nan_percentile(tbcube, [low_percentile, high_percentile])
+    mask = (tbcube <= high_thresh) * (tbcube >= low_thresh)  # shape: (T, H, W)
 
     # We don't need this anymore and we're holding a lot of RAM, so release some
     del tbcube

@@ -31,6 +31,9 @@ authors:
 - family-names: "DeForest"
   given-names: "Craig"
   orcid: "https://orcid.org/0000-0002-7164-2786"
+- family-names: "Badman"
+  given-names: "Samuel"
+  orcid: "https://orcid.org/0000-0002-6145-436X"
 
 title: "punchbowl"
 version: 0.0.20

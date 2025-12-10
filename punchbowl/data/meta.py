@@ -229,6 +229,10 @@ class NormalizedMetadata(Mapping):
     MetaFields.
     """
 
+    def __str__(self) -> str:
+        """Return the header as a string."""
+        return str(self.to_fits_header().tostring("\n"))
+
     def __len__(self) -> int:
         """Return number of entry cards in NormalizedMetadata object."""
         return sum([len(section) for section in self._contents.values()])
@@ -320,10 +324,7 @@ class NormalizedMetadata(Mapping):
                 )
 
             # add the special WCS section
-            if section == self._wcs_section_name:
-                if wcs is None:
-                    msg = "WCS was expected but not provided."
-                    raise MissingMetadataError(msg)
+            if section == self._wcs_section_name and wcs is not None:
                 if write_celestial_wcs:
                     wcses = {"": wcs, "A": calculate_celestial_wcs_from_helio(wcs, self.astropy_time, self.shape)}
                 else:

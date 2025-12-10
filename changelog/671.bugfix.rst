@@ -1,1 +1,0 @@
-fix nans in f corona polarized background

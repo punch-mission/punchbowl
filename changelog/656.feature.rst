@@ -1,1 +1,0 @@
-Support interpolating between vignetting maps

@@ -1,1 +1,0 @@
-Extra care is taken with nans and infs when merging in Level 2.

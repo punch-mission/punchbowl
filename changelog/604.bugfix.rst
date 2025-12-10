@@ -1,1 +1,0 @@
-Masked regions are set to 0 in level1_late and level1_quick

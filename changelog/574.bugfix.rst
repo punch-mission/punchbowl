@@ -1,1 +1,0 @@
-Tweaks around updating image stats before writing out FITS files

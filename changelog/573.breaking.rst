@@ -1,1 +1,0 @@
-`l1_early_core_flow` no longer writes Q files, nor does it align X files. Alignment happens in `l1_late_core_flow`, which writes Q or final L1 files depending on a flag.

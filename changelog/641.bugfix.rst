@@ -1,1 +1,0 @@
-Forking is now avoided in several situations, hopefully avoiding occasional hung flows.

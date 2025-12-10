@@ -1,1 +1,0 @@
-Polarized F-corona model generation now uses the images whose tB falls between a low and high threshold.

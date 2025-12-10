@@ -1,1 +1,0 @@
-Adds spacecraft labeling indicator metadata in mosaics, indicating which spacecraft ingredients are present in a given mosaic data product.

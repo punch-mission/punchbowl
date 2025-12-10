@@ -1,3 +1,88 @@
+0.0.20 (2025-12-09)
+===================
+
+Breaking Changes
+----------------
+
+- `l1_early_core_flow` no longer writes Q files, nor does it align X files. Alignment happens in `l1_late_core_flow`, which writes Q or final L1 files depending on a flag. (`#573 <https://github.com/punch-mission/punchbowl/pull/573>`__)
+
+
+New Features
+------------
+
+- Adds NFI flat-fielding module. (`#567 <https://github.com/punch-mission/punchbowl/pull/567>`__)
+- Improves stray light generation to avoid banding artifacts. (`#571 <https://github.com/punch-mission/punchbowl/pull/571>`__)
+- Adds an option to fill NaNs with 0 in L2 PTM construction. (`#572 <https://github.com/punch-mission/punchbowl/pull/572>`__)
+- Adds 'OUTLIER' to omniheader (`#574 <https://github.com/punch-mission/punchbowl/pull/574>`__)
+- Mosaics can now be made with edge trimming and with alpha scaling coefficients. (`#576 <https://github.com/punch-mission/punchbowl/pull/576>`__)
+- Pointing initial guess is faster (`#580 <https://github.com/punch-mission/punchbowl/pull/580>`__)
+- Adds spacecraft labeling indicator metadata in mosaics, indicating which spacecraft ingredients are present in a given mosaic data product. (`#584 <https://github.com/punch-mission/punchbowl/pull/584>`__)
+- Rolls off the uncertainty by distance to edge of mask so that we seamlessly make mosaics. (`#592 <https://github.com/punch-mission/punchbowl/pull/592>`__)
+- Add spacecraft data example notebooks in punchbowl/examples (`#597 <https://github.com/punch-mission/punchbowl/pull/597>`__)
+- Adds inverse punch colormap to punchbowl.data.visualize. (`#600 <https://github.com/punch-mission/punchbowl/pull/600>`__)
+- Adds indexing based straylight generation for polarized channel to punchbowl.level1.straylight (`#602 <https://github.com/punch-mission/punchbowl/pull/602>`__)
+- Updates Level 3 processing for preliminary products. (`#603 <https://github.com/punch-mission/punchbowl/pull/603>`__)
+- Implement average below percentile based indexing for polarization straylight background (`#614 <https://github.com/punch-mission/punchbowl/pull/614>`__)
+- Filled saturated pixels with their neighbors and flagged their uncertainty as infinite. (`#629 <https://github.com/punch-mission/punchbowl/pull/629>`__)
+- generate_vignetting_calibration_nfi accepts a maximum number of files to load. (`#634 <https://github.com/punch-mission/punchbowl/pull/634>`__)
+- Updates the quicklook image generation to use a power normalization with a gamma of 2.2 rather than the original log normalization. (`#637 <https://github.com/punch-mission/punchbowl/pull/637>`__)
+- A new `load_mask_file` function is available. (`#642 <https://github.com/punch-mission/punchbowl/pull/642>`__)
+- A "BADPKTS" key is now included in the omniheader (`#643 <https://github.com/punch-mission/punchbowl/pull/643>`__)
+- Added capability to reconstitute noise with sqrt decoding. Defaulted to always add noise. (`#647 <https://github.com/punch-mission/punchbowl/pull/647>`__)
+- The `nan_percentile_2d` function has been added. (`#655 <https://github.com/punch-mission/punchbowl/pull/655>`__)
+- Support interpolating between vignetting maps (`#656 <https://github.com/punch-mission/punchbowl/pull/656>`__)
+- Updates PSF correction to access parameters for existing regularizepsf handling of saturated neighborhoods, and sets uncertainty appropriately (`#661 <https://github.com/punch-mission/punchbowl/pull/661>`__)
+- L2 mosaic rolloffs are now configurable (`#664 <https://github.com/punch-mission/punchbowl/pull/664>`__)
+- For mosaics, the location of the central pixel of each input image is recorded in the header (`#665 <https://github.com/punch-mission/punchbowl/pull/665>`__)
+- Adds indexing-based f corona model generation for polarized data (`#666 <https://github.com/punch-mission/punchbowl/pull/666>`__)
+- (Approximate) uncertainty is now propagated through F corona subtraction (`#669 <https://github.com/punch-mission/punchbowl/pull/669>`__)
+- Adds low noise data generation functions for CAM and PAM data products. (`#678 <https://github.com/punch-mission/punchbowl/pull/678>`__)
+- Polarized F-corona model generation now uses the images whose tB falls between a low and high threshold. (`#680 <https://github.com/punch-mission/punchbowl/pull/680>`__)
+- Calling `str` on a `NormalizedMetadata` now returns the full contents of the header, allowing for easy printing. (`#681 <https://github.com/punch-mission/punchbowl/pull/681>`__)
+- The dtype of cubes loaded with `load_ndcube_from_fits` can be set. (`#681 <https://github.com/punch-mission/punchbowl/pull/681>`__)
+
+
+Bug Fixes
+---------
+
+- Tweaks around updating image stats before writing out FITS files (`#574 <https://github.com/punch-mission/punchbowl/pull/574>`__)
+- Fixes a mask path bug in NFI vignetting module inputs. (`#578 <https://github.com/punch-mission/punchbowl/pull/578>`__)
+- DATE is set correctly in L1 headers. (`#586 <https://github.com/punch-mission/punchbowl/pull/586>`__)
+- Corrects units in polarization resolution to be compatible with solpolpy usage. (`#590 <https://github.com/punch-mission/punchbowl/pull/590>`__)
+- Updates quickpunch f-corona generation for multithreading and data cube array ordering. (`#595 <https://github.com/punch-mission/punchbowl/pull/595>`__)
+- Masked regions are set to 0 in level1_late and level1_quick (`#604 <https://github.com/punch-mission/punchbowl/pull/604>`__)
+- Handle exceptions when loading data for F-corona model generation (`#605 <https://github.com/punch-mission/punchbowl/pull/605>`__)
+- `ALL_INPUT` is set correctly for L2 files. (`#631 <https://github.com/punch-mission/punchbowl/pull/631>`__)
+- `DATE` is formatted the same in stray light models as for other files. (`#631 <https://github.com/punch-mission/punchbowl/pull/631>`__)
+- Masks are applied correctly when the image pixel is NaN. (`#631 <https://github.com/punch-mission/punchbowl/pull/631>`__)
+- Forking is now avoided in several situations, hopefully avoiding occasional hung flows. (`#641 <https://github.com/punch-mission/punchbowl/pull/641>`__)
+- Metadata for L2 and L3 files is now set more fully (`#645 <https://github.com/punch-mission/punchbowl/pull/645>`__)
+- Extra care is taken with nans and infs when merging in Level 2. (`#649 <https://github.com/punch-mission/punchbowl/pull/649>`__)
+- Writes the distortion header keywords for both primary and secondary WCSes. (`#651 <https://github.com/punch-mission/punchbowl/pull/651>`__)
+- Properly labels the PFM and PIM obslayers. (`#653 <https://github.com/punch-mission/punchbowl/pull/653>`__)
+- Fixes detection of image edges for cropping and rolloffs in L2 mosaics (`#664 <https://github.com/punch-mission/punchbowl/pull/664>`__)
+- Disables `conserve_flux` during reprojection, which was being use incorrectly. (`#664 <https://github.com/punch-mission/punchbowl/pull/664>`__)
+- fix nans in f corona polarized background (`#671 <https://github.com/punch-mission/punchbowl/pull/671>`__)
+- Pixels in the interior of the image are no longer masked in the L2 pre-process step (`#672 <https://github.com/punch-mission/punchbowl/pull/672>`__)
+- LQ CFM now runs correctly (`#672 <https://github.com/punch-mission/punchbowl/pull/672>`__)
+- Decreases pointing refinement failures. (`#673 <https://github.com/punch-mission/punchbowl/pull/673>`__)
+
+
+Documentation
+-------------
+
+- Adds DOI for Level 1 data. (`#583 <https://github.com/punch-mission/punchbowl/pull/583>`__)
+- Update the data version documentation. (`#593 <https://github.com/punch-mission/punchbowl/pull/593>`__)
+- Added PIM and CIM to product code list. (`#606 <https://github.com/punch-mission/punchbowl/pull/606>`__)
+- Improved documentation on pointing and various model generation. (`#627 <https://github.com/punch-mission/punchbowl/pull/627>`__)
+
+
+Internal Changes
+----------------
+
+- Fixes L3 tests by not forcing them to run first. (`#577 <https://github.com/punch-mission/punchbowl/pull/577>`__)
+
+
 0.0.19 (2025-08-28)
 ===================
 

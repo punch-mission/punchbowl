@@ -1,1 +1,0 @@
-Corrects units in polarization resolution to be compatible with solpolpy usage.

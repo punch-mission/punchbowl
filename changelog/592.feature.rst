@@ -1,1 +1,0 @@
-Rolls off the uncertainty by distance to edge of mask so that we seamlessly make mosaics.

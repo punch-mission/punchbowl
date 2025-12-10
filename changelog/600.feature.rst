@@ -1,1 +1,0 @@
-Adds inverse punch colormap to punchbowl.data.visualize.

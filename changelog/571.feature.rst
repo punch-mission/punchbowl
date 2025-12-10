@@ -1,1 +1,0 @@
-Improves stray light generation to avoid banding artifacts.

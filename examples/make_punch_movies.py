@@ -1,7 +1,7 @@
 """
-==================================
-Tutorial for creating PUNCH movies
-==================================
+=====================
+Creating PUNCH movies
+=====================
 
 This example creates movies off-screen.
 It downloads the data based on your input of a date range, and required data level and data product.
@@ -124,14 +124,12 @@ class PUNCHDataDownloader:
 
         return fido_urls
 
-
-"""## Define your time range and data product code
-After execution, look at the summary of how many files matched the query.
-Product code are documented at https://punchbowl.readthedocs.io/en/latest/data/data_codes.html
-
-Currently, clear-filter data (unpolarized) are supported for this notebook.
-"""
-
+# %%
+# Define your time range and data product code
+# After execution, look at the summary of how many files matched the query.
+# Product code are documented at https://punchbowl.readthedocs.io/en/latest/data/data_codes.html
+#
+# Currently, clear-filter data (unpolarized) are supported for this notebook.
 # Enter start time and end time of the event
 # For long time range, consider a lower cadence, e.g. skipping every 4 frames (skip = 4)
 # That will keep the memory footprint manageable, and will mitigate visual flickering of the trefoil pattern.
@@ -140,6 +138,7 @@ start_time='2025/08/31 05:00:00'
 end_time='2025/09/01 05:00:30' # Adding the last 30 seconds just make sure you get the one past 5:00 UTC
 skip = 4  # Set `skip` to 0 for full cadence, but beware of disk space...
 
+# %%
 # After this session, try changing the times, and even look at different CMEs
 # Be mindful of temporary disk space in your Google Colab (see next cell)
 # PUNCH data are RICE-compressed: they take about 12 times less on disk than they do once in memory (RAM).
@@ -154,20 +153,21 @@ etime = end_time.replace('/', '').replace(':', '').replace(' ', '_')
 # Output directory where all your downloaded data and PNG plots will land.
 output_dir = Path('punch_data', stime +'_to_'+etime, product_code)
 
-"""### [Optional] Setup data persistence by mounting your personal Google Drive
-By default, Google Colab gives you a temporary space where all your output are stored. Click on the folder icon in the side bar on the left of this window, it will reveal this temp space. You only have about 60 GB available. Whatever is written in that space is lost after the end of your Colab session (referred to as *Runtime* in Colab).  The commented code below, optionally, allows you to mount your own Google Drive for data persistence beyond this Runtime. It will prompt you to give access to your own Google Drive by Google Colab.
-"""
-
-### After you have tried this with the temp space, you have the option to
-### uncomment these 4 lines below if mounting your own Google Drive,
-### ****Be sure to remove all leading spaces****
-### If you do this, you will need to restart the run from this cell.
+# %%
+# [Optional] Setup data persistence by mounting your personal Google Drive
+# By default, Google Colab gives you a temporary space where all your output are stored. Click on the folder icon in the side bar on the left of this window, it will reveal this temp space. You only have about 60 GB available. Whatever is written in that space is lost after the end of your Colab session (referred to as *Runtime* in Colab).  The commented code below, optionally, allows you to mount your own Google Drive for data persistence beyond this Runtime. It will prompt you to give access to your own Google Drive by Google Colab.
+#
+# After you have tried this with the temp space, you have the option to
+# uncomment these 4 lines below if mounting your own Google Drive,
+# ****Be sure to remove all leading spaces****
+# If you do this, you will need to restart the run from this cell.
 
 # from google.colab import drive
 # drive.mount('/content/drive')
 # gdrive_dir = Path('drive/MyDrive/Colab Notebooks/PUNCH Movies')
 # output_dir = gdrive_dir / Path('punch_data', (stime +'_to_'+etime), product_code)
 
+# %
 # We first check how much data are available through VSO before starting any download.
 
 dl = PUNCHDataDownloader()
@@ -180,22 +180,26 @@ urls = dl.search(
 
 """**Executing the cell below should pop-up a window on the side bar about some Third-party widgets being used. Just close it.**"""
 
+# %
 # Download the FITS files with Fido, taking into account the `skip` parameter.
 output_dir.mkdir(parents=True, exist_ok=True)
 files = Fido.fetch(urls[::skip], path=output_dir)
 
+# %
 # A pop-up window should appear on the side bar about some Third-party widgets being used. Just close it.
 
+# %
 # Get list of local files, don't forget to sort them.
 files = sorted(Path(output_dir).glob('*.fits'))
 # Print a few filenames downloaded, just to sanity check it's what we expect
 # You can check your downloaded FITS files on the side bar (folder icon), at the printed location.
 files
 
-"""## Preparing the movie
+# %
+# Preparing the movie
+# -------------------
+# For making the movies, we use an interactive configurator with a downsampled series of frames to setup the intensity scaling. Once we are satisfied with the  intensity scaling, we move forward with printing the png frames off-screen, which will be given to ffmpeg for creating a movie file.
 
-For making the movies, we use an interactive configurator with a downsampled series of frames to setup the intensity scaling. Once we are satisfied with the  intensity scaling, we move forward with printing the png frames off-screen, which will be given to ffmpeg for creating a movie file.
-"""
 
 # basic binning to downsample the image for more efficiency with Google Colab and JavaScript display.
 binning = 8  # 8 makes them 512x512, down from 4096 x 4096
@@ -214,7 +218,9 @@ for file in files:
     cube_lr.append(data)
     metadata.append(ndcube_obj.meta)
 
-"""### Interactive plot"""
+# %
+# Interactive plot
+# ----------------
 
 import numpy as np
 from bokeh.io import output_notebook
@@ -233,6 +239,7 @@ from bokeh.models import (
 )
 from bokeh.plotting import figure, show
 
+# %
 # Enable Bokeh in Jupyter
 output_notebook()
 
@@ -258,13 +265,14 @@ def mpl_to_bokeh_palette(cmap, n=256):
                for r, g, b, _ in colors]
     return palette
 
+# %
 # Convert your custom colormap
 cmap_punch_bokeh = mpl_to_bokeh_palette(cmap_punch)
 
 
 initial_image = cube_lr[0]
 
-
+# %
 # Create the figure
 p = figure(frame_width=600, frame_height=600,
            x_range=(-180, 180), y_range=(-180, 180),
@@ -398,18 +406,22 @@ spacer_index_slider = Spacer(width=30)
 # Display the layout
 show(column(row(spacer_vmin_slider , vmin_slider, vmax_slider), row(spacer_index_slider, index_slider), p))
 
-"""**Final check of the rendered images that will be exported as PNG files.**"""
+# %
+# ** Final check of the rendered images that will be exported as PNG files.**
 
+# %
 # Enter your preferred scaling values for vmin and vmax, based on playing with the Interactive Plot
 vmin=1e-14
 vmax=1e-12
 
+# %
 ### Plot a sample frame with your chosen scaling values, using Helioprojective axes
 figsize = (9.5, 7.5) # size of the image (resp. width and height, inches)
 # Load a sample as a Sunpy NDCube instance.
 # NDCube is a Sunpy object containing both the image and the metadata (including WCS data)
 sample = load_ndcube_from_fits(files[0])
 
+# %
 # Creating the static plot for the sample image.
 fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection":sample.wcs})
 # Note that the image array is in `sample.data`.
@@ -428,7 +440,9 @@ ax.set_title(f"PUNCH Level-{sample.meta.product_level} {sample.meta.product_code
 fig.colorbar(im, ax=ax, label="MSB")
 plt.show()
 
-"""## Generate movie PNG frames off-screen"""
+# %
+# Generate movie PNG frames off-screen
+# ------------------------------------
 
 # output dir
 frames_dir = Path(output_dir, "frames")
@@ -437,7 +451,6 @@ dpi = 100. # Resolution of the PNG file in "dots per inch"
 
 # Create output directory for frames
 os.makedirs(frames_dir, exist_ok=True)
-
 
 # Preload first cube to set up once
 first_cube = load_ndcube_from_fits(files[0])
@@ -489,15 +502,15 @@ for i, file in enumerate(files):
 
 plt.close(fig)
 
-"""
-### Creating the movie with FFMPEG using the PNG frames
-
-Your movie will be located in whatever path you define below as `movie_path`.
-A relative path will put the movie into the local folder of that Colab.
-
-If you have trouble finding your movie file on your first time through this Colab, try the /content directory if you see one in your side bar (click on the file folder) -- otherwise it should be right at the top level. It is not a persistence place, it will be deleted after your session (aka "Runtime") runs out of time or "credits".
-
-Follow the instructions in the cell above called "[Optional] Setup data persistence by mounting your personal Google Drive" to create a permanent file."""
+# %
+# Creating the movie with FFMPEG using the PNG frames
+# --------------------------------------------------
+# Your movie will be located in whatever path you define below as `movie_path`.
+# A relative path will put the movie into the local folder of that Colab.
+#
+# If you have trouble finding your movie file on your first time through this Colab, try the /content directory if you see one in your side bar (click on the file folder) -- otherwise it should be right at the top level. It is not a persistence place, it will be deleted after your session (aka "Runtime") runs out of time or "credits".
+#
+# Follow the instructions in the cell above called "[Optional] Setup data persistence by mounting your personal Google Drive" to create a permanent file."""
 
 # Full path to the output movie file
 movie_path = Path(output_dir.parent.parent.parent, f"punch_movie_{stime}_to_{etime}_{product_code}.mp4")
@@ -529,18 +542,18 @@ out, err = stream.run(quiet=True, capture_stdout=True, capture_stderr=True)
 
 print(f'movie created at {movie_path}')
 
-"""### [Optional] **Running difference images**
+# %
+# [Optional] **Running difference images**
+# ----------------------------------------
+# We can create movies of running difference images with similar workflow:
+#
+# 1. Create the series of downsampled running difference images for the GUI
+# 2. Determine your scaling parameters with the GUI
+# 3. Save the series of off-screen PNG figures
+# 4. Create the movie of running difference images
 
-We can create movies of running difference images with similar workflow:
-
-1. Create the series of downsampled running difference images for the GUI
-2. Determine your scaling parameters with the GUI
-3. Save the series of off-screen PNG figures
-4. Create the movie of running difference images
-
-#### Series of downsampled running difference images for the GUI
-"""
-
+# %
+# Series of downsampled running difference images for the GUI
 # Load base image at initial time
 # Load image array and downsample
 base_image = load_ndcube_from_fits(files[0]).data[::binning, ::binning]
@@ -558,7 +571,9 @@ for file in files[1:]:
     diff_metadata.append(ndcube_obj.meta)
     previous = current
 
-"""#### Determine your scaling parameters with the GUI"""
+# %
+# Determine your scaling parameters with the GUI
+# ----------------------------------------------
 
 # Get the low-res data for the GUI
 cube = cube_diff
@@ -622,7 +637,9 @@ color_bar = ColorBar(
 p.add_layout(color_bar, 'right')
 
 
-### Create interactive sliders:
+# %
+# Create interactive sliders
+# --------------------------
 
 # Formatter for slider tick labels
 slider_tick_formatter = CustomJSTickFormatter(code="""
@@ -727,7 +744,9 @@ ax.set_title(f"Running Difference - PUNCH Level-{diff_metadata[0].product_level}
 fig.colorbar(im, ax=ax, label="MSB Difference")
 plt.show()
 
-"""#### Save the series of off-screen PNG figures"""
+# %
+# Save the series of off-screen PNG figures
+# -----------------------------------------
 
 # Output directory for the difference images
 frames_diff_dir = Path(output_dir, "frames")

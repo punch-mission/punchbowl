@@ -83,7 +83,8 @@ docs = [
     "ipython",
     "ipykernel",
     "sphinxcontrib-mermaid",
-    "ffmpeg-python"
+    "ffmpeg-python",
+    "bokeh"
 ]
 gpu = ["cupy"]
 dev = ["punchbowl[docs,test]"]

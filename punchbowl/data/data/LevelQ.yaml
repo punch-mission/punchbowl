@@ -14,6 +14,8 @@ Level:
     Temporal Information:
     Instrument and Spacecraft State:
     World Coordinate System:
+    Calibration Data:
+        omits: [CALSTAR1, CALSTAR2]
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
@@ -31,7 +33,8 @@ Kinds:
             NAXIS2: 4096
             OBS-MODE: Unpolarized
             POLAR: -999
-        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, CALCF, CALVI, CALVI2, CALPSF, CALPM,
+                CALDSL0, CALDSL1, CALSL0, CALSL1]
 
     Calibration:
         overrides:
@@ -70,13 +73,24 @@ Products:
             OBSCODE: N
             HAS_NFI4: 1
             ALL_INPT: 1
-
-    CTM:
+    CQM:
         kinds: [Unpolarized]
         overrides:
             NAXIS1: 1024
             NAXIS2: 1024
             TITLE: PUNCH Level-Q Unpolarized QuickPUNCH Mosaic
+            OBSTYPE: Unpolarized QuickPUNCH mosaic
+            TYPECODE: CQ
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+        omits: [CALFCOR1, CALFCOR2]
+    CTM:
+        kinds: [Unpolarized]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-Q Unpolarized F-corona-subtracted QuickPUNCH Mosaic
             OBSTYPE: Unpolarized QuickPUNCH mosaic
             TYPECODE: CT
             INSTRUME: "{craftname}"
@@ -95,3 +109,4 @@ Products:
             OBSCODE: N
             HAS_NFI4: 1
             ALL_INPT: 1
+        omits: [CALFCOR1, CALFCOR2]

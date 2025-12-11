@@ -5,7 +5,7 @@ import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
-from prefect import flow, get_run_logger
+from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, get_base_file_name
 from punchbowl.data.meta import set_spacecraft_location_to_earth
@@ -14,7 +14,9 @@ from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_w
 from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
+from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.levelq.pca import pca_filter
+from punchbowl.prefect import punch_flow
 from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
 
 ORDER_QP = ["QR1", "QR2", "QR3", "CNN"]
@@ -25,7 +27,7 @@ SPACECRAFT_OBSCODE = {"1": "WFI1",
                       "4": "NFI4",
                       "N": "NFI4"}
 
-@flow(validate_parameters=False)
+@punch_flow
 def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                          output_filename: list[str] | None = None,
                          files_to_fit: list[str | NDCube | DataLoader] | None = None,
@@ -104,8 +106,8 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     return output_cubes
 
 
-@flow(validate_parameters=False)
-def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
+@punch_flow
+def levelq_CQM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
                          output_filename: list[str] | None = None,
                          trim_edges_px: int = 0,
                          alphas_file: str | None = None,
@@ -114,7 +116,7 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
                          ) -> list[NDCube]:
     """Level quickPUNCH core flow."""
     logger = get_run_logger()
-    logger.info("beginning level quickPUNCH CTM core flow")
+    logger.info("beginning level quickPUNCH CQM core flow")
 
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
 
@@ -146,7 +148,8 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
         output_dateend = max([d.meta.datetime for d in data_list_mosaic if d is not None],
                              ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-        output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs, level="Q")
+        output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs, level="Q",
+                                                   product_code="CQM")
 
         for d in filter(None, data_list_mosaic):
             spacecraft = SPACECRAFT_OBSCODE[d.meta["OBSCODE"].value]
@@ -197,5 +200,54 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
     if output_filename is not None:
         output_image_task(output_data_mosaic, output_filename[0])
 
-    logger.info("ending level quickPUNCH CTM core flow")
+    logger.info("ending level quickPUNCH CQM core flow")
     return [output_data_mosaic]
+
+
+@punch_flow
+def levelq_CTM_core_flow(data_list: list[str] | list[NDCube],  # noqa: N802
+                     before_f_corona_model_path: str,
+                     after_f_corona_model_path: str,
+                     output_filename: str | None = None,
+                     reference_time: datetime | None = None) -> list[NDCube]:  # noqa: ARG001
+    """Level Q CTM flow."""
+    logger = get_run_logger()
+
+    logger.info("beginning level Q CTM flow")
+    data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+
+    for cube in data_list:
+        # We'll want to grab the history we accumulate through this flow and put it in the final product,
+        # but the per-file history up to now is kind of meaningless for the merged final product.
+        if cube is not None:
+            cube.meta.history.clear()
+
+    data_list = [subtract_f_corona_background_task(d,
+                                                   before_f_corona_model_path,
+                                                   after_f_corona_model_path,
+                                                   allow_extrapolation=True) for d in data_list]
+
+    out_list = []
+    for d in data_list:
+        output_meta = NormalizedMetadata.load_template("CTM", "Q")
+        o = NDCube(data=d.data, wcs=d.wcs, meta=output_meta, uncertainty=d.uncertainty)
+        out_list.append(o)
+        o.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        o.meta.history = d.meta.history
+        o.meta["CALFCOR1"] = os.path.basename(before_f_corona_model_path)
+        o.meta["CALFCOR2"] = os.path.basename(after_f_corona_model_path)
+        for key in ["FILEVRSN", "ALL_INPT", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4", "DATE-AVG", "DATE-OBS",
+                    "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
+                    "CTRXNFI4", "CTRYNFI4"]:
+            o.meta[key] = d.meta[key].value
+        set_spacecraft_location_to_earth(o)
+
+    logger.info("ending level Q CTM flow")
+
+    for o in out_list:
+        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+
+    if output_filename is not None:
+        output_image_task(out_list[0], output_filename)
+
+    return out_list

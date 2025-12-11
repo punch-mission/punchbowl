@@ -391,7 +391,8 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
 
 def subtract_f_corona_background(data_object: NDCube,
                                  before_f_background_model: NDCube,
-                                 after_f_background_model: NDCube ) -> NDCube:
+                                 after_f_background_model: NDCube,
+                                 allow_extrapolation: bool = False) -> NDCube:
     """Subtract f corona background."""
     # check dimensions match
     if data_object.data.shape != before_f_background_model.data.shape:
@@ -420,6 +421,7 @@ def subtract_f_corona_background(data_object: NDCube,
             before_f_background_model,
             after_f_background_model,
             data_object.meta.datetime,
+            allow_extrapolation=allow_extrapolation,
             and_uncertainty=True)
 
     interpolated_model[np.isinf(data_object.uncertainty.array)] = 0
@@ -433,7 +435,8 @@ def subtract_f_corona_background(data_object: NDCube,
 @punch_task
 def subtract_f_corona_background_task(observation: NDCube,
                                       before_f_background_model_path: str,
-                                      after_f_background_model_path: str) -> NDCube:
+                                      after_f_background_model_path: str,
+                                      allow_extrapolation: bool = False) -> NDCube:
     """
     Subtracts a background f corona model from an observation.
 
@@ -450,6 +453,9 @@ def subtract_f_corona_background_task(observation: NDCube,
     after_f_background_model_path : str
         path to a NDCube f corona background map after the observation
 
+    allow_extrapolation : bool
+        If true, allow extrapolation beyond the time range spanned by the two F corona models
+
     Returns
     -------
     NDCube
@@ -463,7 +469,8 @@ def subtract_f_corona_background_task(observation: NDCube,
     before_f_corona_model = load_ndcube_from_fits(before_f_background_model_path)
     after_f_corona_model = load_ndcube_from_fits(after_f_background_model_path)
 
-    output = subtract_f_corona_background(observation, before_f_corona_model, after_f_corona_model)
+    output = subtract_f_corona_background(observation, before_f_corona_model, after_f_corona_model,
+                                          allow_extrapolation=allow_extrapolation)
     output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
     logger.info("subtract_f_corona_background finished")

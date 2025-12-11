@@ -58,7 +58,8 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, maint
 
 @punch_task
 def merge_many_clear_task(
-        data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2", maintain_nans: bool = False) -> NDCube:
+        data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2", product_code: str = "CTM",
+        maintain_nans: bool = False) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
     trefoil_data_layers, trefoil_uncertainty_layers = [], []
     selected_images = [d for d in data if d is not None]
@@ -87,7 +88,7 @@ def merge_many_clear_task(
         trefoil_data_layers.append(np.zeros((4096, 4096)))
         trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
 
-    output_meta = NormalizedMetadata.load_template("CTM", level=level)
+    output_meta = NormalizedMetadata.load_template(product_code, level=level)
 
     return NDCube(
         data=np.stack(trefoil_data_layers, axis=0).squeeze(),

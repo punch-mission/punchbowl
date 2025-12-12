@@ -19,7 +19,7 @@ from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.data.visualize import cmap_punch
 from punchbowl.util import nan_percentile
 
-# %
+# %%
 # Let's grab some data for this F-corona exercise. You can pick other days, just edit the commented out examples below, making the file pattern and directory structure match. A few other examples are commented out below.
 os.system('wget -r -l1 --no-parent --no-directories -A "PUNCH_L2_CTM_2025081100*_v0e.fits" -R "*.html*,index*,*tmp*" https://umbra.nascom.nasa.gov/punch/2/CTM/2025/08/11/')
 # !wget -r -l1 --no-parent --no-directories -A "PUNCH_L2_CTM_2025081101*_v0e.fits" -R "*.html*,index*,*tmp*" https://umbra.nascom.nasa.gov/punch/2/CTM/2025/08/11/
@@ -29,7 +29,7 @@ files = glob.glob('*.fits')
 files.sort()
 files
 
-# %
+# %%
 # We'll now load all the data at once.
 
 datacube = np.zeros( (len(files), 4096, 4096) )
@@ -41,7 +41,7 @@ for i, file in enumerate(files):
     data[np.where(data == 0)] = np.nan
     datacube[i,:,:] = data
 
-# %
+# %%
 # Below you can see the difference between two subsequent images in the data array.
 
 fig, ax = plt.subplots(figsize=(9.5, 7.5), subplot_kw={"projection":cube.wcs})
@@ -60,7 +60,7 @@ ax.set_title("PUNCH Level 2 CTM Data")
 fig.colorbar(im, ax=ax, label="MSB")
 plt.show()
 
-# %
+# %%
 # The SOC uses a complex algorithm involving quadratic program and outlier rejection to create F-corona models.
 # For today, we'll just take a low percentile of a bunch of images to determine an F-corona model.
 # What do you think is the right number of images?
@@ -71,7 +71,7 @@ plt.show()
 
 ffcorona = nan_percentile(datacube, 5)[0]
 
-# %
+# %%
 # Time to inspect the F-corona subtracted images!
 
 fig, ax = plt.subplots(figsize=(9.5, 7.5), subplot_kw={"projection":cube.wcs})
@@ -89,14 +89,14 @@ ax.set_title("PUNCH Level 2 CTM Data")
 fig.colorbar(im, ax=ax, label="MSB")
 plt.show()
 
-# %
+# %%
 # You will need more data to build a higher quality F corona model.
 # We've provided a model you can use to experiment at https://data.boulder.swri.edu/mhughes/punch_bimonthly/2025august/.
 # Simply download it by clicking on the F-corona model saved there. Or run the following wget:
 
 os.system('wget https://data.boulder.swri.edu/mhughes/punch_bimonthly/2025august/fcorona_20250530_204029.fits')
 
-# %
+# %%
 # You can now load it:
 
 with fits.open("fcorona_20250530_204029.fits") as hdul:
@@ -111,7 +111,7 @@ ax.set_title("PUNCH Level 2 F-Corona Model")
 fig.colorbar(im, ax=ax, label="MSB")
 plt.show()
 
-# %
+# %%
 # Now you can explore data using this F-corona model to subtract off images.
 # Finally, to make a movie,
 # you can stack images using something like this followed by ffmpeg:
@@ -160,5 +160,5 @@ for path in tqdm(paths):
 
 os.system('ffmpeg -r 120 -f image2 -pattern_type glob -i "*png" -vcodec libx264 -crf 10 -pix_fmt yuv420p movie.mp4')
 
-# %
+# %%
 # Welcome to PUNCH data! We look forward to hearing what you discover!

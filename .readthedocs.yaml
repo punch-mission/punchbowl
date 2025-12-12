@@ -12,6 +12,7 @@ build:
     python: "3.12"
   apt_packages:
     - ffmpeg
+    - wget
 
 
 # Build documentation in the "docs/" directory with Sphinx

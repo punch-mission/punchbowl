@@ -5,6 +5,7 @@ Let's make an F-corona
 
 """
 
+import os
 import glob
 
 import matplotlib.pyplot as plt
@@ -19,9 +20,8 @@ from punchbowl.data.visualize import cmap_punch
 from punchbowl.util import nan_percentile
 
 # %
-# Let's grab some data for this F-corona exercise. You can pick other days, just edit the commented out examples below, making the file pattern and directory structure match. A few other examples are commented out below."""
-
-# !wget -r -l1 --no-parent --no-directories -A "PUNCH_L2_CTM_2025081100*_v0e.fits" -R "*.html*,index*,*tmp*" https://umbra.nascom.nasa.gov/punch/2/CTM/2025/08/11/
+# Let's grab some data for this F-corona exercise. You can pick other days, just edit the commented out examples below, making the file pattern and directory structure match. A few other examples are commented out below.
+os.system('wget -r -l1 --no-parent --no-directories -A "PUNCH_L2_CTM_2025081100*_v0e.fits" -R "*.html*,index*,*tmp*" https://umbra.nascom.nasa.gov/punch/2/CTM/2025/08/11/')
 # !wget -r -l1 --no-parent --no-directories -A "PUNCH_L2_CTM_2025081101*_v0e.fits" -R "*.html*,index*,*tmp*" https://umbra.nascom.nasa.gov/punch/2/CTM/2025/08/11/
 # !wget -r -l1 --no-parent --no-directories -A "PUNCH_L2_CTM_2025081103*_v0e.fits" -R "*.html*,index*,*tmp*" https://umbra.nascom.nasa.gov/punch/2/CTM/2025/08/11/
 
@@ -94,7 +94,7 @@ plt.show()
 # We've provided a model you can use to experiment at https://data.boulder.swri.edu/mhughes/punch_bimonthly/2025august/.
 # Simply download it by clicking on the F-corona model saved there. Or run the following wget:
 
-# !wget https://data.boulder.swri.edu/mhughes/punch_bimonthly/2025august/fcorona_20250530_204029.fits
+os.system('wget https://data.boulder.swri.edu/mhughes/punch_bimonthly/2025august/fcorona_20250530_204029.fits')
 
 # %
 # You can now load it:
@@ -158,10 +158,7 @@ for path in tqdm(paths):
     plt.savefig(path.replace(".fits", ".png"), dpi=300)
     plt.close()
 
-# %
-# ```
-# ffmpeg -r 120 -f image2 -pattern_type glob -i "*png" -vcodec libx264 -crf 10 -pix_fmt yuv420p movie.mp4
-# ```
+os.system('ffmpeg -r 120 -f image2 -pattern_type glob -i "*png" -vcodec libx264 -crf 10 -pix_fmt yuv420p movie.mp4')
 
 # %
 # Welcome to PUNCH data! We look forward to hearing what you discover!

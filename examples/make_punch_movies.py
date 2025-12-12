@@ -167,7 +167,7 @@ output_dir = Path('punch_data', stime +'_to_'+etime, product_code)
 # gdrive_dir = Path('drive/MyDrive/Colab Notebooks/PUNCH Movies')
 # output_dir = gdrive_dir / Path('punch_data', (stime +'_to_'+etime), product_code)
 
-# %
+# %%
 # We first check how much data are available through VSO before starting any download.
 
 dl = PUNCHDataDownloader()
@@ -180,22 +180,22 @@ urls = dl.search(
 
 """**Executing the cell below should pop-up a window on the side bar about some Third-party widgets being used. Just close it.**"""
 
-# %
+# %%
 # Download the FITS files with Fido, taking into account the `skip` parameter.
 output_dir.mkdir(parents=True, exist_ok=True)
 files = Fido.fetch(urls[::skip], path=output_dir)
 
-# %
+# %%
 # A pop-up window should appear on the side bar about some Third-party widgets being used. Just close it.
 
-# %
+# %%
 # Get list of local files, don't forget to sort them.
 files = sorted(Path(output_dir).glob('*.fits'))
 # Print a few filenames downloaded, just to sanity check it's what we expect
 # You can check your downloaded FITS files on the side bar (folder icon), at the printed location.
 files
 
-# %
+# %%
 # Preparing the movie
 # -------------------
 # For making the movies, we use an interactive configurator with a downsampled series of frames to setup the intensity scaling. Once we are satisfied with the  intensity scaling, we move forward with printing the png frames off-screen, which will be given to ffmpeg for creating a movie file.
@@ -218,7 +218,7 @@ for file in files:
     cube_lr.append(data)
     metadata.append(ndcube_obj.meta)
 
-# %
+# %%
 # Interactive plot
 # ----------------
 
@@ -239,7 +239,7 @@ from bokeh.models import (
 )
 from bokeh.plotting import figure, show
 
-# %
+# %%
 # Enable Bokeh in Jupyter
 output_notebook()
 
@@ -265,14 +265,14 @@ def mpl_to_bokeh_palette(cmap, n=256):
                for r, g, b, _ in colors]
     return palette
 
-# %
+# %%
 # Convert your custom colormap
 cmap_punch_bokeh = mpl_to_bokeh_palette(cmap_punch)
 
 
 initial_image = cube_lr[0]
 
-# %
+# %%
 # Create the figure
 p = figure(frame_width=600, frame_height=600,
            x_range=(-180, 180), y_range=(-180, 180),
@@ -406,15 +406,15 @@ spacer_index_slider = Spacer(width=30)
 # Display the layout
 show(column(row(spacer_vmin_slider , vmin_slider, vmax_slider), row(spacer_index_slider, index_slider), p))
 
-# %
+# %%
 # ** Final check of the rendered images that will be exported as PNG files.**
 
-# %
+# %%
 # Enter your preferred scaling values for vmin and vmax, based on playing with the Interactive Plot
 vmin=1e-14
 vmax=1e-12
 
-# %
+# %%
 ### Plot a sample frame with your chosen scaling values, using Helioprojective axes
 figsize = (9.5, 7.5) # size of the image (resp. width and height, inches)
 # Load a sample as a Sunpy NDCube instance.
@@ -440,7 +440,7 @@ ax.set_title(f"PUNCH Level-{sample.meta.product_level} {sample.meta.product_code
 fig.colorbar(im, ax=ax, label="MSB")
 plt.show()
 
-# %
+# %%
 # Generate movie PNG frames off-screen
 # ------------------------------------
 
@@ -542,7 +542,7 @@ out, err = stream.run(quiet=True, capture_stdout=True, capture_stderr=True)
 
 print(f'movie created at {movie_path}')
 
-# %
+# %%
 # [Optional] **Running difference images**
 # ----------------------------------------
 # We can create movies of running difference images with similar workflow:
@@ -552,7 +552,7 @@ print(f'movie created at {movie_path}')
 # 3. Save the series of off-screen PNG figures
 # 4. Create the movie of running difference images
 
-# %
+# %%
 # Series of downsampled running difference images for the GUI
 # Load base image at initial time
 # Load image array and downsample
@@ -571,7 +571,7 @@ for file in files[1:]:
     diff_metadata.append(ndcube_obj.meta)
     previous = current
 
-# %
+# %%
 # Determine your scaling parameters with the GUI
 # ----------------------------------------------
 
@@ -637,7 +637,7 @@ color_bar = ColorBar(
 p.add_layout(color_bar, 'right')
 
 
-# %
+# %%
 # Create interactive sliders
 # --------------------------
 
@@ -744,7 +744,7 @@ ax.set_title(f"Running Difference - PUNCH Level-{diff_metadata[0].product_level}
 fig.colorbar(im, ax=ax, label="MSB Difference")
 plt.show()
 
-# %
+# %%
 # Save the series of off-screen PNG figures
 # -----------------------------------------
 

@@ -1,7 +1,7 @@
 """
-===================
+=================
 Environment setup
-===================
+=================
 
 To run the sample notebooks contained within punchbowl, you must first create a Python environment.
 """

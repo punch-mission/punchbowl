@@ -57,7 +57,7 @@ jobs:
         cp docs/binder/runtime.txt .
         cp docs/auto_examples/*.ipynb notebooks/auto_examples/
     # Push the rendered notebooks to branch
-    - uses: stefanzweifel/git-auto-commit-action@v5
+    - uses: stefanzweifel/git-auto-commit-action@v7
       with:
         branch: binder
         create_branch: true

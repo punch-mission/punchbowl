@@ -35,15 +35,19 @@ result
 # Next, let's download the first file from this list of results:
 
 # %%
-files = Fido.fetch(result[0][0])
-
+try:
+    files = Fido.fetch(result[0][0])
+except IndexError:
+    print("Oops no files were found!")
+    files = None
 # %%
 # This returns a list of paths to files that have been downloaded. Note that the Fido.fetch tool can specify a particular download directory for larger data searches.
 # With that file downloaded, we can load it into a SunPy map object, and display it.
 
 # %%
-map = Map(files[0])
-map.peek()
+if files:
+    map = Map(files[0])
+    map.peek()
 
 # %%
 # And that's it! From here the data is encapsulated into a SunPy map object, which supports that framework for plotting, coordinate transformations, etc.

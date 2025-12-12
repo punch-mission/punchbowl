@@ -1,7 +1,7 @@
 """
-===================
+==============================================================================
 Overplotting Parker Solar Probe and Solar Orbiter Trajectories on PUNCH Images
-===================
+==============================================================================
 
 This notebook demonstrates how to overplot spacecraft trajectories on a sample PUNCH image.
 
@@ -85,7 +85,7 @@ plt.show()
 # Plot Isometrically Assuming PUNCH Data is on the Thomson Sphere
 # ---------------------------------------------------------------
 #
-#First, produce the 3D pixel values
+# First, produce the 3D pixel values
 
 ### Downsample for feasible 3D plotting time/computation
 pam_map_lowres = pam_map.resample([512,512]*u.pix)
@@ -104,22 +104,23 @@ ythomp = coords.y*u.au.to("R_sun")*cosalpha
 zthomp = coords.z*u.au.to("R_sun")*cosalpha
 
 # %%
-# ### Do plot
+# Do plot
+# -------
 
 fig = plt.figure(figsize=(10,10))
 ax = fig.add_subplot(projection='3d')
 
-### Plot the PUNCH data
+# Plot the PUNCH data
 ax.scatter(215-xthomp,ythomp,zthomp,c=np.log10(pam_map_lowres.data), cmap="inferno",alpha=0.9)
 
-### Plot a wireframe grid showing the full thomson sphere
+# Plot a wireframe grid showing the full thomson sphere
 uu, vv = np.meshgrid(np.linspace(0,360,25),np.linspace(-90,90,13))*u.deg
 x = 215/2* (1 + np.cos(uu)*np.cos(vv))
 y = 215/2* np.sin(uu)*np.cos(vv)
 z = 215/2*np.sin(vv)
 ax.plot_wireframe(215-x, y, z, color="black",alpha=0.1)
 
-### Plot Parker Solar Probe
+# Plot Parker Solar Probe
 parker_stonyhurst.representation_type="cartesian"
 ax.plot(parker_stonyhurst.x.to("R_sun"),
         parker_stonyhurst.y.to("R_sun"),
@@ -128,7 +129,7 @@ ax.plot(parker_stonyhurst.x.to("R_sun"),
         zorder=10
        )
 
-### Plot Solar Orbiter
+# Plot Solar Orbiter
 solo_stonyhurst.representation_type="cartesian"
 ax.plot(solo_stonyhurst.x.to("R_sun"),
         solo_stonyhurst.y.to("R_sun"),
@@ -137,13 +138,13 @@ ax.plot(solo_stonyhurst.x.to("R_sun"),
         zorder=10
        )
 
-### Plot Earth
+# Plot Earth
 ax.scatter(215,0,0,marker="o",color="green",ec="black",s=8,label="Earth")
 
-### Point Camera
+# Point Camera
 ax.view_init(20,-5)
 
-### Control Aspect Ratio
+# Control Aspect Ratio
 zoom = 200
 ax.set_xlim(-zoom,zoom)
 ax.set_ylim(-zoom,zoom)

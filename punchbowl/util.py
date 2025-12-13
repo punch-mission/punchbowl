@@ -9,6 +9,7 @@ import numpy as np
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from numpy.typing import ArrayLike
+from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve2d
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
@@ -237,6 +238,21 @@ def nan_percentile_2d(array: np.ndarray, percentile: float | list[float], # noqa
     if isinstance(percentile, (int, float)):
         return output[0]
     return output
+
+
+def nan_gaussian(image: np.ndarray, sigma: float) -> np.ndarray:
+    """Gaussian filter, where NaN pixels are ignored in the convolution, and NaN inputs become NaN outputs."""
+    nans = np.isnan(image)
+    # Ensure we don't modify the input image when replacing nans
+    image = np.where(nans, 0, image)
+
+    image = gaussian_filter(image, sigma, mode="constant", cval=0)
+
+    valid_weight = gaussian_filter((~nans).astype(float), sigma, mode="constant", cval=0)
+    with np.errstate(all="ignore"):
+        image /= valid_weight
+    image[nans] = np.nan
+    return image
 
 
 def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime, time_key: str = "DATE-OBS",

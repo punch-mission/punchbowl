@@ -233,6 +233,39 @@ Products:
             OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
+    TM?:
+        kinds: [Calibration, PM]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Dynamic Additive Stray Light Model
+            OBSTYPE: "{crafttype} dynamic stray light model"
+            TYPECODE: TM
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    TZ?:
+        kinds: [Calibration, PZ]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Dynamic Additive Stray Light Model
+            OBSTYPE: "{crafttype} dynamic stray light model"
+            TYPECODE: TZ
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    TP?:
+        kinds: [Calibration, PP]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Dynamic Additive Stray Light Model
+            OBSTYPE: "{crafttype} dynamic stray light model"
+            TYPECODE: TP
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
     SR?:
         kinds: [Calibration, CR]
         overrides:
@@ -316,6 +349,46 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
             TYPECODE: XR
+
+    YM?:
+        kinds: [Polarized, PM]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: YM
+
+    YZ?:
+        kinds: [Polarized, PZ]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: YZ
+
+    YP?:
+        kinds: [Polarized, PP]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: YP
+
+    YR?:
+        kinds: [Unpolarized, CR]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Clear Image, Xperimental
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: YR
 
     QR?:
         kinds: [Unpolarized, CR]

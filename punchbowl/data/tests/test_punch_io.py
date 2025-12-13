@@ -18,6 +18,7 @@ from punchbowl.data.punch_io import (
     write_ndcube_to_fits,
     write_ndcube_to_quicklook,
 )
+from punchbowl.data.wcs import calculate_pc_matrix
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -39,6 +40,8 @@ def sample_ndcube():
         wcs.wcs.crpix = 0, 0
         wcs.wcs.crval = 1, 1
         wcs.wcs.cname = "HPC lon", "HPC lat"
+        # For polarized static stray light estimation, which currently excludes northern images
+        wcs.wcs.pc = calculate_pc_matrix(90 * np.pi / 180, (0.1, 0.1))
 
         if level in ["2", "3"] and code[0] == "P":
             wcs = add_stokes_axis_to_wcs(wcs, 2)

@@ -837,3 +837,5 @@ stream = (
 out, err = stream.run(quiet=True, capture_stdout=True, capture_stderr=True)
 
 print(f'movie created at {movie_path}')
+
+os.system("rm -r punch_data")

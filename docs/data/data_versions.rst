@@ -17,6 +17,17 @@ The PUNCH mission and the SDAC data repository only supports the most recent ver
 
 A history of data version releases is given below.
 
+Version 0i
+----------
+- Released December 11, 2025
+- Switched QuickPUNCH CTM to an f-corona subtracted image
+- Improved intercalibration of WFI satellites with a new flat field
+- Used a percentile band for F-corona model generation instead of only a threshold
+- Improved image alignment with more attempts to solve
+- Wrote an (approximate) uncertainty layer in F corona models, propagated it though F corona subtraction, and wrote the uncertainty layer for CIMs
+- Changed to load NDCubes with CPDIS[1,2]A and DP[1,2]A set appropriately to avoid crashing Python
+- Recorded WFI center locations in metadata for mosaics
+
 Version 0h
 ----------
 - Released October 29, 2025

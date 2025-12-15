@@ -6,6 +6,7 @@ Level:
     Documentation, Contact, and Collection Metadata:
         overrides:
             DESCRPTN: PUNCH Level-2 data, Composite mosaic in output coordinates
+            DOI: https://doi.org/10.48322/stqs-j385
     File Type and Provenance:
         omits: []
         overrides:

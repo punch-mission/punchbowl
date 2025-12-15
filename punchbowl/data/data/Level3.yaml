@@ -6,6 +6,7 @@ Level:
     Documentation, Contact, and Collection Metadata:
         overrides:
             DESCRPTN: PUNCH Level-3 data, Composite mosaic in output coordinates
+            DOI: https://doi.org/10.48322/nnv7-bn21
     File Type and Provenance:
         omits: []
         overrides:

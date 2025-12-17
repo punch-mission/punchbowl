@@ -332,7 +332,8 @@ class NormalizedMetadata(Mapping):
                 if self.product_level == "0":
                     hdr.insert("CROTA", ("COMMENT","Level 0 WCS approximated from spacecraft-reported state"))
                 for key, this_wcs in wcses.items():
-                    if this_wcs.has_distortion:
+                   # NOTE: sliced WCSes don't even have the "has_distortion" attribute
+                    if hasattr(this_wcs, "has_distortion") and this_wcs.has_distortion: 
                         wcs_header = this_wcs.to_fits()[0].header
                         for required_key in REQUIRED_HEADER_KEYWORDS:
                             del wcs_header[required_key]

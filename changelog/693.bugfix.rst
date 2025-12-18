@@ -1,0 +1,1 @@
+Safeguard access to 'has_distortion' attribute.

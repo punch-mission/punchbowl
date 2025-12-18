@@ -4,6 +4,8 @@
 
 `punchbowl` is the science calibration code for [the PUNCH mission](https://punch.space.swri.edu/).
 
+### [Start by checking the documentation.](https://punchbowl.readthedocs.io/en/latest/)
+
 > [!CAUTION]
 > This package will likely have breaking changes during commissioning (the first few months after launch).
 > Stability is not promised until v1.

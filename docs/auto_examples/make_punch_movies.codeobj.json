@@ -1,0 +1,8873 @@
+{
+ "BasicTicker": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.tickers",
+   "module_short": "bokeh.models",
+   "name": "BasicTicker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "BasicTicker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "BasicTicker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.tickers",
+   "module_short": "bokeh.models",
+   "name": "AdaptiveTicker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "AdaptiveTicker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "AdaptiveTicker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.tickers",
+   "module_short": "bokeh.models",
+   "name": "ContinuousTicker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ContinuousTicker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "ContinuousTicker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.tickers",
+   "module_short": "bokeh.models",
+   "name": "Ticker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Ticker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Ticker"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "BasicTicker"
+  }
+ ],
+ "ColorBar": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.annotations.legends",
+   "module_short": "bokeh.models",
+   "name": "ColorBar"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.annotations",
+   "module_short": "bokeh.models",
+   "name": "ColorBar"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ColorBar"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "ColorBar"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.annotations.legends",
+   "module_short": "bokeh.models.annotations.legends",
+   "name": "BaseColorBar"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.annotations",
+   "module_short": "bokeh.models.annotations",
+   "name": "BaseColorBar"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "BaseColorBar"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "BaseColorBar"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.annotations.annotation",
+   "module_short": "bokeh.models",
+   "name": "Annotation"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.annotations",
+   "module_short": "bokeh.models",
+   "name": "Annotation"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Annotation"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Annotation"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.renderers.renderer",
+   "module_short": "bokeh.models",
+   "name": "CompositeRenderer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.renderers",
+   "module_short": "bokeh.models",
+   "name": "CompositeRenderer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CompositeRenderer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "CompositeRenderer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.renderers.renderer",
+   "module_short": "bokeh.models",
+   "name": "Renderer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.renderers",
+   "module_short": "bokeh.models",
+   "name": "Renderer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Renderer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Renderer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ColorBar"
+  }
+ ],
+ "ColumnDataSource": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.sources",
+   "module_short": "bokeh.models",
+   "name": "ColumnDataSource"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ColumnDataSource"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "ColumnDataSource"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.sources",
+   "module_short": "bokeh.models",
+   "name": "ColumnarDataSource"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ColumnarDataSource"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "ColumnarDataSource"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.sources",
+   "module_short": "bokeh.models",
+   "name": "DataSource"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "DataSource"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "DataSource"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ColumnDataSource"
+  }
+ ],
+ "CustomJS": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.callbacks",
+   "module_short": "bokeh.models",
+   "name": "CustomJS"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CustomJS"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "CustomJS"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.callbacks",
+   "module_short": "bokeh.models.callbacks",
+   "name": "CustomCode"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CustomCode"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "CustomCode"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.callbacks",
+   "module_short": "bokeh.models",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Callback"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CustomJS"
+  }
+ ],
+ "CustomJSTickFormatter": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.formatters",
+   "module_short": "bokeh.models",
+   "name": "CustomJSTickFormatter"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CustomJSTickFormatter"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "CustomJSTickFormatter"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.formatters",
+   "module_short": "bokeh.models",
+   "name": "TickFormatter"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "TickFormatter"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "TickFormatter"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CustomJSTickFormatter"
+  }
+ ],
+ "Fido.fetch": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.fido_factory",
+   "module_short": "sunpy.net.fido_factory",
+   "name": "UnifiedDownloaderFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "UnifiedDownloaderFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "UnifiedDownloaderFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.util.datatype_factory_base",
+   "module_short": "sunpy.util.datatype_factory_base",
+   "name": "BasicRegistrationFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.util",
+   "module_short": "sunpy.util",
+   "name": "BasicRegistrationFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "BasicRegistrationFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.Fido",
+   "module_short": "sunpy.net.Fido",
+   "name": "fetch"
+  }
+ ],
+ "Fido.search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.fido_factory",
+   "module_short": "sunpy.net.fido_factory",
+   "name": "UnifiedDownloaderFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "UnifiedDownloaderFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "UnifiedDownloaderFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.util.datatype_factory_base",
+   "module_short": "sunpy.util.datatype_factory_base",
+   "name": "BasicRegistrationFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.util",
+   "module_short": "sunpy.util",
+   "name": "BasicRegistrationFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "BasicRegistrationFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.Fido",
+   "module_short": "sunpy.net.Fido",
+   "name": "search"
+  }
+ ],
+ "HTML": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "IPython.core.display",
+   "module_short": "IPython.core.display",
+   "name": "HTML"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "IPython.core",
+   "module_short": "IPython.core",
+   "name": "HTML"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "IPython",
+   "module_short": "IPython",
+   "name": "HTML"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "IPython.core.display",
+   "module_short": "IPython.core.display",
+   "name": "TextDisplayObject"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "IPython.core",
+   "module_short": "IPython.core",
+   "name": "TextDisplayObject"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "IPython",
+   "module_short": "IPython",
+   "name": "TextDisplayObject"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "IPython.core.display",
+   "module_short": "IPython.core.display",
+   "name": "DisplayObject"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "IPython.core",
+   "module_short": "IPython.core",
+   "name": "DisplayObject"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "IPython",
+   "module_short": "IPython",
+   "name": "DisplayObject"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "IPython.display",
+   "module_short": "IPython.display",
+   "name": "HTML"
+  }
+ ],
+ "LinearColorMapper": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.mappers",
+   "module_short": "bokeh.models",
+   "name": "LinearColorMapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LinearColorMapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LinearColorMapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.mappers",
+   "module_short": "bokeh.models",
+   "name": "ContinuousColorMapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ContinuousColorMapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "ContinuousColorMapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.mappers",
+   "module_short": "bokeh.models",
+   "name": "ColorMapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ColorMapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "ColorMapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.mappers",
+   "module_short": "bokeh.models",
+   "name": "Mapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Mapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Mapper"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.transforms",
+   "module_short": "bokeh.models",
+   "name": "Transform"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Transform"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Transform"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LinearColorMapper"
+  }
+ ],
+ "List": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "typing",
+   "module_short": "typing",
+   "name": "_SpecialGenericAlias"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "typing",
+   "module_short": "typing",
+   "name": "List"
+  }
+ ],
+ "PUNCHDataDownloader": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "PUNCHDataDownloader"
+  }
+ ],
+ "Path": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "Path"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PurePath"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "Path"
+  }
+ ],
+ "PowerNorm": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "matplotlib.colors",
+   "module_short": "matplotlib.colors",
+   "name": "PowerNorm"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "PowerNorm"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "matplotlib.colors",
+   "module_short": "matplotlib.colors",
+   "name": "Normalize"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Normalize"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.colors",
+   "module_short": "matplotlib.colors",
+   "name": "PowerNorm"
+  }
+ ],
+ "Slider": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Slider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models.widgets.sliders",
+   "name": "NumericalSlider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models.widgets",
+   "name": "NumericalSlider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "NumericalSlider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "NumericalSlider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "AbstractSlider"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.widget",
+   "module_short": "bokeh.models",
+   "name": "Widget"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Widget"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Widget"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Widget"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  }
+ ],
+ "Spacer": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "Spacer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Spacer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Spacer"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Spacer"
+  }
+ ],
+ "Union": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "typing",
+   "module_short": "typing",
+   "name": "_SpecialForm"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "typing",
+   "module_short": "typing",
+   "name": "Union"
+  }
+ ],
+ "attrs.Instrument": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Instrument"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Instrument"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Instrument"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Attr"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Instrument"
+  }
+ ],
+ "attrs.Source": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Source"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Source"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Source"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Attr"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Source"
+  }
+ ],
+ "attrs.Time": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Time"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Time"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Time"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "Range"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Range"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Range"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Attr"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Time"
+  }
+ ],
+ "ax": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.core",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "WCSAxes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "WCSAxes"
+  }
+ ],
+ "ax.coords": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.coordinates_map",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinatesMap"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinatesMap"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "CoordinatesMap"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "CoordinatesMap"
+  }
+ ],
+ "ax.coords.grid": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.coordinates_map",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinatesMap.grid"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinatesMap.grid"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "CoordinatesMap.grid"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "CoordinatesMap.grid"
+  }
+ ],
+ "ax.imshow": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.core",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "WCSAxes.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "WCSAxes.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._base",
+   "module_short": "matplotlib.axes._base",
+   "name": "_AxesBase.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "_AxesBase.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "_AxesBase.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.imshow"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.imshow"
+  }
+ ],
+ "ax.set_facecolor": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.core",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "WCSAxes.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "WCSAxes.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._base",
+   "module_short": "matplotlib.axes._base",
+   "name": "_AxesBase.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "_AxesBase.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "_AxesBase.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.set_facecolor"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.set_facecolor"
+  }
+ ],
+ "ax.set_title": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.core",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "WCSAxes.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "WCSAxes.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._base",
+   "module_short": "matplotlib.axes._base",
+   "name": "_AxesBase.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "_AxesBase.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "_AxesBase.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.set_title"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.set_title"
+  }
+ ],
+ "ax.set_xlabel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.core",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "WCSAxes.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "WCSAxes.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._base",
+   "module_short": "matplotlib.axes._base",
+   "name": "_AxesBase.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "_AxesBase.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "_AxesBase.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.set_xlabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.set_xlabel"
+  }
+ ],
+ "ax.set_ylabel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.core",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "WCSAxes.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "WCSAxes.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "Axes.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Axes.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes._base",
+   "module_short": "matplotlib.axes._base",
+   "name": "_AxesBase.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.axes",
+   "module_short": "matplotlib.axes",
+   "name": "_AxesBase.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "_AxesBase.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.set_ylabel"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.set_ylabel"
+  }
+ ],
+ "base_image": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "binning": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "bokeh_palette": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "cbar": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.colorbar",
+   "module_short": "matplotlib.colorbar",
+   "name": "Colorbar"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Colorbar"
+  }
+ ],
+ "cmap_punch": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.colors",
+   "module_short": "matplotlib.colors",
+   "name": "LinearSegmentedColormap"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "LinearSegmentedColormap"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.visualize",
+   "module_short": "punchbowl.data.visualize",
+   "name": "cmap_punch"
+  }
+ ],
+ "cmap_punch_bokeh": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "color_bar": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.annotations.legends",
+   "module_short": "bokeh.models",
+   "name": "ColorBar"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.annotations",
+   "module_short": "bokeh.models",
+   "name": "ColorBar"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ColorBar"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "ColorBar"
+  }
+ ],
+ "color_callback": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.callbacks",
+   "module_short": "bokeh.models",
+   "name": "CustomJS"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CustomJS"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "CustomJS"
+  }
+ ],
+ "color_mapper": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.mappers",
+   "module_short": "bokeh.models",
+   "name": "LinearColorMapper"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LinearColorMapper"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LinearColorMapper"
+  }
+ ],
+ "colorbar_tick_formatter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.formatters",
+   "module_short": "bokeh.models",
+   "name": "CustomJSTickFormatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CustomJSTickFormatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "CustomJSTickFormatter"
+  }
+ ],
+ "column": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.layouts",
+   "module_short": "bokeh.layouts",
+   "name": "column"
+  }
+ ],
+ "crop_h": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "crop_w": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "cube": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "cube.data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "cube.meta": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "cube.meta.product_code": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "cube.meta.product_level": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "cube_diff": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "cube_diff.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "cube_lr": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "cube_lr.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "current": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "date0": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "date_obs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "datetime": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "datetime",
+   "module_short": "datetime",
+   "name": "datetime"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "datetime",
+   "module_short": "datetime",
+   "name": "date"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "datetime",
+   "module_short": "datetime",
+   "name": "datetime"
+  }
+ ],
+ "diff_image": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "diff_metadata": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "diff_metadata.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "display": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "IPython.display",
+   "module_short": "IPython.display",
+   "name": "display"
+  }
+ ],
+ "dl": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "PUNCHDataDownloader"
+  }
+ ],
+ "dl.search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "__main__",
+   "module_short": "__main__",
+   "name": "PUNCHDataDownloader.search"
+  }
+ ],
+ "dpi": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "end_time": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "end_time.replace": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "end_time.strftime": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "err": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "bytes"
+  }
+ ],
+ "etime": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "ffmpeg.input": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ffmpeg",
+   "module_short": "ffmpeg",
+   "name": "input"
+  }
+ ],
+ "fig": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure"
+  }
+ ],
+ "fig.add_subplot": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure.add_subplot"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure.add_subplot"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "FigureBase.add_subplot"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "FigureBase.add_subplot"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.add_subplot"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.add_subplot"
+  }
+ ],
+ "fig.colorbar": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure.colorbar"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure.colorbar"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "FigureBase.colorbar"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "FigureBase.colorbar"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.colorbar"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.colorbar"
+  }
+ ],
+ "fig.savefig": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure.savefig"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure.savefig"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "FigureBase.savefig"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "FigureBase.savefig"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.savefig"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.savefig"
+  }
+ ],
+ "figsize": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "tuple"
+  }
+ ],
+ "figure": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.plotting._figure",
+   "module_short": "bokeh.plotting",
+   "name": "figure"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "figure"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "figure"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.plots",
+   "module_short": "bokeh.models",
+   "name": "Plot"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Plot"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Plot"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.plotting.glyph_api",
+   "module_short": "bokeh.plotting.glyph_api",
+   "name": "GlyphAPI"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "GlyphAPI"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "GlyphAPI"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "figure"
+  }
+ ],
+ "file": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PosixPath"
+  }
+ ],
+ "files": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "first_cube": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube"
+  }
+ ],
+ "first_cube.data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube.ndcube",
+   "name": "NDCubeABC.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeABC.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDData.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins.ndslicing",
+   "module_short": "ndcube.mixins.ndslicing",
+   "name": "NDCubeSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins",
+   "module_short": "ndcube.mixins",
+   "name": "NDCubeSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata_base",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDDataBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins.ndslicing",
+   "module_short": "astropy.nddata.mixins.ndslicing",
+   "name": "NDSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins",
+   "module_short": "astropy.nddata.mixins",
+   "name": "NDSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDSlicingMixin.data"
+  }
+ ],
+ "first_cube.meta": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata"
+  }
+ ],
+ "first_cube.meta.product_code": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Mapping.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Mapping.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Collection.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Collection.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Sized.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Sized.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Iterable.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Iterable.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Container.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Container.product_code"
+  }
+ ],
+ "first_cube.meta.product_level": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Mapping.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Mapping.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Collection.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Collection.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Sized.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Sized.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Iterable.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Iterable.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Container.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Container.product_level"
+  }
+ ],
+ "first_cube.wcs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube.ndcube",
+   "name": "NDCubeABC.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeABC.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDData.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins.ndslicing",
+   "module_short": "ndcube.mixins.ndslicing",
+   "name": "NDCubeSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins",
+   "module_short": "ndcube.mixins",
+   "name": "NDCubeSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata_base",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDDataBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins.ndslicing",
+   "module_short": "astropy.nddata.mixins.ndslicing",
+   "name": "NDSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins",
+   "module_short": "astropy.nddata.mixins",
+   "name": "NDSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDSlicingMixin.wcs"
+  }
+ ],
+ "frame_path": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PosixPath"
+  }
+ ],
+ "framerate": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "frames_diff_dir": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PosixPath"
+  }
+ ],
+ "frames_dir": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PosixPath"
+  }
+ ],
+ "gamma": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "i": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "im": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.image",
+   "module_short": "matplotlib.image",
+   "name": "AxesImage"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "AxesImage"
+  }
+ ],
+ "im.set_data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.image",
+   "module_short": "matplotlib.image",
+   "name": "AxesImage.set_data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "AxesImage.set_data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.image",
+   "module_short": "matplotlib.image",
+   "name": "_ImageBase.set_data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "_ImageBase.set_data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.set_data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.set_data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.cm",
+   "module_short": "matplotlib.cm",
+   "name": "ScalarMappable.set_data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "ScalarMappable.set_data"
+  }
+ ],
+ "image_callback": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.callbacks",
+   "module_short": "bokeh.models",
+   "name": "CustomJS"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CustomJS"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "CustomJS"
+  }
+ ],
+ "index_slider": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Slider"
+  }
+ ],
+ "index_slider.js_on_change": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models.widgets.sliders",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models.widgets",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.widget",
+   "module_short": "bokeh.models",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable.js_on_change"
+  }
+ ],
+ "init_diff_hr": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "init_image_hr": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "init_wcs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.wcs.wcs",
+   "module_short": "astropy.wcs",
+   "name": "WCS"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.wcs",
+   "module_short": "astropy.wcs",
+   "name": "WCS"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "WCS"
+  }
+ ],
+ "initial_image": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "inv_gamma": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "js_metadata": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "js_metadata.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "lat": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.coordinate_helpers",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinateHelper"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinateHelper"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "CoordinateHelper"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "CoordinateHelper"
+  }
+ ],
+ "lat.set_major_formatter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.coordinate_helpers",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinateHelper.set_major_formatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinateHelper.set_major_formatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "CoordinateHelper.set_major_formatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "CoordinateHelper.set_major_formatter"
+  }
+ ],
+ "load_ndcube_from_fits": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.punch_io",
+   "module_short": "punchbowl.data",
+   "name": "load_ndcube_from_fits"
+  }
+ ],
+ "lon": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.coordinate_helpers",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinateHelper"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinateHelper"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "CoordinateHelper"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "CoordinateHelper"
+  }
+ ],
+ "lon.set_major_formatter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.coordinate_helpers",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinateHelper.set_major_formatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "CoordinateHelper.set_major_formatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "CoordinateHelper.set_major_formatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "CoordinateHelper.set_major_formatter"
+  }
+ ],
+ "m0": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "dict"
+  }
+ ],
+ "meta": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata"
+  }
+ ],
+ "meta.get": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Mapping.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Mapping.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Collection.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Collection.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Sized.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Sized.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Iterable.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Iterable.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Container.get"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Container.get"
+  }
+ ],
+ "meta.product_code": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Mapping.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Mapping.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Collection.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Collection.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Sized.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Sized.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Iterable.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Iterable.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Container.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Container.product_code"
+  }
+ ],
+ "meta.product_level": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Mapping.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Mapping.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Collection.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Collection.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Sized.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Sized.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Iterable.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Iterable.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Container.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Container.product_level"
+  }
+ ],
+ "metadata": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "metadata.append": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "movie_path": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PosixPath"
+  }
+ ],
+ "mpl_colormap": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.colors",
+   "module_short": "matplotlib.colors",
+   "name": "LinearSegmentedColormap"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "LinearSegmentedColormap"
+  }
+ ],
+ "mpl_to_bokeh_palette": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
+ "ndcube_obj": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube"
+  }
+ ],
+ "ndcube_obj.data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube.ndcube",
+   "name": "NDCubeABC.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeABC.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDData.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins.ndslicing",
+   "module_short": "ndcube.mixins.ndslicing",
+   "name": "NDCubeSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins",
+   "module_short": "ndcube.mixins",
+   "name": "NDCubeSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata_base",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDDataBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins.ndslicing",
+   "module_short": "astropy.nddata.mixins.ndslicing",
+   "name": "NDSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins",
+   "module_short": "astropy.nddata.mixins",
+   "name": "NDSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDSlicingMixin.data"
+  }
+ ],
+ "ndcube_obj.meta": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata"
+  }
+ ],
+ "np.isnan": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ufunc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "isnan"
+  }
+ ],
+ "np.linspace": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "linspace"
+  }
+ ],
+ "os.makedirs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "os",
+   "module_short": "os",
+   "name": "makedirs"
+  }
+ ],
+ "os.path.join": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "os.path",
+   "module_short": "os.path",
+   "name": "join"
+  }
+ ],
+ "out": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "bytes"
+  }
+ ],
+ "output_dir": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PosixPath"
+  }
+ ],
+ "output_dir.mkdir": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PosixPath.mkdir"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "Path.mkdir"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PurePosixPath.mkdir"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PurePath.mkdir"
+  }
+ ],
+ "output_dir.parent.parent.parent": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PosixPath.parent"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "Path.parent"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PurePosixPath.parent"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PurePath.parent"
+  }
+ ],
+ "output_notebook": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.io",
+   "module_short": "bokeh.io",
+   "name": "output_notebook"
+  }
+ ],
+ "p": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting._figure",
+   "module_short": "bokeh.plotting",
+   "name": "figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "figure"
+  }
+ ],
+ "p.add_layout": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting._figure",
+   "module_short": "bokeh.plotting",
+   "name": "figure.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "figure.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "figure.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.plots",
+   "module_short": "bokeh.models",
+   "name": "Plot.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Plot.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Plot.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting.glyph_api",
+   "module_short": "bokeh.plotting.glyph_api",
+   "name": "GlyphAPI.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "GlyphAPI.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "GlyphAPI.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models.layouts",
+   "name": "LayoutDOM.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models.ui.panes",
+   "name": "Pane.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "Pane.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models.ui.ui_element",
+   "name": "UIElement.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "UIElement.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models.ui.ui_element",
+   "name": "StyledElement.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "StyledElement.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model.model",
+   "name": "Model.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable.add_layout"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable.add_layout"
+  }
+ ],
+ "p.image": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting._figure",
+   "module_short": "bokeh.plotting",
+   "name": "figure.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "figure.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "figure.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.plots",
+   "module_short": "bokeh.models.plots",
+   "name": "Plot.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Plot.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Plot.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting.glyph_api",
+   "module_short": "bokeh.plotting.glyph_api",
+   "name": "GlyphAPI.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "GlyphAPI.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "GlyphAPI.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models.layouts",
+   "name": "LayoutDOM.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models.ui.panes",
+   "name": "Pane.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "Pane.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models.ui.ui_element",
+   "name": "UIElement.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "UIElement.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models.ui.ui_element",
+   "name": "StyledElement.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "StyledElement.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model.model",
+   "name": "Model.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable.image"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable.image"
+  }
+ ],
+ "p.title.text": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "p.xaxis.axis_label": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting._figure",
+   "module_short": "bokeh.plotting",
+   "name": "figure.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "figure.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "figure.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.plots",
+   "module_short": "bokeh.models",
+   "name": "Plot.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Plot.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Plot.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting.glyph_api",
+   "module_short": "bokeh.plotting.glyph_api",
+   "name": "GlyphAPI.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "GlyphAPI.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "GlyphAPI.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models.layouts",
+   "name": "LayoutDOM.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models.ui.panes",
+   "name": "Pane.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "Pane.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models.ui.ui_element",
+   "name": "UIElement.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "UIElement.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models.ui.ui_element",
+   "name": "StyledElement.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "StyledElement.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model.model",
+   "name": "Model.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable.xaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable.xaxis"
+  }
+ ],
+ "p.yaxis.axis_label": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting._figure",
+   "module_short": "bokeh.plotting",
+   "name": "figure.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "figure.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "figure.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.plots",
+   "module_short": "bokeh.models",
+   "name": "Plot.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Plot.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Plot.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting.glyph_api",
+   "module_short": "bokeh.plotting.glyph_api",
+   "name": "GlyphAPI.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "GlyphAPI.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "GlyphAPI.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models.layouts",
+   "name": "LayoutDOM.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models.ui.panes",
+   "name": "Pane.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "Pane.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models.ui.ui_element",
+   "name": "UIElement.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "UIElement.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models.ui.ui_element",
+   "name": "StyledElement.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models.ui",
+   "name": "StyledElement.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model.model",
+   "name": "Model.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable.yaxis"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable.yaxis"
+  }
+ ],
+ "plt.close": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "close"
+  }
+ ],
+ "plt.figure": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "figure"
+  }
+ ],
+ "plt.get_cmap": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "get_cmap"
+  }
+ ],
+ "plt.show": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "show"
+  }
+ ],
+ "plt.subplots": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "subplots"
+  }
+ ],
+ "previous": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "product_code": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "row": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.layouts",
+   "module_short": "bokeh.layouts",
+   "name": "row"
+  }
+ ],
+ "sample": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube"
+  }
+ ],
+ "sample.data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube.ndcube",
+   "name": "NDCubeABC.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeABC.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDData.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins.ndslicing",
+   "module_short": "ndcube.mixins.ndslicing",
+   "name": "NDCubeSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins",
+   "module_short": "ndcube.mixins",
+   "name": "NDCubeSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata_base",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDDataBase.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins.ndslicing",
+   "module_short": "astropy.nddata.mixins.ndslicing",
+   "name": "NDSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins",
+   "module_short": "astropy.nddata.mixins",
+   "name": "NDSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDSlicingMixin.data"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDSlicingMixin.data"
+  }
+ ],
+ "sample.meta": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata"
+  }
+ ],
+ "sample.meta.product_code": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Mapping.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Mapping.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Collection.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Collection.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Sized.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Sized.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Iterable.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Iterable.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Container.product_code"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Container.product_code"
+  }
+ ],
+ "sample.meta.product_level": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.meta",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data",
+   "module_short": "punchbowl.data",
+   "name": "NormalizedMetadata.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl",
+   "module_short": "punchbowl",
+   "name": "NormalizedMetadata.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Mapping.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Mapping.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Collection.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Collection.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Sized.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Sized.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Iterable.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Iterable.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections.abc",
+   "module_short": "collections.abc",
+   "name": "Container.product_level"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "collections",
+   "module_short": "collections",
+   "name": "Container.product_level"
+  }
+ ],
+ "sample.wcs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCube.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.ndcube",
+   "module_short": "ndcube.ndcube",
+   "name": "NDCubeABC.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeABC.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDData.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDData.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins.ndslicing",
+   "module_short": "ndcube.mixins.ndslicing",
+   "name": "NDCubeSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube.mixins",
+   "module_short": "ndcube.mixins",
+   "name": "NDCubeSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ndcube",
+   "module_short": "ndcube",
+   "name": "NDCubeSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.nddata_base",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDDataBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDDataBase.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins.ndslicing",
+   "module_short": "astropy.nddata.mixins.ndslicing",
+   "name": "NDSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata.mixins",
+   "module_short": "astropy.nddata.mixins",
+   "name": "NDSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.nddata",
+   "module_short": "astropy.nddata",
+   "name": "NDSlicingMixin.wcs"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "NDSlicingMixin.wcs"
+  }
+ ],
+ "show": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.plotting",
+   "module_short": "bokeh.plotting",
+   "name": "show"
+  }
+ ],
+ "skip": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "slider_tick_formatter": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.formatters",
+   "module_short": "bokeh.models",
+   "name": "CustomJSTickFormatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "CustomJSTickFormatter"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "CustomJSTickFormatter"
+  }
+ ],
+ "source": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.sources",
+   "module_short": "bokeh.models",
+   "name": "ColumnDataSource"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "ColumnDataSource"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "ColumnDataSource"
+  }
+ ],
+ "spacer_index_slider": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "Spacer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Spacer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Spacer"
+  }
+ ],
+ "spacer_vmax_slider": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "Spacer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Spacer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Spacer"
+  }
+ ],
+ "spacer_vmin_slider": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "Spacer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Spacer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Spacer"
+  }
+ ],
+ "start_time": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "start_time.replace": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
+ "start_time.strftime": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "step_max": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "step_min": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "stime": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "stream": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ffmpeg.nodes",
+   "module_short": "ffmpeg.nodes",
+   "name": "OutputStream"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ffmpeg",
+   "module_short": "ffmpeg",
+   "name": "OutputStream"
+  }
+ ],
+ "stream.run": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ffmpeg.nodes",
+   "module_short": "ffmpeg.nodes",
+   "name": "OutputStream.run"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ffmpeg",
+   "module_short": "ffmpeg",
+   "name": "OutputStream.run"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ffmpeg.nodes",
+   "module_short": "ffmpeg.nodes",
+   "name": "Stream.run"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "ffmpeg",
+   "module_short": "ffmpeg",
+   "name": "Stream.run"
+  }
+ ],
+ "title_text": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.text",
+   "module_short": "matplotlib.text",
+   "name": "Text"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Text"
+  }
+ ],
+ "title_text.set_text": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.text",
+   "module_short": "matplotlib.text",
+   "name": "Text.set_text"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Text.set_text"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.artist",
+   "module_short": "matplotlib.artist",
+   "name": "Artist.set_text"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Artist.set_text"
+  }
+ ],
+ "urls": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.vso.table_response",
+   "module_short": "sunpy.net.vso",
+   "name": "VSOQueryResponseTable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.vso",
+   "module_short": "sunpy.net.vso",
+   "name": "VSOQueryResponseTable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "VSOQueryResponseTable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "VSOQueryResponseTable"
+  }
+ ],
+ "vmax": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "vmax_slider": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Slider"
+  }
+ ],
+ "vmax_slider.js_on_change": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models.widgets.sliders",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models.widgets",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.widget",
+   "module_short": "bokeh.models",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable.js_on_change"
+  }
+ ],
+ "vmax_slider_max": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "vmax_slider_min": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "vmin": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "vmin_slider": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Slider"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Slider"
+  }
+ ],
+ "vmin_slider.js_on_change": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Slider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models.widgets.sliders",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models.widgets",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "NumericalSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.sliders",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "AbstractSlider.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets.widget",
+   "module_short": "bokeh.models",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.widgets",
+   "module_short": "bokeh.models",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Widget.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.layouts",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "LayoutDOM.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "LayoutDOM.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.panes",
+   "module_short": "bokeh.models",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Pane.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "UIElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui.ui_element",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models.ui",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.models",
+   "module_short": "bokeh.models",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "StyledElement.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.model",
+   "module_short": "bokeh.model",
+   "name": "Model.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "Model.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Model.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.has_props",
+   "module_short": "bokeh.core.has_props",
+   "name": "HasProps.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "HasProps.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasProps.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model.util",
+   "module_short": "bokeh.model.util",
+   "name": "HasDocumentRef.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.model",
+   "module_short": "bokeh.model",
+   "name": "HasDocumentRef.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "HasDocumentRef.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "PropertyCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "PropertyCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "PropertyCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util.callback_manager",
+   "module_short": "bokeh.util.callback_manager",
+   "name": "EventCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.util",
+   "module_short": "bokeh.util",
+   "name": "EventCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "EventCallbackManager.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core.serialization",
+   "module_short": "bokeh.core.serialization",
+   "name": "Serializable.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh.core",
+   "module_short": "bokeh.core",
+   "name": "Serializable.js_on_change"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "bokeh",
+   "module_short": "bokeh",
+   "name": "Serializable.js_on_change"
+  }
+ ],
+ "vmin_slider_max": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "vmin_slider_min": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "x_left": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ],
+ "y_top": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  }
+ ]
+}

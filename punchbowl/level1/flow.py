@@ -16,6 +16,7 @@ from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 from punchbowl.level1.despike import despike_task
 from punchbowl.level1.destreak import destreak_task
+from punchbowl.level1.dynamic_stray_light import remove_dynamic_stray_light_task
 from punchbowl.level1.initial_uncertainty import update_initial_uncertainty_task
 from punchbowl.level1.psf import correct_psf_task
 from punchbowl.level1.quartic_fit import perform_quartic_fit_task
@@ -199,10 +200,62 @@ def level1_early_core_flow(  # noqa: C901
 
 
 @punch_flow
+def level1_middle_core_flow(
+    input_data: list[str] | list[NDCube],
+    dynamic_stray_light_before_path: str | DataLoader | None = None,
+    dynamic_stray_light_after_path: str | DataLoader | None = None,
+    output_filename: list[str] | None = None,
+) -> list[NDCube]:
+    """Core flow for level 1, applying WFI dynamic stray light subtraction."""
+    logger = get_run_logger()
+
+    logger.info("beginning level 1 middle core flow")
+
+    output_data = []
+    for i, this_data in enumerate(input_data):
+        data = load_image_task(this_data) if isinstance(this_data, str) else this_data
+        remove_dynamic_stray_light_task(data, dynamic_stray_light_before_path, dynamic_stray_light_after_path)
+
+        # Repackage data with proper metadata
+        product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
+        product_code = "Y" + product_code[1:]
+        new_meta = NormalizedMetadata.load_template(product_code, "1")
+        # copy over the existing values
+        for key in data.meta.keys():  # noqa: SIM118
+            if key in KEYS_TO_NOT_COPY:
+                continue
+            if key in new_meta.keys():  # noqa: SIM118
+                new_meta[key] = data.meta[key].value
+        new_meta.history = data.meta.history
+        new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+        if isinstance(dynamic_stray_light_before_path, DataLoader):
+            dynamic_stray_light_before_path = dynamic_stray_light_before_path.src_repr()
+        if isinstance(dynamic_stray_light_after_path, DataLoader):
+            dynamic_stray_light_after_path = dynamic_stray_light_after_path.src_repr()
+        new_meta["CALDSL0"] = (os.path.basename(dynamic_stray_light_before_path)
+                               if dynamic_stray_light_before_path else "")
+        new_meta["CALDSL1"] = (os.path.basename(dynamic_stray_light_after_path)
+                               if dynamic_stray_light_after_path else "")
+
+        new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
+
+        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+
+        if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
+            output_image_task(data, output_filename[i])
+
+        output_data.append(data)
+    logger.info("ending level 1 middle core flow")
+    return output_data
+
+
+@punch_flow
 def level1_late_core_flow( # noqa: C901
     input_data: list[str] | list[NDCube],
-    stray_light_before_path: str | None = None,
-    stray_light_after_path: str | None = None,
+    stray_light_before_path: str | DataLoader | None = None,
+    stray_light_after_path: str | DataLoader | None = None,
     psf_model_path: str | DataLoader | None = None,
     distortion_path: str | None = None,
     mask_path: str | None = None,
@@ -257,6 +310,10 @@ def level1_late_core_flow( # noqa: C901
             psf_model_path = psf_model_path.src_repr()
         new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
 
+        if isinstance(stray_light_before_path, DataLoader):
+            stray_light_before_path = stray_light_before_path.src_repr()
+        if isinstance(stray_light_after_path, DataLoader):
+            stray_light_after_path = stray_light_after_path.src_repr()
         new_meta["CALSL0"] = os.path.basename(stray_light_before_path) if stray_light_before_path else ""
         new_meta["CALSL1"] = os.path.basename(stray_light_after_path) if stray_light_after_path else ""
 

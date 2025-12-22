@@ -114,6 +114,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 9,keyword,CALVI2,,second vignetting filename,str,TRUE,TRUE,
 9,keyword,CALPSF,,PSF filename,str,TRUE,TRUE,
 9,keyword,CALPM,,bad pixel map filename,str,TRUE,TRUE,
+9,keyword,CALDSL0,,first dynamic stray light model,str,TRUE,TRUE,
+9,keyword,CALDSL1,,second dynamic stray light model,str,TRUE,TRUE,
 9,keyword,CALSL0,,first stray light model,str,TRUE,TRUE,
 9,keyword,CALSL1,,second stray light model,str,TRUE,TRUE,
 9,keyword,CALFCOR1,,first F corona model filename,str,TRUE,TRUE,

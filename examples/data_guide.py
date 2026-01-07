@@ -1,6 +1,6 @@
 """
 ===================
-Guide to Data
+Guide to PUNCH Data
 ===================
 
 A notebook guide to working with PUNCH FITS files in Python

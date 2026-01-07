@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.colors as mcolors
+import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 from skimage.color import lab2rgb
 
@@ -109,4 +109,3 @@ def generate_mzp_to_rgb_map(data_cube: np.ndarray,
     rgb_sat = mcolors.hsv_to_rgb(hsv)
 
     return rgb_sat, color_image
-

@@ -23,6 +23,8 @@ Level:
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
+    File Generation Diagnostics:
+        omits: [RMSFVRSN, SPPYVRSN]
     Fixity:
     History:
 
@@ -49,7 +51,8 @@ Kinds:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment, NAXIS3]
+        omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment,
+                RPSFVRSN, NAXIS3]
 
     QuarticCalibration:
         overrides:
@@ -57,7 +60,8 @@ Kinds:
             NAXIS1: 2048
             NAXIS2: 2048
             NAXIS3: 5
-            omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment]
+        omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment,
+                RPSFVRSN]
 
     PM:
         overrides:
@@ -90,6 +94,12 @@ Kinds:
             OBS-MODE: Unpolarized
             OBSLAYR1: Unpolarized
             POLAR: -999
+
+    Xfile:
+        omits: [RPSFVRSN]
+
+    Yfile:
+        omits: [RPSFVRSN]
 
 
 # Product specifications
@@ -311,7 +321,7 @@ Products:
         omits: [FILTER, OBS-MODE, POLAR]
 
     XM?:
-        kinds: [Polarized, PM]
+        kinds: [Polarized, PM, Xfile]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -321,7 +331,7 @@ Products:
             TYPECODE: XM
 
     XZ?:
-        kinds: [Polarized, PZ]
+        kinds: [Polarized, PZ, Xfile]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -331,7 +341,7 @@ Products:
             TYPECODE: XZ
 
     XP?:
-        kinds: [Polarized, PP]
+        kinds: [Polarized, PP, Xfile]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -341,7 +351,7 @@ Products:
             TYPECODE: XP
 
     XR?:
-        kinds: [Unpolarized, CR]
+        kinds: [Unpolarized, CR, Xfile]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Clear Image, Xperimental
             OBSTYPE: Unpolarized {crafttype} image
@@ -351,7 +361,7 @@ Products:
             TYPECODE: XR
 
     YM?:
-        kinds: [Polarized, PM]
+        kinds: [Polarized, PM, Yfile]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -361,7 +371,7 @@ Products:
             TYPECODE: YM
 
     YZ?:
-        kinds: [Polarized, PZ]
+        kinds: [Polarized, PZ, Yfile]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -371,7 +381,7 @@ Products:
             TYPECODE: YZ
 
     YP?:
-        kinds: [Polarized, PP]
+        kinds: [Polarized, PP, Yfile]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -381,7 +391,7 @@ Products:
             TYPECODE: YP
 
     YR?:
-        kinds: [Unpolarized, CR]
+        kinds: [Unpolarized, CR, Yfile]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Clear Image, Xperimental
             OBSTYPE: Unpolarized {crafttype} image

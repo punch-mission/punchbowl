@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.colors as mcolors
 from matplotlib.colors import LinearSegmentedColormap
 from skimage.color import lab2rgb
 
@@ -48,3 +49,62 @@ def radial_distance(h: int, w: int, center: tuple[int, int] | None = None, radiu
 def radial_filter(data: np.ndarray) -> np.ndarray:
     """Filter data with radial distance function."""
     return data * radial_distance(*data.shape) ** 2.5
+
+def generate_mzp_to_rgb_map(data_cube,
+                            pow=0.7,
+                            frac=0.125,
+                            s_boost=2.25):
+    """
+    Create an RGB composite from a MZP cube.
+
+    Parameters
+    ----------
+    data_cube : NDData-like or numpy array
+        Expected shape: (3, ny, nx)
+        Channels correspond to M, Z, P images.
+    pow : float
+        Power-law exponent to apply to each channel.
+    frac : float
+        Fractional scaling applied after median normalization.
+    s_boost : float
+        HSV saturation boost factor (>1 increases color saturation).
+
+    Returns
+    -------
+    rgb_sat : ndarray (ny, nx, 3)
+        Float RGB array in [0,1] with enhanced saturation.
+    color_image : ndarray (3, ny, nx)
+        8-bit RGB image before HSV saturation.
+    """
+    m = data_cube[0].astype(np.float32)
+    z = data_cube[1].astype(np.float32)
+    p = data_cube[2].astype(np.float32)
+
+    m = m ** pow
+    z = z ** pow
+    p = p ** pow
+
+    # Median-normalize and scale to 0–255 range
+    scaled_m = (np.clip(frac * m / np.nanmedian(m), 0, 1) * 255).astype('float32')
+    scaled_z = (np.clip(frac * z / np.nanmedian(z), 0, 1) * 255).astype('float32')
+    scaled_p = (np.clip(frac * p / np.nanmedian(p), 0, 1) * 255).astype('float32')
+
+    ny, nx = m.shape
+    color_image = np.zeros((3, ny, nx), dtype=np.uint16)
+    color_image[0] = scaled_m
+    color_image[1] = scaled_z
+    color_image[2] = scaled_p
+
+    # Convert to RGB (ny, nx, 3)
+    rgb = np.moveaxis(color_image, 0, -1) / 255.0
+
+    # RGB to HSV
+    hsv = mcolors.rgb_to_hsv(rgb)
+
+    # Boost saturation
+    hsv[..., 1] = np.clip(hsv[..., 1] * s_boost, 0, 1)
+
+    # HSV to RGB
+    rgb_sat = mcolors.hsv_to_rgb(hsv)
+
+    return rgb_sat, color_image

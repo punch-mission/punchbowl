@@ -14,7 +14,7 @@ from punchbowl.data import NormalizedMetadata
 from punchbowl.data.units import calculate_image_pixel_area, dn_to_msb
 from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
-from punchbowl.level1.despike import despike_task
+from punchbowl.level1.despike import despike_polseq_task
 from punchbowl.level1.destreak import destreak_task
 from punchbowl.level1.dynamic_stray_light import remove_dynamic_stray_light_task
 from punchbowl.level1.initial_uncertainty import update_initial_uncertainty_task
@@ -60,11 +60,7 @@ def level1_early_core_flow(  # noqa: C901
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
     quartic_coefficient_path: str | pathlib.Path | DataLoader | None = None,
-    despike_sigclip: float = 50,
-    despike_sigfrac: float = 0.25,
-    despike_objlim: float = 160.0,
-    despike_niter: int = 10,
-    despike_cleantype: str = "meanmask",
+    despike_neighbors: list[str] | list[NDCube] | None = None,
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
@@ -89,6 +85,11 @@ def level1_early_core_flow(  # noqa: C901
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
+
+        data = despike_polseq_task(data,
+                                   despike_neighbors,
+                                   max_workers=max_workers)
+
         saturated_pixels = data.data >= data.meta["DSATVAL"].value
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
         data = update_initial_uncertainty_task(data,
@@ -121,15 +122,6 @@ def level1_early_core_flow(  # noqa: C901
         data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 
-        data = despike_task(data,
-                            despike_sigclip,
-                            despike_sigfrac,
-                            despike_objlim,
-                            despike_niter,
-                            gain_bottom,  # TODO: despiking should handle the gain more completely
-                            read_noise_level,
-                            despike_cleantype,
-                            max_workers=max_workers)
         data = destreak_task(data,
                              exposure_time=exposure_time,
                              reset_line_time=reset_line_time,

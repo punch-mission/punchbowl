@@ -27,6 +27,8 @@ Level:
     Polarizing Filter Wheel:
     LZ Packet Info:
     LED Status:
+    File Generation Diagnostics:
+        omits: [RMSFVRSN, RPSFVRSN, SPPYVRSN]
     Fixity:
     History:
 

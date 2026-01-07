@@ -23,14 +23,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 2,keyword,OBSTYPE,,Plain text observation,str,TRUE,TRUE,
 2,keyword,TYPECODE,,Observation product type code,str,TRUE,TRUE,
 2,keyword,OBSCODE,,Observatory spacecraft code,str,TRUE,TRUE,
-2,keyword,PIPEVRSN,,punchpipe software version number,str,TRUE,TRUE,
-2,keyword,BOWLVRSN,,punchbowl software version number,str,TRUE,TRUE,
-2,keyword,SPPYVRSN,,solpolpy software version number,str,TRUE,TRUE,
-2,keyword,RPSFVRSN,,regularizepsf software version number,str,TRUE,TRUE,
-2,keyword,RMSFVRSN,,remove_starfield software version number,str,TRUE,TRUE,
 2,keyword,FILEVRSN,,File version number (<1 is provisional),str,FALSE,TRUE,0
 2,keyword,ORIGIN,SwRI,Institution responsible for creating the file,str,TRUE,TRUE,SwRI
-2,keyword,HOSTNAME,,Name of server that created this file,str,TRUE,TRUE,
 3,section,COMMENT,Temporal Information,,str,TRUE,TRUE,Temporal Information
 3,keyword,TIMESYS,UTC,Principal time system,str,TRUE,TRUE,UTC
 3,keyword,DATE-BEG,,UTC time observation,str,TRUE,TRUE,
@@ -268,8 +262,15 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 16,keyword,HOUSTEMP,,Electronics Side Temp (STEAM) or Camera Housing -X Temp (WFI),float,TRUE,TRUE,
 16,keyword,FINGTEMP,,Detector Side Temp Primary (STEAM) or Cold Finger +Z Temp (WFI),float,TRUE,TRUE,
 16,keyword,FPGATEMP,,FPGA Temperature,float,TRUE,TRUE,
-17,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
-17,keyword,CHECKSUM,,,str,TRUE,TRUE,
-17,keyword,DATASUM,,,str,TRUE,TRUE,0
-18,section,COMMENT,History,,str,TRUE,TRUE,History
-18,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline
+17,section,COMMENT,File Generation Diagnostics,,str,TRUE,TRUE,File Generation Diagnostics
+17,keyword,PIPEVRSN,,punchpipe software version number,str,TRUE,TRUE,
+17,keyword,BOWLVRSN,,punchbowl software version number,str,TRUE,TRUE,
+17,keyword,SPPYVRSN,,solpolpy software version number,str,TRUE,TRUE,
+17,keyword,RPSFVRSN,,regularizepsf software version number,str,TRUE,TRUE,
+17,keyword,RMSFVRSN,,remove_starfield software version number,str,TRUE,TRUE,
+17,keyword,HOSTNAME,,Name of server that created this file,str,TRUE,TRUE,
+18,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
+18,keyword,CHECKSUM,,,str,TRUE,TRUE,
+18,keyword,DATASUM,,,str,TRUE,TRUE,0
+19,section,COMMENT,History,,str,TRUE,TRUE,History
+19,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline

@@ -70,12 +70,12 @@ def generate_mzp_to_rgb_map(data_cube: np.ndarray,
         HSV saturation boost factor (>1 increases color saturation).
 
     Returns
-
     -------
     rgb_sat : ndarray (ny, nx, 3)
         Float RGB array in [0,1] with enhanced saturation.
     color_image : ndarray (3, ny, nx)
         8-bit RGB image before HSV saturation.
+
     """
     m = data_cube[0].astype(np.float32)
     z = data_cube[1].astype(np.float32)

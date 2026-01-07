@@ -50,10 +50,10 @@ def radial_filter(data: np.ndarray) -> np.ndarray:
     """Filter data with radial distance function."""
     return data * radial_distance(*data.shape) ** 2.5
 
-def generate_mzp_to_rgb_map(data_cube,
-                            pow=0.7,
-                            frac=0.125,
-                            s_boost=2.25):
+def generate_mzp_to_rgb_map(data_cube: np.ndarray,
+                            gamma:float=0.7,
+                            frac:float=0.125,
+                            s_boost:float=2.25) -> np.ndarray:
     """
     Create an RGB composite from a MZP cube.
 
@@ -62,7 +62,7 @@ def generate_mzp_to_rgb_map(data_cube,
     data_cube : NDData-like or numpy array
         Expected shape: (3, ny, nx)
         Channels correspond to M, Z, P images.
-    pow : float
+    gamma : float
         Power-law exponent to apply to each channel.
     frac : float
         Fractional scaling applied after median normalization.
@@ -70,6 +70,7 @@ def generate_mzp_to_rgb_map(data_cube,
         HSV saturation boost factor (>1 increases color saturation).
 
     Returns
+
     -------
     rgb_sat : ndarray (ny, nx, 3)
         Float RGB array in [0,1] with enhanced saturation.
@@ -80,14 +81,14 @@ def generate_mzp_to_rgb_map(data_cube,
     z = data_cube[1].astype(np.float32)
     p = data_cube[2].astype(np.float32)
 
-    m = m ** pow
-    z = z ** pow
-    p = p ** pow
+    m = m ** gamma
+    z = z ** gamma
+    p = p ** gamma
 
-    # Median-normalize and scale to 0–255 range
-    scaled_m = (np.clip(frac * m / np.nanmedian(m), 0, 1) * 255).astype('float32')
-    scaled_z = (np.clip(frac * z / np.nanmedian(z), 0, 1) * 255).astype('float32')
-    scaled_p = (np.clip(frac * p / np.nanmedian(p), 0, 1) * 255).astype('float32')
+    # Median-normalize and scale to 0 to 255 range
+    scaled_m = (np.clip(frac * m / np.nanmedian(m), 0, 1) * 255).astype("float32")
+    scaled_z = (np.clip(frac * z / np.nanmedian(z), 0, 1) * 255).astype("float32")
+    scaled_p = (np.clip(frac * p / np.nanmedian(p), 0, 1) * 255).astype("float32")
 
     ny, nx = m.shape
     color_image = np.zeros((3, ny, nx), dtype=np.uint16)
@@ -108,3 +109,4 @@ def generate_mzp_to_rgb_map(data_cube,
     rgb_sat = mcolors.hsv_to_rgb(hsv)
 
     return rgb_sat, color_image
+

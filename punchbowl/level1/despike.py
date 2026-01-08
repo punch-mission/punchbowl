@@ -58,17 +58,19 @@ def despike_polseq(
     hpf = sequence.astype(float) - lpf_decoded.astype(float)
     hpf_sorted = np.sort(hpf, axis=0)
 
+    #For a polarization sequence of length N, this finds the median
+    #of the N-1 lowest values of each pixel
     match seq_len:
         case 7:
-            hpf_median_s = np.mean(hpf_sorted[2:3+1],axis=0)
+            hpf_median_s = np.mean(hpf_sorted[2:4],axis=0)
         case 6:
             hpf_median_s = hpf_sorted[2]
         case 5:
-            hpf_median_s = np.mean(hpf_sorted[1:2+1],axis=0)
+            hpf_median_s = np.mean(hpf_sorted[1:3],axis=0)
         case 4:
             hpf_median_s = hpf_sorted[1]
         case 3:
-            hpf_median_s = np.mean(hpf_sorted[0:1+1],axis=0)
+            hpf_median_s = np.mean(hpf_sorted[0:2],axis=0)
         case _:
             raise RuntimeError(f"A sequence length of {seq_len} is not supported.")
 

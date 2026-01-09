@@ -1,0 +1,114 @@
+# Level specification
+Level:
+    FITS Required:
+        overrides:
+            BITPIX: -32
+    Documentation, Contact, and Collection Metadata:
+        overrides:
+            DESCRPTN: PUNCH QuickPUNCH data, Composite mosaic in output coordinates
+    File Type and Provenance:
+        omits: []
+        overrides:
+            LEVEL: Q
+            OBSRVTRY: PUNCH
+    Temporal Information:
+    Instrument and Spacecraft State:
+    World Coordinate System:
+    Calibration Data:
+        omits: [CALSTAR1, CALSTAR2]
+    Image Statistics and Properties:
+    Solar Reference Data:
+    Spacecraft Location & Environment:
+        omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]
+    File Generation Diagnostics:
+        omits: [SPPYVRSN, RMSFVRSN, RPSFVRSN]
+    Fixity:
+    History:
+
+
+# Kind specifications
+Kinds:
+    Unpolarized:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+            OBS-MODE: Unpolarized
+            POLAR: -999
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, CALCF, CALVI, CALVI2, CALPSF, CALPM,
+                CALDSL0, CALDSL1, CALSL0, CALSL1]
+
+    Calibration:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+        omits: [Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3,
+                Velocity, Calibration Data,
+                HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT, CTRXWFI1, CTRYWFI1, CTRXWFI2, CTRYWFI2, CTRXWFI3,
+                CTRYWFI3, CTRXNFI4, CTRYNFI4]
+
+
+# Product specifications
+Products:
+    CFM:
+        kinds: [Unpolarized, Calibration]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-Q Unpolarized QuickPUNCH Mosaic F-Corona Model
+            OBSTYPE: Unpolarized QuickPUNCH mosaic F-corona model
+            TYPECODE: CF
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+    CFN:
+        kinds: [Unpolarized, Calibration]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-Q Unpolarized QuickPUNCH NFI F-Corona Model
+            OBSTYPE: Unpolarized NFI QuickPUNCH F-corona model
+            TYPECODE: CF
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: N
+            HAS_NFI4: 1
+            ALL_INPT: 1
+    CQM:
+        kinds: [Unpolarized]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-Q Unpolarized QuickPUNCH Mosaic
+            OBSTYPE: Unpolarized QuickPUNCH mosaic
+            TYPECODE: CQ
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+        omits: [CALFCOR1, CALFCOR2]
+    CTM:
+        kinds: [Unpolarized]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-Q Unpolarized F-corona-subtracted QuickPUNCH Mosaic
+            OBSTYPE: Unpolarized QuickPUNCH mosaic
+            TYPECODE: CT
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+    CNN:
+        kinds: [Unpolarized]
+        overrides:
+            NAXIS1: 1024
+            NAXIS2: 1024
+            TITLE: PUNCH Level-Q Unpolarized QuickPUNCH NFI Image
+            OBSTYPE: Unpolarized NFI QuickPUNCH image
+            TYPECODE: CN
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: N
+            HAS_NFI4: 1
+            ALL_INPT: 1
+        omits: [CALFCOR1, CALFCOR2]

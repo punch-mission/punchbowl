@@ -20,6 +20,8 @@ Level:
     Solar Reference Data:
     Spacecraft Location & Environment:
         omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]
+    File Generation Diagnostics:
+        omits: [SPPYVRSN, RMSFVRSN, RPSFVRSN]
     Fixity:
     History:
 

@@ -22,6 +22,8 @@ Level:
     Spacecraft Location & Environment:
         omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]
     Velocity:
+    File Generation Diagnostics:
+        omits: [RPSFVRSN]
     Fixity:
     History:
 
@@ -46,7 +48,7 @@ Kinds:
             NAXIS2: 4096
             OBS-MODE: Unpolarized
             POLAR: -999
-        omits: [Velocity, NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3]
+        omits: [Velocity, NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, SPPYVRSN]
 
     Low-noise:
         omits: [HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT, CTRXWFI1, CTRYWFI1, CTRXWFI2, CTRYWFI2, CTRXWFI3,

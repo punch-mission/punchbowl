@@ -1,14 +1,17 @@
 #%%
 import warnings
+
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-from datetime import datetime
 from sunpy.net import Fido, attrs
+
 from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.data.visualize import generate_mzp_to_rgb_map
+
 #%% md
 # Querying some PUNCH polarized data
 #%%

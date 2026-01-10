@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import numpy as np
 import numpy.ma as ma
 from ndcube import NDCube
@@ -53,7 +55,12 @@ def despike_polseq(
     sequence[sequence >= sat_ratio * dsatval] = np.nan
 
     # create the high-pass-filtered images
-    lpf_decoded = gaussian_filter(sequence,[1,filter_width,filter_width], mode="nearest")
+    def blur_one_image(image: np.ndarray)->np.ndarray:
+        return gaussian_filter(image, [filter_width,filter_width], mode="nearest")
+
+    with ThreadPoolExecutor(len(sequence)) as p:
+        lpf_decoded = np.stack(list(p.map(blur_one_image, sequence)))
+
     lpf_decoded = ma.filled(lpf_decoded, np.nan)
     hpf = sequence.astype(float) - lpf_decoded.astype(float)
     hpf_sorted = np.sort(hpf, axis=0)

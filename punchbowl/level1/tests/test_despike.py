@@ -40,7 +40,9 @@ def sample_ndcube_for_despike():
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 
-@pytest.mark.parametrize("num_neighbors", [2, 3, 4, 5, 6])
+@pytest.mark.parametrize("num_neighbors", [2, 3, 4, 5, 6,
+    pytest.param(1, marks=pytest.mark.xfail(reason="Won't compute median of 1 neighbor", raises=RuntimeError))
+    ])
 def test_spikes_are_removed(num_neighbors, sample_ndcube_for_despike):
     reference = np.random.random((300, 300))
     reference[30, 20] = 10

@@ -1,3 +1,11 @@
+"""
+=======================
+Creating PUNCH RGB maps
+=======================
+
+This example creates RGB maps using PUNCH MZP triplets. MZP images are mapped to RGB channel based on formalism presented in DeForest et al. (2022) and Patel et al. (2023).
+"""
+
 #%%
 import warnings
 

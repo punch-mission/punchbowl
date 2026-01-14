@@ -85,6 +85,8 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     index_percentile = np.floor(len(filepaths) * percentile / 100).astype(int)
     stray_light_estimate = data[index_percentile, :, :]
 
+    # TODO - look at spatial STD instead of temporal (5x5 grid of pixels)?
+
     stray_light_std = np.std(data[0:index_exclude, :, :], axis=0)
 
     sigma_offset = -1 * erfinv((-1 + percentile / 50) * erfinv_scale)
@@ -123,6 +125,9 @@ def estimate_polarized_stray_light( # noqa: C901
                 percentile: float = 2,
                 do_uncertainty: bool = True,
                 reference_time: datetime | str | None = None,
+                exclude_percentile: float = 50,
+                erfinv_scale: float = 0.75,
+                tb_factor: float = 1/3,
                 num_loaders: int | None = None,
                 ) -> list[NDCube]:
     """Estimate the polarized stray light pattern using minimum indexing method."""
@@ -229,13 +234,32 @@ def estimate_polarized_stray_light( # noqa: C901
     tb_thresh = nan_percentile(tbcube, percentile)
     mask = (tbcube <= tb_thresh)  # shape: (T, H, W)
 
+    # TODO - notes on implementation, remove when finished
+    # Take inferf of tb
+    # multiply by 1/3 - 2/3
+    # add into each MZP channel
+
+    # Estimate stray light from total brightness
+
+    parallel_sort_first_axis(tbcube, inplace=True)
+
+    index_exclude = np.floor(len(mfilepaths) * exclude_percentile / 100).astype(int)
+    index_percentile = np.floor(len(mfilepaths) * percentile / 100).astype(int)
+    stray_light_estimate = tbcube[index_percentile, :, :]
+
+    stray_light_std = np.std(tbcube[0:index_exclude, :, :], axis=0)
+
+    sigma_offset = -1 * erfinv((-1 + percentile / 50) * erfinv_scale)
+
+    stray_light_estimate2 = stray_light_estimate + sigma_offset * stray_light_std
+
     # We don't need this anymore and we're holding a lot of RAM, so release some
     del tbcube
 
     # Estimate MZP background based on index
-    m_background = masked_mean(mdata, mask)
-    z_background = masked_mean(zdata, mask)
-    p_background = masked_mean(pdata, mask)
+    m_background = masked_mean(mdata, mask) + tb_factor * stray_light_estimate2
+    z_background = masked_mean(zdata, mask) + tb_factor * stray_light_estimate2
+    p_background = masked_mean(pdata, mask) + tb_factor * stray_light_estimate2
 
     if do_uncertainty:
         uncertainty = np.sqrt(uncertainty) / len(mfilepaths)

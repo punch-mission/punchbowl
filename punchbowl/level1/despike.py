@@ -1,7 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
-import numpy.ma as ma
 from ndcube import NDCube
 from prefect import get_run_logger
 from scipy.ndimage import gaussian_filter
@@ -61,7 +60,6 @@ def despike_polseq(
     with ThreadPoolExecutor(len(sequence)) as p:
         lpf_decoded = np.stack(list(p.map(blur_one_image, sequence)))
 
-    lpf_decoded = ma.filled(lpf_decoded, np.nan)
     hpf = sequence.astype(float) - lpf_decoded.astype(float)
     hpf_sorted = np.sort(hpf, axis=0)
 

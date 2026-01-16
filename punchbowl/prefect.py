@@ -1,5 +1,6 @@
 from typing import Any
 
+from httpx import ConnectError
 from ndcube import NDCube
 from prefect import Flow, Task, flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
@@ -28,7 +29,10 @@ def completion_debugger(task: Task, task_run: TaskRun, state: State) -> None:
 def failure_hook(task: Task, task_run: TaskRun, state: State) -> None:
     """Run if a punch_task fails."""
 
-_debug_mode = Variable.get("debug", False)
+try:
+    _debug_mode = Variable.get("debug", False)
+except ConnectError:
+    _debug_mode = False
 
 def punch_task(*args: Any, **kwargs: Any) -> Task:
     """Prefect task that does PUNCH special things."""

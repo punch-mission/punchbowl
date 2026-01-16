@@ -244,22 +244,20 @@ def estimate_polarized_stray_light( # noqa: C901
     parallel_sort_first_axis(tbcube, inplace=True)
 
     index_exclude = np.floor(len(mfilepaths) * exclude_percentile / 100).astype(int)
-    index_percentile = np.floor(len(mfilepaths) * percentile / 100).astype(int)
-    stray_light_estimate = tbcube[index_percentile, :, :]
 
     stray_light_std = np.std(tbcube[0:index_exclude, :, :], axis=0)
 
     sigma_offset = -1 * erfinv((-1 + percentile / 50) * erfinv_scale)
 
-    stray_light_estimate2 = stray_light_estimate + sigma_offset * stray_light_std
+    offset = tb_factor * (sigma_offset * stray_light_std)
 
     # We don't need this anymore and we're holding a lot of RAM, so release some
     del tbcube
 
     # Estimate MZP background based on index
-    m_background = masked_mean(mdata, mask) + tb_factor * stray_light_estimate2
-    z_background = masked_mean(zdata, mask) + tb_factor * stray_light_estimate2
-    p_background = masked_mean(pdata, mask) + tb_factor * stray_light_estimate2
+    m_background = masked_mean(mdata, mask) + offset
+    z_background = masked_mean(zdata, mask) + offset
+    p_background = masked_mean(pdata, mask) + offset
 
     if do_uncertainty:
         uncertainty = np.sqrt(uncertainty) / len(mfilepaths)

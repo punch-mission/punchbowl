@@ -30,7 +30,7 @@ SAMPLE_SPACECRAFT_DEF_PATH = os.path.join(TESTDATA_DIR, "spacecraft.yaml")
 
 @pytest.fixture
 def sample_ndcube():
-    def _sample_ndcube(shape, code="PM1", level="0", date_obs=None):
+    def _sample_ndcube(shape, code="PM1", level="0", date_obs=None, crota=0):
         data = np.random.random(shape).astype(np.float32)
         uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
         wcs = WCS(naxis=2)
@@ -41,7 +41,7 @@ def sample_ndcube():
         wcs.wcs.crval = 1, 1
         wcs.wcs.cname = "HPC lon", "HPC lat"
         # For polarized static stray light estimation, which currently excludes northern images
-        wcs.wcs.pc = calculate_pc_matrix(90 * np.pi / 180, (0.1, 0.1))
+        wcs.wcs.pc = calculate_pc_matrix(crota * np.pi / 180, (0.1, 0.1))
 
         if level in ["2", "3"] and code[0] == "P":
             wcs = add_stokes_axis_to_wcs(wcs, 2)

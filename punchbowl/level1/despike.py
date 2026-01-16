@@ -14,7 +14,6 @@ from punchbowl.prefect import punch_task
 def despike_polseq(
         reference: NDCube,
         neighbors: list[NDCube],
-        sat_ratio: float=0.99,
         filter_width: float=25.0,
         hpf_zscore_thresh: float=20.0,
 )->tuple[NDCube, np.ndarray]:
@@ -33,8 +32,6 @@ def despike_polseq(
         an NDCube to correct for cosmic rays
     neighbors : List[NDCube]
         a list of NDCube objects representing a polarization image sequence, should not include the reference image
-    sat_ratio: float
-        pixels greater than this fraction of the saturation value are set to NaN
     filter_width: float
         width of the gaussian filter used in created the high-pass-filtered image
     hpf_zscore_thresh: float
@@ -47,11 +44,8 @@ def despike_polseq(
          and a list of spike locations for all neighbors
 
     """
-    dsatval = reference[0].meta["DSATVAL"].value
-
     sequence = np.stack([cube.data for cube in [*neighbors, reference]], axis=0)
     seq_len = sequence.shape[0]
-    sequence[sequence >= sat_ratio * dsatval] = np.nan
 
     # create the high-pass-filtered images
     def blur_one_image(image: np.ndarray)->np.ndarray:
@@ -95,7 +89,6 @@ def despike_polseq(
 @punch_task
 def despike_polseq_task(data_object: NDCube,
                         neighbors: list[NDCube],
-                        sat_ratio: float=0.99,
                         filter_width: float=25.0,
                         hpf_zscore_thresh: float=20.0,
                         max_workers: int | None = None)-> NDCube:
@@ -108,8 +101,6 @@ def despike_polseq_task(data_object: NDCube,
         Image to be despiked.
     neighbors : list[NDCube]
         Sequence of neighbor images from the same spacecraft and roll sequence to use in despiking.
-    sat_ratio: float, optional
-        Pixels greater than sat_ratio times the saturation value are set to NaN.
     filter_width : float, optional
         width of the gaussian filter used to construct the high-pass-filtered image, in pixels.
     hpf_zscore_thresh: float, optional
@@ -130,13 +121,11 @@ def despike_polseq_task(data_object: NDCube,
             data_object, spikes = despike_polseq(
                                             data_object,
                                             neighbors,
-                                            sat_ratio=sat_ratio,
                                             filter_width=filter_width,
                                             hpf_zscore_thresh=hpf_zscore_thresh)
 
         data_object.uncertainty.array[spikes[-1]] = np.inf
         data_object.meta.history.add_now("LEVEL1-despike", "image despiked")
-        data_object.meta.history.add_now("LEVEL1-despike", f"saturation_ratio={sat_ratio}")
         data_object.meta.history.add_now("LEVEL1-despike", f"filter_width={filter_width}")
         data_object.meta.history.add_now("LEVEL1-despike", f"zscore_thresh={hpf_zscore_thresh}")
     else:

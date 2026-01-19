@@ -12,6 +12,7 @@ from prefect.logging import disable_run_logger
 
 from punchbowl.data import NormalizedMetadata, punch_io, write_ndcube_to_fits
 from punchbowl.data.tests.test_punch_io import sample_ndcube
+from punchbowl.data.wcs import calculate_pc_matrix
 from punchbowl.level1.stray_light import estimate_polarized_stray_light, estimate_stray_light, remove_stray_light_task
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
@@ -61,6 +62,7 @@ def dummy_fits_paths(tmp_path: Path):
     wcs.wcs.cdelt = 0.01, 0.01
     wcs.wcs.crpix = 1024, 1024
     wcs.wcs.crval = 0, 0
+    wcs.wcs.pc = calculate_pc_matrix(90 * np.pi / 180, (0.01, 0.01))
     wcs.wcs.cname = "HPC lon", "HPC lat"
     wcs.array_shape = (2048, 2048)
 
@@ -91,9 +93,9 @@ def test_estimate_polarized_stray_light(dummy_fits_paths) -> None:
 
 def test_estimate_polarized_stray_light_runs(tmpdir, sample_ndcube):
     dates = [datetime(2025, 1, d, 1, 2, 3).strftime('%Y-%m-%dT%H:%M:%S') for d in range(1, 11)]
-    m_cubes = [sample_ndcube(shape=(10, 10), code='XM1', level="1", date_obs=date) for date in dates]
-    z_cubes = [sample_ndcube(shape=(10, 10), code='XZ1', level="1", date_obs=date) for date in dates]
-    p_cubes = [sample_ndcube(shape=(10, 10), code='XP1', level="1", date_obs=date) for date in dates]
+    m_cubes = [sample_ndcube(shape=(10, 10), code='XM1', level="1", date_obs=date, crota=90) for date in dates]
+    z_cubes = [sample_ndcube(shape=(10, 10), code='XZ1', level="1", date_obs=date, crota=90) for date in dates]
+    p_cubes = [sample_ndcube(shape=(10, 10), code='XP1', level="1", date_obs=date, crota=90) for date in dates]
 
     mpaths, zpaths, ppaths = [], [], []
     for i, cube in enumerate(m_cubes):

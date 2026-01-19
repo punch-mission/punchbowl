@@ -15,7 +15,7 @@ def despike_polseq(
         reference: NDCube,
         neighbors: list[NDCube],
         filter_width: float=25.0,
-        hpf_zscore_thresh: float=20.0,
+        hpf_zscore_thresh: float=10.0,
 )->tuple[NDCube, np.ndarray]:
     """
     Remove cosmic ray spikes from a single polarization sequence of images.
@@ -90,7 +90,7 @@ def despike_polseq(
 def despike_polseq_task(data_object: NDCube,
                         neighbors: list[NDCube],
                         filter_width: float=25.0,
-                        hpf_zscore_thresh: float=20.0,
+                        hpf_zscore_thresh: float=10.0,
                         max_workers: int | None = None)-> NDCube:
     """
     Despike a polarization sequence of images using a simple statistical test.

@@ -31,7 +31,7 @@ def failure_hook(task: Task, task_run: TaskRun, state: State) -> None:
 
 try:
     _debug_mode = Variable.get("debug", False)
-except ConnectError:
+except (ConnectError, RuntimeError):
     _debug_mode = False
 
 def punch_task(*args: Any, **kwargs: Any) -> Task:

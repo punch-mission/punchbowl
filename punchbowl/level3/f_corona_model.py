@@ -358,7 +358,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         output_data = np.stack([m_model_fcorona,
                                 z_model_fcorona,
                                 p_model_fcorona], axis=0)
-        uncertainty = np.sqrt(np.abs(output_data)) / np.sqrt(len(obs_times))
+        uncertainty = 0 #np.sqrt(np.abs(output_data)) / np.sqrt(len(obs_times))
         meta = NormalizedMetadata.load_template("PFM", "3")
         trefoil_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
     else:

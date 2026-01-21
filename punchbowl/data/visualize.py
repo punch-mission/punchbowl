@@ -118,7 +118,7 @@ def generate_mzp_to_rgb_map(data_cube: np.ndarray,
     return rgb_sat, color_image
 
 
-def plot_punch_cube(
+def plot_punch(
     cube: ndcube.NDCube,
     layer: int = 0,
     cmap: str | Colormap | None = cmap_punch,

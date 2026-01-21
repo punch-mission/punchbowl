@@ -1,6 +1,13 @@
+from pathlib import Path
+
+import astropy.units as u
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import ndcube
 import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.axes import Axes
+from matplotlib.colors import Colormap, LinearSegmentedColormap, Normalize, PowerNorm
+from matplotlib.figure import Figure
 from skimage.color import lab2rgb
 
 
@@ -109,3 +116,87 @@ def generate_mzp_to_rgb_map(data_cube: np.ndarray,
     rgb_sat = mcolors.hsv_to_rgb(hsv)
 
     return rgb_sat, color_image
+
+
+def plot_punch_cube(
+    cube: ndcube.NDCube,
+    layer: int = 0,
+    cmap: str | Colormap | None = cmap_punch,
+    norm: Normalize | None = PowerNorm,
+    vmin: float = 1e-14,
+    vmax: float = 1e-12,
+    gamma: float = 1/2.2,
+    figsize: tuple[float, float] = (9.5, 7.5),
+    grid_spacing: int = 15,
+    grid_alpha: float = 0.25,
+    title_prefix: str | None = None,
+    save_path: str | Path | None = None,
+    dpi: int = 300,
+    ) -> tuple[Figure, Axes]:
+    """
+    Plot a PUNCH NDCube data object.
+
+    Parameters
+    ----------
+    cube : ndcube.NDCube
+        PUNCH NDCube object to plot
+    layer : int
+        Data layer to plot when using three-dimensional data cubes
+    cmap : str or Colormap, optional
+        Colormap to use for plot
+    norm : Normalize, optional
+        Normalization function for image
+    vmin : float,
+        Normalization vmin value
+    vmax : float,
+        Normalization vmax value
+    gamma : float,
+        Normalization gamma scaling value
+    figsize : tuple, optional
+        Figure size
+    grid_spacing : int, optional
+        Coordinate grid spacing in degrees, removes grid for None
+    grid_alpha : float
+        Coordinate grid transparency (1: opaque, 0: transparent)
+    title_prefix : str, optional
+        Prefix to prepend to plot title
+    save_path : str or Path, optional
+        When provided, saves the figure to file directly without plotting on screen
+    dpi : int, optional
+        DPI for output plots saved to file
+
+    Returns
+    -------
+    tuple of (figure, axes)
+
+    """
+    norm = norm(gamma, vmin=vmin, vmax=vmax)
+
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs})
+
+    im = ax.imshow(cube.data if cube.data.ndim == 2 else cube.data[layer,...], cmap=cmap, norm=norm)
+
+    lon, lat = ax.coords
+    lat.set_ticks(np.arange(-90, 90, grid_spacing) * u.degree)
+    lon.set_ticks(np.arange(-180, 180, grid_spacing) * u.degree)
+    lat.set_major_formatter("dd")
+    lon.set_major_formatter("dd")
+
+    ax.set_facecolor("black")
+    ax.coords.grid(color="white", alpha=grid_alpha, ls="dotted")
+    ax.set_xlabel("Helioprojective longitude")
+    ax.set_ylabel("Helioprojective latitude")
+    timestamp = cube.meta.datetime.strftime("%Y/%m/%d %H:%M:%S UT")
+
+    if title_prefix is None:
+        title_prefix = f"PUNCH {cube.meta['TYPECODE']}{cube.meta['OBSCODE']} - "
+    ax.set_title(f"{title_prefix}{timestamp}")
+
+    fig.colorbar(im, ax=ax, label="Mean Solar Brightness (MSB)")
+
+    if save_path is not None:
+        fig.savefig(save_path, dpi=dpi, bbox_inches="tight")
+        plt.close(fig)
+        return None
+
+    return fig, ax

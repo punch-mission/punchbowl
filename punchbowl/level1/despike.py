@@ -8,6 +8,7 @@ from threadpoolctl import threadpool_limits
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.level1.deficient_pixel import mean_correct
+from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.prefect import punch_task
 
 
@@ -114,8 +115,11 @@ def despike_polseq_task(data_object: NDCube,
         Despiked cube.
 
     """
+    logger = get_run_logger()
+
     if neighbors is not None:
-        neighbors = [load_ndcube_from_fits(n) if isinstance(n, str) else n for n in neighbors]
+        logger.info(f"Neighbors = {neighbors}")
+        neighbors = [decode_sqrt_data(load_ndcube_from_fits(n)) if isinstance(n, str) else n for n in neighbors]
 
         with threadpool_limits(max_workers):
             data_object, spikes = despike_polseq(
@@ -128,8 +132,8 @@ def despike_polseq_task(data_object: NDCube,
         data_object.meta.history.add_now("LEVEL1-despike", "image despiked")
         data_object.meta.history.add_now("LEVEL1-despike", f"filter_width={filter_width}")
         data_object.meta.history.add_now("LEVEL1-despike", f"zscore_thresh={hpf_zscore_thresh}")
+        data_object.meta.history.add_now("LEVEL1-despike", f"neighbor_count={len(neighbors)}")
     else:
         data_object.meta.history.add_now("LEVEL1-despike", "Empty neighbors so no correction applied")
-        logger = get_run_logger()
         logger.info("No polarization neighbors so despiking is skipped")
     return data_object

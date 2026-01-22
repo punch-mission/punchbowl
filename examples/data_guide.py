@@ -26,6 +26,7 @@ from ndcube import NDCube
 from sunpy.map import Map
 
 from punchbowl.data.sample import PUNCH_PAM
+from punchbowl.data.visualize import plot_punch
 
 # %%
 # Data loading
@@ -149,6 +150,14 @@ ax.set_ylabel("DEC")
 ax.set_title("Synthetic PUNCH Polarized Brightness")
 fig.colorbar(im, ax=ax, label="Mean Solar Brightness")
 plt.show()
+
+# %% [markdown]
+# Alternatively we can use a built-in plotter function, which can be configured to plot in many of the same ways.
+
+# %%
+# Plot the data using the punchbowl plot_punch function
+
+fig, ax = plot_punch(PUNCH_PAM)
 
 # %% [markdown]
 # Reprojecting the data

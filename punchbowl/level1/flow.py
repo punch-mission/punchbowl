@@ -86,12 +86,7 @@ def level1_early_core_flow(  # noqa: C901
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
 
-        data = despike_polseq_task(data,
-                                   despike_neighbors,
-                                   max_workers=max_workers)
-
         saturated_pixels = data.data >= data.meta["DSATVAL"].value
-        data = perform_quartic_fit_task(data, quartic_coefficient_path)
         data = update_initial_uncertainty_task(data,
                                                dark_level=dark_level,
                                                gain_bottom=gain_bottom,
@@ -100,6 +95,11 @@ def level1_early_core_flow(  # noqa: C901
                                                bitrate_signal=bitrate_signal,
                                                saturated_pixels=saturated_pixels,
                                                )
+        data = despike_polseq_task(data,
+                                   despike_neighbors,
+                                   max_workers=max_workers)
+
+        data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
         if data.meta["OBSCODE"].value == "4":
             scaling = {"gain_bottom": data.meta["GAINBTM"].value * u.photon / u.DN,

@@ -4,8 +4,8 @@ from datetime import UTC, datetime, timedelta
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
 
+from punchbowl import __version__
 from punchbowl.level2.flow import level2_core_flow
-from punchbowl.pipe import __version__
 from punchbowl.pipe.control.db import File, Flow
 from punchbowl.pipe.control.processor import generic_process_flow_logic
 from punchbowl.pipe.control.scheduler import generic_scheduler_flow_logic

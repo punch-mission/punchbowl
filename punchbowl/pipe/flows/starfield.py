@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
 
+from punchbowl import __version__
 from punchbowl.level3.stellar import generate_starfield_background
-from punchbowl.pipe import __version__
 from punchbowl.pipe.control.db import File, Flow
 from punchbowl.pipe.control.processor import generic_process_flow_logic
 from punchbowl.pipe.control.scheduler import generic_scheduler_flow_logic

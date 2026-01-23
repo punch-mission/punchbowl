@@ -11,9 +11,9 @@ from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from sqlalchemy import and_, func, or_, select, text
 
+from punchbowl import __version__
 from punchbowl.levelq.f_corona_model import construct_qp_f_corona_model
 from punchbowl.levelq.flow import levelq_CNN_core_flow, levelq_CQM_core_flow, levelq_CTM_core_flow
-from punchbowl.pipe import __version__
 from punchbowl.pipe.control.cache_layer.nfi_l1 import wrap_if_appropriate
 from punchbowl.pipe.control.db import File, Flow
 from punchbowl.pipe.control.processor import generic_process_flow_logic

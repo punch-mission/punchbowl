@@ -107,10 +107,8 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                          f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
     meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
 
-    # Let's put in a valid, representative WCS, with the right scale and pointing, etc. But let's set the rotation to
-    # zero---the rotation value is meaningless, so it should be an obvious filler value
+    # Let's put in a valid, representative WCS, with the right scale and pointing, etc.
     wcs = cube.wcs
-    wcs.wcs.pc = np.eye(2)
     out_cube = NDCube(data=stray_light_estimate2, meta=meta, wcs=wcs, uncertainty=uncertainty)
 
     return [out_cube]

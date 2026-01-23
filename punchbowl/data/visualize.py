@@ -197,7 +197,8 @@ def plot_punch(
 
     norm = norm(gamma, vmin=vmin, vmax=vmax)
 
-    fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs})
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
+                                                        else cube.wcs[layer]})
 
     im = ax.imshow(cube.data if cube.data.ndim == 2 else cube.data[layer,...], cmap=cmap, norm=norm)
 

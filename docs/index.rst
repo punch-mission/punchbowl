@@ -21,6 +21,7 @@ Welcome to punchbowl's documentation!
    auto_examples/index
    help
    contribute
+   automation/index
 
 Indices and tables
 ==================

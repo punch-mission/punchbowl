@@ -26,7 +26,7 @@ from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import punch_flow
 from punchbowl.util import DataLoader, load_image_task, load_mask_file, output_image_task
 
-KEYS_TO_NOT_COPY = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE", "TYPECODE", "FILEVRSN"]
+KEYS_TO_NOT_COPY = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "TITLE", "TYPECODE", "FILEVRSN"]
 
 
 @punch_flow

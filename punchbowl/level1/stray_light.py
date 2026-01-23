@@ -96,12 +96,20 @@ class SkewFitResult:
         plt.legend()
 
 
+# To compute skew-gaussians a bit faster, we pre-generate a lookup table. This table's resolution is good to within
+# 0.0002 (where the absolute values are within [0, 1]), and where the function values aren't minute, the table is
+# good to within 0.02%. Using the table saves about 30% of the computation time---and we compute a *lot* of skew
+# Gaussians!
+pdf_table_vals = np.arange(-4.2, 4.2, 0.02)
+cdf_table_vals = np.arange(-3, 3, 0.02)
+pdf_vals = np.exp(-0.5 * pdf_table_vals**2)
+cdf_vals = 1 + scipy.special.erf(cdf_table_vals)
 def skew_gaussian(x: np.ndarray, A: float, alpha: float, x0: float, sigma: float, m: float, b: float, # noqa: N803
                   ) -> np.ndarray:
     """Calculate a skewed Gaussian."""
     y = (x - x0) / sigma
-    pdf = np.exp(-0.5 * y ** 2)
-    cdf = 1 + scipy.special.erf(alpha * y)
+    pdf = np.interp(y, pdf_table_vals, pdf_vals, left=0, right=0)
+    cdf = np.interp(alpha * y, cdf_table_vals, cdf_vals, left=0, right=2)
     return A * pdf * cdf + m * x + b
 
 

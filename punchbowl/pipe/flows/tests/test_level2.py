@@ -7,7 +7,7 @@ from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 from pytest_mock_resources import create_mysql_fixture
 
-from punchbowl.pipe import __version__
+from punchbowl import __version__
 from punchbowl.pipe.control.db import Base, File, Flow
 from punchbowl.pipe.control.util import batched, load_pipeline_configuration
 from punchbowl.pipe.flows.level2 import (

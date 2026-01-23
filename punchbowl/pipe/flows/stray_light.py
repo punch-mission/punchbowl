@@ -5,8 +5,8 @@ from collections import defaultdict
 from prefect import flow, get_run_logger
 from sqlalchemy import func
 
+from punchbowl import __version__
 from punchbowl.level1.stray_light import estimate_polarized_stray_light, estimate_stray_light
-from punchbowl.pipe import __version__
 from punchbowl.pipe.control.db import File, Flow
 from punchbowl.pipe.control.processor import generic_process_flow_logic
 from punchbowl.pipe.control.scheduler import generic_scheduler_flow_logic

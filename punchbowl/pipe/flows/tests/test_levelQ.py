@@ -5,7 +5,7 @@ from freezegun import freeze_time
 from prefect.logging import disable_run_logger
 from pytest_mock_resources import create_mysql_fixture
 
-from punchbowl.pipe import __version__
+from punchbowl import __version__
 from punchbowl.pipe.control.db import Base, File
 from punchbowl.pipe.control.util import load_pipeline_configuration
 from punchbowl.pipe.flows.levelq import (

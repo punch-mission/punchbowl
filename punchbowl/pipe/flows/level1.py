@@ -8,8 +8,8 @@ from prefect.cache_policies import NO_CACHE
 from sqlalchemy import and_, func, text
 from sqlalchemy.orm import aliased
 
+from punchbowl import __version__
 from punchbowl.level1.flow import level1_early_core_flow, level1_late_core_flow, level1_middle_core_flow
-from punchbowl.pipe import __version__
 from punchbowl.pipe.control import cache_layer
 from punchbowl.pipe.control.db import File, FileRelationship, Flow
 from punchbowl.pipe.control.processor import generic_process_flow_logic

@@ -50,7 +50,10 @@ class SkewFitResult:
     @cached_property
     def result(self) -> float:
         """Return the mode of the skewed Gaussian."""
-        a = self.alpha
+        # Uses the approximation from https://en.wikipedia.org/wiki/Skew_normal_distribution. I took the factor of
+        # 1/np.sqrt(2) out of the actual skew-gaussian function, so what we have as the fitted alpha is *actually*
+        # alpha / sqrt(2) # noqa: ERA001
+        a = self.alpha * np.sqrt(2)
 
         # Find the mode of a skew Gaussian
         delta = a / np.sqrt(1 + a ** 2)
@@ -97,8 +100,8 @@ def skew_gaussian(x: np.ndarray, A: float, alpha: float, x0: float, sigma: float
                   ) -> np.ndarray:
     """Calculate a skewed Gaussian."""
     y = (x - x0) / sigma
-    pdf = 1 / np.sqrt(2 * np.pi) * np.exp(-y ** 2 / 2)
-    cdf = 1 / 2 * (1 + scipy.special.erf(alpha * y / np.sqrt(2)))
+    pdf = np.exp(-0.5 * y ** 2)
+    cdf = 1 + scipy.special.erf(alpha * y)
     return A * pdf * cdf + m * x + b
 
 
@@ -211,7 +214,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         bin_weights = np.ones_like(bin_weights)
 
     params = Parameters()
-    params.add("A", value=np.max(bin_values), min=0, max=2 * peak_val)
+    params.add("A", value=0.5/np.sqrt(2*np.pi) * np.max(bin_values), min=0, max=2 * peak_val)
     params.add("alpha", value=0, min=0)
     params.add("x0",
                value=x_scale_factor * bin_centers[np.argmax(bin_values)],
@@ -225,7 +228,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
 
     with np.errstate(all="ignore"):
         out = minimize(_resid_skew, params, args=(scaled_x_values, bin_values, bin_weights), method="least_squares",
-                       calc_covar=False)
+                       calc_covar=False, ftol=2e-4, gtol=2e-4)
 
     r = SkewFitResult(out, bin_centers=bin_centers, scaled_x_values=scaled_x_values, bin_values=bin_values,
                       stack=stack, scale_factor=x_scale_factor, weights=bin_weights)

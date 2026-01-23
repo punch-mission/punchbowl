@@ -26,9 +26,11 @@ def convert_polarization(
                                                         [-60 * u.deg, 0 * u.deg, 60 * u.deg], strict=False)]
     data_collection = NDCollection(collection_contents, aligned_axes="all")
 
-    resolved_data_collection = resolve(data_collection, "BpB", imax_effect=False)
+    resolved_data_collection = resolve(data_collection, "bp3", imax_effect=False)
 
-    new_data = np.stack([resolved_data_collection["B"].data, resolved_data_collection["pB"].data], axis=0)
+    new_data = np.stack([resolved_data_collection["B"].data,
+                                resolved_data_collection["pB"].data,
+                                resolved_data_collection["pBp"].data], axis=0)
     new_wcs = input_data.wcs.copy()
 
     output_meta = NormalizedMetadata.load_template("PTM", "3")
@@ -41,6 +43,6 @@ def convert_polarization(
     output = set_spacecraft_location_to_earth(output)
 
     logger.info("convert2bpb finished")
-    output.meta.history.add_now("LEVEL3-convert2bpb", "Convert MZP to BpB")
+    output.meta.history.add_now("LEVEL3-convert2bp3", "Convert MZP to B-pB-pBp")
 
     return output

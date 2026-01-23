@@ -16,5 +16,5 @@ When writing this data to a FITS file, the uncertainty is packed as the reciproc
 When unpacking these uncertainty values from a FITS file back into an NDCube object, this process is reversed, taking the inverse of the stored array and multiplying by the data array to restore the absolute uncertainty.
 
 .. note::
-    When reading data using the punchbowl framework, uncertainty is stored as the absolute uncertainty.
+    When reading data using the punchbowl framework, specifically the ``load_ndcube_from_fits`` function, uncertainty is load, converted, and stored as the absolute uncertainty.
 When reading data using astropy FITS frameworks, uncertainty will appear as the reciprocal fractional uncertainty.

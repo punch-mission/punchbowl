@@ -38,7 +38,7 @@ Kinds:
             OBS-MODE: Polar_BpB
             OBSLAYR1: Polar_B
             OBSLAYR2: Polar_pB
-            OBSLAYR3: "Polar_pB'"
+            OBSLAYR3: Polar_pBp
             POLARREF: 'Solar'
         omits: [Velocity, FILTER, POLAR]
 

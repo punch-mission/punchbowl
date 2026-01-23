@@ -136,6 +136,7 @@ def plot_punch(
     grid_alpha: float = 0.25,
     title_prefix: str | None = None,
     colorbar: bool = True,
+    colorbar_label: str = "Mean Solar Brightness (MSB)",
     save_path: str | Path | None = None,
     dpi: int = 300,
     ) -> tuple[Figure, Axes]:
@@ -174,6 +175,8 @@ def plot_punch(
         Prefix to prepend to plot title
     colorbar : bool, optional
         Toggle for plotting colorbar
+    colorbar_label : str, optional
+        Label to use for the colorbar
     save_path : str or Path, optional
         When provided, saves the figure to file directly without plotting on screen
     dpi : int, optional
@@ -239,7 +242,7 @@ def plot_punch(
         fontfamily="monospace")
 
     if colorbar and not axes_off:
-        fig.colorbar(im, ax=ax, label="Mean Solar Brightness (MSB)")
+        fig.colorbar(im, ax=ax, label=colorbar_label)
 
     if save_path is not None:
         fig.savefig(save_path, dpi=dpi, bbox_inches="tight")

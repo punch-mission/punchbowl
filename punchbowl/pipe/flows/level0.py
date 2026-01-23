@@ -41,10 +41,10 @@ from sunpy.coordinates import (
 )
 
 import punchbowl
+from punchbowl import __version__
 from punchbowl.data import NormalizedMetadata, get_base_file_name, punch_io, write_ndcube_to_fits
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
 from punchbowl.limits import LimitSet
-from punchbowl.pipe.__init__ import __version__
 from punchbowl.pipe.control.cache_layer import manager
 from punchbowl.pipe.control.cache_layer.loader_base_class import LoaderABC
 from punchbowl.pipe.control.db import (

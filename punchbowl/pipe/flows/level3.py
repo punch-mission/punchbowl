@@ -5,8 +5,8 @@ from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
 from sqlalchemy import and_
 
+from punchbowl import __version__
 from punchbowl.level3.flow import level3_core_flow, level3_PIM_flow
-from punchbowl.pipe import __version__
 from punchbowl.pipe.control.db import File, Flow, get_closest_after_file, get_closest_before_file, get_closest_file
 from punchbowl.pipe.control.processor import generic_process_flow_logic
 from punchbowl.pipe.control.scheduler import generic_scheduler_flow_logic

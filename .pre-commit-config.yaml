@@ -2,7 +2,7 @@ exclude: "\\.asdf$"
 repos:
   # This should be before any formatting hooks like isort
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.14.10"
+    rev: "v0.14.14"
     hooks:
       - id: ruff
         args: ["--fix"]
@@ -32,7 +32,6 @@ repos:
         exclude: ".*(.fits|.fts|.fit|.header|.txt|tca.*|.json)$|^CITATION.rst$"
       - id: mixed-line-ending
         exclude: ".*(.fits|.fts|.fit|.header|.txt|tca.*)$"
-        repos:
   - repo: https://github.com/twisted/towncrier
     rev: 25.8.0 # run 'pre-commit autoupdate' to update
     hooks:

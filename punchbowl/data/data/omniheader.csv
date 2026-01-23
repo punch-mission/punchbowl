@@ -263,7 +263,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 16,keyword,FINGTEMP,,Detector Side Temp Primary (STEAM) or Cold Finger +Z Temp (WFI),float,TRUE,TRUE,
 16,keyword,FPGATEMP,,FPGA Temperature,float,TRUE,TRUE,
 17,section,COMMENT,File Generation Diagnostics,,str,TRUE,TRUE,File Generation Diagnostics
-17,keyword,PIPEVRSN,,punchpipe software version number,str,TRUE,TRUE,
 17,keyword,BOWLVRSN,,punchbowl software version number,str,TRUE,TRUE,
 17,keyword,SPPYVRSN,,solpolpy software version number,str,TRUE,TRUE,
 17,keyword,RPSFVRSN,,regularizepsf software version number,str,TRUE,TRUE,

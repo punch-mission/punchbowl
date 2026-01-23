@@ -67,6 +67,7 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
             continue
         if len(despike_neighbors) <= 2 and f.date_obs > more_L0_impossible_cutoff:
             missing_sequence.append(f)
+            continue
         # Smuggle the identified models out of this function
         f.quartic_model = quartic_model
         f.vignetting_functions = vignetting_function

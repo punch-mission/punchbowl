@@ -21,9 +21,10 @@ def construct_stray_light_check_for_inputs(session,
                                            reference_file: File):
     logger = get_run_logger()
 
-    min_files_per_half = pipeline_config["flows"]["construct_stray_light"]["min_files_per_half"]
-    max_files_per_half = pipeline_config["flows"]["construct_stray_light"]["max_files_per_half"]
-    max_hours_per_half = pipeline_config["flows"]["construct_stray_light"]["max_hours_per_half"]
+    pol_type = 'clear' if reference_file.file_type[0] == 'S' else 'pol'
+    min_files_per_half = pipeline_config["flows"]["construct_stray_light"][f"{pol_type}_min_files_per_half"]
+    max_files_per_half = pipeline_config["flows"]["construct_stray_light"][f"{pol_type}_max_files_per_half"]
+    max_hours_per_half = pipeline_config["flows"]["construct_stray_light"][f"{pol_type}_max_hours_per_half"]
     t_start = reference_time - timedelta(hours=max_hours_per_half)
     t_end = reference_time + timedelta(hours=max_hours_per_half)
     L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
@@ -130,6 +131,7 @@ def construct_stray_light_flow_info(level1_files: list[File],
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
     mask = get_mask_file(level1_files[0], pipeline_config, session=session)
+    pol_type = 'clear' if file_type[0] == 'S' else 'pol'
 
     call_data = json.dumps(
         {
@@ -137,6 +139,7 @@ def construct_stray_light_flow_info(level1_files: list[File],
             "reference_time": reference_time.strftime("%Y-%m-%d %H:%M:%S"),
             "spacecraft": spacecraft,
             "image_mask_path": mask.filename().replace(".fits", ".bin"),
+            "window_size": pipeline_config["flows"][flow_type][f"{pol_type}_neighborhood_size"]
         },
     )
     return Flow(

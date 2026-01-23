@@ -164,3 +164,9 @@ docs/_build/
 *.npy
 test_run/
 PUNCH_SAMPLE/
+docs/auto_examples/
+scratch/
+punchbowl/level1/astrometry_cache/
+astrometry_cache/
+uv.lock
+empty.txt

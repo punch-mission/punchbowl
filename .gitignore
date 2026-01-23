@@ -170,3 +170,4 @@ punchbowl/level1/astrometry_cache/
 astrometry_cache/
 uv.lock
 empty.txt
+scripts/pipe/create_credentials.py

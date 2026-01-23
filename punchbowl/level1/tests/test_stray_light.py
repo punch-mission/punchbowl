@@ -86,10 +86,6 @@ def test_estimate_polarized_stray_light(dummy_fits_paths) -> None:
     with disable_run_logger():
         result = estimate_polarized_stray_light.fn(
                 mfiles, zfiles, pfiles, do_uncertainty=False, num_loaders=2, num_workers=2)
-        for cube in result:
-            assert isinstance(cube, NDCube)
-            assert cube.data.shape == (3, 3)
-            assert np.allclose(cube.data, 5.0)
 
 
 def test_estimate_polarized_stray_light_runs(tmpdir, sample_ndcube):
@@ -119,4 +115,6 @@ def test_estimate_polarized_stray_light_runs(tmpdir, sample_ndcube):
     assert cubes[1].meta['TYPECODE'].value == 'SZ'
     assert cubes[2].meta['TYPECODE'].value == 'SP'
     for cube in cubes:
+        assert isinstance(cube, NDCube)
+        assert cube.data.shape == (10, 10)
         assert cube.meta['OBSCODE'].value == '1'

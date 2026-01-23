@@ -7,6 +7,7 @@ from collections.abc import Generator
 
 import numpy as np
 import scipy
+from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime
 from lmfit import Parameters, minimize
 from lmfit.minimizer import MinimizerResult
@@ -271,7 +272,11 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     date_obses = []
     n_failed = 0
     j = 0
-    for i, result in enumerate(load_many_cubes_iterable(filepaths, n_workers=num_loaders, allow_errors=True)):
+    if isinstance(filepaths[0], NDCube):
+        iterator = filepaths
+    else:
+        iterator = load_many_cubes_iterable(filepaths, n_workers=num_loaders, allow_errors=True)
+    for i, result in enumerate(iterator):
         if isinstance(result, str):
             logger.warning(f"Loading {filepaths[i]} failed")
             logger.warning(result)
@@ -337,7 +342,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
     # Let's put in a valid, representative WCS, with the right scale and pointing, etc.
     wcs = cube.wcs
-    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=wcs, uncertainty=uncertainty)
+    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=wcs, uncertainty=StdDevUncertainty(uncertainty))
 
     return [out_cube]
 

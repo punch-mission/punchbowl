@@ -138,6 +138,8 @@ dev = ["punchbowl[docs,test,pipe,docs_pipe,test_pipe]"]
 
 [project.scripts]
 punchbowl = "punchbowl.cli:main"
+punchpipe = "punchbowl.pipe.cli:main"
+punchpipe_cluster = "punchbowl.pipe.cluster:main"
 
 [project.urls]
 #Homepage = "https://example.com"

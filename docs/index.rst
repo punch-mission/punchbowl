@@ -19,6 +19,7 @@ Welcome to punchbowl's documentation!
    data/index
    pipeline/index
    auto_examples/index
+   automation/index
    help
    contribute
 

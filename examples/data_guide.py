@@ -25,7 +25,7 @@ from matplotlib.colors import LogNorm
 from ndcube import NDCube
 from sunpy.map import Map
 
-from punchbowl.data.sample import PUNCH_PAM
+from punchbowl.data.sample import PUNCH_CAM, PUNCH_PAM
 from punchbowl.data.visualize import plot_punch
 
 # %%
@@ -152,12 +152,12 @@ fig.colorbar(im, ax=ax, label="Mean Solar Brightness")
 plt.show()
 
 # %% [markdown]
-# Alternatively we can use a built-in plotter function, which can be configured to plot in many of the same ways.
+# Alternatively we can use a built-in plotter function, which can be configured to plot in many of the same ways. Let try this with some real PUNCH CAM data.
 
 # %%
 # Plot the data using the punchbowl plot_punch function
 
-fig, ax = plot_punch(PUNCH_PAM)
+fig, ax = plot_punch(PUNCH_CAM)
 
 # %% [markdown]
 # Reprojecting the data

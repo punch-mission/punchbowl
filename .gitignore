@@ -175,3 +175,4 @@ examples/punch_data/
 punchbowl/levelq/*/*.fits
 punchbowl/levelq/*/*.sha
 examples/*.mp4
+.vscode/

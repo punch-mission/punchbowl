@@ -19,10 +19,10 @@ def get_crota_from_file(file):
     try:
         path = os.path.join(file.directory("/d0/punchsoc/real_data/"), file.filename())  # TODO this is only for 190
         header = fits.getheader(path, 1)
-        return file, header['CROTA']
+        return header['CROTA']
     except Exception as e:
         print(e)
-        return file, None
+        return None
 
 if __name__ == "__main__":
     session, engine = get_database_session(get_engine=True)
@@ -35,7 +35,7 @@ if __name__ == "__main__":
                       .filter(File.file_type.in_(["CR", "PM", "PZ", "PP"]))
                       .filter(File.crota.is_(None)).all())
 
-    for file, crota in process_map(get_crota_from_file, existing_files, chunksize=100):
-        file.crota = crota
-
+    for f, crota in zip(existing_files, process_map(get_crota_from_file, existing_files, chunksize=100)):
+        f.crota = crota
     session.commit()
+

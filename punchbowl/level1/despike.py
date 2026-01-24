@@ -46,15 +46,15 @@ def despike_polseq(
          and a list of spike locations for all neighbors
 
     """
-    sequence = np.stack([cube.data for cube in [*neighbors, reference]], axis=0)
+    sequence = np.stack([cube.data.copy() for cube in [*neighbors, reference]], axis=0)
 
     seq_len = sequence.shape[0]
 
     # saturated regions can lead to weird uncertainties and leftovers so we try to mask them
-    inf_uncertainty_mask = np.isinf(sequence >= 60_000)
+    inf_uncertainty_mask = sequence >= 60_000
     inf_uncertainty_mask = binary_dilation(inf_uncertainty_mask)
     inf_uncertainty_mask = np.any(inf_uncertainty_mask, axis=0)
-    sequence[np.stack([inf_uncertainty_mask for _ in range(seq_len)])] = np.nan
+    sequence[np.stack([inf_uncertainty_mask for _ in range(seq_len)])] = 0
 
     # create the high-pass-filtered images
     def blur_one_image(image: np.ndarray)->np.ndarray:
@@ -88,7 +88,12 @@ def despike_polseq(
     cosmic_sequence = np.zeros_like(sequence, dtype=bool)
     cosmic_sequence[hpf_zscore>=hpf_zscore_thresh] = 1
 
-    reference.data[binary_dilation((hpf_zscore>=hpf_zscore_thresh)[-1])] = np.nan
+    image_bounds = sequence[-1] == 0  # the image is zero where there's no data
+    correction_mask = (hpf_zscore >= hpf_zscore_thresh)[-1]
+    correction_mask[inf_uncertainty_mask] = 1
+    correction_mask[image_bounds] = 0
+
+    reference.data[correction_mask] = np.nan
 
     reference.data = mean_correct(data_array=reference.data, mask_array=~np.isnan(reference.data))
 

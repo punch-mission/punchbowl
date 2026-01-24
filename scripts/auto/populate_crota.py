@@ -31,7 +31,7 @@ if __name__ == "__main__":
                       .filter(File.file_type.in_(["CR", "PM", "PZ", "PP"]))
                       .filter(File.crota.is_(None)).all())
 
-    for file, crota in process_map(read_file_crota, existing_files):
+    for file, crota in process_map(read_file_crota, existing_files, chunksize=1000):
         file.crota = crota
 
     session.commit()

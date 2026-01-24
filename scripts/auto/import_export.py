@@ -55,6 +55,7 @@ class ExportedFile:
     date_end: datetime
     polarization: str
     state: str
+    crota: float
     outlier: bool
     bad_packets: bool
     processing_flow: ExportedFlow
@@ -102,6 +103,7 @@ class ExportedFile:
             date_end=file.date_end,
             polarization=file.polarization,
             state=file.state,
+            crota=file.crota,
             outlier=file.outlier,
             bad_packets=file.bad_packets,
             processing_flow=ExportedFlow.from_Flow(processing_flow) if processing_flow is not None else None,
@@ -135,6 +137,7 @@ class ExportedFile:
                 date_end=self.date_end,
                 polarization=self.polarization,
                 state=self.state,
+                crota=self.crota,
                 outlier=self.outlier,
                 bad_packets=self.bad_packets,
             )

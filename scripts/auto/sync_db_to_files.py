@@ -18,9 +18,9 @@ from punchbowl.auto.control.util import get_database_session
 def read_new_file_metadata(file, path):
     # Get the correct number of microseconds from the FITS header
     if file.file_type[0] in ['M', 'L']:
-        return None, None, None, None
+        return None, None, None, None, None
 
-    new_dateobs, new_date_created, new_outlier, new_bad_packets = None, None, None, None
+    new_dateobs, new_date_created, new_outlier, new_bad_packets, new_crota = None, None, None, None, None
     try:
         with fits.open(path, disable_image_compression=True) as hdul:
             if len(hdul) > 1 and 'DATE-OBS' in hdul[1].header:
@@ -42,6 +42,9 @@ def read_new_file_metadata(file, path):
 
             if len(hdul) > 1 and 'BADPKTS' in hdul[1].header:
                 new_bad_packets = hdul[1].header['BADPKTS']
+
+            if len(hdul) > 1 and 'CROTA' in hdul[1].header:
+                new_crota = hdul[1].header['CROTA']
     except:
         print(f"Error loading {path}")
 
@@ -123,7 +126,7 @@ if __name__ == "__main__":
     print(f"Found {n_added} new files, skipping {n_existing} existing files")
 
     print("Reading metadata...")
-    for file, (date_obs, date_created, new_outlier, new_bad_packets) in zip(
+    for file, (date_obs, date_created, new_outlier, new_bad_packets, new_crota) in zip(
             new_files, process_map(read_new_file_metadata, new_files, new_file_paths, chunksize=10, max_workers=10)):
         if date_obs is not None:
             file.date_obs = date_obs
@@ -133,6 +136,8 @@ if __name__ == "__main__":
             file.outlier = new_outlier
         if new_bad_packets is not None:
             file.bad_packets = new_bad_packets
+        if new_crota is not None:
+            file.crota = new_crota
 
     print("Adding to DB...")
     session.bulk_save_objects(new_files)

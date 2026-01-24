@@ -1,11 +1,13 @@
 import os
 import json
+import socket
 from datetime import UTC, datetime
 
 from dateutil.parser import parse as parse_datetime_str
 from prefect import get_run_logger, tags
 from prefect.context import MissingContextError, get_run_context
 
+from punchbowl import __version__
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.util import (
     get_database_session,
@@ -102,6 +104,20 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
                 file_db_entry.date_created = date_created
                 result.meta["OUTLIER"] = int(file_db_entry.outlier)
                 result.meta["BADPKTS"] = int(file_db_entry.bad_packets)
+                result.meta['BOWLVRSN'] = __version__
+                if 'SPPYVRSN' in result.meta:
+                    # No reason to load this if we don't need it
+                    import solpolpy
+                    result.meta['SPPYVRSN'] = solpolpy.__version__
+                if 'RPSFVRSN' in result.meta:
+                    # No reason to load this if we don't need it
+                    import regularizepsf
+                    result.meta['RPSFVRSN'] = regularizepsf.__version__
+                if 'RMSFVRSN' in result.meta:
+                    # No reason to load this if we don't need it
+                    import remove_starfield
+                    result.meta['RMSFVRSN'] = remove_starfield.__version__
+                result.meta['HOSTNAME'] = socket.gethostname()
                 filename = write_file(result, file_db_entry, pipeline_config)
                 logger.info(f"Wrote to {filename}")
 

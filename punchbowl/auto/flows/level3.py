@@ -1,5 +1,6 @@
+import os
 import json
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
@@ -11,7 +12,8 @@ from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session
 from punchbowl.auto.flows.util import file_name_to_full_path
-from punchbowl.level3.flow import level3_core_flow, level3_PIM_flow
+from punchbowl.level3.flow import generate_level3_low_noise_flow, level3_core_flow, level3_PIM_flow
+from punchbowl.util import average_datetime
 
 
 def get_valid_starfields(session, f: File, timedelta_window: timedelta, file_type: str = "PS"):
@@ -430,44 +432,76 @@ def level3_CTM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
     generic_process_flow_logic(flow_id, level3_core_flow, pipeline_config_path, session=session,
                                call_data_processor=level3_CTM_call_data_processor)
 
-import os
-from datetime import UTC, datetime
-
-from prefect import flow, task
-from punchpipe import __version__
-from punchpipe.control.db import File, Flow
-from punchpipe.control.processor import generic_process_flow_logic
-from punchpipe.control.scheduler import generic_scheduler_flow_logic
-
-from punchbowl.level3.flow import generate_level3_low_noise_flow
-
 # TODO - repeat below logic for the final PAM set
+@task(cache_policy=NO_CACHE)
+def level3_CAM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=100):
+    return _level3_CAMPAM_query_ready_files(session, polarized=False, pipeline_config=pipeline_config, max_n=max_n)
 
-@task
-def level3_CAM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+
+@task(cache_policy=NO_CACHE)
+def level3_PAM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=100):
+    return _level3_CAMPAM_query_ready_files(session, polarized=True, pipeline_config=pipeline_config, max_n=max_n)
+
+def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: dict, reference_time=None, max_n=100):
     logger = get_run_logger()
-    all_ready_files = session.query(File).where(and_(and_(File.state.in_(["progressed", "created"]),
-                                                          File.level == "3"),
-                                                     File.file_type == "CT")).order_by(File.date_obs.asc()).all()
+    all_ready_files = (session.query(File)
+                       .filter(File.state == "created")
+                       .filter(File.level == "3")
+                       .filter(File.file_type == "CT")
+                       .filter(File.observatory == "M")
+                       .order_by(File.date_obs.asc()).all())
     # TODO - need to grab data from sets of rotation. look at movie processor for inspiration
     logger.info(f"{len(all_ready_files)} Level 3 CTM files need to be processed to low-noise.")
 
-    actually_ready_files = []
-    for f in all_ready_files:
-        # TODO - remove this unless the time check happens here
-        actually_ready_files.append(f)
-        if len(actually_ready_files) >= max_n:
-            break
-    logger.info(f"{len(actually_ready_files)} Level 3 CTM files selected for low-noise processing")
+    if len(all_ready_files) == 0:
+        return []
 
-    return [[f.file_id] for f in actually_ready_files]
+    end_time = reference_time
+    start_time = end_time - timedelta(minutes=32)
+
+    grouped_files = []
+    current_index = 0
+    while len(grouped_files) < max_n:
+        current_group = []
+        f = all_ready_files[current_index]
+        while start_time <= f.date_obs < end_time:
+            current_group.append(f)
+            current_index += 1
+            f = all_ready_files[current_index]
+        grouped_files.append(current_group)
+
+
+    cutoff_time = (pipeline_config["flows"]["level3_PAM" if polarized else "level3_CAM"]
+                   .get("ignore_missing_after_days", None))
+    if cutoff_time is not None:
+        cutoff_time = datetime.now(tz=UTC) - timedelta(days=cutoff_time)
+
+    grouped_ready_files = []
+    for group in grouped_files:
+        group_is_complete = len(group) == (8 if polarized else 4)
+
+        if len(grouped_ready_files) >= max_n:
+            break
+
+        if group_is_complete:
+            grouped_ready_files.append(group)
+            continue
+
+        # group[-1] is the newest file by date_obs
+        if cutoff_time and group[-1].date_obs.replace(tzinfo=UTC) < cutoff_time:
+            # We've waited long enough. Just go ahead and make it.
+            grouped_ready_files.append(group)
+            continue
+
+    logger.info(f"{len(grouped_ready_files)} groups heading out")
+    return grouped_ready_files
 
 
 @task
-def level3_CAM_construct_flow_info(level3_files: list[File], level3_file_out: File,
+def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out: File,
                                    pipeline_config: dict, session=None, reference_time=None):
 
-    flow_type = "level3_CAM"
+    flow_type = "level3_CAM" if level3_files[0].file_type == "CT" else "level3_PAM"
     state = "planned"
     creation_time = datetime.now(UTC)
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
@@ -491,24 +525,43 @@ def level3_CAM_construct_flow_info(level3_files: list[File], level3_file_out: Fi
 
 
 @task
-def level3_CAM_construct_file_info(level3_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+def level3_CAMPAM_construct_file_info(level3_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
     return [File(
                 level="3",
-                file_type="CA",
+                file_type="CA" if level3_files[0].file_type == "CT" else "PA",
                 observatory="M",
+                polarization="C" if level3_files[0].file_type == "CT" else "Y",
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
-                date_obs=level3_files[0].date_obs, # TODO - set to date avg
+                date_obs=average_datetime([f.date_obs for f in level3_files]),
                 state="planned",
+                outlier=any(file.outlier for file in level3_files),
+                bad_packets=any(file.bad_packets for file in level3_files),
             )]
+
 
 
 @flow
 def level3_CAM_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
     generic_scheduler_flow_logic(
         level3_CAM_query_ready_files,
-        level3_CAM_construct_file_info,
-        level3_CAM_construct_flow_info,
+        level3_CAMPAM_construct_file_info,
+        level3_CAMPAM_construct_flow_info,
+        pipeline_config_path,
+        reference_time=reference_time,
+        session=session,
+    )
+
+@flow
+def level3_CAM_process_flow(flow_id: int, pipeline_config_path=None, session=None):
+    generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session)
+
+@flow
+def level3_PAM_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+    generic_scheduler_flow_logic(
+        level3_PAM_query_ready_files,
+        level3_CAMPAM_construct_file_info,
+        level3_CAMPAM_construct_flow_info,
         pipeline_config_path,
         reference_time=reference_time,
         session=session,
@@ -516,5 +569,5 @@ def level3_CAM_scheduler_flow(pipeline_config_path=None, session=None, reference
 
 
 @flow
-def level3_CAM_process_flow(flow_id: int, pipeline_config_path=None, session=None):
+def level3_PAM_process_flow(flow_id: int, pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session)

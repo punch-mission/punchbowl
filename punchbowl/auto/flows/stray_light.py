@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timedelta
 from collections import defaultdict
 
+from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger
 from sqlalchemy import func
 
@@ -358,7 +359,7 @@ def construct_stray_light_scheduler_flow(pipeline_config_path=None, session=None
     earliest_input, latest_input = dates[0]
 
     target_date = pipeline_config.get("target_date", None)
-    target_date = datetime.strptime(target_date, "%Y-%m-%d") if target_date else None
+    target_date = parse_datetime_str(target_date) if target_date else None
     if target_date:
         sorted_models = sorted(waiting_models_by_time_and_type.items(),
                                 key=lambda x: abs((target_date - x[0][0]).total_seconds()))

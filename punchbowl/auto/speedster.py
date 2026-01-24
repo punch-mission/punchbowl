@@ -8,6 +8,7 @@ from datetime import datetime
 from collections import defaultdict
 
 import prefect.exceptions
+import sqlalchemy
 import yaml
 from prefect.logging import disable_run_logger
 from sqlalchemy import update
@@ -70,8 +71,14 @@ def worker_run_flow(inputs):
     else:
         runner = flow_type_to_runner[flow_type]
 
-    session.execute(update(Flow).where(Flow.flow_id == flow_id).values(
-            state="launched", flow_run_name="speedster", launch_time=datetime.now()))
+    def set_flow_to_launched():
+        session.execute(update(Flow).where(Flow.flow_id == flow_id).values(
+                state='launched', flow_run_name='speedster', launch_time=datetime.now()))
+    try:
+        set_flow_to_launched()
+    except sqlalchemy.exc.OperationalError:
+        time.sleep(3)
+        set_flow_to_launched()
 
     with disable_run_logger(), warnings.catch_warnings():
         # Otherwise warning spam will hide any progress messages

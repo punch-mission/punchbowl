@@ -267,7 +267,7 @@ def _estimate_stray_light_one_slice(data_slice: np.ndarray, x_grid: np.ndarray, 
 def estimate_stray_light(filepaths: list[str], # noqa: C901
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
-                         stride: int = 1,
+                         stride: int = 2,
                          window_size: int = 3,
                          num_workers: int | None = None,
                          num_loaders: int | None = None) -> list[NDCube]:
@@ -364,7 +364,7 @@ def estimate_polarized_stray_light(
                 pfilepaths: list[str],
                 do_uncertainty: bool = True,
                 reference_time: datetime | str | None = None,
-                stride: int = 1,
+                stride: int = 2,
                 window_size: int = 3,
                 num_workers: int | None = None,
                 num_loaders: int | None = None,

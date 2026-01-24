@@ -16,11 +16,6 @@ def add_column(session, table_name, column):
 if __name__ == "__main__":
     session, engine = get_database_session(get_engine=True)
 
-
-    # Source - https://stackoverflow.com/a
-    # Posted by AlexP, modified by community. See post 'Timeline' for change history
-    # Retrieved 2025-11-10, License - CC BY-SA 4.0
-
     column = Column('crota', Float, nullable=True)
     add_column(session, "files", column)
 

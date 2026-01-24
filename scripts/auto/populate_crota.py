@@ -20,7 +20,8 @@ def get_crota_from_file(file):
         path = os.path.join(file.directory("/d0/punchsoc/real_data/"), file.filename())  # TODO this is only for 190
         header = fits.getheader(path, 1)
         return file, header['CROTA']
-    except:
+    except Exception as e:
+        print(e)
         return file, None
 
 if __name__ == "__main__":

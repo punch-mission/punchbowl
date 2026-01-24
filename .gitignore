@@ -171,3 +171,7 @@ astrometry_cache/
 uv.lock
 empty.txt
 scripts/auto/create_credentials.py
+examples/punch_data/
+punchbowl/levelq/*/*.fits
+punchbowl/levelq/*/*.sha
+examples/*.mp4

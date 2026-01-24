@@ -3,12 +3,14 @@ from pathlib import Path
 import astropy.units as u
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
-import ndcube
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, LinearSegmentedColormap, Normalize, PowerNorm
 from matplotlib.figure import Figure
+from ndcube import NDCube
 from skimage.color import lab2rgb
+
+from punchbowl.data import punch_io
 
 
 def _cmap_punch() -> LinearSegmentedColormap:
@@ -119,17 +121,22 @@ def generate_mzp_to_rgb_map(data_cube: np.ndarray,
 
 
 def plot_punch(
-    cube: ndcube.NDCube,
+    data: Path | NDCube,
     layer: int = 0,
     cmap: str | Colormap | None = cmap_punch,
     norm: Normalize | None = PowerNorm,
     vmin: float = 1e-14,
     vmax: float = 1e-12,
     gamma: float = 1/2.2,
-    figsize: tuple[float, float] = (9.5, 7.5),
+    figsize: tuple[float, float] = (10,8),
+    axes_labels: tuple[str, str] = ("Helioprojective longitude", "Helioprojective latitude"),
+    axes_off: bool = False,
+    annotate: bool = True,
     grid_spacing: int = 15,
     grid_alpha: float = 0.25,
     title_prefix: str | None = None,
+    colorbar: bool = True,
+    colorbar_label: str = "Mean Solar Brightness (MSB)",
     save_path: str | Path | None = None,
     dpi: int = 300,
     ) -> tuple[Figure, Axes]:
@@ -138,28 +145,38 @@ def plot_punch(
 
     Parameters
     ----------
-    cube : ndcube.NDCube
-        PUNCH NDCube object to plot
+    data : Path | NDCube
+        PUNCH data to plot, either a filepath or an NDCube
     layer : int
         Data layer to plot when using three-dimensional data cubes
     cmap : str or Colormap, optional
         Colormap to use for plot
     norm : Normalize, optional
         Normalization function for image
-    vmin : float,
+    vmin : float, optional
         Normalization vmin value
-    vmax : float,
+    vmax : float, optional
         Normalization vmax value
-    gamma : float,
+    gamma : float, optional
         Normalization gamma scaling value
     figsize : tuple, optional
         Figure size
+    axes_labels : tuple[str, str], optional
+        Axes labels (x, y)
+    axes_off : bool, optional
+        Remove axes and labels
+    annotate : bool, optional
+        Toggles display of corner annotation when axes_off is True
     grid_spacing : int, optional
         Coordinate grid spacing in degrees, removes grid for None
-    grid_alpha : float
+    grid_alpha : float, optional
         Coordinate grid transparency (1: opaque, 0: transparent)
     title_prefix : str, optional
         Prefix to prepend to plot title
+    colorbar : bool, optional
+        Toggle for plotting colorbar
+    colorbar_label : str, optional
+        Label to use for the colorbar
     save_path : str or Path, optional
         When provided, saves the figure to file directly without plotting on screen
     dpi : int, optional
@@ -170,9 +187,18 @@ def plot_punch(
     tuple of (figure, axes)
 
     """
+    if isinstance(data, NDCube):
+        cube = data
+    elif isinstance(data, Path | str):
+        cube = punch_io.load_ndcube_from_fits(data)
+    else:
+        msg = "Provide a valid file path or NDCube for plotting."
+        raise TypeError(msg)
+
     norm = norm(gamma, vmin=vmin, vmax=vmax)
 
-    fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs})
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
+                                                        else cube.wcs[layer]})
 
     im = ax.imshow(cube.data if cube.data.ndim == 2 else cube.data[layer,...], cmap=cmap, norm=norm)
 
@@ -184,15 +210,40 @@ def plot_punch(
 
     ax.set_facecolor("black")
     ax.coords.grid(color="white", alpha=grid_alpha, ls="dotted")
-    ax.set_xlabel("Helioprojective longitude")
-    ax.set_ylabel("Helioprojective latitude")
+    ax.set_xlabel(axes_labels[0])
+    ax.set_ylabel(axes_labels[1])
     timestamp = cube.meta.datetime.strftime("%Y/%m/%d %H:%M:%S UT")
 
     if title_prefix is None:
-        title_prefix = f"PUNCH {cube.meta['TYPECODE']}{cube.meta['OBSCODE']} - "
-    ax.set_title(f"{title_prefix}{timestamp}")
+        title_prefix = f"PUNCH {cube.meta['TYPECODE']}{cube.meta['OBSCODE']}"
+    ax.set_title(f"{title_prefix} {timestamp}")
 
-    fig.colorbar(im, ax=ax, label="Mean Solar Brightness (MSB)")
+    if axes_off:
+        ax.set_axis_off()
+        ax.set_title("")
+        fig.set_facecolor("black")
+
+    if axes_off and annotate:
+        ax.text(0.01,0.01,
+        cube.meta.datetime.strftime("%Y-%m-%d %H:%M:%S UT"),
+        transform=ax.transAxes,
+        color="white",
+        verticalalignment="bottom",
+        horizontalalignment="left",
+        fontsize=8,
+        fontfamily="monospace")
+
+        ax.text(0.01, 0.05,
+        title_prefix,
+        transform=ax.transAxes,
+        color="white",
+        verticalalignment="bottom",
+        horizontalalignment="left",
+        fontsize=8,
+        fontfamily="monospace")
+
+    if colorbar and not axes_off:
+        fig.colorbar(im, ax=ax, label=colorbar_label)
 
     if save_path is not None:
         fig.savefig(save_path, dpi=dpi, bbox_inches="tight")

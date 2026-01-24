@@ -101,13 +101,13 @@ def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
 
 def write_ndcube_to_quicklook(cube: NDCube,
                               filename: str,
-                              layer: int | None = None,
-                              vmin: float = 1e-15,
-                              vmax: float = 8e-12,
+                              layer: int | str | None = None,
+                              vmin: float = 2e-14,
+                              vmax: float = 1e-12,
                               include_meta: bool = True,
                               annotation: str | None = None,
                               color: bool = False,
-                              gamma: float = 1/2.2) -> None:
+                              gamma: float = 1/3.0) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
 
@@ -117,8 +117,9 @@ def write_ndcube_to_quicklook(cube: NDCube,
         data cube to visualize
     filename : str
         path to save output, must end in .jp2, .j2k, .jpeg, .jpg
-    layer : int | None
-        if the cube is 3D, then selects cube.data[layer] for visualization
+    layer : int | str | None
+        if the cube is 3D and an integer is provided, selects cube.data[layer] for visualization
+        if the cube is 3D and the string 'tB' is provided, visualizes the computed total brightness
     vmin : float
         the lower limit value to visualize
     vmax : float
@@ -147,12 +148,19 @@ def write_ndcube_to_quicklook(cube: NDCube,
                f"Found: {os.path.splitext(filename)[1]}")
         raise ValueError(msg)
 
-    norm = PowerNorm(gamma = gamma, vmin=vmin, vmax=vmax)
+    norm = PowerNorm(gamma=gamma, vmin=vmin, vmax=vmax)
 
-    if layer is not None:  # noqa: SIM108
-        image = cube.data[layer, :, :]
-    else:
+    if cube.data.ndim == 2:
         image = cube.data
+    elif cube.data.ndim == 3:
+        if isinstance(layer, str) and layer.casefold() == "tb":
+            image = cube.data[0] if cube.data.shape[0] == 2 else 2 / 3 * np.sum(cube.data, axis=0)
+        elif isinstance(layer, int):
+            image = cube.data[layer, :, :]
+        else:
+            raise ValueError("Provide a valid data layer (integer layer number or 'tB').")
+    else:
+        raise ValueError("Provide either two-dimensional or three-dimensional input data for quicklook display.")
 
     if color:
         mode = "RGBA"

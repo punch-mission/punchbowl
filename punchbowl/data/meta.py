@@ -653,9 +653,6 @@ class NormalizedMetadata(Mapping):
                             default,
                         )
 
-        if "File Type and Provenance" in contents and "PIPEVRSN" in contents["File Type and Provenance"]:
-            contents["File Type and Provenance"]["PIPEVRSN"].value = punchbowl.__version__
-
         return cls(contents, history)
 
     @property

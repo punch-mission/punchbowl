@@ -3,9 +3,10 @@ from datetime import datetime, timedelta
 from itertools import pairwise
 from collections import defaultdict
 
+from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
-from sqlalchemy import and_, func, text
+from sqlalchemy import func, or_, text
 from sqlalchemy.orm import aliased
 
 from punchbowl import __version__
@@ -32,7 +33,7 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
                                 .filter(File.level == "0"))
 
     target_date = pipeline_config.get("target_date")
-    target_date = datetime.strptime(target_date, "%Y-%m-%d") if target_date else None
+    target_date = parse_datetime_str(target_date) if target_date else None
     dt = func.abs(func.timestampdiff(text("second"), File.date_obs, target_date)) if target_date else None
     if target_date:
         ready = ready.order_by(dt.asc())
@@ -86,8 +87,9 @@ def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=0.01
     neighbors = (session.query(File)
                  .filter(File.level == "0")
                  .filter(File.observatory == f.observatory)
-                 .filter(and_(File.crota > f.crota - crota_tolerance_degree,
-                              File.crota < f.crota + crota_tolerance_degree))
+                 .filter(or_(func.abs(File.crota - f.crota) < crota_tolerance_degree,
+                             func.abs(File.crota - f.crota) > 360 - crota_tolerance_degree))
+                 .filter(File.bad_packets == False)  # noqa: E712
                  .filter(File.date_obs != f.date_obs)  # do not include the image itself in the pol. sequence neighbors
                  .filter(File.date_obs > f.date_obs - timedelta(minutes=time_tolerance_minutes))
                  .filter(File.date_obs < f.date_obs + timedelta(minutes=time_tolerance_minutes)).all())
@@ -508,7 +510,7 @@ def level1_middle_query_ready_files(session, pipeline_config: dict, reference_ti
              .filter(File.date_obs <= end_date))
 
     target_date = pipeline_config.get("target_date")
-    target_date = datetime.strptime(target_date, "%Y-%m-%d") if target_date else None
+    target_date = parse_datetime_str(target_date) if target_date else None
     dt = func.abs(func.timestampdiff(text("second"), File.date_obs, target_date)) if target_date else None
     if target_date:
         ready = ready.order_by(dt.asc())
@@ -627,7 +629,7 @@ def level1_late_query_ready_files(session, pipeline_config: dict, reference_time
              .filter(File.date_obs <= end_date))
 
     target_date = pipeline_config.get("target_date")
-    target_date = datetime.strptime(target_date, "%Y-%m-%d") if target_date else None
+    target_date = parse_datetime_str(target_date) if target_date else None
     dt = func.abs(func.timestampdiff(text("second"), File.date_obs, target_date)) if target_date else None
     if target_date:
         ready = ready.order_by(dt.asc())

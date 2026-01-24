@@ -28,17 +28,20 @@ class ExportableWrapper:
 @contextlib.contextmanager
 def try_read_from_key(key) -> ExportableWrapper | None:
     shm = None
+    wrapper = None
     try:
         shm = SharedMemory(CACHE_KEY_PREFIX + key, track=False)
         if shm.buf[0] == 1:
             wrapper = ExportableWrapper(shm.buf[1:])
             yield wrapper
-            wrapper.data = None
         else:
             yield None
     except FileNotFoundError:
         yield None
     finally:
+        if wrapper is not None:
+            # This allows `shm` to be closed---otherwise it complains than an "exported buffer" exists
+            wrapper.data = None
         if shm is not None:
             shm.close()
 

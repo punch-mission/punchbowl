@@ -92,6 +92,10 @@ def despike_polseq(
 
     reference.data = mean_correct(data_array=reference.data, mask_array=~np.isnan(reference.data))
 
+    # any remaining nans are bad!
+    reference.uncertainty.array[np.isnan(reference.data)] = 0
+    reference.data[np.isnan(reference.data)] = 0
+
     return reference, cosmic_sequence
 
 

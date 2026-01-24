@@ -72,12 +72,11 @@ def write_file(data: NDCube, corresponding_file_db_entry, pipeline_config) -> No
                          write_hash=pipeline_config.get("write_sha_files", True))
 
     if pipeline_config.get('write_quicklooks', True):
-        layer = 0 if len(data.data.shape) > 2 else None
         ql_directory = pipeline_config.get("ql_root", pipeline_config["root"])
         ql_filename = os.path.join(corresponding_file_db_entry.directory(ql_directory),
                                    corresponding_file_db_entry.filename())
         ql_filename = ql_filename.replace(".fits", ".jp2")
-        write_ndcube_to_quicklook(data, ql_filename, layer=layer)
+        write_ndcube_to_quicklook(data, ql_filename, layer="tB")
     return output_filename
 
 

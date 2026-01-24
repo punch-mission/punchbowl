@@ -101,7 +101,7 @@ def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
 
 def write_ndcube_to_quicklook(cube: NDCube,
                               filename: str,
-                              layer: int | str | None = None,
+                              layer: int | str | None = "tb",
                               vmin: float = 2e-14,
                               vmax: float = 1e-12,
                               include_meta: bool = True,
@@ -154,7 +154,15 @@ def write_ndcube_to_quicklook(cube: NDCube,
         image = cube.data
     elif cube.data.ndim == 3:
         if isinstance(layer, str) and layer.casefold() == "tb":
-            image = cube.data[0] if cube.data.shape[0] == 2 else 2 / 3 * np.sum(cube.data, axis=0)
+            if cube.meta['LEVEL'].value == "2":
+                image = 2 / 3 * np.sum(cube.data, axis=0)
+            elif cube.meta['LEVEL'].value == "3":
+                if cube.meta['TYPECODE'].value == "PI":
+                    image = 2 / 3 * np.sum(cube.data, axis=0)
+                else:
+                    image = cube.data[1]
+            else:
+                raise RuntimeError("Level 0 and 1 data cannot be converted to tB because they're single polarizations.")
         elif isinstance(layer, int):
             image = cube.data[layer, :, :]
         else:

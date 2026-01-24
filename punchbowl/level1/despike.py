@@ -47,12 +47,11 @@ def despike_polseq(
 
     """
     sequence = np.stack([cube.data for cube in [*neighbors, reference]], axis=0)
-    uncertainties = np.stack([cube.uncertainty.array for cube in [*neighbors, reference]], axis=0)
 
     seq_len = sequence.shape[0]
 
     # saturated regions can lead to weird uncertainties and leftovers so we try to mask them
-    inf_uncertainty_mask = np.isinf(uncertainties)
+    inf_uncertainty_mask = np.isinf(sequence >= 60_000)
     inf_uncertainty_mask = binary_dilation(inf_uncertainty_mask)
     inf_uncertainty_mask = np.any(inf_uncertainty_mask, axis=0)
     sequence[np.stack([inf_uncertainty_mask for _ in range(seq_len)])] = np.nan

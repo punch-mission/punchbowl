@@ -45,7 +45,7 @@ def main():
 def find_flow(target_flow, subpackage="flows") -> Flow:
     for filename in os.listdir(os.path.join(THIS_DIR, subpackage)):
         if filename.endswith(".py"):
-            module_name = f"punchpipe.{subpackage}."  + os.path.splitext(filename)[0]
+            module_name = f"punchbowl.auto.{subpackage}."  + os.path.splitext(filename)[0]
             module = import_module(module_name)
             for name, obj in inspect.getmembers(module):
                 if name == target_flow:

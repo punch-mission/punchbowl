@@ -136,9 +136,9 @@ def construct_dynamic_stray_light_check_for_inputs(session,
 
     produce = False
     if more_L0_impossible:
-        logger.debug("More L0 files are impossible.")
-        logger.debug(f"All inputs ready {all_inputs_ready}")
-        logger.debug(f"Enough L1s {enough_L1s}")
+        logger.info("More L0 files are impossible.")
+        logger.info(f"All inputs ready {all_inputs_ready}")
+        logger.info(f"Enough L1s {enough_L1s}")
         if len(first_half_L0s) < min_files_per_half or len(second_half_L0s) < min_files_per_half:
             reference_file.state = "impossible"
             # Record who deemed this to be impossible
@@ -146,13 +146,13 @@ def construct_dynamic_stray_light_check_for_inputs(session,
             reference_file.software_version = __version__
             reference_file.date_created = datetime.now()
         elif all_inputs_ready and enough_L1s:
-            logger.debug("All inputs are ready and there are enough L1")
+            logger.info("All inputs are ready and there are enough L1")
             n = min(len(first_half_pairs), len(second_half_pairs), int(max_files_per_half / 2))
             first_half_pairs = first_half_pairs[:n]
             second_half_pairs = second_half_pairs[:n]
             produce = True
     elif max_L1s:
-        logger.debug("Max L1s exceeded")
+        logger.info("Max L1s exceeded")
         produce = True
 
     if produce:

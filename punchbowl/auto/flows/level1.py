@@ -94,7 +94,20 @@ def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=0.01
                  .filter(File.date_obs != f.date_obs)  # do not include the image itself in the pol. sequence neighbors
                  .filter(File.date_obs > f.date_obs - timedelta(minutes=time_tolerance_minutes))
                  .filter(File.date_obs < f.date_obs + timedelta(minutes=time_tolerance_minutes)).all())
-    return neighbors
+    # We have occasionally had a file get generated twice with different filetypes. (If we're missing downlink
+    # packets and the wrong polarization state get assigned to a file, we'll get the file written with the wrong file
+    # type, then later with the correct one after the missing packets get replayed.) As a workaround here,
+    # we look for identical date_obs in our neighbors and keep only the newest.
+    neighbors_by_dateobs = {}
+    for neighbor in neighbors:
+        dobs = neighbor.date_obs
+        if dobs in neighbors_by_dateobs:
+            if neighbor.date_created > neighbors_by_dateobs[dobs]:
+                neighbors_by_dateobs[dobs] = neighbor
+            # else: neighbor is an older duplicate; drop it
+        else:
+            neighbors_by_dateobs[dobs] = neighbor
+    return list(neighbors_by_dateobs.values())
 
 def get_distortion_paths(level0_files, pipeline_config: dict, session=None):
     # Get all models, in reverse-chronological order

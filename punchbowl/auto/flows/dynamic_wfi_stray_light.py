@@ -131,6 +131,9 @@ def construct_dynamic_stray_light_check_for_inputs(session,
     first_half_pairs = collect_pairs_by_phase(first_half_phases, first_phase, second_phase)
     second_half_pairs = collect_pairs_by_phase(second_half_phases, first_phase, second_phase)
 
+    logger.info(f"First half pairs {len(first_half_pairs)}")
+    logger.info(f"Second half pairs {len(second_half_pairs)}")
+
     enough_L1s = len(first_half_pairs) > min_files_per_half / 2 and len(second_half_pairs) > min_files_per_half / 2
     max_L1s = len(first_half_pairs) == max_files_per_half / 2 and len(second_half_pairs) == max_files_per_half / 2
 

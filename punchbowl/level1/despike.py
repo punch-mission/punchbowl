@@ -3,8 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger
-from scipy.ndimage import gaussian_filter
-from scipy.ndimage.morphology import binary_dilation
+from scipy.ndimage import binary_dilation, gaussian_filter
 from threadpoolctl import threadpool_limits
 
 from punchbowl.data import load_ndcube_from_fits

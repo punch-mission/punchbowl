@@ -118,6 +118,8 @@ def construct_dynamic_stray_light_check_for_inputs(session,
 
     first_half_phases = make_phases(first_half_inputs)
     second_half_phases = make_phases(second_half_inputs)
+    logger.info(f"First half phases {first_half_phases}")
+    logger.info(f"Second half phases {second_half_phases}")
     if target_file_type[1] == "M":
         first_phase = 3
         second_phase = 7

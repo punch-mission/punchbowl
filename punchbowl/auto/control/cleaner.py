@@ -42,19 +42,21 @@ def reset_revivable_flows(logger, session, pipeline_config):
     # think we're good.
     child = aliased(File)
     parent = aliased(File)
-    results = (session.query(FileRelationship, parent, child, Flow)
-               .join(parent, parent.file_id == FileRelationship.parent)
-               .join(child, child.file_id == FileRelationship.child)
-               .join(Flow, Flow.flow_id == child.processing_flow)
+    results = (session.query(Flow, child, FileRelationship, parent)
+               # isouter sets a left outer join---we'll get back flows that don't have a matching child file,
+               # but not files without a matching flow
+               .join(child, Flow.flow_id == child.processing_flow, isouter=True)
+               .join(FileRelationship, child.file_id == FileRelationship.child, isouter=True)
+               .join(parent, parent.file_id == FileRelationship.parent, isouter=True)
                .where(Flow.state == "revivable")
-              ).all()
+               ).all()
 
     # This one loops differently than the others, because we need to track the child that's being deleted to know how
     # to reset the parent.
     unique_parents = set()
-    for _, parent, child, processing_flow in results:
-        # Handle the case that both L2 and LQ have been set to 'revivable'. If the LQ shows up first in this loop and
-        # we set the L1's state to 'created', we don't want to later set it to 'quickpunched' when the L2 shows up.
+    for processing_flow, _, _, parent in results:
+        if parent is None:
+            continue
         if processing_flow.flow_type not in ("construct_stray_light",
                                              "construct_dynamic_stray_light"
                                              "construct_f_corona_background",
@@ -64,7 +66,7 @@ def reset_revivable_flows(logger, session, pipeline_config):
             unique_parents.add(parent.file_id)
     logger.info(f"Reset {len(unique_parents)} parent files")
 
-    unique_children = {child for rel, parent, child, flow in results}
+    unique_children = {child for _, child, _, _ in results if child is not None}
     root_path = Path(pipeline_config["root"])
     for child in unique_children:
         output_path = Path(child.directory(pipeline_config["root"])) / child.filename()
@@ -90,11 +92,14 @@ def reset_revivable_flows(logger, session, pipeline_config):
     logger.info(f"Deleted {len(unique_children)} child files")
 
     # Every FileRelationship item is unique
-    for relationship, _, _, _ in results:
-        session.delete(relationship)
-    logger.info(f"Cleared {len(results)} file relationships")
+    n_cleared = 0
+    for _, _, relationship, _ in results:
+        if relationship is not None:
+            session.delete(relationship)
+            n_cleared += 1
+    logger.info(f"Cleared {n_cleared} file relationships")
 
-    unique_flows = {flow for rel, parent, child, flow in results}
+    unique_flows = {flow for flow, _, _, _ in results}
     for f in unique_flows:
         session.delete(f)
     logger.info(f"Deleted {len(unique_flows)} flows")

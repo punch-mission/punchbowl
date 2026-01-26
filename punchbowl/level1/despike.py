@@ -89,7 +89,7 @@ def despike_polseq(
 
 @punch_task
 def despike_polseq_task(data_object: NDCube,
-                        neighbors: list[NDCube],
+                        neighbors: list[NDCube] | list[str],
                         filter_width: float=25.0,
                         hpf_zscore_thresh: float=10.0,
                         max_workers: int | None = None)-> NDCube:
@@ -100,7 +100,7 @@ def despike_polseq_task(data_object: NDCube,
     ----------
     data_object : NDCube
         Image to be despiked.
-    neighbors : list[NDCube]
+    neighbors : list[NDCube]  | list[str]
         Sequence of neighbor images from the same spacecraft and roll sequence to use in despiking.
     filter_width : float, optional
         width of the gaussian filter used to construct the high-pass-filtered image, in pixels.
@@ -117,9 +117,13 @@ def despike_polseq_task(data_object: NDCube,
     """
     logger = get_run_logger()
 
-    if neighbors is not None:
+    neighbors = neighbors if neighbors is not None else []
+
+    if 3 <= len(neighbors) <= 7:
         logger.info(f"Neighbors = {neighbors}")
-        neighbors = [decode_sqrt_data(load_ndcube_from_fits(n)) if isinstance(n, str) else n for n in neighbors]
+
+        neighbors = [load_ndcube_from_fits(n) if isinstance(n, str) else n for n in neighbors]
+        neighbors = [decode_sqrt_data(n) for n in neighbors]
 
         with threadpool_limits(max_workers):
             data_object, spikes = despike_polseq(
@@ -134,6 +138,6 @@ def despike_polseq_task(data_object: NDCube,
         data_object.meta.history.add_now("LEVEL1-despike", f"zscore_thresh={hpf_zscore_thresh}")
         data_object.meta.history.add_now("LEVEL1-despike", f"neighbor_count={len(neighbors)}")
     else:
-        data_object.meta.history.add_now("LEVEL1-despike", "Empty neighbors so no correction applied")
-        logger.info("No polarization neighbors so despiking is skipped")
+        data_object.meta.history.add_now("LEVEL1-despike", "Incompatible neighbor count so no correction applied")
+        logger.info(f"Incompatible neighbor count {len(neighbors)} so despiking is skipped")
     return data_object

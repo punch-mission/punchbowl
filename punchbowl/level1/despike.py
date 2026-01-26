@@ -137,7 +137,10 @@ def despike_polseq_task(data_object: NDCube,
 
     neighbors = neighbors if neighbors is not None else []
 
-    if 3 <= len(neighbors) <= 7:
+    if data_object.meta['BADPKTS'].value:
+        data_object.meta.history.add_now("LEVEL1-despike", "Image has bad packets; no despiking applied")
+        logger.info(f"Bad packets---despiking skipped")
+    elif 3 <= len(neighbors) <= 7:
         logger.info(f"Neighbors = {neighbors}")
 
         neighbors = [load_ndcube_from_fits(n) if isinstance(n, str) else n for n in neighbors]

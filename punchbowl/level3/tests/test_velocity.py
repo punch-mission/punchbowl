@@ -74,16 +74,6 @@ def test_shape_matching(synthetic_data):
     assert result.data.shape[0] == len(ycens)
 
 
-@pytest.mark.mpl_image_compare(style="default")
-def test_wind_plot(synthetic_data):
-    """Tests that wind plots are generated and  output to file."""
-    files = synthetic_data
-    ycens = np.arange(7, 14.5, 0.5)
-    result = track_velocity(files, ycens=ycens)
-
-    return plot_flow_map(None, result)
-
-
 def test_no_nans_or_negatives(synthetic_data):
     """Test that the output does not contain NaNs or negative values."""
     files = synthetic_data

@@ -116,8 +116,6 @@ def construct_dynamic_stray_light_check_for_inputs(session,
     all_inputs_ready = (len(first_half_inputs) >= 0.95 * len(first_half_L0s)
                         and len(second_half_inputs) >= 0.95 * len(second_half_L0s))
 
-    logger.info()
-
     first_half_phases = make_phases(first_half_inputs)
     second_half_phases = make_phases(second_half_inputs)
     logger.info(f"First half phases {[len(e) for e in first_half_phases]}")

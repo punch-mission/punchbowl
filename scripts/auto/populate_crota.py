@@ -38,4 +38,3 @@ if __name__ == "__main__":
     for f, crota in zip(existing_files, process_map(get_crota_from_file, existing_files, chunksize=100)):
         f.crota = crota
     session.commit()
-

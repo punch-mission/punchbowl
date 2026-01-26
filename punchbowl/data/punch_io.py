@@ -198,7 +198,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
         pil_image = padded_image
 
     arr_image = np.array(pil_image)
-    
+
     tmp_filename = f"{filename}tmp.jp2"
     os.makedirs(os.path.dirname(tmp_filename), exist_ok=True)
     jp2 = Jp2k(tmp_filename, arr_image)

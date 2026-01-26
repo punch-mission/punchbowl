@@ -81,7 +81,8 @@ def level1_early_core_flow(  # noqa: C901
 
     output_data = []
     for i, this_data in enumerate(input_data):
-        data = load_image_task(this_data) if isinstance(this_data, str) else this_data
+        l0_data = load_image_task(this_data) if isinstance(this_data, str) else this_data
+        data = l0_data
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
@@ -95,9 +96,13 @@ def level1_early_core_flow(  # noqa: C901
                                                bitrate_signal=bitrate_signal,
                                                saturated_pixels=saturated_pixels,
                                                )
-        data = despike_polseq_task(data,
-                                   despike_neighbors,
-                                   max_workers=max_workers)
+        if l0_data.meta['BADPKTS'].value:
+            data.meta.history.add_now("LEVEL1-despike", "Image has bad packets; no despiking applied")
+            logger.info(f"Bad packets---despiking skipped")
+        else:
+            data = despike_polseq_task(data,
+                                       despike_neighbors,
+                                       max_workers=max_workers)
 
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
 

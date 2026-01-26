@@ -96,9 +96,6 @@ def construct_dynamic_stray_light_check_for_inputs(session,
                           .filter(File.level == "1")
                           .order_by(File.date_obs.asc()).all())
 
-    logger.info(f"First half inputs {len(first_half_inputs)}")
-    logger.info(f"Second half inputs {len(second_half_inputs)}")
-
     first_half_L0s = (base_query
                       .filter(File.date_obs >= t_start)
                       .filter(File.date_obs <= reference_time)
@@ -121,8 +118,6 @@ def construct_dynamic_stray_light_check_for_inputs(session,
 
     first_half_phases = make_phases(first_half_inputs)
     second_half_phases = make_phases(second_half_inputs)
-    logger.info(f"First half phases {[len(e) for e in first_half_phases]}")
-    logger.info(f"Second half phases {[len(e) for e in second_half_phases]}")
     if target_file_type[1] == "M":
         first_phase = 3
         second_phase = 7
@@ -136,41 +131,44 @@ def construct_dynamic_stray_light_check_for_inputs(session,
     first_half_pairs = collect_pairs_by_phase(first_half_phases, first_phase, second_phase)
     second_half_pairs = collect_pairs_by_phase(second_half_phases, first_phase, second_phase)
 
-    logger.info(f"First half pairs {len(first_half_pairs)}")
-    logger.info(f"Second half pairs {len(second_half_pairs)}")
-
     enough_L1s = len(first_half_pairs) > min_files_per_half / 2 and len(second_half_pairs) > min_files_per_half / 2
     max_L1s = len(first_half_pairs) == max_files_per_half / 2 and len(second_half_pairs) == max_files_per_half / 2
 
     produce = False
     if more_L0_impossible:
-        logger.info("More L0 files are impossible.")
-        logger.info(f"All inputs ready {all_inputs_ready}")
-        logger.info(f"Enough L1s {enough_L1s}")
         if len(first_half_L0s) < min_files_per_half or len(second_half_L0s) < min_files_per_half:
             reference_file.state = "impossible"
             # Record who deemed this to be impossible
             reference_file.file_version = pipeline_config["file_version"]
             reference_file.software_version = __version__
             reference_file.date_created = datetime.now()
+            logger.info(f"{reference_file.filename()} marked impossible")
         elif all_inputs_ready and enough_L1s:
-            logger.info("All inputs are ready and there are enough L1")
             n = min(len(first_half_pairs), len(second_half_pairs), int(max_files_per_half / 2))
             first_half_pairs = first_half_pairs[:n]
             second_half_pairs = second_half_pairs[:n]
             produce = True
     elif max_L1s:
-        logger.info("Max L1s exceeded")
         produce = True
 
     if produce:
         all_ready_files = [x for y in first_half_pairs for x in y] + [x for y in second_half_pairs for x in y]
-
         logger.info(f"{len(all_ready_files)} Level 1 {target_file_type}{reference_file.observatory} files will be used "
                      "for dynamic WFI stray light estimation.")
         return [f.file_id for f in all_ready_files]
     else:
-        logger.debug("No dynamic WFI stray light models will be scheduled.")
+        status = []
+        if not all_inputs_ready:
+            status.append("more L0s than L1s---waiting for L1s to be produced")
+        if not enough_L1s:
+            status.append("not enough inputs")
+        status.append(f"{'not' if more_L0_impossible else ''} waiting for more downlinks")
+        status.append(f"first half: {len(first_half_inputs)} files, {len(first_half_pairs)} matched pairs, "
+                      f"{len(first_half_L0s)} L0s")
+        status.append(f"second half: {len(second_half_inputs)} files, {len(second_half_pairs)} matched pairs, "
+                      f"{len(second_half_L0s)} L0s")
+        status.append(f"looked for inputs between {t_start.isoformat(' ')} and {t_end.isoformat(' ')}")
+        logger.info(f'{reference_file.filename()}: ' + '; '.join(status))
     return []
 
 

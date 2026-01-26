@@ -102,7 +102,7 @@ def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=0.01
     for neighbor in neighbors:
         dobs = neighbor.date_obs
         if dobs in neighbors_by_dateobs:
-            if neighbor.date_created > neighbors_by_dateobs[dobs]:
+            if neighbor.date_created > neighbors_by_dateobs[dobs].date_created:
                 neighbors_by_dateobs[dobs] = neighbor
             # else: neighbor is an older duplicate; drop it
         else:

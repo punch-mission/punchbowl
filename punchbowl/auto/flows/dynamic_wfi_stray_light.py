@@ -136,6 +136,7 @@ def construct_dynamic_stray_light_check_for_inputs(session,
 
     produce = False
     if more_L0_impossible:
+        logger.info("More L0 files are impossible.")
         if len(first_half_L0s) < min_files_per_half or len(second_half_L0s) < min_files_per_half:
             reference_file.state = "impossible"
             # Record who deemed this to be impossible
@@ -143,11 +144,13 @@ def construct_dynamic_stray_light_check_for_inputs(session,
             reference_file.software_version = __version__
             reference_file.date_created = datetime.now()
         elif all_inputs_ready and enough_L1s:
+            logger.info("All inputs are ready and there are enough L1")
             n = min(len(first_half_pairs), len(second_half_pairs), int(max_files_per_half / 2))
             first_half_pairs = first_half_pairs[:n]
             second_half_pairs = second_half_pairs[:n]
             produce = True
     elif max_L1s:
+        logger.info("Max L1s exceeded")
         produce = True
 
     if produce:
@@ -156,6 +159,8 @@ def construct_dynamic_stray_light_check_for_inputs(session,
         logger.info(f"{len(all_ready_files)} Level 1 {target_file_type}{reference_file.observatory} files will be used "
                      "for dynamic WFI stray light estimation.")
         return [f.file_id for f in all_ready_files]
+    else:
+        logger.info("No dynamic WFI stray light models will be scheduled.")
     return []
 
 

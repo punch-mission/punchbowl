@@ -127,11 +127,15 @@ def level1_early_core_flow(  # noqa: C901
         data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 
-        data = destreak_task(data,
-                             exposure_time=exposure_time,
-                             reset_line_time=reset_line_time,
-                             readout_line_time=readout_line_time,
-                             max_workers=max_workers)
+        if l0_data.meta['BADPKTS'].value:
+            data.meta.history.add_now("LEVEL1-destreak", "Image has bad packets; no destreaking applied")
+            logger.info(f"Bad packets---destreaking skipped")
+        else:
+            data = destreak_task(data,
+                                 exposure_time=exposure_time,
+                                 reset_line_time=reset_line_time,
+                                 readout_line_time=readout_line_time,
+                                 max_workers=max_workers)
         data = correct_vignetting_task(data, vignetting_function_path, second_vignetting_function_path,
                                        allow_extrapolation=False)
         data = remove_deficient_pixels_task(data,

@@ -4,6 +4,7 @@ import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger
 from scipy.ndimage import gaussian_filter
+from scipy.ndimage.morphology import binary_dilation
 from threadpoolctl import threadpool_limits
 
 from punchbowl.data import load_ndcube_from_fits
@@ -45,8 +46,15 @@ def despike_polseq(
          and a list of spike locations for all neighbors
 
     """
-    sequence = np.stack([cube.data for cube in [*neighbors, reference]], axis=0)
+    sequence = np.stack([cube.data.copy() for cube in [*neighbors, reference]], axis=0)
+
     seq_len = sequence.shape[0]
+
+    # saturated regions can lead to weird uncertainties and leftovers so we try to mask them
+    inf_uncertainty_mask = sequence >= 60_000
+    inf_uncertainty_mask = binary_dilation(inf_uncertainty_mask)
+    inf_uncertainty_mask = np.any(inf_uncertainty_mask, axis=0)
+    sequence[np.stack([inf_uncertainty_mask for _ in range(seq_len)])] = 0
 
     # create the high-pass-filtered images
     def blur_one_image(image: np.ndarray)->np.ndarray:
@@ -62,29 +70,40 @@ def despike_polseq(
     #of the N-1 lowest values of each pixel
     match seq_len:
         case 7:
-            hpf_median_s = np.mean(hpf_sorted[2:4],axis=0)
+            hpf_median_s = np.nanmean(hpf_sorted[2:4],axis=0)
         case 6:
             hpf_median_s = hpf_sorted[2]
         case 5:
-            hpf_median_s = np.mean(hpf_sorted[1:3],axis=0)
+            hpf_median_s = np.nanmean(hpf_sorted[1:3],axis=0)
         case 4:
             hpf_median_s = hpf_sorted[1]
         case 3:
-            hpf_median_s = np.mean(hpf_sorted[0:2],axis=0)
+            hpf_median_s = np.nanmean(hpf_sorted[0:2],axis=0)
         case _:
             raise RuntimeError(f"A sequence length of {seq_len} is not supported.")
 
     hpf_stdev = np.std(hpf_sorted[:-1], axis=0, ddof=0)
     hpf_zscore = (hpf - hpf_median_s)/hpf_stdev
 
-    cosmic_sequence = np.zeros_like(sequence, dtype=bool)
-    cosmic_sequence[hpf_zscore>=hpf_zscore_thresh] = 1
+    sequence_spike_mask = np.zeros_like(sequence, dtype=bool)
+    sequence_spike_mask[hpf_zscore>=hpf_zscore_thresh] = 1
 
-    reference.data[(hpf_zscore>=hpf_zscore_thresh)[-1]] = np.nan
+    image_bounds = sequence[-1] == 0  # the image is zero where there's no data
+    correction_mask = (hpf_zscore >= hpf_zscore_thresh)[-1]
+    correction_mask[inf_uncertainty_mask] = 1
+    correction_mask[image_bounds] = 0
+
+    sequence_spike_mask[-1] = correction_mask
+
+    reference.data[correction_mask] = np.nan
 
     reference.data = mean_correct(data_array=reference.data, mask_array=~np.isnan(reference.data))
 
-    return reference, cosmic_sequence
+    # any remaining nans are bad!
+    reference.uncertainty.array[np.isnan(reference.data)] = np.inf
+    reference.data[np.isnan(reference.data)] = 0
+
+    return reference, sequence_spike_mask
 
 
 @punch_task

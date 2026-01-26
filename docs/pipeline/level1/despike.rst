@@ -1,16 +1,16 @@
 Despike
 =======
 
-The goal of despiking is to remove cosmic ray hits from images.
+Cosmic rays passing through an instrument CCD can leave behind bright spots or streaks in the collected image, depending on the angle of incidence.
+This despiking module aims to identify and remove cosmic ray artifacts from a sequence of images.
 
 Concept
 -------
 
-Despiking hinges on looking for pixels that have high variability in a single roll state.
-The idea is that a cosmic ray will hit only one image.
-While the polarization changes between images, the satellite is stable.
-Thus up to the polarization differences, the scene is largely the same. A cosmic ray will look
-anomalous if compared to the average frame in a roll state.
+A PUNCH roll sequence consists of three polarized exposures, a clear exposure, and three more polarized exposures.
+As cosmic ray artifacts are temporally transient, a given cluster of pixels will likely only show an artifact in one of these images.
+N input images from the roll sequence (three minimum) are high-pass-filtered, and the median is computed for each pixel from the resulting N-1 lowest values per pixel.
+From here z-score filtering is used to identify outlier pixels from cosmic ray strikes, which are removed and filled in from surrounding valid pixels.
 
 Applying correction
 -------------------

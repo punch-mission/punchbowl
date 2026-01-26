@@ -287,8 +287,8 @@ def construct_dynamic_stray_light_scheduler_flow(pipeline_config_path=None, sess
         return
 
     earliest_input, latest_input = dates[0]
-    logger.debug(f"Earliest X date {earliest_input}.")
-    logger.debug(f"Latest X date {latest_input}.")
+    logger.info(f"Earliest X date {earliest_input}.")
+    logger.info(f"Latest X date {latest_input}.")
 
     target_date = pipeline_config.get("target_date", None)
     target_date = parse_datetime_str(target_date) if target_date else None

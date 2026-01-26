@@ -96,6 +96,9 @@ def construct_dynamic_stray_light_check_for_inputs(session,
                           .filter(File.level == "1")
                           .order_by(File.date_obs.asc()).all())
 
+    logger.info(f"First half inputs {len(first_half_inputs)}")
+    logger.info(f"Second half inputs {len(second_half_inputs)}")
+
     first_half_L0s = (base_query
                       .filter(File.date_obs >= t_start)
                       .filter(File.date_obs <= reference_time)

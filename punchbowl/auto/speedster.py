@@ -117,6 +117,7 @@ if __name__ == "__main__":
         n_cores = min(args.n_workers, args.flows_per_batch)
 
     n_batches_run = 0
+    batch_of_flows = []
     with multiprocessing.Pool(n_cores, initializer=worker_init, initargs=(config_path,)) as p:
         print("Beginning fetch-run loop; press Ctrl-C to exit and allow time for cleanup")
         if args.flows_per_batch:
@@ -150,7 +151,20 @@ if __name__ == "__main__":
                             pbar.update()
                     except KeyboardInterrupt:
                         print("Halting")
+                        time.sleep(3)
+                        print("Will wrap up in 6 sec")
+                        time.sleep(6)
+                        print("Terminating pool")
+                        p.terminate()
                         break
             n_batches_run += 1
             if args.n_batches and n_batches_run >= args.n_batches:
                 break
+    if batch_of_flows:
+        flows_to_reset = (session.query(Flow)
+                          .where(Flow.flow_id.in_(batch_of_flows))
+                          .where(Flow.state.in_(['running', 'launched'])).all())
+        for flow in flows_to_reset:
+            flow.state = 'revivable'
+        session.commit()
+        print(f"{len(flows_to_reset)} flows set to 'revivable' by main process")

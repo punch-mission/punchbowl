@@ -85,23 +85,25 @@ def despike_polseq(
     hpf_stdev = np.std(hpf_sorted[:-1], axis=0, ddof=0)
     hpf_zscore = (hpf - hpf_median_s)/hpf_stdev
 
-    cosmic_sequence = np.zeros_like(sequence, dtype=bool)
-    cosmic_sequence[hpf_zscore>=hpf_zscore_thresh] = 1
+    sequence_spike_mask = np.zeros_like(sequence, dtype=bool)
+    sequence_spike_mask[hpf_zscore>=hpf_zscore_thresh] = 1
 
     image_bounds = sequence[-1] == 0  # the image is zero where there's no data
     correction_mask = (hpf_zscore >= hpf_zscore_thresh)[-1]
     correction_mask[inf_uncertainty_mask] = 1
     correction_mask[image_bounds] = 0
 
+    sequence_spike_mask[-1] = correction_mask
+
     reference.data[correction_mask] = np.nan
 
     reference.data = mean_correct(data_array=reference.data, mask_array=~np.isnan(reference.data))
 
     # any remaining nans are bad!
-    reference.uncertainty.array[np.isnan(reference.data)] = 0
+    reference.uncertainty.array[np.isnan(reference.data)] = np.inf
     reference.data[np.isnan(reference.data)] = 0
 
-    return reference, cosmic_sequence
+    return reference, sequence_spike_mask
 
 
 @punch_task

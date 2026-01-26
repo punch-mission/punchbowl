@@ -461,6 +461,7 @@ def level1_early_construct_file_info(level0_files: list[File], pipeline_config: 
             outlier=level0_files[0].outlier,
             bad_packets=level0_files[0].bad_packets,
             state="planned",
+            crota=level0_files[0].crota,
         ))
     return files
 
@@ -591,6 +592,7 @@ def level1_middle_construct_file_info(input_files: list[File], pipeline_config: 
             outlier=input_files[0].outlier,
             bad_packets=input_files[0].bad_packets,
             state="planned",
+            crota=input_files[0].crota,
         ),
     ]
 
@@ -736,6 +738,7 @@ def level1_late_construct_file_info(input_files: list[File], pipeline_config: di
             outlier=input_files[0].outlier,
             bad_packets=input_files[0].bad_packets,
             state="planned",
+            crota=input_files[0].crota,
         ),
     ]
 
@@ -880,6 +883,7 @@ def level1_quick_construct_file_info(input_files: list[File], pipeline_config: d
             outlier=input_files[0].outlier,
             bad_packets=input_files[0].bad_packets,
             state="planned",
+            crota=input_files[0].crota,
         ),
     ]
 

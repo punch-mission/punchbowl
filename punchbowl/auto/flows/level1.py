@@ -84,7 +84,7 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
                     + summarize_files_missing_cal_files(missing_sequence))
     return actually_ready
 
-def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=0.01, time_tolerance_minutes=15):
+def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=1, time_tolerance_minutes=15):
     neighbors = (session.query(File)
                  .filter(File.level == "0")
                  .filter(File.observatory == f.observatory)

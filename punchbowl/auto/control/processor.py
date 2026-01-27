@@ -85,8 +85,9 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
             if call_data_processor is not None:
                 flow_call_data = call_data_processor(flow_call_data, pipeline_config, session)
             output_file_ids = set()
+            expected_files = {f"{entry.filename()} ({entry.file_id})" for entry in file_db_entry_list}
             expected_file_ids = {entry.file_id for entry in file_db_entry_list}
-            logger.info(f"Expecting to output files with ids={expected_file_ids}.")
+            logger.info(f"Expecting to output these files: {', '.join(expected_files)}")
 
             tag_set = {entry.file_type + entry.observatory for entry in file_db_entry_list}
             with tags(*sorted(tag_set)):

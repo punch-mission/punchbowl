@@ -134,6 +134,8 @@ def fill_saturated_pixels(data_object: NDCube,
         filled_data = inpaint_nans(image, kernel_size=5)
         data_object.data[...] = filled_data[...]
         data_object.mask = saturated_pixels
+    else:
+        data_object.mask = np.zeros_like(data_object.data, dtype=bool)
     return data_object
 
 

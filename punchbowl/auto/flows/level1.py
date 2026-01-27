@@ -44,6 +44,8 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
     quartic_models = get_quartic_model_paths(ready, pipeline_config, session)
     vignetting_functions = get_vignetting_function_paths(ready, pipeline_config, session)
     mask_files = get_mask_files(ready, pipeline_config, session)
+    L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
+    more_L0_impossible_cutoff = datetime.now() - timedelta(days=L0_impossible_after_days)
     actually_ready = []
     missing_quartic = []
     missing_vignetting = []
@@ -62,7 +64,7 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
         if mask_file is None:
             missing_mask.append(f)
             continue
-        if despike_neighbors is None or len(despike_neighbors) <= 2:
+        if len(despike_neighbors) <= 2 and f.date_obs > more_L0_impossible_cutoff:
             missing_sequence.append(f)
             continue
         # Smuggle the identified models out of this function

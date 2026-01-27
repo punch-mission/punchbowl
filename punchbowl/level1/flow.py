@@ -87,7 +87,12 @@ def level1_early_core_flow(  # noqa: C901
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
 
-        saturated_pixels = data.data >= data.meta["DSATVAL"].value
+        if l0_data.meta['BADPKTS'].value:
+            data.meta.history.add_now("LEVEL1", "Image has bad packets; saturated pixels not filled")
+            logger.info(f"Bad packets---not filling saturated pixels")
+            saturated_pixels = None
+        else:
+            saturated_pixels = data.data >= data.meta["DSATVAL"].value
         data = update_initial_uncertainty_task(data,
                                                dark_level=dark_level,
                                                gain_bottom=gain_bottom,

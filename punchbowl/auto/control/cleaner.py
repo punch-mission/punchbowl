@@ -70,13 +70,13 @@ def reset_revivable_flows(logger, session, pipeline_config):
     root_path = Path(pipeline_config["root"])
     for child in unique_children:
         output_path = Path(child.directory(pipeline_config["root"])) / child.filename()
-        lq_path = Path(child.directory(pipeline_config["ql_root"])) / child.filename()
+        ql_path = Path(child.directory(pipeline_config["ql_root"])) / child.filename()
         if output_path.exists():
             os.remove(output_path)
         sha_path = str(output_path) + ".sha"
         if os.path.exists(sha_path):
             os.remove(sha_path)
-        jp2_path = lq_path.with_suffix(".jp2")
+        jp2_path = ql_path.with_suffix(".jp2")
         if jp2_path.exists():
             os.remove(jp2_path)
         # Iteratively remove parent directories if they're empty. output_path.parents gives the file's parent dir,

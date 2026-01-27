@@ -36,7 +36,7 @@ def try_read_from_key(key) -> ExportableWrapper | None:
             yield wrapper
         else:
             yield None
-    except FileNotFoundError:
+    except (FileNotFoundError, ValueError):
         yield None
     finally:
         if wrapper is not None:

@@ -260,9 +260,9 @@ def construct_stray_light_file_info(level1_files: list[File],
     if file_type == ["SR"]:
         return [File(
                     level="1",
-                    file_type=file_type,
+                    file_type="SR",
                     observatory=spacecraft,
-                    polarization=level1_files[0].polarization,
+                    polarization="C",
                     file_version=pipeline_config["file_version"],
                     software_version=__version__,
                     date_obs=reference_time,

@@ -64,6 +64,9 @@ clear NFI images.
 Level 3
 -------
 
+Two intermediary product codes describe data products just before the final L3 products, "PIM" for polarized intermediate mosaics, and "CIM" for clear intermediate mosaics.
+These products have f-corona subtraction, but no starfield removal.
+
 Level 3 products are background-subtracted and are intended to be usable directly as coronal and solar-wind images.  The basic product
 codes are similar to the Level 2 codes, but include long-term average products ("PAM", "PAN", "CAM", and "CAN") that fill in the entire circular
 FOV by averaging across 32 minutes of PUNCH data acquisition. In addition, a wind-flow product "VAM" describes derived solar-wind motion.

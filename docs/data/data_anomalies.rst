@@ -3,6 +3,7 @@ Data anomalies
 
 This list chronologically records anomalies or large outages in the PUNCH data by spacecraft.
 This list may not be exhaustive. If you see additional issues, please report them by opening an issue or PR.
+The PUNCH SOC is working on a public facing anomaly reporting dashboard, and will be linked here when completed.
 
 NFI
 ---

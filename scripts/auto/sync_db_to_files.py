@@ -96,12 +96,10 @@ if __name__ == "__main__":
         date = datetime.strptime(base_path.split("_")[3], "%Y%m%d%H%M%S")
 
         pol = 'C'
-        if code[0] in ['G', 'S', 'R', 'P', 'L']:
+        if code[0] in ['G', 'S', 'R', 'P', 'L', 'T', 'X', 'Y']:
             pol = code[1]
             if pol == 'R':
                 pol = 'C'
-        if code[0] == 'X':
-            pol = 'X'
 
         file = File(
             level=level,

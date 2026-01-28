@@ -3,7 +3,7 @@
 Plotting PUNCH data
 ===================
 
-How to plot PUNCH data using built-in plotting tools.
+How to plot PUNCH data using built-in plotting tools
 """
 
 # %%  [markdown]
@@ -17,7 +17,7 @@ from punchbowl.data.sample import PUNCH_CAM
 from punchbowl.data.visualize import plot_punch
 
 # %%
-# Next we'll plot the data.
+# Next we'll plot the data. Note that you can provide as input either a path to a FITS file directly, or alternatively a loaded NDCube object.
 
 # %%
 plt, ax = plot_punch(PUNCH_CAM)

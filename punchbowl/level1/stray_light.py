@@ -348,6 +348,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                          reference_time: datetime | str | None = None,
                          stride: int = 2,
                          window_size: int = 3,
+                         blur_sigma: float = 1.5,
                          num_workers: int | None = None,
                          num_loaders: int | None = None) -> list[NDCube]:
     """Estimate the fixed stray light pattern using a percentile."""
@@ -409,6 +410,10 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         stray_light_estimate = np.stack(p.starmap(_estimate_stray_light_one_slice, args()), axis=0)
 
     stray_light_estimate = inpaint_nans(stray_light_estimate, kernel_size=5)
+
+    if blur_sigma:
+        stray_light_estimate = scipy.ndimage.gaussian_filter(stray_light_estimate, blur_sigma)
+
     if stride > 1 or window_size > 1:
         interper = scipy.interpolate.RegularGridInterpolator(
                 (y_grid, x_grid), stray_light_estimate, method="linear", bounds_error=False, fill_value=None)

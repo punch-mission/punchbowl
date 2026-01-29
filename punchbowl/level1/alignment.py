@@ -809,8 +809,12 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
     refining_data[np.isnan(refining_data)] = 0
 
     if distortion_path:
-        with fits.open(distortion_path) as distortion_hdul:
-            distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+        try:
+            with fits.open(distortion_path) as distortion_hdul:
+                distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+        except KeyError:
+            with fits.open(distortion_path) as distortion_hdul:
+                distortion = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
     else:
         distortion = None
 
@@ -823,8 +827,12 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
                                                        data_object.data.shape)
 
     if distortion_path:
-        with fits.open(distortion_path) as distortion_hdul:
-            distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+        try:
+            with fits.open(distortion_path) as distortion_hdul:
+                distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+        except KeyError:
+            with fits.open(distortion_path) as distortion_hdul:
+                distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
         recovered_wcs.cpdis1 = distortion_wcs.cpdis1
         recovered_wcs.cpdis2 = distortion_wcs.cpdis2
 

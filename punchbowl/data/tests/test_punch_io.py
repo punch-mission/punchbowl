@@ -66,7 +66,6 @@ def test_write_data(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -85,7 +84,6 @@ def test_write_data_jp2(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -101,7 +99,6 @@ def test_write_jpeg(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -115,7 +112,6 @@ def test_write_data_jp2_with_annotation(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -129,7 +125,6 @@ def test_write_data_jp2_wrong_filename(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -142,7 +137,6 @@ def test_write_data_jp2_wrong_dimensions(sample_ndcube, tmpdir):
     cube = sample_ndcube((2, 50, 50))
     cube.meta["LEVEL"] = "3"
     cube.meta["TYPECODE"] = "PAM"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 

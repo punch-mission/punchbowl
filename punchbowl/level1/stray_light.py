@@ -132,7 +132,7 @@ def pick_peak(bin_values: np.ndarray) -> int:
         if bin_values[i] > largest_seen:
             largest_seen = bin_values[i]
             largest_idx = i
-        if bin_values[i] < 0.75 * largest_seen:
+        if bin_values[i] < 0.75 * largest_seen and bin_values[i] > 0:
             return largest_idx
         i += 1
         if i >= len(bin_values):

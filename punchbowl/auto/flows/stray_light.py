@@ -474,6 +474,5 @@ def construct_stray_light_process_flow(flow_id: int, pipeline_config_path=None, 
 def call_correct_stray_light_function(*args, **kwargs):
     is_polarized = kwargs.pop("is_polarized")
     if is_polarized:
-        kwargs.pop("num_workers", None)
         return estimate_polarized_stray_light(*args, **kwargs)
     return estimate_stray_light(*args, **kwargs)

@@ -30,7 +30,8 @@ class SkewFitResult:
     """Stores inputs and result of skewed Gaussian fitting."""
 
     def __init__(self, fit: MinimizerResult, bin_centers: np.ndarray, scaled_x_values: np.ndarray,
-                 bin_values: np.ndarray, stack: np.ndarray, scale_factor: float, weights: np.ndarray) -> None:
+                 bin_values: np.ndarray, stack: np.ndarray, scale_factor: float, weights: np.ndarray,
+                 target_center: float) -> None:
         """Initialize class."""
         self.fit = fit
         self.bin_centers = bin_centers
@@ -39,6 +40,7 @@ class SkewFitResult:
         self.stack = stack
         self.scale_factor = scale_factor
         self.weights = weights
+        self.target_center = target_center
         self.x0 = self.fit.params["x0"].value
         self.A = self.fit.params["A"].value
         self.alpha = self.fit.params["alpha"].value
@@ -76,7 +78,7 @@ class SkewFitResult:
             return True
         return any(param.value == param.min or param.value == param.max for param in self.fit.params.values())
 
-    def plot(self, mark_result: bool = True) -> None:
+    def plot(self, mark_result: bool = True, mark_tcenter: bool = True) -> None:
         """Plot the fit."""
         import matplotlib.pyplot as plt  # noqa: PLC0415
         plt.step(self.bin_centers, self.bin_values, where="mid")
@@ -93,6 +95,8 @@ class SkewFitResult:
                  color="C3", label="Model")
         if mark_result:
             plt.axvline(self.result, color="C4", label="Our result")
+        if mark_tcenter:
+            plt.axvline(self.target_center, color='C5', label="Targeted peak", ls=':')
         plt.legend()
 
 
@@ -139,6 +143,22 @@ def pick_peak(bin_values: np.ndarray) -> int:
             return largest_idx
 
 
+def find_peak_end(bin_values: np.ndarray, peak_location, direction) -> int:
+    """Pick the first (left-most) peak, but isn't fooled if the bins dip by <20% and then keep going up."""
+    lowest_seen = np.inf
+    lowest_idx = -1
+    i = peak_location
+    while True:
+        if bin_values[i] < lowest_seen:
+            lowest_seen = bin_values[i]
+            lowest_idx = i
+        if bin_values[i] > 1.25 * lowest_seen and bin_values[i] > 0:
+            return lowest_idx
+        i += direction
+        if i >= len(bin_values) or i < 0:
+            return lowest_idx
+
+
 def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1e13, weight: bool = True, # noqa: C901
              plot_histogram_steps: bool = False) -> float | SkewFitResult:
     """Fit a skewed Gaussian to a histogram of data values to estimate the stray light value."""
@@ -183,7 +203,6 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
             plt.bar(bin_edges[:-1] + dx/2, bin_values, width=dx)
 
     dx = bin_edges[1] - bin_edges[0]
-    bin_centers = bin_edges[:-1] + dx / 2
 
     # Now the outliers should be gone. When present, they were dragging the range of our histogram way out,
     # so the core distribution had very poor resolution. Now we should have good resolution on the core area,
@@ -221,13 +240,6 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         dx = bin_edges[1] - bin_edges[0]
         bin_centers = bin_edges[:-1] + dx / 2
 
-        # Sometimes there are empty bins that just seem to make the fit worse, so exclude them
-        full_bins = bin_values > .05 * bin_values.max()
-        bin_values = bin_values[full_bins]
-        bin_centers = bin_centers[full_bins]
-        # No longer valid
-        del bin_edges
-
         # Don't just take the largest bin as the peak---occasionally there are two peaks in the range, and we want the
         # one that's dimmer (i.e. pixel values that are lower), not the peak that's higher on our histogram
         imax = pick_peak(bin_values)
@@ -239,7 +251,6 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         n_in_peak = np.sum(bin_values > peak_val - 0.4 * p2p)
         if plot_histogram_steps:
             plt.bar(bin_centers, bin_values, width=dx)
-            plt.hist(stack, range=(low, high), bins=20)
             plt.suptitle(f"p2p {p2p}, thresh {peak_val - 0.4 * p2p}, {n_in_peak} bins above thresh")
         if n_in_peak > 0.2 * len(bin_values):
             break
@@ -249,20 +260,51 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         low = center - 0.75 * dlow
         dhigh = high - center
         high = center + 0.75 * dhigh
+
+    # As our final trick, let's isolate our targeted peak, so we don't end up fitting a different peak
+    ilow = find_peak_end(bin_values, imax, -1)
+    ihigh = find_peak_end(bin_values, imax, 1)
+    low = bin_edges[ilow]
+    high = bin_edges[ihigh + 1]
+
+    bin_values, bin_edges, *_ = np.histogram(stack, bins=20, range=(low, high))
+    dx = bin_edges[1] - bin_edges[0]
+    bin_centers = bin_edges[:-1] + dx / 2
+
+    imax = pick_peak(bin_values)
+    peak_val = bin_values[imax]
+    peak_location = bin_centers[imax]
+
     if plot_histogram_steps:
+        plt.axvline(bin_edges[imax] + dx/2, ls='--')
+        plt.axvline(low)
+        plt.axvline(high)
+        plt.title("Zooming in to isolate peak")
         plt.show()
 
-    bin_weights = 1 / (20 + np.abs(np.arange(0, len(bin_values)) - imax))
-    bin_weights /= bin_weights.max()
+    # Sometimes there are empty bins that just seem to make the fit worse, so exclude them
+    full_bins = bin_values > .05 * peak_val
+    bin_values = bin_values[full_bins]
+    bin_centers = bin_centers[full_bins]
+    imax = np.where(bin_values == peak_val)[0][0]
+    # No longer valid
+    del bin_edges
 
-    if not weight:
-        bin_weights = np.ones_like(bin_weights)
+    if plot_histogram_steps:
+        plt.bar(bin_centers, bin_values, width=dx)
+        plt.show()
+
+    if weight:
+        bin_weights = 1 / (40 + np.abs(np.arange(0, len(bin_values)) - imax))
+        bin_weights /= bin_weights.max()
+    else:
+        bin_weights = np.ones_like(bin_values)
 
     params = Parameters()
     params.add("A", value=0.5/np.sqrt(2*np.pi) * np.max(bin_values), min=0, max=2 * peak_val)
     params.add("alpha", value=0, min=0)
     params.add("x0",
-               value=x_scale_factor * bin_centers[imax],
+               value=x_scale_factor * peak_location,
                min=(bin_centers[0] - dx) * x_scale_factor,
                max=(bin_centers[-1] + dx) * x_scale_factor)
     params.add("sigma", value=6 * dx * x_scale_factor, min=1e-20, max=10)
@@ -276,7 +318,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
                        calc_covar=False, ftol=2e-4, gtol=2e-4)
 
     r = SkewFitResult(out, bin_centers=bin_centers, scaled_x_values=scaled_x_values, bin_values=bin_values,
-                      stack=stack, scale_factor=x_scale_factor, weights=bin_weights, target_center=bin_centers[imax])
+                      stack=stack, scale_factor=x_scale_factor, weights=bin_weights, target_center=peak_location)
 
     if ret_all:
         return r

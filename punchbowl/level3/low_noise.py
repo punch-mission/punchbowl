@@ -20,18 +20,16 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     data_stack = np.stack([cube.data for cube in cubes], axis=0)
     uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes])
 
-    uncertainty_stack[uncertainty_stack <= 0] = np.inf
-    uncertainty_stack[~np.isfinite(uncertainty_stack)] = 1E32
-
-    uncertainty_stack[np.isnan(data_stack)] = np.inf
-    uncertainty_stack[data_stack == 0] = np.inf
+    uncertainty_stack[uncertainty_stack <= 0] = np.nan
+    uncertainty_stack[~np.isfinite(uncertainty_stack)] = np.nan
+    uncertainty_stack[data_stack == 0] = np.nan
 
     weight_stack = 1/np.square(uncertainty_stack)
     weight_stack[np.isnan(uncertainty_stack)] = np.nan
 
     new_data = np.nansum(data_stack * weight_stack, axis=0) / np.nansum(weight_stack, axis=0)
 
-    final_uncertainty = np.sqrt(np.nansum(uncertainty_stack, axis=0)) / np.sqrt(new_data)
+    final_uncertainty = np.sqrt(np.nansum(uncertainty_stack**2, axis=0)) / np.sqrt(len(cubes))
 
     new_code = cubes[0].meta.product_code[0] + "A" + cubes[0].meta.product_code[2]
     new_meta = NormalizedMetadata.load_template(new_code, "3")
@@ -47,7 +45,6 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
                           for cube in cubes])
 
     new_meta["TYPECODE"] = new_code[0:2]
-    # TODO - distinction here? and mean versus midpoint.
     new_meta["DATE-OBS"] = datetime.fromtimestamp(np.mean(times_obs),
                                                   tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     new_meta["DATE-AVG"] = datetime.fromtimestamp(np.mean(times_obs),

@@ -159,6 +159,10 @@ def find_peak_end(bin_values: np.ndarray, peak_location, direction) -> int:
             return lowest_idx
 
 
+class OutOfPointsError(RuntimeError):
+    pass
+
+
 def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1e13, weight: bool = True, # noqa: C901
              plot_histogram_steps: bool = False) -> float | SkewFitResult:
     """Fit a skewed Gaussian to a histogram of data values to estimate the stray light value."""
@@ -172,6 +176,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         import matplotlib.pyplot as plt  # noqa: PLC0415
         dx = bin_edges[1] - bin_edges[0]
         plt.bar(bin_edges[:-1] + dx/2, bin_values, width=dx)
+
     min_count = 0.01 * bin_values.max()
     # Safety valve to avoid infinite loops
     max_loops_remaining = 10
@@ -192,6 +197,8 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         high = bin_edges[istop] if istop == len(bin_values) - 1 else bin_edges[istop + 1]
         # Re-make the histogram within these bounds
         bin_values, bin_edges, *_ = np.histogram(stack, bins=50, range=(low, high))
+        if np.sum(bin_values) < 100:
+            raise OutOfPointsError()
         min_count = 0.01 * bin_values.max()
 
         if plot_histogram_steps:
@@ -237,6 +244,8 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         if np.sum((stack > low) * (stack < high)) < 30:
             break
         bin_values, bin_edges, *_ = np.histogram(stack, bins=20, range=(low, high))
+        if np.sum(bin_values) < 100:
+            raise OutOfPointsError()
         dx = bin_edges[1] - bin_edges[0]
         bin_centers = bin_edges[:-1] + dx / 2
 
@@ -268,6 +277,8 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
     high = bin_edges[ihigh + 1]
 
     bin_values, bin_edges, *_ = np.histogram(stack, bins=20, range=(low, high))
+    if np.sum(bin_values) < 100:
+        raise OutOfPointsError()
     dx = bin_edges[1] - bin_edges[0]
     bin_centers = bin_edges[:-1] + dx / 2
 
@@ -285,6 +296,8 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
     # Sometimes there are empty bins that just seem to make the fit worse, so exclude them
     full_bins = bin_values > .05 * peak_val
     bin_values = bin_values[full_bins]
+    if np.sum(bin_values) < 100 or len(bin_values) < 5:
+        raise OutOfPointsError()
     bin_centers = bin_centers[full_bins]
     imax = np.where(bin_values == peak_val)[0][0]
     # No longer valid

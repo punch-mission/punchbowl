@@ -31,6 +31,8 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
 
     final_uncertainty = np.sqrt(np.nansum(uncertainty_stack**2, axis=0)) / np.sqrt(len(cubes))
 
+    final_uncertainty[final_uncertainty == 0] = np.inf
+
     new_code = cubes[0].meta.product_code[0] + "A" + cubes[0].meta.product_code[2]
     new_meta = NormalizedMetadata.load_template(new_code, "3")
 

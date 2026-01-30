@@ -33,8 +33,8 @@ parr[mask] = punch_cube.data[mask]
 # Use the punchbowl function to map PUNCH polarizer triplets to RGB colorspace.
 # Parameters can be tuned to enhance the visual appearance as required.
 rgb_sat, rgb_raw = generate_mzp_to_rgb_map(punch_cube.data,
-                                        gamma=0.6,
-                                        frac=.15,
+                                        gamma=1/2.2,
+                                        frac=.1,
                                         s_boost=1.25)
 
 #%%

@@ -25,13 +25,14 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     uncertainty_stack[data_stack == 0] = np.nan
 
     weight_stack = 1/np.square(uncertainty_stack)
-    weight_stack[np.isnan(uncertainty_stack)] = np.nan
 
     new_data = np.nansum(data_stack * weight_stack, axis=0) / np.nansum(weight_stack, axis=0)
 
-    final_uncertainty = np.sqrt(np.nansum(uncertainty_stack**2, axis=0)) / np.sqrt(len(cubes))
+    final_uncertainty = np.sqrt(np.sum(np.where(np.isfinite(uncertainty_stack), uncertainty_stack**2, 0), axis=0)) \
+        / np.sqrt(np.sum(np.isfinite(uncertainty_stack), axis=0))
 
     final_uncertainty[final_uncertainty == 0] = np.inf
+    final_uncertainty[~np.isfinite(final_uncertainty)] = np.inf
 
     new_code = cubes[0].meta.product_code[0] + "A" + cubes[0].meta.product_code[2]
     new_meta = NormalizedMetadata.load_template(new_code, "3")

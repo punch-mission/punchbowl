@@ -901,7 +901,7 @@ def check_moon_in_fov(time_start_str: str,
                         time_end_str: str,
                         resolution_minutes: int = 30,
                         fov_deg: float = 90.0,
-                        plot: bool = True,) -> tuple[list[datetime], list[float], float, list[tuple[str, float]]]:
+                        plot: bool = True) -> tuple[list[datetime], list[float], float, list[tuple[str, float]]]:
     """Forecast the moon in PUNCH FOV in a given time range."""
     time_start = Time(time_start_str)
     time_end = Time(time_end_str)

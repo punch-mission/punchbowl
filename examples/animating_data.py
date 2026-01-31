@@ -11,10 +11,8 @@ How to animate PUNCH data using built-in plotting tools
 
 from datetime import datetime
 
-from IPython.display import Video
 from sunpy.net import Fido, attrs
 
-# %%
 from punchbowl.data.visualize import animate_punch
 
 # %% [markdown]
@@ -49,7 +47,4 @@ output_path = "PUNCH_CIM.mp4"
 animate_punch(files, output_path=output_path)
 
 # %% [markdown]
-# The resulting animation is saved to disk, and can optionally be viewed here in a notebook cell.
-
-# %%
-Video(output_path, embed=True)
+# The resulting animation is saved to disk, and can optionally be displayed in a locally run Python notebook with the IPython.display.Video function.

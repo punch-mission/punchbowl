@@ -897,19 +897,22 @@ def set_spacecraft_location_to_earth(input_data: NDCube) -> NDCube:
     return input_data
 
 
-def check_moon_in_fov(time_start_str, time_end_str, resolution_minutes=30, fov_deg=90):
+def check_moon_in_fov(time_start_str: str,
+                        time_end_str: str,
+                        resolution_minutes: int = 30,
+                        fov_deg: float = 90.0,
+                        plot: bool = True,) -> tuple[list[datetime], list[float], float, list[tuple[str, float]]]:
+    """Forecast the moon in PUNCH FOV in a given time range."""
     time_start = Time(time_start_str)
     time_end = Time(time_end_str)
-    dt = TimeDelta(resolution_minutes * 60, format='sec')
+    dt = TimeDelta(resolution_minutes * 60, format="sec")
     times = time_start + dt * np.arange(int((time_end - time_start) / dt) + 1)
     angles = []
     in_fov_times = []
 
     fov_half = fov_deg / 2
 
-    print("Calculating Moon angular separation from Sun...")
-
-    with solar_system_ephemeris.set('jpl'):
+    with solar_system_ephemeris.set("jpl"):
         for t in times:
             sun = SkyCoord(CartesianRepresentation(0*u.km, 0*u.km, 0*u.km),
                            frame=HeliocentricEarthEcliptic(obstime=t))
@@ -934,22 +937,25 @@ def check_moon_in_fov(time_start_str, time_end_str, resolution_minutes=30, fov_d
             if angle <= fov_half:
                 in_fov_times.append((t.iso, angle))
 
-    if in_fov_times:
-        print("\n Moon is inside FOV at:")
-        for t, a in in_fov_times:
-            print(f"  {t} — {a:.2f}°")
-    else:
-        print("\n Moon never enters the FOV in this time range.")
-
-    plt.figure(figsize=(10, 5))
-    plt.plot(times.datetime, angles, label="Moon–Sun Angular Separation")
-    plt.axhline(fov_half, color='red', linestyle='--', label=f'FOV Limit (±{fov_half}°)')
-    plt.xlabel("Time (UTC)")
-    plt.ylabel("Angular Separation (°)")
-    plt.title("Moon's Angular Separation from PUNCH Boresight (Sun center)")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    if plot:
+        plt.figure(figsize=(10, 5))
+        plt.plot(
+            times.datetime,
+            angles,
+            label="Moon-Sun Angular Separation",
+        )
+        plt.axhline(
+            fov_half,
+            color="red",
+            linestyle="--",
+            label=f"FOV Limit (+/-{fov_half:.1f} deg)",
+        )
+        plt.xlabel("Time (UTC)")
+        plt.ylabel("Angular Separation (deg)")
+        plt.title("Moon Angular Separation from PUNCH Boresight")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
 
     return times.datetime, angles, fov_half

@@ -7,14 +7,17 @@ from collections import OrderedDict
 from collections.abc import Mapping
 
 import astropy.units as u
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
-from astropy.coordinates import GCRS, SkyCoord
+from astropy.coordinates import GCRS, SkyCoord, get_body, solar_system_ephemeris
 from astropy.io import fits
 from astropy.io.fits import Header
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 from astropy.wcs import WCS
+from astropy.coordinates import CartesianRepresentation
+from sunpy.coordinates import HeliocentricEarthEcliptic
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from sunpy.coordinates import frames, get_earth, sun
@@ -892,3 +895,61 @@ def set_spacecraft_location_to_earth(input_data: NDCube) -> NDCube:
     input_data.meta["CAR_ROT"] = float(sun.carrington_rotation_number(time_obs))
 
     return input_data
+
+
+def check_moon_in_fov(time_start_str, time_end_str, resolution_minutes=30, fov_deg=90):
+    time_start = Time(time_start_str)
+    time_end = Time(time_end_str)
+    dt = TimeDelta(resolution_minutes * 60, format='sec')
+    times = time_start + dt * np.arange(int((time_end - time_start) / dt) + 1)
+    angles = []
+    in_fov_times = []
+
+    fov_half = fov_deg / 2
+
+    print("Calculating Moon angular separation from Sun...")
+
+    with solar_system_ephemeris.set('jpl'):
+        for t in times:
+            sun = SkyCoord(CartesianRepresentation(0*u.km, 0*u.km, 0*u.km),
+                           frame=HeliocentricEarthEcliptic(obstime=t))
+
+            moon = get_body("moon", t).transform_to(HeliocentricEarthEcliptic(obstime=t))
+            earth = get_body("earth", t).transform_to(HeliocentricEarthEcliptic(obstime=t))
+
+            # Vectors from spacecraft to Moon and Sun
+            v_moon = moon.cartesian - earth.cartesian
+            v_sun = sun.cartesian - earth.cartesian
+
+            # Unit vectors for angle calculation
+            v_moon_unit = v_moon.get_xyz().value / np.linalg.norm(v_moon.get_xyz().value)
+            v_sun_unit = v_sun.get_xyz().value / np.linalg.norm(v_sun.get_xyz().value)
+
+            # Compute angle
+            dot = np.dot(v_moon_unit, v_sun_unit)
+            angle = np.degrees(np.arccos(np.clip(dot, -1.0, 1.0)))
+
+            angles.append(angle)
+
+            if angle <= fov_half:
+                in_fov_times.append((t.iso, angle))
+
+    if in_fov_times:
+        print("\n Moon is inside FOV at:")
+        for t, a in in_fov_times:
+            print(f"  {t} — {a:.2f}°")
+    else:
+        print("\n Moon never enters the FOV in this time range.")
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(times.datetime, angles, label="Moon–Sun Angular Separation")
+    plt.axhline(fov_half, color='red', linestyle='--', label=f'FOV Limit (±{fov_half}°)')
+    plt.xlabel("Time (UTC)")
+    plt.ylabel("Angular Separation (°)")
+    plt.title("Moon's Angular Separation from PUNCH Boresight (Sun center)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    return times.datetime, angles, fov_half

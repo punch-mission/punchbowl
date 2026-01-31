@@ -8,7 +8,7 @@ from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable
 
 from punchbowl.data.history import HistoryEntry
-from punchbowl.data.meta import MetaField, NormalizedMetadata, construct_all_product_codes, load_spacecraft_def
+from punchbowl.data.meta import MetaField, NormalizedMetadata, construct_all_product_codes, load_spacecraft_def, check_moon_in_fov
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -300,3 +300,12 @@ def test_fits_header_has_both_distortion_models():
     assert "DP2" in h
     assert "DP1A" in h
     assert "DP2A" in h
+
+
+def test_check_moon_in_fov():
+    output = check_moon_in_fov(
+        time_start_str="2025-04-10 00:00:00",
+        time_end_str="2025-04-10 09:00:00",
+        resolution_minutes=60*12)
+    expected = 147.013
+    assert np.allclose(output[1], expected)

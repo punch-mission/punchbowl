@@ -11,16 +11,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
-from astropy.coordinates import GCRS, SkyCoord, get_body, solar_system_ephemeris
+from astropy.coordinates import GCRS, CartesianRepresentation, SkyCoord, get_body, solar_system_ephemeris
 from astropy.io import fits
 from astropy.io.fits import Header
 from astropy.time import Time, TimeDelta
 from astropy.wcs import WCS
-from astropy.coordinates import CartesianRepresentation
-from sunpy.coordinates import HeliocentricEarthEcliptic
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
-from sunpy.coordinates import frames, get_earth, sun
+from sunpy.coordinates import HeliocentricEarthEcliptic, frames, get_earth, sun
 from sunpy.coordinates.sun import _sun_north_angle_to_z
 from sunpy.map import solar_angular_radius
 

@@ -8,7 +8,13 @@ from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable
 
 from punchbowl.data.history import HistoryEntry
-from punchbowl.data.meta import MetaField, NormalizedMetadata, construct_all_product_codes, load_spacecraft_def, check_moon_in_fov
+from punchbowl.data.meta import (
+    MetaField,
+    NormalizedMetadata,
+    check_moon_in_fov,
+    construct_all_product_codes,
+    load_spacecraft_def,
+)
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")

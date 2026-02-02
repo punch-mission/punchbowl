@@ -310,8 +310,15 @@ def test_fits_header_has_both_distortion_models():
 
 def test_check_moon_in_fov():
     output = check_moon_in_fov(
-        time_start_str="2025-04-10 00:00:00",
-        time_end_str="2025-04-10 09:00:00",
+        time_obs_start="2025-04-10 00:00:00",
+        time_end="2025-04-10 09:00:00",
         resolution_minutes=60*12)
     expected = 147.013
+    assert np.allclose(output[1], expected)
+
+
+def test_check_moon_dateobs():
+    hdr = fits.getheader(SAMPLE_FITS_PATH_UNCOMPRESSED, ext=1)
+    output = check_moon_in_fov(hdr)
+    expected = 66.0887
     assert np.allclose(output[1], expected)

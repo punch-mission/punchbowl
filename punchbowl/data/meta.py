@@ -5,9 +5,9 @@ import typing as t
 from datetime import UTC, datetime
 from collections import OrderedDict
 from collections.abc import Mapping
+from typing import Any, Mapping, Union, List, Tuple
 
 import astropy.units as u
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
@@ -895,22 +895,58 @@ def set_spacecraft_location_to_earth(input_data: NDCube) -> NDCube:
     return input_data
 
 
-def check_moon_in_fov(time_start_str: str,
-                        time_end_str: str,
+DateLike = Union[str, Header, Mapping[str, Any]]
+def check_moon_in_fov(time_obs_start: DateLike,
+                        time_end: str | None = None,
                         resolution_minutes: int = 30,
-                        fov_deg: float = 90.0,
-                        plot: bool = True) -> tuple[list[datetime], list[float], float, list[tuple[str, float]]]:
-    """Forecast the moon in PUNCH FOV in a given time range."""
-    time_start = Time(time_start_str)
-    time_end = Time(time_end_str)
-    dt = TimeDelta(resolution_minutes * 60, format="sec")
-    times = time_start + dt * np.arange(int((time_end - time_start) / dt) + 1)
+                        fov_deg: float = 90.0) -> tuple[list[datetime], list[float], float, list[tuple[str, float]]]:
+    """
+    Forecast the moon in PUNCH FOV in a given time range.
+    It supports two modes:
+        1) Single-time mode: pass a DATE-OBS (string or FITS header)
+        2) Time-range mode: pass DATE-OBS as start time and `time_end`
+
+    Parameters
+    ----------
+    time_obs_start : str | Header | Mapping[str, Any]
+        Start time (or single observation time). If a header-like object is
+                provided, DATE-OBS is extracted.
+    time_end : str
+        End time in ISO format (UTC). If None, single-time mode is used.
+    resolution_minutes : int, optional
+        Time cadence resolution in minutes, by default 30.
+    fov_deg : float, optional
+        Total field of view in degrees, by default 90.0.
+
+    Returns
+    -------
+    times : list[datetime]
+        Sampled times in UTC.
+    angles : list[float]
+        Moon-Sun angular separation at each sampled time (degrees).
+    fov_half : float
+        Half-angle of the field of view (degrees).
+    in_fov_times : list[tuple[str, float]]
+        Times (ISO) and angles when the Moon lies inside the FOV.
+    """
+    if isinstance(time_obs_start, Mapping):
+        date_obs_str = str(time_obs_start["DATE-OBS"])
+    else:
+        date_obs_str = str(time_obs_start)
+
+    if time_end is None:
+        times = Time([date_obs_str])
+    else:
+        time_start = Time(time_obs_start)
+        time_end = Time(time_end)
+        dt = TimeDelta(resolution_minutes * 60, format="sec")
+        times = time_start + dt * np.arange(int((time_end - time_start) / dt) + 1)
     angles = []
     in_fov_times = []
 
     fov_half = fov_deg / 2
 
-    with solar_system_ephemeris.set("jpl"):
+    with solar_system_ephemeris.set("builtin"):
         for t in times:
             sun = SkyCoord(CartesianRepresentation(0*u.km, 0*u.km, 0*u.km),
                            frame=HeliocentricEarthEcliptic(obstime=t))
@@ -934,26 +970,5 @@ def check_moon_in_fov(time_start_str: str,
 
             if angle <= fov_half:
                 in_fov_times.append((t.iso, angle))
-
-    if plot:
-        plt.figure(figsize=(10, 5))
-        plt.plot(
-            times.datetime,
-            angles,
-            label="Moon-Sun Angular Separation",
-        )
-        plt.axhline(
-            fov_half,
-            color="red",
-            linestyle="--",
-            label=f"FOV Limit (+/-{fov_half:.1f} deg)",
-        )
-        plt.xlabel("Time (UTC)")
-        plt.ylabel("Angular Separation (deg)")
-        plt.title("Moon Angular Separation from PUNCH Boresight")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
 
     return times.datetime, angles, fov_half

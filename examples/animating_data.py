@@ -47,4 +47,8 @@ output_path = "PUNCH_CIM.mp4"
 animate_punch(files, output_path=output_path)
 
 # %% [markdown]
-# The resulting animation is saved to disk, and can optionally be displayed in a locally run Python notebook with the IPython.display.Video function.
+# .. raw:: html
+#
+#    <video width="100%" controls>
+#      <source src="PUNCH_CIM.mp4" type="video/mp4">
+#    </video>

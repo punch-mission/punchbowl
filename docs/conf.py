@@ -136,6 +136,7 @@ mermaid_verbose = True
 sphinx_gallery_conf = {
     'filename_pattern': '^((?!skip_).)*$',
     'examples_dirs': os.path.join('..', 'examples'),
+    'copyfile_regex': r'.*\.mp4$',
     'gallery_dirs': 'auto_examples',
     'jupyterlite': {
         'use_jupyter_lab': True,

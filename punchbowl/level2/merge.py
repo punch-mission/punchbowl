@@ -5,7 +5,6 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.data.punch_io import check_outlier
 from punchbowl.prefect import punch_task
 from punchbowl.util import average_datetime
 
@@ -44,20 +43,19 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
     """Merge many task and carefully combine uncertainties."""
     data_layers, uncertainty_layers = [], []
     for polarization in [-60, 0, 60]:
-        # TODO - Do we want to check for outliers here to exclude?
-        polar_data = [d for d in data if not check_outlier(d) and d.meta["POLAR"].value == polarization]
+        # TODO - mark outliers with binary mask (0001, 0010) NFI, WFI3, WFI2, WFI1
+        polar_data = [d for d in data if d.meta["POLAR"].value == polarization]
 
         if len(polar_data) > 0:
             data_merged = _merge_ndcubes(polar_data)
             data_merged.meta = NormalizedMetadata.load_template(product_code, level=level)
-            data_merged.wcs = trefoil_wcs
 
             if maintain_nans:
                 data_stack = np.stack([d.data for d in polar_data], axis=-1)
                 was_nan = np.all(np.isnan(data_stack), axis=-1)
                 data_merged.data[was_nan] = np.nan
         else:
-            data_merged = NDCube(data = np.zeros(4096, 4096),
+            data_merged = NDCube(data = np.zeros((4096, 4096)),
                                 uncertainty = StdDevUncertainty(np.full((4096, 4096), np.inf)),
                                 wcs = trefoil_wcs,
                                 meta = NormalizedMetadata.load_template(product_code, level=level))
@@ -82,26 +80,26 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
     output_cube.meta["DATE-END"] = max([d.meta.datetime for d in data if d is not None],
                                     ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
+    return output_cube
+
 
 @punch_task
 def merge_many_clear_task(
         data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2", product_code: str = "CTM",
         maintain_nans: bool = False) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
-    # TODO - Do we want to check for outliers here to exclude?
-    data = [d for d in data if not check_outlier(d)]
+    # TODO - mark outliers with binary mask (0001, 0010) NFI, WFI3, WFI2, WFI1
 
     if len(data) > 0:
         data_merged = _merge_ndcubes(data)
         data_merged.meta = NormalizedMetadata.load_template(product_code, level=level)
-        data_merged.wcs = trefoil_wcs
 
         if maintain_nans:
             data_stack = np.stack([d.data for d in data], axis=-1)
             was_nan = np.all(np.isnan(data_stack), axis=-1)
             data_merged.data[was_nan] = np.nan
     else:
-        data_merged = NDCube(data = np.zeros(4096, 4096),
+        data_merged = NDCube(data = np.zeros((4096, 4096)),
                              uncertainty = StdDevUncertainty(np.full((4096, 4096), np.inf)),
                              wcs = trefoil_wcs,
                              meta = NormalizedMetadata.load_template(product_code, level=level))

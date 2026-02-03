@@ -1,0 +1,207 @@
+:orphan:
+
+Examples
+========
+
+Below is a gallery of examples working with PUNCH data.
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="To run the sample notebooks contained within punchbowl, you must first create a Python environment.">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_environment_setup_thumb.png
+    :alt:
+
+  :doc:`/auto_examples/environment_setup`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Environment setup</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="How to plot PUNCH data using built-in plotting tools">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_plotting_data_thumb.png
+    :alt:
+
+  :doc:`/auto_examples/plotting_data`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Plotting PUNCH data</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A notebook guide to querying and loading PUNCH data using SunPy.">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_querying_data_thumb.png
+    :alt:
+
+  :doc:`/auto_examples/querying_data`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Querying PUNCH Data</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="How to animate PUNCH data using built-in plotting tools">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_animating_data_thumb.png
+    :alt:
+
+  :doc:`/auto_examples/animating_data`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Animating PUNCH data</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example creates RGB maps using PUNCH MZP triplets. MZP images are mapped to RGB channel based on formalism presented in DeForest et al. (2022) and Patel et al. (2023).">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_create_rgb_map_thumb.png
+    :alt:
+
+  :doc:`/auto_examples/create_rgb_map`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Creating PUNCH RGB maps</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Data downlinked from the individual PUNCH spacecraft are usually square root encoded. This decoding is completed as part of the regular data processing pipeline for end-user data products. If using Level 0 manually, you may want to decode this data manually, as outlined here.">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_decoding_data_thumb.png
+    :alt:
+
+  :doc:`/auto_examples/decoding_data`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Decoding square root encoded data</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A notebook guide to working with QuickPUNCH data in Python">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_data_guide_quickpunch_thumb.png
+    :alt:
+
+  :doc:`/auto_examples/data_guide_quickpunch`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Guide to QuickPUNCH Data</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This notebook demonstrates how to overplot spacecraft trajectories on a sample PUNCH image.">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_PUNCH-InSitu-Connection_thumb.png
+    :alt:
+
+  :doc:`/auto_examples/PUNCH-InSitu-Connection`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Overplotting Parker Solar Probe and Solar Orbiter Trajectories on PUNCH Images</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A notebook guide to working with PUNCH FITS files in Python">
+
+.. only:: html
+
+  .. image:: /auto_examples/images/thumb/sphx_glr_data_guide_thumb.png
+    :alt:
+
+  :doc:`/auto_examples/data_guide`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Guide to PUNCH Data</div>
+    </div>
+
+
+.. thumbnail-parent-div-close
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/environment_setup
+   /auto_examples/plotting_data
+   /auto_examples/querying_data
+   /auto_examples/animating_data
+   /auto_examples/create_rgb_map
+   /auto_examples/decoding_data
+   /auto_examples/data_guide_quickpunch
+   /auto_examples/PUNCH-InSitu-Connection
+   /auto_examples/data_guide
+
+
+.. only:: html
+
+  .. container:: sphx-glr-footer sphx-glr-footer-gallery
+
+    .. container:: sphx-glr-download sphx-glr-download-python
+
+      :download:`Download all examples in Python source code: auto_examples_python.zip </auto_examples/auto_examples_python.zip>`
+
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
+
+      :download:`Download all examples in Jupyter notebooks: auto_examples_jupyter.zip </auto_examples/auto_examples_jupyter.zip>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_

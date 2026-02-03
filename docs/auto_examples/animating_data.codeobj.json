@@ -1,0 +1,504 @@
+{
+ "Fido.fetch": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.fido_factory",
+   "module_short": "sunpy.net.fido_factory",
+   "name": "UnifiedDownloaderFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "UnifiedDownloaderFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "UnifiedDownloaderFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.util.datatype_factory_base",
+   "module_short": "sunpy.util.datatype_factory_base",
+   "name": "BasicRegistrationFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.util",
+   "module_short": "sunpy.util",
+   "name": "BasicRegistrationFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "BasicRegistrationFactory.fetch"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.Fido",
+   "module_short": "sunpy.net.Fido",
+   "name": "fetch"
+  }
+ ],
+ "Fido.search": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.fido_factory",
+   "module_short": "sunpy.net.fido_factory",
+   "name": "UnifiedDownloaderFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "UnifiedDownloaderFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "UnifiedDownloaderFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.util.datatype_factory_base",
+   "module_short": "sunpy.util.datatype_factory_base",
+   "name": "BasicRegistrationFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.util",
+   "module_short": "sunpy.util",
+   "name": "BasicRegistrationFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "BasicRegistrationFactory.search"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.Fido",
+   "module_short": "sunpy.net.Fido",
+   "name": "search"
+  }
+ ],
+ "animate_punch": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.visualize",
+   "module_short": "punchbowl.data.visualize",
+   "name": "animate_punch"
+  }
+ ],
+ "attrs.Instrument": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Instrument"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Instrument"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Instrument"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Attr"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Instrument"
+  }
+ ],
+ "attrs.Source": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Source"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Source"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Source"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "SimpleAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Attr"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Source"
+  }
+ ],
+ "attrs.Time": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Time"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Time"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Time"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "Range"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Range"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Range"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "DataAttr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net.attr",
+   "module_short": "sunpy.net.attr",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "Attr"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "Attr"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.attrs",
+   "module_short": "sunpy.net.attrs",
+   "name": "Time"
+  }
+ ],
+ "datetime": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "datetime",
+   "module_short": "datetime",
+   "name": "datetime"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "datetime",
+   "module_short": "datetime",
+   "name": "date"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "datetime",
+   "module_short": "datetime",
+   "name": "datetime"
+  }
+ ],
+ "end_time": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "datetime",
+   "module_short": "datetime",
+   "name": "datetime"
+  }
+ ],
+ "files": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "parfive.results",
+   "module_short": "parfive",
+   "name": "Results"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "parfive",
+   "module_short": "parfive",
+   "name": "Results"
+  }
+ ],
+ "product_code": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "result": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.vso.table_response",
+   "module_short": "sunpy.net.vso",
+   "name": "VSOQueryResponseTable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net.vso",
+   "module_short": "sunpy.net.vso",
+   "name": "VSOQueryResponseTable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy.net",
+   "module_short": "sunpy.net",
+   "name": "VSOQueryResponseTable"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sunpy",
+   "module_short": "sunpy",
+   "name": "VSOQueryResponseTable"
+  }
+ ],
+ "start_time": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "datetime",
+   "module_short": "datetime",
+   "name": "datetime"
+  }
+ ],
+ "version_code": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ]
+}

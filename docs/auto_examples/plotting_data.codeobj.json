@@ -1,0 +1,80 @@
+{
+ "PUNCH_CAM": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "PosixPath"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.sample",
+   "module_short": "punchbowl.data.sample",
+   "name": "PUNCH_CAM"
+  }
+ ],
+ "ax": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes.core",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization.wcsaxes",
+   "module_short": "astropy.visualization.wcsaxes",
+   "name": "WCSAxes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy.visualization",
+   "module_short": "astropy.visualization",
+   "name": "WCSAxes"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "astropy",
+   "module_short": "astropy",
+   "name": "WCSAxes"
+  }
+ ],
+ "plot_punch": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "punchbowl.data.visualize",
+   "module_short": "punchbowl.data.visualize",
+   "name": "plot_punch"
+  }
+ ],
+ "plt": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.figure",
+   "module_short": "matplotlib.figure",
+   "name": "Figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib",
+   "module_short": "matplotlib",
+   "name": "Figure"
+  }
+ ]
+}

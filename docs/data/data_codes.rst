@@ -119,10 +119,10 @@ Calibration Product Codes
    * - 1
      - LM1, LM2, LM3, LM4, LZ1, LZ2, LZ3, LZ4, LP1, LP2, LP3, LP4, LR1, LR2, LR3, L4
      - Outlier limits used for image rejection, saved as NumPy format instead of FITS
-   * - 1 
+   * - 1
      - MS1, MS2, MS3, MS4
      - Mask files to define where image is undefined for each satellite
-   * - 1 
+   * - 1
      - QR1, QR2, QR3, QR4
      - Intermediate level-1 processing necessary for QuickPUNCH
    * - 1

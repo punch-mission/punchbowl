@@ -83,6 +83,7 @@ docs = [
     "ipython",
     "ipykernel",
     "sphinxcontrib-mermaid",
+    "sphinx-copybutton",
     "ffmpeg-python",
     "bokeh"
 ]

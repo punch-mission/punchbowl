@@ -1,4 +1,8 @@
+import subprocess
+from copy import deepcopy
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from multiprocessing import Pool
 
 import astropy.units as u
 import matplotlib.colors as mcolors
@@ -9,6 +13,7 @@ from matplotlib.colors import Colormap, LinearSegmentedColormap, Normalize, Powe
 from matplotlib.figure import Figure
 from ndcube import NDCube
 from skimage.color import lab2rgb
+from tqdm.auto import tqdm
 
 from punchbowl.data import punch_io
 
@@ -120,7 +125,73 @@ def generate_mzp_to_rgb_map(data_cube: np.ndarray,
     return rgb_sat, color_image
 
 
-def plot_punch(
+def _render_frame(args: tuple[int, Path | NDCube, str, dict]) -> Path:
+    """Frame rendering helper function."""
+    i, data, tmpdir, kwargs = args
+    frame_path = Path(tmpdir) / f"frame_{i:07d}.png"
+    plot_punch(data, save_path=frame_path, **kwargs)
+    return frame_path
+
+
+def animate_punch(
+    data_list: list[Path | NDCube],
+    output_path: str | Path,
+    fps: int = 10,
+    n_jobs: int | None = None,
+    persistence: bool = False,
+    **plot_kwargs: dict,
+) -> None:
+    """
+    Create an animation from a sequence of PUNCH data.
+
+    Parameters
+    ----------
+    data_list : list of Path or NDCube
+        PUNCH data to animate
+    output_path : str or Path
+        Output path to write generated animation (.mp4)
+    fps : int, optional
+        Frames per second
+    n_jobs : int or None, optional
+        Number of parallel processes (None uses all available cores)
+    persistence : bool, optional
+        Toggle for persistence of vision animation, which updates each frame in valid data areas,
+        keeping a running value elsewhere. False by default.
+    **plot_kwargs
+        Additional formatting arguments passed to plot_punch
+
+    """
+    with TemporaryDirectory() as tmpdir:
+        if persistence:
+            for i, data in tqdm(enumerate(data_list), total=len(data_list)):
+                cube = punch_io.load_ndcube_from_fits(data)
+                if i == 0:
+                    persistence_array = deepcopy(cube)
+                frame_path = Path(tmpdir) / f"frame_{i:07d}.png"
+                plot_punch(cube, save_path=frame_path, **plot_kwargs, persistence_array=persistence_array)
+                mask = np.isfinite(cube.uncertainty.array)
+                persistence_array.data[mask] = cube.data[mask]
+        else:
+            args_list = [(i, data, tmpdir, plot_kwargs) for i, data in enumerate(data_list)]
+            with Pool(n_jobs) as pool:
+                list(tqdm(pool.imap_unordered(_render_frame, args_list), total=len(args_list)))
+
+        frame_paths = list(Path(tmpdir).glob("frame_*.png"))
+        if not frame_paths:
+            raise RuntimeError("No frames were created")
+
+        ffmpeg_command = [
+            "ffmpeg", "-y", "-framerate", str(fps),
+            "-i", f"{tmpdir}/frame_%07d.png",
+            "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            str(output_path),
+            ]
+
+        subprocess.run(ffmpeg_command, check=True, stdout = subprocess.DEVNULL)  # noqa: S603
+
+
+def plot_punch(  # noqa: C901
     data: Path | NDCube,
     layer: int = 0,
     cmap: str | Colormap | None = cmap_punch,
@@ -137,6 +208,7 @@ def plot_punch(
     title_prefix: str | None = None,
     colorbar: bool = True,
     colorbar_label: str = "Mean Solar Brightness (MSB)",
+    persistence_array: np.ndarray | NDCube | None = None,
     save_path: str | Path | None = None,
     dpi: int = 300,
     ) -> tuple[Figure, Axes]:
@@ -177,6 +249,8 @@ def plot_punch(
         Toggle for plotting colorbar
     colorbar_label : str, optional
         Label to use for the colorbar
+    persistence_array : np.ndarray or NDCube or None
+        When not None, data is plotted where valid atop this existing array.
     save_path : str or Path, optional
         When provided, saves the figure to file directly without plotting on screen
     dpi : int, optional
@@ -194,6 +268,14 @@ def plot_punch(
     else:
         msg = "Provide a valid file path or NDCube for plotting."
         raise TypeError(msg)
+
+    if persistence_array is not None:
+        mask = ~np.isfinite(cube.uncertainty.array)
+
+    if isinstance(persistence_array, np.ndarray):
+        cube.data[mask] = persistence_array[mask]
+    elif isinstance(persistence_array, NDCube):
+        cube.data[mask] = persistence_array.data[mask]
 
     norm = norm(gamma, vmin=vmin, vmax=vmax)
 

@@ -117,6 +117,15 @@ Calibration Product Codes
      - GM1, GM2, GM3, GM4, GZ1, GZ2, GZ3, GZ4, GP1, GP2, GP3, GP4, GR1, GR2, GR3, GR4
      - Calibration: Vignetting functions for the standard polarization (GM, GZ, GP) and clear (GR) states
    * - 1
+     - LM1, LM2, LM3, LM4, LZ1, LZ2, LZ3, LZ4, LP1, LP2, LP3, LP4, LR1, LR2, LR3, L4
+     - Calibration: Outlier limits used for image rejection, saved as NumPy format instead of FITS
+   * - 1 
+     - MS1, MS2, MS3, MS4
+     - Calibration: Mask files to define where image is undefined for each satellite
+   * - 1 
+     - QR1, QR2, QR3, QR4
+     - Intermediate level-1 processing necessary for QuickPUNCH
+   * - 1
      - SM1, SM2, SM3, SM4, SZ1, SZ2, SZ3, SZ4, SP1, SP2, SP3, SP4, SR1, SR2, SR3, SR4
      - Calibration: Instrumental additive stray light model for the standard polarization (SM, SZ, SP) and clear (SR) states
    * - 1

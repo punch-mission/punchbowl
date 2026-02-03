@@ -121,7 +121,7 @@ Calibration Product Codes
      - Calibration: Instrumental additive stray light model for the standard polarization (SM, SZ, SP) and clear (SR) states
    * - 1
      - TM1, TM2, TM3, TM4, TZ1, TZ2, TZ3, TZ4, TP1, TP2, TP3, TP4, TR1, TR2, TR3, TR4
-     - Calibration: Dynamic instrumental additive stray light model for the standard polarization (SM, SZ, SP) and clear (SR) states
+     - Calibration: Dynamic instrumental additive stray light model for the standard polarization (TM, TZ, TP) and clear (TR) states
    * - 1
      - XM1, XM2, XM3, XM4, XZ1, XZ2, XZ3, XZ4, XP1, XP2, XP3, XP4, XR1, XR2, XR3, XR4
      - Result of the "L1 early" pipeline stage, an input to dynamic stray light model generation.

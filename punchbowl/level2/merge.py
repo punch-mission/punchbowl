@@ -5,94 +5,115 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punch_io import check_outlier
 from punchbowl.prefect import punch_task
 from punchbowl.util import average_datetime
 
 
+def _merge_ndcubes(cubes: list[NDCube | None], reference_cube_index: int | None = None) -> NDCube:
+    """Create a merged data product from a set of input data, weighting by uncertainty."""
+    if cubes is not None:
+        if reference_cube_index is None:
+            reference_cube_index = len(cubes)//2 - 1
+
+        data_stack = np.stack([cube.data for cube in cubes], axis=0)
+        uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes])
+
+        uncertainty_stack[uncertainty_stack <= 0] = np.nan
+        uncertainty_stack[~np.isfinite(uncertainty_stack)] = np.nan
+        uncertainty_stack[data_stack == 0] = np.nan
+
+        weight_stack = 1/np.square(uncertainty_stack)
+
+        new_data = np.nansum(data_stack * weight_stack, axis=0) / np.nansum(weight_stack, axis=0)
+
+        final_uncertainty = np.sqrt(np.sum(np.where(np.isfinite(uncertainty_stack), uncertainty_stack**2, 0), axis=0)) \
+            / np.sqrt(np.sum(np.isfinite(uncertainty_stack), axis=0))
+
+        final_uncertainty[final_uncertainty == 0] = np.inf
+        final_uncertainty[~np.isfinite(final_uncertainty)] = np.inf
+
+        return NDCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty), \
+                      wcs=cubes[reference_cube_index].wcs)
+    return None
+
+
 @punch_task
-def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, maintain_nans: bool = False) -> NDCube:
+def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2",
+                              product_code: str = "PTM", maintain_nans: bool = False) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
-    trefoil_data_layers, trefoil_uncertainty_layers = [], []
+    data_layers, uncertainty_layers = [], []
     for polarization in [-60, 0, 60]:
-        selected_images = [d for d in data if d is not None and d.meta["POLAR"].value == polarization]
-        if len(selected_images) > 0:
-            reprojected_data = np.stack([d.data for d in selected_images], axis=-1)
-            reprojected_uncertainties = np.stack([d.uncertainty.array for d in selected_images], axis=-1)
-            reprojected_uncertainties[reprojected_uncertainties <= 0] = np.inf
-            reprojected_uncertainties[np.isinf(reprojected_uncertainties)] = 1E64
+        # TODO - Do we want to check for outliers here to exclude?
+        polar_data = [d for d in data if not check_outlier(d) and d.meta["POLAR"].value == polarization]
 
-            reprojected_uncertainties[np.isnan(reprojected_data)] = np.inf
-            reprojected_uncertainties[reprojected_data == 0] = np.inf
+        if len(polar_data) > 0:
+            data_merged = _merge_ndcubes(polar_data)
+            data_merged.meta = NormalizedMetadata.load_template(product_code, level=level)
+            data_merged.wcs = trefoil_wcs
 
-            reprojected_weights = 1 / np.square(reprojected_uncertainties)
-            reprojected_weights[np.isnan(reprojected_uncertainties)] = np.nan
-
-            merged_data = (np.nansum(reprojected_data * reprojected_weights, axis=2) /
-                                       np.nansum(reprojected_weights, axis=2))
-            merged_data[np.isnan(merged_data)] = 0
-            trefoil_data_layers.append(merged_data)
-            trefoil_uncertainty_layers.append(1/np.nansum(np.sqrt(reprojected_weights), axis=2))
             if maintain_nans:
-                was_nan = np.all(np.isnan(reprojected_data), axis=-1)
-                merged_data[was_nan] = np.nan
+                data_stack = np.stack([d.data for d in polar_data], axis=-1)
+                was_nan = np.all(np.isnan(data_stack), axis=-1)
+                data_merged.data[was_nan] = np.nan
         else:
-            trefoil_data_layers.append(np.zeros((4096, 4096)))
-            trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
+            data_merged = NDCube(data = np.zeros(4096, 4096),
+                                uncertainty = StdDevUncertainty(np.full((4096, 4096), np.inf)),
+                                wcs = trefoil_wcs,
+                                meta = NormalizedMetadata.load_template(product_code, level=level))
 
-    output_meta = NormalizedMetadata.load_template("PTM", "2")
-    output_dateobs = average_datetime(
-        [d.meta.datetime for d in data if d is not None],
-    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    output_datebeg = min([d.meta.datetime for d in data if d is not None]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    output_dateend = max([d.meta.datetime for d in data if d is not None]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    output_meta["DATE-OBS"] = output_dateobs
-    output_meta["DATE-BEG"] = output_datebeg
-    output_meta["DATE-END"] = output_dateend
+        data_layers.append(data_merged.data)
+        uncertainty_layers.append(data_merged.uncertainty.array)
+
     trefoil_3d_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
-    return NDCube(
-        data=np.stack(trefoil_data_layers, axis=0),
-        uncertainty=StdDevUncertainty(np.stack(trefoil_uncertainty_layers, axis=0)),
-        wcs=trefoil_3d_wcs,
-        meta=output_meta,
-    )
+
+    output_cube = NDCube(data=np.stack(data_layers, axis=0),
+                         uncertainty=StdDevUncertainty(np.stack(uncertainty_layers, axis=0)),
+                         wcs = trefoil_3d_wcs,
+                         meta = NormalizedMetadata.load_template(product_code, level=level))
+
+    # TODO - UTC tz?
+    output_cube.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],
+                                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_cube.meta["DATE-AVG"] = average_datetime([d.meta.datetime for d in data if d is not None],
+                                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_cube.meta["DATE-BEG"] = min([d.meta.datetime for d in data if d is not None],
+                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_cube.meta["DATE-END"] = max([d.meta.datetime for d in data if d is not None],
+                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
 
 @punch_task
 def merge_many_clear_task(
         data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2", product_code: str = "CTM",
         maintain_nans: bool = False) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
-    trefoil_data_layers, trefoil_uncertainty_layers = [], []
-    selected_images = [d for d in data if d is not None]
+    # TODO - Do we want to check for outliers here to exclude?
+    data = [d for d in data if not check_outlier(d)]
 
-    if len(selected_images) > 0:
-        reprojected_data = np.stack([d.data for d in selected_images], axis=-1)
-        reprojected_uncertainties = np.stack([d.uncertainty.array for d in selected_images], axis=-1)
-        reprojected_uncertainties[reprojected_uncertainties <= 0] = np.inf
-        reprojected_uncertainties[~np.isfinite(reprojected_uncertainties)] = 1E64
+    if len(data) > 0:
+        data_merged = _merge_ndcubes(data)
+        data_merged.meta = NormalizedMetadata.load_template(product_code, level=level)
+        data_merged.wcs = trefoil_wcs
 
-        reprojected_uncertainties[np.isnan(reprojected_data)] = np.inf
-        reprojected_uncertainties[reprojected_data == 0] = np.inf
-
-        reprojected_weights = 1/np.square(reprojected_uncertainties)
-        reprojected_weights[np.isnan(reprojected_uncertainties)] = np.nan
-
-        merged_data = (np.nansum(reprojected_data * reprojected_weights, axis=-1)
-                       / np.nansum(reprojected_weights, axis=-1))
-        merged_data[np.isnan(merged_data)] = 0
-        trefoil_data_layers.append(merged_data)
-        trefoil_uncertainty_layers.append(1/np.sqrt(np.nansum(reprojected_weights, axis=-1)))
         if maintain_nans:
-            was_nan = np.all(np.isnan(reprojected_data), axis=-1)
-            merged_data[was_nan] = np.nan
+            data_stack = np.stack([d.data for d in data], axis=-1)
+            was_nan = np.all(np.isnan(data_stack), axis=-1)
+            data_merged.data[was_nan] = np.nan
     else:
-        trefoil_data_layers.append(np.zeros((4096, 4096)))
-        trefoil_uncertainty_layers.append(np.zeros((4096, 4096))-999)
+        data_merged = NDCube(data = np.zeros(4096, 4096),
+                             uncertainty = StdDevUncertainty(np.full((4096, 4096), np.inf)),
+                             wcs = trefoil_wcs,
+                             meta = NormalizedMetadata.load_template(product_code, level=level))
 
-    output_meta = NormalizedMetadata.load_template(product_code, level=level)
+    # TODO - UTC tz?
+    data_merged.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],
+                                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    data_merged.meta["DATE-AVG"] = average_datetime([d.meta.datetime for d in data if d is not None],
+                                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    data_merged.meta["DATE-BEG"] = min([d.meta.datetime for d in data if d is not None],
+                                       ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    data_merged.meta["DATE-END"] = max([d.meta.datetime for d in data if d is not None],
+                                       ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    return NDCube(
-        data=np.stack(trefoil_data_layers, axis=0).squeeze(),
-        uncertainty=StdDevUncertainty(np.stack(trefoil_uncertainty_layers, axis=0).squeeze()),
-        wcs=trefoil_wcs,
-        meta=output_meta,
-    )
+    return data_merged

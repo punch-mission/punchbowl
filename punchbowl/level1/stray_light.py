@@ -129,22 +129,32 @@ def _resid_skew(params: Parameters, scaled_x_values: np.ndarray, y_values: np.nd
 
 def pick_peak(bin_values: np.ndarray) -> int:
     """Pick the first (left-most) peak, but isn't fooled if the bins dip by <20% and then keep going up."""
+    peak_min_height = 0.15 * bin_values.max()
     largest_seen = -1
     largest_idx = -1
+    n_consecutive_downhill = 0
     i = 0
     while True:
+        if i > 0:
+            if bin_values[i] >= bin_values[i-1]:
+                n_consecutive_downhill = 0
+            else:
+                n_consecutive_downhill += 1
         if bin_values[i] > largest_seen:
             largest_seen = bin_values[i]
             largest_idx = i
-        if bin_values[i] < 0.75 * largest_seen and bin_values[i] > 0:
-            return largest_idx
+        else:
+            peak_seems_peakish = bin_values[i] < 0.85 * largest_seen or n_consecutive_downhill >= 3
+            peak_is_valid = largest_seen >= peak_min_height
+            this_bin_is_ok = bin_values[i] > 0
+            if peak_seems_peakish and peak_is_valid and this_bin_is_ok:
+                return largest_idx
         i += 1
         if i >= len(bin_values):
             return largest_idx
 
 
 def find_peak_end(bin_values: np.ndarray, peak_location, direction) -> int:
-    """Pick the first (left-most) peak, but isn't fooled if the bins dip by <20% and then keep going up."""
     lowest_seen = np.inf
     lowest_idx = -1
     i = peak_location
@@ -164,14 +174,19 @@ class OutOfPointsError(RuntimeError):
 
 
 def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1e13, weight: bool = True, # noqa: C901
-             plot_histogram_steps: bool = False) -> float | SkewFitResult:
+             plot_histogram_steps: bool = False, exclude_above_percentile: float = 25) -> float | SkewFitResult:
     """Fit a skewed Gaussian to a histogram of data values to estimate the stray light value."""
     # Start by trimming outliers. We do that by making a histogram, finding the tallest bin, and then working out
     # from there until we hit bins with little to no counts. We care about the main part of the distribution,
     # so anything beyond those (nearly-) empty bins is an outlier. So we exclude those points and "zoom in" by
     # re-making the histogram using only points between those two identified bins. This process repeats until there
     # aren't any (nearly-) empty bins.
+    if exclude_above_percentile:
+        percentile_value = np.percentile(stack, exclude_above_percentile)
+        stack = stack[stack < percentile_value]
+
     bin_values, bin_edges, *_ = np.histogram(stack, bins=50)
+    dx = bin_edges[1] - bin_edges[0]
     if plot_histogram_steps:
         import matplotlib.pyplot as plt  # noqa: PLC0415
         dx = bin_edges[1] - bin_edges[0]
@@ -183,39 +198,69 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
     while np.any(bin_values <= min_count) and max_loops_remaining:
         max_loops_remaining -= 1
         peak = np.argmax(bin_values)
+
         # Go to the left, looking for nearly-empty bins
         istart = peak
         while bin_values[istart] > min_count and istart > 0:
             istart -= 1
         # Set our new low bound to be the high edge of the bin if it's empty, or the low end if it's full but it's
         # the last bin.
-        low = bin_edges[istart + 1] if istart > 0 else bin_edges[istart]
+        stopped_on_small_bin = istart > 0 or bin_values[istart] <= min_count
+        low = bin_edges[istart + 1] if stopped_on_small_bin else bin_edges[istart]
+
         # Go to the right, looking for nearly-empty bins
         istop = peak
         while bin_values[istop] > min_count and istop < len(bin_values) - 1:
             istop += 1
-        high = bin_edges[istop] if istop == len(bin_values) - 1 else bin_edges[istop + 1]
-        # Re-make the histogram within these bounds
-        bin_values, bin_edges, *_ = np.histogram(stack, bins=50, range=(low, high))
-        if np.sum(bin_values) < 100:
-            raise OutOfPointsError()
-        min_count = 0.01 * bin_values.max()
+        stopped_on_small_bin = istop < len(bin_values) - 1 or bin_values[istop] <= min_count
+        high = bin_edges[istop] if stopped_on_small_bin else bin_edges[istop + 1]
 
         if plot_histogram_steps:
             plt.axvline(low)
             plt.axvline(high)
             plt.title("Zooming to cut outlier bins")
             plt.show()
-            dx = bin_edges[1] - bin_edges[0]
+
+        # Re-make the histogram within these bounds
+        bin_values, bin_edges, *_ = np.histogram(stack, bins=50, range=(low, high))
+        dx = bin_edges[1] - bin_edges[0]
+        if plot_histogram_steps:
             plt.bar(bin_edges[:-1] + dx/2, bin_values, width=dx)
 
-    dx = bin_edges[1] - bin_edges[0]
+        if np.sum(bin_values) < 100:
+            raise OutOfPointsError()
+        min_count = 0.01 * bin_values.max()
+
 
     # Now the outliers should be gone. When present, they were dragging the range of our histogram way out,
     # so the core distribution had very poor resolution. Now we should have good resolution on the core area,
-    # and we can refine our zoom range better. From the highest bin, we work out until we find a bin that has dropped
-    # by more than a certain amount. That will set our new zoom-in range. The idea is now to exclude the tail and
-    # focus only on the region around the peak.
+    # and we can refine our zoom range better. Next we identify the target peak, walk downhill from it to find its
+    # edges, and we zoom there to isolate our targeted peak and avoid fitting a different peak
+    imax = pick_peak(bin_values)
+    peak_location = bin_edges[imax] + dx / 2
+    ilow = find_peak_end(bin_values, imax, -1)
+    ihigh = find_peak_end(bin_values, imax, 1)
+    low = bin_edges[ilow]
+    high = bin_edges[ihigh + 1]
+    if plot_histogram_steps:
+        plt.axvline(peak_location, ls='--')
+        plt.axvline(low)
+        plt.axvline(high)
+        plt.title("Zooming in to isolate peak")
+        plt.show()
+
+    bin_values, bin_edges, *_ = np.histogram(stack, bins=20, range=(low, high))
+    dx = bin_edges[1] - bin_edges[0]
+    bin_centers = bin_edges[:-1] + dx / 2
+
+    if plot_histogram_steps:
+        plt.bar(bin_edges[:-1] + dx/2, bin_values, width=dx)
+
+    if np.sum(bin_values) < 100:
+        raise OutOfPointsError()
+
+    # Next we walk out from the target peak until we find binds that are low relative to the peak, to chop off the
+    # tails of the distribution.
     imax = pick_peak(bin_values)
     peak_val = bin_values[imax]
     for istart in range(imax - 1, -1, -1):
@@ -232,65 +277,63 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         istop = len(bin_values) - 1
     high = bin_edges[1 + istop]
 
-    # Now we'll zoom in to that region, make a histogram, and then if the peak doesn't seem wide enough (in terms of
-    # number of bins), we'll zoom in further
-    while True:
-        if plot_histogram_steps:
-            plt.axvline(bin_edges[imax] + dx/2, ls='--')
-            plt.axvline(low)
-            plt.axvline(high)
-            plt.title("Zooming in to exclude tail")
-            plt.show()
-        if np.sum((stack > low) * (stack < high)) < 30:
-            break
-        bin_values, bin_edges, *_ = np.histogram(stack, bins=20, range=(low, high))
-        if np.sum(bin_values) < 100:
-            raise OutOfPointsError()
-        dx = bin_edges[1] - bin_edges[0]
-        bin_centers = bin_edges[:-1] + dx / 2
-
-        # Don't just take the largest bin as the peak---occasionally there are two peaks in the range, and we want the
-        # one that's dimmer (i.e. pixel values that are lower), not the peak that's higher on our histogram
-        imax = pick_peak(bin_values)
-        peak_val = bin_values[imax]
-
-        # We need to compute how many bins wide our peak is (roughly)
-        p2p = peak_val - np.min(bin_values)
-        # We're comparing bins' height above the minimum bin value, not the height above 0!
-        n_in_peak = np.sum(bin_values > peak_val - 0.4 * p2p)
-        if plot_histogram_steps:
-            plt.bar(bin_centers, bin_values, width=dx)
-            plt.suptitle(f"p2p {p2p}, thresh {peak_val - 0.4 * p2p}, {n_in_peak} bins above thresh")
-        if n_in_peak > 0.2 * len(bin_values):
-            break
-
-        center = bin_centers[imax]
-        dlow = center - low
-        low = center - 0.75 * dlow
-        dhigh = high - center
-        high = center + 0.75 * dhigh
-
-    # As our final trick, let's isolate our targeted peak, so we don't end up fitting a different peak
-    ilow = find_peak_end(bin_values, imax, -1)
-    ihigh = find_peak_end(bin_values, imax, 1)
-    low = bin_edges[ilow]
-    high = bin_edges[ihigh + 1]
+    if plot_histogram_steps:
+        plt.title("Zooming in to exclude tail")
+        plt.axvline(bin_edges[imax] + dx/2, ls='--')
+        plt.axvline(low)
+        plt.axvline(high)
+        plt.show()
 
     bin_values, bin_edges, *_ = np.histogram(stack, bins=20, range=(low, high))
     if np.sum(bin_values) < 100:
         raise OutOfPointsError()
     dx = bin_edges[1] - bin_edges[0]
     bin_centers = bin_edges[:-1] + dx / 2
-
     imax = pick_peak(bin_values)
     peak_val = bin_values[imax]
     peak_location = bin_centers[imax]
+    if plot_histogram_steps:
+        plt.bar(bin_centers, bin_values, width=dx)
+
+    # Now we'll zoom in to that region, make a histogram, and then if the peak doesn't seem wide enough (in terms of
+    # number of bins), we'll zoom in further
+    while True:
+        # We need to compute how many bins wide our peak is (roughly)
+        p2p = peak_val - np.min(bin_values)
+        # We're comparing bins' height above the minimum bin value, not the height above 0!
+        n_in_peak = np.sum(bin_values > peak_val - 0.4 * p2p)
+        if plot_histogram_steps:
+            plt.suptitle(f"p2p {p2p}, thresh {peak_val - 0.4 * p2p}, {n_in_peak} bins above thresh")
+        if n_in_peak > 0.2 * len(bin_values):
+            break
+
+        center = bin_centers[imax]
+        dlow = center - low
+        low = center - 0.8 * dlow
+        dhigh = high - center
+        high = center + 0.8 * dhigh
+
+        if plot_histogram_steps:
+            plt.title("Zooming in to widen peak")
+            plt.axvline(bin_edges[imax] + dx/2, ls='--')
+            plt.axvline(low)
+            plt.axvline(high)
+            plt.show()
+
+        bin_values, bin_edges, *_ = np.histogram(stack, bins=20, range=(low, high))
+        if np.sum(bin_values) < 100:
+            raise OutOfPointsError()
+        dx = bin_edges[1] - bin_edges[0]
+        bin_centers = bin_edges[:-1] + dx / 2
+        if plot_histogram_steps:
+            plt.bar(bin_centers, bin_values, width=dx)
+        imax = pick_peak(bin_values)
+        peak_val = bin_values[imax]
+        peak_location = bin_centers[imax]
 
     if plot_histogram_steps:
-        plt.axvline(bin_edges[imax] + dx/2, ls='--')
-        plt.axvline(low)
-        plt.axvline(high)
-        plt.title("Zooming in to isolate peak")
+        plt.axvline(peak_location, ls='--')
+        plt.title("Final distribution")
         plt.show()
 
     # Sometimes there are empty bins that just seem to make the fit worse, so exclude them
@@ -302,10 +345,6 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
     imax = np.where(bin_values == peak_val)[0][0]
     # No longer valid
     del bin_edges
-
-    if plot_histogram_steps:
-        plt.bar(bin_centers, bin_values, width=dx)
-        plt.show()
 
     if weight:
         bin_weights = 1 / (40 + np.abs(np.arange(0, len(bin_values)) - imax))
@@ -374,6 +413,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     data = None
     uncertainty = None
     date_obses = []
+    filenames = []
     n_failed = 0
     j = 0
     if isinstance(filepaths[0], NDCube):
@@ -390,6 +430,8 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
             continue
         cube = result
         date_obses.append(cube.meta.datetime)
+        if fname := cube.meta['FILENAME'].value:
+            filenames.append(fname)
         if data is None:
             data = np.empty((len(filepaths), *cube.data.shape))
         data[j] = cube.data
@@ -437,6 +479,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
+    meta.provenance = filenames
     meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") if reference_time else meta["DATE-AVG"].value
     meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")

@@ -43,8 +43,7 @@ files = Fido.fetch(result)
 # That file list is then passed into the animator function, along with an output filename.
 
 # %%
-output_path = "PUNCH_CIM.mp4"
-animate_punch(files, output_path=output_path)
+animate_punch(files, output_path="PUNCH_CIM.mp4")
 
 # %% [markdown]
 # .. raw:: html

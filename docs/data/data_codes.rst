@@ -106,7 +106,7 @@ Calibration Product Codes
      - Experimental image (no set parameters; variable crop)
    * - 1
      - BD1, BD2, BD3, BD4
-     - Deficient Pixel (Boolean) map
+     - Deficient pixel (boolean) map
    * - 1
      - DS1, DS2, DS3, DS4
      - Optical distortion models

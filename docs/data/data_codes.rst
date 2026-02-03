@@ -106,7 +106,7 @@ Calibration Product Codes
      - Experimental image (no set parameters; variable crop)
    * - 1
      - BD1, BD2, BD3, BD4
-     - Deficient Pixel (Boolean) Map
+     - Deficient Pixel (Boolean) map
    * - 1
      - DS1, DS2, DS3, DS4
      - Optical distortion models
@@ -117,7 +117,7 @@ Calibration Product Codes
      - GM1, GM2, GM3, GM4, GZ1, GZ2, GZ3, GZ4, GP1, GP2, GP3, GP4, GR1, GR2, GR3, GR4
      - Vignetting functions for the standard polarization (GM, GZ, GP) and clear (GR) states
    * - 1
-     - LM1, LM2, LM3, LM4, LZ1, LZ2, LZ3, LZ4, LP1, LP2, LP3, LP4, LR1, LR2, LR3, L4
+     - LM1, LM2, LM3, LM4, LZ1, LZ2, LZ3, LZ4, LP1, LP2, LP3, LP4, LR1, LR2, LR3, LR4
      - Outlier limits used for image rejection, saved as NumPy format instead of FITS
    * - 1
      - MS1, MS2, MS3, MS4
@@ -139,7 +139,7 @@ Calibration Product Codes
      - Result of the "L1 middle" pipeline stage, an input to static stray light model generation.
    * - 1
      - RM1, RM2, RM3, RM4, RZ1, RZ2, RZ3, RZ4, RP1, RP2, RP3, RP4, RC1, RC2, RC3, RC4
-     - Point Spread Function model for the standard polarization and clear states
+     - Point Spread Function (PSF) model for the standard polarization and clear states
    * - Q
      - CFN
      - QuickPUNCH NFI images F corona model

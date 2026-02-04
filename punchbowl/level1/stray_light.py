@@ -3,16 +3,19 @@ import warnings
 import multiprocessing
 from datetime import UTC, datetime
 from functools import cached_property
+from itertools import pairwise
 from collections.abc import Generator
 
 import numpy as np
 import scipy
+from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime
 from lmfit import Parameters, minimize
 from lmfit.minimizer import MinimizerResult
 from ndcube import NDCube
 from prefect import get_run_logger
+from skimage.restoration import inpaint
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.punch_io import load_many_cubes_iterable
@@ -23,7 +26,15 @@ from punchbowl.exceptions import (
     InvalidDataError,
 )
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import DataLoader, average_datetime, inpaint_nans, interpolate_data
+from punchbowl.util import (
+    DataLoader,
+    average_datetime,
+    inpaint_nans,
+    interpolate_data,
+    load_mask_file,
+    nan_gaussian,
+    parallel_sort_first_axis,
+)
 
 
 class SkewFitResult:
@@ -174,7 +185,7 @@ class OutOfPointsError(RuntimeError):
 
 
 def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1e13, weight: bool = True, # noqa: C901
-             plot_histogram_steps: bool = False, exclude_above_percentile: float = 25) -> float | SkewFitResult:
+             plot_histogram_steps: bool = False, exclude_above_percentile: float = 0) -> float | SkewFitResult:
     """Fit a skewed Gaussian to a histogram of data values to estimate the stray light value."""
     # Start by trimming outliers. We do that by making a histogram, finding the tallest bin, and then working out
     # from there until we hit bins with little to no counts. We care about the main part of the distribution,
@@ -379,17 +390,29 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
     return r.result
 
 
-def _estimate_stray_light_one_slice(data_slice: np.ndarray, x_grid: np.ndarray, half_width: int) -> np.ndarray:
+REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS = 0.5
+
+
+def _estimate_stray_light_one_slice(y: int, data_slice: np.ndarray, x_grid: np.ndarray, half_width: int) -> np.ndarray:
+    noise_mode = 2e-13
+    noise_hwhm = 2.25e-13 - 1.8e-13
+    noise_amp = 0.2
+
     result = np.empty(x_grid.shape)
-    for j in range(len(x_grid)):
-        x = x_grid[j]
+    for j, x in enumerate(x_grid):
         stack = data_slice[:, :, x - half_width:x + half_width + 1]
         n_pts = stack.size
         stack = stack[stack > 1e-15]
-        if stack.size < n_pts / 2: # noqa: SIM108
-            r = 0
+        if stack.size < n_pts * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS:
+            r = np.nan
         else:
-            r = fit_skew(stack, False)
+            rng = np.random.default_rng(y * x + y + x)
+            noise = noise_amp * rng.normal(scale=np.sqrt(stack / noise_mode) * noise_hwhm, size=stack.size)
+            stack += noise
+            try:
+                r = fit_skew(stack, False)
+            except OutOfPointsError:
+                r = np.nan
         result[j] = r
     return result
 
@@ -401,6 +424,9 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                          stride: int = 2,
                          window_size: int = 3,
                          blur_sigma: float = 1.5,
+                         n_crota_bins: int = 30,
+                         crota_bin_width: float = 45,
+                         image_mask_path: str | None = None,
                          num_workers: int | None = None,
                          num_loaders: int | None = None) -> list[NDCube]:
     """Estimate the fixed stray light pattern using a percentile."""
@@ -410,90 +436,153 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     logger.info(f"Running with {len(filepaths)} input files")
     if isinstance(reference_time, str):
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
-    data = None
+
+    image_mask = load_mask_file(image_mask_path) if image_mask_path is not None else None
+    strided_image_mask = None
+
+    crotas = [fits.getheader(f, 1)['CROTA'] for f in filepaths]
+
+    bin_centers = np.linspace(-180, 180, n_crota_bins, endpoint=False)
+    data_array = np.empty((0, 2048, 2048))
+    models = []
+    loaded_paths_crotas = []
     uncertainty = None
-    date_obses = []
-    filenames = []
-    n_failed = 0
-    j = 0
-    if isinstance(filepaths[0], NDCube):
-        iterator = filepaths
-    else:
-        iterator = load_many_cubes_iterable(filepaths, n_workers=num_loaders, allow_errors=True)
-    for i, result in enumerate(iterator):
-        if isinstance(result, str):
-            logger.warning(f"Loading {filepaths[i]} failed")
-            logger.warning(result)
-            n_failed += 1
-            if n_failed > 10:
-                raise RuntimeError(f"{n_failed} files failed to load, stopping")
-            continue
-        cube = result
-        date_obses.append(cube.meta.datetime)
-        if fname := cube.meta['FILENAME'].value:
-            filenames.append(fname)
-        if data is None:
-            data = np.empty((len(filepaths), *cube.data.shape))
-        data[j] = cube.data
-        j += 1
-        if do_uncertainty:
-            if uncertainty is None:
-                uncertainty = np.zeros_like(cube.data)
-            if cube.uncertainty is not None:
-                # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
-                uncertainty += cube.uncertainty.array ** 2
-        if (i+1) % 50 == 0:
-            logger.info(f"Loaded {i+1}/{len(filepaths)} files")
-    # Crop the unused end of the array if we had a few files that errored out
-    data = data[:j+1]
+    all_date_obses = []
+    all_loaded_filenames = []
 
-    logger.info(f"Images loaded; they span {min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
-                f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
+    for bin_n, bin_center in enumerate(bin_centers):
+        logger.info(f"Starting bin {bin_n + 1}")
+        bin_start = bin_center - crota_bin_width / 2
+        bin_end = bin_center + crota_bin_width / 2
+        indices_to_keep = []
+        for i, (path, crota) in enumerate(loaded_paths_crotas):
+            if bin_start < crota <= bin_end or bin_start < crota - 360 <= bin_end or bin_start < crota + 360 <= bin_end:
+                indices_to_keep.append(i)
+        kept_images = [data_array[i] for i in indices_to_keep]
+        loaded_paths_crotas = [loaded_paths_crotas[i] for i in indices_to_keep]
+        loaded_paths = {p for p, c in loaded_paths_crotas}
+        paths_to_load = []
+        for path, crota in zip(filepaths, crotas):
+            if path in loaded_paths:
+                continue
+            if bin_start < crota <= bin_end or bin_start < crota - 360 <= bin_end or bin_start < crota + 360 <= bin_end:
+                paths_to_load.append(path)
 
-    window_half_width = window_size // 2
-    x_grid = np.arange(window_half_width, data.shape[2] - window_half_width, stride)
-    y_grid = np.arange(window_half_width, data.shape[1] - window_half_width, stride)
-    def args() -> Generator[tuple]:
+        n_failed = 0
+        cubes = []
+        logger.info(f"Will read {len(paths_to_load)} new images and keep {len(kept_images)} images loaded")
+        for i, result in enumerate(load_many_cubes_iterable(paths_to_load, n_workers=num_loaders, allow_errors=True,
+                                                            include_uncertainty=do_uncertainty,
+                                                            include_provenance=False)):
+            if isinstance(result, str):
+                logger.warning(f"Loading {filepaths[i]} failed")
+                logger.warning(result)
+                n_failed += 1
+                if n_failed > 10:
+                    raise RuntimeError(f"{n_failed} files failed to load, stopping")
+                continue
+            # We need to save a sample cube (not a string/error message) for the end of this flow
+            cube = result
+            cubes.append(cube)
+            loaded_paths_crotas.append((paths_to_load[i], cube.meta['CROTA'].value))
+            all_loaded_filenames.append(cube.meta['FILENAME'].value)
+            all_date_obses.append(cube.meta.datetime)
+
+            if do_uncertainty:
+                if uncertainty is None:
+                    uncertainty = np.zeros_like(cube.data)
+                if cube.uncertainty is not None:
+                    # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
+                    uncertainty += cube.uncertainty.array ** 2
+            if (i + 1) % 50 == 0:
+                logger.info(f"Loaded {i + 1}/{len(paths_to_load)} files")
+        logger.info("Finished loaded files")
+        data_array = np.stack((*kept_images, *[c.data for c in cubes]), axis=0)
+        del cubes
+
+        if image_mask is None:
+            image_mask = np.all(data_array == 0, axis=0)
+
+        window_half_width = window_size // 2
         # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
         # stride position fits
-        for i in range(window_half_width, data.shape[1] - window_half_width, stride):
-            data_slice = data[:, i-window_half_width:i+window_half_width+1, :]
-            yield data_slice, x_grid, window_half_width
+        x_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
+        y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
 
-    ctx = multiprocessing.get_context("forkserver")
-    with ctx.Pool(num_workers) as p:
-        stray_light_estimate = np.stack(p.starmap(_estimate_stray_light_one_slice, args()), axis=0)
+        if strided_image_mask is None:
+            strided_image_mask = np.empty((y_grid.size, x_grid.size), dtype=bool)
+            for i, y in enumerate(y_grid):
+                for j, x in enumerate(x_grid):
+                    sample = image_mask[y - window_half_width:y + window_half_width + 1,
+                                        x - window_half_width:x + window_half_width + 1]
+                    strided_image_mask[i, j] = sample.sum() > sample.size * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS
 
-    stray_light_estimate = inpaint_nans(stray_light_estimate, kernel_size=5)
+        def args() -> Generator[tuple]:
+            for y in y_grid:
+                data_slice = data_array[:, y - window_half_width:y + window_half_width + 1, :]
+                yield y, data_slice, x_grid, window_half_width
 
-    if blur_sigma:
-        stray_light_estimate = scipy.ndimage.gaussian_filter(stray_light_estimate, blur_sigma)
+        logger.info("Beginning model fitting")
+        ctx = multiprocessing.get_context("forkserver")
+        with ctx.Pool(num_workers) as p:
+            stray_light_estimate = np.stack(p.starmap(_estimate_stray_light_one_slice, args()), axis=0)
+        stray_light_estimate[~strided_image_mask] = 0
+        logger.info("Finished model fitting")
 
-    if stride > 1 or window_size > 1:
-        interper = scipy.interpolate.RegularGridInterpolator(
-                (y_grid, x_grid), stray_light_estimate, method="linear", bounds_error=False, fill_value=None)
-        out_y, out_x = np.mgrid[:data.shape[1], :data.shape[2]]
-        stray_light_estimate = interper(np.stack((out_y, out_x), axis=-1))
+        stray_light_estimate = inpaint_nans(stray_light_estimate, kernel_size=5)
+
+        d = data_array[:, y_grid][:, :, x_grid]
+        d = parallel_sort_first_axis(d, inplace=True)
+        percentiles = np.argmin(np.abs(d - stray_light_estimate), axis=0) / d.shape[0] * 100
+        del d
+        bad_region = percentiles >= 70
+        bad_region = scipy.ndimage.binary_fill_holes(bad_region)
+        bad_region = scipy.ndimage.binary_dilation(bad_region, iterations=2)
+        bad_region *= strided_image_mask
+
+        inpaint_mask = bad_region + ~strided_image_mask
+        inpainted = inpaint.inpaint_biharmonic(stray_light_estimate, inpaint_mask)
+
+        stray_light_estimate[bad_region] = inpainted[bad_region]
+
+        stray_light_estimate[~strided_image_mask] = np.nan
+
+        if blur_sigma:
+            stray_light_estimate = nan_gaussian(stray_light_estimate, blur_sigma)
+
+        stray_light_estimate[~strided_image_mask] = 0
+
+        if stride > 1 or window_size > 1:
+            interper = scipy.interpolate.RegularGridInterpolator(
+                    (y_grid, x_grid), stray_light_estimate, method="linear", bounds_error=False, fill_value=None)
+            out_y, out_x = np.mgrid[:data_array.shape[1], :data_array.shape[2]]
+            stray_light_estimate = interper(np.stack((out_y, out_x), axis=-1))
+            stray_light_estimate *= image_mask
+
+        models.append(stray_light_estimate)
+        logger.info(f"Finished with bin {bin_n + 1}")
+
+    del data_array
 
     uncertainty = np.sqrt(uncertainty) / len(filepaths) if do_uncertainty else None
 
     out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
-    meta.provenance = filenames
-    meta["DATE-AVG"] = average_datetime(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+    meta.provenance = all_loaded_filenames
+    meta["DATE-AVG"] = average_datetime(all_date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") if reference_time else meta["DATE-AVG"].value
-    meta["DATE-BEG"] = min(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
-    meta["DATE-END"] = max(date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+    meta["DATE-BEG"] = min(all_date_obses).strftime("%Y-%m-%dT%H:%M:%S")
+    meta["DATE-END"] = max(all_date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta.history.add_now("stray light",
                          f"Generated with {len(filepaths)} files running from "
-                         f"{min(date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
-                         f"{max(date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
+                         f"{min(all_date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
+                         f"{max(all_date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
     meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
 
-    # Let's put in a valid, representative WCS, with the right scale and pointing, etc.
+    # Let's put in a valid, representative WCS, with the right scale and sun-relative pointing, etc.
     wcs = cube.wcs
-    out_cube = NDCube(data=stray_light_estimate, meta=meta, wcs=wcs, uncertainty=StdDevUncertainty(uncertainty))
+    out_cube = NDCube(data=np.array(models), meta=meta, wcs=wcs, uncertainty=StdDevUncertainty(uncertainty))
 
     return [out_cube]
 
@@ -619,6 +708,40 @@ def remove_stray_light_task(data_object: NDCube, #noqa: C901
         if model.data.shape != data_object.data.shape:
             msg = f"Incorrect stray light function shape within {model['FILENAME'].value}"
             raise InvalidDataError(msg)
+
+    bin_edges = np.linspace(-180, 180, stray_light_before_model.shape[0] + 1)
+    bin_centers = bin_edges[:-1] / 2 + bin_edges[1:] / 2
+    bin_width = 360 / len(bin_centers)
+    crota = data_object.meta["CROTA"].value
+    # CROTA falls within [-180, 180]
+
+    for bin_idx, (start, stop) in enumerate(pairwise(bin_edges)): # noqa: B007
+        if start <= crota <= stop:
+            break
+
+    if bin_idx == 0 and crota < bin_centers[0]:
+        before_bin = -1
+        after_bin = 0
+        fpos = 1 - (bin_centers[0] - crota) / bin_width
+    elif bin_idx == len(bin_centers) - 1 and crota > bin_centers[-1]:
+        before_bin = -1
+        after_bin = 0
+        fpos = (crota - bin_centers[-1]) / bin_width
+    else:
+        if crota > bin_centers[bin_idx]:
+            before_bin = bin_idx
+            after_bin = bin_idx + 1
+        else:
+            before_bin = bin_idx - 1
+            after_bin = bin_idx
+        fpos = (crota - bin_centers[before_bin]) / bin_width
+
+    before_at_orbit_pos = (stray_light_before_model.data[before_bin] * (1 - fpos)
+                           + stray_light_before_model.data[after_bin] * fpos)
+    after_at_orbit_pos = (stray_light_after_model.data[before_bin] * (1 - fpos)
+                          + stray_light_after_model.data[after_bin] * fpos)
+    stray_light_before_model = NDCube(data=before_at_orbit_pos, meta=stray_light_before_model.meta)
+    stray_light_after_model = NDCube(data=after_at_orbit_pos, meta=stray_light_after_model.meta)
 
     # For the quickpunch case, our stray light models run right up to the current time, with their DATE-OBS likely days
     # in the past. It feels reckless to interpolate the six-hour variation in the model over several days, so let's

@@ -899,12 +899,22 @@ DateLike = Union[str, Header, Mapping[str, Any]]
 def check_moon_in_fov(time_obs_start: DateLike,
                         time_end: str | None = None,
                         resolution_minutes: int = 30,
-                        fov_deg: float = 90.0) -> tuple[list[datetime], list[float], float, list[tuple[str, float]]]:
+                        fov_deg: float = 90.0,
+                        wcs: WCS | None = None,
+                        image_shape: tuple[int, int] | None = None,
+                      ) -> tuple[list[datetime], list[float], float,
+                            list[tuple[str, float]], list[float] | None,
+                            list[float] | None, list[float] | None]:
     """
     Forecast the moon in PUNCH FOV in a given time range.
     It supports two modes:
         1) Single-time mode: pass a DATE-OBS (string or FITS header)
         2) Time-range mode: pass DATE-OBS as start time and `time_end`
+
+    If `wcs` and `image_shape` are given then it also computes:
+        1) angular distance of the Moon from the image center (deg)
+        2) Moon center (x, y) pixel coordinates in image. If out of image,
+        it returns -1.
 
     Parameters
     ----------
@@ -917,17 +927,28 @@ def check_moon_in_fov(time_obs_start: DateLike,
         Time cadence resolution in minutes, by default 30.
     fov_deg : float, optional
         Total field of view in degrees, by default 90.0.
+    wcs : astropy.wcs.WCS | None
+        WCS of the image.
+    image_shape : (ny, nx) | None
+        Image shape needed to define the image center pixel.
 
     Returns
     -------
     times : list[datetime]
         Sampled times in UTC.
-    angles : list[float]
+    angle_sun_center : list[float]
         Moon-Sun angular separation at each sampled time (degrees).
     fov_half : float
-        Half-angle of the field of view (degrees).
-    in_fov_times : list[tuple[str, float]]
-        Times (ISO) and angles when the Moon lies inside the FOV.
+        Half-angle of the field of view (degrees). It will be required
+            mainly when plotting the angular distance.
+    in_fov_times : list[(iso, angle)]
+            Times where Moon–Sun separation <= fov_half.
+    angles_image_center : list[float] | None
+        Moon angular separation from image center (deg), if wcs provided.
+    moon_xpix : list[float] | None
+        Moon center x pixel coordinate (float).
+    moon_ypix : list[float] | None
+        Moon center y pixel coordinate (float).
     """
     if isinstance(time_obs_start, Mapping):
         date_obs_str = str(time_obs_start["DATE-OBS"])
@@ -941,10 +962,25 @@ def check_moon_in_fov(time_obs_start: DateLike,
         time_end = Time(time_end)
         dt = TimeDelta(resolution_minutes * 60, format="sec")
         times = time_start + dt * np.arange(int((time_end - time_start) / dt) + 1)
-    angles = []
+    angle_sun_center = []
     in_fov_times = []
 
     fov_half = fov_deg / 2
+
+    # Image-plane outputs
+    do_image = (wcs is not None and image_shape is not None)
+    angles_image_center: list[float] | None = [] if (wcs is not None and image_shape is not None) else None
+    moon_xpix: list[float] | None = [] if (wcs is not None and image_shape is not None) else None
+    moon_ypix: list[float] | None = [] if (wcs is not None and image_shape is not None) else None
+
+    if (wcs is None) ^ (image_shape is None):
+        raise ValueError("Provide both `wcs` and `image_shape` together, or neither.")
+
+    if do_image:
+        ny, nx = image_shape
+        xc = (nx - 1) / 2.0
+        yc = (ny - 1) / 2.0
+        center_coord = wcs.pixel_to_world(xc, yc)
 
     with solar_system_ephemeris.set("builtin"):
         for t in times:
@@ -966,9 +1002,27 @@ def check_moon_in_fov(time_obs_start: DateLike,
             dot = np.dot(v_moon_unit, v_sun_unit)
             angle = np.degrees(np.arccos(np.clip(dot, -1.0, 1.0)))
 
-            angles.append(angle)
+            angle_sun_center.append(angle)
 
             if angle <= fov_half:
                 in_fov_times.append((t.iso, angle))
 
-    return times.datetime, angles, fov_half
+            if do_image and wcs is not None:
+                moon_icrs = get_body("moon", t).icrs  # appropriate for RA/Dec-like WCS
+
+                x_moon, y_moon = wcs.world_to_pixel(moon_icrs)
+
+                # Angular separation from image center
+                ang_c = float(moon_icrs.separation(center_coord).to_value(u.deg))
+                angles_image_center.append(ang_c)
+
+                if (np.isfinite(x_moon) and np.isfinite(y_moon)
+                    and (0.0 <= x_moon < nx) and (0.0 <= y_moon < ny)):
+                    moon_xpix.append(float(x_moon))
+                    moon_ypix.append(float(y_moon))
+                else:
+                    moon_xpix.append(-1.0)
+                    moon_ypix.append(-1.0)
+
+    return (times.datetime, angle_sun_center, fov_half, in_fov_times,
+            angles_image_center, moon_xpix, moon_ypix)

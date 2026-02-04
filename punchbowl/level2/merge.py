@@ -44,7 +44,6 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
     """Merge many task and carefully combine uncertainties."""
     data_layers, uncertainty_layers = [], []
     for polarization in [-60, 0, 60]:
-        # TODO - mark outliers with binary mask (0001, 0010) NFI, WFI3, WFI2, WFI1
         polar_data = [d for d in data if d is not None and hasattr(d, "meta") and d.meta["POLAR"].value == polarization]
 
         if len(polar_data) > 0:
@@ -73,7 +72,6 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
 
     output_cube.meta["OUTLIER"] = encode_outliers([d for d in data if d is not None])
 
-    # TODO - UTC tz?
     output_cube.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],
                                                     ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_cube.meta["DATE-AVG"] = average_datetime([d.meta.datetime for d in data if d is not None],
@@ -108,7 +106,6 @@ def merge_many_clear_task(
 
     data_merged.meta["OUTLIER"] = encode_outliers([d for d in data if d is not None])
 
-    # TODO - UTC tz?
     data_merged.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],
                                                     ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     data_merged.meta["DATE-AVG"] = average_datetime([d.meta.datetime for d in data if d is not None],

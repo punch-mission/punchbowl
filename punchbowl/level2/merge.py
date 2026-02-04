@@ -79,9 +79,9 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
     output_cube.meta["DATE-AVG"] = average_datetime([d.meta.datetime for d in data if d is not None],
                                                     ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_cube.meta["DATE-BEG"] = min([d.meta.datetime for d in data if d is not None],
-                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+                                       ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_cube.meta["DATE-END"] = max([d.meta.datetime for d in data if d is not None],
-                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+                                       ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     return output_cube
 

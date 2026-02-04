@@ -5,6 +5,7 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punch_io import encode_outliers
 from punchbowl.prefect import punch_task
 from punchbowl.util import average_datetime
 
@@ -44,7 +45,7 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
     data_layers, uncertainty_layers = [], []
     for polarization in [-60, 0, 60]:
         # TODO - mark outliers with binary mask (0001, 0010) NFI, WFI3, WFI2, WFI1
-        polar_data = [d for d in data if d.meta["POLAR"].value == polarization]
+        polar_data = [d for d in data if d is not None and hasattr(d, "meta") and d.meta["POLAR"].value == polarization]
 
         if len(polar_data) > 0:
             data_merged = _merge_ndcubes(polar_data)
@@ -70,6 +71,8 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
                          wcs = trefoil_3d_wcs,
                          meta = NormalizedMetadata.load_template(product_code, level=level))
 
+    output_cube.meta["OUTLIER"] = encode_outliers([d for d in data if d is not None])
+
     # TODO - UTC tz?
     output_cube.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],
                                                     ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -88,9 +91,8 @@ def merge_many_clear_task(
         data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2", product_code: str = "CTM",
         maintain_nans: bool = False) -> NDCube:
     """Merge many task and carefully combine uncertainties."""
-    # TODO - mark outliers with binary mask (0001, 0010) NFI, WFI3, WFI2, WFI1
-
     if len(data) > 0:
+        data = [d for d in data if d is not None]
         data_merged = _merge_ndcubes(data)
         data_merged.meta = NormalizedMetadata.load_template(product_code, level=level)
 
@@ -103,6 +105,8 @@ def merge_many_clear_task(
                              uncertainty = StdDevUncertainty(np.full((4096, 4096), np.inf)),
                              wcs = trefoil_wcs,
                              meta = NormalizedMetadata.load_template(product_code, level=level))
+
+    data_merged.meta["OUTLIER"] = encode_outliers([d for d in data if d is not None])
 
     # TODO - UTC tz?
     data_merged.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],

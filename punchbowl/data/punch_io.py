@@ -468,7 +468,7 @@ def check_outlier(cube: NDCube) -> bool:
     for flag in ["OUTLIER", "BADPKTS"]:
         if flag not in cube.meta:
             warnings.warn(f"Input cube does not contain {flag} keyword.")
-        elif cube.meta[flag].value == 1:
+        elif cube.meta[flag].value != 0:
             return True
     return False
 

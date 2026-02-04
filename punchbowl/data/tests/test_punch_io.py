@@ -13,6 +13,7 @@ from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import (
     CALIBRATION_ANNOTATION,
     _update_statistics,
+    check_outlier,
     get_base_file_name,
     load_ndcube_from_fits,
     write_ndcube_to_fits,
@@ -324,3 +325,16 @@ def test_uncertainty_inf_roundtrip(sample_ndcube, tmpdir):
     write_ndcube_to_fits(cube, test_path)
     loaded_cube = load_ndcube_from_fits(test_path)
     assert np.all(np.isinf(loaded_cube.uncertainty.array))
+
+
+def test_check_outlier(sample_ndcube):
+    cube = sample_ndcube((10,10))
+
+    cube.meta["OUTLIER"] = 1
+    assert check_outlier(cube) == 1
+
+    cube.meta["OUTLIER"] = 0
+    assert check_outlier(cube) == 0
+
+    cube.meta["OUTLIER"] = 1010
+    assert check_outlier(cube) == 1

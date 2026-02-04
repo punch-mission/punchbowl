@@ -473,22 +473,22 @@ def check_outlier(cube: NDCube) -> bool:
     return False
 
 
-def encode_outliers(cubes: list[NDCube]) -> str:
+def encode_outliers(cubes: list[NDCube]) -> int:
     """Encode the input data cube to return the outlier status for spacecraft 4321."""
-    outlier_map = {}
+    outliers = {}
     for cube in cubes:
-        obscode = cube.meta["OBSCODE"].value
-        has_outlier = cube.meta["OUTLIER"].value
-        outlier_map[obscode] = has_outlier
+        outliers[cube.meta["OBSCODE"].value] = cube.meta["OUTLIER"].value
 
-    return "".join(str(int(outlier_map.get(code, False))) for code in [4, 3, 2, 1])
+    outlier_string = "".join(str(int(outliers.get(code, False))) for code in ["4", "3", "2", "1"])
+
+    return int(outlier_string)
 
 
 def decode_outlier(cube: NDCube) -> dict:
     """Decode the input data cube to return the outlier status for spacecraft 4321."""
     return {
-        4: bool(cube.meta["OUTLIER"].value & 0b1000),
-        3: bool(cube.meta["OUTLIER"].value & 0b0100),
-        2: bool(cube.meta["OUTLIER"].value & 0b0010),
-        1: bool(cube.meta["OUTLIER"].value & 0b0001),
+        4: bool(int(cube.meta["OUTLIER"].value) & 0b1000),
+        3: bool(int(cube.meta["OUTLIER"].value) & 0b0100),
+        2: bool(int(cube.meta["OUTLIER"].value) & 0b0010),
+        1: bool(int(cube.meta["OUTLIER"].value) & 0b0001),
     }

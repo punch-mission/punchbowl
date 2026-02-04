@@ -410,6 +410,8 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
 def _load_many_cubes_caller(path: str | Path, kwargs: dict, allow_errors: bool) -> NDCube | str:
     try:
         return load_ndcube_from_fits(path, **kwargs)
+    except KeyboardInterrupt:
+        raise
     except:
         if allow_errors:
             return traceback.format_exc()

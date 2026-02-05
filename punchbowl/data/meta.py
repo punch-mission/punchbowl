@@ -935,6 +935,7 @@ def check_moon_in_fov(time_obs_start: DateLike,
 
     Returns
     -------
+
     times : list[datetime]
         Sampled times in UTC.
     angle_sun_center : list[float]

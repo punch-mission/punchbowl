@@ -934,8 +934,8 @@ def check_moon_in_fov(time_obs_start: DateLike,
         Image shape needed to define the image center pixel.
 
     Returns
-    -------
 
+    -------
     times : list[datetime]
         Sampled times in UTC.
     angle_sun_center : list[float]

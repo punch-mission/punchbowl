@@ -460,8 +460,8 @@ def construct_stray_light_call_data_processor(call_data: dict, pipeline_config, 
             call_data["mfilepaths"] = call_data["filepaths"][2::3]
         del call_data["filepaths"]
     del call_data["spacecraft"]
-    call_data["num_workers"] = 32
-    call_data["num_loaders"] = 5
+    call_data["num_workers"] = 40
+    call_data["num_loaders"] = 12
     return call_data
 
 

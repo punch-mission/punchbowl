@@ -165,6 +165,7 @@ def pick_peak(bin_values: np.ndarray) -> int:
 
 
 def find_peak_end(bin_values: np.ndarray, peak_location, direction) -> int:
+    """Find the edges of the first (left-most) peak, by expanding until appreciable up-hillage is found."""
     lowest_seen = np.inf
     lowest_idx = -1
     i = peak_location
@@ -186,15 +187,14 @@ class OutOfPointsError(RuntimeError):
 def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1e13, weight: bool = True, # noqa: C901
              plot_histogram_steps: bool = False, exclude_above_percentile: float = 0) -> float | SkewFitResult:
     """Fit a skewed Gaussian to a histogram of data values to estimate the stray light value."""
-    # Start by trimming outliers. We do that by making a histogram, finding the tallest bin, and then working out
-    # from there until we hit bins with little to no counts. We care about the main part of the distribution,
-    # so anything beyond those (nearly-) empty bins is an outlier. So we exclude those points and "zoom in" by
-    # re-making the histogram using only points between those two identified bins. This process repeats until there
-    # aren't any (nearly-) empty bins.
+    # The bulk of this function is producing a histogram of the data and progressively zooming in that histogram
+    # until we've found the left-most peak in the data. Then a bit at the end of the function fits that final
+    # histogram with a skewed Gaussian.
     if exclude_above_percentile:
         percentile_value = np.percentile(stack, exclude_above_percentile)
         stack = stack[stack < percentile_value]
 
+    # Build our first histogram
     bin_values, bin_edges, *_ = np.histogram(stack, bins=50)
     dx = bin_edges[1] - bin_edges[0]
     if plot_histogram_steps:
@@ -202,6 +202,11 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         dx = bin_edges[1] - bin_edges[0]
         plt.bar(bin_edges[:-1] + dx/2, bin_values, width=dx)
 
+    # We start by trimming outliers. We do that by making a histogram, finding the tallest bin, and then working out
+    # from there until we hit bins with little to no counts. We care about the main part of the distribution,
+    # so anything beyond those (nearly-) empty bins is an outlier. So we exclude those points and "zoom in" by
+    # re-making the histogram using only points between those two identified bins. This process repeats until there
+    # aren't any (nearly-) empty bins.
     min_count = 0.01 * bin_values.max()
     # Safety valve to avoid infinite loops
     max_loops_remaining = 10
@@ -241,11 +246,10 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
             raise OutOfPointsError
         min_count = 0.01 * bin_values.max()
 
-
     # Now the outliers should be gone. When present, they were dragging the range of our histogram way out,
     # so the core distribution had very poor resolution. Now we should have good resolution on the core area,
-    # and we can refine our zoom range better. Next we identify the target peak, walk downhill from it to find its
-    # edges, and we zoom there to isolate our targeted peak and avoid fitting a different peak
+    # and we can refine our zoom range better. Here we identify the target peak, walk downhill from it to find its
+    # edges, and we zoom there to isolate our targeted peak and avoid fitting a different peak.
     imax = pick_peak(bin_values)
     peak_location = bin_edges[imax] + dx / 2
     ilow = find_peak_end(bin_values, imax, -1)
@@ -269,7 +273,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
     if np.sum(bin_values) < 100:
         raise OutOfPointsError
 
-    # Next we walk out from the target peak until we find binds that are low relative to the peak, to chop off the
+    # Next we walk out from the target peak until we find bins that are low relative to the peak, to chop off the
     # tails of the distribution.
     imax = pick_peak(bin_values)
     peak_val = bin_values[imax]
@@ -299,14 +303,17 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         raise OutOfPointsError
     dx = bin_edges[1] - bin_edges[0]
     bin_centers = bin_edges[:-1] + dx / 2
+
     imax = pick_peak(bin_values)
     peak_val = bin_values[imax]
     peak_location = bin_centers[imax]
     if plot_histogram_steps:
         plt.bar(bin_centers, bin_values, width=dx)
 
-    # Now we'll zoom in to that region, make a histogram, and then if the peak doesn't seem wide enough (in terms of
-    # number of bins), we'll zoom in further
+    # Now, if the target peak doesn't seem wide enough (in terms of number of bins), we'll zoom in further. (If we
+    # only had a couple of bins in the actual peak, we'll probably get a really poor fit.). Note that this step may
+    # be unnecessary---it was added before the "zoom to target peak" step earlier, but that step may well always give
+    # good resolution on that peak.
     while True:
         # We need to compute how many bins wide our peak is (roughly)
         p2p = peak_val - np.min(bin_values)
@@ -346,6 +353,8 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         plt.title("Final distribution")
         plt.show()
 
+    # This concludes the histogram preparation. Now we get ready for fitting.
+
     # Sometimes there are empty bins that just seem to make the fit worse, so exclude them
     full_bins = bin_values > .05 * peak_val
     bin_values = bin_values[full_bins]
@@ -357,6 +366,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
     del bin_edges
 
     if weight:
+        # Assign weights that just taper off with distance from the peak bin.
         bin_weights = 1 / (40 + np.abs(np.arange(0, len(bin_values)) - imax))
         bin_weights /= bin_weights.max()
     else:
@@ -393,6 +403,8 @@ REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS = 0.5
 
 
 def _estimate_stray_light_one_slice(y: int, data_slice: np.ndarray, x_grid: np.ndarray, half_width: int) -> np.ndarray:
+    """This is our parallel worker, computing the stray light model for one y coordinate."""
+    # Control the extra noise we add to the data to prevent concentric bands that would otherwise appear
     noise_mode = 2e-13
     noise_hwhm = 2.25e-13 - 1.8e-13
     noise_amp = 0.2
@@ -405,7 +417,8 @@ def _estimate_stray_light_one_slice(y: int, data_slice: np.ndarray, x_grid: np.n
         if stack.size < n_pts * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS:
             r = np.nan
         else:
-            rng = np.random.default_rng(y * x + y + x)
+            # A seed that's unique per pixel yet deterministic
+            rng = np.random.default_rng(10000 * y + x)
             noise = noise_amp * rng.normal(scale=np.sqrt(stack / noise_mode) * noise_hwhm, size=stack.size)
             stack += noise
             try:
@@ -426,6 +439,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                          n_crota_bins: int = 30,
                          crota_bin_width: float = 45,
                          image_mask_path: str | None = None,
+                         make_plots_along_the_way: bool = False,
                          num_workers: int | None = None,
                          num_loaders: int | None = None) -> list[NDCube]:
     """Estimate the fixed stray light pattern using a percentile."""
@@ -481,6 +495,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     if image_mask is None:
         image_mask = np.all(data_array == 0, axis=0)
 
+    # Build our CROTA bins
     bin_centers = np.linspace(-180, 180, n_crota_bins, endpoint=False)
     bin_starts = bin_centers - crota_bin_width / 2
     bin_stops = bin_centers + crota_bin_width / 2
@@ -504,6 +519,8 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         x_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
         y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
 
+        # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
+        # inside the mask for this function's inner loop to get enough samples.
         if strided_image_mask is None:
             strided_image_mask = np.empty((y_grid.size, x_grid.size), dtype=bool)
             for i, y in enumerate(y_grid):
@@ -514,6 +531,8 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
         def args() -> Generator[tuple]:
             for y in y_grid:
+                # We can't fork when running under Prefect, so we have to just copy chunks of the data cube to each
+                # worker.
                 data_slice = data_array[bin_mask, y - window_half_width:y + window_half_width + 1, :]
                 yield y, data_slice, x_grid, window_half_width
 
@@ -521,70 +540,100 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         ctx = multiprocessing.get_context("forkserver")
         with ctx.Pool(num_workers) as p:
             stray_light_estimate = np.stack(p.starmap(_estimate_stray_light_one_slice, args()), axis=0)
-        stray_light_estimate[~strided_image_mask] = 0
+
         logger.info("Finished model fitting")
 
-        # import matplotlib.pyplot as plt
-        # plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
-        # plt.title("Raw")
-        # plt.show()
+        if make_plots_along_the_way:
+            import matplotlib.pyplot as plt
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.title("Raw")
+            plt.show()
 
+        # Fill spots where the fitting didn't succeed. But don't fill stuff outside the image mask.
+        stray_light_estimate[~strided_image_mask] = 0
         stray_light_estimate = inpaint_nans(stray_light_estimate, kernel_size=5)
-        # plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
-        # plt.title("post inpaint")
-        # plt.show()
+        if make_plots_along_the_way:
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.title("post inpaint")
+            plt.show()
 
+        # Now compute a percentile-equivalent value for each pixel in the model---i.e., what percentile would we have
+        # to take of the input data to produce the model value. We use this to flag the fits in the equatorial region
+        # that are wonky. (The closer you get to the equatorial region, the more subtle the lowest peak gets,
+        # until eventually you can't identify it anymore. That lost of the peak means the fitting jumps to a
+        # different peak and there's a discontinuity in the model, and that discontinuity is the main thing we want
+        # to identify and mask out.) For this to be a *true* percentile equivalent, we should only be considering the
+        # data in this orbital bin, but it just turns out that the problem region we want to flag doesn't stand out
+        # much if we do that, but it stands out *very* clearly if we compute these percentile-equivalents using the
+        # entire data cube, so we do that.
         d = data_array[:, y_grid][:, :, x_grid]
         d = parallel_sort_first_axis(d, inplace=True)
         percentiles = np.argmin(np.abs(d - stray_light_estimate), axis=0) / d.shape[0] * 100
-        # plt.imshow(percentiles, vmin=0, vmax=80, origin='lower')
-        # plt.title("Percentiles")
-        # plt.show()
+        if make_plots_along_the_way:
+            plt.imshow(percentiles, vmin=0, vmax=80, origin='lower')
+            plt.title("Percentiles")
+            plt.show()
         del d
+        # ID and process the region we want to mask and replace
         bad_region = percentiles >= 70
         bad_region = scipy.ndimage.binary_fill_holes(bad_region)
         bad_region = scipy.ndimage.binary_opening(bad_region, iterations=int(np.ceil(2*stride/10)))
         bad_region = scipy.ndimage.binary_dilation(bad_region, iterations=int(np.ceil(8*stride/10)))
         bad_region *= strided_image_mask
 
-        # plt.imshow(bad_region, vmin=0, vmax=1, origin='lower')
-        # plt.title("bad region")
-        # plt.show()
+        if make_plots_along_the_way:
+            plt.imshow(bad_region, vmin=0, vmax=1, origin='lower')
+            plt.title("bad region")
+            plt.show()
 
+        # Produce a fill value for that region. We don't want the masked outer edges of the image to influence the
+        # fill values we produce, so we include them in the "pixels to inpaint" mask. That produces fill values for
+        # those pixels which we don't need or use, but it prevents those pixels from being considered as input pixels
+        # to inpaint from, and that's the important thing.
         inpaint_mask = bad_region + ~strided_image_mask
         inpainted = inpaint.inpaint_biharmonic(stray_light_estimate, inpaint_mask)
-        # plt.imshow(inpainted, vmin=0, vmax=.5e-12, origin='lower')
-        # plt.title("Inpainted")
-        # plt.show()
+
+        if make_plots_along_the_way:
+            plt.imshow(inpainted, vmin=0, vmax=.5e-12, origin='lower')
+            plt.title("Inpainted")
+            plt.show()
 
         stray_light_estimate[bad_region] = inpainted[bad_region]
 
+        # Now the outer masked region needs to be NaNs so it doesn't impact the Gaussian blurring we're about to do.
         stray_light_estimate[~strided_image_mask] = np.nan
 
-        # plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
-        # plt.title("Filled")
-        # plt.show()
+        if make_plots_along_the_way:
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.title("Filled")
+            plt.show()
 
         if blur_sigma:
             stray_light_estimate = nan_gaussian(stray_light_estimate, blur_sigma)
-        # plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
-        # plt.title("Blurred")
-        # plt.show()
+
+        if make_plots_along_the_way:
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.title("Blurred")
+            plt.show()
 
         stray_light_estimate[~strided_image_mask] = 0
 
-        # plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
-        # plt.title("Masked")
-        # plt.show()
+        if make_plots_along_the_way:
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.title("Masked")
+            plt.show()
         if stride > 1 or window_size > 1:
+            # Upsample to a proper output size
             interper = scipy.interpolate.RegularGridInterpolator(
                     (y_grid, x_grid), stray_light_estimate, method="linear", bounds_error=False, fill_value=None)
             out_y, out_x = np.mgrid[:data_array.shape[1], :data_array.shape[2]]
             stray_light_estimate = interper(np.stack((out_y, out_x), axis=-1))
             stray_light_estimate *= image_mask
-        # plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
-        # plt.title("Interped, final")
-        # plt.show()
+
+        if make_plots_along_the_way:
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.title("Interped, final")
+            plt.show()
 
         models.append(stray_light_estimate)
         logger.info(f"Finished with bin {bin_n + 1}")
@@ -694,7 +743,8 @@ def remove_stray_light_task(data_object: NDCube, #noqa: C901
             msg = f"Incorrect stray light function shape within {model.meta['FILENAME'].value}"
             raise InvalidDataError(msg)
 
-    # Duplicate bin at top
+    # Here we handle the CROTA bins. First, figure out which bin we're in.
+    # First bin center is duplicated at the end
     bin_centers = np.linspace(-180, 180, stray_light_before_model.shape[0] + 1)
     bin_width = 360 / stray_light_before_model.shape[0]
     crota = data_object.meta["CROTA"].value
@@ -716,6 +766,8 @@ def remove_stray_light_task(data_object: NDCube, #noqa: C901
             data=before_at_orbit_pos, meta=stray_light_before_model.meta, wcs=stray_light_before_model.wcs)
     stray_light_after_model = NDCube(
             data=after_at_orbit_pos, meta=stray_light_after_model.meta, wcs=stray_light_after_model.wcs)
+
+    # Next we do the temporal interpolation.
 
     # For the quickpunch case, our stray light models run right up to the current time, with their DATE-OBS likely days
     # in the past. It feels reckless to interpolate the six-hour variation in the model over several days, so let's

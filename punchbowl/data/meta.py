@@ -5,7 +5,7 @@ import typing as t
 from datetime import UTC, datetime
 from collections import OrderedDict
 from collections.abc import Mapping
-from typing import Any, Mapping, Union, List, Tuple
+from typing import Any
 
 import astropy.units as u
 import numpy as np
@@ -895,7 +895,7 @@ def set_spacecraft_location_to_earth(input_data: NDCube) -> NDCube:
     return input_data
 
 
-DateLike = Union[str, Header, Mapping[str, Any]]
+DateLike = str | Header | Mapping[str, Any]
 def check_moon_in_fov(time_obs_start: DateLike,
                         time_end: str | None = None,
                         resolution_minutes: int = 30,
@@ -907,6 +907,7 @@ def check_moon_in_fov(time_obs_start: DateLike,
                             list[float] | None, list[float] | None]:
     """
     Forecast the moon in PUNCH FOV in a given time range.
+
     It supports two modes:
         1) Single-time mode: pass a DATE-OBS (string or FITS header)
         2) Time-range mode: pass DATE-OBS as start time and `time_end`
@@ -934,6 +935,7 @@ def check_moon_in_fov(time_obs_start: DateLike,
 
     Returns
     -------
+
     times : list[datetime]
         Sampled times in UTC.
     angle_sun_center : list[float]
@@ -942,18 +944,15 @@ def check_moon_in_fov(time_obs_start: DateLike,
         Half-angle of the field of view (degrees). It will be required
             mainly when plotting the angular distance.
     in_fov_times : list[(iso, angle)]
-            Times where Moon–Sun separation <= fov_half.
+            Times where Moon-Sun separation <= fov_half.
     angles_image_center : list[float] | None
         Moon angular separation from image center (deg), if wcs provided.
     moon_xpix : list[float] | None
-        Moon center x pixel coordinate (float).
+        Moon center x pixel coordinate (float).  If outside the image, -1.
     moon_ypix : list[float] | None
-        Moon center y pixel coordinate (float).
+        Moon center y pixel coordinate (float).  If outside the image, -1.
     """
-    if isinstance(time_obs_start, Mapping):
-        date_obs_str = str(time_obs_start["DATE-OBS"])
-    else:
-        date_obs_str = str(time_obs_start)
+    date_obs_str = str(time_obs_start["DATE-OBS"]) if isinstance(time_obs_start, Mapping) else str(time_obs_start)
 
     if time_end is None:
         times = Time([date_obs_str])

@@ -509,15 +509,19 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         mask = np.array([crota_is_in_bin(m['CROTA'].value, binn) for m in metas])
         bin_masks.append(mask)
 
+    window_half_width = window_size // 2
+    # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
+    # stride position fits
+    x_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
+    y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
+
+    # We'll use this later for calculating percentile equivalents
+    sorted_data = data_array[:, y_grid][:, :, x_grid]
+    sorted_data = parallel_sort_first_axis(sorted_data, inplace=True)
+
     models = []
     for bin_n, bin_mask in enumerate(bin_masks):
         logger.info(f"Starting bin {bin_n + 1}")
-
-        window_half_width = window_size // 2
-        # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
-        # stride position fits
-        x_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
-        y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
 
         # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
         # inside the mask for this function's inner loop to get enough samples.
@@ -566,14 +570,12 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         # data in this orbital bin, but it just turns out that the problem region we want to flag doesn't stand out
         # much if we do that, but it stands out *very* clearly if we compute these percentile-equivalents using the
         # entire data cube, so we do that.
-        d = data_array[:, y_grid][:, :, x_grid]
-        d = parallel_sort_first_axis(d, inplace=True)
-        percentiles = np.argmin(np.abs(d - stray_light_estimate), axis=0) / d.shape[0] * 100
+        percentiles = np.argmin(np.abs(sorted_data - stray_light_estimate), axis=0) / sorted_data.shape[0] * 100
         if make_plots_along_the_way:
             plt.imshow(percentiles, vmin=0, vmax=80, origin='lower')
             plt.title("Percentiles")
             plt.show()
-        del d
+
         # ID and process the region we want to mask and replace
         bad_region = percentiles >= 70
         bad_region = scipy.ndimage.binary_fill_holes(bad_region)

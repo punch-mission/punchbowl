@@ -421,7 +421,7 @@ def _estimate_stray_light_one_slice(y: int, data_slice: np.ndarray, x_grid: np.n
 def estimate_stray_light(filepaths: list[str], # noqa: C901
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
-                         stride: int = 4,
+                         stride: int = 10,
                          window_size: int = 5,
                          blur_sigma: float = 1.5,
                          n_crota_bins: int = 30,
@@ -474,7 +474,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
             if cube.uncertainty is not None:
                 # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
                 uncertainty += np.nan_to_num(cube.uncertainty.array, posinf=0, neginf=0) ** 2
-        if (i + 1) % 50 == 0:
+        if (i + 1) % 100 == 0:
             logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
     logger.info("Finished loaded files")
     data_array = data_array[:j]
@@ -623,8 +623,6 @@ def estimate_polarized_stray_light(
                 pfilepaths: list[str],
                 do_uncertainty: bool = True,
                 reference_time: datetime | str | None = None,
-                stride: int = 2,
-                window_size: int = 3,
                 num_workers: int | None = None,
                 num_loaders: int | None = None,
                 ) -> list[NDCube]:
@@ -639,24 +637,18 @@ def estimate_polarized_stray_light(
     output_cubes.extend(estimate_stray_light(mfilepaths,
                                              do_uncertainty=do_uncertainty,
                                              reference_time=reference_time,
-                                             stride=stride,
-                                             window_size=window_size,
                                              num_workers=num_workers,
                                              num_loaders=num_loaders))
     logger.info("Running for Z files")
     output_cubes.extend(estimate_stray_light(zfilepaths,
                                              do_uncertainty=do_uncertainty,
                                              reference_time=reference_time,
-                                             stride=stride,
-                                             window_size=window_size,
                                              num_workers=num_workers,
                                              num_loaders=num_loaders))
     logger.info("Running for P files")
     output_cubes.extend(estimate_stray_light(pfilepaths,
                                              do_uncertainty=do_uncertainty,
                                              reference_time=reference_time,
-                                             stride=stride,
-                                             window_size=window_size,
                                              num_workers=num_workers,
                                              num_loaders=num_loaders))
     return output_cubes

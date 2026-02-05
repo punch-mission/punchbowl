@@ -8,7 +8,6 @@ from collections.abc import Generator
 
 import numpy as np
 import scipy
-from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime
 from lmfit import Parameters, minimize
@@ -107,7 +106,7 @@ class SkewFitResult:
         if mark_result:
             plt.axvline(self.result, color="C4", label="Our result")
         if mark_tcenter:
-            plt.axvline(self.target_center, color='C5', label="Targeted peak", ls=':')
+            plt.axvline(self.target_center, color="C5", label="Targeted peak", ls=":")
         plt.legend()
 
 
@@ -239,7 +238,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
             plt.bar(bin_edges[:-1] + dx/2, bin_values, width=dx)
 
         if np.sum(bin_values) < 100:
-            raise OutOfPointsError()
+            raise OutOfPointsError
         min_count = 0.01 * bin_values.max()
 
 
@@ -254,7 +253,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
     low = bin_edges[ilow]
     high = bin_edges[ihigh + 1]
     if plot_histogram_steps:
-        plt.axvline(peak_location, ls='--')
+        plt.axvline(peak_location, ls="--")
         plt.axvline(low)
         plt.axvline(high)
         plt.title("Zooming in to isolate peak")
@@ -268,7 +267,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         plt.bar(bin_edges[:-1] + dx/2, bin_values, width=dx)
 
     if np.sum(bin_values) < 100:
-        raise OutOfPointsError()
+        raise OutOfPointsError
 
     # Next we walk out from the target peak until we find binds that are low relative to the peak, to chop off the
     # tails of the distribution.
@@ -290,14 +289,14 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
 
     if plot_histogram_steps:
         plt.title("Zooming in to exclude tail")
-        plt.axvline(bin_edges[imax] + dx/2, ls='--')
+        plt.axvline(bin_edges[imax] + dx/2, ls="--")
         plt.axvline(low)
         plt.axvline(high)
         plt.show()
 
     bin_values, bin_edges, *_ = np.histogram(stack, bins=20, range=(low, high))
     if np.sum(bin_values) < 100:
-        raise OutOfPointsError()
+        raise OutOfPointsError
     dx = bin_edges[1] - bin_edges[0]
     bin_centers = bin_edges[:-1] + dx / 2
     imax = pick_peak(bin_values)
@@ -326,14 +325,14 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
 
         if plot_histogram_steps:
             plt.title("Zooming in to widen peak")
-            plt.axvline(bin_edges[imax] + dx/2, ls='--')
+            plt.axvline(bin_edges[imax] + dx/2, ls="--")
             plt.axvline(low)
             plt.axvline(high)
             plt.show()
 
         bin_values, bin_edges, *_ = np.histogram(stack, bins=20, range=(low, high))
         if np.sum(bin_values) < 100:
-            raise OutOfPointsError()
+            raise OutOfPointsError
         dx = bin_edges[1] - bin_edges[0]
         bin_centers = bin_edges[:-1] + dx / 2
         if plot_histogram_steps:
@@ -343,7 +342,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
         peak_location = bin_centers[imax]
 
     if plot_histogram_steps:
-        plt.axvline(peak_location, ls='--')
+        plt.axvline(peak_location, ls="--")
         plt.title("Final distribution")
         plt.show()
 
@@ -351,7 +350,7 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
     full_bins = bin_values > .05 * peak_val
     bin_values = bin_values[full_bins]
     if np.sum(bin_values) < 100 or len(bin_values) < 5:
-        raise OutOfPointsError()
+        raise OutOfPointsError
     bin_centers = bin_centers[full_bins]
     imax = np.where(bin_values == peak_val)[0][0]
     # No longer valid
@@ -492,7 +491,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
     bin_masks = []
     for binn in range(n_crota_bins):
-        mask = np.array([crota_is_in_bin(m['CROTA'].value, binn) for m in metas])
+        mask = np.array([crota_is_in_bin(m["CROTA"].value, binn) for m in metas])
         bin_masks.append(mask)
 
     models = []
@@ -597,7 +596,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
     out_type = "S" + metas[0].product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
-    meta.provenance = [m['FILENAME'] for m in metas]
+    meta.provenance = [m["FILENAME"] for m in metas]
     all_date_obses = [m.datetime for m in metas]
     meta["DATE-AVG"] = average_datetime(all_date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") if reference_time else meta["DATE-AVG"].value
@@ -616,42 +615,6 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
     return [out_cube]
 
-@punch_flow
-def estimate_polarized_stray_light(
-                mfilepaths: list[str],
-                zfilepaths: list[str],
-                pfilepaths: list[str],
-                do_uncertainty: bool = True,
-                reference_time: datetime | str | None = None,
-                num_workers: int | None = None,
-                num_loaders: int | None = None,
-                ) -> list[NDCube]:
-    """Estimate the polarized stray light pattern using minimum indexing method."""
-    logger = get_run_logger()
-
-    if isinstance(reference_time, str):
-        reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
-
-    output_cubes = []
-    logger.info("Running for M files")
-    output_cubes.extend(estimate_stray_light(mfilepaths,
-                                             do_uncertainty=do_uncertainty,
-                                             reference_time=reference_time,
-                                             num_workers=num_workers,
-                                             num_loaders=num_loaders))
-    logger.info("Running for Z files")
-    output_cubes.extend(estimate_stray_light(zfilepaths,
-                                             do_uncertainty=do_uncertainty,
-                                             reference_time=reference_time,
-                                             num_workers=num_workers,
-                                             num_loaders=num_loaders))
-    logger.info("Running for P files")
-    output_cubes.extend(estimate_stray_light(pfilepaths,
-                                             do_uncertainty=do_uncertainty,
-                                             reference_time=reference_time,
-                                             num_workers=num_workers,
-                                             num_loaders=num_loaders))
-    return output_cubes
 
 @punch_task
 def remove_stray_light_task(data_object: NDCube, #noqa: C901

@@ -950,6 +950,7 @@ def check_moon_in_fov(time_obs_start: DateLike,
         Moon center x pixel coordinate (float).  If outside the image, -1.
     moon_ypix : list[float] | None
         Moon center y pixel coordinate (float).  If outside the image, -1.
+
     """
     date_obs_str = str(time_obs_start["DATE-OBS"]) if isinstance(time_obs_start, Mapping) else str(time_obs_start)
 

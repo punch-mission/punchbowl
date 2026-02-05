@@ -616,42 +616,6 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
     return [out_cube]
 
-@punch_flow
-def estimate_polarized_stray_light(
-                mfilepaths: list[str],
-                zfilepaths: list[str],
-                pfilepaths: list[str],
-                do_uncertainty: bool = True,
-                reference_time: datetime | str | None = None,
-                num_workers: int | None = None,
-                num_loaders: int | None = None,
-                ) -> list[NDCube]:
-    """Estimate the polarized stray light pattern using minimum indexing method."""
-    logger = get_run_logger()
-
-    if isinstance(reference_time, str):
-        reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
-
-    output_cubes = []
-    logger.info("Running for M files")
-    output_cubes.extend(estimate_stray_light(mfilepaths,
-                                             do_uncertainty=do_uncertainty,
-                                             reference_time=reference_time,
-                                             num_workers=num_workers,
-                                             num_loaders=num_loaders))
-    logger.info("Running for Z files")
-    output_cubes.extend(estimate_stray_light(zfilepaths,
-                                             do_uncertainty=do_uncertainty,
-                                             reference_time=reference_time,
-                                             num_workers=num_workers,
-                                             num_loaders=num_loaders))
-    logger.info("Running for P files")
-    output_cubes.extend(estimate_stray_light(pfilepaths,
-                                             do_uncertainty=do_uncertainty,
-                                             reference_time=reference_time,
-                                             num_workers=num_workers,
-                                             num_loaders=num_loaders))
-    return output_cubes
 
 @punch_task
 def remove_stray_light_task(data_object: NDCube, #noqa: C901

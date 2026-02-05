@@ -1008,8 +1008,7 @@ def check_moon_in_fov(time_obs_start: DateLike,
                 in_fov_times.append((t.iso, angle))
 
             if do_image and wcs is not None:
-                moon_icrs = get_body("moon", t).icrs  # appropriate for RA/Dec-like WCS
-
+                moon_icrs = get_body("moon", t).icrs
                 x_moon, y_moon = wcs.world_to_pixel(moon_icrs)
 
                 # Angular separation from image center

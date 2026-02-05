@@ -339,7 +339,6 @@ wcs.wcs.crpix = 1024, 1024
 wcs.wcs.crval = 0, 24.75
 
 def test_moon_angular_distance_from_center(): # change import
-    # wcs = WCS(fits.getheader(SAMPLE_FITS_PATH_UNCOMPRESSED, ext=1)).dropaxis(2)
     shape = (2048, 2048)
     t_obs = "2026-08-24T16:30:24.766"
 

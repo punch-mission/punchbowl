@@ -481,7 +481,7 @@ def encode_outliers(cubes: list[NDCube]) -> int:
 
     result = 0
     for i, code in enumerate(["1", "2", "3", "4"]):
-        if outliers[code]:
+        if outliers.get(code, False):
             result |= (1 << i)
 
     return result

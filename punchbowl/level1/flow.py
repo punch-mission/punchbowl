@@ -11,8 +11,8 @@ from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_
 from regularizepsf.util import calculate_covering
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.data.units import calculate_image_pixel_area, dn_to_msb
 from punchbowl.data.meta import check_moon_in_fov
+from punchbowl.data.units import calculate_image_pixel_area, dn_to_msb
 from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 from punchbowl.level1.despike import despike_polseq_task

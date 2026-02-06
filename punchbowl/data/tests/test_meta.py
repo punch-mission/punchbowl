@@ -2,13 +2,13 @@ import os
 from datetime import UTC, datetime
 from collections import Counter
 
+import astropy.units as u
 import numpy as np
 import pytest
-import astropy.units as u
-from astropy.io import fits
-from astropy.wcs import WCS, DistortionLookupTable
 from astropy.coordinates import get_body
+from astropy.io import fits
 from astropy.time import Time
+from astropy.wcs import WCS, DistortionLookupTable
 
 from punchbowl.data.history import HistoryEntry
 from punchbowl.data.meta import (

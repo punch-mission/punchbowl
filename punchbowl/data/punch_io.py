@@ -482,7 +482,7 @@ def encode_outliers(cubes: list[NDCube]) -> int:
     result = 0
     for i, code in enumerate(["1", "2", "3", "4"]):
         if outliers.get(code, False):
-            result |= (1 << i)
+            result |= (1 << (i+1))
 
     return result
 
@@ -490,8 +490,8 @@ def encode_outliers(cubes: list[NDCube]) -> int:
 def decode_outliers(cube: NDCube) -> dict:
     """Decode the input data cube to return the outlier status for spacecraft 4321."""
     return {
-        "4": bool(cube.meta["OUTLIER"].value & 0b1000),
-        "3": bool(cube.meta["OUTLIER"].value & 0b0100),
-        "2": bool(cube.meta["OUTLIER"].value & 0b0010),
-        "1": bool(cube.meta["OUTLIER"].value & 0b0001),
+        "4": bool(cube.meta["OUTLIER"].value & 0b10000),
+        "3": bool(cube.meta["OUTLIER"].value & 0b01000),
+        "2": bool(cube.meta["OUTLIER"].value & 0b00100),
+        "1": bool(cube.meta["OUTLIER"].value & 0b00010),
     }

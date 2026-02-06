@@ -361,13 +361,13 @@ def test_encode_outliers(sample_ndcube):
 
     outlier_code = encode_outliers([cube1, cube2, cube3, cube4])
 
-    assert outlier_code == 10
+    assert outlier_code == 20
 
 
 def test_decode_outliers(sample_ndcube):
     cube = sample_ndcube((10,10))
     cube.meta["OBSCODE"] = "M"
-    cube.meta["OUTLIER"] = 10
+    cube.meta["OUTLIER"] = 20
 
     outliers = decode_outliers(cube)
 

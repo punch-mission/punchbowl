@@ -155,9 +155,9 @@ def construct_stray_light_file_info(level1_files: list[File],
     date_beg, date_end = min(date_obses), max(date_obses)
     return [File(
                 level="1",
-                file_type="SR",
+                file_type=file_type,
                 observatory=spacecraft,
-                polarization="C",
+                polarization="C" if file_type[1] == 'R' else file_type[1],
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
                 date_obs=reference_time,

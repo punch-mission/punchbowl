@@ -44,7 +44,7 @@ htmlcov/
 .coverage.*
 .cache
 nosetests.xml
-coverage.xml
+scratch/coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
@@ -164,3 +164,15 @@ docs/_build/
 *.npy
 test_run/
 PUNCH_SAMPLE/
+docs/auto_examples/
+scratch/
+punchbowl/level1/astrometry_cache/
+astrometry_cache/
+uv.lock
+empty.txt
+scripts/auto/create_credentials.py
+examples/punch_data/
+punchbowl/levelq/*/*.fits
+punchbowl/levelq/*/*.sha
+examples/*.mp4
+.vscode/

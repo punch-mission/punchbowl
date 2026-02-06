@@ -21,6 +21,7 @@ def _merge_ndcubes(cubes: list[NDCube | None], reference_cube_index: int | None 
     data_stack = np.stack([cube.data for cube in cubes], axis=0)
     uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes])
 
+    # Ignores negative / zero / infinite uncertainty, or places where the input data is exactly zero
     uncertainty_stack[uncertainty_stack <= 0] = np.nan
     uncertainty_stack[~np.isfinite(uncertainty_stack)] = np.nan
     uncertainty_stack[data_stack == 0] = np.nan
@@ -32,6 +33,7 @@ def _merge_ndcubes(cubes: list[NDCube | None], reference_cube_index: int | None 
     final_uncertainty = np.sqrt(np.sum(np.where(np.isfinite(uncertainty_stack), uncertainty_stack**2, 0), axis=0)) \
         / np.sqrt(np.sum(np.isfinite(uncertainty_stack), axis=0))
 
+    # Restores uncertainty of zero or nan to infinite
     final_uncertainty[final_uncertainty == 0] = np.inf
     final_uncertainty[~np.isfinite(final_uncertainty)] = np.inf
 

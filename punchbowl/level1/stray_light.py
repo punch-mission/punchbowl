@@ -493,7 +493,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     data_array = data_array[:j]
 
     if image_mask is None:
-        image_mask = np.all(data_array == 0, axis=0)
+        image_mask = ~np.all(data_array == 0, axis=0)
 
     # Build our CROTA bins
     bin_centers = np.linspace(-180, 180, n_crota_bins, endpoint=False)

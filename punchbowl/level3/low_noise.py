@@ -13,6 +13,7 @@ from punchbowl.prefect import punch_task
 @punch_task
 def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     """Create a low noise image from a set of inputs."""
+    cube_count = len(cubes)
     cubes = [cube for cube in cubes if not check_outlier(cube)]
 
     # TODO - Note to future self: be clever and use the outlier flag to excise bad data spatially.
@@ -26,8 +27,9 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
         if k not in ("COMMENT", "HISTORY", "") and k in new_meta:
             new_meta[k] = cubes[reference_cube_index].meta[k].value
 
-    # We've ignored outlier inputs, so we know this to be clean.
-    new_meta["OUTLIER"] = 0
+    # If any input data are excluded, flag this as an outlier
+    if cube_count != len(cubes):
+        new_meta["OUTLIER"] = 1
 
     times_obs = np.array([cube.meta.datetime.timestamp() for cube in cubes])
     times_beg = np.array([parse_datetime(cube.meta["DATE-BEG"].value).replace(tzinfo=UTC).timestamp()

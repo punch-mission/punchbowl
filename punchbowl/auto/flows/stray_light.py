@@ -10,6 +10,7 @@ from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
+from punchbowl.auto.flows.level1 import get_mask_file
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level1.stray_light import estimate_stray_light
 
@@ -125,11 +126,14 @@ def construct_stray_light_flow_info(level1_files: list[File],
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    mask = get_mask_file(level1_files[0], pipeline_config, session=session)
+
     call_data = json.dumps(
         {
             "filepaths": [level1_file.filename() for level1_file in level1_files],
             "reference_time": reference_time.strftime("%Y-%m-%d %H:%M:%S"),
             "spacecraft": spacecraft,
+            "image_mask_path": mask.filename().replace(".fits", ".bin"),
         },
     )
     return Flow(
@@ -282,7 +286,8 @@ def construct_stray_light_scheduler_flow(pipeline_config_path=None, session=None
 
 def construct_stray_light_call_data_processor(call_data: dict, pipeline_config, session) -> dict:
     # Prepend the directory path to each input file
-    call_data["filepaths"] = file_name_to_full_path(call_data["filepaths"], pipeline_config["root"])
+    for key in ["filepaths", "image_mask_path"]:
+        call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     del call_data["spacecraft"]
     call_data["num_workers"] = 40
     call_data["num_loaders"] = 12

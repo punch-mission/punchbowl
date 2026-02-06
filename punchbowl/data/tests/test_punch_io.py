@@ -14,6 +14,8 @@ from punchbowl.data.punch_io import (
     CALIBRATION_ANNOTATION,
     _update_statistics,
     check_outlier,
+    decode_outliers,
+    encode_outliers,
     get_base_file_name,
     load_ndcube_from_fits,
     write_ndcube_to_fits,
@@ -327,7 +329,7 @@ def test_uncertainty_inf_roundtrip(sample_ndcube, tmpdir):
     assert np.all(np.isinf(loaded_cube.uncertainty.array))
 
 
-def test_check_outlier(sample_ndcube):
+def test_check_outliers(sample_ndcube):
     cube = sample_ndcube((10,10))
 
     cube.meta["OUTLIER"] = 1
@@ -336,5 +338,40 @@ def test_check_outlier(sample_ndcube):
     cube.meta["OUTLIER"] = 0
     assert check_outlier(cube) == 0
 
-    cube.meta["OUTLIER"] = 1010
+    cube.meta["OUTLIER"] = 15
     assert check_outlier(cube) == 1
+
+
+def test_encode_outliers(sample_ndcube):
+    cube1 = sample_ndcube((10,10))
+    cube1.meta["OBSCODE"] = "1"
+    cube1.meta["OUTLIER"] = 0
+
+    cube2 = sample_ndcube((10,10))
+    cube2.meta["OBSCODE"] = "2"
+    cube2.meta["OUTLIER"] = 1
+
+    cube3 = sample_ndcube((10,10))
+    cube3.meta["OBSCODE"] = "3"
+    cube3.meta["OUTLIER"] = 0
+
+    cube4 = sample_ndcube((10,10))
+    cube4.meta["OBSCODE"] = "4"
+    cube4.meta["OUTLIER"] = 1
+
+    outlier_code = encode_outliers([cube1, cube2, cube3, cube4])
+
+    assert outlier_code == 10
+
+
+def test_decode_outliers(sample_ndcube):
+    cube = sample_ndcube((10,10))
+    cube.meta["OBSCODE"] = "M"
+    cube.meta["OUTLIER"] = 10
+
+    outliers = decode_outliers(cube)
+
+    assert outliers["4"] == 1
+    assert outliers["3"] == 0
+    assert outliers["2"] == 1
+    assert outliers["1"] == 0

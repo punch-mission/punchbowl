@@ -15,6 +15,7 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     """Create a low noise image from a set of inputs."""
     cubes = [cube for cube in cubes if not check_outlier(cube)]
 
+    # TODO - Note to future self: be clever and use the outlier flag to excise bad data spatially.
     reference_cube_index = len(cubes)//2 - 1
     new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index)
 
@@ -24,6 +25,9 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     for k in cubes[0].meta.fits_keys:
         if k not in ("COMMENT", "HISTORY", "") and k in new_meta:
             new_meta[k] = cubes[reference_cube_index].meta[k].value
+
+    # We've ignored outlier inputs, so we know this to be clean.
+    new_meta["OUTLIER"] = 0
 
     times_obs = np.array([cube.meta.datetime.timestamp() for cube in cubes])
     times_beg = np.array([parse_datetime(cube.meta["DATE-BEG"].value).replace(tzinfo=UTC).timestamp()

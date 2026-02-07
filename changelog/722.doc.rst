@@ -1,0 +1,1 @@
+Streamlines example notebooks built as part of the documentation to avoid timing out the CI.

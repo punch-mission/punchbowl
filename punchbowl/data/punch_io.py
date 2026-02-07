@@ -479,6 +479,30 @@ def check_outlier(cube: NDCube) -> bool:
     for flag in ["OUTLIER", "BADPKTS"]:
         if flag not in cube.meta:
             warnings.warn(f"Input cube does not contain {flag} keyword.")
-        elif cube.meta[flag].value == 1:
+        elif cube.meta[flag].value != 0:
             return True
     return False
+
+
+def encode_outliers(cubes: list[NDCube]) -> int:
+    """Encode the input data cube to return the outlier status for spacecraft 4321."""
+    outliers = {}
+    for cube in cubes:
+        outliers[cube.meta["OBSCODE"].value] = cube.meta["OUTLIER"].value
+
+    result = 0
+    for i, code in enumerate(["1", "2", "3", "4"]):
+        if outliers.get(code, False):
+            result |= (1 << (i+1))
+
+    return result
+
+
+def decode_outliers(cube: NDCube) -> dict:
+    """Decode the input data cube to return the outlier status for spacecraft 4321."""
+    return {
+        "4": bool(cube.meta["OUTLIER"].value & 0b10000),
+        "3": bool(cube.meta["OUTLIER"].value & 0b01000),
+        "2": bool(cube.meta["OUTLIER"].value & 0b00100),
+        "1": bool(cube.meta["OUTLIER"].value & 0b00010),
+    }

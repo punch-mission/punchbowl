@@ -11,7 +11,7 @@ dependencies = [
     "sunpy[all]",
     "pandas",
     "ndcube",
-    "matplotlib<=3.9.2",
+    "matplotlib<=3.10.8",
     "ccsdspy",
     "prefect[dask]",
     "regularizepsf",
@@ -98,6 +98,7 @@ docs = [
     "ipython",
     "ipykernel",
     "sphinxcontrib-mermaid",
+    "sphinx-copybutton",
     "ffmpeg-python",
     "bokeh"
 ]

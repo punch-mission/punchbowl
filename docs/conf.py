@@ -78,6 +78,7 @@ extensions = ["autoapi.extension",
               "sphinx_rtd_theme",
               "sphinx_favicon",
               'sphinx_gallery.gen_gallery',
+              "sphinx_copybutton",
               "sphinxcontrib.mermaid",
               # 'jupyterlite_sphinx',
               "IPython.sphinxext.ipython_console_highlighting"]
@@ -133,10 +134,27 @@ favicons = ["favicon.ico"]
 
 mermaid_verbose = True
 
+def setup(app):
+    app.connect('build-finished', copy_gallery_files)
+
+def copy_gallery_files(app, exception):
+    if exception is None and app.builder.name == 'html':
+        import shutil
+        from pathlib import Path
+
+        src = Path(app.srcdir) / 'auto_examples'
+        dst = Path(app.outdir) / 'auto_examples'
+
+        for mp4 in src.rglob('*.mp4'):
+            rel_path = mp4.relative_to(src)
+            (dst / rel_path.parent).mkdir(parents=True, exist_ok=True)
+            shutil.copy2(mp4, dst / rel_path)
+
 sphinx_gallery_conf = {
     'filename_pattern': '^((?!skip_).)*$',
     'examples_dirs': os.path.join('..', 'examples'),
     'gallery_dirs': 'auto_examples',
+    'copyfile_regex': r'.*\.mp4$',
     'jupyterlite': {
         'use_jupyter_lab': True,
         'notebook_modification_function': None,

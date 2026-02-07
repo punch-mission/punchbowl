@@ -22,10 +22,10 @@ def _merge_ndcubes(cubes: list[NDCube | None], reference_cube_index: int | None 
     uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes])
 
     # Ignores negative / zero / infinite uncertainty, or places where the input data is exactly zero
-    uncertainty_stack_was_nan = np.isnan(uncertainty_stack)
+    uncertainty_was_invalid = ~np.isfinite(uncertainty_stack) + (uncertainty_stack == 0)
     uncertainty_stack_was_bad = (uncertainty_stack <= 0) + ~np.isfinite(uncertainty_stack)
     uncertainty_stack[uncertainty_stack_was_bad] = 1e64
-    uncertainty_stack[(data_stack == 0) & uncertainty_stack_was_nan] = np.nan
+    uncertainty_stack[((data_stack == 0) + np.isnan(data_stack)) & uncertainty_was_invalid] = np.nan
 
     weight_stack = 1/np.square(uncertainty_stack)
 

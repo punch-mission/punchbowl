@@ -29,7 +29,7 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     base_query = (session.query(File)
                   .filter(File.state.in_(["created", "progressed"]))
                   .filter(File.observatory == reference_file.observatory)
-                  .filter(~File.outlier)
+                  .filter(File.outlier == 0)
                   )
 
     first_half_inputs = (base_query

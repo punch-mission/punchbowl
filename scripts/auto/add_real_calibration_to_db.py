@@ -36,7 +36,7 @@ for model_path in model_paths:
         software_version=version,
         date_obs=date,
         polarization=code[1] if code[0] == 'P' else 'C',
-        outlier=False,
+        outlier=0,
         state='created',
     )
     session.add(file)

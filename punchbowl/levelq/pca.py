@@ -93,7 +93,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
             body_finding_input = (meta, wcs)
         else:
             raise TypeError(f"Invalid type {type(input_file)} for input file")
-        is_good = not meta["OUTLIER"].value
+        is_good = meta["OUTLIER"].value == 0
         if is_good or input_list_index >= 0:
             loaded_input_list_indices.append(input_list_index)
             all_files_to_fit[index_to_insert] = data

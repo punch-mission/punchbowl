@@ -56,7 +56,7 @@ class ExportedFile:
     polarization: str
     state: str
     crota: float
-    outlier: bool
+    outlier: int
     bad_packets: bool
     processing_flow: ExportedFlow
     parents: list[tuple]

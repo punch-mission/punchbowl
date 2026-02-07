@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy import TEXT, Boolean, Column, Float, Index, Integer, String
+from sqlalchemy import TEXT, Boolean, Column, Float, Index, Integer, SmallInteger, String
 from sqlalchemy.dialects.mysql import DATETIME, MEDIUMTEXT
 from sqlalchemy.orm import declarative_base
 
@@ -21,7 +21,7 @@ class File(Base):
     date_end = Column(DATETIME(fsp=6), nullable=True)
     polarization = Column(String(2), nullable=True)
     state = Column(String(64), nullable=False)
-    outlier = Column(Boolean, nullable=False, default=False)
+    outlier = Column(SmallInteger, nullable=False, default=False)
     bad_packets = Column(Boolean, nullable=False, default=False)
     processing_flow = Column(Integer, nullable=True)
     crota = Column(Float, nullable=True)

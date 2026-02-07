@@ -1,44 +1,35 @@
 from datetime import UTC, datetime
 
 import numpy as np
-from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import check_outlier
+from punchbowl.level2.merge import _merge_ndcubes
 from punchbowl.prefect import punch_task
 
 
 @punch_task
 def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     """Create a low noise image from a set of inputs."""
+    cube_count = len(cubes)
     cubes = [cube for cube in cubes if not check_outlier(cube)]
 
-    ref_cube_index = len(cubes)//2 - 1
-
-    data_stack = np.stack([cube.data for cube in cubes], axis=0)
-    uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes])
-
-    uncertainty_stack[uncertainty_stack <= 0] = np.inf
-    uncertainty_stack[~np.isfinite(uncertainty_stack)] = 1E32
-
-    uncertainty_stack[np.isnan(data_stack)] = np.inf
-    uncertainty_stack[data_stack == 0] = np.inf
-
-    weight_stack = 1/np.square(uncertainty_stack)
-    weight_stack[np.isnan(uncertainty_stack)] = np.nan
-
-    new_data = np.nansum(data_stack * weight_stack, axis=0) / np.nansum(weight_stack, axis=0)
-
-    final_uncertainty = np.sqrt(np.nansum(uncertainty_stack, axis=0)) / np.sqrt(new_data)
+    # TODO - Note to future self: be clever and use the outlier flag to excise bad data spatially.
+    reference_cube_index = len(cubes)//2 - 1
+    new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index)
 
     new_code = cubes[0].meta.product_code[0] + "A" + cubes[0].meta.product_code[2]
     new_meta = NormalizedMetadata.load_template(new_code, "3")
 
     for k in cubes[0].meta.fits_keys:
         if k not in ("COMMENT", "HISTORY", "") and k in new_meta:
-            new_meta[k] = cubes[ref_cube_index].meta[k].value
+            new_meta[k] = cubes[reference_cube_index].meta[k].value
+
+    # If any input data are excluded, flag this as an outlier
+    if cube_count != len(cubes):
+        new_meta["OUTLIER"] = 1
 
     times_obs = np.array([cube.meta.datetime.timestamp() for cube in cubes])
     times_beg = np.array([parse_datetime(cube.meta["DATE-BEG"].value).replace(tzinfo=UTC).timestamp()
@@ -47,7 +38,6 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
                           for cube in cubes])
 
     new_meta["TYPECODE"] = new_code[0:2]
-    # TODO - distinction here? and mean versus midpoint.
     new_meta["DATE-OBS"] = datetime.fromtimestamp(np.mean(times_obs),
                                                   tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     new_meta["DATE-AVG"] = datetime.fromtimestamp(np.mean(times_obs),
@@ -58,5 +48,6 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     new_meta["DATE-END"] = datetime.fromtimestamp(np.max(times_end),
                                                   tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    return NDCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty),
-                  wcs=cubes[ref_cube_index].wcs, meta=new_meta)
+    new_cube.meta = new_meta
+
+    return new_cube

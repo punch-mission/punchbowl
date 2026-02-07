@@ -22,19 +22,23 @@ def _merge_ndcubes(cubes: list[NDCube | None], reference_cube_index: int | None 
     uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes])
 
     # Ignores negative / zero / infinite uncertainty, or places where the input data is exactly zero
-    uncertainty_stack[uncertainty_stack <= 0] = np.nan
-    uncertainty_stack[~np.isfinite(uncertainty_stack)] = np.nan
-    uncertainty_stack[(data_stack == 0) & np.isnan(uncertainty_stack)] = np.nan
+    uncertainty_stack_was_nan = np.isnan(uncertainty_stack)
+    uncertainty_stack_was_bad = (uncertainty_stack <= 0) + ~np.isfinite(uncertainty_stack)
+    uncertainty_stack[uncertainty_stack_was_bad] = 1e64
+    uncertainty_stack[(data_stack == 0) & uncertainty_stack_was_nan] = np.nan
 
     weight_stack = 1/np.square(uncertainty_stack)
 
     new_data = np.nansum(data_stack * weight_stack, axis=0) / np.nansum(weight_stack, axis=0)
 
+    uncertainty_stack[uncertainty_stack_was_bad] = np.nan
     final_uncertainty = np.sqrt(np.nanmean(uncertainty_stack**2, axis=0))
 
     # Restores uncertainty of zero or nan to infinite
     final_uncertainty[final_uncertainty == 0] = np.inf
     final_uncertainty[~np.isfinite(final_uncertainty)] = np.inf
+
+    new_data[np.isnan(new_data)] = 0
 
     return NDCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty), \
                     wcs=cubes[reference_cube_index].wcs)

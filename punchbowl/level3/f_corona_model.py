@@ -306,6 +306,8 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     filenames.sort()
 
     data_shape = (3, *trefoil_shape) if polarized else trefoil_shape
+    uncertainty = np.zeros(data_shape)
+    sample_counts = np.zeros(data_shape, dtype=int)
 
     number_of_data_frames = len(filenames)
     data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
@@ -328,6 +330,9 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         cube = result
         dates.append(cube.meta.datetime)
         data_cube[j] = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
+        this_uncertainty = np.nan_to_num(cube.uncertainty.array, nan=0, posinf=0, neginf=0)
+        uncertainty += this_uncertainty ** 2
+        sample_counts += this_uncertainty != 0
         j += 1
         obs_times.append(cube.meta.datetime.timestamp())
         meta_list.append(cube.meta)
@@ -338,6 +343,8 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     logger.info("end of data loading")
     output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+    uncertainty = np.nansum(data_cube**2, axis=0)
 
     reference_xt = reference_time.timestamp()
     if polarized:
@@ -358,7 +365,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         output_data = np.stack([m_model_fcorona,
                                 z_model_fcorona,
                                 p_model_fcorona], axis=0)
-        uncertainty = 0 #np.sqrt(np.abs(output_data)) / np.sqrt(len(obs_times))
+        uncertainty = np.sqrt(uncertainty) / sample_counts
         meta = NormalizedMetadata.load_template("PFM", "3")
         trefoil_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
     else:
@@ -371,7 +378,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
             model_fcorona = fill_nans_with_interpolation(model_fcorona)
 
         output_data = model_fcorona
-        uncertainty = np.sqrt(np.abs(model_fcorona)) / np.sqrt(len(obs_times))
+        uncertainty = np.sqrt(uncertainty) / sample_counts
         meta = NormalizedMetadata.load_template("CFM", "3")
 
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

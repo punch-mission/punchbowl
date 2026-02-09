@@ -8,6 +8,7 @@ from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import check_outlier
 from punchbowl.level2.merge import _merge_ndcubes
 from punchbowl.prefect import punch_task
+from punchbowl.util import average_datetime
 
 
 @punch_task
@@ -28,20 +29,23 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
             new_meta[k] = cubes[reference_cube_index].meta[k].value
 
     # If any input data are excluded, flag this as an outlier
-    if cube_count != len(cubes):
+    if (cube_count != len(cubes)
+            or not all(cube.meta['HAS_WFI1'] for cube in cubes)
+            or not all(cube.meta['HAS_WFI2'] for cube in cubes)
+            or not all(cube.meta['HAS_WFI3'] for cube in cubes)):
         new_meta["OUTLIER"] = 1
 
-    times_obs = np.array([cube.meta.datetime.timestamp() for cube in cubes])
+    new_meta.provenance = [c.meta['FILENAME'] for c in cubes]
+
+    date_obs = average_datetime([cube.meta.datetime for cube in cubes])
     times_beg = np.array([parse_datetime(cube.meta["DATE-BEG"].value).replace(tzinfo=UTC).timestamp()
                           for cube in cubes])
     times_end = np.array([parse_datetime(cube.meta["DATE-END"].value).replace(tzinfo=UTC).timestamp()
                           for cube in cubes])
 
     new_meta["TYPECODE"] = new_code[0:2]
-    new_meta["DATE-OBS"] = datetime.fromtimestamp(np.mean(times_obs),
-                                                  tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    new_meta["DATE-AVG"] = datetime.fromtimestamp(np.mean(times_obs),
-                                                  tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    new_meta["DATE-OBS"] = date_obs.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    new_meta["DATE-AVG"] = date_obs.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     new_meta["DATE-BEG"] = datetime.fromtimestamp(np.min(times_beg),
                                                   tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

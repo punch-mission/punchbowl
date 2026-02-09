@@ -9,6 +9,7 @@ from ndcube import NDCube
 
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.util import (
+    compute_tb,
     find_first_existing_file,
     interpolate_data,
     load_mask_file,
@@ -84,3 +85,17 @@ def test_load_mask_file():
     mask = load_mask_file(path)
     assert mask.dtype == np.bool
     assert mask.shape == (2048, 2048)
+
+
+def test_compute_tb(sample_ndcube):
+    cube = sample_ndcube((3,10,10))
+
+    tb = compute_tb(cube)
+
+    assert isinstance(tb, np.ndarray)
+    assert tb.shape == (10,10)
+
+    tb = compute_tb(np.random.random((3,10,10)))
+
+    assert isinstance(tb, np.ndarray)
+    assert tb.shape == (10,10)

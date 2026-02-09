@@ -407,3 +407,14 @@ def inpaint_nans(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
         convolved[~nan_mask] = image[~nan_mask]
         image = convolved
     return image
+
+
+def compute_tb(data: NDCube | np.ndarray) -> np.ndarray:
+    """Compute total brightness from input NDCube or 3D data array of shape (MZP, ...)."""
+    if isinstance(data, np.ndarray):
+        return 2/3 * np.sum(data, axis=0)
+
+    if data.meta["OBS-MODE"].value == "Polar_BpB":
+        return data.data[0, ...]
+
+    return 2/3 * np.sum(data.data, axis=0)

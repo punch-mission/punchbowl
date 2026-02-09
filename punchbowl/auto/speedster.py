@@ -128,8 +128,13 @@ if __name__ == "__main__":
             pipeline_config = load_pipeline_configuration(config_path)
             enabled_flows = load_enabled_flows(pipeline_config)
 
-            batch_of_flows, batch_types, count_per_type = gather_planned_flows(
-                    session, enabled_flows, args.flows_per_batch)
+            try:
+                batch_of_flows, batch_types, count_per_type = gather_planned_flows(
+                        session, enabled_flows, args.flows_per_batch)
+            except:
+                # Try once more on failure
+                batch_of_flows, batch_types, count_per_type = gather_planned_flows(
+                        session, enabled_flows, args.flows_per_batch)
 
             if len(batch_of_flows) == 0:
                 print("No pending flows found---will wait two minutes and try again")
@@ -155,16 +160,18 @@ if __name__ == "__main__":
                         print("Will wrap up in 6 sec")
                         time.sleep(6)
                         print("Terminating pool")
-                        p.terminate()
-                        break
+                        try:
+                            p.terminate()
+                            break
+                        finally:
+                            if batch_of_flows:
+                                flows_to_reset = (session.query(Flow)
+                                                  .where(Flow.flow_id.in_(batch_of_flows))
+                                                  .where(Flow.state.in_(['running', 'launched'])).all())
+                                for flow in flows_to_reset:
+                                    flow.state = 'revivable'
+                                session.commit()
+                                print(f"{len(flows_to_reset)} flows set to 'revivable' by main process")
             n_batches_run += 1
             if args.n_batches and n_batches_run >= args.n_batches:
                 break
-    if batch_of_flows:
-        flows_to_reset = (session.query(Flow)
-                          .where(Flow.flow_id.in_(batch_of_flows))
-                          .where(Flow.state.in_(['running', 'launched'])).all())
-        for flow in flows_to_reset:
-            flow.state = 'revivable'
-        session.commit()
-        print(f"{len(flows_to_reset)} flows set to 'revivable' by main process")

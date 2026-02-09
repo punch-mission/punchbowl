@@ -279,9 +279,7 @@ def write_ndcube_to_fits(cube: NDCube,
     hdu_data = fits.CompImageHDU(data=cube.data.astype(np.float32) if cube.data.dtype == np.float64 else cube.data,
                                  header=full_header,
                                  name="Primary data array")
-    hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
-        name="provenance", format="A40", array=np.char.array(meta.provenance))]))
-    hdu_provenance.name = "File provenance"
+    hdu_provenance = _make_provenance_hdu(meta.provenance)
 
     hdul = cube.wcs.to_fits()
     hdul[0] = fits.PrimaryHDU()
@@ -299,6 +297,12 @@ def write_ndcube_to_fits(cube: NDCube,
     if write_hash:
         write_file_hash(filename)
 
+
+def _make_provenance_hdu(filenames):
+    hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
+        name="provenance", format="A40", array=np.char.array(filenames))]))
+    hdu_provenance.name = "File provenance"
+    return hdu_provenance
 
 
 def _pack_uncertainty(cube: NDCube) -> np.ndarray:

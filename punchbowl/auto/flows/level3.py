@@ -504,7 +504,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
             continue
 
         # group[0] is the newest file by date_obs
-        if cutoff_time and group[0].date_obs.replace(tzinfo=UTC) < cutoff_time:
+        if cutoff_time and group[0].date_created.replace(tzinfo=UTC) < cutoff_time:
             # We've waited long enough. Just go ahead and make it.
             grouped_ready_files.append(group)
             continue

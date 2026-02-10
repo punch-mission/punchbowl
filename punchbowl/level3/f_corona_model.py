@@ -344,8 +344,6 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    uncertainty = np.nansum(data_cube**2, axis=0)
-
     reference_xt = reference_time.timestamp()
     if polarized:
         m_model_fcorona, z_model_fcorona, p_model_fcorona = model_polarized_fcorona_for_cube(

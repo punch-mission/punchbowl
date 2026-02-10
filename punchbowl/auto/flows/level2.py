@@ -222,7 +222,6 @@ def group_l2_inputs_single_observatory(
     return grouped_files
 
 
-@task(cache_policy=NO_CACHE)
 def level2_construct_flow_info(level1_files: list[File], level2_file: File, pipeline_config: dict, session=None, reference_time=None):
     flow_type = "level2_clear" if level1_files[0].file_type == "CR" else "level2"
     state = "planned"
@@ -252,7 +251,6 @@ def level2_construct_flow_info(level1_files: list[File], level2_file: File, pipe
     )
 
 
-@task
 def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
     return [File(
                 level="2",

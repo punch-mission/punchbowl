@@ -470,25 +470,25 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
     grouped_files = []
     current_group = []
     while all_ready_files:
-        f = all_ready_files.pop(0)
-        if start_time <= f.date_obs < end_time:
-            current_group.append(f)
-        elif f.date_obs > end_time:
+        file = all_ready_files.pop(0)
+        if start_time <= file.date_obs < end_time:
+            current_group.append(file)
+        elif file.date_obs > end_time:
             # Shouldn't happen
             continue
         else:
-            # f.date_obs < start_time, so this group is complete
+            # file.date_obs < start_time, so this group is complete
             if current_group:
                 ref_time = start_time + 0.5 * (end_time - start_time)
                 for f in current_group:
                     f._reference_time = ref_time
                 grouped_files.append(current_group)
-            while not (start_time <= f.date_obs < end_time) and start_time >= t0:
+            while not (start_time <= file.date_obs < end_time) and start_time >= t0:
                 start_time -= increment
                 end_time -= increment
             if start_time < t0:
                 break
-            current_group = [f]
+            current_group = [file]
 
     cutoff_time = (pipeline_config["flows"]["level3_PAM" if polarized else "level3_CAM"]
                    .get("ignore_missing_after_days", None))
@@ -506,8 +506,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
             grouped_ready_files.append(group)
             continue
 
-        # group[0] is the newest file by date_obs
-        if cutoff_time and group[0].date_obs.replace(tzinfo=UTC) < cutoff_time:
+        if cutoff_time and min(f.date_created for f in group).replace(tzinfo=UTC) < cutoff_time:
             # We've waited long enough. Just go ahead and make it.
             grouped_ready_files.append(group)
             continue
@@ -530,7 +529,7 @@ def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out:
                 os.path.join(level3_file.directory(pipeline_config["root"]), level3_file.filename())
                 for level3_file in level3_files
             ],
-            "reference_time": reference_time,
+            "reference_time": reference_time.strftime("%Y-%m-%dT%H:%M:%S"),
         },
     )
     return Flow(
@@ -553,7 +552,7 @@ def level3_CAMPAM_construct_file_info(level3_files: list[File], pipeline_config:
                 polarization="C" if level3_files[0].file_type[0] == "C" else "Y",
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
-                date_obs=reference_time,
+                date_obs=reference_time.replace(microsecond=0),
                 date_beg=min([f.date_obs for f in level3_files if f.outlier == 0]),
                 date_end=max([f.date_obs for f in level3_files if f.outlier == 0]),
                 state="planned",

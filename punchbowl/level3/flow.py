@@ -107,16 +107,14 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
 
 @punch_flow
 def generate_level3_low_noise_flow(data_list: list[str] | list[NDCube],
-                                   output_filename: str | None = None) -> list[NDCube]:
+                                   output_filename: str | None = None,
+                                   reference_time: str | datetime | None = None) -> list[NDCube]:
     """Generate low noise products."""
     logger = get_run_logger()
 
     logger.info("Generating low noise products")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
-    low_noise_image = create_low_noise_task(data_list)
-
-    provenance_list = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
-    low_noise_image.meta.provenance = provenance_list
+    low_noise_image = create_low_noise_task(data_list, reference_time=reference_time)
 
     if output_filename is not None:
         output_image_task(low_noise_image, output_filename)

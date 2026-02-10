@@ -448,7 +448,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
     all_ready_files = (session.query(File)
                        .filter(File.state == "created")
                        .filter(File.level == "3")
-                       .filter(File.file_type == "PI" if polarized else "CI")
+                       .filter(File.file_type == ("PI" if polarized else "CI"))
                        .filter(File.observatory == "M")
                        .order_by(File.date_obs.desc()).all())
     # TODO - need to grab data from sets of rotation. look at movie processor for inspiration

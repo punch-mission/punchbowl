@@ -479,6 +479,9 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
         else:
             # f.date_obs < start_time, so this group is complete
             if current_group:
+                ref_time = start_time + 0.5 * (end_time - start_time)
+                for f in current_group:
+                    f._reference_time = ref_time
                 grouped_files.append(current_group)
             while not (start_time <= f.date_obs < end_time) and start_time >= t0:
                 start_time -= increment
@@ -519,6 +522,7 @@ def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out:
     state = "planned"
     creation_time = datetime.now(UTC)
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    reference_time = level3_files[0]._reference_time
 
     call_data = json.dumps(
         {
@@ -526,6 +530,7 @@ def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out:
                 os.path.join(level3_file.directory(pipeline_config["root"]), level3_file.filename())
                 for level3_file in level3_files
             ],
+            "reference_time": reference_time,
         },
     )
     return Flow(
@@ -538,7 +543,9 @@ def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out:
     )
 
 
-def level3_CAMPAM_construct_file_info(level3_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+def level3_CAMPAM_construct_file_info(level3_files: list[File], pipeline_config: dict,
+                                      reference_time=None) -> list[File]:
+    reference_time = level3_files[0]._reference_time
     return [File(
                 level="3",
                 file_type="CA" if level3_files[0].file_type[0] == "C" else "PA",
@@ -546,7 +553,7 @@ def level3_CAMPAM_construct_file_info(level3_files: list[File], pipeline_config:
                 polarization="C" if level3_files[0].file_type[0] == "C" else "Y",
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
-                date_obs=average_datetime([f.date_obs for f in level3_files if f.outlier == 0]),
+                date_obs=reference_time,
                 date_beg=min([f.date_obs for f in level3_files if f.outlier == 0]),
                 date_end=max([f.date_obs for f in level3_files if f.outlier == 0]),
                 state="planned",
@@ -556,13 +563,12 @@ def level3_CAMPAM_construct_file_info(level3_files: list[File], pipeline_config:
 
 
 @flow
-def level3_CAM_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+def level3_CAM_scheduler_flow(pipeline_config_path=None, session=None):
     generic_scheduler_flow_logic(
         level3_CAM_query_ready_files,
         level3_CAMPAM_construct_file_info,
         level3_CAMPAM_construct_flow_info,
         pipeline_config_path,
-        reference_time=reference_time,
         session=session,
     )
 
@@ -571,13 +577,12 @@ def level3_CAM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
     generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session)
 
 @flow
-def level3_PAM_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+def level3_PAM_scheduler_flow(pipeline_config_path=None, session=None):
     generic_scheduler_flow_logic(
         level3_PAM_query_ready_files,
         level3_CAMPAM_construct_file_info,
         level3_CAMPAM_construct_flow_info,
         pipeline_config_path,
-        reference_time=reference_time,
         session=session,
     )
 

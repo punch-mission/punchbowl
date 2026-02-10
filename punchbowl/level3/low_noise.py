@@ -81,7 +81,6 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
     if new_cube.data.ndim == 3:
         # # TODO - Fully propagate uncertainty
         new_uncertainty = np.copy(new_cube.uncertainty.array[0,...])
-        new_uncertainty[np.isfinite(new_uncertainty)] = 0
         new_uncertainty = np.stack([new_uncertainty, new_uncertainty], axis=0)
         return NDCube(data = np.stack([bpb_collection[k].data for k in ["B", "pB"]]),
                            uncertainty=StdDevUncertainty(new_uncertainty),

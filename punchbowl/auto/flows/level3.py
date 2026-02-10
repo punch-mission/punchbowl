@@ -515,7 +515,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
 
 def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out: File,
                                    pipeline_config: dict, session=None, reference_time=None):
-    flow_type = "level3_CAM" if level3_files[0].file_type == "CT" else "level3_PAM"
+    flow_type = "level3_CAM" if level3_files[0].file_type[0] == "C" else "level3_PAM"
     state = "planned"
     creation_time = datetime.now(UTC)
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
@@ -541,9 +541,9 @@ def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out:
 def level3_CAMPAM_construct_file_info(level3_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
     return [File(
                 level="3",
-                file_type="CA" if level3_files[0].file_type == "CT" else "PA",
+                file_type="CA" if level3_files[0].file_type[0] == "C" else "PA",
                 observatory="M",
-                polarization="C" if level3_files[0].file_type == "CT" else "Y",
+                polarization="C" if level3_files[0].file_type[0] == "C" else "Y",
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
                 date_obs=average_datetime([f.date_obs for f in level3_files if f.outlier == 0]),
@@ -567,7 +567,7 @@ def level3_CAM_scheduler_flow(pipeline_config_path=None, session=None, reference
     )
 
 @flow
-def level3_CAM_process_flow(flow_id: int, pipeline_config_path=None, session=None):
+def level3_CAM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session)
 
 @flow
@@ -583,5 +583,5 @@ def level3_PAM_scheduler_flow(pipeline_config_path=None, session=None, reference
 
 
 @flow
-def level3_PAM_process_flow(flow_id: int, pipeline_config_path=None, session=None):
+def level3_PAM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session)

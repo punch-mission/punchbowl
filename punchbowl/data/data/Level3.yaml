@@ -16,7 +16,7 @@ Level:
     Instrument and Spacecraft State:
     World Coordinate System:
     Calibration Data:
-        omits: [CALCF, CALVI, CALVI2, CALPSF, CALPM, CALSL0, CALSL1]
+        omits: [CALCF, CALVI, CALVI2, CALPSF, CALPM, CALSL0, CALSL1, CALDSL0, CALDSL1]
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:

@@ -166,7 +166,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
 
     _, angle_sun, _, _, _, xpix, ypix = check_moon_in_fov(
         output_data.meta["DATE-OBS"].value, wcs=output_data.wcs,
-        image_shape=output_data.data.shape)
+        image_shape=trefoil_shape)
     output_data.meta["MOONDIST"] = angle_sun[0]
     output_data.meta["MOON_X"] = xpix[0]
     output_data.meta["MOON_Y"] = ypix[0]

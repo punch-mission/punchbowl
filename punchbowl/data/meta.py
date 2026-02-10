@@ -967,6 +967,7 @@ def check_moon_in_fov(time_obs_start: DateLike,
     fov_half = fov_deg / 2
 
     # Image-plane outputs
+    wcs = wcs.dropaxis(2)
     do_image = (wcs is not None and image_shape is not None)
     angles_image_center: list[float] | None = [] if (wcs is not None and image_shape is not None) else None
     moon_xpix: list[float] | None = [] if (wcs is not None and image_shape is not None) else None

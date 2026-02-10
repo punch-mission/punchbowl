@@ -212,7 +212,7 @@ async def launch_ready_flows(session: Session, flow_info: list[list[Flow]], tags
 
             responses.extend(await asyncio.gather(*awaitables))
             awaitables = []
-            logger.info(f"Chunk {chunk_number}/{len(all_chunks)} sent, containing {n_actual_flows} flows "
+            logger.info(f"Chunk {chunk_number + 1}/{len(all_chunks)} sent, containing {n_actual_flows} flows "
                         f"in {len(chunk)} batches")
             if delay_time:
                 # Stagger the launches

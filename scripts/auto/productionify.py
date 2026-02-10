@@ -8,7 +8,7 @@ from astropy.io import fits
 from dateutil.parser import parse as parse_datetime_str
 from tqdm.contrib.concurrent import process_map
 
-from punchbowl.auto.control.db import File, FileRelationship, Flow
+from punchbowl.auto.control.db import File
 from punchbowl.auto.control.util import _write_quicklook, get_database_session, load_pipeline_configuration
 from punchbowl.data.punch_io import _make_provenance_hdu, load_ndcube_from_fits, write_file_hash
 
@@ -20,10 +20,19 @@ def replace_version(pattern, replacement, string):
 def update_metadata(path, old_pattern, new_version):
     with fits.open(path, mode='update', disable_image_compression=True) as hdul:
         for i, hdu in enumerate(hdul):
-            if hdu['EXTNAME'] in ('PRIMARY DATA ARRAY', 'UNCERTAINTY ARRAY'):
+            if 'EXTNAME' not in hdu.header:
+                continue
+            if hdu.header['EXTNAME'] in ('PRIMARY DATA ARRAY', 'UNCERTAINTY ARRAY'):
                 for key in hdu.header:
-                    hdu.header[key] = replace_version(old_pattern, new_version, hdu.header[key])
-            elif hdu['EXTNAME'] == 'FILE PROVENANCE':
+                    if isinstance(hdu.header[key], str):
+                        hdu.header[key] = replace_version(old_pattern, new_version, hdu.header[key])
+                if "FILEVRSN" in hdu.header:
+                    hdu.header['FILEVRSN'] = new_version
+                if "HISTORY" in hdu.header:
+                    hist = hdu.header['HISTORY']
+                    for i in range(len(hist)):
+                        hist[i] = replace_version(old_pattern, new_version, hist[i])
+            elif hdu.header['EXTNAME'] == 'FILE PROVENANCE':
                 source_files = hdu.data['provenance']
                 source_files = [replace_version(old_pattern, new_version, f) for f in source_files]
                 hdu_provenance = _make_provenance_hdu(source_files)
@@ -49,7 +58,8 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern, ne
             cube = load_ndcube_from_fits(new_path)
             _write_quicklook(config, file, cube)
         return True
-    except:
+    except Exception as e:
+        print(f"Error in {file.filename()}, {repr(e)}")
         return False
 
 
@@ -103,17 +113,18 @@ if __name__ == "__main__":
 
     files = query.all()
 
-    if any(f.state in ['planned', 'creating'] for f in files):
+    if any(f.state in ['planning', 'planned', 'creating', 'revivable'] for f in files):
         print("This script should not run while the pipeline is running (at least for the selected file types).")
         print("Please clear out any planned or running flows and try again.")
         sys.exit()
 
     print(f"Found {len(files)} files")
 
-    for file, success in zip(files, process_map(productionify_file, files, repeat(config), repeat(args.data_root),
-                                       repeat(old_version_pattern), repeat(new_version), max_workers=5, chunksize=5)):
+    for file, success in zip(files, process_map(productionify_file, files, repeat(config),
+                                                repeat(args.data_root), repeat(old_version_pattern),
+                                                repeat(new_version), max_workers=5, chunksize=5)):
         if success:
-            file.version = new_version
+            file.file_version = new_version
         else:
             print(f"Error with {file.filename()}")
 

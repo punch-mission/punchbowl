@@ -319,15 +319,17 @@ def test_check_moon_in_fov():
         time_obs_start="2025-04-10 00:00:00",
         time_end="2025-04-10 09:00:00",
         resolution_minutes=60*12,
-        wcs=WCS(header).dropaxis(2), image_shape=data.shape)
+        wcs=WCS(header), image_shape=data.shape)
     expected = 147.013
     assert np.allclose(angles, expected)
     assert xpix[0] == -1.0
     assert ypix[0] == -1.0
 
 def test_check_moon_dateobs():
-    hdr = fits.getheader(SAMPLE_FITS_PATH_UNCOMPRESSED, ext=1)
-    output = check_moon_in_fov(hdr)
+    with fits.open(SAMPLE_FITS_PATH_UNCOMPRESSED) as hdul:
+        hdr = hdul[1].header
+        data = hdul[1].data
+    output = check_moon_in_fov(hdr["DATE-OBS"], wcs=WCS(hdr), image_shape=data.shape)
     expected = 66.0887
     assert np.allclose(output[1], expected)
 

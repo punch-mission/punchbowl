@@ -1,10 +1,12 @@
 import os
 import re
+import sys
 import argparse
+from itertools import repeat
 
 from astropy.io import fits
 from dateutil.parser import parse as parse_datetime_str
-from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.util import _write_quicklook, get_database_session, load_pipeline_configuration
@@ -12,7 +14,7 @@ from punchbowl.data.punch_io import _make_provenance_hdu, load_ndcube_from_fits,
 
 
 def replace_version(pattern, replacement, string):
-    return re.sub(f"_v{pattern}_", f"_v{replacement}", string)
+    return re.sub(fr"_v{pattern}\.fits", f"_v{replacement}.fits", string)
 
 
 def update_metadata(path, old_pattern, new_version):
@@ -29,20 +31,26 @@ def update_metadata(path, old_pattern, new_version):
 
 
 def productionify_file(file: File, config: dict, data_root: str, old_pattern, new_version):
-    old_path = os.path.join(file.directory(data_root), file.filename())
-    update_metadata(old_path, old_pattern, new_version)
-    file.version = new_version
-    path = os.path.join(file.directory(data_root), file.filename())
-    os.rename(old_path, path)
-    if os.path.exists(old_path + '.sha'):
-        os.rename(old_path + '.sha', path + '.sha')
-    else:
-        write_file_hash(path)
-    if os.path.exists(old_path.replace('.fits', '.jp2')):
-        os.rename(old_path.replace('.fits', '.jp2'), path.replace('.fits', '.jp2'))
-    else:
-        cube = load_ndcube_from_fits(path)
-        _write_quicklook(config, file, cube)
+    try:
+        old_path = os.path.join(file.directory(data_root), file.filename())
+        update_metadata(old_path, old_pattern, new_version)
+        file.file_version = new_version
+        new_path = os.path.join(file.directory(data_root), file.filename())
+        os.rename(old_path, new_path)
+
+        if os.path.exists(old_path + '.sha'):
+            os.rename(old_path + '.sha', new_path + '.sha')
+        else:
+            write_file_hash(new_path)
+
+        if os.path.exists(old_path.replace('.fits', '.jp2')):
+            os.rename(old_path.replace('.fits', '.jp2'), new_path.replace('.fits', '.jp2'))
+        else:
+            cube = load_ndcube_from_fits(new_path)
+            _write_quicklook(config, file, cube)
+        return True
+    except:
+        return False
 
 
 if __name__ == "__main__":
@@ -62,20 +70,20 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    pattern = args.old_version_pattern
-    if pattern.startswith('v'):
+    old_version_pattern = args.old_version_pattern
+    if old_version_pattern.startswith('v'):
         print("Stripping leading 'v' from old version")
-        pattern = pattern[1:]
+        old_version_pattern = old_version_pattern[1:]
 
-    replacement = args.new_version
-    if replacement.startswith('v'):
+    new_version = args.new_version
+    if new_version.startswith('v'):
         print("Stripping leading 'v' from new version")
-        replacement = replacement[1:]
+        new_version = new_version[1:]
 
     config = load_pipeline_configuration(args.pipeline_config)
     session = get_database_session()
 
-    query = session.query(File).where(File.state.in_(['created', 'progressed']))
+    query = session.query(File).where(File.file_version != new_version)
     if args.level:
         query = query.where(File.level.in_(args.level))
     if args.type:
@@ -95,9 +103,18 @@ if __name__ == "__main__":
 
     files = query.all()
 
+    if any(f.state in ['planned', 'creating'] for f in files):
+        print("This script should not run while the pipeline is running (at least for the selected file types).")
+        print("Please clear out any planned or running flows and try again.")
+        sys.exit()
+
     print(f"Found {len(files)} files")
 
-    for file in tqdm(files):
-        productionify_file(file, config, args.data_root, pattern, replacement)
+    for file, success in zip(files, process_map(productionify_file, files, repeat(config), repeat(args.data_root),
+                                       repeat(old_version_pattern), repeat(new_version), max_workers=5, chunksize=5)):
+        if success:
+            file.version = new_version
+        else:
+            print(f"Error with {file.filename()}")
 
     session.commit()

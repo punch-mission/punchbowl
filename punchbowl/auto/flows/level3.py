@@ -480,9 +480,17 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
             # file.date_obs < start_time, so this group is complete
             if current_group:
                 ref_time = start_time + 0.5 * (end_time - start_time)
-                for f in current_group:
-                    f._reference_time = ref_time
-                grouped_files.append(current_group)
+                ref_time = ref_time.replace(microsecond=0)
+                # Check if we've already generated a (presumably incomplete) file for this date_obs.
+                # TODO: it would be better to regenerate the file, but we don't have a way to do that sensibly now
+                if not (session.query(File).filter(File.level == "3")
+                        .filter(File.file_type == ("PI" if polarized else "CI"))
+                        .filter(File.observatory == "M")
+                        .filter(File.date_obs == ref_time)
+                        .first()):
+                    for f in current_group:
+                        f._reference_time = ref_time
+                    grouped_files.append(current_group)
             while not (start_time <= file.date_obs < end_time) and start_time >= t0:
                 start_time -= increment
                 end_time -= increment
@@ -552,7 +560,7 @@ def level3_CAMPAM_construct_file_info(level3_files: list[File], pipeline_config:
                 polarization="C" if level3_files[0].file_type[0] == "C" else "Y",
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
-                date_obs=reference_time.replace(microsecond=0),
+                date_obs=reference_time,
                 date_beg=min([f.date_obs for f in level3_files if f.outlier == 0]),
                 date_end=max([f.date_obs for f in level3_files if f.outlier == 0]),
                 state="planned",

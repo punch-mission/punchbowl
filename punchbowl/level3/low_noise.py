@@ -5,6 +5,7 @@ import numpy as np
 import solpolpy
 from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime
+from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCollection, NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
@@ -16,10 +17,13 @@ from punchbowl.util import average_datetime
 KEYWORD_OMIT = ("COMMENT", "HISTORY", "", "NAXIS3", "OBSTYPE", "OBS-MODE", "OBSLAYR1", "OBSLAYR2", "OBSLAYR3")
 
 @punch_task
-def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
+def create_low_noise_task(cubes: list[NDCube], reference_time: str | datetime | None = None) -> NDCube:
     """Create a low noise image from a set of inputs."""
     cube_count = len(cubes)
     cubes = [cube for cube in cubes if not check_outlier(cube)]
+
+    if isinstance(reference_time, str):
+        reference_time = parse_datetime_str(reference_time)
 
     # TODO - Note to future self: be clever and use the outlier flag to excise bad data spatially.
     reference_cube_index = len(cubes)//2 - 1
@@ -61,16 +65,17 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
 
     new_meta.provenance = [c.meta["FILENAME"] for c in cubes]
 
-    date_obs = average_datetime([cube.meta.datetime for cube in cubes])
+    mean_date = average_datetime([cube.meta.datetime for cube in cubes])
+    date_obs = mean_date if reference_time is None else reference_time
     times_beg = np.array([parse_datetime(cube.meta["DATE-BEG"].value).replace(tzinfo=UTC).timestamp()
                           for cube in cubes])
     times_end = np.array([parse_datetime(cube.meta["DATE-END"].value).replace(tzinfo=UTC).timestamp()
                           for cube in cubes])
 
     new_meta["TYPECODE"] = new_code[0:2]
+    new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     new_meta["DATE-OBS"] = date_obs.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    new_meta["DATE-AVG"] = date_obs.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-
+    new_meta["DATE-AVG"] = mean_date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     new_meta["DATE-BEG"] = datetime.fromtimestamp(np.min(times_beg),
                                                   tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     new_meta["DATE-END"] = datetime.fromtimestamp(np.max(times_end),

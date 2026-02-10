@@ -43,7 +43,7 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
             aligned_axes=(0, 1),
         )
 
-        bpb_collection = solpolpy.resolve(mzp_collection, "bpb")
+        bpb_collection = solpolpy.resolve(mzp_collection, "bp3")
 
     new_code = cubes[0].meta.product_code[0] + "A" + cubes[0].meta.product_code[2]
     new_meta = NormalizedMetadata.load_template(new_code, "3")
@@ -82,7 +82,7 @@ def create_low_noise_task(cubes: list[NDCube]) -> NDCube:
         # # TODO - Fully propagate uncertainty
         new_uncertainty = np.copy(new_cube.uncertainty.array[0,...])
         new_uncertainty = np.stack([new_uncertainty, new_uncertainty], axis=0)
-        return NDCube(data = np.stack([bpb_collection[k].data for k in ["B", "pB"]]),
+        return NDCube(data = np.stack([bpb_collection[k].data for k in ["B", "pBp"]]),
                            uncertainty=StdDevUncertainty(new_uncertainty),
                            wcs=new_cube.wcs,
                            meta=new_cube.meta)

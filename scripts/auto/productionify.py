@@ -5,6 +5,7 @@ from itertools import repeat
 
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
+from sqlalchemy import or_
 from tqdm.contrib.concurrent import process_map
 
 from punchbowl.auto.control.db import File
@@ -93,7 +94,11 @@ if __name__ == "__main__":
     if args.level:
         query = query.where(File.level.in_(args.level))
     if args.type:
-        query = query.where(File.file_type.in_(args.type))
+        if any('%' in t for t in args.type):
+            conditions = [File.file_type.like(t) for t in args.type]
+            query = query.where(or_(*conditions))
+        else:
+            query = query.where(File.file_type.in_(args.type))
     if args.obs:
         query = query.where(File.observatory.in_(args.obs))
     if args.file_version:
@@ -113,6 +118,9 @@ if __name__ == "__main__":
     files = query.all()
 
     print(f"Found {len(files)} files")
+
+    if not args.force:
+        input("Press enter if that seems right.")
 
     if any(f.state in ['planning', 'planned', 'creating', 'revivable'] for f in files):
         print("Selected files haves states indicating the pipeline is still running for this flow type.")

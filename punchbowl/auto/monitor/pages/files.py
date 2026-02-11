@@ -161,6 +161,22 @@ def layout():
                     ),
                 ]),
             ]),
+            dbc.Col(width="auto", align="center", children=[
+                html.Div([
+                    "Show 1 point per row every",
+                    dcc.Input(
+                        id="graph_point_time_window",
+                        type="number",
+                        debounce=1,
+                        min=0,
+                        step=10,
+                        value=60,
+                        style={"display": "block"},
+                        persistence=True, persistence_type="memory",
+                    ),
+                    "minutes (set to 0 for all points)",
+                ]),
+            ]),
         ]),
         dcc.Graph(id="file-graph", style={"height": "400"}),
         dcc.Interval(
@@ -406,9 +422,10 @@ def make_y_axis_labels(dff):
     Input("table-date-obs", "end_date"),
     Input("table-date-created", "start_date"),
     Input("table-date-created", "end_date"),
+    Input("graph_point_time_window", "value"),
 )
 def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, extra_filters, extra_filters2, graph_x_axis,
-                      date_obs_start, date_obs_end, date_created_start, date_created_end):
+                      date_obs_start, date_obs_end, date_created_start, date_created_end, graph_point_time_window):
     group_by = [col.lower().replace(" ", "_") for col in group_by]
     color_key = color_key.lower().replace(" ", "_")
     shape_key = shape_key.lower().replace(" ", "_")
@@ -429,6 +446,10 @@ def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, extra_
 
     query = construct_base_query(query_cols, filter, extra_filters, extra_filters2, False, date_obs_start,
                  date_obs_end, date_created_start, date_created_end)
+    if graph_point_time_window > 0:
+        col = getattr(File, graph_x_axis)
+        y_axis_cols = [getattr(File, c) for c in group_by]
+        query = query.order_by(col).group_by(*y_axis_cols, func.round(func.unix_timestamp(col) / (graph_point_time_window * 60)))
     with get_database_session() as session:
         dff = pd.read_sql_query(query, session.connection())
 

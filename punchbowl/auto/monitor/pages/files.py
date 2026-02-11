@@ -157,9 +157,14 @@ def layout():
                         inline=True,
                         id="auto-refresh",
                         inputStyle={"margin-left": "10px", "margin-right": "3px"},
+                        style={"display": "inline"},
                         persistence=True, persistence_type="memory",
                     ),
-                ]),
+                    dcc.Button(
+                        'Refresh',
+                        id='manual-refresh',
+                    ),
+                ],),
             ]),
             dbc.Col(width="auto", align="center", children=[
                 html.Div([
@@ -314,9 +319,10 @@ def construct_base_query(columns, filter, extra_filters, extra_filters2, include
     Input("table-date-obs", "end_date"),
     Input("table-date-created", "start_date"),
     Input("table-date-created", "end_date"),
+    Input("manual-refresh", "n_clicks"),
 )
 def update_table(show_in_table, group_by, n, page_current, page_size, sort_by, filter, extra_filters, extra_filters2,
-                 date_obs_start, date_obs_end, date_created_start, date_created_end):
+                 date_obs_start, date_obs_end, date_created_start, date_created_end, refresh_nclicks):
     query = construct_base_query(group_by, filter, extra_filters, extra_filters2, True, date_obs_start,
              date_obs_end, date_created_start, date_created_end)
 
@@ -423,9 +429,11 @@ def make_y_axis_labels(dff):
     Input("table-date-created", "start_date"),
     Input("table-date-created", "end_date"),
     Input("graph_point_time_window", "value"),
+    Input("manual-refresh", "n_clicks"),
 )
 def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, extra_filters, extra_filters2, graph_x_axis,
-                      date_obs_start, date_obs_end, date_created_start, date_created_end, graph_point_time_window):
+                      date_obs_start, date_obs_end, date_created_start, date_created_end, graph_point_time_window,
+                      refresh_nclicks):
     group_by = [col.lower().replace(" ", "_") for col in group_by]
     color_key = color_key.lower().replace(" ", "_")
     shape_key = shape_key.lower().replace(" ", "_")

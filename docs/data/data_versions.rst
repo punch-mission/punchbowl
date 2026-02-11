@@ -29,6 +29,10 @@ Version 0j
 - Introduced low-noise products L3_PAM and L3_CAM
 - Fixed L3_PIM OBSLAYER values to reflect actual file contents
 - Improved quicklook products
+- Known problems:
+
+  + Glint from planets like Venus is slightly worse and will be removed more completely in the next version
+  + pB' is not close to 0 and pB is often negative indicating a calibration error
 
 Version 0i
 ----------

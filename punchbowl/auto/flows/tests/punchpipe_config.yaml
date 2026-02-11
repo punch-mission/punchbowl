@@ -1,0 +1,154 @@
+root: "/Users/jhughes/Desktop/pipeline_testing/"
+tlm_directory: "/Users/jhughes/Desktop/pipeline_testing/"
+file_version: "0.0.1"
+
+plate_scale:
+  1: 0.02444444444
+  2: 0.02444444444
+  3: 0.02444444444
+  4: 0.008333333333
+
+# CCD gain for [bottom, top] sides of chip
+ccd_gain:
+  1: [4.93, 4.92]
+  2: [4.90, 5.04]
+  3: [4.94, 4.89]
+  4: [4.98, 4.92]
+
+replay:
+  science_blocks: [2048, 24575]
+  window_in_days: 5
+
+quality_check:
+  mean_low: 0
+  mean_high: 65000
+
+scheduler:
+  max_start: 16
+
+control:
+  launcher:
+    description: "Kick off new flows for processing."
+    max_flows_running: 50
+  health_monitor:
+    description: "Monitor the health of the pipeline."
+
+flows:
+#  level0:
+#    priority:
+#      initial: 5
+#      seconds: [ 30, 120, 600 ]
+#      escalation: [ 10, 20, 30 ]
+#    schedule: "* * * * *"
+#    options:
+#      num_quads: 100
+
+  level1_early:
+    description: "Creates Level 1 files."
+    priority:
+      initial: 6
+      seconds: [ 30, 120, 600 ]
+      escalation: [ 11, 21, 31 ]
+    schedule: "* * * * *"
+    tags: ["L1"]
+    options:
+
+  level1_middle:
+    description: "Creates Level 1 files."
+    priority:
+      initial: 6
+      seconds: [ 30, 120, 600 ]
+      escalation: [ 11, 21, 31 ]
+    schedule: "* * * * *"
+    tags: ["L1"]
+    options:
+
+  level1_late:
+    description: "Creates Level 1 files."
+    priority:
+      initial: 6
+      seconds: [ 30, 120, 600 ]
+      escalation: [ 11, 21, 31 ]
+    schedule: "* * * * *"
+    tags: ["L1"]
+    options:
+
+  level2:
+    description: "Creates Level 2 files."
+    priority:
+      initial: 1000
+      seconds: [ 3000, 12000, 60000 ]
+      escalation: [ 1000, 1000, 1000 ]
+    schedule: "* * * * *"
+    tags: ["L2"]
+    options:
+
+  levelq_CQM:
+    description: "Creates Level Q CQM files."
+    priority:
+      initial: 1000
+      seconds: [ 3000, 12000, 60000 ]
+      escalation: [ 1000, 1000, 1000 ]
+    schedule: "* * * * *"
+    tags: ["LQ"]
+    options:
+
+  levelq_CTM:
+    description: "Creates Level Q CTM files."
+    priority:
+      initial: 1000
+      seconds: [ 3000, 12000, 60000 ]
+      escalation: [ 1000, 1000, 1000 ]
+    schedule: "* * * * *"
+    tags: ["LQ"]
+    options:
+
+  level3_PTM:
+    description: "Creates Level 3 PTM files."
+    priority:
+      initial: 10000
+      seconds: [1]
+      escalation: [10000]
+      schedule: "* * * * *"
+      tags: ["L3"]
+      options:
+
+  level3_PIM:
+    description: "Creates Level 3 PIM files."
+    priority:
+      initial: 10000
+      seconds: [ 1 ]
+      escalation: [ 10000 ]
+    schedule: "* * * * *"
+    tags: ["L3"]
+    options:
+
+  construct_f_corona_background:
+    description: "Creates F corona background files."
+    priority:
+      initial: 10000
+      seconds: [ 1 ]
+      escalation: [ 10000 ]
+    schedule: "0/30 * * * *"
+    tags: ["L3"]
+    options:
+
+  construct_starfield_background:
+    description: "Creates starfield background files."
+    priority:
+      initial: 100000
+      seconds: [ 1 ]
+      escalation: [ 100000 ]
+    schedule: "0/30 * * * *"
+    tags: ["L3"]
+    options:
+
+  movie:
+    description: "Creates quicklook movies."
+    priority:
+      initial: 100000
+      seconds: [ 1 ]
+      escalation: [ 100000 ]
+    schedule: "59 23 * * *"
+    tags: ["movie"]
+    options:

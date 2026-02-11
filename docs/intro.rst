@@ -13,14 +13,6 @@ Where does `punchbowl` fit in?
 ``punchbowl`` is the data reduction pipeline code for the PUNCH mission. The pipeline, as shown below,
 consists of several segments of processing.
 
-.. figure:: ./images/PUNCH_data_flow.png
-    :alt: PUNCH pipeline schematic
-    :width: 800px
-    :align: center
-
-    A schematic overview of the PUNCH data processing pipeline
-
-
 These segments are the following:
 
 - Raw to *Level 0*: converts raw satellite data to FITS images
@@ -32,9 +24,15 @@ We identify these segments by their finishing level, i.e. the Level 1 products c
 which can be called just the Level 1 segment for short. The processing description and code you'll find here is
 organized in this manner.
 
+In addition to the science processing levels, we have QuickPUNCH or Level Q that runs at a lower latency.
+
 PUNCH and Python
 ----------------
 
-The PUNCH framework is built using Python - an object-oriented language with a large user / code base in astronomy and solar physics. The pipeline and tools for querying / loading PUNCH data use the Python language, along with the SunPy and Astropy software libraries. A number of useful tutorials exist online, including the official `Python tutorial <https://docs.python.org/3/tutorial/index.html>`_ and the `Hitchhiker's Guide to Python <https://docs.python-guide.org>`_.
+The PUNCH framework is built using Python - an object-oriented language with a large user / code base in astronomy and solar physics. T
+he pipeline and tools for querying / loading PUNCH data use the Python language, along with the SunPy and Astropy software libraries.
+A number of useful tutorials exist online, including the official `Python tutorial <https://docs.python.org/3/tutorial/index.html>`_ and the `Hitchhiker's Guide to Python <https://docs.python-guide.org>`_.
 
-In addition to scripts and modules, Python notebooks provide a great way to execute and document a sequence of code cells, with visualizations directly in-line. It's a sort of analogue of the classic research notebook. The `SunPy example gallery <https://docs.sunpy.org/en/stable/generated/gallery/index.html>`_ provides a great series of example notebooks, which are an additional great tool for learning Python.
+In addition to scripts and modules, Python notebooks provide a great way to execute and document a sequence of code cells, with visualizations directly in-line.
+It's a sort of analogue of the classic research notebook.
+The `SunPy example gallery <https://docs.sunpy.org/en/stable/generated/gallery/index.html>`_ provides a great series of example notebooks, which are an additional great tool for learning Python.

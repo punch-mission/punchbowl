@@ -30,8 +30,8 @@ For most end-users the primary data of interest are PAM (low-noise full frame da
 
 PUNCH FITS files are RICE compressed, reducing the overall file size while preserving data fidelity.
 Due to this compression, the zeroth HDU of each output data file contains information about the compression scheme.
-The first HDU (hdul[1]) contains the primary data array, along with an astropy header string describing that data.
-The second HDU (hdul[2]) contains the uncertainty array - corresponding on a pixel-by-pixel basis with the primary data array.
+The first HDU (``hdul[1]``) contains the primary data array, along with an astropy header string describing that data.
+The second HDU (``hdul[2]``) contains the uncertainty array - corresponding on a pixel-by-pixel basis with the primary data array.
 
 These data are compatible with standard astropy FITS libraries, and can be read in as following the example,
 

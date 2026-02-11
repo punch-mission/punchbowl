@@ -4,6 +4,7 @@ import sys
 import argparse
 from itertools import repeat
 
+import numpy as np
 from astropy.io import fits
 from dateutil.parser import parse as parse_datetime_str
 from tqdm.contrib.concurrent import process_map
@@ -42,21 +43,29 @@ def update_metadata(path, old_pattern, new_version):
 def productionify_file(file: File, config: dict, data_root: str, old_pattern, new_version):
     try:
         old_path = os.path.join(file.directory(data_root), file.filename())
-        update_metadata(old_path, old_pattern, new_version)
         file.file_version = new_version
         new_path = os.path.join(file.directory(data_root), file.filename())
-        os.rename(old_path, new_path)
 
-        if os.path.exists(old_path + '.sha'):
-            os.rename(old_path + '.sha', new_path + '.sha')
-        else:
+        if os.path.exists(old_path):
+            update_metadata(old_path, old_pattern, new_version)
+            os.rename(old_path, new_path)
+
+        old_sha_path = old_path + '.sha'
+        new_sha_path = new_path + '.sha'
+        if os.path.exists(old_sha_path):
+            os.rename(old_sha_path, new_sha_path)
+        elif os.path.exists(new_path):
+            # We should overwrite existing sha files because we might have changed the metadata
             write_file_hash(new_path)
 
-        if os.path.exists(old_path.replace('.fits', '.jp2')):
-            os.rename(old_path.replace('.fits', '.jp2'), new_path.replace('.fits', '.jp2'))
-        else:
+        old_ql_path = old_path.replace('.fits', '.jp2')
+        new_ql_path = new_path.replace('.fits', '.jp2')
+        if os.path.exists(old_ql_path):
+            os.rename(old_ql_path, new_ql_path)
+        elif os.path.exists(new_path) and not os.path.exists(new_ql_path):
             cube = load_ndcube_from_fits(new_path)
-            _write_quicklook(config, file, cube)
+            with np.errstate(all='ignore'):
+                _write_quicklook(config, file, cube)
         return True
     except Exception as e:
         print(f"Error in {file.filename()}, {repr(e)}")
@@ -73,12 +82,22 @@ if __name__ == "__main__":
     parser.add_argument('--dobs_end')
     parser.add_argument('--dcreate_start')
     parser.add_argument('--dcreate_end')
+    parser.add_argument('-n', '--max-n-files', type=int)
+    parser.add_argument('-f', '--force', action='store_true', help="Skip warning message")
+    parser.add_argument ('-w', '--workers', type=int, help="Number of worker processes", default=12)
     parser.add_argument('data_root')
     parser.add_argument('pipeline_config')
     parser.add_argument('old_version_pattern')
     parser.add_argument('new_version')
 
     args = parser.parse_args()
+
+    if not args.force:
+        print("This script should not run when files of the selected type are being produced, are planned (even if not "
+              "running), or if the selected files have descendants that are planned.")
+        print("This is because planned flows will have file names written in the call_data in the database, "
+              "but we'll be renaming files.")
+        input("Press enter to acknowledge this.")
 
     old_version_pattern = args.old_version_pattern
     if old_version_pattern.startswith('v'):
@@ -111,18 +130,21 @@ if __name__ == "__main__":
     if args.dcreate_end:
         query = query.where(File.date_created < parse_datetime_str(args.dcreate_end))
 
-    files = query.all()
+    if args.max_n_files:
+        query = query.limit(args.max_n_files)
 
-    if any(f.state in ['planning', 'planned', 'creating', 'revivable'] for f in files):
-        print("This script should not run while the pipeline is running (at least for the selected file types).")
-        print("Please clear out any planned or running flows and try again.")
-        sys.exit()
+    files = query.all()
 
     print(f"Found {len(files)} files")
 
+    if any(f.state in ['planning', 'planned', 'creating', 'revivable'] for f in files):
+        print("Selected files haves states indicating the pipeline is still running for this flow type.")
+        print("Please clear out any planned or running flows and try again.")
+        sys.exit()
+
     for file, success in zip(files, process_map(productionify_file, files, repeat(config),
                                                 repeat(args.data_root), repeat(old_version_pattern),
-                                                repeat(new_version), max_workers=5, chunksize=5)):
+                                                repeat(new_version), max_workers=args.workers, chunksize=2)):
         if success:
             file.file_version = new_version
         else:

@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 from dash import Input, Output, State, callback, dash_table, dcc, html
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.monitor.app import get_database_session
@@ -180,6 +180,7 @@ def toggle_auto_refresh(auto_refresh_settings):
     return 99999999999999999
 
 
+# It's important that e.g. '>=' appears before '>' or '=', otherwise the latter ones will match '>='
 operators = [(["ge ", ">="], "__ge__"),
              (["le ", "<="], "__le__"),
              (["lt ", "<"], "__lt__"),
@@ -190,47 +191,38 @@ operators = [(["ge ", ">="], "__ge__"),
              (["datestartswith "], None),
             ]
 
-def split_filter_part(filter_part):
-    for operator_type, py_method in operators:
-        for operator in operator_type:
-            if operator in filter_part:
-                name_part, value_part = filter_part.split(operator, 1)
-                name = name_part[name_part.find("{") + 1: name_part.rfind("}")]
 
-                value_part = value_part.strip()
-                v0 = value_part[0]
-                if (v0 == value_part[-1] and v0 in ("'", '"', "`")):
-                    value = value_part[1: -1].replace("\\" + v0, v0)
+def split_filter_part(filter_part):
+    for input_operators, py_method in operators:
+        for input_operator in input_operators:
+            if input_operator in filter_part:
+                name_part, value = filter_part.split(input_operator, 1)
+                column_name = name_part[name_part.find("{") + 1: name_part.rfind("}")]
+
+                value = value.strip()
+                v0 = value[0]
+                if (v0 == value[-1] and v0 in ("'", '"', "`")):
+                    value = value[1: -1].replace("\\" + v0, v0)
                 else:
                     try:
-                        value = float(value_part)
+                        value = float(value)
                     except ValueError:
-                        value = value_part
-                        if operator in ["=", "eq", "contains "]:
-                            if "," in value:
-                                value = value.split(",")
-                                py_method = "in_"
-                                new_value = []
-                                for v in value:
-                                    v = v.strip()
-                                    if len(v) > 1 and v[1] == "*":
-                                        for suffix in ["R", "M", "Z", "P"]:
-                                            new_value.append(v[0] + suffix)
-                                    else:
-                                        new_value.append(v)
-                                value = new_value
-                            elif value[0] == "*":
-                                value = value[1:]
-                                py_method = "endswith"
-                            elif value[-1] == "*":
-                                value = value[:-1]
-                                py_method = "startswith"
-
-
+                        if input_operator in ["=", "eq", "contains "]:
+                            values = value.split(",")
+                            py_method = None
+                            parsed_values = []
+                            for v in values:
+                                v = v.strip()
+                                if '*' in v:
+                                    v = v.replace('*', '%')
+                                    py_method = "like"
+                                parsed_values.append(v)
+                            if len(parsed_values) == 1:
+                                parsed_values = parsed_values[0]
+                            value = parsed_values
                 # word operators need spaces after them in the filter string,
                 # but we don't want these later
-                return name, operator_type[0].strip(), value, py_method
-
+                return column_name, input_operator.strip(), value, py_method
     return [None] * 4
 
 
@@ -257,7 +249,13 @@ def construct_base_query(columns, filter, extra_filters, extra_filters2, include
     for filter_part in filter.split(" && "):
         col_name, operator, filter_value, py_method = split_filter_part(filter_part)
         if col_name is not None:
-            query = query.where(getattr(getattr(File, col_name), py_method)(filter_value))
+            column = getattr(File, col_name)
+            method = getattr(column, py_method)
+            if isinstance(filter_value, list):
+                conditions = [method(value) for value in filter_value]
+                query = query.where(or_(*conditions))
+            else:
+                query = query.where(method(filter_value))
 
     extra_filter_state = []
     if "Existing files" in extra_filters:

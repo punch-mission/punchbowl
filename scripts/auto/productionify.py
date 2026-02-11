@@ -142,12 +142,14 @@ if __name__ == "__main__":
         print("Please clear out any planned or running flows and try again.")
         sys.exit()
 
-    for file, success in zip(files, process_map(productionify_file, files, repeat(config),
+    for i, (file, success) in enumerate(zip(files, process_map(productionify_file, files, repeat(config),
                                                 repeat(args.data_root), repeat(old_version_pattern),
-                                                repeat(new_version), max_workers=args.workers, chunksize=2)):
+                                                repeat(new_version), max_workers=args.workers, chunksize=2))):
         if success:
             file.file_version = new_version
         else:
             print(f"Error with {file.filename()}")
+        if i % 200 == 0:
+            session.commit()
 
     session.commit()

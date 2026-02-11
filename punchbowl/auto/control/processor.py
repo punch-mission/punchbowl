@@ -13,6 +13,7 @@ from punchbowl.auto.control.util import (
     get_database_session,
     load_pipeline_configuration,
     match_data_with_file_db_entry,
+    replace_file_version_in_metadata,
     write_file,
 )
 
@@ -126,6 +127,8 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
                 result.meta['HOSTNAME'] = socket.gethostname()
                 filename = write_file(result, file_db_entry, pipeline_config)
                 logger.info(f"Wrote to {filename}")
+                if old_version_pattern := pipeline_config.get('old_fileversion_to_filter_in_meta', None):
+                    replace_file_version_in_metadata(filename, old_version_pattern, pipeline_config['file_version'])
 
             missing_file_ids = expected_file_ids.difference(output_file_ids)
             if missing_file_ids:

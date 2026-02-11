@@ -1,9 +1,11 @@
 import os
+import re
 from math import inf
 from datetime import UTC, datetime
 from itertools import islice
 
 import yaml
+from astropy.io import fits
 from ndcube import NDCube
 from prefect.variables import Variable
 from prefect_sqlalchemy import SqlAlchemyConnector
@@ -13,6 +15,7 @@ from yaml.loader import FullLoader
 
 from punchbowl.auto.control.db import File
 from punchbowl.data import get_base_file_name, write_ndcube_to_fits, write_ndcube_to_quicklook
+from punchbowl.data.punch_io import _make_provenance_hdu
 
 DEFAULT_SCALING = (5e-13, 5e-11)
 
@@ -154,3 +157,29 @@ def group_files_by_time(files: list[File],
             tstamp_start = this_tstamp
     grouped_files.append(files[group_start:])
     return grouped_files
+
+
+def replace_version(pattern, replacement, string):
+    return re.sub(fr"_v{pattern}\.fits", f"_v{replacement}.fits", string)
+
+
+def replace_file_version_in_metadata(path, old_pattern, new_version):
+    with fits.open(path, mode='update', disable_image_compression=True) as hdul:
+        for i, hdu in enumerate(hdul):
+            if 'EXTNAME' not in hdu.header:
+                continue
+            if hdu.header['EXTNAME'] in ('PRIMARY DATA ARRAY', 'UNCERTAINTY ARRAY'):
+                for key in hdu.header:
+                    if isinstance(hdu.header[key], str):
+                        hdu.header[key] = replace_version(old_pattern, new_version, hdu.header[key])
+                if "FILEVRSN" in hdu.header:
+                    hdu.header['FILEVRSN'] = new_version
+                if "HISTORY" in hdu.header:
+                    hist = hdu.header['HISTORY']
+                    for i in range(len(hist)):
+                        hist[i] = replace_version(old_pattern, new_version, hist[i])
+            elif hdu.header['EXTNAME'] == 'FILE PROVENANCE':
+                source_files = hdu.data['provenance']
+                source_files = [replace_version(old_pattern, new_version, f) for f in source_files]
+                hdu_provenance = _make_provenance_hdu(source_files)
+                hdul[i] = hdu_provenance

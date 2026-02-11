@@ -1,43 +1,20 @@
 import os
-import re
 import sys
 import argparse
 from itertools import repeat
 
 import numpy as np
-from astropy.io import fits
 from dateutil.parser import parse as parse_datetime_str
 from tqdm.contrib.concurrent import process_map
 
 from punchbowl.auto.control.db import File
-from punchbowl.auto.control.util import _write_quicklook, get_database_session, load_pipeline_configuration
-from punchbowl.data.punch_io import _make_provenance_hdu, load_ndcube_from_fits, write_file_hash
-
-
-def replace_version(pattern, replacement, string):
-    return re.sub(fr"_v{pattern}\.fits", f"_v{replacement}.fits", string)
-
-
-def update_metadata(path, old_pattern, new_version):
-    with fits.open(path, mode='update', disable_image_compression=True) as hdul:
-        for i, hdu in enumerate(hdul):
-            if 'EXTNAME' not in hdu.header:
-                continue
-            if hdu.header['EXTNAME'] in ('PRIMARY DATA ARRAY', 'UNCERTAINTY ARRAY'):
-                for key in hdu.header:
-                    if isinstance(hdu.header[key], str):
-                        hdu.header[key] = replace_version(old_pattern, new_version, hdu.header[key])
-                if "FILEVRSN" in hdu.header:
-                    hdu.header['FILEVRSN'] = new_version
-                if "HISTORY" in hdu.header:
-                    hist = hdu.header['HISTORY']
-                    for i in range(len(hist)):
-                        hist[i] = replace_version(old_pattern, new_version, hist[i])
-            elif hdu.header['EXTNAME'] == 'FILE PROVENANCE':
-                source_files = hdu.data['provenance']
-                source_files = [replace_version(old_pattern, new_version, f) for f in source_files]
-                hdu_provenance = _make_provenance_hdu(source_files)
-                hdul[i] = hdu_provenance
+from punchbowl.auto.control.util import (
+    _write_quicklook,
+    get_database_session,
+    load_pipeline_configuration,
+    replace_file_version_in_metadata,
+)
+from punchbowl.data.punch_io import load_ndcube_from_fits, write_file_hash
 
 
 def productionify_file(file: File, config: dict, data_root: str, old_pattern, new_version):
@@ -47,7 +24,7 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern, ne
         new_path = os.path.join(file.directory(data_root), file.filename())
 
         if os.path.exists(old_path):
-            update_metadata(old_path, old_pattern, new_version)
+            replace_file_version_in_metadata(old_path, old_pattern, new_version)
             os.rename(old_path, new_path)
 
         old_sha_path = old_path + '.sha'

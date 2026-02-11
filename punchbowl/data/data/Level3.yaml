@@ -56,11 +56,7 @@ Kinds:
                 CTRYWFI3, CTRXNFI4, CTRYNFI4]
 
     Calibration:
-        overrides:
-            NAXIS: 2
-            NAXIS1: 4096
-            NAXIS2: 4096
-        omits: [Velocity, Calibration Data, Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3,
+        omits: [Velocity, Calibration Data, Spacecraft Location & Environment, OBSLAYR1, OBSLAYR2, OBSLAYR3,
                 HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT, CTRXWFI1, CTRYWFI1, CTRXWFI2, CTRYWFI2, CTRXWFI3,
                 CTRYWFI3, CTRXNFI4, CTRYNFI4]
 

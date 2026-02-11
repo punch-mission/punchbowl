@@ -74,7 +74,7 @@ def write_file(data: NDCube, corresponding_file_db_entry, pipeline_config) -> No
                          output_filename,
                          write_hash=pipeline_config.get("write_sha_files", True))
 
-    if pipeline_config.get('write_quicklooks', True):
+    if pipeline_config.get('write_quicklooks', True) and corresponding_file_db_entry.file_type[0] not in ('S', 'T'):
         _write_quicklook(pipeline_config, corresponding_file_db_entry, data)
     return output_filename
 

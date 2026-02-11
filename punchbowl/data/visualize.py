@@ -209,6 +209,7 @@ def plot_punch(  # noqa: C901
     colorbar: bool = True,
     colorbar_label: str = "Mean Solar Brightness (MSB)",
     persistence_array: np.ndarray | NDCube | None = None,
+    trim_edge: bool | float | tuple[float, float] | list[float, float] = False,
     save_path: str | Path | None = None,
     dpi: int = 300,
     ) -> tuple[Figure, Axes]:
@@ -251,6 +252,9 @@ def plot_punch(  # noqa: C901
         Label to use for the colorbar
     persistence_array : np.ndarray or NDCube or None
         When not None, data is plotted where valid atop this existing array.
+    trim_edge : bool, float, tuple, or list
+        Toggle to trim the very outer edge of low-noise mosaic products for aesthetics.
+        If a float or tuple of floats is provided, trims with a specified fractional radial distance (0.68 by default).
     save_path : str or Path, optional
         When provided, saves the figure to file directly without plotting on screen
     dpi : int, optional
@@ -282,7 +286,19 @@ def plot_punch(  # noqa: C901
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
                                                         else cube.wcs[layer]})
 
-    im = ax.imshow(cube.data if cube.data.ndim == 2 else cube.data[layer,...], cmap=cmap, norm=norm)
+    if trim_edge is not False:
+        if isinstance(trim_edge, (tuple, list)):
+            r_min, r_max = sorted(trim_edge)
+            r = radial_distance(cube.data.shape[0], cube.data.shape[1])
+            radial_mask = (r >= r_min) & (r <= r_max)
+        else:
+            threshold = 0.68 if trim_edge is True else trim_edge
+            radial_mask = radial_distance(cube.data.shape[0], cube.data.shape[1]) < threshold
+
+        im = ax.imshow(cube.data * radial_mask if cube.data.ndim == 2 else
+                    cube.data[layer,...] * radial_mask, cmap=cmap, norm=norm)
+    else:
+        im = ax.imshow(cube.data if cube.data.ndim == 2 else cube.data[layer,...], cmap=cmap, norm=norm)
 
     lon, lat = ax.coords
     lat.set_ticks(np.arange(-90, 90, grid_spacing) * u.degree)

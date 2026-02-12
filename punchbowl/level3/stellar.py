@@ -212,7 +212,7 @@ def generate_starfield_background(
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
         out_data = starfield_clear.starfield
-        out_wcs, _ = calculate_helio_wcs_from_celestial(starfield_clear.wcs,
+        out_wcs = calculate_helio_wcs_from_celestial(starfield_clear.wcs,
                                                         meta.astropy_time,
                                                         starfield_clear.starfield.shape)
 

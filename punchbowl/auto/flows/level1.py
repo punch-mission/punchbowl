@@ -6,7 +6,7 @@ from collections import defaultdict
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
-from sqlalchemy import func, or_, text
+from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import aliased
 
 from punchbowl import __version__
@@ -21,6 +21,7 @@ SCIENCE_LEVEL0_TYPE_CODES = ["PM", "PZ", "PP", "CR"]
 SCIENCE_LEVEL1_MIDDLE_INPUT_TYPE_CODES = ["XM", "XZ", "XP"]
 SCIENCE_LEVEL1_MIDDLE_OUTPUT_TYPE_CODES = ["YM", "YZ", "YP"]
 SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES = ["YM", "YZ", "YP", "XR"]
+SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES_NFI = ["XM", "XZ", "XP", "XR"]
 SCIENCE_LEVEL1_LATE_OUTPUT_TYPE_CODES = ["PM", "PZ", "PP", "CR"]
 SCIENCE_LEVEL1_QUICK_INPUT_TYPE_CODES = ["XR"]
 SCIENCE_LEVEL1_QUICK_OUTPUT_TYPE_CODES = ["QR"]
@@ -639,7 +640,14 @@ def level1_late_query_ready_files(session, pipeline_config: dict, reference_time
                              .filter(child.file_type.in_(SCIENCE_LEVEL1_LATE_OUTPUT_TYPE_CODES))
                              .exists())
     ready = (session.query(File)
-             .filter(File.file_type.in_(SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES))
+             .filter(or_(
+                and_(File.file_type.in_(SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES),
+                     File.observatory.in_(['1', '2', '3'])
+                     ),
+                and_(File.file_type.in_(SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES_NFI),
+                     File.observatory == '4'
+                     ),
+             ))
              .filter(File.level == "1")
              .filter(File.state.in_(["created", "progressed"]))
              .filter(~child_exists_subquery)

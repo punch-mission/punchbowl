@@ -271,7 +271,7 @@ def test_level2_construct_file_info():
                        file_version='none',
                        software_version='none',
                        date_obs=datetime.now(UTC))]
-    constructed_file_info = level2_construct_file_info.fn(level1_file, pipeline_config)[0]
+    constructed_file_info = level2_construct_file_info(level1_file, pipeline_config)[0]
     assert constructed_file_info.level == '2'
     assert constructed_file_info.file_type == level1_file[0].file_type
     assert constructed_file_info.observatory == level1_file[0].observatory
@@ -292,8 +292,8 @@ def test_level2_construct_flow_info():
                        file_version='none',
                        software_version='none',
                        date_obs=datetime.now(UTC))]
-    level2_file = level2_construct_file_info.fn(level1_file, pipeline_config)
-    flow_info = level2_construct_flow_info.fn(level1_file, level2_file, pipeline_config)
+    level2_file = level2_construct_file_info(level1_file, pipeline_config)
+    flow_info = level2_construct_flow_info(level1_file, level2_file, pipeline_config)
 
     assert flow_info.flow_type == 'level2'
     assert flow_info.state == "planned"

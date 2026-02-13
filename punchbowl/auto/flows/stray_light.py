@@ -87,6 +87,7 @@ def construct_clear_stray_light_check_for_inputs(session,
             reference_file.file_version = pipeline_config["file_version"]
             reference_file.software_version = __version__
             reference_file.date_created = datetime.now()
+            logger.info(f"{reference_file.filename()} marked impossible")
         elif all_inputs_ready and enough_L1s:
             n = min(len(first_half_inputs), len(second_half_inputs))
             first_half_inputs = first_half_inputs[:n]
@@ -101,6 +102,17 @@ def construct_clear_stray_light_check_for_inputs(session,
         logger.info(f"{len(all_ready_files)} Level 1 {target_file_type}{reference_file.observatory} files will be used "
                      "for stray light estimation.")
         return [f.file_id for f in all_ready_files]
+    else:
+        status = []
+        if not all_inputs_ready:
+            status.append("more L0s than L1s---waiting for L1s to be produced")
+        if not enough_L1s:
+            status.append("not enough inputs")
+        status.append(f"{'not' if more_L0_impossible else ''} waiting for more downlinks")
+        status.append(f"first half: {len(first_half_inputs)} files, {len(first_half_L0s)} L0s")
+        status.append(f"second half: {len(second_half_inputs)} files, {len(second_half_L0s)} L0s")
+        status.append(f"looked for inputs between {t_start.isoformat(' ')} and {t_end.isoformat(' ')}")
+        logger.info(f'{reference_file.filename()}: ' + '; '.join(status))
     return []
 
 
@@ -176,6 +188,7 @@ def construct_polarized_stray_light_check_for_inputs(session,
                 reference_file.file_version = pipeline_config["file_version"]
                 reference_file.software_version = __version__
                 reference_file.date_created = datetime.now()
+            logger.info(f"{[f.filename() for f in reference_files]} marked impossible")
         elif all_inputs_ready and enough_L1s:
             n = min(len(first_half_inputs), len(second_half_inputs))
             first_half_inputs = first_half_inputs[:n]
@@ -194,6 +207,17 @@ def construct_polarized_stray_light_check_for_inputs(session,
         logger.info(f"{len(all_ready_files)} Level 1 Y*{reference_files[0].observatory} files will be used "
                      "for stray light estimation.")
         return [f.file_id for f in all_ready_files]
+    else:
+        status = []
+        if not all_inputs_ready:
+            status.append("more L0s than L1s---waiting for L1s to be produced")
+        if not enough_L1s:
+            status.append("not enough inputs")
+        status.append(f"{'not' if more_L0_impossible else ''} waiting for more downlinks")
+        status.append(f"first half: {len(first_half_inputs)} files, {len(first_half_L0s)} L0s")
+        status.append(f"second half: {len(second_half_inputs)} files, {len(second_half_L0s)} L0s")
+        status.append(f"looked for inputs between {t_start.isoformat(' ')} and {t_end.isoformat(' ')}")
+        logger.info(f'{[f.filename() for f in reference_files]}: ' + '; '.join(status))
     return []
 
 

@@ -54,6 +54,13 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
         logger.info(f"{len(all_ready_files)} Level 2 {target_file_type}{reference_file.observatory} files will be used "
                      "for F corona estimation.")
         return [f for f in all_ready_files]
+    else:
+        status = []
+        status.append("not enough inputs")
+        status.append(f"first half: {len(first_half_inputs)} files")
+        status.append(f"second half: {len(second_half_inputs)} files")
+        status.append(f"looked for inputs between {t_start.isoformat(' ')} and {t_end.isoformat(' ')}")
+        logger.info(f'{reference_file.filename()}: ' + '; '.join(status))
     return []
 
 

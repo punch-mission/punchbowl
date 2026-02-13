@@ -1,4 +1,5 @@
 root: "./test_results/"
+ql_root:  "./test_results/L/"
 tlm_directory: "./test_results/"
 file_version: "1"
 

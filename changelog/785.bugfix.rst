@@ -1,0 +1,1 @@
+Propagate the OUTLIER flag as a bitmask properly.

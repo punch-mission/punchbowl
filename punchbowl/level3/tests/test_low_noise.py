@@ -59,12 +59,12 @@ def sample_ndcube_clear() -> NDCube:
 
 
 def test_low_noise_polarized(sample_ndcube_polarized) -> NDCube:
-    cube_low_noise = create_low_noise_task([sample_ndcube_polarized((2,10,10)),
-                                            sample_ndcube_polarized((2,10,10)),
-                                            sample_ndcube_polarized((2,10,10)),
-                                            sample_ndcube_polarized((2,10,10))])
+    cube_low_noise = create_low_noise_task([sample_ndcube_polarized((3,10,10)),
+                                            sample_ndcube_polarized((3,10,10)),
+                                            sample_ndcube_polarized((3,10,10)),
+                                            sample_ndcube_polarized((3,10,10))])
     assert isinstance(cube_low_noise, NDCube)
-    assert cube_low_noise.data.shape == (2,10,10)
+    assert cube_low_noise.data.shape == (3,10,10)
     assert cube_low_noise.meta.product_code == "PAM"
 
 

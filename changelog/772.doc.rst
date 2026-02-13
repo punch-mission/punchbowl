@@ -1,0 +1,1 @@
+Changes despiking documentation to reflect new algorithm.

@@ -61,6 +61,7 @@ from punchbowl.auto.control.util import load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.data import NormalizedMetadata, get_base_file_name, punch_io, write_ndcube_to_fits
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
+from punchbowl.exceptions import MissingMetadataError
 from punchbowl.limits import LimitSet
 from punchbowl.util import load_mask_file
 
@@ -985,6 +986,8 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
                                                     apid_name2num,
                                                     pfw_recency_requirement=pfw_recency_requirement,
                                                     xact_recency_requirement=xact_recency_requirement)
+            if fits_info["TYPECODE"] == "PX":
+                raise MissingMetadataError("PFW is stale so will wait to process.")
             fits_info["FILEVRSN"] = pipeline_config["file_version"]
             fits_info["PIPEVRSN"] = punchbowl.__version__
             fits_info["NUM_PCKT"] = len(image_packets_entries)
@@ -1079,6 +1082,10 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
             else:  # we skipped because there are bad packets and it's possible we'll get a replay
                 skip_image = True
                 skip_reason = "Waiting for replay"
+        except MissingMetadataError:
+            session.rollback()
+            skip_image = True
+            skip_reason = "PFW was stale so wait to make the image."
         except Exception as e:
             session.rollback()
             skip_image = True

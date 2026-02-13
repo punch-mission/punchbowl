@@ -1,0 +1,117 @@
+root: "./test_results/"
+tlm_directory: "./test_results/"
+file_version: "1"
+
+plate_scale:
+  1: 0.02444444444
+  2: 0.02444444444
+  3: 0.02444444444
+  4: 0.008333333333
+
+# CCD gain for [bottom, top] sides of chip
+ccd_gain:
+  1: [4.93, 4.92]
+  2: [4.90, 5.04]
+  3: [4.94, 4.89]
+  4: [4.98, 4.92]
+
+replay:
+  science_blocks: [2048, 24575]
+  window_in_days: 5
+
+# Scaling vmin/vmax factors for [WFI, NFI]
+quicklook_scaling:
+  '0':
+    default: [[100, 800], [300, 1100]]
+    DK: [[0,40], [0,40]]
+    CR: [[100, 800], [300, 1100]]
+    PM: [[100, 650], [300, 1100]]
+    PZ: [[100, 650], [300, 1100]]
+    PP: [[100, 650], [300, 1100]]
+  'H':
+    default: [[100, 800], [300, 1100]]
+    CR: [[100, 800], [300, 1100]]
+    PM: [[100, 650], [300, 1100]]
+    PZ: [[100, 650], [300, 1100]]
+    PP: [[100, 650], [300, 1100]]
+  '1':
+    default: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    CR: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    PM: [[2.5e-13, 2.5e-11], [2.5e-11, 5e-10]]
+    PZ: [[2.5e-13, 2.5e-11], [2.5e-11, 5e-10]]
+    PP: [[2.5e-13, 2.5e-11], [2.5e-11, 5e-10]]
+  '2':
+    default: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    PT: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    PN: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    CT: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    CN: [[5e-13, 5e-11], [5e-11, 1e-9]]
+  '3':
+    default: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    PF: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    CF: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    CT: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    PT: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    CA: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    PA: [[5e-13, 5e-11], [5e-11, 1e-9]]
+  'Q':
+    default: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    CF: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    CT: [[5e-13, 5e-11], [5e-11, 1e-9]]
+    CN: [[5e-13, 5e-11], [5e-11, 1e-9]]
+
+quality_check:
+  mean_low: 0
+  mean_high: 65000
+
+scheduler:
+  max_start: 16
+
+control:
+  launcher:
+    description: "Kick off new flows for processing."
+    max_flows_running: 50
+  health_monitor:
+    description: "Monitor the health of the pipeline."
+  cleaner:
+    description: "Cleans things in the database"
+
+flows:
+  level0:
+    priority:
+      initial: 5
+      seconds: [ 30, 120, 600 ]
+      escalation: [ 10, 20, 30 ]
+    schedule:
+    options:
+      num_quads: 100
+
+  level1_early:
+    description: "Creates Level 1 files."
+    priority:
+      initial: 6
+      seconds: [ 30, 120, 600 ]
+      escalation: [ 11, 21, 31 ]
+    schedule: "* * * * *"
+    tags: ["L1"]
+    options:
+
+  level1_late:
+    description: "Creates Level 1 files."
+    priority:
+      initial: 6
+      seconds: [ 30, 120, 600 ]
+      escalation: [ 11, 21, 31 ]
+    schedule: "* * * * *"
+    tags: ["L1"]
+    options:
+
+  level2:
+    description: "Creates Level 2 files."
+    priority:
+      initial: 7
+      seconds: [ 30, 120, 600 ]
+      escalation: [ 12, 22, 32 ]
+    schedule: "* * * * *"
+    tags: ["L2"]
+    options:

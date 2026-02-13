@@ -9,6 +9,7 @@ from astropy.io import fits
 from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
+from prefect.testing.utilities import prefect_test_harness
 
 from punchbowl.data import NormalizedMetadata, punch_io, write_ndcube_to_fits
 from punchbowl.data.tests.test_punch_io import sample_ndcube
@@ -83,7 +84,7 @@ def dummy_fits_paths(tmp_path: Path):
 
 def test_estimate_polarized_stray_light(dummy_fits_paths) -> None:
     mfiles, zfiles, pfiles = dummy_fits_paths
-    with disable_run_logger():
+    with prefect_test_harness(), disable_run_logger():
         result = estimate_polarized_stray_light.fn(
                 mfiles, zfiles, pfiles, do_uncertainty=False, num_loaders=2, num_workers=2)
 
@@ -108,7 +109,7 @@ def test_estimate_polarized_stray_light_runs(tmpdir, sample_ndcube):
         write_ndcube_to_fits(cube, path)
         ppaths.append(path)
 
-    with disable_run_logger():
+    with prefect_test_harness(), disable_run_logger():
         cubes = estimate_polarized_stray_light.fn(mpaths, zpaths, ppaths, num_loaders=2, num_workers=2)
 
     assert cubes[0].meta['TYPECODE'].value == 'SM'

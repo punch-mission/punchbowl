@@ -27,6 +27,15 @@ To get the latest unreleased version: clone the repo and install it locally.
 It also provides a short explanation of each underlying algorithm.
 Please reach out with a discussion for more help.
 
+## Testing
+
+You need Docker or Podman Desktop.
+
+1. Install Podman Desktop using your preferred method
+2. Pull the mariadb image with podman pull docker.io/library/mariadb
+3. Run tests with pytest
+
+
 ## Getting help
 
 Please open an issue or discussion on this repo.

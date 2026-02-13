@@ -68,7 +68,7 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
             continue
 
         # group[-1] is the newest file by date_obs
-        if cutoff_time and group[-1].date_obs.replace(tzinfo=UTC) > cutoff_time:
+        if cutoff_time and min(g.date_created for g in group).replace(tzinfo=UTC) > cutoff_time:
             # We're still potentially waiting for downlinks
             continue
 

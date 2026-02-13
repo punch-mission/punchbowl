@@ -209,6 +209,7 @@ def plot_punch(  # noqa: C901
     colorbar: bool = True,
     colorbar_label: str = "Mean Solar Brightness (MSB)",
     persistence_array: np.ndarray | NDCube | None = None,
+    trim_edge: float | tuple[float, float] | list[float, float] | None = None,
     save_path: str | Path | None = None,
     dpi: int = 300,
     ) -> tuple[Figure, Axes]:
@@ -251,6 +252,10 @@ def plot_punch(  # noqa: C901
         Label to use for the colorbar
     persistence_array : np.ndarray or NDCube or None
         When not None, data is plotted where valid atop this existing array.
+    trim_edge : float, tuple[float, float], list[float, float], None
+        Option to trim the edges of low-noise mosaic products to the specified fractional radial distance.
+        One input value trims the outer boundary only, while two trim both the inner and outer boundaries.
+        A reasonable set of values are (0.13, 0.68) for the inner and outer boundaries.
     save_path : str or Path, optional
         When provided, saves the figure to file directly without plotting on screen
     dpi : int, optional
@@ -282,7 +287,17 @@ def plot_punch(  # noqa: C901
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
                                                         else cube.wcs[layer]})
 
-    im = ax.imshow(cube.data if cube.data.ndim == 2 else cube.data[layer,...], cmap=cmap, norm=norm)
+    if isinstance(trim_edge, (tuple, list)):
+        r_min, r_max = sorted(trim_edge)
+        r = radial_distance(cube.data.shape[0], cube.data.shape[1])
+        radial_mask = (r >= r_min) & (r <= r_max)
+    elif isinstance(trim_edge, float):
+        radial_mask = radial_distance(cube.data.shape[0], cube.data.shape[1]) < trim_edge
+    else:
+        radial_mask = 1
+
+    im = ax.imshow(cube.data * radial_mask if cube.data.ndim == 2 else
+                   cube.data[layer,...] * radial_mask, cmap=cmap, norm=norm)
 
     lon, lat = ax.coords
     lat.set_ticks(np.arange(-90, 90, grid_spacing) * u.degree)

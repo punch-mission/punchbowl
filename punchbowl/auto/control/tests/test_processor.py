@@ -5,6 +5,7 @@ from datetime import datetime
 
 import numpy as np
 import pytest
+import yaml
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from ndcube import NDCube
@@ -14,6 +15,7 @@ from pytest_mock_resources import create_mysql_fixture
 
 from punchbowl.auto.control.db import Base, File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
+from punchbowl.auto.control.util import load_pipeline_configuration
 from punchbowl.data import NormalizedMetadata
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -204,8 +206,13 @@ def normal_flow(flow_id: int, pipeline_config_path=TESTDATA_DIR+"/punchpipe_conf
     generic_process_flow_logic(flow_id, normal_core_flow, pipeline_config_path, session=session)
 
 
-def test_simple_generic_process_flow_normal_return(db):
-    os.makedirs("./test_results/", exist_ok=True)
+def test_simple_generic_process_flow_normal_return(db, tmpdir):
+    config = load_pipeline_configuration(TESTDATA_DIR+"/punchpipe_config.yaml")
+    config['root'] = str(tmpdir)
+    config['ql_root'] = str(tmpdir)
+    config_path = os.path.join(tmpdir, 'config.yaml')
+    with open(config_path, 'w') as f:
+        yaml.dump(config, f)
 
     level1_file = db.query(File).where(File.file_id == 2).one()
     assert level1_file.state == "planned"
@@ -216,12 +223,10 @@ def test_simple_generic_process_flow_normal_return(db):
     db.commit()
     del flow
     with prefect_test_harness():
-        normal_flow(1, session=db)
+        normal_flow(1, session=db, pipeline_config_path=config_path)
 
     level1_file = db.query(File).where(File.file_id == 2).one()
     assert level1_file.state == "created"
-    output_filename = os.path.join(level1_file.directory("./test_results/"), level1_file.filename())
-    del level1_file
+    output_filename = os.path.join(level1_file.directory(tmpdir), level1_file.filename())
 
     assert os.path.isfile(str(output_filename))
-    shutil.rmtree("./test_results/", ignore_errors=True)

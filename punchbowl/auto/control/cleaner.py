@@ -2,7 +2,7 @@ import os
 import asyncio
 import subprocess
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
@@ -14,6 +14,8 @@ from prefect.client.schemas.filters import (
     FlowRunFilterStateType,
 )
 from prefect.client.schemas.objects import StateType
+from prefect.client.schemas.sorting import FlowRunSort
+from prefect.exceptions import ObjectNotFound
 from sqlalchemy.orm import aliased
 
 from punchbowl.auto.control.db import File, FileRelationship, Flow
@@ -35,6 +37,81 @@ async def cleaner(pipeline_config_path: str, session=None):
 
     # running flows are both in Prefect and in our punchpipe database, so we have to cancel them both places
     await fail_stuck_flows(logger, session, pipeline_config, "running", update_prefect=True)
+
+    await delete_old_flow_runs(logger, pipeline_config)
+
+
+@task(cache_policy=NO_CACHE)
+async def delete_old_flow_runs(logger, config, batch_size=100):
+    """Delete completed flow runs older than specified days."""
+    days_to_keep = config['control']['cleaner'].get("days_to_keep_flows", None)
+    if not days_to_keep:
+        return
+    max_n = config['control']['cleaner'].get("max_deletions_per_run", 1000)
+
+    async with get_client() as client:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days_to_keep)
+
+        # Create filter for old completed flow runs
+        # Note: Using start_time because created time filtering is not available
+        flow_run_filter = FlowRunFilter(
+            start_time=FlowRunFilterStartTime(before_=cutoff),
+            state=FlowRunFilterState(
+                type=FlowRunFilterStateType(
+                    any_=[StateType.COMPLETED, StateType.CANCELLED]
+                )
+            )
+        )
+
+        # Get flow runs to delete
+        flow_runs = await client.read_flow_runs(
+            flow_run_filter=flow_run_filter,
+            sort=FlowRunSort.START_TIME_ASC,
+            limit=batch_size
+        )
+
+        deleted_total = 0
+
+        while flow_runs:
+            batch_deleted = 0
+            failed_deletes = []
+
+            # Delete each flow run through the API
+            for flow_run in flow_runs:
+                try:
+                    await client.delete_flow_run(flow_run.id)
+                    deleted_total += 1
+                    batch_deleted += 1
+                except ObjectNotFound:
+                    # Already deleted (e.g., by concurrent cleanup) - treat as success
+                    deleted_total += 1
+                    batch_deleted += 1
+                except Exception as e:
+                    logger.warning(f"Failed to delete flow run {flow_run.id}: {e}")
+                    failed_deletes.append(flow_run.id)
+
+                # Rate limiting - adjust based on your API capacity
+                if batch_deleted % 10 == 0:
+                    await asyncio.sleep(0.5)
+
+            logger.info(f"Deleted {batch_deleted}/{len(flow_runs)} flow runs (total: {deleted_total})")
+            if failed_deletes:
+                logger.warning(f"Failed to delete {len(failed_deletes)} flow runs")
+
+            if deleted_total >= max_n:
+                break
+
+            # Get next batch
+            flow_runs = await client.read_flow_runs(
+                flow_run_filter=flow_run_filter,
+                limit=batch_size
+            )
+
+            # Delay between batches to avoid overwhelming the API
+            await asyncio.sleep(1.0)
+
+        logger.info(f"Retention complete. Total deleted: {deleted_total}")
+
 
 @task(cache_policy=NO_CACHE)
 def reset_revivable_flows(logger, session, pipeline_config):

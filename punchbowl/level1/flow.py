@@ -87,9 +87,9 @@ def level1_early_core_flow(  # noqa: C901
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
 
-        if l0_data.meta['BADPKTS'].value:
+        if l0_data.meta["BADPKTS"].value:
             data.meta.history.add_now("LEVEL1", "Image has bad packets; saturated pixels not filled")
-            logger.info(f"Bad packets---not filling saturated pixels")
+            logger.info("Bad packets---not filling saturated pixels")
             saturated_pixels = None
         else:
             saturated_pixels = data.data >= data.meta["DSATVAL"].value
@@ -101,9 +101,9 @@ def level1_early_core_flow(  # noqa: C901
                                                bitrate_signal=bitrate_signal,
                                                saturated_pixels=saturated_pixels,
                                                )
-        if l0_data.meta['BADPKTS'].value:
+        if l0_data.meta["BADPKTS"].value:
             data.meta.history.add_now("LEVEL1-despike", "Image has bad packets; no despiking applied")
-            logger.info(f"Bad packets---despiking skipped")
+            logger.info("Bad packets---despiking skipped")
         else:
             data = despike_polseq_task(data,
                                        despike_neighbors,
@@ -132,9 +132,9 @@ def level1_early_core_flow(  # noqa: C901
         data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 
-        if l0_data.meta['BADPKTS'].value:
+        if l0_data.meta["BADPKTS"].value:
             data.meta.history.add_now("LEVEL1-destreak", "Image has bad packets; no destreaking applied")
-            logger.info(f"Bad packets---destreaking skipped")
+            logger.info("Bad packets---destreaking skipped")
         else:
             data = destreak_task(data,
                                  exposure_time=exposure_time,

@@ -289,7 +289,11 @@ def level1_late_core_flow( # noqa: C901
 
         data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
         if do_align:
-            data = align_task(data, distortion_path)
+            if data.meta["BADPKTS"].value:
+                data.meta.history.add_now("LEVEL1-align", "Image has bad packets; no alignment applied")
+                logger.info("Bad packets---alignment skipped")
+            else:
+                data = align_task(data, distortion_path)
 
         if mask is not None:
             data.data[~mask] = 0

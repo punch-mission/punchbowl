@@ -2,11 +2,12 @@ import os
 import sys
 import argparse
 from itertools import repeat
+from concurrent.futures.process import ProcessPoolExecutor
 
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
 from sqlalchemy import or_
-from tqdm.contrib.concurrent import process_map
+from tqdm.auto import tqdm
 
 from punchbowl.auto.control.db import File
 from punchbowl.auto.control.util import (
@@ -46,8 +47,9 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern, ne
                 _write_quicklook(config, file, cube)
         return True
     except Exception as e:
-        print(f"Error in {file.filename()}, {repr(e)}")
-        return False
+        msg = f"Error in {file.filename()}, {repr(e)}"
+        print(msg)
+        return msg
 
 
 if __name__ == "__main__":
@@ -88,7 +90,7 @@ if __name__ == "__main__":
         new_version = new_version[1:]
 
     config = load_pipeline_configuration(args.pipeline_config)
-    session = get_database_session()
+    session = get_database_session(session_kwargs=dict(expire_on_commit=False))
 
     query = session.query(File).where(File.file_version != new_version)
     if args.level:
@@ -127,14 +129,21 @@ if __name__ == "__main__":
         print("Please clear out any planned or running flows and try again.")
         sys.exit()
 
-    for i, (file, success) in enumerate(zip(files, process_map(productionify_file, files, repeat(config),
-                                                repeat(args.data_root), repeat(old_version_pattern),
-                                                repeat(new_version), max_workers=args.workers, chunksize=2))):
-        if success:
-            file.file_version = new_version
-        else:
-            print(f"Error with {file.filename()}")
-        if i % 200 == 0:
-            session.commit()
-
-    session.commit()
+    errors = []
+    with ProcessPoolExecutor(args.workers) as p, tqdm(total=len(files)) as pbar:
+        try:
+            for i, (file, success_or_msg) in enumerate(zip(files, p.map(productionify_file, files, repeat(config),
+                                                           repeat(args.data_root), repeat(old_version_pattern),
+                                                           repeat(new_version), chunksize=2))):
+                pbar.update()
+                if success_or_msg is True:
+                    file.file_version = new_version
+                else:
+                    errors.append(success_or_msg)
+                if i % 200 == 0:
+                    session.commit()
+        except KeyboardInterrupt:
+            pass
+        session.commit()
+        print("Repeats of all error messages:")
+        print('\n'.join(errors))

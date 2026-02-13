@@ -173,6 +173,9 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,HEQX_OBS,,[m] S/C Heliocentric Earth Equatorial X,float,TRUE,TRUE,
 12,keyword,HEQY_OBS,,[m] S/C Heliocentric Earth Equatorial Y,float,TRUE,TRUE,
 12,keyword,HEQZ_OBS,,[m] S/C Heliocentric Earth Equatorial Z,float,TRUE,TRUE,
+12,keyword,MOONDIST,,[deg] Angular Moon distance from image center,float,TRUE,TRUE,
+12,keyword,MOON_X,,X center pixel of Moon in image,float,TRUE,TRUE,
+12,keyword,MOON_Y,,Y center pixel of Moon in image,float,TRUE,TRUE,
 12,keyword,XACTTIME,,XACT packet timestamp,str,TRUE,TRUE,
 13,section,COMMENT,Velocity,,str,TRUE,TRUE,Velocity
 13,keyword,DELTAT,,Time offset in frames between images,int,TRUE,TRUE,

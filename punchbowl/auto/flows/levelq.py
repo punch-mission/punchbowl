@@ -358,6 +358,7 @@ def levelq_CTM_construct_flow_info(CQM_files: list[File], output_file: File, pip
 
 
 def levelq_CTM_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+    input_file = level1_files[0]
     return [File(
                 level="Q",
                 file_type="CT",
@@ -365,10 +366,10 @@ def levelq_CTM_construct_file_info(level1_files: list[File], pipeline_config: di
                 polarization="C",
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
-                date_obs=average_datetime([f.date_obs for f in level1_files]),
+                date_obs=input_file.date_obs,
                 state="planned",
-                outlier=any(file.outlier for file in level1_files),
-                bad_packets=any(file.bad_packets for file in level1_files),
+                outlier=input_file.outlier,
+                bad_packets=input_file.bad_packets,
             ),
     ]
 

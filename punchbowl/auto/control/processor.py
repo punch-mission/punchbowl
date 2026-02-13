@@ -102,7 +102,12 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
                 # Converts to local time
                 date_created = date_created.replace(tzinfo=UTC).astimezone()
                 file_db_entry.date_created = date_created
-                result.meta["OUTLIER"] = int(file_db_entry.outlier)
+                if result.meta['OUTLIER'].value == 0:
+                    # Stamp the DB value into this file, which hasn't had OUTLIER set yet
+                    result.meta["OUTLIER"] = file_db_entry.outlier
+                else:
+                    # The flow specifically set a value, so copy it back into the DB
+                    file_db_entry.outlier = result.meta["OUTLIER"].value
                 result.meta["BADPKTS"] = int(file_db_entry.bad_packets)
                 result.meta['BOWLVRSN'] = __version__
                 if 'SPPYVRSN' in result.meta:

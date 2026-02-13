@@ -112,7 +112,7 @@ if __name__ == "__main__":
             date_obs=date,
             polarization=pol,
             state='created',
-            outlier=False,
+            outlier=0,
         )
 
         if file.filename() not in existing_files:

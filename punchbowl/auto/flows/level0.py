@@ -632,20 +632,24 @@ def get_metadata(first_image_packet,
     spacecraft_id = first_image_packet.spacecraft_id
     exposure_time = acquisition_settings["EXPOSURE"]/10.0 * (1+acquisition_settings["IMG_NUM"])
 
+    packet_window_size = timedelta(hours=5)
     # get the XACT packet right before and right after the first image packet to determine position
     before_xact_db = (session.query(ENG_XACT)
                    .filter(ENG_XACT.spacecraft_id == spacecraft_id)
                    .filter(ENG_XACT.timestamp <= observation_time)
+                   .filter(ENG_XACT.timestamp > observation_time - packet_window_size)
                    .order_by(ENG_XACT.timestamp.desc()).first())
     after_xact_db = (session.query(ENG_XACT)
                   .filter(ENG_XACT.spacecraft_id == spacecraft_id)
                   .filter(ENG_XACT.timestamp >= observation_time)
+                  .filter(ENG_XACT.timestamp < observation_time + packet_window_size)
                   .order_by(ENG_XACT.timestamp.asc()).first())
 
     # get the PFW packet right before the observation
     best_pfw_db = (session.query(ENG_PFW)
                   .filter(ENG_PFW.spacecraft_id == spacecraft_id)
                   .filter(ENG_PFW.timestamp <= observation_time)
+                  .filter(ENG_PFW.timestamp > observation_time - packet_window_size)
                   .order_by(ENG_PFW.timestamp.desc()).first())
     pfw_recency = abs((best_pfw_db.timestamp - observation_time).total_seconds())
     pfw_is_out_of_date = pfw_recency > pfw_recency_requirement
@@ -654,12 +658,14 @@ def get_metadata(first_image_packet,
     best_ceb_db = (session.query(ENG_CEB)
                   .filter(ENG_CEB.spacecraft_id == spacecraft_id)
                   .filter(ENG_CEB.timestamp < observation_time)
+                  .filter(ENG_CEB.timestamp > observation_time - packet_window_size)
                   .order_by(ENG_CEB.timestamp.desc()).first())
 
     # get the LZ packet right before the observation
     best_lz_db = (session.query(ENG_LZ)
                   .filter(ENG_LZ.spacecraft_id == spacecraft_id)
                   .filter(ENG_LZ.timestamp < observation_time)
+                  .filter(ENG_LZ.timestamp > observation_time - packet_window_size)
                   .order_by(ENG_LZ.timestamp.desc()).first())
 
     # get the LED packet that corresponds to this observation if one exists.

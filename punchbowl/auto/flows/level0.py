@@ -6,6 +6,7 @@ import hashlib
 import traceback
 import multiprocessing
 from glob import glob
+from random import shuffle
 from typing import Any
 from datetime import UTC, datetime, timedelta
 from collections import defaultdict
@@ -1148,6 +1149,7 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
         logger.warning(f"No num_workers defined, using {num_workers} workers")
 
     max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
+    shuffle(image_inputs)
     image_inputs = image_inputs[:max_images_per_flow]
 
     with multiprocessing.get_context("spawn").Pool(num_workers, initializer=initializer) as pool:

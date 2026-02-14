@@ -1153,7 +1153,17 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
 
     image_inputs.sort()
     max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
-    image_inputs = [e[1] for e in image_inputs[:max_images_per_flow]]
+    image_inputs = image_inputs[:max_images_per_flow]
+    n_retries = len([e for e in image_inputs if e[0][0]])
+    last_attempts = [e[0][1] for e in image_inputs if e[0][0]]
+    retry_timestamps = [e[1][1] for e in image_inputs if e[0][0]]
+    new_timestamps = [e[1][1] for e in image_inputs if not e[0][0]]
+    image_inputs = [e[1] for e in image_inputs]
+    logger.info(f"Will run {len(image_inputs)} attempts, including {n_retries} retries")
+    if n_retries:
+        logger.info(f"Retries were last attempted between {min(last_attempts)} and {max(last_attempts)}")
+        logger.info(f"Retries are for timestamps between {min(retry_timestamps)} and {max(retry_timestamps)}")
+    logger.info(f"New images are for timestamps between {min(new_timestamps)} and {max(new_timestamps)}")
 
     try:
         num_workers = pipeline_config["flows"]["level0"]["options"]["num_workers"]
@@ -1164,15 +1174,15 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
     with multiprocessing.get_context("spawn").Pool(num_workers, initializer=initializer) as pool:
         skip_reasons = defaultdict(lambda: 0)
         for i, (new_replay_needs, successful_image, skip_reason) in enumerate(
-                pool.imap(form_single_image_caller, image_inputs, chunksize=10)):
+                pool.imap_unordered(form_single_image_caller, image_inputs, chunksize=5)):
             replay_needs.extend(new_replay_needs)
             if successful_image:
                 success_count += 1
             else:
                 skip_reasons[skip_reason] += 1
                 skip_count += 1
-            if (i + 1) % 1000 == 0:
-                logger.info(f"Completed {i+1} / {len(image_inputs)} image formation attempts")
+            if (i + 1) % 100 == 0:
+                logger.info(f"Completed {i+1} / {len(image_inputs)} formation attempts; {success_count} successes so far")
 
     history = PacketHistory(datetime=datetime.now(UTC),
                             num_images_succeeded=success_count,

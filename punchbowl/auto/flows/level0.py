@@ -1137,27 +1137,29 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
 
     image_inputs = []
     for spacecraft in distinct_spacecraft:
-        distinct_times = (session.query(SCI_XFI.timestamp, SCI_XFI.priority)
+        distinct_times = (session.query(SCI_XFI.timestamp, SCI_XFI.num_attempts, SCI_XFI.last_attempt)
                           .filter(or_(~SCI_XFI.is_used, SCI_XFI.is_used.is_(None)))
                           .filter(SCI_XFI.spacecraft_id == spacecraft[0])
                           .filter(SCI_XFI.timestamp > retry_window_start)
                           .distinct()
                           .all())
         for t in distinct_times:
-            image_inputs.append((t[1], (spacecraft[0], t[0], defs, apid_name2num, pipeline_config, spacecraft_secrets,
+            # Sort by (num_attempts != 0) first, so new stuff gets tried (False sorts before True), and then sort by
+            # last attempt, with less-recent attempts coming first
+            sort_key = (t[1] not in (0, None), t[2])
+            image_inputs.append((sort_key, (spacecraft[0], t[0], defs, apid_name2num, pipeline_config, spacecraft_secrets,
                                  outlier_limits, masks, processing_flow_id)))
     logger.info(f"Got {len(image_inputs)} images to try forming")
+
+    image_inputs.sort()
+    max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
+    image_inputs = [e[1] for e in image_inputs[:max_images_per_flow]]
 
     try:
         num_workers = pipeline_config["flows"]["level0"]["options"]["num_workers"]
     except KeyError:
         num_workers = 4
         logger.warning(f"No num_workers defined, using {num_workers} workers")
-
-    image_inputs.sort(reverse=True)
-    max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
-    image_inputs = [e[1] for e in image_inputs[:max_images_per_flow]]
-    shuffle(image_inputs)
 
     with multiprocessing.get_context("spawn").Pool(num_workers, initializer=initializer) as pool:
         skip_reasons = defaultdict(lambda: 0)

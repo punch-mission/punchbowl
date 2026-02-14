@@ -1148,10 +1148,12 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
         num_workers = 4
         logger.warning(f"No num_workers defined, using {num_workers} workers")
 
-    image_inputs.sort()
+    image_inputs.sort(reverse=True)
     max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
     image_inputs = [e[1] for e in image_inputs[:max_images_per_flow]]
     shuffle(image_inputs)
+    for e in image_inputs:
+        logger.info(f"Will try to create {e}")
 
     with multiprocessing.get_context("spawn").Pool(num_workers, initializer=initializer) as pool:
         skip_reasons = defaultdict(lambda: 0)

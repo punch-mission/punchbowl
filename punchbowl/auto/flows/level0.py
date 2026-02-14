@@ -1171,8 +1171,8 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
             else:
                 skip_reasons[skip_reason] += 1
                 skip_count += 1
-            if i % 1000 == 0:
-                logger.info(f"Completed {i} / {len(image_inputs)} image formation attempts")
+            if (i + 1) % 1000 == 0:
+                logger.info(f"Completed {i+1} / {len(image_inputs)} image formation attempts")
 
     history = PacketHistory(datetime=datetime.now(UTC),
                             num_images_succeeded=success_count,

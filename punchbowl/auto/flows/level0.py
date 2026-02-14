@@ -1063,7 +1063,7 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
                                    observatory=str(soc_spacecraft_id),
                                    file_version=pipeline_config["file_version"],
                                    software_version=__version__,
-                                   outlier=is_outlier,
+                                   outlier=int(is_outlier),
                                    bad_packets=bad_packets,
                                    date_created=parse_datetime_str(fits_info["DATE"]).replace(tzinfo=UTC).astimezone(),
                                    date_obs=date_obs,

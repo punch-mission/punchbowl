@@ -470,7 +470,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
             logger.warning(f"Loading {filepaths[i]} failed")
             logger.warning(result)
             n_failed += 1
-            if n_failed > 10:
+            if n_failed > .05 * len(filepaths):
                 raise RuntimeError(f"{n_failed} files failed to load, stopping")
             continue
         # We need to save a sample cube (not a string/error message) for the end of this flow
@@ -489,7 +489,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                 uncertainty += np.nan_to_num(cube.uncertainty.array, posinf=0, neginf=0) ** 2
         if (i + 1) % 100 == 0:
             logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
-    logger.info("Finished loaded files")
+    logger.info(f"Finished loaded files, saw {n_failed} failures")
     data_array = data_array[:j]
 
     if image_mask is None:

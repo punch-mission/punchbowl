@@ -323,7 +323,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
             logger.warning(f"Loading {filenames[i]} failed")
             logger.warning(result)
             n_failed += 1
-            if n_failed > 10:
+            if n_failed > 0.05 * len(filenames):
                 raise RuntimeError(f"{n_failed} files failed to load, stopping")
             continue
         cube = result
@@ -344,7 +344,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
             logger.info(f"Loaded {i+1}/{len(filenames)} files")
     # Crop the unused end of the array if we had a few files that errored out
     data_cube = data_cube[:j+1]
-    logger.info("end of data loading")
+    logger.info(f"end of data loading, saw {n_failed} failures")
     output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 

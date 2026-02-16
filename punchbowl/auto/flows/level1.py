@@ -523,6 +523,7 @@ def level1_middle_query_ready_files(session, pipeline_config: dict, reference_ti
              .filter(File.file_type.in_(SCIENCE_LEVEL1_MIDDLE_INPUT_TYPE_CODES))
              .filter(File.level == "1")
              .filter(File.state.in_(["created", "progressed"]))
+             .filter(File.observatory != '4')
              .filter(~child_exists_subquery)
              .filter(File.date_obs >= start_date)
              .filter(File.date_obs <= end_date))

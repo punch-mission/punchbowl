@@ -30,7 +30,10 @@ def construct_stray_light_check_for_inputs(session,
     L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
     more_L0_impossible = datetime.now() - t_end > timedelta(days=L0_impossible_after_days)
 
-    file_type_mapping = {"SR": "XR", "SM": "YM", "SZ": "YZ", "SP": "YP"}
+    if reference_file.observatory == '4':
+        file_type_mapping = {"SR": "XR", "SM": "XM", "SZ": "XZ", "SP": "XP"}
+    else:
+        file_type_mapping = {"SR": "XR", "SM": "YM", "SZ": "YZ", "SP": "YP"}
     target_file_type = file_type_mapping[reference_file.file_type]
     L0_type_mapping = {"SR": "CR", "SM": "PM", "SZ": "PZ", "SP": "PP"}
     L0_target_file_type = L0_type_mapping[reference_file.file_type]

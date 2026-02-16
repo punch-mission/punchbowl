@@ -509,6 +509,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     for binn in range(n_crota_bins):
         mask = np.array([crota_is_in_bin(m["CROTA"].value, binn) for m in metas])
         bin_masks.append(mask)
+        logger.info(f"Bin centered at CROTA {bin_centers[binn]} has {np.sum(mask)} images")
 
     window_half_width = window_size // 2
     # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
@@ -522,7 +523,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
     models = []
     for bin_n, bin_mask in enumerate(bin_masks):
-        logger.info(f"Starting bin {bin_n + 1}")
+        logger.info(f"Starting bin {bin_n + 1}, containing {np.sum(bin_mask)} images")
 
         # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
         # inside the mask for this function's inner loop to get enough samples.

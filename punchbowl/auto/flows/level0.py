@@ -1154,16 +1154,17 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
     image_inputs.sort()
     max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
     image_inputs = image_inputs[:max_images_per_flow]
-    n_retries = len([e for e in image_inputs if e[0][0]])
+
     last_attempts = [e[0][1] for e in image_inputs if e[0][0]]
     retry_timestamps = [e[1][1] for e in image_inputs if e[0][0]]
     new_timestamps = [e[1][1] for e in image_inputs if not e[0][0]]
     image_inputs = [e[1] for e in image_inputs]
-    logger.info(f"Will run {len(image_inputs)} attempts, including {n_retries} retries")
-    if n_retries:
+    logger.info(f"Will run {len(image_inputs)} attempts, including {len(retry_timestamps)} retries")
+    if retry_timestamps:
         logger.info(f"Retries were last attempted between {min(last_attempts)} and {max(last_attempts)}")
         logger.info(f"Retries are for timestamps between {min(retry_timestamps)} and {max(retry_timestamps)}")
-    logger.info(f"New images are for timestamps between {min(new_timestamps)} and {max(new_timestamps)}")
+    if new_timestamps:
+        logger.info(f"New images are for timestamps between {min(new_timestamps)} and {max(new_timestamps)}")
 
     try:
         num_workers = pipeline_config["flows"]["level0"]["options"]["num_workers"]
@@ -1192,8 +1193,9 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
     logger.info(f"SUCCESS={success_count}")
     logger.info(f"FAILURE={skip_count}")
 
-    for reason in skip_reasons:
-        logger.info(f"Skipped {skip_reasons[reason]} images for reason {reason}")
+    reasons = sorted([(count, reason) for reason, count in skip_reasons.items()], reverse=True)
+    for count, reason in reasons:
+        logger.info(f"Skipped {count} images for reason {reason}")
 
     # Split into multiple files and append updates instead of making a new file each time
     # We label not with the spacecraft telemetry ID but with the spelled out name

@@ -336,10 +336,16 @@ def update_table(show_in_table, group_by, n, page_current, page_size, sort_by, f
 
     for col in group_by:
         query = query.group_by(col.lower().replace(" ", "_"))
-    query = query.offset(page_current * page_size).limit(page_size)
 
     with get_database_session() as session:
         dff = pd.read_sql_query(query, session.connection())
+
+    # It turns out, surprisingly, that for at least some queries, if we put the limit in the MySQL query, a different
+    # (worse) index gets chosen and the DB query takes orders of magnitude longer. Since we're GROUP BY-ing anyway
+    # and so the number of rows is always small, we cut rows as needed in Python instead.
+    if page_current * page_size < len(dff):
+        dff = dff[page_current * page_size:]
+    dff = dff[:page_size]
 
     if len(dff) == 0:
         dff.loc[-1] = ["-"] * (len(dff.columns) - 1) + ["No files found for these criteria"]

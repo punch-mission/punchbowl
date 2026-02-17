@@ -1,0 +1,1 @@
+CAM/PAMs are not scheduled if they would be empty because all the input images are outliers.

@@ -1,0 +1,1 @@
+Images with BADPKTS set no longer undergo despiking, destreaking, or saturated pixel filling

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 from punchbowl import __version__
 from punchbowl.auto.control.db import File, Flow
@@ -41,7 +41,7 @@ def construct_stray_light_check_for_inputs(session,
     base_query = (session.query(File)
                   .filter(File.state.in_(["created", "progressed"]))
                   .filter(File.observatory == reference_file.observatory)
-                  .filter(~File.outlier)
+                  .filter(~File.bad_packets)
                   )
 
     first_half_inputs = (base_query
@@ -133,13 +133,22 @@ def construct_stray_light_flow_info(level1_files: list[File],
     mask = get_mask_file(level1_files[0], pipeline_config, session=session)
     pol_type = 'clear' if file_type[0] == 'S' else 'pol'
 
+    dt = func.abs(func.timestampdiff(text("second"), File.date_obs, reference_time))
+    nearest_created_model = (
+            session.query(File)
+            .where(File.file_type == file_type)
+            .where(File.observatory == spacecraft)
+            .where(File.state == 'created')
+            .order_by(dt.asc()).first())
+
     call_data = json.dumps(
         {
             "filepaths": [level1_file.filename() for level1_file in level1_files],
             "reference_time": reference_time.strftime("%Y-%m-%d %H:%M:%S"),
             "spacecraft": spacecraft,
             "image_mask_path": mask.filename().replace(".fits", ".bin"),
-            "window_size": pipeline_config["flows"][flow_type][f"{pol_type}_neighborhood_size"]
+            "window_size": pipeline_config["flows"][flow_type][f"{pol_type}_neighborhood_size"],
+            "fallback_model_path": None if nearest_created_model is None else nearest_created_model.filename()
         },
     )
     return Flow(
@@ -292,7 +301,7 @@ def construct_stray_light_scheduler_flow(pipeline_config_path=None, session=None
 
 def construct_stray_light_call_data_processor(call_data: dict, pipeline_config, session) -> dict:
     # Prepend the directory path to each input file
-    for key in ["filepaths", "image_mask_path"]:
+    for key in ["filepaths", "image_mask_path", "fallback_model_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     del call_data["spacecraft"]
     call_data["num_workers"] = 40

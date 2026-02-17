@@ -549,7 +549,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
         if make_plots_along_the_way:
             import matplotlib.pyplot as plt
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
             plt.title("Raw")
             plt.show()
 
@@ -557,7 +557,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         stray_light_estimate[~strided_image_mask] = 0
         stray_light_estimate = inpaint_nans(stray_light_estimate, kernel_size=5)
         if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
             plt.title("post inpaint")
             plt.show()
 
@@ -572,7 +572,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         # entire data cube, so we do that.
         percentiles = np.argmin(np.abs(sorted_data - stray_light_estimate), axis=0) / sorted_data.shape[0] * 100
         if make_plots_along_the_way:
-            plt.imshow(percentiles, vmin=0, vmax=80, origin='lower')
+            plt.imshow(percentiles, vmin=0, vmax=80, origin="lower")
             plt.title("Percentiles")
             plt.show()
 
@@ -584,7 +584,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         bad_region *= strided_image_mask
 
         if make_plots_along_the_way:
-            plt.imshow(bad_region, vmin=0, vmax=1, origin='lower')
+            plt.imshow(bad_region, vmin=0, vmax=1, origin="lower")
             plt.title("bad region")
             plt.show()
 
@@ -596,7 +596,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         inpainted = inpaint.inpaint_biharmonic(stray_light_estimate, inpaint_mask)
 
         if make_plots_along_the_way:
-            plt.imshow(inpainted, vmin=0, vmax=.5e-12, origin='lower')
+            plt.imshow(inpainted, vmin=0, vmax=.5e-12, origin="lower")
             plt.title("Inpainted")
             plt.show()
 
@@ -606,7 +606,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         stray_light_estimate[~strided_image_mask] = np.nan
 
         if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
             plt.title("Filled")
             plt.show()
 
@@ -614,14 +614,14 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
             stray_light_estimate = nan_gaussian(stray_light_estimate, blur_sigma)
 
         if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
             plt.title("Blurred")
             plt.show()
 
         stray_light_estimate[~strided_image_mask] = 0
 
         if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
             plt.title("Masked")
             plt.show()
         if stride > 1 or window_size > 1:
@@ -633,7 +633,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
             stray_light_estimate *= image_mask
 
         if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin='lower')
+            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
             plt.title("Interped, final")
             plt.show()
 

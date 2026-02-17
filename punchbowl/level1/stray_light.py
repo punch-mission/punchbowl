@@ -164,7 +164,7 @@ def pick_peak(bin_values: np.ndarray) -> int:
             return largest_idx
 
 
-def find_peak_end(bin_values: np.ndarray, peak_location, direction) -> int:
+def find_peak_end(bin_values: np.ndarray, peak_location: int, direction: int) -> int:
     """Find the edges of the first (left-most) peak, by expanding until appreciable up-hillage is found."""
     lowest_seen = np.inf
     lowest_idx = -1
@@ -181,7 +181,8 @@ def find_peak_end(bin_values: np.ndarray, peak_location, direction) -> int:
 
 
 class OutOfPointsError(RuntimeError):
-    pass
+    """Raised when the histogram runs out of points."""
+
 
 
 def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1e13, weight: bool = True, # noqa: C901
@@ -403,7 +404,7 @@ REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS = 0.5
 
 
 def _estimate_stray_light_one_slice(y: int, data_slice: np.ndarray, x_grid: np.ndarray, half_width: int) -> np.ndarray:
-    """This is our parallel worker, computing the stray light model for one y coordinate."""
+    """This is our parallel worker, computing the stray light model for one y coordinate.""" # noqa: D401 D404
     # Control the extra noise we add to the data to prevent concentric bands that would otherwise appear
     noise_mode = 2e-13
     noise_hwhm = 2.25e-13 - 1.8e-13
@@ -537,7 +538,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
             for y in y_grid:
                 # We can't fork when running under Prefect, so we have to just copy chunks of the data cube to each
                 # worker.
-                data_slice = data_array[bin_mask, y - window_half_width:y + window_half_width + 1, :]
+                data_slice = data_array[bin_mask, y - window_half_width:y + window_half_width + 1, :] # noqa: B023 F821
                 yield y, data_slice, x_grid, window_half_width
 
         logger.info("Beginning model fitting")
@@ -548,7 +549,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         logger.info("Finished model fitting")
 
         if make_plots_along_the_way:
-            import matplotlib.pyplot as plt
+            import matplotlib.pyplot as plt  # noqa: PLC0415
             plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
             plt.title("Raw")
             plt.show()

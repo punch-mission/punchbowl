@@ -41,6 +41,6 @@ with engine.connect() as connection:
         packet_ids = [p[0] for p in packets_to_update_info]
         all_packet_ids.extend(packet_ids)
     print(f"Will reset {len(all_packet_ids)} packets")
-    update_query = f'update sci_xfi set is_used=0,priority=2 where id in {tuple(all_packet_ids)}'
+    update_query = f'update sci_xfi set is_used=0 where id in {tuple(all_packet_ids)}'
     connection.execute(text(update_query))
     connection.execute(text("commit"))

@@ -1,0 +1,1 @@
+old_fileversion_to_filter_in_meta can be set, allowing files to have version numbers scrubbed in their metadata before writing.

@@ -1,7 +1,7 @@
 root: "/Users/jhughes/Desktop/pipeline_testing/"
 tlm_directory: "/Users/jhughes/Desktop/pipeline_testing/"
 file_version: "0.0.1"
-new_L0_impossible_after_days: 3
+new_L0_impossible_after_days: 0
 
 plate_scale:
   1: 0.02444444444

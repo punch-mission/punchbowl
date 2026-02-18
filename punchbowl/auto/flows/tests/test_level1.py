@@ -40,7 +40,37 @@ def session_fn(session):
                        file_version='none',
                        software_version='none',
                        crota=90,
-                       date_obs=datetime.now(UTC))
+                       date_obs=datetime.now(UTC) - timedelta(minutes=11))
+
+    level0_file2 = File(level="0",
+                       file_type='PZ',
+                       observatory='2',
+                       state='created',
+                       polarization='Z',
+                       file_version='none',
+                       software_version='none',
+                       crota=90,
+                       date_obs=datetime.now(UTC) - timedelta(minutes=10))
+
+    level0_file3 = File(level="0",
+                       file_type='PP',
+                       observatory='2',
+                       state='created',
+                       polarization='P',
+                       file_version='none',
+                       software_version='none',
+                       crota=90,
+                       date_obs=datetime.now(UTC) - timedelta(minutes=9))
+
+    level0_file4 = File(level="0",
+                       file_type='CR',
+                       observatory='2',
+                       state='created',
+                       polarization='C',
+                       file_version='none',
+                       software_version='none',
+                       crota=90,
+                       date_obs=datetime.now(UTC) - timedelta(minutes=8))
 
     level1_file = File(level="1",
                        file_type="PM",
@@ -265,6 +295,9 @@ def session_fn(session):
                        date_obs=datetime.now(UTC)-timedelta(days=1))
 
     session.add(level0_file)
+    session.add(level0_file2)
+    session.add(level0_file3)
+    session.add(level0_file4)
     session.add(level1_file)
     session.add(level1_x_file)
     session.add(level1_y_file)

@@ -7,7 +7,7 @@ from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
-from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
+from punchbowl.data.meta import NormalizedMetadata, check_moon_in_fov, set_spacecraft_location_to_earth
 from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
@@ -163,6 +163,13 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
     output_data.meta["DATE-BEG"] = output_datebeg
     output_data.meta["DATE-END"] = output_dateend
     output_data = set_spacecraft_location_to_earth(output_data)
+
+    _, angle_sun, _, _, _, xpix, ypix = check_moon_in_fov(
+        output_data.meta["DATE-OBS"].value, wcs=output_data.wcs,
+        image_shape=trefoil_shape)
+    output_data.meta["MOONDIST"] = angle_sun[0]
+    output_data.meta["MOON_X"] = xpix[0]
+    output_data.meta["MOON_Y"] = ypix[0]
 
     output_data.meta.provenance = [fname for d in data_list
         if d is not None and (fname := d.meta.get("FILENAME").value)]

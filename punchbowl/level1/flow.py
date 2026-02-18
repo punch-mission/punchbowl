@@ -11,6 +11,7 @@ from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_
 from regularizepsf.util import calculate_covering
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.meta import check_moon_in_fov
 from punchbowl.data.units import calculate_image_pixel_area, dn_to_msb
 from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
@@ -183,6 +184,12 @@ def level1_early_core_flow(  # noqa: C901
             quartic_coefficient_path = quartic_coefficient_path.src_repr()
         new_meta["CALCF"] = os.path.basename(quartic_coefficient_path) if quartic_coefficient_path else ""
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
+
+        _, _, _, _, moondist, xpix, ypix = check_moon_in_fov(
+            data.meta["DATE-OBS"].value, wcs=data.wcs, image_shape=data.data.shape)
+        new_meta["MOONDIST"] = moondist[0]
+        new_meta["MOON_X"] = xpix[0]
+        new_meta["MOON_Y"] = ypix[0]
 
         filename = data.meta.get("FILENAME").value
         if filename:

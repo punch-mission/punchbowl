@@ -45,6 +45,8 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
     quartic_models = get_quartic_model_paths(ready, pipeline_config, session)
     vignetting_functions = get_vignetting_function_paths(ready, pipeline_config, session)
     mask_files = get_mask_files(ready, pipeline_config, session)
+    L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
+    more_L0_impossible_cutoff = datetime.now() - timedelta(days=L0_impossible_after_days)
     actually_ready = []
     missing_quartic = []
     missing_vignetting = []
@@ -63,7 +65,7 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
         if mask_file is None:
             missing_mask.append(f)
             continue
-        if despike_neighbors is None or len(despike_neighbors) <= 2:
+        if len(despike_neighbors) <= 2 and f.date_obs > more_L0_impossible_cutoff:
             missing_sequence.append(f)
         # Smuggle the identified models out of this function
         f.quartic_model = quartic_model
@@ -84,7 +86,7 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
                     + summarize_files_missing_cal_files(missing_sequence))
     return actually_ready
 
-def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=0.01, time_tolerance_minutes=15):
+def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=1, time_tolerance_minutes=15):
     neighbors = (session.query(File)
                  .filter(File.level == "0")
                  .filter(File.observatory == f.observatory)
@@ -94,7 +96,20 @@ def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=0.01
                  .filter(File.date_obs != f.date_obs)  # do not include the image itself in the pol. sequence neighbors
                  .filter(File.date_obs > f.date_obs - timedelta(minutes=time_tolerance_minutes))
                  .filter(File.date_obs < f.date_obs + timedelta(minutes=time_tolerance_minutes)).all())
-    return neighbors
+    # We have occasionally had a file get generated twice with different filetypes. (If we're missing downlink
+    # packets and the wrong polarization state get assigned to a file, we'll get the file written with the wrong file
+    # type, then later with the correct one after the missing packets get replayed.) As a workaround here,
+    # we look for identical date_obs in our neighbors and keep only the newest.
+    neighbors_by_dateobs = {}
+    for neighbor in neighbors:
+        dobs = neighbor.date_obs
+        if dobs in neighbors_by_dateobs:
+            if neighbor.date_created > neighbors_by_dateobs[dobs].date_created:
+                neighbors_by_dateobs[dobs] = neighbor
+            # else: neighbor is an older duplicate; drop it
+        else:
+            neighbors_by_dateobs[dobs] = neighbor
+    return list(neighbors_by_dateobs.values())
 
 def get_distortion_paths(level0_files, pipeline_config: dict, session=None):
     # Get all models, in reverse-chronological order
@@ -448,6 +463,7 @@ def level1_early_construct_file_info(level0_files: list[File], pipeline_config: 
             outlier=level0_files[0].outlier,
             bad_packets=level0_files[0].bad_packets,
             state="planned",
+            crota=level0_files[0].crota,
         ))
     return files
 
@@ -579,6 +595,7 @@ def level1_middle_construct_file_info(input_files: list[File], pipeline_config: 
             outlier=input_files[0].outlier,
             bad_packets=input_files[0].bad_packets,
             state="planned",
+            crota=input_files[0].crota,
         ),
     ]
 
@@ -731,6 +748,7 @@ def level1_late_construct_file_info(input_files: list[File], pipeline_config: di
             outlier=input_files[0].outlier,
             bad_packets=input_files[0].bad_packets,
             state="planned",
+            crota=input_files[0].crota,
         ),
     ]
 
@@ -875,6 +893,7 @@ def level1_quick_construct_file_info(input_files: list[File], pipeline_config: d
             outlier=input_files[0].outlier,
             bad_packets=input_files[0].bad_packets,
             state="planned",
+            crota=input_files[0].crota,
         ),
     ]
 

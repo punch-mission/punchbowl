@@ -68,7 +68,7 @@ def construct_dynamic_stray_light_check_for_inputs(session,
     max_hours_per_half = pipeline_config["flows"]["construct_dynamic_stray_light"]["max_hours_per_half"]
     t_start = reference_time - timedelta(hours=max_hours_per_half)
     t_end = reference_time + timedelta(hours=max_hours_per_half)
-    L0_impossible_after_days = pipeline_config["flows"]["construct_dynamic_stray_light"]["new_L0_impossible_after_days"]
+    L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
     more_L0_impossible = datetime.now() - t_end > timedelta(days=L0_impossible_after_days)
 
     file_type_mapping = {"TR": "XR", "TM": "XM", "TZ": "XZ", "TP": "XP"}

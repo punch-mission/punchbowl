@@ -74,6 +74,8 @@ def load_image_task(input_filename: str, include_provenance: bool = True, includ
         whether to load the provenance layer
     include_uncertainty : bool
         whether to load the uncertainty layer
+    dtype : type
+        dtype to cast the data to
 
     Returns
     -------

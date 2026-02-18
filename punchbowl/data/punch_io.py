@@ -99,7 +99,7 @@ def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
     return jp2box.XMLBox(xml=tree)
 
 
-def write_ndcube_to_quicklook(cube: NDCube,
+def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               filename: str,
                               layer: int | str | None = "tb",
                               vmin: float = 2e-14,
@@ -157,7 +157,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
             if cube.meta["LEVEL"].value == "2":
                 image = 2 / 3 * np.sum(cube.data, axis=0)
             elif cube.meta["LEVEL"].value == "3":
-                if cube.meta["TYPECODE"].value == "PI":
+                if cube.meta["TYPECODE"].value == "PI": # noqa: SIM108
                     image = 2 / 3 * np.sum(cube.data, axis=0)
                 else:
                     image = cube.data[1]
@@ -298,7 +298,7 @@ def write_ndcube_to_fits(cube: NDCube,
         write_file_hash(filename)
 
 
-def _make_provenance_hdu(filenames):
+def _make_provenance_hdu(filenames: list[str]) -> fits.BinTableHDU:
     hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
         name="provenance", format="A40", array=np.char.array(filenames))]))
     hdu_provenance.name = "File provenance"

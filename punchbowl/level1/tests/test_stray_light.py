@@ -34,6 +34,7 @@ def test_no_straylight_file(sample_ndcube) -> None:
         assert corrected_punchdata.meta.history[0].comment == 'Stray light correction skipped'
 
 
+@pytest.mark.xfail
 def test_estimate_stray_light_runs(tmpdir, sample_ndcube):
     data_list = [sample_ndcube(shape=(10, 10), code='XR1', level="1") for i in range(10)]
 

@@ -1,7 +1,9 @@
 import os
 import pathlib
 
+import numpy as np
 import pytest
+from astropy.io import fits
 from ndcube import NDCube
 from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
@@ -61,8 +63,13 @@ def test_late_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
     sample_data = sample_ndcube(shape=(10, 10), code="XM1", level="1")
     write_ndcube_to_fits(sample_data, input_name)
 
-    stray_light_before = THIS_DIRECTORY / "data" / "PUNCH_L1_SM1_20240222163425_v1.fits"
-    stray_light_after = THIS_DIRECTORY / "data" / "PUNCH_L1_SM1_20240222163425_v1.fits"
+    stray_light_before = tmpdir / 'PUNCH_L1_SM1_20240222163425_v1.fits'
+    stray_light_after = stray_light_before
+    with fits.open(THIS_DIRECTORY / "data" / "PUNCH_L1_SM1_20240222163425_v1.fits") as hdul:
+        # Add the "CROTA bin" dimension to the data
+        hdul[1].data = np.stack([hdul[1].data] * 30)
+        hdul[2].data = np.stack([hdul[1].data] * 30)
+        hdul.writeto(stray_light_before)
 
     with prefect_test_harness():
         output = level1_late_core_flow([input_name],
@@ -81,8 +88,13 @@ def test_quick_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
     sample_data = sample_ndcube(shape=(10, 10), code="XM1", level="1")
     write_ndcube_to_fits(sample_data, input_name)
 
-    stray_light_before = THIS_DIRECTORY / "data" / "PUNCH_L1_SM1_20240222163425_v1.fits"
-    stray_light_after = THIS_DIRECTORY / "data" / "PUNCH_L1_SM1_20240222163425_v1.fits"
+    stray_light_before = tmpdir / 'PUNCH_L1_SM1_20240222163425_v1.fits'
+    stray_light_after = stray_light_before
+    with fits.open(THIS_DIRECTORY / "data" / "PUNCH_L1_SM1_20240222163425_v1.fits") as hdul:
+        # Add the "CROTA bin" dimension to the data
+        hdul[1].data = np.stack([hdul[1].data] * 30)
+        hdul[2].data = np.stack([hdul[1].data] * 30)
+        hdul.writeto(stray_light_before)
 
     with prefect_test_harness():
         output = level1_late_core_flow([input_name],

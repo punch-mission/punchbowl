@@ -1,0 +1,1 @@
+The files dashboard has been sped up, and date selections are no longer capped at the date the page was loaded.

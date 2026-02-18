@@ -450,6 +450,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
                        .filter(File.level == "3")
                        .filter(File.file_type == ("PI" if polarized else "CI"))
                        .filter(File.observatory == "M")
+                       .filter(File.outlier == 0)
                        .order_by(File.date_obs.desc()).all())
     # TODO - need to grab data from sets of rotation. look at movie processor for inspiration
     logger.info(f"{len(all_ready_files)} Level 3 {'P' if polarized else 'C'}TM files need to be processed to low-noise.")

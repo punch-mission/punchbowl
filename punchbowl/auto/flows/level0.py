@@ -632,20 +632,24 @@ def get_metadata(first_image_packet,
     spacecraft_id = first_image_packet.spacecraft_id
     exposure_time = acquisition_settings["EXPOSURE"]/10.0 * (1+acquisition_settings["IMG_NUM"])
 
+    packet_window_size = timedelta(hours=5)
     # get the XACT packet right before and right after the first image packet to determine position
     before_xact_db = (session.query(ENG_XACT)
                    .filter(ENG_XACT.spacecraft_id == spacecraft_id)
                    .filter(ENG_XACT.timestamp <= observation_time)
+                   .filter(ENG_XACT.timestamp > observation_time - packet_window_size)
                    .order_by(ENG_XACT.timestamp.desc()).first())
     after_xact_db = (session.query(ENG_XACT)
                   .filter(ENG_XACT.spacecraft_id == spacecraft_id)
                   .filter(ENG_XACT.timestamp >= observation_time)
+                  .filter(ENG_XACT.timestamp < observation_time + packet_window_size)
                   .order_by(ENG_XACT.timestamp.asc()).first())
 
     # get the PFW packet right before the observation
     best_pfw_db = (session.query(ENG_PFW)
                   .filter(ENG_PFW.spacecraft_id == spacecraft_id)
                   .filter(ENG_PFW.timestamp <= observation_time)
+                  .filter(ENG_PFW.timestamp > observation_time - packet_window_size)
                   .order_by(ENG_PFW.timestamp.desc()).first())
     pfw_recency = abs((best_pfw_db.timestamp - observation_time).total_seconds())
     pfw_is_out_of_date = pfw_recency > pfw_recency_requirement
@@ -654,12 +658,14 @@ def get_metadata(first_image_packet,
     best_ceb_db = (session.query(ENG_CEB)
                   .filter(ENG_CEB.spacecraft_id == spacecraft_id)
                   .filter(ENG_CEB.timestamp < observation_time)
+                  .filter(ENG_CEB.timestamp > observation_time - packet_window_size)
                   .order_by(ENG_CEB.timestamp.desc()).first())
 
     # get the LZ packet right before the observation
     best_lz_db = (session.query(ENG_LZ)
                   .filter(ENG_LZ.spacecraft_id == spacecraft_id)
                   .filter(ENG_LZ.timestamp < observation_time)
+                  .filter(ENG_LZ.timestamp > observation_time - packet_window_size)
                   .order_by(ENG_LZ.timestamp.desc()).first())
 
     # get the LED packet that corresponds to this observation if one exists.
@@ -1056,14 +1062,14 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
             # otherwise (when we have bad packets and could get a replay), we just skip and will make the image later
             replay_delay = timedelta(days=pipeline_config["flows"]["level0"]["options"].get("days_to_wait_for_replay",
                                                                                             7))
-            if not bad_packets or (bad_packets and datetime.now(UTC) - date_obs > replay_delay):
+            if not bad_packets or (bad_packets and datetime.now(UTC) - date_obs.replace(tzinfo=UTC) > replay_delay):
                 l0_db_entry = File(level="0",
                                    polarization="C" if file_type[0] == "C" else file_type[1],
                                    file_type=file_type,
                                    observatory=str(soc_spacecraft_id),
                                    file_version=pipeline_config["file_version"],
                                    software_version=__version__,
-                                   outlier=is_outlier,
+                                   outlier=int(is_outlier),
                                    bad_packets=bad_packets,
                                    date_created=parse_datetime_str(fits_info["DATE"]).replace(tzinfo=UTC).astimezone(),
                                    date_obs=date_obs,
@@ -1131,16 +1137,34 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
 
     image_inputs = []
     for spacecraft in distinct_spacecraft:
-        distinct_times = (session.query(SCI_XFI.timestamp)
+        distinct_times = (session.query(SCI_XFI.timestamp, SCI_XFI.num_attempts, SCI_XFI.last_attempt)
                           .filter(or_(~SCI_XFI.is_used, SCI_XFI.is_used.is_(None)))
                           .filter(SCI_XFI.spacecraft_id == spacecraft[0])
                           .filter(SCI_XFI.timestamp > retry_window_start)
                           .distinct()
                           .all())
         for t in distinct_times:
-            image_inputs.append((spacecraft[0], t[0], defs, apid_name2num, pipeline_config, spacecraft_secrets,
-                                 outlier_limits, masks, processing_flow_id))
+            # Sort by (num_attempts != 0) first, so new stuff gets tried (False sorts before True), and then sort by
+            # last attempt, with less-recent attempts coming first
+            sort_key = (t[1] not in (0, None), t[2])
+            image_inputs.append((sort_key, (spacecraft[0], t[0], defs, apid_name2num, pipeline_config, spacecraft_secrets,
+                                 outlier_limits, masks, processing_flow_id)))
     logger.info(f"Got {len(image_inputs)} images to try forming")
+
+    image_inputs.sort()
+    max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
+    image_inputs = image_inputs[:max_images_per_flow]
+
+    last_attempts = [e[0][1] for e in image_inputs if e[0][0]]
+    retry_timestamps = [e[1][1] for e in image_inputs if e[0][0]]
+    new_timestamps = [e[1][1] for e in image_inputs if not e[0][0]]
+    image_inputs = [e[1] for e in image_inputs]
+    logger.info(f"Will run {len(image_inputs)} attempts, including {len(retry_timestamps)} retries")
+    if retry_timestamps:
+        logger.info(f"Retries were last attempted between {min(last_attempts)} and {max(last_attempts)}")
+        logger.info(f"Retries are for timestamps between {min(retry_timestamps)} and {max(retry_timestamps)}")
+    if new_timestamps:
+        logger.info(f"New images are for timestamps between {min(new_timestamps)} and {max(new_timestamps)}")
 
     try:
         num_workers = pipeline_config["flows"]["level0"]["options"]["num_workers"]
@@ -1148,22 +1172,18 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
         num_workers = 4
         logger.warning(f"No num_workers defined, using {num_workers} workers")
 
-    max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
-    shuffle(image_inputs)
-    image_inputs = image_inputs[:max_images_per_flow]
-
     with multiprocessing.get_context("spawn").Pool(num_workers, initializer=initializer) as pool:
         skip_reasons = defaultdict(lambda: 0)
         for i, (new_replay_needs, successful_image, skip_reason) in enumerate(
-                pool.imap(form_single_image_caller, image_inputs, chunksize=10)):
+                pool.imap_unordered(form_single_image_caller, image_inputs, chunksize=5)):
             replay_needs.extend(new_replay_needs)
             if successful_image:
                 success_count += 1
             else:
                 skip_reasons[skip_reason] += 1
                 skip_count += 1
-            if i % 1000 == 0:
-                logger.info(f"Completed {i} / {len(image_inputs)} image formation attempts")
+            if (i + 1) % 100 == 0:
+                logger.info(f"Completed {i+1} / {len(image_inputs)} formation attempts; {success_count} successes so far")
 
     history = PacketHistory(datetime=datetime.now(UTC),
                             num_images_succeeded=success_count,
@@ -1173,8 +1193,9 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
     logger.info(f"SUCCESS={success_count}")
     logger.info(f"FAILURE={skip_count}")
 
-    for reason in skip_reasons:
-        logger.info(f"Skipped {skip_reasons[reason]} images for reason {reason}")
+    reasons = sorted([(count, reason) for reason, count in skip_reasons.items()], reverse=True)
+    for count, reason in reasons:
+        logger.info(f"Skipped {count} images for reason {reason}")
 
     # Split into multiple files and append updates instead of making a new file each time
     # We label not with the spacecraft telemetry ID but with the spelled out name
@@ -1303,8 +1324,9 @@ def level0_construct_flow_info(pipeline_config: dict, session, skip_if_no_new_tl
 
 
 @flow
-def level0_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None, skip_if_no_new_tlm: bool=True):
+def level0_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
+    skip_if_no_new_tlm = pipeline_config['flows']['level0']['options'].get('skip_if_no_new_tlm', True)
     logger = get_run_logger()
 
     if session is None:

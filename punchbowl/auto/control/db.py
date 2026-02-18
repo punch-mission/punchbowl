@@ -154,6 +154,9 @@ class SCI_XFI(Base):
     compression_settings = Column(Integer, nullable=False)
     acquisition_settings = Column(Integer, nullable=False)
     packet_group = Column(Integer, nullable=False)
+    priority = Column(Integer, nullable=False, default=0)
+
+Index("unused_packet_query", SCI_XFI.spacecraft_id, SCI_XFI.is_used)
 
 class ENG_CEB(Base):
     __tablename__ = "eng_ceb"
@@ -165,6 +168,8 @@ class ENG_CEB(Base):
     ccsds_packet_length = Column(Integer, nullable=False)
     timestamp = Column(DATETIME(fsp=6), nullable=False, index=True)
 
+Index("metadata_query", ENG_CEB.spacecraft_id, ENG_CEB.timestamp)
+
 class ENG_PFW(Base):
     __tablename__ = "eng_pfw"
     id = Column(Integer, primary_key=True)
@@ -174,6 +179,8 @@ class ENG_PFW(Base):
     ccsds_sequence_count = Column(Integer, nullable=False)
     ccsds_packet_length = Column(Integer, nullable=False)
     timestamp = Column(DATETIME(fsp=6), nullable=False, index=True)
+
+Index("metadata_query", ENG_PFW.spacecraft_id, ENG_PFW.timestamp)
 
 class ENG_XACT(Base):
     __tablename__ = "eng_xact"
@@ -185,6 +192,8 @@ class ENG_XACT(Base):
     ccsds_packet_length = Column(Integer, nullable=False)
     timestamp = Column(DATETIME(fsp=6), nullable=False, index=True)
 
+Index("metadata_query", ENG_XACT.spacecraft_id, ENG_XACT.timestamp)
+
 class ENG_LZ(Base):
     __tablename__ = "eng_lz"
     id = Column(Integer, primary_key=True)
@@ -194,6 +203,8 @@ class ENG_LZ(Base):
     ccsds_sequence_count = Column(Integer, nullable=False)
     ccsds_packet_length = Column(Integer, nullable=False)
     timestamp = Column(DATETIME(fsp=6), nullable=False, index=True)
+
+Index("metadata_query", ENG_LZ.spacecraft_id, ENG_LZ.timestamp)
 
 class ENG_LED(Base):
     __tablename__ = "eng_led"
@@ -206,6 +217,8 @@ class ENG_LED(Base):
     timestamp = Column(DATETIME(fsp=6), nullable=False, index=True)
     led_start_time = Column(DATETIME(fsp=6), nullable=False, index=True)
     led_end_time = Column(DATETIME(fsp=6), nullable=False, index=True)
+
+Index("metadata_query", ENG_LED.spacecraft_id, ENG_LED.timestamp)
 
 PACKETNAME2SQL = {"SCI_XFI": SCI_XFI,
                   "ENG_CEB": ENG_CEB,

@@ -154,10 +154,10 @@ def write_ndcube_to_quicklook(cube: NDCube,
         image = cube.data
     elif cube.data.ndim == 3:
         if isinstance(layer, str) and layer.casefold() == "tb":
-            if cube.meta['LEVEL'].value == "2":
+            if cube.meta["LEVEL"].value == "2":
                 image = 2 / 3 * np.sum(cube.data, axis=0)
-            elif cube.meta['LEVEL'].value == "3":
-                if cube.meta['TYPECODE'].value == "PI":
+            elif cube.meta["LEVEL"].value == "3":
+                if cube.meta["TYPECODE"].value == "PI":
                     image = 2 / 3 * np.sum(cube.data, axis=0)
                 else:
                     image = cube.data[1]

@@ -485,7 +485,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
         j += 1
         metas.append(cube.meta)
 
-        if do_uncertainty and not cube.meta['OUTLIER'].value:
+        if do_uncertainty and not cube.meta["OUTLIER"].value:
             if uncertainty is None:
                 uncertainty = np.zeros_like(cube.data)
             if cube.uncertainty is not None:
@@ -495,7 +495,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
             logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
     logger.info(f"Finished loaded files, saw {n_failed} failures")
     data_array = data_array[:j]
-    outliers = np.array([m['OUTLIER'].value for m in metas])
+    outliers = np.array([m["OUTLIER"].value for m in metas])
 
     if image_mask is None:
         image_mask = ~np.all(data_array == 0, axis=0)
@@ -536,7 +536,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
             models.append(fallback_model[bin_n])
             continue
 
-        bin_mask = bin_mask * ~outliers
+        bin_mask = bin_mask * ~outliers # noqa: PLW2901
 
         # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
         # inside the mask for this function's inner loop to get enough samples.
@@ -681,7 +681,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
                          f"{min(all_date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                          f"{max(all_date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
     if fallback_model_path:
-        meta.history.add_now('stray light', f"Used {fallback_model_path} as a fallback model")
+        meta.history.add_now("stray light", f"Used {fallback_model_path} as a fallback model")
     meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
 
     # Let's put in a valid, representative WCS, with the right scale and sun-relative pointing, etc.

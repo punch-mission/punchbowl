@@ -31,8 +31,8 @@ def session_fn(session):
                         file_version='none',
                         software_version='none',
                         polarization='M',
-                        date_obs=datetime(2023, 1, 1, 0, 0, 0),
-                        date_created=datetime(2022, 12, 25, 0, 0, 0))
+                        date_created=datetime(2023, 1, 1, 0, 0, 0),
+                        date_obs=datetime(2022, 12, 25, 0, 0, 0))
 
     level0_fileZ = File(level='0',
                         file_type='PZ',
@@ -40,9 +40,9 @@ def session_fn(session):
                         state='progressed',
                         file_version='none',
                         software_version='none',
-                         polarization='Z',
-                        date_obs=datetime(2023, 1, 1, 0, 0, 0),
-                        date_created=datetime(2022, 12, 25, 0, 0, 0))
+                        polarization='Z',
+                        date_created=datetime(2023, 1, 1, 0, 0, 0),
+                        date_obs=datetime(2022, 12, 25, 0, 1, 0))
 
     level0_fileP = File(level='0',
                         file_type='PP',
@@ -51,8 +51,8 @@ def session_fn(session):
                         file_version='none',
                         software_version='none',
                         polarization='P',
-                        date_obs=datetime(2023, 1, 1, 0, 0, 0),
-                        date_created=datetime(2022, 12, 25, 0, 0, 0))
+                        date_created=datetime(2023, 1, 1, 0, 0, 0),
+                        date_obs=datetime(2022, 12, 25, 0, 2, 0))
 
     level1_fileM = File(level='1',
                        file_type='PM',
@@ -61,8 +61,8 @@ def session_fn(session):
                        file_version='none',
                        software_version='none',
                        polarization='M',
-                       date_obs=datetime(2023, 1, 1, 0, 2, 0),
-                       date_created=datetime(2022, 12, 25, 0, 0, 0))
+                       date_created=datetime(2023, 1, 1, 0, 2, 0),
+                       date_obs=datetime(2022, 12, 25, 0, 2, 0))
 
     level1_fileZ = File(level='1',
                        file_type='PZ',
@@ -71,8 +71,8 @@ def session_fn(session):
                        file_version='none',
                        software_version='none',
                        polarization='Z',
-                       date_obs=datetime(2023, 1, 1, 0, 1, 0),
-                       date_created=datetime(2022, 12, 25, 0, 0, 0))
+                       date_created=datetime(2023, 1, 1, 0, 1, 0),
+                       date_obs=datetime(2022, 12, 25, 0, 1, 0))
 
     level1_fileP = File(level='1',
                        file_type='PP',
@@ -81,8 +81,8 @@ def session_fn(session):
                        file_version='none',
                        software_version='none',
                        polarization='P',
-                       date_obs=datetime(2023, 1, 1, 0, 0, 0),
-                       date_created=datetime(2022, 12, 25, 0, 0, 0))
+                       date_created=datetime(2023, 1, 1, 0, 0, 0),
+                       date_obs=datetime(2022, 12, 25, 0, 0, 0))
 
     level0_file_clear = File(level='0',
                              file_type='CR',
@@ -91,8 +91,8 @@ def session_fn(session):
                              file_version='none',
                              software_version='none',
                              polarization='C',
-                             date_obs=datetime(2023, 1, 1, 0, 0, 0),
-                             date_created=datetime(2022, 12, 25, 0, 0, 0))
+                             date_created=datetime(2023, 1, 1, 0, 0, 0),
+                             date_obs=datetime(2022, 12, 25, 0, 0, 0))
 
     level1_file_clear = File(level='1',
                              file_type='CR',
@@ -101,8 +101,8 @@ def session_fn(session):
                              file_version='none',
                              software_version='none',
                              polarization='C',
-                             date_obs=datetime(2023, 1, 1, 0, 0, 0),
-                             date_created=datetime(2022, 12, 25, 0, 0, 0))
+                             date_created=datetime(2023, 1, 1, 0, 0, 0),
+                             date_obs=datetime(2022, 12, 25, 0, 0, 0))
 
     level1_file_clear_not_ready = File(level='1',
                              file_type='CR',
@@ -111,8 +111,8 @@ def session_fn(session):
                              file_version='none',
                              software_version='none',
                              polarization='C',
-                             date_obs=datetime(2023, 1, 1, 0, 0, 1),
-                             date_created=datetime(2022, 12, 25, 0, 0, 0))
+                             date_created=datetime(2023, 1, 1, 0, 0, 1),
+                             date_obs=datetime(2022, 12, 25, 0, 1, 0))
 
     session.add(level0_fileM)
     session.add(level0_fileZ)
@@ -251,7 +251,8 @@ def test_level2_clear_query_ready_files_unprocessed_L0(db):
                                state="progressed",
                                file_version="none",
                                software_version="none",
-                               date_obs=datetime(2023, 1, 1, 0, 0, 0))
+                               date_created=datetime(2023, 1, 1, 0, 0, 0),
+                               date_obs=datetime(2022, 12, 25, 0, 0, 1))
             db.add(level0_file)
 
             ready_file_ids = level2_query_ready_clear_files.fn(db, pipeline_config)

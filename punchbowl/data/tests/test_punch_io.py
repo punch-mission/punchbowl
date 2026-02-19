@@ -139,13 +139,13 @@ def test_write_data_jp2_wrong_filename(sample_ndcube, tmpdir):
 def test_write_data_jp2_wrong_dimensions(sample_ndcube, tmpdir):
     cube = sample_ndcube((2, 50, 50))
     cube.meta["LEVEL"] = "3"
-    cube.meta["TYPECODE"] = "PAM"
+    cube.meta["TYPECODE"] = "CAM"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
     test_path = os.path.join(tmpdir, "test.jp2")
     with pytest.raises(ValueError):
-        write_ndcube_to_quicklook(cube, test_path)
+        write_ndcube_to_quicklook(cube, test_path, layer=None)
 
 
 def test_generate_data_statistics_from_zeros():

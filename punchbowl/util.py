@@ -61,7 +61,8 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
 
 
 @punch_task(tags=["image_loader"])
-def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True) -> NDCube:
+def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True,
+                    dtype: type = float) -> NDCube:
     """
     Prefect task to load data for processing.
 
@@ -73,6 +74,8 @@ def load_image_task(input_filename: str, include_provenance: bool = True, includ
         whether to load the provenance layer
     include_uncertainty : bool
         whether to load the uncertainty layer
+    dtype : type
+        dtype to cast the data to
 
     Returns
     -------
@@ -81,7 +84,7 @@ def load_image_task(input_filename: str, include_provenance: bool = True, includ
 
     """
     return load_ndcube_from_fits(
-        input_filename, include_provenance=include_provenance, include_uncertainty=include_uncertainty)
+        input_filename, include_provenance=include_provenance, include_uncertainty=include_uncertainty, dtype=dtype)
 
 
 def average_datetime(datetimes: list[datetime]) -> datetime:

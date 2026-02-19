@@ -26,7 +26,7 @@ from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import punch_flow
 from punchbowl.util import DataLoader, load_image_task, load_mask_file, output_image_task
 
-KEYS_TO_NOT_COPY = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "PIPEVRSN", "TITLE", "TYPECODE", "FILEVRSN"]
+KEYS_TO_NOT_COPY = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "TITLE", "TYPECODE", "FILEVRSN"]
 
 
 @punch_flow
@@ -81,12 +81,18 @@ def level1_early_core_flow(  # noqa: C901
 
     output_data = []
     for i, this_data in enumerate(input_data):
-        data = load_image_task(this_data) if isinstance(this_data, str) else this_data
+        l0_data = load_image_task(this_data) if isinstance(this_data, str) else this_data
+        data = l0_data
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
 
-        saturated_pixels = data.data >= data.meta["DSATVAL"].value
+        if l0_data.meta["BADPKTS"].value:
+            data.meta.history.add_now("LEVEL1", "Image has bad packets; saturated pixels not filled")
+            logger.info("Bad packets---not filling saturated pixels")
+            saturated_pixels = None
+        else:
+            saturated_pixels = data.data >= data.meta["DSATVAL"].value
         data = update_initial_uncertainty_task(data,
                                                dark_level=dark_level,
                                                gain_bottom=gain_bottom,
@@ -95,9 +101,13 @@ def level1_early_core_flow(  # noqa: C901
                                                bitrate_signal=bitrate_signal,
                                                saturated_pixels=saturated_pixels,
                                                )
-        data = despike_polseq_task(data,
-                                   despike_neighbors,
-                                   max_workers=max_workers)
+        if l0_data.meta["BADPKTS"].value:
+            data.meta.history.add_now("LEVEL1-despike", "Image has bad packets; no despiking applied")
+            logger.info("Bad packets---despiking skipped")
+        else:
+            data = despike_polseq_task(data,
+                                       despike_neighbors,
+                                       max_workers=max_workers)
 
         data = perform_quartic_fit_task(data, quartic_coefficient_path)
 
@@ -122,11 +132,15 @@ def level1_early_core_flow(  # noqa: C901
         data.data[:, :] = np.clip(dn_to_msb(data.data[:, :], data.wcs, **scaling), a_min=0, a_max=None)
         data.uncertainty.array[:, :] = dn_to_msb(data.uncertainty.array[:, :], data.wcs, **scaling)
 
-        data = destreak_task(data,
-                             exposure_time=exposure_time,
-                             reset_line_time=reset_line_time,
-                             readout_line_time=readout_line_time,
-                             max_workers=max_workers)
+        if l0_data.meta["BADPKTS"].value:
+            data.meta.history.add_now("LEVEL1-destreak", "Image has bad packets; no destreaking applied")
+            logger.info("Bad packets---destreaking skipped")
+        else:
+            data = destreak_task(data,
+                                 exposure_time=exposure_time,
+                                 reset_line_time=reset_line_time,
+                                 readout_line_time=readout_line_time,
+                                 max_workers=max_workers)
         data = correct_vignetting_task(data, vignetting_function_path, second_vignetting_function_path,
                                        allow_extrapolation=False)
         data = remove_deficient_pixels_task(data,
@@ -275,7 +289,11 @@ def level1_late_core_flow( # noqa: C901
 
         data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
         if do_align:
-            data = align_task(data, distortion_path)
+            if data.meta["BADPKTS"].value:
+                data.meta.history.add_now("LEVEL1-align", "Image has bad packets; no alignment applied")
+                logger.info("Bad packets---alignment skipped")
+            else:
+                data = align_task(data, distortion_path)
 
         if mask is not None:
             data.data[~mask] = 0

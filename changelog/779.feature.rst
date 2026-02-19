@@ -1,0 +1,1 @@
+Files dashboard now defaults to showing 1 dot per filetype per hour, so it loads much quicker when showing a large time range.

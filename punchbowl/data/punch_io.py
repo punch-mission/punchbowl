@@ -99,9 +99,9 @@ def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
     return jp2box.XMLBox(xml=tree)
 
 
-def write_ndcube_to_quicklook(cube: NDCube,
+def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               filename: str,
-                              layer: int | str | None = None,
+                              layer: int | str | None = "tb",
                               vmin: float = 2e-14,
                               vmax: float = 1e-12,
                               include_meta: bool = True,
@@ -154,7 +154,15 @@ def write_ndcube_to_quicklook(cube: NDCube,
         image = cube.data
     elif cube.data.ndim == 3:
         if isinstance(layer, str) and layer.casefold() == "tb":
-            image = cube.data[0] if cube.data.shape[0] == 2 else 2 / 3 * np.sum(cube.data, axis=0)
+            if cube.meta["LEVEL"].value == "2":
+                image = 2 / 3 * np.sum(cube.data, axis=0)
+            elif cube.meta["LEVEL"].value == "3":
+                if cube.meta["TYPECODE"].value == "PI": # noqa: SIM108
+                    image = 2 / 3 * np.sum(cube.data, axis=0)
+                else:
+                    image = cube.data[1]
+            else:
+                raise RuntimeError("Level 0 and 1 data cannot be converted to tB because they're single polarizations.")
         elif isinstance(layer, int):
             image = cube.data[layer, :, :]
         else:
@@ -192,6 +200,7 @@ def write_ndcube_to_quicklook(cube: NDCube,
     arr_image = np.array(pil_image)
 
     tmp_filename = f"{filename}tmp.jp2"
+    os.makedirs(os.path.dirname(tmp_filename), exist_ok=True)
     jp2 = Jp2k(tmp_filename, arr_image)
     meta_boxes = jp2.box
     target_index = len(meta_boxes) - 1
@@ -270,9 +279,7 @@ def write_ndcube_to_fits(cube: NDCube,
     hdu_data = fits.CompImageHDU(data=cube.data.astype(np.float32) if cube.data.dtype == np.float64 else cube.data,
                                  header=full_header,
                                  name="Primary data array")
-    hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
-        name="provenance", format="A40", array=np.char.array(meta.provenance))]))
-    hdu_provenance.name = "File provenance"
+    hdu_provenance = _make_provenance_hdu(meta.provenance)
 
     hdul = cube.wcs.to_fits()
     hdul[0] = fits.PrimaryHDU()
@@ -290,6 +297,12 @@ def write_ndcube_to_fits(cube: NDCube,
     if write_hash:
         write_file_hash(filename)
 
+
+def _make_provenance_hdu(filenames: list[str]) -> fits.BinTableHDU:
+    hdu_provenance = fits.BinTableHDU.from_columns(fits.ColDefs([fits.Column(
+        name="provenance", format="A40", array=np.char.array(filenames))]))
+    hdu_provenance.name = "File provenance"
+    return hdu_provenance
 
 
 def _pack_uncertainty(cube: NDCube) -> np.ndarray:
@@ -401,6 +414,8 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
 def _load_many_cubes_caller(path: str | Path, kwargs: dict, allow_errors: bool) -> NDCube | str:
     try:
         return load_ndcube_from_fits(path, **kwargs)
+    except KeyboardInterrupt:
+        raise
     except:
         if allow_errors:
             return traceback.format_exc()
@@ -468,6 +483,30 @@ def check_outlier(cube: NDCube) -> bool:
     for flag in ["OUTLIER", "BADPKTS"]:
         if flag not in cube.meta:
             warnings.warn(f"Input cube does not contain {flag} keyword.")
-        elif cube.meta[flag].value == 1:
+        elif cube.meta[flag].value != 0:
             return True
     return False
+
+
+def encode_outliers(cubes: list[NDCube]) -> int:
+    """Encode the input data cube to return the outlier status for spacecraft 4321."""
+    outliers = {}
+    for cube in cubes:
+        outliers[cube.meta["OBSCODE"].value] = cube.meta["OUTLIER"].value
+
+    result = 0
+    for i, code in enumerate(["1", "2", "3", "4"]):
+        if outliers.get(code, False):
+            result |= (1 << (i+1))
+
+    return result
+
+
+def decode_outliers(cube: NDCube) -> dict:
+    """Decode the input data cube to return the outlier status for spacecraft 4321."""
+    return {
+        "4": bool(cube.meta["OUTLIER"].value & 0b10000),
+        "3": bool(cube.meta["OUTLIER"].value & 0b01000),
+        "2": bool(cube.meta["OUTLIER"].value & 0b00100),
+        "1": bool(cube.meta["OUTLIER"].value & 0b00010),
+    }

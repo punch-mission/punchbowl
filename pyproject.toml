@@ -34,6 +34,7 @@ dependencies = [
     "scikit-learn",
     "astrometry",
     "numba",
+    "pre-commit==4.5.1",
 ]
 requires-python = ">=3.11"
 authors = [
@@ -68,7 +69,21 @@ test = [
     "pre-commit",
     "ruff",
     "hypothesis",
+
 ]
+
+test_pipe = [
+    "pre-commit",
+    "hypothesis",
+    "pytest",
+    "pytest-asyncio",
+    "coverage",
+    "pytest-cov",
+    "pytest-mock-resources[mysql]",
+    "freezegun",
+    "ruff"
+]
+
 docs = [
     "astroid>=3",
     "sphinx",
@@ -87,11 +102,45 @@ docs = [
     "ffmpeg-python",
     "bokeh"
 ]
-gpu = ["cupy"]
-dev = ["punchbowl[docs,test]"]
+
+docs_pipe = [
+    "packaging",
+    "sphinx",
+    "pydata-sphinx-theme",
+    "sphinx-autoapi",
+    "sphinx-favicon",
+    "sphinxcontrib-mermaid",
+    "sphinx-automodapi"
+]
+
+pipe = ["ccsdspy",
+    "punchbowl",
+    "simpunch",
+    "prefect[sqlalchemy]",
+    "pymysql",
+    "pandas",
+    "xlrd",
+    "pydantic",
+    "sqlalchemy",
+    "dash >= 4",
+    "dash-bootstrap-components",
+    "coolname",
+    "numpy",
+    "plotly",
+    "pyyaml",
+    "click",
+    "pylibjpeg[libjpeg]",
+    "psutil",
+    "gunicorn",
+    "numpy-quaternion"
+]
+
+dev = ["punchbowl[docs,test,pipe,docs_pipe,test_pipe]"]
 
 [project.scripts]
 punchbowl = "punchbowl.cli:main"
+punchpipe = "punchbowl.auto.cli:main"
+punchpipe_cluster = "punchbowl.auto.cluster:main"
 
 [project.urls]
 #Homepage = "https://example.com"
@@ -110,7 +159,7 @@ skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
 
 [tool.ruff]
 target-version = 'py311'
-exclude = ['tests', 'scripts', 'docs', 'examples']
+exclude = ['tests', 'scripts', 'docs', 'examples', "punchbowl/auto/*"]
 line-length = 120
 lint.select = ["ALL"]
 lint.ignore = [

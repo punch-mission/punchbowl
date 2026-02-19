@@ -16,7 +16,7 @@ Level:
     Instrument and Spacecraft State:
     World Coordinate System:
     Calibration Data:
-        omits: [CALCF, CALVI, CALVI2, CALPSF, CALPM, CALSL0, CALSL1]
+        omits: [CALCF, CALVI, CALVI2, CALPSF, CALPM, CALSL0, CALSL1, CALDSL0, CALDSL1]
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
@@ -34,7 +34,7 @@ Kinds:
             NAXIS: 3
             NAXIS1: 4096
             NAXIS2: 4096
-            NAXIS3: 2
+            NAXIS3: 3
             OBS-MODE: Polar_BpB
             OBSLAYR1: Polar_B
             OBSLAYR2: Polar_pB
@@ -56,11 +56,7 @@ Kinds:
                 CTRYWFI3, CTRXNFI4, CTRYNFI4]
 
     Calibration:
-        overrides:
-            NAXIS: 2
-            NAXIS1: 4096
-            NAXIS2: 4096
-        omits: [Velocity, Calibration Data, Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3,
+        omits: [Velocity, Calibration Data, Spacecraft Location & Environment, OBSLAYR1, OBSLAYR2, OBSLAYR3,
                 HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT, CTRXWFI1, CTRYWFI1, CTRXWFI2, CTRYWFI2, CTRXWFI3,
                 CTRYWFI3, CTRXNFI4, CTRYNFI4]
 

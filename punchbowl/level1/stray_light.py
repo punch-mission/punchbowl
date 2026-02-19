@@ -431,7 +431,7 @@ def _estimate_stray_light_one_slice(y: int, data_slice: np.ndarray, x_grid: np.n
 
 
 @punch_flow
-def estimate_stray_light(filepaths: list[str], # noqa: C901
+def estimate_stray_light(filepaths: list[str],  # noqa: C901
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
                          stride: int = 10,
@@ -441,6 +441,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                          crota_bin_width: float = 45,
                          image_mask_path: str | None = None,
                          make_plots_along_the_way: bool = False,
+                         fallback_model_path: str | None = None,
                          num_workers: int | None = None,
                          num_loaders: int | None = None) -> list[NDCube]:
     """Estimate the fixed stray light pattern using a percentile."""
@@ -450,6 +451,8 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     logger.info(f"Running with {len(filepaths)} input files")
     if isinstance(reference_time, str):
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
+
+    fallback_model = load_ndcube_from_fits(fallback_model_path).data if isinstance(fallback_model_path, str) else None
 
     image_mask = load_mask_file(image_mask_path) if image_mask_path is not None else None
     strided_image_mask = None
@@ -482,7 +485,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         j += 1
         metas.append(cube.meta)
 
-        if do_uncertainty:
+        if do_uncertainty and not cube.meta["OUTLIER"].value:
             if uncertainty is None:
                 uncertainty = np.zeros_like(cube.data)
             if cube.uncertainty is not None:
@@ -492,6 +495,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
             logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
     logger.info(f"Finished loaded files, saw {n_failed} failures")
     data_array = data_array[:j]
+    outliers = np.array([m["OUTLIER"].value for m in metas])
 
     if image_mask is None:
         image_mask = ~np.all(data_array == 0, axis=0)
@@ -509,6 +513,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     for binn in range(n_crota_bins):
         mask = np.array([crota_is_in_bin(m["CROTA"].value, binn) for m in metas])
         bin_masks.append(mask)
+        logger.info(f"Bin centered at CROTA {bin_centers[binn]} has {np.sum(mask)} images")
 
     window_half_width = window_size // 2
     # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
@@ -522,7 +527,16 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
 
     models = []
     for bin_n, bin_mask in enumerate(bin_masks):
-        logger.info(f"Starting bin {bin_n + 1}")
+        logger.info(f"Starting bin {bin_n + 1}, containing {np.sum(bin_mask)} images")
+
+        n_outliers = np.sum(outliers[bin_mask])
+        logger.info(f"{n_outliers} outliers in this bin")
+        if fallback_model is not None and n_outliers > 0.1 * np.sum(bin_mask):
+            logger.info("Too many outliers; using fallback model for this bin")
+            models.append(fallback_model[bin_n])
+            continue
+
+        bin_mask = bin_mask * ~outliers # noqa: PLW2901
 
         # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
         # inside the mask for this function's inner loop to get enough samples.
@@ -594,7 +608,14 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         # those pixels which we don't need or use, but it prevents those pixels from being considered as input pixels
         # to inpaint from, and that's the important thing.
         inpaint_mask = bad_region + ~strided_image_mask
-        inpainted = inpaint.inpaint_biharmonic(stray_light_estimate, inpaint_mask)
+        try:
+            # Sometimes this raises `ValueError: zero-size array to reduction operation minimum which has no identity`
+            inpainted = inpaint.inpaint_biharmonic(stray_light_estimate, inpaint_mask)
+        except ValueError:
+            logger.info("inpaint failed; using fallback model for this bin")
+            models.append(fallback_model[bin_n])
+            continue
+
 
         if make_plots_along_the_way:
             plt.imshow(inpainted, vmin=0, vmax=.5e-12, origin="lower")
@@ -659,6 +680,8 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                          f"Generated with {len(filepaths)} files running from "
                          f"{min(all_date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                          f"{max(all_date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
+    if fallback_model_path:
+        meta.history.add_now("stray light", f"Used {fallback_model_path} as a fallback model")
     meta["FILEVRSN"] = cube.meta["FILEVRSN"].value
 
     # Let's put in a valid, representative WCS, with the right scale and sun-relative pointing, etc.

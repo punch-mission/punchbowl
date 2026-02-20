@@ -1,1 +1,0 @@
-Reduces artifacts of saturated pixels during despiking.

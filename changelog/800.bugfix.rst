@@ -1,1 +1,0 @@
-Stray light model generation will use a "fallback" model if a CROTA bin has too many outlier images.

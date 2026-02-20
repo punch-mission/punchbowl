@@ -1,1 +1,0 @@
-F corona models now have a reasonable (though not perfectly rigorous) uncertainty layer.

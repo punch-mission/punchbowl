@@ -1,1 +1,0 @@
-Fixed filtering so P* is actually P* and not just PP, PM, PZ and PR.

@@ -1,1 +1,0 @@
-Add text about how to use wget to pull data directly from SDAC.

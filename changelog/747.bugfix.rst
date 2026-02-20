@@ -1,1 +1,0 @@
-Updates uncertainty propagation in low-noise mosaics to properly add in quadrature and handle rogue values.

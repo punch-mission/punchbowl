@@ -1,1 +1,0 @@
-L3 PAMs and CAMs can now be scheduled.

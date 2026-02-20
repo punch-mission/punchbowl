@@ -1,1 +1,0 @@
-Adds a simple utility function to compute total brightness from an input NDCube or datacube array.

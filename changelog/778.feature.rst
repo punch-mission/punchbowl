@@ -1,1 +1,0 @@
-Adds an edge trimming plot option to plot_punch, to trim the outer and/or inner edge of low-noise mosaics.

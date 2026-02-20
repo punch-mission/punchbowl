@@ -1,1 +1,0 @@
-Adds support for estimating and removing some dynamic stray light from WFI polarized images.

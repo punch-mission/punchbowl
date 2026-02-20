@@ -1,1 +1,0 @@
-Adds a minimalist data plotting notebook to illustrate the plot_punch function.

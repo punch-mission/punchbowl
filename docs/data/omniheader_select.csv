@@ -1,0 +1,255 @@
+KEYWORD,COMMENT
+SIMPLE,Conforms to FITS Standard
+BITPIX,Number of bits per pixel
+NAXIS,Number of axes
+NAXIS1,Length of the first axis
+NAXIS2,Length of the second axis
+NAXIS3,Length of the third axis
+EXTNAME,Name of this binary table extension
+LONGSTRN,The OGIP long string convention may be used
+DOI,Data reference DOI
+PROJECT,PUNCH
+TITLE,PUNCH Level-0 WFI-1 Clear Image
+KEYVOCAB,Unified Astronomy Thesaurus Keywords
+KEYWORDS,"Solar Corona (1483), Solar K Corona (2042), Solar F Corona (1991), Solar Coronal Streamers (1486), Solar Coronal Plumes (2039), Solar Wind (1534), Fast Solar Wind (1872), Slow Solar Wind (1873), Solar Coronal Mass Ejection (310), Heliosphere (711), Polarimetry (1278)"
+LICENSE,Creative Commons Attribution 4.0 International | CC BY 4.0
+DESCRPTN,"PUNCH Level-0 data, Uncalibrated instrumental units in camera coordinates"
+DOC_URL,https://punch.spaceops.swri.org
+FILENAME,Name of file
+LEVEL,Product Level
+OBSTYPE,Plain text observation
+TYPECODE,Observation product type code
+OBSCODE,Observatory spacecraft code
+FILEVRSN,File version number (<1 is provisional)
+ORIGIN,Institution responsible for creating the file
+TIMESYS,Principal time system
+DATE-BEG,UTC time observation
+DATE-OBS,UTC reference time
+DATE-AVG,UTC reference time
+DATE-END,UTC time of observation end
+DATE,UTC file generation date and time
+WAVELNTH,[nm] average peak response
+WAVEUNIT,Unit of observation measurement
+FILTER,Name of filter for observations
+OBS-MODE,"Image Mode (Unpolarized, Polar_MZP, Polar_BpB)"
+OBSLAYR1,Image Mode for first datacube layer
+OBSLAYR2,Image Mode for second datacube layer
+OBSLAYR3,Image Mode for third datacube layer
+POLAR,[deg] Polarizer angle or fill value for clear
+POLAROFF,[deg] Offset in degrees of polarizer from POLAR
+POLARREF,Polarizer reference frame (instrument or solar)
+INSTRUME,Instrument name
+TELESCOP,Satellite name
+OBSRVTRY,Observatory name
+HAS_WFI1,Includes WFI-1 data
+HAS_WFI2,Includes WFI-2 data
+HAS_WFI3,Includes WFI-3 data
+HAS_NFI4,Includes NFI data
+ALL_INPT,Includes all expected mosaic components
+CTRXWFI1,X coord of WFI-1 center in mosaic
+CTRYWFI1,Y coord of WFI-1 center in mosaic
+CTRXWFI2,X coord of WFI-2 center in mosaic
+CTRYWFI2,Y coord of WFI-2 center in mosaic
+CTRXWFI3,X coord of WFI-3 center in mosaic
+CTRYWFI3,Y coord of WFI-3 center in mosaic
+CTRXNFI4,X coord of NFI center in mosaic
+CTRYNFI4,Y coord of NFI center in mosaic
+OBJECT,Object observed
+CROTA,[deg] Human-readable solar north pole angle
+DETECTOR,CCD detector 2048x2048 pixels
+COM_SET,compression setting
+ACQ_SET,acquisition setting
+EXPTIME,[s] commanded exposure time
+OFFSET,commanded offset value used in camera
+GAINBTM,[e/DN] gain value (bottom CCD side)
+GAINTOP,[e/DN] gain value (top CCD side)
+GAINCMDB,[e/DN] commanded gain value (bottom CCD side)
+GAINCMDT,[e/DN] commanded gain value (top CCD side)
+CEBSTAT,Status to indicate stale CEB telemetry packet
+CEBTIME,CEB packet timestamp
+CEBWGS,WGS_STATUS
+CEBFIFO,Number of pixels in video FIFO (0-2047)
+CEBBIAS1,CCD output drain bias (Analog 1)
+CEBBIAS2,CCD dump drain bias (Analog 2)
+CEBBIAS3,CCD reset drain bias (Analog 3)
+CEBBIAS4,CCD top gate bias (Analog 4)
+CEBBIAS5,CCD output gate bias (Analog 5)
+CEBVREF,2.5V ref. for bias/temp setting (Analog 6)
+CEBGND1,Ground (Analog 7)
+CEBCONV1,P30V DC-DC converter output (Analog 8)
+CEBCONV2,P15V DC-DC converter output (Analog 9)
+CEBCONV3,P5V DC-DC converter output (Analog 10)
+BIASVREF,Bias setting reference (Analog 11)
+CEBGND2,Ground (Analog 15)
+CEBSEDAC,Single-bit EDAC
+CEBMEDAC,Multi-bit EDAC
+RAWBITS,[bits] raw image bits per pixel
+COMPBITS,[bits] compressed image bits per pixel
+PMB_INIT,True to initialize pixel mask bits to '1'
+CMP_BYP,True bypasses JPEG-LS compression 
+BSEL,data or pre-scaled square-rooted image data
+SCALE,data scaling factor
+ISTEST,boolean indicating if image is a test pattern
+ISSQRT,data sqrt compression status
+WASJPEG,data JPEG downlink compression status
+NUM_PCKT,number of packets used in data creation
+PCKTBYTE,bytes of packet data
+DELAY,Delay time between SHIFT+READOUT in 100ms ticks
+IMGCOUNT,Num images collected in this acquisition cycle
+TABLE1,Assigns location of CLEAR in WGS RAM
+TABLE2,Assigns location of SHIFT+READOUT in WGS RAM
+CALCF,quartic fit filename
+CALVI,vignetting filename
+CALVI2,second vignetting filename
+CALPSF,PSF filename
+CALPM,bad pixel map filename
+CALDSL0,first dynamic stray light model
+CALDSL1,second dynamic stray light model
+CALSL0,first stray light model
+CALSL1,second stray light model
+CALFCOR1,first F corona model filename
+CALFCOR2,second F corona model filename
+CALSTAR1,first starfield model filename
+CALSTAR2,first starfield model filename
+OUTLIER,Probable bad-image status
+BADPKTS,Whether image data suffers from corrupt packets
+BUNIT,Units of observation
+DATAZER,number of pixels=0
+DATASAT,number of saturated pixels
+DSATVAL,saturation value in calibrated units
+DATAAVG,average non-zero pixel value
+DATAMDN,median non-zero pixel value
+DATASIG,standard deviation of non-zero pixels
+DATAP01,1% of non-zero pixels are LE this value
+DATAP10,10% of non-zero pixels are LE this value
+DATAP25,25% of non-zero pixels are LE this value
+DATAP50,50% of non-zero pixels are LE this value
+DATAP75,75% of non-zero pixels are LE this value
+DATAP90,90% of non-zero pixels are LE this value
+DATAP95,95% of non-zero pixels are LE this value
+DATAP98,98% of non-zero pixels are LE this value
+DATAP99,99% of non-zero pixels are LE this value
+DATAMIN,minimum valid physical value
+DATAMAX,maximum valid physical value
+RSUN_ARC,[arcsec] photospheric solar radius
+RSUN_REF,[m] assumed physical solar radius
+SOLAR_EP,[deg] S/C ecliptic North to solar North angle
+CAR_ROT,Carrington Rotation number
+XACTTIME,Time of XACT packet
+GEOD_LAT,[deg] S/C sub-point geodetic latitude
+GEOD_LON,[deg] S/C sub-point geodetic longitude
+GEOD_ALT,[m] S/C WGS84 altitude
+LOS_ALT,[m] line-of-sight altitude above Earth
+HGLT_OBS,[deg] S/C heliographic latitude
+HGLN_OBS,[deg] S/C heliographic longitude (B0)
+CRLT_OBS,[deg] S/C Carrington latitude (B0)
+CRLN_OBS,[deg] S/C Carrington longitude
+DSUN_OBS,[m] S/C distance from Sun
+HEEX_OBS,[m] S/C Heliocentric Earth Ecliptic X
+HEEY_OBS,[m] S/C Heliocentric Earth Ecliptic Y
+HEEZ_OBS,[m] S/C Heliocentric Earth Ecliptic Z
+HCIX_OBS,[m] S/C Heliocentric Inertial X
+HCIY_OBS,[m] S/C Heliocentric Inertial Y
+HCIZ_OBS,[m] S/C Heliocentric Inertial Z
+HCIX_VOB,[m/s] S/C Heliocentric Inertial X Velocity
+HCIY_VOB,[m/s] S/C Heliocentric Inertial Y Velocity
+HCIZ_VOB,[m/s] S/C Heliocentric Inertial Z Velocity
+HAEX_OBS,[m] S/C Heliocentric Aries Ecliptic X
+HAEY_OBS,[m] S/C Heliocentric Aries Ecliptic Y
+HAEZ_OBS,[m] S/C Heliocentric Aries Ecliptic Z
+HEQX_OBS,[m] S/C Heliocentric Earth Equatorial X
+HEQY_OBS,[m] S/C Heliocentric Earth Equatorial Y
+HEQZ_OBS,[m] S/C Heliocentric Earth Equatorial Z
+XACTTIME,XACT packet timestamp
+DELTAT,Time offset in frames between images
+SPARSITY,Frame skip interval for averaging
+N_OFS,Number of spatial offsets for cross-correlation
+DELTA_PX,Pixel offset increment per sample
+KPSEXP,Expected wind speed in km/s
+BANDWDTH,Half-width of each radial band in solar radii
+MAXRAD,The maximum radius in degrees
+AZMBINS,Number of azimuthal bins in the polar remapped images
+AZMBINF,Azimuthal binning factor
+PLTBINS,Number of azimuthal bins in the output flow maps
+YCENS,Radial band centers in solar radii
+RBANDS,Indices of radial bands to visualize
+PFWTIME,PFW packet timestamp
+PFWSTAT,"Current PFW Status (0 - no error, else error)"
+STEPCALC,Calculated step (0-1199)
+CMDSTEPS,Commanded number of steps (1-1199)
+HOMEOVRD,HOME Position OVERRIDE
+POSCURR,"Current position (1-5, 0 - manual stepping)"
+POSCMD,"Commanded position (1-5, 0 - manual stepping)"
+POSRAW,Resolver position - raw counts (0-65000)
+POSRAW2,Resolver position - error corrected (0-65000)
+READCNT,Accumulative resolver reads (resets on boot)
+LMNSTEP,Number of steps on last move (1-1199)
+LMTIME,Current move execution time
+LTSTEP,Lifetime accumulative number of steps taken
+LTTIME,Lifetime accumulative execution time
+FSMSTAT,Controller FSM State
+READSTAT,READ Sub-FSM State
+MOVSTAT,MOVE Sub-FSM State
+HOMESTAT,HOME Sub-FSM State
+HOMEPOS,Home Position (1-5)
+RESSEL,Resolver Select
+RESTOLH,Resolver Tolerance
+RESTOLC,Resolver Tolerance
+STEPSEL,Stepper Motor Select
+STEPDLY,Stepper Motor Rate Delay
+STEPRATE,Stepper Motor Rate
+SHORTMV,Short Move(1-4 steps) Settling time
+LONGMV,Long Move(5-1199 steps) Setting time
+PFWOFF1,Primary Step Offset 1
+PFWOFF2,Primary Step Offset 2
+PFWOFF3,Primary Step Offset 3
+PFWOFF4,Primary Step Offset 4
+PFWOFF5,Primary Step Offset 5
+RPFWOFF1,Redundant Step Offset 1
+RPFWOFF2,Redundant Step Offset 2
+RPFWOFF3,Redundant Step Offset 3
+RPFWOFF4,Redundant Step Offset 4
+RPFWOFF5,Redundant Step Offset 5
+PFWPOS1,Primary Resolver Position 1
+PFWPOS2,Primary Resolver Position 2
+PFWPOS3,Primary Resolver Position 3
+PFWPOS4,Primary Resolver Position 4
+PFWPOS5,Primary Resolver Position 5
+RPFWPOS1,Redundant Resolver Position 1
+RPFWPOS2,Redundant Resolver Position 2
+RPFWPOS3,Redundant Resolver Position 3
+RPFWPOS4,Redundant Resolver Position 4
+RPFWPOS5,Redundant Resolver Position 5
+LED_PCKT,LED packet indicator
+LEDTIME,LED packet timestamp
+LED1STAT,LED1 Activation State
+LEDPLSN,LED Number of Pulses
+LED2STAT,LED2 Activation State
+LEDPLSD,LED Pulse Delay
+LEDPLSW,LED Pulse Width
+LED1CURR,LED1 Accumulated Current for pulse
+LED2CURR,LED2 Accumulated Current for pulse
+LEDCNT,LED Sample Count
+PLSSEC1,Pulse Train start TAI Second
+PLSUSEC1,Pulse Train start TAI MIcroseconds-in-Seconds
+PLSSEC2,Pulse Train end TAI Second
+PLSUSEC2,Pulse Train end TAI MIcroseconds-in-Seconds
+LZTIME,Time of LZ packet
+CCDTEMP,Camera Detector (CCD) Temp
+ICMTEMP,Camera ICM Temp Primary
+FORTEMP,Baffle Forward +Y Temp (NFI) or OLA Temp Primary (WFI)
+AFTTEMP,Baffle Aft +Z Temp (NFI) or PFW Clamshell Temp Primary (WFI)
+PFWTEMP,PFW Motor Temp
+DOORTEMP,Door Actuator Temp (NFI) or Radiator Center Temp (WFI)
+CEBTEMP,CEB Base Temp Primary
+HOUSTEMP,Electronics Side Temp (STEAM) or Camera Housing -X Temp (WFI)
+FINGTEMP,Detector Side Temp Primary (STEAM) or Cold Finger +Z Temp (WFI)
+FPGATEMP,FPGA Temperature
+BOWLVRSN,punchbowl software version number
+SPPYVRSN,solpolpy software version number
+RPSFVRSN,regularizepsf software version number
+RMSFVRSN,remove_starfield software version number
+HOSTNAME,Name of server that created this file
+CHECKSUM,
+DATASUM,0
+HISTORY,Records of processing from pipeline

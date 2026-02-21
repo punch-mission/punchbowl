@@ -9,10 +9,11 @@ from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCollection, NDCube
 from prefect import get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
-from remove_starfield.reducers import PercentileReducer
+from remove_starfield.reducers import GaussianReducer
 from solpolpy import resolve
 
-from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, get_p_angle
 from punchbowl.prefect import punch_flow, punch_task
 
@@ -124,8 +125,9 @@ def generate_starfield_background(
         target_mem_usage: float = 1000,
         n_procs: int | None = None,
         reference_time: datetime | None = None,
-        is_polarized: bool = False) -> [NDCube, NDCube]:
-    """Create a background starfield_bg map from a series of PUNCH images over a long period of time."""
+        is_polarized: bool = False,
+        out_file: str | None = None) -> NDCube | None :
+    """Create a background starfield map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
 
     if reference_time is None:
@@ -136,7 +138,7 @@ def generate_starfield_background(
     logger.info("construct_starfield_background started")
 
     # create an empty array to fill with data
-    #   open the first file in the list to ge the shape of the file
+    # open the first file in the list to ge the shape of the file
     if len(filenames) == 0:
         msg = "filenames cannot be empty"
         raise ValueError(msg)
@@ -145,16 +147,16 @@ def generate_starfield_background(
     starfield_wcs = WCS(naxis=2)
     # n.b. it seems the RA wrap point is chosen so there's 180 degrees
     # included on either side of crpix
-    crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
-    starfield_wcs.wcs.crpix = crpix
+    starfield_wcs.wcs.crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
     starfield_wcs.wcs.crval = 270, -23.5
-    starfield_wcs.wcs.cdelt = map_scale, map_scale
+    starfield_wcs.wcs.cdelt = -1 * map_scale, map_scale
     starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
     starfield_wcs.wcs.cunit = "deg", "deg"
     starfield_wcs.array_shape = shape
 
     meta = NormalizedMetadata.load_template("PSM" if is_polarized else "CSM", "3")
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    # TODO - Do we want these dates to reflect the set of input files?
     meta["DATE-BEG"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE-END"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE-AVG"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -166,7 +168,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=PercentileReducer(10),
+            reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
@@ -178,7 +180,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=PercentileReducer(10),
+            reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
@@ -190,7 +192,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=PercentileReducer(10),
+            reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
@@ -205,13 +207,14 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=PercentileReducer(10),
+            reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(None, apply_mask=True, key="A"),
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
         out_data = starfield_clear.starfield
+        # TODO - Do we want the starfield map to be in celestial coordinates as the primary system?
         out_wcs = calculate_helio_wcs_from_celestial(starfield_clear.wcs,
                                                         meta.astropy_time,
                                                         starfield_clear.starfield.shape)
@@ -220,7 +223,12 @@ def generate_starfield_background(
     output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     logger.info("construct_starfield_background finished")
-    return [output]
+
+    if out_file is not None:
+        write_ndcube_to_fits(output, filename=out_file, write_hash=False, overwrite=True)
+        return None
+
+    return output
 
 
 @punch_task

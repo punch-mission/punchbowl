@@ -467,6 +467,8 @@ def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, extra_
     with get_database_session() as session:
         dff = pd.read_sql_query(query, session.connection())
 
+    dff.loc[dff['date_created'].isna(), 'date_created'] = '1969-12-31 23:59:59'
+
     # Extract the data that sets shape and color, and then remove if necessary
     if color_key != "nothing":
         color_data = dff[color_key]

@@ -1,5 +1,6 @@
 from math import floor
 from datetime import UTC, datetime
+from collections.abc import Callable
 
 import astropy.units as u
 import numpy as np
@@ -126,7 +127,8 @@ def generate_starfield_background(
         n_procs: int | None = None,
         reference_time: datetime | None = None,
         is_polarized: bool = False,
-        out_file: str | None = None) -> NDCube | None :
+        out_file: str | None = None,
+        reducer_function: Callable = GaussianReducer) -> NDCube | None :
     """Create a background starfield map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
 
@@ -168,7 +170,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=GaussianReducer(),
+            reducer=reducer_function(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
@@ -180,7 +182,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=GaussianReducer(),
+            reducer=reducer_function(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
@@ -192,7 +194,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=GaussianReducer(),
+            reducer=reducer_function(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
@@ -207,7 +209,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=GaussianReducer(),
+            reducer=reducer_function(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(None, apply_mask=True, key="A"),

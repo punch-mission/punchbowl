@@ -1,5 +1,6 @@
+import gc
+import warnings
 import subprocess
-from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from multiprocessing import Pool
@@ -17,6 +18,7 @@ from tqdm.auto import tqdm
 
 from punchbowl.data import punch_io
 
+warnings.filterwarnings("ignore", message="invalid value encountered in do_format", category=RuntimeWarning)
 
 def _cmap_punch() -> LinearSegmentedColormap:
     """Generate PUNCH colormap."""
@@ -166,11 +168,14 @@ def animate_punch(
             for i, data in tqdm(enumerate(data_list), total=len(data_list)):
                 cube = punch_io.load_ndcube_from_fits(data)
                 if i == 0:
-                    persistence_array = deepcopy(cube)
+                    persistence_array = cube.data.copy()
                 frame_path = Path(tmpdir) / f"frame_{i:07d}.png"
                 plot_punch(cube, save_path=frame_path, **plot_kwargs, persistence_array=persistence_array)
                 mask = np.isfinite(cube.uncertainty.array)
-                persistence_array.data[mask] = cube.data[mask]
+                persistence_array[mask] = cube.data[mask]
+                del cube
+                plt.close("all")
+                gc.collect()
         else:
             args_list = [(i, data, tmpdir, plot_kwargs) for i, data in enumerate(data_list)]
             with Pool(n_jobs) as pool:
@@ -289,10 +294,10 @@ def plot_punch(  # noqa: C901
 
     if isinstance(trim_edge, (tuple, list)):
         r_min, r_max = sorted(trim_edge)
-        r = radial_distance(cube.data.shape[0], cube.data.shape[1])
+        r = radial_distance(cube.data.shape[-2], cube.data.shape[-1])
         radial_mask = (r >= r_min) & (r <= r_max)
     elif isinstance(trim_edge, float):
-        radial_mask = radial_distance(cube.data.shape[0], cube.data.shape[1]) < trim_edge
+        radial_mask = radial_distance(cube.data.shape[-2], cube.data.shape[-1]) < trim_edge
     else:
         radial_mask = 1
 

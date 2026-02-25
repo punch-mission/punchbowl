@@ -239,6 +239,8 @@ def split_filter_part(filter_part):
                             if len(parsed_values) == 1:
                                 parsed_values = parsed_values[0]
                             value = parsed_values
+                            if py_method is None:
+                                py_method = '__eq__'
                 # word operators need spaces after them in the filter string,
                 # but we don't want these later
                 return column_name, input_operator.strip(), value, py_method

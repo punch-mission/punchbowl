@@ -239,6 +239,8 @@ def split_filter_part(filter_part):
                             if len(parsed_values) == 1:
                                 parsed_values = parsed_values[0]
                             value = parsed_values
+                            if py_method is None:
+                                py_method = '__eq__'
                 # word operators need spaces after them in the filter string,
                 # but we don't want these later
                 return column_name, input_operator.strip(), value, py_method
@@ -464,6 +466,8 @@ def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, extra_
         query = query.order_by(col).group_by(*y_axis_cols, func.round(func.unix_timestamp(col) / (graph_point_time_window * 60)))
     with get_database_session() as session:
         dff = pd.read_sql_query(query, session.connection())
+
+    dff.loc[dff['date_created'].isna(), 'date_created'] = '1969-12-31 23:59:59'
 
     # Extract the data that sets shape and color, and then remove if necessary
     if color_key != "nothing":

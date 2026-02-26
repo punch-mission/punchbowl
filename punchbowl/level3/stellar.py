@@ -18,6 +18,8 @@ from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, get_p_angle
 from punchbowl.prefect import punch_flow, punch_task
 
+from astropy.nddata import StdDevUncertainty
+
 
 def to_celestial(input_data: NDCube) -> NDCube:
     """
@@ -127,8 +129,7 @@ def generate_starfield_background(
         n_procs: int | None = None,
         reference_time: datetime | None = None,
         is_polarized: bool = False,
-        out_file: str | None = None,
-        reducer_function: Callable = GaussianReducer) -> NDCube | None :
+        out_file: str | None = None) -> NDCube | None :
     """Create a background starfield map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
 
@@ -151,7 +152,7 @@ def generate_starfield_background(
     # included on either side of crpix
     starfield_wcs.wcs.crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
     starfield_wcs.wcs.crval = 270, -23.5
-    starfield_wcs.wcs.cdelt = -1 * map_scale, map_scale
+    starfield_wcs.wcs.cdelt = map_scale, map_scale
     starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
     starfield_wcs.wcs.cunit = "deg", "deg"
     starfield_wcs.array_shape = shape
@@ -170,7 +171,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=reducer_function,
+            reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
@@ -182,7 +183,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=reducer_function,
+            reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
@@ -194,7 +195,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=reducer_function,
+            reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
@@ -209,7 +210,7 @@ def generate_starfield_background(
             filenames,
             attribution=False,
             frame_count=False,
-            reducer=reducer_function,
+            reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(None, apply_mask=True, key="A"),
@@ -221,7 +222,7 @@ def generate_starfield_background(
                                                         meta.astropy_time,
                                                         starfield_clear.starfield.shape)
 
-    output = NDCube(data=out_data, wcs=out_wcs, meta=meta)
+    output = NDCube(data=out_data, uncertainty=StdDevUncertainty(np.sqrt(out_data)), wcs=out_wcs, meta=meta)
     output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     logger.info("construct_starfield_background finished")
@@ -230,7 +231,7 @@ def generate_starfield_background(
         write_ndcube_to_fits(output, filename=out_file, write_hash=False, overwrite=True)
         return None
 
-    return output
+    return [output]
 
 
 @punch_task

@@ -648,7 +648,7 @@ def prep_star_coords(stars_in_image: pd.DataFrame, image_header: NormalizedMetad
     # Convert stellar coordinates to GCRS centered on the spacecraft location
     sc_location = EarthLocation.from_geodetic(lon=image_header["GEOD_LON"].value * u.deg,
                                               lat=image_header["GEOD_LAT"].value * u.deg,
-                                              height=image_header["GEOD_LAT"].value * u.m)
+                                              height=image_header["GEOD_ALT"].value * u.m)
     geoloc, geovel = sc_location.get_gcrs_posvel(image_header.astropy_time)
     catalog_stars = SkyCoord(
         np.array(stars_in_image["RAdeg"]) * u.degree,

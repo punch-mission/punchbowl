@@ -1,1 +1,0 @@
-Sped up L0 queries with new database indices and limiting scope of time for query.

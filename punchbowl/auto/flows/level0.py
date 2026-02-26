@@ -996,7 +996,7 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
             if fits_info["TYPECODE"] == "PX":
                 raise MissingMetadataError("PFW is stale so will wait to process.")
             fits_info["FILEVRSN"] = pipeline_config["file_version"]
-            fits_info["PIPEVRSN"] = punchbowl.__version__
+            fits_info["BOWLVRSN"] = punchbowl.__version__
             fits_info["NUM_PCKT"] = len(image_packets_entries)
             fits_info["PCKTBYTE"] = len(np.concatenate(ordered_image_content).tobytes())
             file_type = fits_info["TYPECODE"]

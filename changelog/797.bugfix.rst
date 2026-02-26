@@ -1,1 +1,0 @@
-Alters f-corona subtraction to apply to in-painted data regions.

@@ -1,1 +1,0 @@
-Adds new example notebooks from bimonthly meetings and cleans up existing ones.

@@ -1,1 +1,0 @@
-Moves punchpipe into punchbowl auto subpackage.

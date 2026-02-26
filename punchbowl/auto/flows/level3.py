@@ -132,7 +132,7 @@ def level3_PIM_query_ready_files(session, pipeline_config: dict, reference_time=
     all_ready_files = session.query(File).where(and_(and_(File.state == "created",
                                                           File.level == "2"),
                                                      File.file_type == "PT")).order_by(File.date_obs.asc()).all()
-    logger.info(f"{len(all_ready_files)} Level 3 PTM files need to be processed.")
+    logger.info(f"{len(all_ready_files)} Level 2 PTM files need to be processed.")
 
     actually_ready_files = []
     for f in all_ready_files:

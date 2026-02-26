@@ -1,1 +1,0 @@
-NFI polarized images now properly skip level1_middle and get produced as L1s

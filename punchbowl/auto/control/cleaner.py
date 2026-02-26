@@ -135,7 +135,7 @@ def reset_revivable_flows(logger, session, pipeline_config):
         if parent is None:
             continue
         if processing_flow.flow_type not in ("construct_stray_light",
-                                             "construct_dynamic_stray_light"
+                                             "construct_dynamic_stray_light",
                                              "construct_f_corona_background",
                                              "construct_starfield_background",
                                              "levelq_CFM"):

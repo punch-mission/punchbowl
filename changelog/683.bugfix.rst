@@ -1,1 +1,0 @@
-Northern images are excluded from WFI static stray light models, to avoid eclipsed images affecting the models.

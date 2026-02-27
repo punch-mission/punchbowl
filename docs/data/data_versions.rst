@@ -17,6 +17,23 @@ The PUNCH mission and the SDAC data repository only supports the most recent ver
 
 A history of data version releases is given below.
 
+Version 0j
+----------
+- Released February 10, 2026
+- Paused realtime QuickPUNCH processing as new products are designed
+- Added pB' to L3_PAM and L3_PTM images as a diagnostic
+- Created new stray light modeling for WFI, fits a peak in histogram of data instead of percentile
+- Updated WFI flatfields, by removing ad hoc factor
+- Switched to a new cosmic ray despiking algorithm that is temporal instead of spatial
+- Regenerated distortion models utilizing residual update for better alignment
+- Introduced low-noise products L3_PAM and L3_CAM
+- Fixed L3_PIM OBSLAYER values to reflect actual file contents
+- Improved quicklook products by improving scaling factors
+- Known problems:
+
+  + Glint from planets like Venus is slightly worse and will be removed more completely in the next version
+  + pB' is not close to 0 and pB is often negative indicating a calibration error
+
 Version 0i
 ----------
 - Released December 11, 2025

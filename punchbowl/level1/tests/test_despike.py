@@ -40,9 +40,7 @@ def sample_ndcube_for_despike():
         return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 
-@pytest.mark.parametrize("num_neighbors", [2, 3, 4, 5, 6,
-    pytest.param(1, marks=pytest.mark.xfail(reason="Won't compute median of 1 neighbor", raises=RuntimeError))
-    ])
+@pytest.mark.parametrize("num_neighbors", [2, 3, 4, 5, 6])
 def test_spikes_are_removed(num_neighbors, sample_ndcube_for_despike):
     reference = np.random.random((300, 300))
     reference[30, 20] = 10
@@ -57,3 +55,17 @@ def test_spikes_are_removed(num_neighbors, sample_ndcube_for_despike):
     print("MAX", np.max(despiked.data))
     assert np.all(despiked.data <= 10)
     assert spike_map[-1][30, 20] == 1
+
+
+@pytest.mark.parametrize("num_neighbors", [1, 7])
+def test_insufficient_spike_neighbors(num_neighbors, sample_ndcube_for_despike):
+    reference = np.random.random((300, 300))
+    reference[30, 20] = 10
+
+    neighbors = [np.random.random((300, 300)) for _ in range(num_neighbors)]
+
+    sample_data = sample_ndcube_for_despike(reference, code="PM1", level="0")
+    sample_neighbors = [sample_ndcube_for_despike(n, code="PM1", level="0") for n in neighbors]
+
+    with pytest.raises(RuntimeError):
+        _, _ = despike_polseq(sample_data, sample_neighbors)

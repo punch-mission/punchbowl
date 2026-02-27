@@ -1,10 +1,11 @@
 from math import floor
 from datetime import UTC, datetime
-from collections.abc import Callable
 
 import astropy.units as u
 import numpy as np
 import remove_starfield
+from astropy.io.fits import getheader
+from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCollection, NDCube
@@ -17,8 +18,6 @@ from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, get_p_angle
 from punchbowl.prefect import punch_flow, punch_task
-
-from astropy.nddata import StdDevUncertainty
 
 
 def to_celestial(input_data: NDCube) -> NDCube:
@@ -157,12 +156,16 @@ def generate_starfield_background(
     starfield_wcs.wcs.cunit = "deg", "deg"
     starfield_wcs.array_shape = shape
 
+    date_obses = [getheader(f, 1)["DATE-OBS"] for f in filenames]
+
+    times = [datetime.fromisoformat(d) for d in date_obses]
+    date_avg = datetime.fromtimestamp(np.mean([t.timestamp() for t in times]), tz=UTC)
+
     meta = NormalizedMetadata.load_template("PSM" if is_polarized else "CSM", "3")
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    # TODO - Do we want these dates to reflect the set of input files?
-    meta["DATE-BEG"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    meta["DATE-END"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    meta["DATE-AVG"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-BEG"] = min(times).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-END"] = max(times).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-AVG"] = date_avg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     if is_polarized:

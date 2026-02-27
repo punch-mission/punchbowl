@@ -16,7 +16,7 @@ from solpolpy import resolve
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_fits
-from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, get_p_angle
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial, get_p_angle
 from punchbowl.prefect import punch_flow, punch_task
 
 
@@ -271,7 +271,9 @@ def subtract_starfield_background_task(data_object: NDCube,
                                            "starfield subtraction skipped since path is empty")
     else:
         star_datacube = load_ndcube_from_fits(starfield_background_path, key="A")
-        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), star_datacube.wcs)
+        wcs_celestial = calculate_celestial_wcs_from_helio(star_datacube.wcs)
+        wcs_celestial.wcs.cdelt = wcs_celestial.wcs.cdelt * [-1, 1]
+        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
 
         subtracted = starfield_model.subtract_from_image(
             NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),

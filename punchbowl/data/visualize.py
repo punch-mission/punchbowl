@@ -1,5 +1,4 @@
 import gc
-import warnings
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -18,7 +17,6 @@ from tqdm.auto import tqdm
 
 from punchbowl.data import punch_io
 
-warnings.filterwarnings("ignore", message="invalid value encountered in do_format", category=RuntimeWarning)
 
 def _cmap_punch() -> LinearSegmentedColormap:
     """Generate PUNCH colormap."""

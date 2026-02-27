@@ -30,6 +30,9 @@ def test_early_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
                               vignetting_function_path=vignetting_path)
     assert isinstance(output[0], NDCube)
     assert os.path.exists(output_name[0])
+    assert "MOONDIST" in output[0].meta
+    assert "MOON_X" in output[0].meta
+    assert "MOON_Y" in output[0].meta
 
 
 

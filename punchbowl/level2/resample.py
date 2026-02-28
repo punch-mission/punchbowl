@@ -14,7 +14,9 @@ from punchbowl.prefect import punch_flow, punch_task
 @punch_task(tags=["reproject"])
 def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int, int],
                    rolloff_strength: float | list[float] = 1,
-                   rolloff_width: float | list[float] = .25) -> np.ndarray:
+                   rolloff_width: float | list[float] = .25,
+                   do_uncertainty: bool = True,
+                   repro_args: dict | None = None) -> np.ndarray:
     """
     Core reprojection function.
 
@@ -40,6 +42,10 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         Image uncertainties are enhanced at the edges, to provide a smooth rolloff in merging. This controls the
         strength of that rolloff. Merging weights at the mask edge will be reduced by this fractional amount. A
         strength of zero means no rolloff. A list can be provided to give one value for each spacecraft.
+    do_uncertainty : bool
+        Whether to reproject the uncertainty layer as well and return a 2 x ny x nx array
+    repro_args : dict
+        Additional kwargs to pass to the reproject call
 
     Returns
     -------
@@ -52,6 +58,9 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     >>> reprojected_arrays = reproject_cube(input_cube, output_wcs, output_shape)
 
     """
+    if repro_args is None:
+        repro_args = {}
+
     input_wcs = input_cube.wcs
     time = input_cube.meta.astropy_time
 
@@ -93,7 +102,7 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         xmax = np.min((xmax, output_shape[1]))
         ymax = np.min((ymax, output_shape[0]))
 
-    output_array = np.full((2, *output_shape), np.nan)
+    output_array = np.full((2 if do_uncertainty else 1, *output_shape), np.nan)
 
     # We will roll off the uncertainty by the inverse of the distance to the edge of the mask.
     # This allows pixels closer to the center to be weighted more than those on the edge.
@@ -103,14 +112,19 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     if isinstance(rolloff_width, list):
         rolloff_width = rolloff_width[int(input_cube.meta["OBSCODE"].value) - 1]
 
-    image_mask = ((np.isnan(input_cube.data) + (input_cube.data == 0))
-                  * (~np.isfinite(input_cube.uncertainty.array)))
-    distance_to_edge = distance_transform_edt(~image_mask, return_indices=False) + 1
-    cap = rolloff_width * distance_to_edge.max()
-    distance_to_edge[distance_to_edge > cap] = cap
-    rolloff_fractions = distance_to_edge / cap
-    rolloff_fractions = (1 - rolloff_strength) + rolloff_fractions * rolloff_strength
-    input_data = np.stack([input_cube.data, input_cube.uncertainty.array / np.sqrt(rolloff_fractions)])
+    if not do_uncertainty:
+        input_data = np.expand_dims(input_cube.data, 0)
+    elif rolloff_strength > 0 and rolloff_width > 0:
+        image_mask = ((np.isnan(input_cube.data) + (input_cube.data == 0))
+                      * (~np.isfinite(input_cube.uncertainty.array)))
+        distance_to_edge = distance_transform_edt(~image_mask, return_indices=False) + 1
+        cap = rolloff_width * distance_to_edge.max()
+        distance_to_edge[distance_to_edge > cap] = cap
+        rolloff_fractions = distance_to_edge / cap
+        rolloff_fractions = (1 - rolloff_strength) + rolloff_fractions * rolloff_strength
+        input_data = np.stack([input_cube.data, input_cube.uncertainty.array / np.sqrt(rolloff_fractions)])
+    else:
+        input_data = np.stack([input_cube.data, input_cube.uncertainty.array])
 
     # Reproject will complain if the input and output arrays have different dtypes
     input_data = np.asarray(input_data, dtype=float)
@@ -118,12 +132,15 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     reproject.reproject_adaptive(
         (input_data, celestial_source),
         celestial_target[ymin:ymax, xmin:xmax],
-        shape_out=(2, np.max((ymax-ymin, 0)), np.max((xmax-xmin, 0))),
+        shape_out=(2 if do_uncertainty else 1, np.max((ymax-ymin, 0)), np.max((xmax-xmin, 0))),
         roundtrip_coords=False, return_footprint=False,
         output_array=output_array[..., ymin:ymax, xmin:xmax],
         conserve_flux=False,
+        **repro_args,
     )
 
+    if not do_uncertainty:
+        output_array = output_array[0]
     return output_array
 
 

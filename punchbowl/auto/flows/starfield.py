@@ -45,15 +45,15 @@ def starfield_background_query_ready_files(session, pipeline_config: dict,
                          .filter(File.date_obs <= reference_time)
                          .filter(File.file_type == target_file_type)
                          .filter(File.level == "3")
-                         .order_by(File.date_obs.desc())
-                         .slice(0, before_max_files, image_cadence).all())
+                         .order_by(File.date_obs.desc()).all())
+    first_half_inputs = first_half_inputs[0:before_max_files:image_cadence]
     second_half_inputs = (base_query
                           .filter(File.date_obs >= reference_time)
                           .filter(File.date_obs <= t_end)
                           .filter(File.file_type == target_file_type)
                           .filter(File.level == "3")
-                          .order_by(File.date_obs.asc())
-                          .slice(0, after_max_files, image_cadence).all())
+                          .order_by(File.date_obs.asc()).all())
+    second_half_inputs = second_half_inputs[0:after_max_files:image_cadence]
 
     enough_inputs = len(first_half_inputs) > before_min_files and len(second_half_inputs) > after_min_files
     if enough_inputs:

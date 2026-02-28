@@ -412,16 +412,16 @@ def _estimate_stray_light_one_slice(y: int, data_slice: np.ndarray, x_grid: np.n
 
     result = np.empty(x_grid.shape)
     for j, x in enumerate(x_grid):
-        stack = data_slice[:, :, x - half_width:x + half_width + 1]
+        stack = data_slice[:, :, x - half_width:x + half_width + 1].ravel()
         n_pts = stack.size
-        stack = stack[stack > 1e-15]
+        stack = stack[np.abs(stack) > 1e-17]
         if stack.size < n_pts * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS:
             r = np.nan
         else:
             # A seed that's unique per pixel yet deterministic
-            rng = np.random.default_rng(10000 * y + x)
-            noise = noise_amp * rng.normal(scale=np.sqrt(stack / noise_mode) * noise_hwhm, size=stack.size)
-            stack += noise
+            # rng = np.random.default_rng(10000 * y + x)
+            # noise = noise_amp * rng.normal(scale=np.sqrt(stack / noise_mode) * noise_hwhm, size=stack.size)
+            # stack += noise
             try:
                 r = fit_skew(stack, False)
             except OutOfPointsError:

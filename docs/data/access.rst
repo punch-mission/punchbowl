@@ -53,7 +53,7 @@ These data can also be bundled together as an NDCube object, either manually or 
     filename = 'example_data/PUNCH_L3_PAM_20240620000000.fits'
 
     cube = load_ndcube_from_fits(filename)
-   
+
 See `this example <https://punchbowl.readthedocs.io/en/latest/auto_examples/data_guide.html#sphx-glr-auto-examples-data-guide-py>`_ on how to use data.
 
 Data Projections

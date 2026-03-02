@@ -1,4 +1,3 @@
-import gc
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -171,9 +170,7 @@ def animate_punch(
                 plot_punch(cube, save_path=frame_path, **plot_kwargs, persistence_array=persistence_array)
                 mask = np.isfinite(cube.uncertainty.array)
                 persistence_array[mask] = cube.data[mask]
-                del cube
                 plt.close("all")
-                gc.collect()
         else:
             args_list = [(i, data, tmpdir, plot_kwargs) for i, data in enumerate(data_list)]
             with Pool(n_jobs) as pool:

@@ -14,6 +14,7 @@ from sunpy.sun import constants
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.prefect import punch_flow
 
 
 def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: float) -> tuple[int, int]:
@@ -427,7 +428,7 @@ def plot_flow_map(filename: str | None, data: NDCube, cmap: str = "magma") -> No
         plt.savefig(filename)
     return fig
 
-
+@punch_flow(log_prints=True, timeout_seconds=21_600)
 def track_velocity(files: list[str],
                    delta_t: int = 12,
                    sparsity: int = 2,

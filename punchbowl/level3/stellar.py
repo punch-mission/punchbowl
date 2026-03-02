@@ -18,6 +18,7 @@ from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial, get_p_angle
 from punchbowl.prefect import punch_flow, punch_task
+from punchbowl.util import average_datetime
 
 
 def to_celestial(input_data: NDCube) -> NDCube:
@@ -157,15 +158,13 @@ def generate_starfield_background(
     starfield_wcs.array_shape = shape
 
     date_obses = [getheader(f, 1)["DATE-OBS"] for f in filenames]
-
     times = [datetime.fromisoformat(d) for d in date_obses]
-    date_avg = datetime.fromtimestamp(np.mean([t.timestamp() for t in times]), tz=UTC)
 
     meta = NormalizedMetadata.load_template("PSM" if is_polarized else "CSM", "3")
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE-BEG"] = min(times).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE-END"] = max(times).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    meta["DATE-AVG"] = date_avg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    meta["DATE-AVG"] = average_datetime(times).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     if is_polarized:

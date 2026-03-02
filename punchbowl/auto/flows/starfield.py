@@ -54,8 +54,8 @@ def starfield_background_query_ready_files(session, pipeline_config: dict,
                           .order_by(File.date_obs.asc()).all())
     logger.info("Count of before and after halves pre-cadence step: "
                 f"{len(first_half_inputs)}, {len(second_half_inputs)}")
-    first_half_inputs = first_half_inputs[0:before_max_files:image_cadence]
-    second_half_inputs = second_half_inputs[0:after_max_files:image_cadence]
+    first_half_inputs = first_half_inputs[::image_cadence][0:before_max_files]
+    second_half_inputs = second_half_inputs[::image_cadence][0:after_max_files]
     logger.info("Count of before and after halves post-cadence step: "
                 f"{len(first_half_inputs)}, {len(second_half_inputs)}")
 

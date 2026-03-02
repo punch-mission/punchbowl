@@ -1,1 +1,0 @@
-Updates quicklook plotting to allow more complex layer selection for polarized data, and updates default color scaling parameters.

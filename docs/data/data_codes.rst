@@ -97,31 +97,40 @@ Calibration Product Codes
      - Description
    * - 0
      - DK1, DK2, DK3, DK4, DY1, DY2, DY3, DY4
-     - Calibration Images: polarizer in dark pos.; stim lamp off (DK) or on (DY)
+     - Polarizer in dark position, used for calibration; stim lamp off (DK) or on (DY)
    * - 0
      - OV1, OV2, OV3, OV4
-     - Calibration Image: CCD over-scan
+     - CCD over-scan images
    * - 0
      - XI1, XI2, XI3, XI4
      - Experimental image (no set parameters; variable crop)
    * - 1
      - BD1, BD2, BD3, BD4
-     - Calibration: Deficient Pixel (Boolean) Map
+     - Deficient pixel (boolean) map
    * - 1
      - DS1, DS2, DS3, DS4
-     - Calibration: Distortion models
+     - Optical distortion models
    * - 1
      - FQ1, FQ2, FQ3, FQ4
-     - Calibration: Flat-field parameters (quartic polynomial coefficients), by pixel
+     - Flat-field parameters (quartic polynomial coefficients), by pixel
    * - 1
      - GM1, GM2, GM3, GM4, GZ1, GZ2, GZ3, GZ4, GP1, GP2, GP3, GP4, GR1, GR2, GR3, GR4
-     - Calibration: Vignetting functions for the standard polarization (GM, GZ, GP) and clear (GR) states
+     - Vignetting functions for the standard polarization (GM, GZ, GP) and clear (GR) states
+   * - 1
+     - LM1, LM2, LM3, LM4, LZ1, LZ2, LZ3, LZ4, LP1, LP2, LP3, LP4, LR1, LR2, LR3, LR4
+     - Outlier limits used for image rejection, saved as NumPy format instead of FITS
+   * - 1
+     - MS1, MS2, MS3, MS4
+     - Mask files to define where image is undefined for each satellite
+   * - 1
+     - QR1, QR2, QR3, QR4
+     - Intermediate level-1 processing necessary for QuickPUNCH
    * - 1
      - SM1, SM2, SM3, SM4, SZ1, SZ2, SZ3, SZ4, SP1, SP2, SP3, SP4, SR1, SR2, SR3, SR4
-     - Calibration: Instrumental additive stray light model for the standard polarization (SM, SZ, SP) and clear (SR) states
+     - Instrumental additive stray light model for the standard polarization (SM, SZ, SP) and clear (SR) states
    * - 1
      - TM1, TM2, TM3, TM4, TZ1, TZ2, TZ3, TZ4, TP1, TP2, TP3, TP4, TR1, TR2, TR3, TR4
-     - Calibration: Dynamic instrumental additive stray light model for the standard polarization (SM, SZ, SP) and clear (SR) states
+     - Dynamic instrumental additive stray light model for the standard polarization (TM, TZ, TP) and clear (TR) states
    * - 1
      - XM1, XM2, XM3, XM4, XZ1, XZ2, XZ3, XZ4, XP1, XP2, XP3, XP4, XR1, XR2, XR3, XR4
      - Result of the "L1 early" pipeline stage, an input to dynamic stray light model generation.
@@ -130,7 +139,7 @@ Calibration Product Codes
      - Result of the "L1 middle" pipeline stage, an input to static stray light model generation.
    * - 1
      - RM1, RM2, RM3, RM4, RZ1, RZ2, RZ3, RZ4, RP1, RP2, RP3, RP4, RC1, RC2, RC3, RC4
-     - Calibration: Point Spread Function model for the standard polarization and clear states
+     - Point Spread Function (PSF) model for the standard polarization and clear states
    * - Q
      - CFN
      - QuickPUNCH NFI images F corona model

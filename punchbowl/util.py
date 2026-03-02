@@ -61,7 +61,8 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
 
 
 @punch_task(tags=["image_loader"])
-def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True) -> NDCube:
+def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True,
+                    dtype: type = float) -> NDCube:
     """
     Prefect task to load data for processing.
 
@@ -73,6 +74,8 @@ def load_image_task(input_filename: str, include_provenance: bool = True, includ
         whether to load the provenance layer
     include_uncertainty : bool
         whether to load the uncertainty layer
+    dtype : type
+        dtype to cast the data to
 
     Returns
     -------
@@ -81,7 +84,7 @@ def load_image_task(input_filename: str, include_provenance: bool = True, includ
 
     """
     return load_ndcube_from_fits(
-        input_filename, include_provenance=include_provenance, include_uncertainty=include_uncertainty)
+        input_filename, include_provenance=include_provenance, include_uncertainty=include_uncertainty, dtype=dtype)
 
 
 def average_datetime(datetimes: list[datetime]) -> datetime:
@@ -407,3 +410,14 @@ def inpaint_nans(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
         convolved[~nan_mask] = image[~nan_mask]
         image = convolved
     return image
+
+
+def compute_tb(data: NDCube | np.ndarray) -> np.ndarray:
+    """Compute total brightness from input NDCube or 3D data array of shape (MZP, ...)."""
+    if isinstance(data, np.ndarray):
+        return 2/3 * np.sum(data, axis=0)
+
+    if data.meta["OBS-MODE"].value == "Polar_BpB":
+        return data.data[0, ...]
+
+    return 2/3 * np.sum(data.data, axis=0)

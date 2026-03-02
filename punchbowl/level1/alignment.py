@@ -648,7 +648,7 @@ def prep_star_coords(stars_in_image: pd.DataFrame, image_header: NormalizedMetad
     # Convert stellar coordinates to GCRS centered on the spacecraft location
     sc_location = EarthLocation.from_geodetic(lon=image_header["GEOD_LON"].value * u.deg,
                                               lat=image_header["GEOD_LAT"].value * u.deg,
-                                              height=image_header["GEOD_LAT"].value * u.m)
+                                              height=image_header["GEOD_ALT"].value * u.m)
     geoloc, geovel = sc_location.get_gcrs_posvel(image_header.astropy_time)
     catalog_stars = SkyCoord(
         np.array(stars_in_image["RAdeg"]) * u.degree,
@@ -809,8 +809,12 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
     refining_data[np.isnan(refining_data)] = 0
 
     if distortion_path:
-        with fits.open(distortion_path) as distortion_hdul:
-            distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+        try:
+            with fits.open(distortion_path) as distortion_hdul:
+                distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+        except KeyError:
+            with fits.open(distortion_path) as distortion_hdul:
+                distortion = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
     else:
         distortion = None
 
@@ -823,8 +827,12 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
                                                        data_object.data.shape)
 
     if distortion_path:
-        with fits.open(distortion_path) as distortion_hdul:
-            distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+        try:
+            with fits.open(distortion_path) as distortion_hdul:
+                distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+        except KeyError:
+            with fits.open(distortion_path) as distortion_hdul:
+                distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
         recovered_wcs.cpdis1 = distortion_wcs.cpdis1
         recovered_wcs.cpdis2 = distortion_wcs.cpdis2
 

@@ -13,6 +13,9 @@ from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import (
     CALIBRATION_ANNOTATION,
     _update_statistics,
+    check_outlier,
+    decode_outliers,
+    encode_outliers,
     get_base_file_name,
     load_ndcube_from_fits,
     write_ndcube_to_fits,
@@ -66,7 +69,6 @@ def test_write_data(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -85,7 +87,6 @@ def test_write_data_jp2(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -101,7 +102,6 @@ def test_write_jpeg(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -115,7 +115,6 @@ def test_write_data_jp2_with_annotation(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -129,7 +128,6 @@ def test_write_data_jp2_wrong_filename(sample_ndcube, tmpdir):
     cube.meta["LEVEL"] = "1"
     cube.meta["TYPECODE"] = "CL"
     cube.meta["OBSRVTRY"] = "1"
-    cube.meta["PIPEVRSN"] = "0.1"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
@@ -141,14 +139,13 @@ def test_write_data_jp2_wrong_filename(sample_ndcube, tmpdir):
 def test_write_data_jp2_wrong_dimensions(sample_ndcube, tmpdir):
     cube = sample_ndcube((2, 50, 50))
     cube.meta["LEVEL"] = "3"
-    cube.meta["TYPECODE"] = "PAM"
-    cube.meta["PIPEVRSN"] = "0.1"
+    cube.meta["TYPECODE"] = "CAM"
     cube.meta["DATE-OBS"] = str(datetime.now(UTC))
     cube.meta["DATE-END"] = str(datetime.now(UTC))
 
     test_path = os.path.join(tmpdir, "test.jp2")
     with pytest.raises(ValueError):
-        write_ndcube_to_quicklook(cube, test_path)
+        write_ndcube_to_quicklook(cube, test_path, layer=None)
 
 
 def test_generate_data_statistics_from_zeros():
@@ -324,3 +321,51 @@ def test_uncertainty_inf_roundtrip(sample_ndcube, tmpdir):
     write_ndcube_to_fits(cube, test_path)
     loaded_cube = load_ndcube_from_fits(test_path)
     assert np.all(np.isinf(loaded_cube.uncertainty.array))
+
+
+def test_check_outliers(sample_ndcube):
+    cube = sample_ndcube((10,10))
+
+    cube.meta["OUTLIER"] = 1
+    assert check_outlier(cube) == 1
+
+    cube.meta["OUTLIER"] = 0
+    assert check_outlier(cube) == 0
+
+    cube.meta["OUTLIER"] = 15
+    assert check_outlier(cube) == 1
+
+
+def test_encode_outliers(sample_ndcube):
+    cube1 = sample_ndcube((10,10))
+    cube1.meta["OBSCODE"] = "1"
+    cube1.meta["OUTLIER"] = 0
+
+    cube2 = sample_ndcube((10,10))
+    cube2.meta["OBSCODE"] = "2"
+    cube2.meta["OUTLIER"] = 1
+
+    cube3 = sample_ndcube((10,10))
+    cube3.meta["OBSCODE"] = "3"
+    cube3.meta["OUTLIER"] = 0
+
+    cube4 = sample_ndcube((10,10))
+    cube4.meta["OBSCODE"] = "4"
+    cube4.meta["OUTLIER"] = 1
+
+    outlier_code = encode_outliers([cube1, cube2, cube3, cube4])
+
+    assert outlier_code == 20
+
+
+def test_decode_outliers(sample_ndcube):
+    cube = sample_ndcube((10,10))
+    cube.meta["OBSCODE"] = "M"
+    cube.meta["OUTLIER"] = 20
+
+    outliers = decode_outliers(cube)
+
+    assert outliers["4"] == 1
+    assert outliers["3"] == 0
+    assert outliers["2"] == 1
+    assert outliers["1"] == 0

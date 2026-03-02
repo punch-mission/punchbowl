@@ -1,0 +1,1 @@
+Uses altitude correctly in geodetic location instead of latitude for alignment.

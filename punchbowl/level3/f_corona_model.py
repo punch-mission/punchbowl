@@ -189,8 +189,6 @@ def model_polarized_fcorona_for_cube(xt: np.ndarray, # noqa: ARG001
                                      *args: list, **kwargs: dict, # noqa: ARG001
                                      ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Estimate the polarized f corona model using indexing method."""
-    cube[cube == 0] = np.nan
-
     mdata = cube[:, 0, :, :]
     zdata = cube[:, 1, :, :]
     pdata = cube[:, 2, :, :]
@@ -306,8 +304,10 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     filenames.sort()
 
     data_shape = (3, *trefoil_shape) if polarized else trefoil_shape
-
     number_of_data_frames = len(filenames)
+
+    uncertainty = np.zeros(data_shape)
+    sample_counts = np.zeros(data_shape, dtype=int)
     data_cube = np.empty((number_of_data_frames, *data_shape), dtype=float)
 
     meta_list = []
@@ -317,17 +317,26 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     dates = []
     n_failed = 0
     j = 0
-    for i, result in enumerate(load_many_cubes_iterable(filenames, allow_errors=True, n_workers=num_loaders)):
+    for i, result in enumerate(load_many_cubes_iterable(filenames, allow_errors=True, include_provenance=False,
+                                                        n_workers=num_loaders)):
         if isinstance(result, str):
             logger.warning(f"Loading {filenames[i]} failed")
             logger.warning(result)
             n_failed += 1
-            if n_failed > 10:
+            if n_failed > 0.05 * len(filenames):
                 raise RuntimeError(f"{n_failed} files failed to load, stopping")
             continue
         cube = result
         dates.append(cube.meta.datetime)
-        data_cube[j] = np.where(np.isnan(cube.uncertainty.array), np.nan, cube.data)
+
+        data_cube[j] = np.where(~np.isfinite(cube.uncertainty.array), np.nan, cube.data)
+
+        np.nan_to_num(cube.uncertainty.array, nan=0, posinf=0, neginf=0, copy=False)
+        sample_counts += cube.uncertainty.array != 0
+        # Square the array in-place
+        cube.uncertainty.array *= cube.uncertainty.array
+        uncertainty += cube.uncertainty.array
+
         j += 1
         obs_times.append(cube.meta.datetime.timestamp())
         meta_list.append(cube.meta)
@@ -335,9 +344,11 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
             logger.info(f"Loaded {i+1}/{len(filenames)} files")
     # Crop the unused end of the array if we had a few files that errored out
     data_cube = data_cube[:j+1]
-    logger.info("end of data loading")
+    logger.info(f"end of data loading, saw {n_failed} failures")
     output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+    uncertainty = np.nansum(data_cube**2, axis=0)
 
     reference_xt = reference_time.timestamp()
     if polarized:
@@ -346,10 +357,10 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
                                                     data_cube,
                                                     num_workers=num_workers,
                                                     percentile=clip_factor)
+        m_model_fcorona[sample_counts[0] == 0] = np.nan
+        z_model_fcorona[sample_counts[1] == 0] = np.nan
+        p_model_fcorona[sample_counts[2] == 0] = np.nan
 
-        m_model_fcorona[m_model_fcorona == 0] = np.nan
-        z_model_fcorona[z_model_fcorona == 0] = np.nan
-        p_model_fcorona[p_model_fcorona == 0] = np.nan
         if fill_nans:
             m_model_fcorona = fill_nans_with_interpolation(m_model_fcorona)
             z_model_fcorona = fill_nans_with_interpolation(z_model_fcorona)
@@ -358,7 +369,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         output_data = np.stack([m_model_fcorona,
                                 z_model_fcorona,
                                 p_model_fcorona], axis=0)
-        uncertainty = 0 #np.sqrt(np.abs(output_data)) / np.sqrt(len(obs_times))
+        uncertainty = np.sqrt(uncertainty) / sample_counts
         meta = NormalizedMetadata.load_template("PFM", "3")
         trefoil_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
     else:
@@ -366,12 +377,12 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
                                                   data_cube,
                                                   num_workers=num_workers,
                                                   clip_factor=clip_factor)
-        # model_fcorona[model_fcorona==0] = np.nan # noqa: ERA001
+        model_fcorona[sample_counts == 0] = np.nan
         if fill_nans:
             model_fcorona = fill_nans_with_interpolation(model_fcorona)
 
         output_data = model_fcorona
-        uncertainty = np.sqrt(np.abs(model_fcorona)) / np.sqrt(len(obs_times))
+        uncertainty = np.sqrt(uncertainty) / sample_counts
         meta = NormalizedMetadata.load_template("CFM", "3")
 
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -424,7 +435,7 @@ def subtract_f_corona_background(data_object: NDCube,
             allow_extrapolation=allow_extrapolation,
             and_uncertainty=True)
 
-    interpolated_model[np.isinf(data_object.uncertainty.array)] = 0
+    interpolated_model[(data_object.data == 0) & np.isinf(data_object.uncertainty.array)] = 0
 
     original_mask = (data_object.data == 0) * np.isinf(data_object.uncertainty.array)
     data_object.data[...] -= interpolated_model

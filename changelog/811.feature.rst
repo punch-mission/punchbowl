@@ -1,0 +1,1 @@
+Uses the lowest error WCS when aligning images.

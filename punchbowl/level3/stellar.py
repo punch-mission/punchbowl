@@ -100,22 +100,15 @@ def from_celestial(input_data: NDCube) -> NDCube:
 class PUNCHImageProcessor(ImageProcessor):
     """Special loader for PUNCH data."""
 
-    def __init__(self, layer: int | None, apply_mask: bool = True, key: str = " ") -> None:
+    def __init__(self, apply_mask: bool = True, key: str = " ") -> None:
         """Create PUNCHImageProcessor."""
-        self.layer: int | None = layer
         self.apply_mask = apply_mask
         self.key = key
 
     def load_image(self, filename: str) -> ImageHolder:
         """Load an image."""
         cube = load_ndcube_from_fits(filename, key=self.key)
-
-        if self.layer is None:  # it's a clear image
-            data = cube.data
-        else:  # it's polarized
-            cube = to_celestial(cube)
-            data = cube.data[self.layer]
-
+        data = cube.data
         if self.apply_mask:
             data[data==0] = np.nan
         return ImageHolder(data, cube.wcs.celestial, cube.meta)
@@ -269,16 +262,16 @@ def subtract_starfield_background_task(data_object: NDCube,
         output.meta.history.add_now("LEVEL3-subtract_starfield_background",
                                            "starfield subtraction skipped since path is empty")
     else:
-        star_datacube = load_ndcube_from_fits(starfield_background_path, key="A")
+        star_datacube = load_ndcube_from_fits(starfield_background_path)
         wcs_celestial = calculate_celestial_wcs_from_helio(star_datacube.wcs)
         wcs_celestial.wcs.cdelt = wcs_celestial.wcs.cdelt * [-1, 1]
         starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
 
         subtracted = starfield_model.subtract_from_image(
             NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
-                   wcs=data_object.wcs.celestial,
+                   wcs=data_object.wcs,
                    meta=data_object.meta),
-            processor=PUNCHImageProcessor(0, key="A"))
+            processor=PUNCHImageProcessor(key="A"))
 
         data_object.data[...] = subtracted.subtracted[0]
         data_object.uncertainty.array[...] -= subtracted.subtracted[1]

@@ -274,14 +274,23 @@ def subtract_starfield_background_task(data_object: NDCube,
         wcs_celestial.wcs.cdelt = wcs_celestial.wcs.cdelt * [-1, 1]
         starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
 
+        original_mask = data_object.data == 0
+
         subtracted = starfield_model.subtract_from_image(
             NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
                    wcs=data_object.wcs,
                    meta=data_object.meta),
             processor=PUNCHImageProcessor(key="A"))
 
+        # TODO - Need to add logic for layer-by-layer subtraction for polarized data...?
+
         data_object.data[...] = subtracted.subtracted[0]
         data_object.uncertainty.array[...] -= subtracted.subtracted[1]
+
+        # Reset the data to be zero in invalid regions
+        data_object.data[original_mask] = 0
+        data_object.data[~np.isfinite(data_object.data)] = 0
+
         data_object.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
         output = from_celestial(data_object) if is_polarized else data_object
     logger.info("subtract_starfield_background finished")

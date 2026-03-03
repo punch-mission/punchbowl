@@ -100,15 +100,22 @@ def from_celestial(input_data: NDCube) -> NDCube:
 class PUNCHImageProcessor(ImageProcessor):
     """Special loader for PUNCH data."""
 
-    def __init__(self, apply_mask: bool = True, key: str = " ") -> None:
+    def __init__(self, layer: int | None = None, apply_mask: bool = True, key: str = " ") -> None:
         """Create PUNCHImageProcessor."""
+        self.layer: int | None = layer
         self.apply_mask = apply_mask
         self.key = key
 
     def load_image(self, filename: str) -> ImageHolder:
         """Load an image."""
         cube = load_ndcube_from_fits(filename, key=self.key)
-        data = cube.data
+
+        if self.layer is None:  # clear data
+            data = cube.data
+        else:  # polarized data
+            cube = to_celestial(cube)
+            data = cube.data[self.layer]
+
         if self.apply_mask:
             data[data==0] = np.nan
         return ImageHolder(data, cube.wcs.celestial, cube.meta)

@@ -2,13 +2,22 @@ import os
 from datetime import UTC, datetime
 from collections import Counter
 
+import astropy.units as u
 import numpy as np
 import pytest
+from astropy.coordinates import get_body
 from astropy.io import fits
+from astropy.time import Time
 from astropy.wcs import WCS, DistortionLookupTable
 
 from punchbowl.data.history import HistoryEntry
-from punchbowl.data.meta import MetaField, NormalizedMetadata, construct_all_product_codes, load_spacecraft_def
+from punchbowl.data.meta import (
+    MetaField,
+    NormalizedMetadata,
+    check_moon_in_fov,
+    construct_all_product_codes,
+    load_spacecraft_def,
+)
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -300,3 +309,49 @@ def test_fits_header_has_both_distortion_models():
     assert "DP2" in h
     assert "DP1A" in h
     assert "DP2A" in h
+
+
+def test_check_moon_in_fov():
+    with fits.open(SAMPLE_FITS_PATH_UNCOMPRESSED) as hdul:
+        data = hdul[1].data
+        header = hdul[1].header
+    times, angles, fov_half, in_fov, ang_c, xpix, ypix = check_moon_in_fov(
+        time_obs_start="2025-04-10 00:00:00",
+        time_end="2025-04-10 09:00:00",
+        resolution_minutes=60*12,
+        wcs=WCS(header), image_shape=data.shape)
+    expected = 147.013
+    assert np.allclose(angles, expected)
+    assert xpix[0] == -1.0
+    assert ypix[0] == -1.0
+
+def test_check_moon_dateobs():
+    with fits.open(SAMPLE_FITS_PATH_UNCOMPRESSED) as hdul:
+        hdr = hdul[1].header
+        data = hdul[1].data
+    output = check_moon_in_fov(hdr["DATE-OBS"], wcs=WCS(hdr), image_shape=data.shape)
+    expected = 66.0887
+    assert np.allclose(output[1], expected)
+
+wcs = WCS(naxis=2)
+wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
+wcs.wcs.cunit = "deg", "deg"
+wcs.wcs.cdelt = 0.02, 0.02
+wcs.wcs.crpix = 1024, 1024
+wcs.wcs.crval = 0, 24.75
+
+def test_moon_angular_distance_from_center(): # change import
+    shape = (2048, 2048)
+    t_obs = "2026-08-24T16:30:24.766"
+
+    times, ang_sun, fov_half, in_fov, ang_center, xpix, ypix = check_moon_in_fov(
+        t_obs, wcs=wcs, image_shape=shape)
+
+    moon = get_body("moon", Time(t_obs)).icrs
+    xc = (shape[1] - 1) / 2
+    yc = (shape[0] - 1) / 2
+    center = wcs.pixel_to_world(xc, yc)
+    expected = moon.separation(center).to_value(u.deg)
+
+    assert len(ang_center) == 1
+    assert np.isclose(ang_center[0], expected, rtol=1e-6)

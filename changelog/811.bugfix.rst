@@ -1,0 +1,1 @@
+Fixes a missed mask usage in starfield alignment.

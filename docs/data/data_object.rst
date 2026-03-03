@@ -17,4 +17,4 @@ When unpacking these uncertainty values from a FITS file back into an NDCube obj
 
 .. note::
     When reading data using the punchbowl framework, specifically the ``load_ndcube_from_fits`` function, uncertainty is load, converted, and stored as the absolute uncertainty.
-When reading data using astropy FITS frameworks, uncertainty will appear as the reciprocal fractional uncertainty.
+    When reading data using astropy FITS frameworks, uncertainty will appear as the reciprocal fractional uncertainty.

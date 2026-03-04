@@ -42,7 +42,7 @@ def test_ctm_flow_runs_with_filenames(sample_ndcube, tmpdir):
 
 def test_cqm_flow_runs_with_filenames(sample_ndcube, tmpdir):
     data_list = [sample_ndcube(shape=(10, 10), code=code, level="1") for code in ["QR1", "QR2", "QR3"]]
-    data_list.append(sample_ndcube(shape=(10, 10), code="CNN", level="Q"))
+    data_list.append(sample_ndcube(shape=(10, 10), code="QNN", level="Q"))
 
     paths = []
     for i, cube in enumerate(data_list):

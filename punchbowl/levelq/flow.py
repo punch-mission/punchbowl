@@ -20,7 +20,7 @@ from punchbowl.levelq.pca import pca_filter
 from punchbowl.prefect import punch_flow
 from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
 
-ORDER_QP = ["QR1", "QR2", "QR3", "CNN"]
+ORDER_QP = ["QR1", "QR2", "QR3", "QNN"]
 
 SPACECRAFT_OBSCODE = {"1": "WFI1",
                       "2": "WFI2",
@@ -43,7 +43,7 @@ def levelq_QNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     data_list : list[str | NDCube]
         The input images, either as paths or NDCubes
     output_filename : list[str]
-        Optional output paths at which the CNN files should be written
+        Optional output paths at which the QNN files should be written
     files_to_fit : list[str | NDCube | DataLoader]
         Additional files to use for the PCA fitting, but not to actually be filtered or output
     data_root : str
@@ -52,11 +52,11 @@ def levelq_QNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     Returns
     -------
     output_cubes : list[NDCube]
-        The CNN data cubes
+        The QNN data cubes
 
     """
     logger = get_run_logger()
-    logger.info("beginning level quickPUNCH CNN core flow")
+    logger.info("beginning level quickPUNCH QNN core flow")
     logger.info(f"Got {len(data_list)} input files and {len(files_to_fit)} extra files for fitting")
 
     output_cubes = []

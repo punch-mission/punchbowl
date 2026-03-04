@@ -116,7 +116,7 @@ Products:
             NAXIS2: 2048
             TITLE: PUNCH Level-Q Unpolarized QuickPUNCH NFI Image
             OBSTYPE: Unpolarized NFI QuickPUNCH image
-            TYPECODE: CN
+            TYPECODE: QN
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: N

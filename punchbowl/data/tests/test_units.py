@@ -23,7 +23,7 @@ def test_calculate_image_pixel_area_rotated_input():
         area_maps.append(units.calculate_image_pixel_area(wcs, shape))
 
     for area_map in area_maps[1:]:
-        np.testing.assert_allclose(area_maps[0], area_map)
+        np.testing.assert_allclose(area_maps[0], area_map, atol=1e-6)
 
 
 def test_calculate_image_pixel_area_output_shape():

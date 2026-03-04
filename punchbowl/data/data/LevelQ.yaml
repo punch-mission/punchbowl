@@ -54,8 +54,8 @@ Products:
     CFM:
         kinds: [Unpolarized, Calibration]
         overrides:
-            NAXIS1: 1024
-            NAXIS2: 1024
+            NAXIS1: 4096
+            NAXIS2: 4096
             TITLE: PUNCH Level-Q Unpolarized QuickPUNCH Mosaic F-Corona Model
             OBSTYPE: Unpolarized QuickPUNCH mosaic F-corona model
             TYPECODE: CF
@@ -65,8 +65,8 @@ Products:
     CFN:
         kinds: [Unpolarized, Calibration]
         overrides:
-            NAXIS1: 1024
-            NAXIS2: 1024
+            NAXIS1: 2048
+            NAXIS2: 2048
             TITLE: PUNCH Level-Q Unpolarized QuickPUNCH NFI F-Corona Model
             OBSTYPE: Unpolarized NFI QuickPUNCH F-corona model
             TYPECODE: CF
@@ -78,8 +78,8 @@ Products:
     CQM:
         kinds: [Unpolarized]
         overrides:
-            NAXIS1: 1024
-            NAXIS2: 1024
+            NAXIS1: 4096
+            NAXIS2: 4096
             TITLE: PUNCH Level-Q Unpolarized QuickPUNCH Mosaic
             OBSTYPE: Unpolarized QuickPUNCH mosaic
             TYPECODE: CQ
@@ -90,19 +90,30 @@ Products:
     CTM:
         kinds: [Unpolarized]
         overrides:
-            NAXIS1: 1024
-            NAXIS2: 1024
+            NAXIS1: 4096
+            NAXIS2: 4096
             TITLE: PUNCH Level-Q Unpolarized F-corona-subtracted QuickPUNCH Mosaic
             OBSTYPE: Unpolarized QuickPUNCH mosaic
             TYPECODE: CT
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M
-    CNN:
+    QAM:
+        kinds: [ Unpolarized ]
+        overrides:
+            NAXIS1: 4096
+            NAXIS2: 4096
+            TITLE: PUNCH Level-Q Unpolarized F-corona-subtracted QuickPUNCH Mosaic
+            OBSTYPE: Unpolarized QuickPUNCH mosaic
+            TYPECODE: CT
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: M
+    QNN:
         kinds: [Unpolarized]
         overrides:
-            NAXIS1: 1024
-            NAXIS2: 1024
+            NAXIS1: 2048
+            NAXIS2: 2048
             TITLE: PUNCH Level-Q Unpolarized QuickPUNCH NFI Image
             OBSTYPE: Unpolarized NFI QuickPUNCH image
             TYPECODE: CN

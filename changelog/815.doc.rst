@@ -1,0 +1,1 @@
+Updates example animation notebook to use CAM data, with notes on using polarized PAM data.

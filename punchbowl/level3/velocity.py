@@ -278,7 +278,7 @@ def compute_all_bands(acc: np.ndarray, ycen_band_rs: np.ndarray, r_band_half_wid
 
     avg_speeds = []
     sigmas = []
-    for (ylo, yhi) in zip(*ylohi, strict=False):
+    for (ylo, yhi) in zip(*ylohi, strict=True):
         acc_k = acc[:, int(ylo):int(yhi) + 1, ...].mean(axis=1)
         # The modulus must be zero
         azimuth_bin_size = acc_k.shape[1] // velocity_azimuth_bins

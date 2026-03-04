@@ -160,7 +160,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(or_(
                             and_(File.level == "1", File.file_type == "QR", File.observatory.in_(["1", "2", "3"])),
-                            # TODO: We're excluding NFI for now
+                            # We're excluding NFI
                             # and_(File.level == "Q", File.file_type == "CN"),
                        )).order_by(File.date_obs.desc()).all())
     logger.info(f"{len(all_ready_files)} ready files")
@@ -182,7 +182,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
     for group in grouped_files:
         if len(grouped_ready_files) >= max_n:
             break
-        # TODO: We're excluding NFI for now
+        # We're excluding NFI
         # group_is_complete = len(group) == 4
         group_is_complete = len(group) == 3
         if group_is_complete:
@@ -211,7 +211,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
         # Grab all the L0s that produce inputs for this trefoil
         expected_inputs = (session.query(File)
                                   .filter(File.level == "0")
-                                  # TODO: This line temporarily excludes NFI
+                                  # This line excludes NFI as designed
                                   .filter(File.observatory.in_(["1", "2", "3"]))
                                   .filter(File.file_type.in_(search_types))
                                   .filter(File.date_obs > center - search_width)

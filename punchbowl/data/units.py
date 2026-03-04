@@ -1,7 +1,6 @@
 import astropy.constants as const
 import astropy.units as u
 import numpy as np
-import scipy.interpolate
 from astropy.wcs import WCS
 from numpy import ndarray
 
@@ -29,8 +28,7 @@ def calculate_image_pixel_area(wcs: WCS, data_shape: tuple[int, int], stride: in
 
     # 5. Compute the Jacobian Determinant (Area)
     # Area = | (dlon_dx * cos_lat * dlat_dy) - (dlon_dy * cos_lat * dlat_dx) |
-    pixel_area = np.abs((dlon_dx * cos_lat * dlat_dy) - (dlon_dy * cos_lat * dlat_dx))* u.deg**2
-    return pixel_area
+    return np.abs((dlon_dx * cos_lat * dlat_dy) - (dlon_dy * cos_lat * dlat_dx))* u.deg**2
 
 def msb_to_dn(data: ndarray,
               data_wcs: WCS,

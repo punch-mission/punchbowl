@@ -271,21 +271,49 @@ def subtract_starfield_background_task(data_object: NDCube,
     else:
         star_datacube = load_ndcube_from_fits(starfield_background_path)
         wcs_celestial = calculate_celestial_wcs_from_helio(star_datacube.wcs)
-        wcs_celestial.wcs.cdelt = wcs_celestial.wcs.cdelt * [-1, 1]
-        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
+        wcs_celestial.wcs.cdelt[0] = wcs_celestial.wcs.cdelt[0] * -1
 
         original_mask = data_object.data == 0
 
-        subtracted = starfield_model.subtract_from_image(
-            NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
-                   wcs=data_object.wcs,
-                   meta=data_object.meta),
-            processor=PUNCHImageProcessor(key="A"))
+        if is_polarized:
+            starfield_model_m = Starfield(np.stack((star_datacube.data[0], star_datacube.uncertainty.array[0])),
+                                          wcs_celestial[0])
+            subtracted_m = starfield_model_m.subtract_from_image(
+                NDCube(data=np.stack((data_object.data[0], data_object.uncertainty.array[0])),
+                       wcs=data_object.wcs[0],
+                       meta=data_object.meta),
+                       processor=PUNCHImageProcessor(layer=0, key="A"))
+            starfield_model_z = Starfield(np.stack((star_datacube.data[1], star_datacube.uncertainty.array[1])),
+                                          wcs_celestial[1])
+            subtracted_z = starfield_model_z.subtract_from_image(
+                NDCube(data=np.stack((data_object.data[1], data_object.uncertainty.array[1])),
+                       wcs=data_object.wcs[1],
+                       meta=data_object.meta),
+                       processor=PUNCHImageProcessor(layer=1, key="A"))
+            starfield_model_p = Starfield(np.stack((star_datacube.data[2], star_datacube.uncertainty.array[2])),
+                                          wcs_celestial[2])
+            subtracted_p = starfield_model_p.subtract_from_image(
+                NDCube(data=np.stack((data_object.data[2], data_object.uncertainty.array[2])),
+                       wcs=data_object.wcs[2],
+                       meta=data_object.meta),
+                       processor=PUNCHImageProcessor(layer=2, key="A"))
 
-        # TODO - Need to add logic for layer-by-layer subtraction for polarized data...?
+            data_object.data[...] = np.stack([subtracted_m.subtracted[0],
+                                              subtracted_z.subtracted[0],
+                                              subtracted_p.subtracted[0]], axis=0)
+            data_object.uncertainty.array[...] -= np.stack([subtracted_m.subtracted[1],
+                                                            subtracted_z.subtracted[1],
+                                                            subtracted_p.subtracted[1]], axis=0)
+        else:
+            starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
+            subtracted = starfield_model.subtract_from_image(
+                NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
+                       wcs=data_object.wcs,
+                       meta=data_object.meta),
+                       processor=PUNCHImageProcessor(key="A"))
 
-        data_object.data[...] = subtracted.subtracted[0]
-        data_object.uncertainty.array[...] -= subtracted.subtracted[1]
+            data_object.data[...] = subtracted.subtracted[0]
+            data_object.uncertainty.array[...] -= subtracted.subtracted[1]
 
         # Reset the data to be zero in invalid regions
         data_object.data[original_mask] = 0

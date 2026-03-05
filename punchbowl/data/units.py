@@ -26,7 +26,7 @@ def calculate_image_pixel_area(wcs: WCS, data_shape: tuple[int, int], stride: in
     # The width of a degree of HPLN/RA shrinks as we move toward the poles
     cos_lat = np.cos(np.radians(lat_ctr))
 
-    # 5. Compute the Jacobian Determinant (Area)
+    # Compute the Jacobian Determinant (Area)
     # Area = | (dlon_dx * cos_lat * dlat_dy) - (dlon_dy * cos_lat * dlat_dx) |
     return np.abs((dlon_dx * cos_lat * dlat_dy) - (dlon_dy * cos_lat * dlat_dx))* u.deg**2
 

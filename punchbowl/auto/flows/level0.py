@@ -1038,7 +1038,7 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
                     raise RuntimeError(f"Could not find outlier limits for {get_base_file_name(cube)}")
                 is_outlier = False
             else:
-                is_outlier = not selected_limits.is_good(cube.meta['CROTA'].value)
+                is_outlier = not selected_limits.is_good(cube.meta)
 
             selected_mask = None
             for mask_observatory, mask_date, mask in masks:

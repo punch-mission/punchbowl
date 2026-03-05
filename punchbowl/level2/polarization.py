@@ -34,8 +34,7 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
 
     out = []
     resolved_data_collection = solpolpy.resolve(data_collection,
-                                                "mzpsolar",
-                                                imax_effect=True)
+                                                "mzpsolar")
     for key in resolved_data_collection:
         resolved_data_collection[key].meta = input_collection[key].meta
         resolved_data_collection[key].uncertainty = input_collection[key].uncertainty

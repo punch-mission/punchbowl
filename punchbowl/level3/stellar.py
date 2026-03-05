@@ -50,7 +50,7 @@ def to_celestial(input_data: NDCube) -> NDCube:
     data_collection = NDCollection(collection_contents, aligned_axes="all")
 
     # Resolve data to celestial frame
-    celestial_data_collection = resolve(data_collection, "npol", out_angles=new_angles, imax_effect=False)
+    celestial_data_collection = resolve(data_collection, "npol", out_angles=new_angles)
 
     valid_keys = [key for key in celestial_data_collection if key != "alpha"]
     new_data = [celestial_data_collection[key].data for key in valid_keys]
@@ -87,7 +87,7 @@ def from_celestial(input_data: NDCube) -> NDCube:
     data_collection = NDCollection(collection_contents, aligned_axes="all")
 
     # Resolve data to mzpsolar frame
-    solar_data_collection = resolve(data_collection, "mzpsolar", imax_effect=False)
+    solar_data_collection = resolve(data_collection, "mzpsolar")
 
     valid_keys = [key for key in solar_data_collection if key != "alpha"]
     new_data = [solar_data_collection[key].data for key in valid_keys]

@@ -452,3 +452,57 @@ def load_quickpunch_nfi_wcs() -> tuple[astropy.wcs.WCS, tuple[int, int]]:
     quickpunch_nfi_wcs.array_shape = quickpunch_nfi_shape
 
     return quickpunch_nfi_wcs, quickpunch_nfi_shape
+
+
+def celestial_north_from_wcs(input_wcs, shape, eps=1.0*u.arcsec):
+    """
+    Compute the angle of celestial north direction at each pixel using the WCS.
+
+    Parameters
+    ----------
+    input_wcs : astropy.wcs.WCS
+        2D celestial WCS (e.g., RA/Dec TAN) or a WCS where the celestial axes
+        are the first two. If WCS has extra axes (e.g., STOKES), pass a
+        dropped/sliced 2D WCS (e.g., wcs.dropaxis(2)).
+
+    shape : tuple
+        Shape of the image as (nrows, ncols).
+
+    eps : astropy.units.Quantity
+        Small sky offset applied toward celestial north (positive Dec direction)
+        to estimate the local north direction.
+
+    Returns
+    -------
+    angle_cel_north : 2D numpy.ndarray
+        Angle in degrees from +Y image axis to celestial north at each pixel
+        (measured counterclockwise in the pixel coordinate system):
+            angle = atan2(dx, dy)
+    """
+    nrows, ncols = shape
+    y, x = np.mgrid[0:nrows, 0:ncols]
+    c = input_wcs.pixel_to_world(x, y)
+
+    # Move a tiny amount toward celestial north (increasing Dec) at constant RA
+    # spherical_offsets_by(dlon, dlat): dlon eastward, dlat northward
+    cN = c.spherical_offsets_by(0*u.deg, eps)
+
+    # World -> pixel for the north-offset point
+    xN, yN = input_wcs.world_to_pixel(cN)
+
+    # Pixel-space "north" direction vectors
+    dx = xN - x
+    dy = yN - y
+
+    # Normalize vectors to unit length (avoid divide-by-zero)
+    norm = np.hypot(dx, dy)
+    north_dx = np.zeros_like(dx, dtype=np.float64)
+    north_dy = np.zeros_like(dy, dtype=np.float64)
+    good = norm > 0
+    north_dx[good] = dx[good] / norm[good]
+    north_dy[good] = dy[good] / norm[good]
+
+    # Angle from +Y axis to north vector, -ve for CCW: atan2(dx, dy)
+    angle_cel_north = -np.degrees(np.arctan2(north_dx, north_dy))
+
+    return angle_cel_north

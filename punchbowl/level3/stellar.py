@@ -11,9 +11,11 @@ from prefect import get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import PercentileReducer
 from solpolpy import resolve
+from solpolpy.util import solnorth_from_wcs
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, get_p_angle
+from punchbowl.data.wcs import (calculate_helio_wcs_from_celestial,
+                                get_p_angle, celestial_north_from_wcs)
 from punchbowl.prefect import punch_flow, punch_task
 
 
@@ -27,14 +29,21 @@ def to_celestial(input_data: NDCube) -> NDCube:
     # Create a data collection for M, Z, P components
     mzp_angles = [-60, 0, 60]*u.degree
 
-    # Compute new angles for celestial frame
-    cel_north_offset = get_p_angle(time=input_data[0].meta["DATE-OBS"].value)
-    new_angles = mzp_angles - cel_north_offset
+    ncols, nrows = input_data.data[0].shape
+    wcs1 = WCS(input_data.meta).dropaxis(2)
+    wcs2 = WCS(input_data.meta, key='A').dropaxis(2)
+
+    # Converting polarization w.r.t. Celestial North
+    angle_solar_north = solnorth_from_wcs(wcs1, (nrows, ncols))
+    angle_celest_north = celestial_north_from_wcs(wcs2, (nrows, ncols))
+
+    zoff = (angle_solar_north - angle_celest_north) * u.degree
+    new_angles = np.stack([zoff - 60 * u.deg, zoff, zoff + 60 * u.deg])
 
     collection_contents = [
         (label,
          NDCube(data=input_data[i].data,
-                wcs=input_data.wcs.dropaxis(2),
+                wcs=wcs1,
                 meta={"POLAR": angle}))
         for label, i, angle in zip(["M", "Z", "P"], [0, 1, 2], mzp_angles, strict=False)
     ]

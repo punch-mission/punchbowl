@@ -20,7 +20,7 @@ from punchbowl.data.visualize import animate_punch
 # Two useful datasets to visualize are CAM and PAM - level 3 clear and polarized low-noise mosaics.
 
 # %%
-start_time, end_time = datetime(2025, 10, 31, 0, 0, 0), datetime(2025, 10, 31, 2, 0, 0)
+start_time, end_time = datetime(2025, 10, 14, 14, 30, 0), datetime(2025, 10, 14, 17, 0, 0)
 product_code = "L3_CAM"    # Or L3_PAM for polarized data
 data_type = "Unpolarized"  # Or "Polar_BpB" for polarized data
 version_code = "v0j"
@@ -45,7 +45,7 @@ files = Fido.fetch(result)
 # That file list is then passed into the animator function, along with an output filename.
 
 # %%
-animate_punch(files, output_path="PUNCH_CAM.mp4")
+animate_punch(files, output_path="PUNCH_CAM.mp4", axes_off=True, trim_edge=(0.13, 0.68))
 
 # %% [markdown]
 # .. raw:: html

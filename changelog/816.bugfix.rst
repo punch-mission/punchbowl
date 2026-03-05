@@ -1,0 +1,1 @@
+Fix setting CROTA in DB for L0 files.

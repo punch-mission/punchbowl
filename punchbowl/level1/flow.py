@@ -71,8 +71,11 @@ def level1_early_core_flow(  # noqa: C901
     deficient_pixel_method: str = "median",
     deficient_pixel_required_good_count: int = 3,
     deficient_pixel_max_window_size: int = 10,
-    output_filename: list[str] | None = None,
+    do_align: bool = True,
+    distortion_path: str | None = None,
+    psf_model_path: str | DataLoader | None = None,
     max_workers: int | None = None,
+    output_filename: list[str] | None = None,
     mask_path: str | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1, doing preliminary stray light subtraction."""
@@ -155,6 +158,20 @@ def level1_early_core_flow(  # noqa: C901
             data.data[~mask] = 0
             data.uncertainty.array[~mask] = np.inf
             data.mask[~mask] = 1
+        else:
+            mask = None
+
+        data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
+        if do_align:
+            if data.meta["BADPKTS"].value:
+                data.meta.history.add_now("LEVEL1-align", "Image has bad packets; no alignment applied")
+                logger.info("Bad packets---alignment skipped")
+            else:
+                data = align_task(data, distortion_path)
+
+        if mask is not None:
+            data.data[~mask] = 0
+            data.uncertainty.array[~mask] = np.inf
 
         # Repackage data with proper metadata
         product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
@@ -183,6 +200,11 @@ def level1_early_core_flow(  # noqa: C901
         if isinstance(quartic_coefficient_path, DataLoader):
             quartic_coefficient_path = quartic_coefficient_path.src_repr()
         new_meta["CALCF"] = os.path.basename(quartic_coefficient_path) if quartic_coefficient_path else ""
+
+        if isinstance(psf_model_path, DataLoader):
+            psf_model_path = psf_model_path.src_repr()
+        new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
+
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
         _, _, _, _, moondist, xpix, ypix = check_moon_in_fov(
@@ -265,17 +287,13 @@ def level1_middle_core_flow(
 
 
 @punch_flow
-def level1_late_core_flow( # noqa: C901
+def level1_late_core_flow(
     input_data: list[str] | list[NDCube],
     stray_light_before_path: str | DataLoader | None = None,
     stray_light_after_path: str | DataLoader | None = None,
-    psf_model_path: str | DataLoader | None = None,
-    distortion_path: str | None = None,
     mask_path: str | None = None,
-    do_align: bool = True,
     output_as_Q_file: bool = False, # noqa: N803
     output_filename: list[str] | None = None,
-    max_workers: int | None = None,
 ) -> list[NDCube]:
     """Core flow for level 1, applying final stray light subtraction."""
     logger = get_run_logger()
@@ -289,20 +307,6 @@ def level1_late_core_flow( # noqa: C901
 
         if mask_path:
             mask = load_mask_file(mask_path)
-            data.data[~mask] = 0
-            data.uncertainty.array[~mask] = np.inf
-        else:
-            mask = None
-
-        data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
-        if do_align:
-            if data.meta["BADPKTS"].value:
-                data.meta.history.add_now("LEVEL1-align", "Image has bad packets; no alignment applied")
-                logger.info("Bad packets---alignment skipped")
-            else:
-                data = align_task(data, distortion_path)
-
-        if mask is not None:
             data.data[~mask] = 0
             data.uncertainty.array[~mask] = np.inf
 
@@ -322,10 +326,6 @@ def level1_late_core_flow( # noqa: C901
         new_meta.history = data.meta.history
         new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-
-        if isinstance(psf_model_path, DataLoader):
-            psf_model_path = psf_model_path.src_repr()
-        new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
 
         if isinstance(stray_light_before_path, DataLoader):
             stray_light_before_path = stray_light_before_path.src_repr()

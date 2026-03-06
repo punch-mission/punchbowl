@@ -304,8 +304,7 @@ def construct_stray_light_call_data_processor(call_data: dict, pipeline_config, 
     for key in ["filepaths", "image_mask_path", "fallback_model_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     del call_data["spacecraft"]
-    call_data["num_workers"] = 40
-    call_data["num_loaders"] = 12
+    call_data["num_workers"] = 20
     return call_data
 
 

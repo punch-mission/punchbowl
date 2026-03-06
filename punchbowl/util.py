@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 import numba
 import numpy as np
+from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from numpy.typing import ArrayLike
@@ -427,3 +428,24 @@ def compute_tb(data: NDCube | np.ndarray) -> np.ndarray:
         return data.data[0, ...]
 
     return 2/3 * np.sum(data.data, axis=0)
+
+
+def censor_wcs(wcs: WCS, obstime: bool = True, observer: bool = True) -> WCS:
+    """
+    Remove observer details from a WCS.
+
+    When input images have slightly different viewpoints, Sunpy will say this
+    is an invalid coordinate transformation. Here we censor information from the
+    WCS to pacify Sunpy.
+    """
+    wcs = wcs.deepcopy()
+    if observer:
+        wcs.wcs.aux.hgln_obs = None
+        wcs.wcs.aux.hglt_obs = None
+        wcs.wcs.aux.dsun_obs = None
+    if obstime:
+        wcs.wcs.dateobs = ""
+        wcs.wcs.dateavg = ""
+        wcs.wcs.datebeg = ""
+        wcs.wcs.dateend = ""
+    return wcs

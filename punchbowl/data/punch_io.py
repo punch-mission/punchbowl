@@ -107,7 +107,8 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               include_meta: bool = True,
                               annotation: str | None = None,
                               color: bool = False,
-                              gamma: float = 1/3.0) -> None:
+                              gamma: float = 1/3.0,
+                              write_hash: bool = False) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
 
@@ -133,6 +134,8 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
         flag to generate RGB quicklook files, grayscale by default
     gamma : float
         power law exponent used for color normalization
+    write_hash : bool
+        writes a .sha hash for each file, this is intended for QuickPUNCH products where the SHA is used
 
     Returns
     -------
@@ -211,6 +214,9 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
         meta_boxes.insert(target_index, fits_box)
     jp2.wrap(filename, boxes=meta_boxes)
     os.remove(tmp_filename)
+
+    if write_hash:
+        write_file_hash(filename)
 
 
 def write_quicklook_to_mp4(files: list[str],

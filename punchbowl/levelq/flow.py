@@ -10,16 +10,17 @@ from prefect import get_run_logger
 from punchbowl.data import NormalizedMetadata, get_base_file_name
 from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.punch_io import load_many_cubes
-from punchbowl.data.wcs import load_quickpunch_mosaic_wcs, load_quickpunch_nfi_wcs
+from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
+from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.levelq.pca import pca_filter
 from punchbowl.prefect import punch_flow
 from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
 
-ORDER_QP = ["QR1", "QR2", "QR3", "CNN"]
+ORDER_QP = ["QR1", "QR2", "QR3", "QNN"]
 
 SPACECRAFT_OBSCODE = {"1": "WFI1",
                       "2": "WFI2",
@@ -28,12 +29,12 @@ SPACECRAFT_OBSCODE = {"1": "WFI1",
                       "N": "NFI4"}
 
 @punch_flow
-def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
+def levelq_QNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
                          output_filename: list[str] | None = None,
                          files_to_fit: list[str | NDCube | DataLoader] | None = None,
                          data_root: str | None = None) -> list[NDCube]:
     """
-    Run the LQ CNN flow.
+    Run the LQ QNN flow.
 
     This flow is designed to run on a batch of input CR4 images to facilitate more efficient PCA fitting.
 
@@ -42,7 +43,7 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     data_list : list[str | NDCube]
         The input images, either as paths or NDCubes
     output_filename : list[str]
-        Optional output paths at which the CNN files should be written
+        Optional output paths at which the QNN files should be written
     files_to_fit : list[str | NDCube | DataLoader]
         Additional files to use for the PCA fitting, but not to actually be filtered or output
     data_root : str
@@ -51,11 +52,11 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
     Returns
     -------
     output_cubes : list[NDCube]
-        The CNN data cubes
+        The QNN data cubes
 
     """
     logger = get_run_logger()
-    logger.info("beginning level quickPUNCH CNN core flow")
+    logger.info("beginning level quickPUNCH QNN core flow")
     logger.info(f"Got {len(data_list)} input files and {len(files_to_fit)} extra files for fitting")
 
     output_cubes = []
@@ -71,10 +72,7 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
     pca_filter(data_cubes, files_to_fit)
 
-    quickpunch_nfi_wcs, quickpunch_nfi_shape = load_quickpunch_nfi_wcs()
-    data_list_nfi = reproject_many_flow(data_cubes, quickpunch_nfi_wcs, quickpunch_nfi_shape)
-
-    for i, data_cube in enumerate(data_list_nfi):
+    for i, data_cube in enumerate(data_cubes):
         data = data_cube.data
         uncertainty = data_cube.uncertainty.array
 
@@ -82,11 +80,11 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
         uncertainty[isnan] = np.inf
         data[isnan] = 0
 
-        output_meta_nfi = NormalizedMetadata.load_template("CNN", "Q")
+        output_meta_nfi = NormalizedMetadata.load_template("QNN", "Q")
         output_cube = NDCube(
             data=data,
             uncertainty=StdDevUncertainty(uncertainty),
-            wcs=quickpunch_nfi_wcs,
+            wcs=data_cube.wcs,
             meta=output_meta_nfi,
             )
         output_cube.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -102,7 +100,7 @@ def levelq_CNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(output_cube, output_filename[i])
 
-    logger.info("ending level quickPUNCH CNN core flow")
+    logger.info("ending level quickPUNCH QNN core flow")
     return output_cubes
 
 
@@ -131,7 +129,7 @@ def levelq_CQM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
         logger.info("Ordered files are "
                     f"{[get_base_file_name(cube) if cube is not None else None for cube in ordered_data_list]}")
 
-        quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_quickpunch_mosaic_wcs()
+        quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_trefoil_wcs()
         if trefoil_wcs is not None:
             quickpunch_mosaic_wcs = trefoil_wcs
         if trefoil_shape is not None:
@@ -183,7 +181,7 @@ def levelq_CQM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
         output_datebeg = output_dateobs
         output_dateend = output_datebeg
 
-        quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_quickpunch_mosaic_wcs()
+        quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_trefoil_wcs()
         output_data_mosaic = NDCube(
             data=np.zeros(quickpunch_mosaic_shape),
             uncertainty=StdDevUncertainty(np.zeros(quickpunch_mosaic_shape)),
@@ -243,6 +241,47 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube],  # noqa: N802
         set_spacecraft_location_to_earth(o)
 
     logger.info("ending level Q CTM flow")
+
+    for o in out_list:
+        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+
+    if output_filename is not None:
+        output_image_task(out_list[0], output_filename)
+
+    return out_list
+
+@punch_flow
+def levelq_QAM_core_flow(data_list: list[str] | list[NDCube],  # noqa: N802
+                     output_filename: str | None = None,
+                     reference_time: datetime | None = None) -> list[NDCube]:
+    """Level Q QAM flow."""
+    logger = get_run_logger()
+
+    logger.info("beginning level Q QAM flow")
+    data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+
+    for cube in data_list:
+        # We'll want to grab the history we accumulate through this flow and put it in the final product,
+        # but the per-file history up to now is kind of meaningless for the merged final product.
+        if cube is not None:
+            cube.meta.history.clear()
+
+    data_list = [create_low_noise_task(data_list, reference_time=reference_time)]
+
+    out_list = []
+    for d in data_list:
+        output_meta = NormalizedMetadata.load_template("CTM", "Q")
+        o = NDCube(data=d.data, wcs=d.wcs, meta=output_meta, uncertainty=d.uncertainty)
+        out_list.append(o)
+        o.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        o.meta.history = d.meta.history
+        for key in ["FILEVRSN", "ALL_INPT", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4", "DATE-AVG", "DATE-OBS",
+                    "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
+                    "CTRXNFI4", "CTRYNFI4"]:
+            o.meta[key] = d.meta[key].value
+        set_spacecraft_location_to_earth(o)
+
+    logger.info("ending level Q QAM flow")
 
     for o in out_list:
         o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]

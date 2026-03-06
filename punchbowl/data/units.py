@@ -9,13 +9,17 @@ MSB = u.def_unit("MSB", 2.0090000E7 * u.W / u.m ** 2 / u.sr)
 
 def calculate_image_pixel_area(wcs: WCS, data_shape: tuple[int, int], stride: int = 1) -> u.sr:
     """Calculate the sky area of every pixel in an image according to its WCS."""
-    ny, nx = data_shape
-    y, x = np.indices((ny, nx), dtype=float)
+    xx, yy = np.meshgrid(np.arange(0, data_shape[1], stride),
+                             np.arange(0, data_shape[0], stride))
 
-    # SIP/PV distortions are included
-    lon_ctr, lat_ctr = wcs.all_pix2world(x, y, 0)
-    lon_dx, lat_dx = wcs.all_pix2world(x + stride, y, 0)
-    lon_dy, lat_dy = wcs.all_pix2world(x, y + stride, 0)
+    coords_ctr = wcs.pixel_to_world(xx, yy)
+    lon_ctr, lat_ctr = coords_ctr.Tx.degree, coords_ctr.Ty.degree
+
+    dx = wcs.pixel_to_world(xx + stride, yy)
+    lon_dx, lat_dx = dx.Tx.degree, dx.Ty.degree
+
+    dy = wcs.pixel_to_world(xx, yy + stride)
+    lon_dy, lat_dy = dy.Tx.degree, dy.Ty.degree
 
     dlon_dx = ((lon_dx - lon_ctr + 180) % 360 - 180) / stride
     dlon_dy = ((lon_dy - lon_ctr + 180) % 360 - 180) / stride

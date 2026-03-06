@@ -632,7 +632,8 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
             for y in y_grid:
                 # We can't fork when running under Prefect, so we have to just copy chunks of the data cube to each
                 # worker.
-                data_slice = data_array[bin_mask, y - window_half_width:y + window_half_width + 1, :] # noqa: B023 F821
+                # Copy to avoid holding (and pickling and sending) a reference to the entire cube
+                data_slice = data_array[bin_mask, y - window_half_width:y + window_half_width + 1].copy() # noqa: B023 F821
                 yield data_slice, x_grid, window_half_width
 
         logger.info("Beginning model fitting")

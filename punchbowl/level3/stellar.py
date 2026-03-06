@@ -75,19 +75,30 @@ def from_celestial(input_data: NDCube) -> NDCube:
     # Create a data collection for M, Z, P components
     mzp_angles = [-60, 0, 60]*u.degree
     # Compute new angles for celestial frame
-    cel_north_offset = get_p_angle(time=input_data[0].meta["DATE-OBS"].value)
-    new_angles = mzp_angles - cel_north_offset
+    ncols, nrows = input_data.data[0].shape
+    wcs1 = WCS(input_data.meta).dropaxis(2)
+    wcs2 = WCS(input_data.meta, key='A').dropaxis(2)
+
+    # Converting polarization w.r.t. Celestial North
+    angle_solar_north = solnorth_from_wcs(wcs1, (nrows, ncols))
+    angle_celest_north = celestial_north_from_wcs(wcs2, (nrows, ncols))
+
+    zoff = (angle_solar_north - angle_celest_north) * u.degree
+    new_angles = np.stack([zoff - 60 * u.deg, zoff, zoff + 60 * u.deg])
+
+    # cel_north_offset = get_p_angle(time=input_data[0].meta["DATE-OBS"].value)
+    # new_angles = mzp_angles - cel_north_offset
     collection_contents = [
-        (f"{angle.value} deg",
+        (f"{str(np.round(np.mean(new_angles).value))} deg",
          NDCube(data=input_data[i].data,
-                wcs=input_data.wcs.dropaxis(2),
+                wcs=wcs1,
                 meta={"POLAR": angle}))
         for i, angle in enumerate(new_angles)
     ]
     data_collection = NDCollection(collection_contents, aligned_axes="all")
 
     # Resolve data to mzpsolar frame
-    solar_data_collection = resolve(data_collection, "mzpsolar")
+    solar_data_collection = resolve(data_collection, "mzpsolar", in_angles=new_angles)
 
     valid_keys = [key for key in solar_data_collection if key != "alpha"]
     new_data = [solar_data_collection[key].data for key in valid_keys]

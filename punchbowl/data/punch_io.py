@@ -23,8 +23,9 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, FITSFixedWarning
 from glymur import Jp2k, jp2box
 from matplotlib.colors import PowerNorm
-from ndcube import NDCube
+from ndcube import NDCube, NDCollection
 from PIL import Image, ImageDraw, ImageFont
+from typing import Sequence
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.visualize import cmap_punch
@@ -510,3 +511,45 @@ def decode_outliers(cube: NDCube) -> dict:
         "2": bool(cube.meta["OUTLIER"].value & 0b00100),
         "1": bool(cube.meta["OUTLIER"].value & 0b00010),
     }
+
+
+def remix_collection(data: Sequence[Any] | np.ndarray,
+                    wcs: WCS,
+                    labels: tuple[str, ...] = ("M", "Z", "P"),
+                    indices: tuple[int, ...] = (0, 1, 2),
+                    angles: tuple[u.Quantity, ...] = (-60 * u.deg, 0 * u.deg, 60 * u.deg)
+                    ) -> NDCollection:
+    """
+    Create an NDCollection of image cubes primarily used for solpolpy.
+
+    Parameters
+    ----------
+    data : Ssequence or numpy.ndarray
+        Input cubes containing-
+        - a sequence of NDCube-like objects with a ``.data`` attribute, or
+        - a 3D NumPy array / FITS cube with shape ``(nz, ny, nx)``
+    wcs : astropy.wcs.WCS
+        WCS to assign to the output cubes.
+    labels : tuple[str, ...], optional
+        Labels for the collection entries.
+    indices : tuple[int, ...], optional
+        Indices selecting elements from ``data``.
+    angles : tuple[astropy.units.Quantity, ...], optional
+        Polarizer angles stored in the ``POLAR`` metadata.
+
+    Returns
+    -------
+    NDCollection
+        Collection of ``NDCube`` objects with aligned axes.
+    """
+    if not (len(labels) == len(indices) == len(angles)):
+        raise ValueError("labels, indices, and angles must have the same length.")
+
+    collection_contents: list[tuple[str, NDCube]] = []
+
+    for label, idx, angle in zip(labels, indices, angles, strict=False):
+        cube = NDCube(data=data[idx].data, wcs=wcs,
+            meta={"POLAR": angle})
+        collection_contents.append((label, cube))
+
+    return NDCollection(collection_contents, aligned_axes="all")

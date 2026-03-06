@@ -32,9 +32,10 @@ def read_new_file_metadata(file, path):
                     new_dateobs = file.date_obs.replace(microsecond=int(ms))
             if len(hdul) > 1 and 'DATE' in hdul[1].header:
                 date = hdul[1].header['DATE']
-                new_date_created = parse_datetime_str(date)
-                # Convert to local time
-                new_date_created = new_date_created.replace(tzinfo=UTC).astimezone()
+                if date:
+                    new_date_created = parse_datetime_str(date)
+                    # Convert to local time
+                    new_date_created = new_date_created.replace(tzinfo=UTC).astimezone()
 
             if len(hdul) > 1 and 'OUTLIER' in hdul[1].header:
                 new_outlier = hdul[1].header['OUTLIER']

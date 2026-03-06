@@ -1,0 +1,267 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "punchbowl"
+dynamic = ["version"]
+dependencies = [
+    "numpy",
+    "astropy",
+    "sunpy[all]",
+    "pandas",
+    "ndcube",
+    "matplotlib<=3.10.8",
+    "ccsdspy",
+    "prefect[dask]",
+    "regularizepsf",
+    "solpolpy",
+    "scipy",
+    "lmfit",
+    "sunkit-image",
+    "setuptools",
+    "reproject",
+    "pylibjpeg",
+    "python-dateutil",
+    "remove_starfield>=0.0.4",
+    "quadprog",
+    "pylibjpeg[openjpeg]",
+    "requests",
+    "threadpoolctl",
+    "numexpr",
+    "glymur",
+    "astroscrappy",
+    "scikit-learn",
+    "astrometry",
+    "numba",
+    "pre-commit==4.5.1",
+]
+requires-python = ">=3.11"
+authors = [
+    { name = "J. Marcus Hughes", email = "marcus.hughes@swri.org" },
+    { name = "Chris Lowder", email = "chris.lowder@swri.org" },
+    { name = "Matthew West", email = "matthew.west@swri.org" },
+    { name = "Sarak Kovac", email = "sarah.kovac@swri.org" },
+    { name = "Ritesh Patel", email = "ritesh.patel@swri.org" },
+    { name = "Derek Lamb", email = "derek.lamb@swri.org" },
+    { name = "Dan Seaton", email = "daniel.seaton@swri.org" },
+]
+maintainers = [{ name = "J. Marcus Hughes", email = "marcus.hughes@swri.org" }]
+description = "PUNCH science calibration code"
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["solar physics", "PUNCH", "NASA", "science", "calibration"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-order",
+    "codespell",
+    "coverage",
+    "pytest-cov",
+    "flake8",
+    "pytest-runner",
+    "pytest-mpl",
+    "pre-commit",
+    "ruff",
+    "hypothesis",
+
+]
+
+test_pipe = [
+    "pre-commit",
+    "hypothesis",
+    "pytest",
+    "pytest-asyncio",
+    "coverage",
+    "pytest-cov",
+    "pytest-mock-resources[mysql]",
+    "freezegun",
+    "ruff"
+]
+
+docs = [
+    "astroid>=3",
+    "sphinx",
+    "sphinx-gallery",
+    "sphinx_rtd_theme",
+    "codespell",
+    "packaging",
+    "pydata-sphinx-theme",
+    "sphinx-autoapi",
+    "sphinx-favicon",
+    "jupyterlite-sphinx",
+    "ipython",
+    "ipykernel",
+    "sphinxcontrib-mermaid",
+    "sphinx-copybutton",
+    "ffmpeg-python",
+    "bokeh"
+]
+
+docs_pipe = [
+    "packaging",
+    "sphinx",
+    "pydata-sphinx-theme",
+    "sphinx-autoapi",
+    "sphinx-favicon",
+    "sphinxcontrib-mermaid",
+    "sphinx-automodapi"
+]
+
+pipe = ["ccsdspy",
+    "punchbowl",
+    "simpunch",
+    "prefect[sqlalchemy]",
+    "pymysql",
+    "pandas",
+    "xlrd",
+    "pydantic",
+    "sqlalchemy",
+    "dash >= 4",
+    "dash-bootstrap-components",
+    "coolname",
+    "numpy",
+    "plotly",
+    "pyyaml",
+    "click",
+    "pylibjpeg[libjpeg]",
+    "psutil",
+    "gunicorn",
+    "numpy-quaternion"
+]
+
+dev = ["punchbowl[docs,test,pipe,docs_pipe,test_pipe]"]
+
+[project.scripts]
+punchbowl = "punchbowl.cli:main"
+punchpipe = "punchbowl.auto.cli:main"
+punchpipe_cluster = "punchbowl.auto.cluster:main"
+
+[project.urls]
+#Homepage = "https://example.com"
+Documentation = "https://punchbowl.readthedocs.io/en/latest/"
+Repository = "https://github.com/punch-mission/punchbowl.git"
+"Bug Tracker" = "https://github.com/punch-mission/punchbowl/issues"
+#Changelog = "https://github.com/punch-mission/thuban/blob/main/CHANGELOG.md"
+
+[tool.setuptools_scm]
+
+[tool.setuptools]
+packages = ["punchbowl"]
+
+[tool.codespell]
+skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
+
+[tool.ruff]
+target-version = 'py311'
+exclude = ['tests', 'scripts', 'docs', 'examples', "punchbowl/auto/*"]
+line-length = 120
+lint.select = ["ALL"]
+lint.ignore = [
+    'EM102',
+    'TRY003',
+    'G004',
+    "I001",
+    'D100',
+    'D104',
+    "PTH",
+    "FBT",
+    "TD",
+    "FIX",
+    "PLR",
+    "B028",
+    "NPY002",
+    "PERF401",
+    "PERF403",
+    "PYI041",
+    "ANN401",
+    "PYI024",
+    "DTZ005",
+    "D203",
+    "D212",
+    "TC002",
+    "TC003",
+    "E731",
+    "EM101"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+"*/tests/*" = ['S101']
+"confest.py" = ["ANN", "D"]
+
+[tool.isort]
+balanced_wrapping = true
+default_section = "THIRDPARTY"
+include_trailing_comma = true
+known_compatibility = "future"
+known_first_party = "punchbowl"
+length_sort = false
+length_sort_sections = "stdlib"
+line_length = 120
+multi_line_output = 3
+no_lines_before = "LOCALFOLDER"
+sections = "FUTURE, COMPATIBILITY, STDLIB, THIRDPARTY, FIRSTPARTY, LOCALFOLDER"
+
+[tool.pytest.ini_options]
+markers = [
+    "prefect_test: a test that integrates with Prefect",
+    "regression: a regression test, likely slow",
+]
+
+[tool.gilesbot]
+[tool.gilesbot.pull_requests]
+enabled = true
+
+[tool.gilesbot.towncrier_changelog]
+enabled = true
+changelog_skip_label = "no-changelog-entry-needed" # default is none
+changelog_noop_label = "skip-changelog-checks"
+whatsnew_label = "whatsnew-needed"
+
+[tool.towncrier]
+package = "punchbowl"
+filename = "CHANGELOG.rst"
+directory = "changelog/"
+issue_format = "`#{issue} <https://github.com/punch-mission/punchbowl/pull/{issue}>`__"
+title_format = "{version} ({project_date})"
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "deprecation"
+name = "Deprecations"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "removal"
+name = "Removals"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "feature"
+name = "New Features"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bug Fixes"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "doc"
+name = "Documentation"
+showcontent = true
+
+[[tool.towncrier.type]]
+directory = "trivial"
+name = "Internal Changes"
+showcontent = true

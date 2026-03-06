@@ -7,7 +7,7 @@
 ### [Start by checking the documentation.](https://punchbowl.readthedocs.io/en/latest/)
 
 > [!CAUTION]
-> This package is still being heavily improved as calibration algorithms are improved.
+> This package is still being heavily edited as calibration algorithms are improved.
 > Stability is not promised until v1.
 
 ## Accessing the data

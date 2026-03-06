@@ -18,11 +18,18 @@ def starfield_background_query_ready_files(session, pipeline_config: dict,
                                            reference_time: datetime, reference_file: File):
     logger = get_run_logger()
 
-    min_files_per_half = pipeline_config["flows"]["construct_starfield_background"]["min_files_per_half"]
-    max_files_per_half = pipeline_config["flows"]["construct_starfield_background"]["max_files_per_half"]
-    max_hours_per_half = pipeline_config["flows"]["construct_starfield_background"]["max_hours_per_half"]
-    t_start = reference_time - timedelta(hours=max_hours_per_half)
-    t_end = reference_time + timedelta(hours=max_hours_per_half)
+    before_min_files = pipeline_config["flows"]["construct_starfield_background"]["before_min_files"]
+    before_max_files = pipeline_config["flows"]["construct_starfield_background"]["before_max_files"]
+    after_min_files = pipeline_config["flows"]["construct_starfield_background"]["after_min_files"]
+    after_max_files = pipeline_config["flows"]["construct_starfield_background"]["after_max_files"]
+
+    days_before = pipeline_config["flows"]["construct_starfield_background"]["days_before"]
+    days_after = pipeline_config["flows"]["construct_starfield_background"]["days_after"]
+
+    image_cadence = pipeline_config["flows"]["construct_starfield_background"]["image_cadence"]
+
+    t_start = reference_time - timedelta(days=days_before)
+    t_end = reference_time + timedelta(days=days_after)
 
     target_mapping = {"PS": "PI", "CS": "CI"}
     target_file_type = target_mapping[reference_file.file_type]
@@ -38,17 +45,21 @@ def starfield_background_query_ready_files(session, pipeline_config: dict,
                          .filter(File.date_obs <= reference_time)
                          .filter(File.file_type == target_file_type)
                          .filter(File.level == "3")
-                         .order_by(File.date_obs.desc())
-                         .limit(max_files_per_half).all())
+                         .order_by(File.date_obs.desc()).all())
     second_half_inputs = (base_query
                           .filter(File.date_obs >= reference_time)
                           .filter(File.date_obs <= t_end)
                           .filter(File.file_type == target_file_type)
                           .filter(File.level == "3")
-                          .order_by(File.date_obs.asc())
-                          .limit(max_files_per_half).all())
+                          .order_by(File.date_obs.asc()).all())
+    logger.info("Count of before and after halves pre-cadence step: "
+                f"{len(first_half_inputs)}, {len(second_half_inputs)}")
+    first_half_inputs = first_half_inputs[::image_cadence][0:before_max_files]
+    second_half_inputs = second_half_inputs[::image_cadence][0:after_max_files]
+    logger.info("Count of before and after halves post-cadence step: "
+                f"{len(first_half_inputs)}, {len(second_half_inputs)}")
 
-    enough_inputs = len(first_half_inputs) > min_files_per_half and len(second_half_inputs) > min_files_per_half
+    enough_inputs = len(first_half_inputs) > before_min_files and len(second_half_inputs) > after_min_files
     if enough_inputs:
         all_ready_files = first_half_inputs + second_half_inputs
 
@@ -75,6 +86,9 @@ def construct_starfield_background_flow_info(level3_fcorona_subtracted_files: li
             "filenames": list(set([level3_file.filename() for level3_file in level3_fcorona_subtracted_files])),
             "reference_time": str(reference_time),
             "is_polarized": level3_starfield_model_file[0].file_type[0] == "P",
+            "map_scale": pipeline_config["flows"][flow_type].get("map_scale", 0.01),
+            "target_mem_usage": pipeline_config["flows"][flow_type].get("target_mem_usage", 250),
+            "n_procs": pipeline_config["flows"][flow_type].get("n_procs", 20),
         },
     )
     return Flow(
@@ -90,13 +104,14 @@ def construct_starfield_background_flow_info(level3_fcorona_subtracted_files: li
 @task(cache_policy=NO_CACHE)
 def construct_starfield_background_file_info(level3_files: list[File], pipeline_config: dict,
                                              reference_time: datetime, file_type: str,
-                                    spacecraft: str) -> list[File]:
+                                             spacecraft: str) -> list[File]:
     date_obses = [f.date_obs for f in level3_files]
 
     return [File(
                 level="3",
                 file_type=file_type,
                 observatory="M",
+                polarization=file_type[0],
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
                 date_obs= reference_time,
@@ -135,7 +150,7 @@ def construct_starfield_background_scheduler_flow(pipeline_config_path=None, ses
 
     existing_models = {(model.file_type, model.observatory, model.date_obs): model for model in existing_models}
     t0 = datetime.strptime(pipeline_config["flows"]["construct_starfield_background"]["t0"], "%Y-%m-%d %H:%M:%S")
-    increment = timedelta(hours=float(pipeline_config["flows"]["construct_starfield_background"]["model_spacing_hours"]))
+    increment = timedelta(days=float(pipeline_config["flows"]["construct_starfield_background"]["model_spacing_days"]))
     n = 0
     models_to_try_creating = []
     # I'm sure there's a better way to do this, but let's step forward by increments to the present, and then we'll work
@@ -201,7 +216,6 @@ def construct_starfield_background_scheduler_flow(pipeline_config_path=None, ses
 
 def construct_starfield_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
     call_data["filenames"] = file_name_to_full_path(call_data["filenames"], pipeline_config["root"])
-    call_data["n_procs"] = 10
     return call_data
 
 

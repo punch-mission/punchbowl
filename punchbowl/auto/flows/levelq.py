@@ -460,7 +460,7 @@ def levelq_QAM_query_ready_files(session, pipeline_config: dict, reference_time=
 
     grouped_ready_files = []
     for group in grouped_files:
-        group_is_complete = len(group) == (8 if polarized else 4)
+        group_is_complete = len(group) == 4
 
         if len(grouped_ready_files) >= max_n:
             break

@@ -31,7 +31,13 @@ def validate_image_is_square(image: np.ndarray) -> None:
 
 
 def load_mask_file(path: str) -> np.ndarray:
-    """Load a PUNCH instrument mask."""
+    """
+    Load a PUNCH instrument mask.
+
+    To write a .bin file that this function can read, use:
+    with open('PUNCH_L2_MS1_20250101000000_v0j.bin', 'wb') as f:
+        np.packbits(np.isfinite(mask).T).tofile(f)
+    """
     with open(path, "rb") as f:
         b = f.read()
     return np.unpackbits(np.frombuffer(b, dtype=np.uint8)).reshape(2048, 2048).T.astype(bool)

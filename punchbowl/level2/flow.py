@@ -37,6 +37,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
                      rolloff_strength: float | list[float] = 1,
                      trim_edges_px: int | list[int] = 0,
                      alphas_file: str | None = None,
+                     image_masks: list[str | None] | None = None,
                      output_filename: str | None = None) -> list[NDCube]:
     """
     Level 2 core flow.
@@ -67,6 +68,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
          list can be provided to give one value for each spacecraft.
     alphas_file : str
         File path containing alpha scalings for relative instrument scaling.
+    image_masks: list[str | None] | None
+        File paths containing masks to be applied before reprojection, one per input image.
     output_filename : str | None
         If provided, the resulting mosaic is written to this path.
 
@@ -80,6 +83,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
     logger.info("beginning level 2 core flow")
 
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+    if image_masks is None:
+        image_masks = [None] * len(data_list)
 
     if data_list and not all(cube is None for cube in data_list):
         for cube in data_list:
@@ -97,13 +102,15 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         if polarized:
             # order the data list so it can be processed properly
             ordered_data_list: list[NDCube | None] = [None for _ in range(len(POLARIZED_FILE_ORDER))]
+            ordered_mask_list = [None for _ in range(len(POLARIZED_FILE_ORDER))]
             ordered_voters: list[list[str]] = [[] for _ in range(len(POLARIZED_FILE_ORDER))]
             for i, order_element in enumerate(POLARIZED_FILE_ORDER):
-                for j, data_element in enumerate(data_list):
+                for j, (data_element, mask_element) in enumerate(zip(data_list, image_masks, strict=True)):
                     typecode = data_element.meta["TYPECODE"].value
                     obscode = data_element.meta["OBSCODE"].value
                     if typecode == order_element[:2] and obscode == order_element[2]:
                         ordered_data_list[i] = data_element
+                        ordered_mask_list[i] = mask_element
                         ordered_voters[i] = voter_filenames[j]
             logger.info("Ordered files are "
                         f"{[get_base_file_name(cube) if cube is not None else None for cube in ordered_data_list]}")
@@ -112,6 +119,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             data_list = [entry.result() for entry in data_list]
             data_list = [j for i in data_list for j in i]
             voter_filenames = ordered_voters
+            image_masks = ordered_mask_list
             # Use the Z state for each file
             center_inputs = [cube for cube in ordered_data_list if cube is not None and cube.meta["POLAR"].value == 0]
         else:
@@ -121,7 +129,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         trefoil_wcs = trefoil_wcs or default_trefoil_wcs
         trefoil_shape = trefoil_shape or default_trefoil_shape
 
-        preprocess_trefoil_inputs(data_list, trim_edges_px, alphas_file)
+        preprocess_trefoil_inputs(data_list, image_masks, trim_edges_px, alphas_file)
 
         data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape, rolloff_width=rolloff_width,
                                         rolloff_strength=rolloff_strength)

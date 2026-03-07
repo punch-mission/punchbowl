@@ -706,6 +706,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
         models.append(stray_light_estimate)
         logger.info(f"Finished with bin {bin_n + 1}")
 
+    data_array.free()
     del data_array
 
     if do_uncertainty:

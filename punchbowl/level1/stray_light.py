@@ -459,8 +459,8 @@ def _load_and_reproject(path: str, target_wcs: WCS, data_destination: np.ndarray
     return cube
 
 
-def _subtract_fcor_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, corona_models: list,
-                         corona_model_dates: list, coronal_wcs: WCS):
+def _subtract_coronal_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, corona_models: list,
+                            corona_model_dates: list, coronal_wcs: WCS):
     if wcs is None:
         return
     if dobs <= corona_model_dates[0]:
@@ -508,7 +508,7 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
 
     ctx = multiprocessing.get_context("forkserver")
     with ProcessPoolExecutor(num_workers, mp_context=ctx) as p:
-        for i, result in enumerate(p.map(_subtract_fcor_model,
+        for i, result in enumerate(p.map(_subtract_coronal_model,
                                          data_array, wcses, [m.datetime if m is not None else None for m in metas],
                                          repeat(corona_models), repeat(corona_model_dates),
                                          repeat(mosaic_wcs))):

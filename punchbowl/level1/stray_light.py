@@ -450,22 +450,22 @@ def _load_and_reproject(path: str, target_wcs: WCS) -> tuple[NDCube, np.ndarray]
     return cube, datar
 
 
-def _subtract_fcor_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, f_corona_models: list,
-                         f_corona_model_dates: list, fcor_wcs: WCS) -> np.ndarray:
-    if dobs <= f_corona_model_dates[0]:
-        model = f_corona_models[0]
-    elif dobs >= f_corona_model_dates[-1]:
-        model = f_corona_models[-1]
+def _subtract_fcor_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, corona_models: list,
+                         corona_model_dates: list, coronal_wcs: WCS) -> np.ndarray:
+    if dobs <= corona_model_dates[0]:
+        model = corona_models[0]
+    elif dobs >= corona_model_dates[-1]:
+        model = corona_models[-1]
     else:
-        for i, j in pairwise(range(len(f_corona_model_dates))):
-            if f_corona_model_dates[i] < dobs <= f_corona_model_dates[j]:
+        for i, j in pairwise(range(len(corona_model_dates))):
+            if corona_model_dates[i] < dobs <= corona_model_dates[j]:
                 break
-        model = ((f_corona_models[j] - f_corona_models[i])
-                 * ((dobs - f_corona_model_dates[i]).total_seconds()
-                    / (f_corona_model_dates[j] - f_corona_model_dates[i]).total_seconds())
-                 + f_corona_models[i])
+        model = ((corona_models[j] - corona_models[i])
+                 * ((dobs - corona_model_dates[i]).total_seconds()
+                    / (corona_model_dates[j] - corona_model_dates[i]).total_seconds())
+                 + corona_models[i])
     bottom_crop = 200
-    model = reproject.reproject_adaptive((model, fcor_wcs), wcs[bottom_crop:], (2048-bottom_crop, 2048),
+    model = reproject.reproject_adaptive((model, coronal_wcs), wcs[bottom_crop:], (2048 - bottom_crop, 2048),
                                          roundtrip_coords=False, return_footprint=False, bad_value_mode="ignore",
                                          boundary_mode="ignore")
     np.nan_to_num(model, copy=False)
@@ -475,8 +475,8 @@ def _subtract_fcor_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, f_cor
 
 def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.ndarray, metas: list[NormalizedMetadata],
                                wcses: list[WCS], num_workers: int, mosaic_wcs: WCS, mask: np.ndarray) -> None:
-    f_corona_models = []
-    f_corona_model_dates = []
+    corona_models = []
+    corona_model_dates = []
     dstart = metas[0].datetime
     dstop = dstart
     while dstop < metas[-1].datetime:
@@ -486,8 +486,8 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
         istop = np.argmin([np.abs((m.datetime - dstop).total_seconds()) for m in metas])
         model = nan_percentile(reprojected_array[istart:istop], 5)
         mdate = average_datetime([m.datetime for m in metas[istart:istop]])
-        f_corona_models.append(model)
-        f_corona_model_dates.append(mdate)
+        corona_models.append(model)
+        corona_model_dates.append(mdate)
 
     def args(data_cube: np.ndarray) -> np.ndarray:
         for d in data_cube:
@@ -498,7 +498,7 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
     with ProcessPoolExecutor(num_workers, mp_context=ctx) as p:
         for i, result in enumerate(p.map(_subtract_fcor_model,
                                          args(data_array), wcses, [m.datetime for m in metas],
-                                         repeat(f_corona_models), repeat(f_corona_model_dates),
+                                         repeat(corona_models), repeat(corona_model_dates),
                                          repeat(mosaic_wcs))):
             data_array[i] = result * mask
 

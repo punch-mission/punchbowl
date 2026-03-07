@@ -467,6 +467,12 @@ class ShmPickleableNDArray(np.ndarray):
         obj._shm = shm
         return obj
 
+    @classmethod
+    def from_array(cls, array):
+        obj = ShmPickleableNDArray(array.shape, array.dtype)
+        obj[:] = array
+        return obj
+
     def __array_finalize__(self, obj):
         if obj is None:
             return

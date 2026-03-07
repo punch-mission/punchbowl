@@ -521,6 +521,92 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
     logger.info("Models subtracted")
 
 
+def _make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, strided_image_mask,
+                       x_grid, y_grid, window_half_width, image_mask, data_array, num_workers, make_plots_along_the_way,
+                       blur_sigma, stride, window_size, pool):
+    logger.info(f"Starting bin {bin_n + 1}, containing {np.sum(bin_mask)} images")
+
+    n_outliers = np.sum(outliers[bin_mask])
+    logger.info(f"{n_outliers} outliers in this bin")
+    if fallback_model is not None and n_outliers > 0.1 * np.sum(bin_mask):
+        logger.info("Too many outliers; using fallback model for this bin")
+        return fallback_model[bin_n]
+
+    bin_mask = bin_mask * ~outliers
+
+    # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
+    # inside the mask for this function's inner loop to get enough samples.
+    if strided_image_mask is None:
+        strided_image_mask = np.empty((y_grid.size, x_grid.size), dtype=bool)
+        for i, y in enumerate(y_grid):
+            for j, x in enumerate(x_grid):
+                sample = image_mask[y - window_half_width:y + window_half_width + 1,
+                x - window_half_width:x + window_half_width + 1]
+                strided_image_mask[i, j] = sample.sum() > sample.size * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS
+
+    def args() -> Generator[tuple]:
+        for y in y_grid:
+            yield data_array, y, x_grid, window_half_width, bin_mask
+
+    logger.info("Beginning model fitting")
+
+    stray_light_estimate = np.stack(pool.starmap(_estimate_stray_light_one_slice, args()), axis=0)
+
+    logger.info("Finished model fitting")
+
+    if make_plots_along_the_way:
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Raw")
+        plt.show()
+
+    # Fill spots where the fitting didn't succeed. But don't fill stuff outside the image mask.
+    stray_light_estimate[~strided_image_mask] = 0
+    stray_light_estimate = inpaint_nans(stray_light_estimate, kernel_size=5)
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("post inpaint")
+        plt.show()
+
+    # Now the outer masked region needs to be NaNs so it doesn't impact the Gaussian blurring we're about to do.
+    stray_light_estimate[~strided_image_mask] = np.nan
+
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Filled")
+        plt.show()
+
+    if blur_sigma:
+        stray_light_estimate = nan_gaussian(stray_light_estimate, blur_sigma)
+
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Blurred")
+        plt.show()
+
+    stray_light_estimate[~strided_image_mask] = 0
+
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Masked")
+        plt.show()
+    if stride > 1 or window_size > 1:
+        # Upsample to a proper output size
+        interper = scipy.interpolate.RegularGridInterpolator(
+                (y_grid, x_grid), stray_light_estimate, method="linear", bounds_error=False, fill_value=None)
+        out_y, out_x = np.mgrid[:data_array.shape[1], :data_array.shape[2]]
+        stray_light_estimate = interper(np.stack((out_y, out_x), axis=-1))
+        stray_light_estimate *= image_mask
+
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Interped, final")
+        plt.show()
+
+    logger.info(f"Finished with bin {bin_n + 1}")
+    return stray_light_estimate
+
+
 @punch_flow
 def estimate_stray_light(filepaths: list[str],  # noqa: C901
                          do_uncertainty: bool = True,
@@ -621,90 +707,13 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
     y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
 
     models = []
-    for bin_n, bin_mask in enumerate(bin_masks):
-        logger.info(f"Starting bin {bin_n + 1}, containing {np.sum(bin_mask)} images")
+    ctx = multiprocessing.get_context("forkserver")
+    with ctx.Pool(num_workers) as pool:
+        for bin_n, bin_mask in enumerate(bin_masks):
+            models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, strided_image_mask,
+                       x_grid, y_grid, window_half_width, image_mask, data_array, num_workers, make_plots_along_the_way,
+                       blur_sigma, stride, window_size, pool))
 
-        n_outliers = np.sum(outliers[bin_mask])
-        logger.info(f"{n_outliers} outliers in this bin")
-        if fallback_model is not None and n_outliers > 0.1 * np.sum(bin_mask):
-            logger.info("Too many outliers; using fallback model for this bin")
-            models.append(fallback_model[bin_n])
-            continue
-
-        bin_mask = bin_mask * ~outliers # noqa: PLW2901
-
-        # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
-        # inside the mask for this function's inner loop to get enough samples.
-        if strided_image_mask is None:
-            strided_image_mask = np.empty((y_grid.size, x_grid.size), dtype=bool)
-            for i, y in enumerate(y_grid):
-                for j, x in enumerate(x_grid):
-                    sample = image_mask[y - window_half_width:y + window_half_width + 1,
-                                        x - window_half_width:x + window_half_width + 1]
-                    strided_image_mask[i, j] = sample.sum() > sample.size * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS
-
-        def args() -> Generator[tuple]:
-            for y in y_grid:
-                yield data_array, y, x_grid, window_half_width, bin_mask
-
-        logger.info("Beginning model fitting")
-        ctx = multiprocessing.get_context("forkserver")
-        with ctx.Pool(num_workers) as p:
-            stray_light_estimate = np.stack(p.starmap(_estimate_stray_light_one_slice, args()), axis=0)
-
-        logger.info("Finished model fitting")
-
-        if make_plots_along_the_way:
-            import matplotlib.pyplot as plt  # noqa: PLC0415
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Raw")
-            plt.show()
-
-        # Fill spots where the fitting didn't succeed. But don't fill stuff outside the image mask.
-        stray_light_estimate[~strided_image_mask] = 0
-        stray_light_estimate = inpaint_nans(stray_light_estimate, kernel_size=5)
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("post inpaint")
-            plt.show()
-
-        # Now the outer masked region needs to be NaNs so it doesn't impact the Gaussian blurring we're about to do.
-        stray_light_estimate[~strided_image_mask] = np.nan
-
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Filled")
-            plt.show()
-
-        if blur_sigma:
-            stray_light_estimate = nan_gaussian(stray_light_estimate, blur_sigma)
-
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Blurred")
-            plt.show()
-
-        stray_light_estimate[~strided_image_mask] = 0
-
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Masked")
-            plt.show()
-        if stride > 1 or window_size > 1:
-            # Upsample to a proper output size
-            interper = scipy.interpolate.RegularGridInterpolator(
-                    (y_grid, x_grid), stray_light_estimate, method="linear", bounds_error=False, fill_value=None)
-            out_y, out_x = np.mgrid[:data_array.shape[1], :data_array.shape[2]]
-            stray_light_estimate = interper(np.stack((out_y, out_x), axis=-1))
-            stray_light_estimate *= image_mask
-
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Interped, final")
-            plt.show()
-
-        models.append(stray_light_estimate)
-        logger.info(f"Finished with bin {bin_n + 1}")
 
     data_array.free()
     del data_array

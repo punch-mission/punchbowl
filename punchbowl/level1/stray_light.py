@@ -552,10 +552,12 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
 
     mosaic_wcs, _ = load_trefoil_wcs()
     # Fit the edges of every image in the mosiac by zooming out a tad
-    mosaic_wcs.wcs.cdelt = 0.024, 0.024
+    mosaic_wcs.wcs.cdelt = 0.024 * 2, 0.024 * 2
+    mosaic_wcs.wcs.crpix = 1024, 1024
+    mosaic_wcs.array_shape = (2048, 2048)
 
     data_array = ShmPickleableNDArray((len(filepaths), 2048, 2048), dtype=np.float32)
-    reprojected_array = ShmPickleableNDArray((len(filepaths), 4096, 4096), dtype=np.float32)
+    reprojected_array = ShmPickleableNDArray((len(filepaths), *mosaic_wcs.array_shape), dtype=np.float32)
     uncertainty = None
     metas = []
     wcses = []

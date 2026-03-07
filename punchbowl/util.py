@@ -482,6 +482,16 @@ class ShmPickleableNDArray(np.ndarray):
         self._shm.close()
         self._shm.unlink()
 
+    def __getitem__(self, *args, **kwargs):
+        if self._shm is None:
+            raise RuntimeError("Attempt to access array that's already been freed")
+        return super().__getitem__(*args, **kwargs)
+
+    def __repr__(self, *args, **kwargs):
+        if self._shm is None:
+            return "<freed ShmPickleableNDArray>"
+        return super().__repr__(*args, **kwargs)
+
     def __reduce__(self):
         base = self
         while isinstance(base.base, ShmPickleableNDArray):

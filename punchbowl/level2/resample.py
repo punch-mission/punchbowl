@@ -16,6 +16,7 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
                    rolloff_strength: float | list[float] = 1,
                    rolloff_width: float | list[float] = .25,
                    do_uncertainty: bool = True,
+                   output_array: np.ndarray | None = None,
                    repro_args: dict | None = None) -> np.ndarray:
     """
     Core reprojection function.
@@ -127,7 +128,10 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         xmax = np.min((xmax, output_shape[1]))
         ymax = np.min((ymax, output_shape[0]))
 
-    output_array = np.full((2 if do_uncertainty else 1, *output_shape), np.nan)
+    if output_array is None:
+        output_array = np.full((2 if do_uncertainty else 1, *output_shape), np.nan)
+    elif len(output_array.shape) == 2:
+        output_array = np.expand_dims(output_array, 0)
 
     # We will roll off the uncertainty by the inverse of the distance to the edge of the mask.
     # This allows pixels closer to the center to be weighted more than those on the edge.
@@ -152,7 +156,7 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         input_data = np.stack([input_data, input_uncertainty])
 
     # Reproject will complain if the input and output arrays have different dtypes
-    input_data = np.asarray(input_data, dtype=float)
+    input_data = np.asarray(input_data, dtype=output_array.dtype)
 
     reproject.reproject_adaptive(
         (input_data, celestial_source),

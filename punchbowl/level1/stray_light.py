@@ -29,6 +29,7 @@ from punchbowl.level2.resample import reproject_cube
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import (
     DataLoader,
+    ShmPickleableNDArray,
     average_datetime,
     inpaint_nans,
     interpolate_data,
@@ -423,12 +424,19 @@ def _estimate_stray_light_one_slice(data_slice: np.ndarray, x_grid: np.ndarray, 
     return result
 
 
-def _load_and_reproject(path: str, target_wcs: WCS) -> tuple[NDCube, np.ndarray] | str:
+def _load_and_reproject(path: str, target_wcs: WCS, data_destination: np.ndarray, repro_destination: np.ndarray,
+                        ) -> tuple[NDCube, np.ndarray] | str:
+    repro_destination[:] = np.nan
     try:
         cube = load_ndcube_from_fits(path, dtype=np.float32, include_provenance=False)
     except Exception as e: # noqa: BLE001
+        data_destination[:] = np.nan
         return str(e)
-    data = cube.data.copy()
+    data = cube.data
+    data_destination[:] = cube.data
+    cube = NDCube(data_destination, meta=cube.meta, wcs=cube.wcs, uncertainty=cube.uncertainty)
+    # `data` is now an independent copy
+
     data[np.isinf(cube.uncertainty.array)] = np.nan
 
     y, x = np.mgrid[:2048, :2048]
@@ -437,21 +445,24 @@ def _load_and_reproject(path: str, target_wcs: WCS) -> tuple[NDCube, np.ndarray]
     data[y < 600 - x] = np.nan
     data[y < 600 - (2048 - x)] = np.nan
 
-    data = data[200:, 200:-200]
-    wcs_cropped = cube.wcs[200:, 200:-200]
+    data = data[:, 200:-200]
+    wcs_cropped = cube.wcs[:, 200:-200]
 
     with warnings.catch_warnings(), np.errstate(all="ignore"):
         warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")
         datar = reproject_cube.fn(NDCube(data, meta=cube.meta, wcs=wcs_cropped), target_wcs, (4096, 4096),
                                   rolloff_strength=0, rolloff_width=0,
+                                  output_array=repro_destination,
                                   repro_args={"boundary_mode": "ignore", "bad_value_mode": "ignore"},
                                   do_uncertainty=False)
-    datar = datar.astype(np.float32)
-    return cube, datar
+    repro_destination[:] = datar.astype(np.float32)
+    return cube
 
 
 def _subtract_fcor_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, corona_models: list,
-                         corona_model_dates: list, coronal_wcs: WCS) -> np.ndarray:
+                         corona_model_dates: list, coronal_wcs: WCS):
+    if wcs is None:
+        return
     if dobs <= corona_model_dates[0]:
         model = corona_models[0]
     elif dobs >= corona_model_dates[-1]:
@@ -470,7 +481,7 @@ def _subtract_fcor_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, coron
                                          boundary_mode="ignore")
     np.nan_to_num(model, copy=False)
     data_slice[bottom_crop:] -= model
-    return data_slice
+    return
 
 
 @punch_task
@@ -480,31 +491,28 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
     logger.info("Making coronal models")
     corona_models = []
     corona_model_dates = []
-    dstart = metas[0].datetime
+    valid_dates = [m.datetime for m in metas if m is not None]
+    dstart = valid_dates[0]
     dstop = dstart
-    while dstop < metas[-1].datetime:
+    while dstop < valid_dates[-1]:
         dstart = dstop
         dstop = dstart + timedelta(hours=24)
-        istart = np.argmin([np.abs((m.datetime - dstart).total_seconds()) for m in metas])
-        istop = np.argmin([np.abs((m.datetime - dstop).total_seconds()) for m in metas])
+        istart = np.argmin([np.abs((m.datetime - dstart).total_seconds()) if m is not None else 9e99 for m in metas])
+        istop = np.argmin([np.abs((m.datetime - dstop).total_seconds()) if m is not None else 9e99 for m in metas])
         model = nan_percentile(reprojected_array[istart:istop], 5)
-        mdate = average_datetime([m.datetime for m in metas[istart:istop]])
+        mdate = average_datetime([m.datetime for m in metas[istart:istop] if m is not None])
         corona_models.append(model)
         corona_model_dates.append(mdate)
 
     logger.info("Models made; subtracting")
-    def args(data_cube: np.ndarray) -> np.ndarray:
-        for d in data_cube:
-            # Copy to avoid holding (and pickling and sending) a reference to the entire cube
-            yield d.copy()
 
     ctx = multiprocessing.get_context("forkserver")
     with ProcessPoolExecutor(num_workers, mp_context=ctx) as p:
         for i, result in enumerate(p.map(_subtract_fcor_model,
-                                         args(data_array), wcses, [m.datetime for m in metas],
+                                         data_array, wcses, [m.datetime if m is not None else None for m in metas],
                                          repeat(corona_models), repeat(corona_model_dates),
                                          repeat(mosaic_wcs))):
-            data_array[i] = result * mask
+            data_array[i] *= mask
             if (i + 1) % 100 == 0:
                 logger.info(f"Corona-subtracted {i + 1}/{len(data_array)} files")
     logger.info("Models subtracted")
@@ -543,32 +551,27 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
     # Fit the edges of every image in the mosiac by zooming out a tad
     mosaic_wcs.wcs.cdelt = 0.024, 0.024
 
-    data_array = None
-    reprojected_array = None
+    data_array = ShmPickleableNDArray((len(filepaths), 2048, 2048), dtype=np.float32)
+    reprojected_array = ShmPickleableNDArray((len(filepaths), 4096, 4096), dtype=np.float32)
     uncertainty = None
     metas = []
     wcses = []
-    j = 0
     n_failed = 0
     logger.info(f"Will read {len(filepaths)} images")
     ctx = multiprocessing.get_context("forkserver")
     with ProcessPoolExecutor(num_workers, mp_context=ctx) as p:
-        for i, result in enumerate(p.map(_load_and_reproject, filepaths, repeat(mosaic_wcs))):
+        for i, result in enumerate(p.map(_load_and_reproject, filepaths, repeat(mosaic_wcs), data_array, reprojected_array)):
             if isinstance(result, str):
                 logger.warning(f"Loading {filepaths[i]} failed")
                 logger.warning(result)
                 n_failed += 1
+                metas.append(None)
+                wcses.append(None)
                 if n_failed > .05 * len(filepaths):
                     raise RuntimeError(f"{n_failed} files failed to load, stopping")
                 continue
             # We need to save a sample cube (not a string/error message) for the end of this flow
-            cube, data_r = result
-            if data_array is None:
-                data_array = np.empty((len(filepaths), *cube.data.shape), dtype=cube.data.dtype)
-                reprojected_array = np.empty((len(filepaths), *data_r.shape), dtype=data_r.dtype)
-            data_array[j] = cube.data
-            reprojected_array[j] = data_r
-            j += 1
+            cube = result
             metas.append(cube.meta)
             wcses.append(cube.wcs)
 
@@ -581,9 +584,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
             if (i + 1) % 100 == 0:
                 logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
     logger.info(f"Finished loaded files, saw {n_failed} failures")
-    data_array = data_array[:j]
-    reprojected_array = reprojected_array[:j]
-    outliers = np.array([m["OUTLIER"].value for m in metas])
+    outliers = np.array([True if m is None else m["OUTLIER"].value for m in metas])
 
     if image_mask is None:
         image_mask = ~np.all(data_array == 0, axis=0)
@@ -602,7 +603,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
 
     bin_masks = []
     for binn in range(n_crota_bins):
-        mask = np.array([crota_is_in_bin(m["CROTA"].value, binn) for m in metas])
+        mask = np.array([False if m is None else crota_is_in_bin(m["CROTA"].value, binn) for m in metas])
         bin_masks.append(mask)
         logger.info(f"Bin centered at CROTA {bin_centers[binn]} has {np.sum(mask)} images")
 
@@ -640,7 +641,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
                 # We can't fork when running under Prefect, so we have to just copy chunks of the data cube to each
                 # worker.
                 # Copy to avoid holding (and pickling and sending) a reference to the entire cube
-                data_slice = data_array[bin_mask, y - window_half_width:y + window_half_width + 1].copy() # noqa: B023 F821
+                data_slice = data_array[bin_mask, y - window_half_width:y + window_half_width + 1] # noqa: B023 F821
                 yield data_slice, x_grid, window_half_width
 
         logger.info("Beginning model fitting")
@@ -707,10 +708,10 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
     if do_uncertainty:
         uncertainty = np.sqrt(uncertainty) / len(filepaths)
 
-    out_type = "S" + metas[0].product_code[1:]
+    out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
-    meta.provenance = [m["FILENAME"] for m in metas]
-    all_date_obses = [m.datetime for m in metas]
+    meta.provenance = [m["FILENAME"] for m in metas if m is not None]
+    all_date_obses = [m.datetime for m in metas if m is not None]
     meta["DATE-AVG"] = average_datetime(all_date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") if reference_time else meta["DATE-AVG"].value
     meta["DATE-BEG"] = min(all_date_obses).strftime("%Y-%m-%dT%H:%M:%S")

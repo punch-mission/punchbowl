@@ -3,6 +3,7 @@ import abc
 import warnings
 from typing import Generic, TypeVar
 from datetime import UTC, datetime
+from multiprocessing.shared_memory import SharedMemory
 
 import numba
 import numpy as np
@@ -449,3 +450,39 @@ def censor_wcs(wcs: WCS, obstime: bool = True, observer: bool = True) -> WCS:
         wcs.wcs.datebeg = ""
         wcs.wcs.dateend = ""
     return wcs
+
+
+class ShmPickleableNDArray(np.ndarray):
+    def __new__(cls, shape, dtype=np.float64, buffer_name=None, strides=None, offset=0, **kwargs):
+        nbytes = 1
+        for e in shape:
+            nbytes *= e
+        nbytes *= np.dtype(dtype).itemsize
+
+        # size is ignored if create is False
+        shm = SharedMemory(create=buffer_name is None, size=nbytes, track=True, name=buffer_name)
+
+        obj = super().__new__(cls, shape=shape, dtype=dtype, buffer=shm.buf, strides=strides,
+                              offset=offset, **kwargs)
+        obj._shm = shm
+        return obj
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+        self._shm = getattr(obj, "_shm", None)
+
+    def free(self):
+        self._shm.close()
+        self._shm.unlink()
+
+    def __reduce__(self):
+        base = self
+        while isinstance(base.base, ShmPickleableNDArray):
+            base = base.base
+        base_bounds = np.lib.array_utils.byte_bounds(base)
+        our_bounds = np.lib.array_utils.byte_bounds(self)
+        offset = our_bounds[0] - base_bounds[0]
+
+        return ShmPickleableNDArray.__new__, (ShmPickleableNDArray, self.shape, self.dtype, self._shm.name,
+                                              self.strides, offset)

@@ -65,26 +65,26 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
 
     input_data = input_cube.data
     input_wcs = input_cube.wcs
-    input_uncertainty = input_cube.uncertainty.array
+    input_uncertainty = input_cube.uncertainty.array if do_uncertainty else None
     time = input_cube.meta.astropy_time
 
     # Trim empty parts of the image, so we don't have to compute coordinates there or reproject those pixels
     while np.all(np.isnan(input_data[:, 0])):
         input_data = input_data[:, 1:]
-        input_uncertainty = input_uncertainty[:, 1:]
+        input_uncertainty = input_uncertainty[:, 1:] if do_uncertainty else None
         input_wcs = input_wcs[:, 1:]
     while np.all(np.isnan(input_data[:, -1])):
         input_data = input_data[:, :-1]
-        input_uncertainty = input_uncertainty[:, :-1]
+        input_uncertainty = input_uncertainty[:, :-1] if do_uncertainty else None
         input_wcs = input_wcs[:, :-1]
 
     while np.all(np.isnan(input_data[0])):
         input_data = input_data[1:]
-        input_uncertainty = input_uncertainty[1:]
+        input_uncertainty = input_uncertainty[1:] if do_uncertainty else None
         input_wcs = input_wcs[1:]
     while np.all(np.isnan(input_data[-1])):
         input_data = input_data[:-1]
-        input_uncertainty = input_uncertainty[:-1]
+        input_uncertainty = input_uncertainty[:-1] if do_uncertainty else None
         input_wcs = input_wcs[:-1]
 
     celestial_source = calculate_celestial_wcs_from_helio(input_wcs, time, output_shape)

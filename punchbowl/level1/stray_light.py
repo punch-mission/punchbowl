@@ -457,7 +457,7 @@ def _load_and_reproject(path: str, target_wcs: WCS, data_destination: np.ndarray
                           rolloff_strength=0, rolloff_width=0,
                           output_array=repro_destination,
                           repro_args={"boundary_mode": "ignore", "bad_value_mode": "ignore"},
-                          xdo_uncertainty=False)
+                          do_uncertainty=False)
     return cube
 
 

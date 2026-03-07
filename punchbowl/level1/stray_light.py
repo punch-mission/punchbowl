@@ -406,11 +406,14 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
 REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS = 0.5
 
 
-def _estimate_stray_light_one_slice(data_slice: np.ndarray, x_grid: np.ndarray, half_width: int) -> np.ndarray:
+def _estimate_stray_light_one_slice(data_array: np.ndarray, y: int, x_grid: np.ndarray, half_width: int,
+                                    bin_mask: np.ndarray) -> np.ndarray:
     """This is our parallel worker, computing the stray light model for one y coordinate.""" # noqa: D401 D404
     result = np.empty(x_grid.shape)
     for j, x in enumerate(x_grid):
-        stack = data_slice[:, :, x - half_width:x + half_width + 1].ravel()
+        stack = data_array[bin_mask,
+                           y - half_width : y + half_width + 1,
+                           x - half_width : x + half_width + 1].ravel()
         n_pts = stack.size
         stack = stack[np.abs(stack) > 1e-17]
         if stack.size < n_pts * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS:
@@ -450,12 +453,11 @@ def _load_and_reproject(path: str, target_wcs: WCS, data_destination: np.ndarray
 
     with warnings.catch_warnings(), np.errstate(all="ignore"):
         warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")
-        datar = reproject_cube.fn(NDCube(data, meta=cube.meta, wcs=wcs_cropped), target_wcs, (4096, 4096),
-                                  rolloff_strength=0, rolloff_width=0,
-                                  output_array=repro_destination,
-                                  repro_args={"boundary_mode": "ignore", "bad_value_mode": "ignore"},
-                                  do_uncertainty=False)
-    repro_destination[:] = datar.astype(np.float32)
+        reproject_cube.fn(NDCube(data, meta=cube.meta, wcs=wcs_cropped), target_wcs, repro_destination.shape,
+                          rolloff_strength=0, rolloff_width=0,
+                          output_array=repro_destination,
+                          repro_args={"boundary_mode": "ignore", "bad_value_mode": "ignore"},
+                          xdo_uncertainty=False)
     return cube
 
 
@@ -500,6 +502,7 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
         istart = np.argmin([np.abs((m.datetime - dstart).total_seconds()) if m is not None else 9e99 for m in metas])
         istop = np.argmin([np.abs((m.datetime - dstop).total_seconds()) if m is not None else 9e99 for m in metas])
         model = nan_percentile(reprojected_array[istart:istop], 5)
+        model = ShmPickleableNDArray.from_array(model)
         mdate = average_datetime([m.datetime for m in metas[istart:istop] if m is not None])
         corona_models.append(model)
         corona_model_dates.append(mdate)
@@ -508,7 +511,7 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
 
     ctx = multiprocessing.get_context("forkserver")
     with ProcessPoolExecutor(num_workers, mp_context=ctx) as p:
-        for i, result in enumerate(p.map(_subtract_coronal_model,
+        for i, _ in enumerate(p.map(_subtract_coronal_model,
                                          data_array, wcses, [m.datetime if m is not None else None for m in metas],
                                          repeat(corona_models), repeat(corona_model_dates),
                                          repeat(mosaic_wcs))):
@@ -560,7 +563,8 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
     logger.info(f"Will read {len(filepaths)} images")
     ctx = multiprocessing.get_context("forkserver")
     with ProcessPoolExecutor(num_workers, mp_context=ctx) as p:
-        for i, result in enumerate(p.map(_load_and_reproject, filepaths, repeat(mosaic_wcs), data_array, reprojected_array)):
+        for i, result in enumerate(p.map(
+                _load_and_reproject, filepaths, repeat(mosaic_wcs), data_array, reprojected_array)):
             if isinstance(result, str):
                 logger.warning(f"Loading {filepaths[i]} failed")
                 logger.warning(result)
@@ -590,6 +594,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
         image_mask = ~np.all(data_array == 0, axis=0)
 
     _build_and_subtract_corona(reprojected_array, data_array, metas, wcses, num_workers, mosaic_wcs, image_mask)
+    reprojected_array.free()
     del reprojected_array
 
     # Build our CROTA bins
@@ -638,11 +643,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
 
         def args() -> Generator[tuple]:
             for y in y_grid:
-                # We can't fork when running under Prefect, so we have to just copy chunks of the data cube to each
-                # worker.
-                # Copy to avoid holding (and pickling and sending) a reference to the entire cube
-                data_slice = data_array[bin_mask, y - window_half_width:y + window_half_width + 1] # noqa: B023 F821
-                yield data_slice, x_grid, window_half_width
+                yield data_array, y, x_grid, window_half_width, bin_mask
 
         logger.info("Beginning model fitting")
         ctx = multiprocessing.get_context("forkserver")

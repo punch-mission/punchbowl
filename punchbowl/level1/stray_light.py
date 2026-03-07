@@ -473,8 +473,11 @@ def _subtract_fcor_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, coron
     return data_slice
 
 
+@punch_task
 def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.ndarray, metas: list[NormalizedMetadata],
                                wcses: list[WCS], num_workers: int, mosaic_wcs: WCS, mask: np.ndarray) -> None:
+    logger = get_run_logger()
+    logger.info("Making coronal models")
     corona_models = []
     corona_model_dates = []
     dstart = metas[0].datetime
@@ -489,6 +492,7 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
         corona_models.append(model)
         corona_model_dates.append(mdate)
 
+    logger.info("Models made; subtracting")
     def args(data_cube: np.ndarray) -> np.ndarray:
         for d in data_cube:
             # Copy to avoid holding (and pickling and sending) a reference to the entire cube
@@ -501,6 +505,9 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
                                          repeat(corona_models), repeat(corona_model_dates),
                                          repeat(mosaic_wcs))):
             data_array[i] = result * mask
+            if (i + 1) % 100 == 0:
+                logger.info(f"Corona-subtracted {i + 1}/{len(data_array)} files")
+    logger.info("Models subtracted")
 
 
 @punch_flow

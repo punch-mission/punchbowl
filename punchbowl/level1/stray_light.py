@@ -743,6 +743,8 @@ def estimate_stray_light(filepaths: list[str],
 
     # Let's put in a valid, representative WCS, with the right scale and sun-relative pointing, etc.
     wcs = cube.wcs
+    wcs.cpdis1 = None
+    wcs.cpdis2 = None
     out_cube = NDCube(data=np.array(models), meta=meta, wcs=wcs, uncertainty=StdDevUncertainty(uncertainty))
 
     return [out_cube]

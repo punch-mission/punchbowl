@@ -581,9 +581,9 @@ def _make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, stride
 
     logger.info("Beginning model fitting")
 
-    stray_light_estimate = np.stack(pool.map(
+    stray_light_estimate = np.stack(list(pool.map(
             _estimate_stray_light_one_slice, repeat(data_array), y_grid, repeat(x_grid), repeat(window_half_width),
-            repeat(bin_mask)), axis=0)
+            repeat(bin_mask))), axis=0)
 
     logger.info("Finished model fitting")
 

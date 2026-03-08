@@ -677,7 +677,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
             if (i + 1) % 100 == 0:
                 logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
     logger.info(f"Finished loading files, saw {n_failed} failures")
-    outliers = np.array([True if m is None else m["OUTLIER"].value for m in metas])
+    outliers = np.array([True if m is None else m["OUTLIER"].value != 0 for m in metas])
 
     if image_mask is None:
         image_mask = ~np.all(data_array == 0, axis=0)

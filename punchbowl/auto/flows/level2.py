@@ -118,7 +118,7 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
         # Otherwise, we'll pass for now on processing this trefoil
         continue
 
-    final_input_files = [f for f in g for g in grouped_ready_files]
+    final_input_files = [f for g in grouped_ready_files for f in g]
     masks = get_mask_files(final_input_files, pipeline_config, session, level='2')
     for file, mask in zip(final_input_files, masks):
         file.mask = mask
@@ -238,7 +238,7 @@ def level2_construct_flow_info(level1_files: list[File], level2_file: File, pipe
     call_data = json.dumps(
         {
             "data_list": [level1_file.filename() for level1_file in level1_files],
-            "image_masks": [level1_file.mask.filename() for level1_file in level1_files],
+            "image_masks": [level1_file.mask.filename().replace(".fits", ".bin") for level1_file in level1_files],
             "voter_filenames": [[] for _ in level1_files],
             "alphas_file": alphas_path,
             "trim_edges_px": trim_edges_px,

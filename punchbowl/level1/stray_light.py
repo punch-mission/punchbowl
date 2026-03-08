@@ -1,4 +1,5 @@
 import pathlib
+import time
 import warnings
 import multiprocessing
 from datetime import UTC, datetime, timedelta
@@ -677,14 +678,18 @@ def estimate_stray_light(filepaths: list[str],
 
     ctx = multiprocessing.get_context("forkserver")
     with ProcessPoolExecutor(num_workers, mp_context=ctx) as pool:
+        start = time.time()
         data_array, reprojected_array, wcses, metas, uncertainty, cube = _load_files(
                 filepaths, mosaic_wcs, logger, do_uncertainty, pool)
+        time_loading = time.time() - start
         outliers = np.array([True if m is None else m["OUTLIER"].value != 0 for m in metas])
 
         if image_mask is None:
             image_mask = ~np.all(data_array == 0, axis=0)
 
+        start = time.time()
         _build_and_subtract_corona(reprojected_array, data_array, metas, wcses, mosaic_wcs, image_mask, pool)
+        time_corona = time.time() - start
 
         # Free this memory early, as we don't need it anymore
         reprojected_array.free()
@@ -712,14 +717,19 @@ def estimate_stray_light(filepaths: list[str],
         y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
 
         models = []
+        start = time.time()
         for bin_n, bin_mask in enumerate(bin_masks):
             models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, strided_image_mask,
                        x_grid, y_grid, window_half_width, image_mask, data_array, make_plots_along_the_way,
                        blur_sigma, stride, window_size, pool))
+        time_making_models = time.time() - start
 
     # Free this memory early, as we don't need it anymore
     data_array.free()
     del data_array
+
+    logger.info(f"Spent {time_loading:.1f} s loading & reprojecting, {time_corona:.1f} s subtracting corona, and "
+                f"{time_making_models:.1f} s making SL models")
 
     if do_uncertainty:
         uncertainty = np.sqrt(uncertainty) / len(filepaths)

@@ -7,6 +7,7 @@ from itertools import repeat, pairwise
 from collections.abc import Generator
 from concurrent.futures import ProcessPoolExecutor
 
+import numba
 import numpy as np
 import reproject
 import scipy
@@ -483,7 +484,6 @@ def _subtract_coronal_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, co
                                          boundary_mode="ignore")
     np.nan_to_num(model, copy=False)
     data_slice[bottom_crop:] -= model
-    return
 
 
 @punch_task
@@ -622,6 +622,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
                          num_workers: int | None = None) -> list[NDCube]:
     """Estimate the fixed stray light pattern using a percentile."""
     logger = get_run_logger()
+    numba.set_num_threads(num_workers)
     if window_size % 2 == 0:
         raise ValueError("Window size must be odd")
     logger.info(f"Running with {len(filepaths)} input files")

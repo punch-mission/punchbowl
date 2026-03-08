@@ -4,7 +4,6 @@ import multiprocessing
 from datetime import UTC, datetime, timedelta
 from functools import cached_property
 from itertools import repeat, pairwise
-from collections.abc import Generator
 from concurrent.futures import ProcessPoolExecutor
 
 import numba
@@ -428,6 +427,43 @@ def _estimate_stray_light_one_slice(data_array: np.ndarray, y: int, x_grid: np.n
     return result
 
 
+def _load_files(filepaths, mosaic_wcs, logger, do_uncertainty, pool):
+    data_array = ShmPickleableNDArray((len(filepaths), 2048, 2048), dtype=np.float32)
+    reprojected_array = ShmPickleableNDArray((len(filepaths), *mosaic_wcs.array_shape), dtype=np.float32)
+    uncertainty = None
+    metas = []
+    wcses = []
+    n_failed = 0
+    logger.info(f"Will read {len(filepaths)} images")
+    for i, result in enumerate(pool.map(
+            _load_and_reproject, filepaths, repeat(mosaic_wcs), data_array, reprojected_array)):
+        if isinstance(result, str):
+            logger.warning(f"Loading {filepaths[i]} failed")
+            logger.warning(result)
+            n_failed += 1
+            metas.append(None)
+            wcses.append(None)
+            if n_failed > .05 * len(filepaths):
+                raise RuntimeError(f"{n_failed} files failed to load, stopping")
+            continue
+        # We need to save a sample cube (not a string/error message) for the end of this flow
+        cube = result
+        metas.append(cube.meta)
+        wcses.append(cube.wcs)
+
+        if do_uncertainty and not cube.meta["OUTLIER"].value:
+            if uncertainty is None:
+                uncertainty = np.zeros_like(cube.data)
+            if cube.uncertainty is not None:
+                # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
+                uncertainty += np.nan_to_num(cube.uncertainty.array, posinf=0, neginf=0) ** 2
+        if (i + 1) % 100 == 0:
+            logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
+    logger.info(f"Finished loading files, saw {n_failed} failures")
+
+    return data_array, reprojected_array, wcses, metas, uncertainty, cube
+
+
 def _load_and_reproject(path: str, target_wcs: WCS, data_destination: np.ndarray, repro_destination: np.ndarray,
                         ) -> tuple[NDCube, np.ndarray] | str:
     repro_destination[:] = np.nan
@@ -488,7 +524,7 @@ def _subtract_coronal_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, co
 
 @punch_task
 def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.ndarray, metas: list[NormalizedMetadata],
-                               wcses: list[WCS], num_workers: int, mosaic_wcs: WCS, mask: np.ndarray) -> None:
+                               wcses: list[WCS], mosaic_wcs: WCS, mask: np.ndarray, pool) -> None:
     logger = get_run_logger()
     logger.info("Making coronal models")
     corona_models = []
@@ -509,20 +545,18 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
 
     logger.info("Models made; subtracting")
 
-    ctx = multiprocessing.get_context("forkserver")
-    with ProcessPoolExecutor(num_workers, mp_context=ctx) as p:
-        for i, _ in enumerate(p.map(_subtract_coronal_model,
-                                         data_array, wcses, [m.datetime if m is not None else None for m in metas],
-                                         repeat(corona_models), repeat(corona_model_dates),
-                                         repeat(mosaic_wcs))):
-            data_array[i] *= mask
-            if (i + 1) % 100 == 0:
-                logger.info(f"Corona-subtracted {i + 1}/{len(data_array)} files")
+    for i, _ in enumerate(pool.map(_subtract_coronal_model,
+                                     data_array, wcses, [m.datetime if m is not None else None for m in metas],
+                                     repeat(corona_models), repeat(corona_model_dates),
+                                     repeat(mosaic_wcs))):
+        data_array[i] *= mask
+        if (i + 1) % 100 == 0:
+            logger.info(f"Corona-subtracted {i + 1}/{len(data_array)} files")
     logger.info("Models subtracted")
 
 
 def _make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, strided_image_mask,
-                       x_grid, y_grid, window_half_width, image_mask, data_array, num_workers, make_plots_along_the_way,
+                       x_grid, y_grid, window_half_width, image_mask, data_array, make_plots_along_the_way,
                        blur_sigma, stride, window_size, pool):
     logger.info(f"Starting bin {bin_n + 1}, containing {np.sum(bin_mask)} images")
 
@@ -544,13 +578,11 @@ def _make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, stride
                 x - window_half_width:x + window_half_width + 1]
                 strided_image_mask[i, j] = sample.sum() > sample.size * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS
 
-    def args() -> Generator[tuple]:
-        for y in y_grid:
-            yield data_array, y, x_grid, window_half_width, bin_mask
-
     logger.info("Beginning model fitting")
 
-    stray_light_estimate = np.stack(pool.starmap(_estimate_stray_light_one_slice, args()), axis=0)
+    stray_light_estimate = np.stack(pool.map(
+            _estimate_stray_light_one_slice, repeat(data_array), y_grid, repeat(x_grid), repeat(window_half_width),
+            repeat(bin_mask)), axis=0)
 
     logger.info("Finished model fitting")
 
@@ -608,7 +640,7 @@ def _make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, stride
 
 
 @punch_flow
-def estimate_stray_light(filepaths: list[str],  # noqa: C901
+def estimate_stray_light(filepaths: list[str],
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
                          stride: int = 10,
@@ -643,81 +675,49 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
     mosaic_wcs.wcs.crpix = 1024, 1024
     mosaic_wcs.array_shape = (2048, 2048)
 
-    data_array = ShmPickleableNDArray((len(filepaths), 2048, 2048), dtype=np.float32)
-    reprojected_array = ShmPickleableNDArray((len(filepaths), *mosaic_wcs.array_shape), dtype=np.float32)
-    uncertainty = None
-    metas = []
-    wcses = []
-    n_failed = 0
-    logger.info(f"Will read {len(filepaths)} images")
     ctx = multiprocessing.get_context("forkserver")
-    with ProcessPoolExecutor(num_workers, mp_context=ctx) as p:
-        for i, result in enumerate(p.map(
-                _load_and_reproject, filepaths, repeat(mosaic_wcs), data_array, reprojected_array)):
-            if isinstance(result, str):
-                logger.warning(f"Loading {filepaths[i]} failed")
-                logger.warning(result)
-                n_failed += 1
-                metas.append(None)
-                wcses.append(None)
-                if n_failed > .05 * len(filepaths):
-                    raise RuntimeError(f"{n_failed} files failed to load, stopping")
-                continue
-            # We need to save a sample cube (not a string/error message) for the end of this flow
-            cube = result
-            metas.append(cube.meta)
-            wcses.append(cube.wcs)
+    with ProcessPoolExecutor(num_workers, mp_context=ctx) as pool:
+        data_array, reprojected_array, wcses, metas, uncertainty, cube = _load_files(
+                filepaths, mosaic_wcs, logger, do_uncertainty, pool)
+        outliers = np.array([True if m is None else m["OUTLIER"].value != 0 for m in metas])
 
-            if do_uncertainty and not cube.meta["OUTLIER"].value:
-                if uncertainty is None:
-                    uncertainty = np.zeros_like(cube.data)
-                if cube.uncertainty is not None:
-                    # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
-                    uncertainty += np.nan_to_num(cube.uncertainty.array, posinf=0, neginf=0) ** 2
-            if (i + 1) % 100 == 0:
-                logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
-    logger.info(f"Finished loading files, saw {n_failed} failures")
-    outliers = np.array([True if m is None else m["OUTLIER"].value != 0 for m in metas])
+        if image_mask is None:
+            image_mask = ~np.all(data_array == 0, axis=0)
 
-    if image_mask is None:
-        image_mask = ~np.all(data_array == 0, axis=0)
+        _build_and_subtract_corona(reprojected_array, data_array, metas, wcses, mosaic_wcs, image_mask, pool)
 
-    _build_and_subtract_corona(reprojected_array, data_array, metas, wcses, num_workers, mosaic_wcs, image_mask)
+        # Free this memory early, as we don't need it anymore
+        reprojected_array.free()
+        del reprojected_array
 
-    # Free this memory early, as we don't need it any more
-    reprojected_array.free()
-    del reprojected_array
+        # Build our CROTA bins
+        bin_centers = np.linspace(-180, 180, n_crota_bins, endpoint=False)
+        bin_starts = bin_centers - crota_bin_width / 2
+        bin_stops = bin_centers + crota_bin_width / 2
 
-    # Build our CROTA bins
-    bin_centers = np.linspace(-180, 180, n_crota_bins, endpoint=False)
-    bin_starts = bin_centers - crota_bin_width / 2
-    bin_stops = bin_centers + crota_bin_width / 2
+        crota_is_in_bin = (lambda crota, binn: ((bin_starts[binn] < crota <= bin_stops[binn])
+                                             or (bin_starts[binn] < crota - 360 <= bin_stops[binn])
+                                             or (bin_starts[binn] < crota + 360 <= bin_stops[binn])))
 
-    crota_is_in_bin = (lambda crota, binn: ((bin_starts[binn] < crota <= bin_stops[binn])
-                                         or (bin_starts[binn] < crota - 360 <= bin_stops[binn])
-                                         or (bin_starts[binn] < crota + 360 <= bin_stops[binn])))
+        bin_masks = []
+        for binn in range(n_crota_bins):
+            mask = np.array([False if m is None else crota_is_in_bin(m["CROTA"].value, binn) for m in metas])
+            bin_masks.append(mask)
+            logger.info(f"Bin centered at CROTA {bin_centers[binn]} has {np.sum(mask)} images")
 
-    bin_masks = []
-    for binn in range(n_crota_bins):
-        mask = np.array([False if m is None else crota_is_in_bin(m["CROTA"].value, binn) for m in metas])
-        bin_masks.append(mask)
-        logger.info(f"Bin centered at CROTA {bin_centers[binn]} has {np.sum(mask)} images")
+        window_half_width = window_size // 2
+        # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
+        # stride position fits
+        x_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
+        y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
 
-    window_half_width = window_size // 2
-    # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
-    # stride position fits
-    x_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
-    y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
-
-    models = []
-    ctx = multiprocessing.get_context("forkserver")
-    with ctx.Pool(num_workers) as pool:
+        models = []
         for bin_n, bin_mask in enumerate(bin_masks):
             models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, strided_image_mask,
-                       x_grid, y_grid, window_half_width, image_mask, data_array, num_workers, make_plots_along_the_way,
+                       x_grid, y_grid, window_half_width, image_mask, data_array, make_plots_along_the_way,
                        blur_sigma, stride, window_size, pool))
 
-    # Free this memory early, as we don't need it any more
+    # Free this memory early, as we don't need it anymore
     data_array.free()
     del data_array
 

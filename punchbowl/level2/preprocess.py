@@ -33,7 +33,7 @@ def trim_edges(data_list: list[NDCube], trim_edge_px: int | list[int] = 0) -> No
 @lru_cache
 def _load_mask_wrapper(mask_path: str) -> np.ndarray:
     mask = load_mask_file(mask_path)
-    mask[mask == 0] = np.nan
+    mask = np.where(mask, 1, np.nan)
     return mask
 
 

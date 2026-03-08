@@ -479,16 +479,26 @@ class ShmPickleableNDArray(np.ndarray):
         self._shm = getattr(obj, "_shm", None)
 
     def free(self):
+        """
+        Free shared memory immediately.
+
+        Each shared memory object has a tracker process that ensures it is freed when the process that created it
+        terminates. This function is only needed to free the memory early, before the process ends. Note that
+        accessing the array after freeing the backing memory may result in a segfault.
+        """
         self._shm.close()
         self._shm.unlink()
+        self._shm = None
 
     def __getitem__(self, *args, **kwargs):
         if self._shm is None:
+            # Guard against segfaults after freeing the shared memory
             raise RuntimeError("Attempt to access array that's already been freed")
         return super().__getitem__(*args, **kwargs)
 
     def __repr__(self, *args, **kwargs):
         if self._shm is None:
+            # Guard against segfaults after freeing the shared memory
             return "<freed ShmPickleableNDArray>"
         return super().__repr__(*args, **kwargs)
 

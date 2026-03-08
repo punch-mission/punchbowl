@@ -683,6 +683,8 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
         image_mask = ~np.all(data_array == 0, axis=0)
 
     _build_and_subtract_corona(reprojected_array, data_array, metas, wcses, num_workers, mosaic_wcs, image_mask)
+
+    # Free this memory early, as we don't need it any more
     reprojected_array.free()
     del reprojected_array
 
@@ -715,7 +717,7 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
                        x_grid, y_grid, window_half_width, image_mask, data_array, num_workers, make_plots_along_the_way,
                        blur_sigma, stride, window_size, pool))
 
-
+    # Free this memory early, as we don't need it any more
     data_array.free()
     del data_array
 

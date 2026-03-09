@@ -111,10 +111,10 @@ class PUNCHImageProcessor(ImageProcessor):
         cube = load_ndcube_from_fits(filename, key=self.key)
 
         if self.layer is None:  # clear data
-            data = cube.data
+            data = np.stack([cube.data, cube.uncertainty.array], axis=0)
         else:  # polarized data
             cube = to_celestial(cube)
-            data = cube.data[self.layer]
+            data = np.stack([cube.data[self.layer], cube.uncertainty.array[self.layer]], axis=0)
 
         if self.apply_mask:
             data[data==0] = np.nan
@@ -204,7 +204,12 @@ def generate_starfield_background(
             target_mem_usage=target_mem_usage)
         logger.info("Ending p starfield")
 
-        out_data = np.stack([starfield_m.starfield, starfield_z.starfield, starfield_p.starfield], axis=0)
+        out_data = np.stack([starfield_m.starfield[0],
+                             starfield_z.starfield[0],
+                             starfield_p.starfield[0]], axis=0)
+        out_uncertainty = np.stack([starfield_m.starfield[1],
+                                    starfield_z.starfield[1],
+                                    starfield_p.starfield[1]], axis=0)
         out_wcs = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     else:
         logger.info("Starting clear starfield")
@@ -218,13 +223,13 @@ def generate_starfield_background(
             processor=PUNCHImageProcessor(None, apply_mask=True, key="A"),
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
-        out_data = starfield_clear.starfield
-        # TODO - Do we want the starfield map to be in celestial coordinates as the primary system?
+        out_data = starfield_clear.starfield[0]
+        out_uncertainty = starfield_clear.starfield[1]
         out_wcs = calculate_helio_wcs_from_celestial(starfield_clear.wcs,
                                                         meta.astropy_time,
                                                         starfield_clear.starfield.shape)
 
-    output = NDCube(data=out_data, uncertainty=StdDevUncertainty(np.sqrt(out_data)), wcs=out_wcs, meta=meta)
+    output = NDCube(data=out_data, uncertainty=StdDevUncertainty(out_uncertainty), wcs=out_wcs, meta=meta)
     output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     logger.info("construct_starfield_background finished")

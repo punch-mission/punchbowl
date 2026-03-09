@@ -270,7 +270,7 @@ def levelq_QAM_core_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 
     out_list = []
     for d in data_list:
-        output_meta = NormalizedMetadata.load_template("CTM", "Q")
+        output_meta = NormalizedMetadata.load_template("QAM", "Q")
         o = NDCube(data=d.data, wcs=d.wcs, meta=output_meta, uncertainty=d.uncertainty)
         out_list.append(o)
         o.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

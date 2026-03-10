@@ -322,21 +322,21 @@ def subtract_starfield_background_task(data_object: NDCube,
             starfield_model_m = Starfield(np.stack((star_datacube.data[0], star_datacube.uncertainty.array[0])),
                                           wcs_celestial[0])
             subtracted_m = starfield_model_m.subtract_from_image(
-                NDCube(data=np.stack((data_object.data[0], data_object.uncertainty.array[0])),
+                NDCube(data=np.stack((data_object.data[0], np.zeros_like(data_object.data[0]))),
                        wcs=data_object.wcs[0],
                        meta=data_object.meta),
                        processor=PUNCHImageProcessor(layer=0, key="A"))
             starfield_model_z = Starfield(np.stack((star_datacube.data[1], star_datacube.uncertainty.array[1])),
                                           wcs_celestial[1])
             subtracted_z = starfield_model_z.subtract_from_image(
-                NDCube(data=np.stack((data_object.data[1], data_object.uncertainty.array[1])),
+                NDCube(data=np.stack((data_object.data[1], np.zeros_like(data_object.data[1]))),
                        wcs=data_object.wcs[1],
                        meta=data_object.meta),
                        processor=PUNCHImageProcessor(layer=1, key="A"))
             starfield_model_p = Starfield(np.stack((star_datacube.data[2], star_datacube.uncertainty.array[2])),
                                           wcs_celestial[2])
             subtracted_p = starfield_model_p.subtract_from_image(
-                NDCube(data=np.stack((data_object.data[2], data_object.uncertainty.array[2])),
+                NDCube(data=np.stack((data_object.data[2], np.zeros_like(data_object.data[2]))),
                        wcs=data_object.wcs[2],
                        meta=data_object.meta),
                        processor=PUNCHImageProcessor(layer=2, key="A"))
@@ -344,19 +344,21 @@ def subtract_starfield_background_task(data_object: NDCube,
             data_object.data[...] = np.stack([subtracted_m.subtracted[0],
                                               subtracted_z.subtracted[0],
                                               subtracted_p.subtracted[0]], axis=0)
-            data_object.uncertainty.array[...] -= np.stack([subtracted_m.subtracted[1],
-                                                            subtracted_z.subtracted[1],
-                                                            subtracted_p.subtracted[1]], axis=0)
+            data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 +
+                                                         np.stack([subtracted_m.subtracted[1],
+                                                                   subtracted_z.subtracted[1],
+                                                                   subtracted_p.subtracted[1]], axis=0)**2)
         else:
             starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
             subtracted = starfield_model.subtract_from_image(
-                NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
+                NDCube(data=np.stack((data_object.data, np.zeros_like(data_object.data))),
                        wcs=data_object.wcs,
                        meta=data_object.meta),
                        processor=PUNCHImageProcessor(key="A"))
 
             data_object.data[...] = subtracted.subtracted[0]
-            data_object.uncertainty.array[...] -= subtracted.subtracted[1]
+            data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 +
+                                                         subtracted.subtracted[1]**2)
 
         # Reset the data to be zero in invalid regions
         data_object.data[original_mask] = 0

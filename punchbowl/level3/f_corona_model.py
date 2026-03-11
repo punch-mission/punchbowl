@@ -333,7 +333,9 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
 
         np.nan_to_num(cube.uncertainty.array, nan=0, posinf=0, neginf=0, copy=False)
         sample_counts += cube.uncertainty.array != 0
-        uncertainty += cube.uncertainty.array**2
+        # Square the array in-place
+        cube.uncertainty.array *= cube.uncertainty.array
+        uncertainty += cube.uncertainty.array
 
         j += 1
         obs_times.append(cube.meta.datetime.timestamp())

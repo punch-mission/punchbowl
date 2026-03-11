@@ -37,11 +37,13 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     rolloff_width : float | list[float]
         Image uncertainties are enhanced at the edges, to provide a smooth rolloff in merging. This controls the
         width of that rolloff. The rolloff width will be this number, times the shortest distance from image-center
-        to image-mask-edge. A list can be provided to give one value for each spacecraft.
+        to image-mask-edge. A list can be provided to give one value for each spacecraft. Has no effect if
+        `do_uncertainties` is False.
     rolloff_strength : float | list[float]
         Image uncertainties are enhanced at the edges, to provide a smooth rolloff in merging. This controls the
         strength of that rolloff. Merging weights at the mask edge will be reduced by this fractional amount. A
-        strength of zero means no rolloff. A list can be provided to give one value for each spacecraft.
+        strength of zero means no rolloff. A list can be provided to give one value for each spacecraft. Has no effect
+        if `do_uncertainties` is False.
     do_uncertainty : bool
         Whether to reproject the uncertainty layer as well and return a 2 x ny x nx array
     repro_args : dict

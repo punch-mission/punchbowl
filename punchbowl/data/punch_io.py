@@ -451,7 +451,7 @@ def load_many_cubes_iterable(paths: list[str | Path], n_workers: int | None = No
 
 
 def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow_errors: bool = False,
-                    **kwargs: dict) -> list[NDCube | str]:
+                    progress_bar: bool = False, **kwargs: dict) -> list[NDCube | str]:
     """
     Load many NDCubes in parallel.
 
@@ -467,6 +467,8 @@ def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow
     allow_errors
         If True, if an exception is raised when loading a cube, the traceback is yielded rather than an NDCube. If
         False, exceptions are raised in the normal way.
+    progress_bar
+        If True, show a progress bar
     kwargs
         Extra args are passed to `load_NDCube_from_fits`
 
@@ -475,7 +477,11 @@ def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow
     A list of NDCubes (or traceback strings)
 
     """
-    return list(load_many_cubes_iterable(paths, n_workers, allow_errors, **kwargs))
+    iterable = load_many_cubes_iterable(paths, n_workers, allow_errors, **kwargs)
+    if progress_bar:
+        from tqdm.auto import tqdm  # noqa: PLC0415
+        iterable = tqdm(iterable, total=len(paths))
+    return list(iterable)
 
 
 def check_outlier(cube: NDCube) -> bool:

@@ -333,9 +333,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
 
         np.nan_to_num(cube.uncertainty.array, nan=0, posinf=0, neginf=0, copy=False)
         sample_counts += cube.uncertainty.array != 0
-        # Square the array in-place
-        cube.uncertainty.array *= cube.uncertainty.array
-        uncertainty += cube.uncertainty.array
+        uncertainty += cube.uncertainty.array**2
 
         j += 1
         obs_times.append(cube.meta.datetime.timestamp())
@@ -347,8 +345,6 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     logger.info(f"end of data loading, saw {n_failed} failures")
     output_datebeg = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_dateend = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-
-    uncertainty = np.nansum(data_cube**2, axis=0)
 
     reference_xt = reference_time.timestamp()
     if polarized:

@@ -18,15 +18,17 @@ def starfield_background_query_ready_files(session, pipeline_config: dict,
                                            reference_time: datetime, reference_file: File):
     logger = get_run_logger()
 
-    before_min_files = pipeline_config["flows"]["construct_starfield_background"]["before_min_files"]
-    before_max_files = pipeline_config["flows"]["construct_starfield_background"]["before_max_files"]
-    after_min_files = pipeline_config["flows"]["construct_starfield_background"]["after_min_files"]
-    after_max_files = pipeline_config["flows"]["construct_starfield_background"]["after_max_files"]
+    data_type = {"PS": "polarized", "CS": "clear"}[reference_file.file_type]
+
+    before_min_files = pipeline_config["flows"]["construct_starfield_background"]["before_min_files"][data_type]
+    before_max_files = pipeline_config["flows"]["construct_starfield_background"]["before_max_files"][data_type]
+    after_min_files = pipeline_config["flows"]["construct_starfield_background"]["after_min_files"][data_type]
+    after_max_files = pipeline_config["flows"]["construct_starfield_background"]["after_max_files"][data_type]
 
     days_before = pipeline_config["flows"]["construct_starfield_background"]["days_before"]
     days_after = pipeline_config["flows"]["construct_starfield_background"]["days_after"]
 
-    image_cadence = pipeline_config["flows"]["construct_starfield_background"]["image_cadence"]
+    image_cadence = pipeline_config["flows"]["construct_starfield_background"]["image_cadence"][data_type]
 
     t_start = reference_time - timedelta(days=days_before)
     t_end = reference_time + timedelta(days=days_after)

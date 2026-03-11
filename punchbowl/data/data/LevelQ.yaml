@@ -105,7 +105,7 @@ Products:
             NAXIS2: 4096
             TITLE: PUNCH Level-Q Unpolarized F-corona-subtracted QuickPUNCH Mosaic
             OBSTYPE: Unpolarized QuickPUNCH mosaic
-            TYPECODE: CT
+            TYPECODE: QA
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M

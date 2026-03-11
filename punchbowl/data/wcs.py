@@ -503,6 +503,6 @@ def celestial_north_from_wcs(input_wcs, shape, eps=1.0*u.arcsec):
     north_dy[good] = dy[good] / norm[good]
 
     # Angle from +Y axis to north vector, -ve for CCW: atan2(dx, dy)
-    angle_cel_north = -np.degrees(np.arctan2(north_dx, north_dy))
+    angle_cel_north = -np.degrees((np.arctan2(north_dx, north_dy)))
 
-    return angle_cel_north
+    return angle_cel_north*u.degree

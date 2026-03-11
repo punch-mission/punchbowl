@@ -18,8 +18,11 @@ from punchbowl.data.wcs import (calculate_helio_wcs_from_celestial,
                                 get_p_angle, celestial_north_from_wcs)
 from punchbowl.prefect import punch_flow, punch_task
 
+import warnings
+warnings.filterwarnings("ignore")
 
-def to_celestial(input_data: NDCube) -> NDCube:
+
+def polarize_solar_to_celestial(input_data: NDCube) -> NDCube:
     """
     Convert polarization from mzpsolar to Celestial frame.
 
@@ -30,14 +33,16 @@ def to_celestial(input_data: NDCube) -> NDCube:
     mzp_angles = [-60, 0, 60]*u.degree
 
     ncols, nrows = input_data.data[0].shape
-    wcs1 = WCS(input_data.meta).dropaxis(2)
-    wcs2 = WCS(input_data.meta, key='A').dropaxis(2)
+    full_header = input_data.meta.to_fits_header(wcs=input_data.wcs,
+                                                write_celestial_wcs=not False)
+    wcs1 = WCS(full_header).dropaxis(2)
+    wcs2 = WCS(full_header, key='A').dropaxis(2)
 
     # Converting polarization w.r.t. Celestial North
     angle_solar_north = solnorth_from_wcs(wcs1, (nrows, ncols))
     angle_celest_north = celestial_north_from_wcs(wcs2, (nrows, ncols))
 
-    zoff = (angle_solar_north - angle_celest_north) * u.degree
+    zoff = (angle_celest_north.value - angle_solar_north.value) * u.degree
     new_angles = np.stack([zoff - 60 * u.deg, zoff, zoff + 60 * u.deg])
 
     collection_contents = [
@@ -65,31 +70,29 @@ def to_celestial(input_data: NDCube) -> NDCube:
     return output
 
 
-def from_celestial(input_data: NDCube) -> NDCube:
+def polarize_celestial_to_solar(input_data: NDCube) -> NDCube:
     """
     Convert polarization from Celestial frame to mzpsolar.
 
     All images need their polarization converted back to Solar frame
     after removing the stellar polarization.
     """
-    # Create a data collection for M, Z, P components
-    mzp_angles = [-60, 0, 60]*u.degree
     # Compute new angles for celestial frame
     ncols, nrows = input_data.data[0].shape
-    wcs1 = WCS(input_data.meta).dropaxis(2)
-    wcs2 = WCS(input_data.meta, key='A').dropaxis(2)
+    full_header = input_data.meta.to_fits_header(wcs=input_data.wcs,
+                                                write_celestial_wcs=not False)
+    wcs1 = WCS(full_header).dropaxis(2)
+    wcs2 = WCS(full_header, key='A').dropaxis(2)
 
     # Converting polarization w.r.t. Celestial North
     angle_solar_north = solnorth_from_wcs(wcs1, (nrows, ncols))
     angle_celest_north = celestial_north_from_wcs(wcs2, (nrows, ncols))
 
-    zoff = (angle_solar_north - angle_celest_north) * u.degree
+    zoff = (angle_celest_north.value - angle_solar_north.value) * u.degree
     new_angles = np.stack([zoff - 60 * u.deg, zoff, zoff + 60 * u.deg])
 
-    # cel_north_offset = get_p_angle(time=input_data[0].meta["DATE-OBS"].value)
-    # new_angles = mzp_angles - cel_north_offset
     collection_contents = [
-        (f"{str(np.round(np.mean(new_angles).value))} deg",
+        (f"{str(np.round(new_angles[i,nrows//2, ncols//2].value))} deg",
          NDCube(data=input_data[i].data,
                 wcs=wcs1,
                 meta={"POLAR": angle}))
@@ -129,7 +132,7 @@ class PUNCHImageProcessor(ImageProcessor):
         if self.layer is None:  # it's a clear image
             data = cube.data
         else:  # it's polarized
-            cube = to_celestial(cube)
+            cube = polarize_solar_to_celestial(cube)
             data = cube.data[self.layer]
 
         if self.apply_mask:
@@ -288,7 +291,7 @@ def subtract_starfield_background_task(data_object: NDCube,
         data_object.data[...] = subtracted.subtracted[0]
         data_object.uncertainty.array[...] -= subtracted.subtracted[1]
         data_object.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
-        output = from_celestial(data_object) if is_polarized else data_object
+        output = polarize_celestial_to_solar(data_object) if is_polarized else data_object
     logger.info("subtract_starfield_background finished")
 
     return output

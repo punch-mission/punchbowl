@@ -101,22 +101,23 @@ class PUNCHImageProcessor(ImageProcessor):
     """Special loader for PUNCH data."""
 
     def __init__(self, layer: int | None = None, apply_mask: bool = True,
-                 key: str = " ", uncertainty: bool = False) -> None:
+                 key: str = " ", use_uncertainty: bool = False) -> None:
         """Create PUNCHImageProcessor."""
         self.layer: int | None = layer
         self.apply_mask = apply_mask
         self.key = key
-        self.uncertainty = uncertainty
+        self.use_uncertainty = use_uncertainty
 
     def load_image(self, filename: str) -> ImageHolder:
         """Load an image."""
         cube = load_ndcube_from_fits(filename, key=self.key)
 
         if self.layer is None:  # clear data
-            data = cube.data if not self.uncertainty else cube.uncertainty.array
+            data = cube.data if not self.use_uncertainty else cube.uncertainty.array
         else:  # polarized data
+            # TODO - Update with new to_celestial function when ready
             cube = to_celestial(cube)
-            data = cube.data[self.layer] if not self.uncertainty else cube.uncertainty.array[self.layer]
+            data = cube.data[self.layer] if not self.use_uncertainty else cube.uncertainty.array[self.layer]
 
         if self.apply_mask:
             data[data==0] = np.nan
@@ -187,7 +188,7 @@ def generate_starfield_background(
             reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
-            processor=PUNCHImageProcessor(0, apply_mask=True, key="A", uncertainty=True),
+            processor=PUNCHImageProcessor(0, apply_mask=True, key="A", use_uncertainty=True),
             target_mem_usage=target_mem_usage)
         logger.info("Ending m starfield")
 
@@ -208,7 +209,7 @@ def generate_starfield_background(
             reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
-            processor=PUNCHImageProcessor(1, apply_mask=True, key="A", uncertainty=True),
+            processor=PUNCHImageProcessor(1, apply_mask=True, key="A", use_uncertainty=True),
             target_mem_usage=target_mem_usage)
         logger.info("Ending z starfield")
 
@@ -229,7 +230,7 @@ def generate_starfield_background(
             reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
-            processor=PUNCHImageProcessor(2, apply_mask=True, key="A", uncertainty=True),
+            processor=PUNCHImageProcessor(2, apply_mask=True, key="A", use_uncertainty=True),
             target_mem_usage=target_mem_usage)
         logger.info("Ending p starfield")
 
@@ -258,7 +259,7 @@ def generate_starfield_background(
             reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
-            processor=PUNCHImageProcessor(None, apply_mask=True, key="A", uncertainty=True),
+            processor=PUNCHImageProcessor(None, apply_mask=True, key="A", use_uncertainty=True),
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
         out_data = starfield_clear.starfield

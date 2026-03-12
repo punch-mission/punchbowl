@@ -15,7 +15,7 @@ from solpolpy.util import solnorth_from_wcs
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.wcs import (calculate_helio_wcs_from_celestial,
-                                get_p_angle, celestial_north_from_wcs)
+                                celestial_north_from_wcs)
 from punchbowl.prefect import punch_flow, punch_task
 
 import warnings
@@ -36,7 +36,7 @@ def polarize_solar_to_celestial(input_data: NDCube) -> NDCube:
     full_header = input_data.meta.to_fits_header(wcs=input_data.wcs,
                                                 write_celestial_wcs=not False)
     wcs1 = WCS(full_header).dropaxis(2)
-    wcs2 = WCS(full_header, key='A').dropaxis(2)
+    wcs2 = WCS(full_header, key="A").dropaxis(2)
 
     # Converting polarization w.r.t. Celestial North
     angle_solar_north = solnorth_from_wcs(wcs1, (nrows, ncols))
@@ -82,7 +82,7 @@ def polarize_celestial_to_solar(input_data: NDCube) -> NDCube:
     full_header = input_data.meta.to_fits_header(wcs=input_data.wcs,
                                                 write_celestial_wcs=not False)
     wcs1 = WCS(full_header).dropaxis(2)
-    wcs2 = WCS(full_header, key='A').dropaxis(2)
+    wcs2 = WCS(full_header, key="A").dropaxis(2)
 
     # Converting polarization w.r.t. Celestial North
     angle_solar_north = solnorth_from_wcs(wcs1, (nrows, ncols))
@@ -92,7 +92,7 @@ def polarize_celestial_to_solar(input_data: NDCube) -> NDCube:
     new_angles = np.stack([zoff - 60 * u.deg, zoff, zoff + 60 * u.deg])
 
     collection_contents = [
-        (f"{str(np.round(new_angles[i,nrows//2, ncols//2].value))} deg",
+        (f"{np.round(new_angles[i, nrows//2, ncols//2].value)} deg",
          NDCube(data=input_data[i].data,
                 wcs=wcs1,
                 meta={"POLAR": angle}))

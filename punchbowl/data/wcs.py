@@ -454,7 +454,9 @@ def load_quickpunch_nfi_wcs() -> tuple[astropy.wcs.WCS, tuple[int, int]]:
     return quickpunch_nfi_wcs, quickpunch_nfi_shape
 
 
-def celestial_north_from_wcs(input_wcs, shape, eps=1.0*u.arcsec):
+def celestial_north_from_wcs(input_wcs: WCS,
+                             shape: tuple,
+                             eps: u.Quantity=1.0*u.arcsec) -> np.ndarray:
     """
     Compute the angle of celestial north direction at each pixel using the WCS.
 
@@ -478,6 +480,7 @@ def celestial_north_from_wcs(input_wcs, shape, eps=1.0*u.arcsec):
         Angle in degrees from +Y image axis to celestial north at each pixel
         (measured counterclockwise in the pixel coordinate system):
             angle = atan2(dx, dy)
+
     """
     nrows, ncols = shape
     y, x = np.mgrid[0:nrows, 0:ncols]
@@ -485,14 +488,14 @@ def celestial_north_from_wcs(input_wcs, shape, eps=1.0*u.arcsec):
 
     # Move a tiny amount toward celestial north (increasing Dec) at constant RA
     # spherical_offsets_by(dlon, dlat): dlon eastward, dlat northward
-    cN = c.spherical_offsets_by(0*u.deg, eps)
+    cn = c.spherical_offsets_by(0*u.deg, eps)
 
     # World -> pixel for the north-offset point
-    xN, yN = input_wcs.world_to_pixel(cN)
+    xn, yn = input_wcs.world_to_pixel(cn)
 
     # Pixel-space "north" direction vectors
-    dx = xN - x
-    dy = yN - y
+    dx = xn - x
+    dy = yn - y
 
     # Normalize vectors to unit length (avoid divide-by-zero)
     norm = np.hypot(dx, dy)
@@ -503,6 +506,6 @@ def celestial_north_from_wcs(input_wcs, shape, eps=1.0*u.arcsec):
     north_dy[good] = dy[good] / norm[good]
 
     # Angle from +Y axis to north vector, -ve for CCW: atan2(dx, dy)
-    angle_cel_north = -np.degrees((np.arctan2(north_dx, north_dy)))
+    angle_cel_north = -np.degrees(np.arctan2(north_dx, north_dy))
 
     return angle_cel_north*u.degree

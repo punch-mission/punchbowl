@@ -517,7 +517,7 @@ def remix_collection(data: Sequence[Any] | np.ndarray,
                     wcs: WCS,
                     labels: tuple[str, ...] = ("M", "Z", "P"),
                     indices: tuple[int, ...] = (0, 1, 2),
-                    angles: tuple[u.Quantity, ...] = (-60 * u.deg, 0 * u.deg, 60 * u.deg)
+                    angles: tuple[u.Quantity, ...] = (-60 * u.deg, 0 * u.deg, 60 * u.deg),
                     ) -> NDCollection:
     """
     Create an NDCollection of image cubes primarily used for solpolpy.
@@ -541,6 +541,7 @@ def remix_collection(data: Sequence[Any] | np.ndarray,
     -------
     NDCollection
         Collection of ``NDCube`` objects with aligned axes.
+
     """
     if not (len(labels) == len(indices) == len(angles)):
         raise ValueError("labels, indices, and angles must have the same length.")

@@ -25,7 +25,7 @@ from glymur import Jp2k, jp2box
 from matplotlib.colors import PowerNorm
 from ndcube import NDCube, NDCollection
 from PIL import Image, ImageDraw, ImageFont
-from typing import Sequence
+from collections.abc import Sequence
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.visualize import cmap_punch

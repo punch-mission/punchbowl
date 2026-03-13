@@ -19,3 +19,5 @@ def test_solar_celestial():
     assert isinstance(data_solar, NDCube)
     assert np.allclose(data_solar.data, data_cube.data, atol=1e-30)
     assert data_cel.data.shape == data_cube.data.shape
+    assert not np.shares_memory(data_cube.data, data_cel.data)
+    assert not np.shares_memory(data_solar.data, data_cel.data)

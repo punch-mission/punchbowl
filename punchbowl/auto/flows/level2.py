@@ -238,7 +238,9 @@ def level2_construct_flow_info(level1_files: list[File], level2_file: File, pipe
     call_data = json.dumps(
         {
             "data_list": [level1_file.filename() for level1_file in level1_files],
-            "image_masks": [level1_file.mask.filename().replace(".fits", ".bin") for level1_file in level1_files],
+            "image_masks": [level1_file.mask.filename().replace(".fits", ".bin")
+                            if level1_file.mask is not None else None
+                            for level1_file in level1_files],
             "voter_filenames": [[] for _ in level1_files],
             "alphas_file": alphas_path,
             "trim_edges_px": trim_edges_px,

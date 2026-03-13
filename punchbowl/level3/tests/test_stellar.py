@@ -1,11 +1,10 @@
 import os
+
 import numpy as np
 from ndcube import NDCube
 
-from punchbowl.level3.stellar import (
-    polarize_celestial_to_solar,
-    polarize_solar_to_celestial)
 from punchbowl.data import punch_io
+from punchbowl.level3.stellar import polarize_celestial_to_solar, polarize_solar_to_celestial
 
 TESTDATA_DIR = os.path.dirname(__file__)
 TEST_FILE = TESTDATA_DIR + '/data/downsampled_L2_PTM.fits'

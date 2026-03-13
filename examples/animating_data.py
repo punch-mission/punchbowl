@@ -8,8 +8,8 @@ How to animate PUNCH data using built-in plotting tools
 
 # %%  [markdown]
 # First we'll load a set of libraries. This is minimal, but will give us the tools to query a sample of data to download and animate.
-# Note that for animation, you'll need a local copy of ffmpeg, which can be installed through tools such as homebrew or conda. Depending on your environment you may also need to install a corresponding python package with a command such as `pip install ffmpeg-python`.
-# Also note that punchbowl is in active development at the moment. To install the bleeding-edge version, use a command such as `pip install git+https://github.com/punch-mission/punchbowl@main`.
+# Note that for animation, you'll need a local copy of ffmpeg, which can be installed through tools such as homebrew or conda. Depending on your environment you may also need to install a corresponding python package with a command such as ``pip install ffmpeg-python``.
+# Also note that punchbowl is in active development at the moment. To install the bleeding-edge version, use a command such as ``pip install git+https://github.com/punch-mission/punchbowl@main``.
 
 from datetime import datetime
 
@@ -39,7 +39,7 @@ result
 
 # %% [markdown]
 # The resulting files can then be downloaded.
-# Note that occasionally data access through these tools can be down for maintenance or other issues. To instead query a list of local files you may have on hand, import the glob package into python, and then use a command such as `files = glob.glob("path/to/files/*.fits")` followed by `files.sort()`.
+# Note that occasionally data access through these tools can be down for maintenance or other issues. To instead query a list of local files you may have on hand, import the glob package into python, and then use a command such as ``files = glob.glob("path/to/files/*.fits")`` followed by ``files.sort()``.
 
 # %%
 files = Fido.fetch(result)

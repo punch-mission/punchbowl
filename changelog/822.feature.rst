@@ -1,0 +1,1 @@
+Estimates angular difference between solar and celestial north at each pixel based on wcs; Improved polarization to and from celestial frame.

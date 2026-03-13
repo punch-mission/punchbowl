@@ -1,5 +1,5 @@
-import pathlib
 import time
+import pathlib
 import warnings
 import multiprocessing
 from datetime import UTC, datetime, timedelta
@@ -465,6 +465,9 @@ def _load_files(filepaths, mosaic_wcs, logger, do_uncertainty, pool):
     return data_array, reprojected_array, wcses, metas, uncertainty, cube
 
 
+bottom_crops = [230, 240, 243]
+
+
 def _load_and_reproject(path: str, target_wcs: WCS, data_destination: np.ndarray, repro_destination: np.ndarray,
                         ) -> tuple[NDCube, np.ndarray] | str:
     repro_destination[:] = np.nan
@@ -473,10 +476,10 @@ def _load_and_reproject(path: str, target_wcs: WCS, data_destination: np.ndarray
     except Exception as e: # noqa: BLE001
         data_destination[:] = np.nan
         return str(e)
+    bottom_crop = bottom_crops[int(cube.meta["OBSCODE"].value) - 1]
     data = cube.data
     data_destination[:] = cube.data
     cube = NDCube(data_destination, meta=cube.meta, wcs=cube.wcs, uncertainty=cube.uncertainty)
-    # `data` is now an independent copy
 
     data[np.isinf(cube.uncertainty.array)] = np.nan
 
@@ -486,8 +489,8 @@ def _load_and_reproject(path: str, target_wcs: WCS, data_destination: np.ndarray
     data[y < 600 - x] = np.nan
     data[y < 600 - (2048 - x)] = np.nan
 
-    data = data[:, 200:-200]
-    wcs_cropped = cube.wcs[:, 200:-200]
+    data = data[bottom_crop:, 200:-200]
+    wcs_cropped = cube.wcs[bottom_crop:, 200:-200]
 
     with warnings.catch_warnings(), np.errstate(all="ignore"):
         warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")
@@ -538,6 +541,8 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
         dstop = dstart + timedelta(hours=24)
         istart = np.argmin([np.abs((m.datetime - dstart).total_seconds()) if m is not None else 9e99 for m in metas])
         istop = np.argmin([np.abs((m.datetime - dstop).total_seconds()) if m is not None else 9e99 for m in metas])
+        if istop - istart < 50:
+            continue
         model = nan_percentile(reprojected_array[istart:istop], 5)
         model = ShmPickleableNDArray.from_array(model)
         mdate = average_datetime([m.datetime for m in metas[istart:istop] if m is not None])
@@ -568,16 +573,6 @@ def _make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, stride
         return fallback_model[bin_n]
 
     bin_mask = bin_mask * ~outliers
-
-    # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
-    # inside the mask for this function's inner loop to get enough samples.
-    if strided_image_mask is None:
-        strided_image_mask = np.empty((y_grid.size, x_grid.size), dtype=bool)
-        for i, y in enumerate(y_grid):
-            for j, x in enumerate(x_grid):
-                sample = image_mask[y - window_half_width:y + window_half_width + 1,
-                x - window_half_width:x + window_half_width + 1]
-                strided_image_mask[i, j] = sample.sum() > sample.size * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS
 
     logger.info("Beginning model fitting")
 
@@ -665,7 +660,6 @@ def estimate_stray_light(filepaths: list[str],
     fallback_model = load_ndcube_from_fits(fallback_model_path).data if isinstance(fallback_model_path, str) else None
 
     image_mask = load_mask_file(image_mask_path) if image_mask_path is not None else None
-    strided_image_mask = None
 
     # Make sure things are in temporal order
     filepaths = sorted(filepaths)
@@ -686,6 +680,9 @@ def estimate_stray_light(filepaths: list[str],
 
         if image_mask is None:
             image_mask = ~np.all(data_array == 0, axis=0)
+
+        bottom_crop = bottom_crops[int(cube.meta["OBSCODE"].value) - 1]
+        image_mask[:bottom_crop] = 0
 
         start = time.time()
         _build_and_subtract_corona(reprojected_array, data_array, metas, wcses, mosaic_wcs, image_mask, pool)
@@ -715,6 +712,15 @@ def estimate_stray_light(filepaths: list[str],
         # stride position fits
         x_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
         y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
+
+        # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
+        # inside the mask for this function's inner loop to get enough samples.
+        strided_image_mask = np.empty((y_grid.size, x_grid.size), dtype=bool)
+        for i, y in enumerate(y_grid):
+            for j, x in enumerate(x_grid):
+                sample = image_mask[y - window_half_width:y + window_half_width + 1,
+                x - window_half_width:x + window_half_width + 1]
+                strided_image_mask[i, j] = sample.sum() > sample.size * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS
 
         models = []
         start = time.time()

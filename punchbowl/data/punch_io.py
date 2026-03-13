@@ -12,6 +12,7 @@ from copy import deepcopy
 from typing import Any
 from pathlib import Path
 from itertools import repeat
+from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 
 import astropy.units as u
@@ -23,9 +24,8 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, FITSFixedWarning
 from glymur import Jp2k, jp2box
 from matplotlib.colors import PowerNorm
-from ndcube import NDCube, NDCollection
+from ndcube import NDCollection, NDCube
 from PIL import Image, ImageDraw, ImageFont
-from collections.abc import Sequence
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.visualize import cmap_punch

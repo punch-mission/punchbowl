@@ -1,3 +1,4 @@
+import warnings
 from math import floor
 from datetime import UTC, datetime
 
@@ -14,11 +15,9 @@ from solpolpy import resolve
 from solpolpy.util import solnorth_from_wcs
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.data.wcs import (calculate_helio_wcs_from_celestial,
-                                celestial_north_from_wcs)
+from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, celestial_north_from_wcs
 from punchbowl.prefect import punch_flow, punch_task
 
-import warnings
 warnings.filterwarnings("ignore")
 
 

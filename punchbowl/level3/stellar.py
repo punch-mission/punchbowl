@@ -16,8 +16,8 @@ from remove_starfield.reducers import GaussianReducer
 from solpolpy import resolve
 from solpolpy.util import solnorth_from_wcs
 
-from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, celestial_north_from_wcs
+from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, celestial_north_from_wcs, calculate_celestial_wcs_from_helio
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import average_datetime
 

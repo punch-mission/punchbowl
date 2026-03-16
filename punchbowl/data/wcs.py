@@ -30,7 +30,7 @@ def extract_crota_from_wcs(wcs: WCS) -> u.deg:
 
 def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
                                        date_obs: astropy.time.Time | str | None=None,
-                                       data_shape: tuple[int, int] | None=None) -> tuple[WCS, float]:
+                                       data_shape: tuple[int, int] | None=None) -> WCS:
     """Calculate the helio WCS from a celestial WCS."""
     if not date_obs:
         date_obs = wcs_celestial.wcs.dateobs

@@ -1029,13 +1029,16 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
                 selected_limits = limits
                 cube.meta.history.add_now("form_single_image", f"Outlier detection with {limit_filename}")
                 break
+
+            # to_fits_header populates CROTA
+            header_with_crota = cube.meta.to_fits_header(cube.wcs, False)
+            cube.meta['CROTA'] = header_with_crota['CROTA']
             if selected_limits is None:
                 if len(outlier_limits) and file_type in ["CR", "PM", "PZ", "PP"]:
                     raise RuntimeError(f"Could not find outlier limits for {get_base_file_name(cube)}")
                 is_outlier = False
             else:
-                # to_fits_header populates CROTA
-                is_outlier = not selected_limits.is_good(cube.meta.to_fits_header(cube.wcs, False))
+                is_outlier = not selected_limits.is_good(cube.meta)
 
             selected_mask = None
             for mask_observatory, mask_date, mask in masks:

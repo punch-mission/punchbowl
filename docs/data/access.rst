@@ -44,7 +44,16 @@ These data are compatible with standard astropy FITS libraries, and can be read 
         header = hdul[1].header
         uncertainty = hdul[2].data
 
-These data can also be bundled together as an NDCube object, either manually or using some of the bundled IO tools within ``punchbowl``.
+These data can also be bundled together as an NDCube object, either manually or using some of the bundled IO tools within punchbowl. For instance,
+
+.. code-block:: python
+
+    from punchbowl.data.punch_io import load_ndcube_from_fits
+
+    filename = 'example_data/PUNCH_L3_PAM_20240620000000.fits'
+
+    cube = load_ndcube_from_fits(filename)
+
 See `this example <https://punchbowl.readthedocs.io/en/latest/auto_examples/data_guide.html#sphx-glr-auto-examples-data-guide-py>`_ on how to use data.
 
 Data Projections

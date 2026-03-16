@@ -1,3 +1,4 @@
+from punchbowl.data.fido import *
 from punchbowl.data.history import History
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import (

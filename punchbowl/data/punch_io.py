@@ -524,7 +524,7 @@ def remix_collection(data: Sequence[Any] | np.ndarray,
 
     Parameters
     ----------
-    data : Ssequence or numpy.ndarray
+    data : Sequence or numpy.ndarray
         Input cubes containing-
         - a sequence of NDCube-like objects with a ``.data`` attribute, or
         - a 3D NumPy array / FITS cube with shape ``(nz, ny, nx)``

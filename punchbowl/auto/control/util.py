@@ -19,9 +19,31 @@ from punchbowl.data.punch_io import _make_provenance_hdu
 
 DEFAULT_SCALING = (5e-13, 5e-11)
 
-def get_database_session(get_engine=False, engine_kwargs={}, session_kwargs={}):
-    """Sets up a session to connect to the MariaDB punchpipe database"""
-    credentials = SqlAlchemyConnector.load("mariadb-creds", _sync=True)
+def get_database_session(get_engine=False,
+                         engine_kwargs={},
+                         session_kwargs={},
+                         credential_name: str = None):
+    """Sets up a session to connect to the MariaDB punchpipe database
+
+    Parameters
+    ----------
+    get_engine : bool
+        if true returns engine as second parameter
+    engine_kwargs : dict
+        kwargs for the SqlAlchemy engine creation
+    session_kwargs : dict
+        kwargs for the SqlAlchemy session creation
+    credential_name : str
+        keyword for the credential block name in Prefect
+
+    Returns
+    -------
+    session or (session, engine) tuple depending on ``get_engine``
+    """
+    if credential_name is None:
+        credential_name = load_pipeline_configuration().get('credential_name', "mariadb_creds")
+
+    credentials = SqlAlchemyConnector.load(credential_name, _sync=True)
     engine = credentials.get_engine(**engine_kwargs)
     session = Session(engine, **session_kwargs)
 

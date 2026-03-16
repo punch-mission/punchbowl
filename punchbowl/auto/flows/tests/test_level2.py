@@ -293,6 +293,7 @@ def test_level2_construct_flow_info():
                        file_version='none',
                        software_version='none',
                        date_obs=datetime.now(UTC))]
+    level1_file[0].mask = level1_file[0]
     level2_file = level2_construct_file_info(level1_file, pipeline_config)
     flow_info = level2_construct_flow_info(level1_file, level2_file, pipeline_config)
 

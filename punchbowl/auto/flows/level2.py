@@ -9,6 +9,7 @@ from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import group_files_by_time
+from punchbowl.auto.flows.level1 import get_mask_files
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level2.flow import level2_core_flow
 from punchbowl.util import average_datetime
@@ -117,6 +118,10 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
         # Otherwise, we'll pass for now on processing this trefoil
         continue
 
+    final_input_files = [f for g in grouped_ready_files for f in g]
+    masks = get_mask_files(final_input_files, pipeline_config, session, level='2')
+    for file, mask in zip(final_input_files, masks):
+        file.mask = mask
     logger.info(f"{len(grouped_ready_files)} groups heading out")
     return grouped_ready_files
 
@@ -233,6 +238,9 @@ def level2_construct_flow_info(level1_files: list[File], level2_file: File, pipe
     call_data = json.dumps(
         {
             "data_list": [level1_file.filename() for level1_file in level1_files],
+            "image_masks": [level1_file.mask.filename().replace(".fits", ".bin")
+                            if level1_file.mask is not None else None
+                            for level1_file in level1_files],
             "voter_filenames": [[] for _ in level1_files],
             "alphas_file": alphas_path,
             "trim_edges_px": trim_edges_px,
@@ -290,7 +298,8 @@ def level2_clear_scheduler_flow(pipeline_config_path=None, session=None, referen
 
 
 def level2_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    call_data["data_list"] = file_name_to_full_path(call_data["data_list"], pipeline_config["root"])
+    for key in ('data_list', 'image_masks'):
+        call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     return call_data
 
 @flow

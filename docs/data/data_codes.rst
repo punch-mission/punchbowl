@@ -140,6 +140,9 @@ Calibration Product Codes
    * - 1
      - RM1, RM2, RM3, RM4, RZ1, RZ2, RZ3, RZ4, RP1, RP2, RP3, RP4, RC1, RC2, RC3, RC4
      - Point Spread Function (PSF) model for the standard polarization and clear states
+   * - 2
+     - MS1, MS2, MS3, MS4
+     - Additional masks applied in L2 immediately before reprojecting and merging..
    * - Q
      - CFN
      - QuickPUNCH NFI images F corona model

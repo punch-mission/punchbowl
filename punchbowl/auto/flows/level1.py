@@ -376,10 +376,11 @@ def get_quartic_model_path(level0_file, pipeline_config: dict, session=None, ref
     return best_model
 
 
-def get_mask_files(level0_files, pipeline_config: dict, session=None):
+def get_mask_files(level0_files, pipeline_config: dict, session=None, level='1'):
     # Get all models, in reverse-chronological order
     models = (session.query(File)
               .filter(File.file_type == "MS")
+              .filter(File.level == level)
               .where(File.file_version.not_like("v%")) #filters out "v0a".
               .order_by(File.file_version.desc(), File.date_obs.desc()).all())
     results = []
@@ -398,9 +399,10 @@ def get_mask_files(level0_files, pipeline_config: dict, session=None):
     return results
 
 
-def get_mask_file(level0_file, pipeline_config: dict, session=None, reference_time=None):
+def get_mask_file(level0_file, pipeline_config: dict, session=None, reference_time=None, level='1'):
     best_model = (session.query(File)
                   .filter(File.file_type == "MS")
+                  .filter(File.level == level)
                   .filter(File.observatory == level0_file.observatory)
                   .where(File.date_obs <= level0_file.date_obs)
                   .where(File.file_version.not_like("v%")) #filters out "v0a".

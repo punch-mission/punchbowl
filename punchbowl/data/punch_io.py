@@ -29,6 +29,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.visualize import cmap_punch
+from punchbowl.util import compute_tb
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -103,12 +104,12 @@ def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
 def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               filename: str,
                               layer: int | str | None = "tb",
-                              vmin: float = 2e-14,
+                              vmin: float = 1e-14,
                               vmax: float = 1e-12,
                               include_meta: bool = True,
                               annotation: str | None = None,
                               color: bool = False,
-                              gamma: float = 1/3.0) -> None:
+                              gamma: float = 1/2.2) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
 
@@ -156,12 +157,12 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
     elif cube.data.ndim == 3:
         if isinstance(layer, str) and layer.casefold() == "tb":
             if cube.meta["LEVEL"].value == "2":
-                image = 2 / 3 * np.sum(cube.data, axis=0)
+                image = compute_tb(cube.data)
             elif cube.meta["LEVEL"].value == "3":
                 if cube.meta["TYPECODE"].value == "PI": # noqa: SIM108
-                    image = 2 / 3 * np.sum(cube.data, axis=0)
+                    image = compute_tb(cube.data)
                 else:
-                    image = cube.data[1]
+                    image = cube.data[0]
             else:
                 raise RuntimeError("Level 0 and 1 data cannot be converted to tB because they're single polarizations.")
         elif isinstance(layer, int):

@@ -2,12 +2,14 @@ from sunpy.net.attr import SimpleAttr
 
 
 class FileType(SimpleAttr):
-    pass
+    """File type attr."""
+
 
 
 class ProductCode(SimpleAttr):
-    pass
+    """PUNCH product code attr."""
+
 
 
 class DataVersion(SimpleAttr):
-    pass
+    """Data version attr."""

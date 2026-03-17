@@ -17,40 +17,42 @@ ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 
 
 class PUNCHClient(GenericClient):
+    """Fido client for fetching PUNCH data from the SDAC."""
+
     pattern = ("https://umbra.nascom.nasa.gov/punch/{Level}/{ProductCode}{Instrument}/{{year:4d}}/{{month:2d}}/"
                "{{day:2d}}/PUNCH_L{Level}_{ProductCode}{Instrument}_{{year:4d}}{{month:2d}}{{day:2d}}{{hour:2d}}"
                "{{minute:2d}}{{second:2d}}_v{DataVersion}.{FileType}")
 
     @classmethod
-    def _attrs_module(cls):
+    def _attrs_module(cls) -> tuple[str, str]:
         return "punch", "punchbowl.data.fido.attrs"
 
     @classmethod
-    def register_values(cls):
-        from sunpy.net import attrs
-        adict = {
-            attrs.Level: [("0", "L0"),
+    def register_values(cls) -> dict:
+        """Register supported attrs with Fido."""
+        return {
+            a.Level: [("0", "L0"),
                           ("1", "L1"),
                           ("2", "L2"),
                           ("3", "L3"),
                           ("Q", "LQ")],
-            attrs.Instrument: [("WFI-1", "Wide Field Imager 1"),
+            a.Instrument: [("WFI-1", "Wide Field Imager 1"),
                                ("WFI-2", "Wide Field Imager 2"),
                                ("WFI-3", "Wide Field Imager 3"),
                                ("NFI-4", "Narrow Field Imager"),
                                ("M", "PUNCH Mosaic") ],
-            attrs.punch.ProductCode: [(code, code) for code in CODES],
-            attrs.punch.DataVersion: [(f"{v}{subv}", f"{v}{subv}") for subv in ALPHABET for v in range(2)],
-            attrs.Source: [("PUNCH", "Polarimeter to UNify the Corona and Heliosphere")],
-            attrs.Provider: [("SwRI", "Southwest Research Institute")],
-            attrs.punch.FileType: [("fits", "FITS file"), ("jp2", "Quick-look JPEG2000")],
+            a.punch.ProductCode: [(code, code) for code in CODES],
+            a.punch.DataVersion: [(f"{v}{subv}", f"{v}{subv}") for subv in ALPHABET for v in range(2)],
+            a.Source: [("PUNCH", "Polarimeter to UNify the Corona and Heliosphere")],
+            a.Provider: [("SwRI", "Southwest Research Institute")],
+            a.punch.FileType: [("fits", "FITS file"), ("jp2", "Quick-look JPEG2000")],
         }
-        return adict
 
-    instr_replacements = {"wfi-1": 1, "wfi-2": 2, "wfi-3": 3, "nfi-4": 4, "m": "M"}
-
-    def _get_match_dict(cls, *args, **kwargs):
+    @classmethod
+    def _get_match_dict(cls, *args: tuple, **kwargs: dict) -> dict: # noqa: ARG003
         """
+        Override of class method to support default value for FileType.
+
         Constructs a dictionary using the query and registered Attrs that represents
         all possible values of the extracted metadata for files that matches the query.
         The returned dictionary is used to validate the metadata of searched files
@@ -58,9 +60,9 @@ class PUNCHClient(GenericClient):
 
         Parameters
         ----------
-        \\*args: `tuple`
+        args: `tuple`
             `sunpy.net.attrs` objects representing the query.
-        \\*\\*kwargs: `dict`
+        kwargs: `dict`
             Any extra keywords to refine the search.
 
         Returns
@@ -72,7 +74,7 @@ class PUNCHClient(GenericClient):
         """
         regattrs_dict = cls.register_values()
         matchdict = {}
-        for i in regattrs_dict.keys():
+        for i in regattrs_dict:
             attrname = i.__name__
             # only Attr values that are subclas of Simple Attr are stored as list in matchdict
             # since complex attrs like Range can't be compared with string matching.
@@ -91,28 +93,26 @@ class PUNCHClient(GenericClient):
             elif isinstance(elem, a.Wavelength):
                 matchdict["Wavelength"] = elem
             else:
-                raise ValueError(
-                    f"GenericClient can not add {elem.__class__.__name__} to the rowdict dictionary to pass to the Client.")
+                raise ValueError(f"GenericClient can not add {elem.__class__.__name__} to the rowdict dictionary to "
+                                 f"pass to the Client.")
         return matchdict
 
-    def search(self, *args, **kwargs):
-        for arg in args:
-            print(arg)
-        for k, v in kwargs.items():
-            print(k, v)
+    def search(self, *args: tuple, **kwargs: dict) -> QueryResponse:
+        """Override of base class method to run the search, handling PUNCH attrs."""
         matchdict = self._get_match_dict(*args, **kwargs)
-        print(matchdict)
         req_codes = matchdict.get("ProductCode")
         req_instrs = matchdict.get("Instrument")
         req_levels = matchdict.get("Level")
         req_versions = matchdict.get("DataVersion")
         req_file_types = matchdict.get("FileType")
 
+        instr_replacements = {"wfi-1": 1, "wfi-2": 2, "wfi-3": 3, "nfi-4": 4, "m": "M"}
+
         metalist = []
         for code, instr, level, dversion, file_type in product(
                 req_codes, req_instrs, req_levels, req_versions, req_file_types):
-            code = code.upper()
-            url_instr = self.instr_replacements[instr]
+            code = code.upper() # noqa: PLW2901
+            url_instr = instr_replacements[instr]
             fdict = {"ProductCode": code, "Instrument": url_instr, "Level": level, "DataVersion": dversion,
                      "FileType": file_type}
 
@@ -120,7 +120,7 @@ class PUNCHClient(GenericClient):
             urlpattern = urlpattern.replace("{", "{{").replace("}", "}}")
             scraper = Scraper(format=urlpattern)
             tr = TimeRange(matchdict["Start Time"], matchdict["End Time"])
-            filesmeta = scraper._extract_files_meta(tr)
+            filesmeta = scraper._extract_files_meta(tr) # noqa: SLF001
             for i in filesmeta:
                 rowdict = self.post_search_hook(i, matchdict)
                 rowdict["ProductCode"] = code

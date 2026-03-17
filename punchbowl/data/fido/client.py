@@ -6,7 +6,7 @@ from sunpy.net.dataretriever.client import GenericClient, QueryResponse
 from sunpy.net.scraper import Scraper
 from sunpy.time import TimeRange
 
-from .attrs import FileType
+from .attrs import DataVersion, FileType
 
 POLS = ["R", "M", "Z", "P"]
 PREFIXES = ["X", "Y", "S", "T", "G"]
@@ -21,7 +21,7 @@ class PUNCHClient(GenericClient):
 
     pattern = ("https://umbra.nascom.nasa.gov/punch/{Level}/{ProductCode}{Instrument}/{{year:4d}}/{{month:2d}}/"
                "{{day:2d}}/PUNCH_L{Level}_{ProductCode}{Instrument}_{{year:4d}}{{month:2d}}{{day:2d}}{{hour:2d}}"
-               "{{minute:2d}}{{second:2d}}_v{DataVersion}.{FileType}")
+               "{{minute:2d}}{{second:2d}}_v{{DataVersion}}.{FileType}")
 
     @classmethod
     def _attrs_module(cls) -> tuple[str, str]:
@@ -42,7 +42,8 @@ class PUNCHClient(GenericClient):
                                ("NFI-4", "Narrow Field Imager"),
                                ("M", "PUNCH Mosaic") ],
             a.punch.ProductCode: [(code, code) for code in CODES],
-            a.punch.DataVersion: [(f"{v}{subv}", f"{v}{subv}") for subv in ALPHABET for v in range(2)],
+            a.punch.DataVersion: [("newest", "Newest available")]
+                                 + [(f"{v}{subv}", f"{v}{subv}") for subv in ALPHABET for v in range(2)],
             a.Source: [("PUNCH", "Polarimeter to UNify the Corona and Heliosphere")],
             a.Provider: [("SwRI", "Southwest Research Institute")],
             a.punch.FileType: [("fits", "FITS file"), ("jp2", "Quick-look JPEG2000")],
@@ -80,6 +81,8 @@ class PUNCHClient(GenericClient):
             # since complex attrs like Range can't be compared with string matching.
             if i is FileType:
                 matchdict[attrname] = ["fits"]
+            elif i is DataVersion:
+                matchdict[attrname] = ["newest"]
             elif issubclass(i, SimpleAttr):
                 matchdict[attrname] = []
                 for val, _ in regattrs_dict[i]:
@@ -113,7 +116,7 @@ class PUNCHClient(GenericClient):
                 req_codes, req_instrs, req_levels, req_versions, req_file_types):
             code = code.upper() # noqa: PLW2901
             url_instr = instr_replacements[instr]
-            fdict = {"ProductCode": code, "Instrument": url_instr, "Level": level, "DataVersion": dversion,
+            fdict = {"ProductCode": code, "Instrument": url_instr, "Level": level,
                      "FileType": file_type}
 
             urlpattern = self.pattern.format(**fdict)
@@ -121,11 +124,26 @@ class PUNCHClient(GenericClient):
             scraper = Scraper(format=urlpattern)
             tr = TimeRange(matchdict["Start Time"], matchdict["End Time"])
             filesmeta = scraper._extract_files_meta(tr) # noqa: SLF001
-            for i in filesmeta:
-                rowdict = self.post_search_hook(i, matchdict)
+
+            if dversion == "newest":
+                newest_file_by_date = {}
+                for row in filesmeta:
+                    tstamp = (row["year"], row["month"], row["day"], row["hour"], row["minute"], row["second"])
+                    entry = (row["DataVersion"], row)
+                    if tstamp in newest_file_by_date:
+                        if row["DataVersion"] > newest_file_by_date[tstamp][0]:
+                            newest_file_by_date[tstamp] = entry
+                    else:
+                        newest_file_by_date[tstamp] = entry
+                filesmeta = []
+                for key in sorted(newest_file_by_date.keys()):
+                    filesmeta.append(newest_file_by_date[key][1])
+
+            for row in filesmeta:
+                rowdict = self.post_search_hook(row, matchdict)
                 rowdict["ProductCode"] = code
                 rowdict["Instrument"] = instr.upper()
-                rowdict["DataVersion"] = dversion.lower()
+                rowdict["DataVersion"] = row["DataVersion"].lower()
                 rowdict["Provider"] = "SwRI"
                 rowdict["Level"] = level.upper()
                 rowdict["FileType"] = file_type

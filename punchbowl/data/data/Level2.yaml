@@ -40,6 +40,19 @@ Kinds:
             POLARREF: 'Solar'
         omits: [FILTER, POLAR]
 
+    Polarized_intermed:
+        overrides:
+            NAXIS: 2
+            NAXIS1: 4096
+            NAXIS2: 4096
+            OBS-MODE: Polar_MZP
+            POLARREF: 'Solar'
+        omits: [FILTER]
+
+    Intermediary:
+        overrides:
+            DESCRPTN: PUNCH Level-2 data, single-exposure intermediary mosaic
+
     Unpolarized:
         overrides:
             NAXIS: 2
@@ -122,3 +135,49 @@ Products:
             OBSCODE: N
             HAS_NFI4: 1
             ALL_INPT: 1
+
+    XM?:
+        kinds: [Polarized_intermed, Intermediary]
+        overrides:
+            TITLE: PUNCH Level-2 {craftname} Polarized Image, Intermediary
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: XM
+            OBSLAYR1: Polar_M
+            POLAR: -60
+
+    XZ?:
+        kinds: [Polarized_intermed, Intermediary]
+        overrides:
+            TITLE: PUNCH Level-2 {craftname} Polarized Image, Intermediary
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: XZ
+            OBSLAYR1: Polar_Z
+            POLAR: 0
+
+    XP?:
+        kinds: [Polarized_intermed, Intermediary]
+        overrides:
+            TITLE: PUNCH Level-2 {craftname} Polarized Image, Intermediary
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: XP
+            OBSLAYR1: Polar_P
+            POLAR: +60
+
+    XR?:
+        kinds: [Unpolarized, Intermediary]
+        overrides:
+            TITLE: PUNCH Level-2 {craftname} Clear Image, Intermediary
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: XR

@@ -136,6 +136,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         data_list = [identify_bright_structures_task(cube, this_voter_filenames)
                      for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
         merger = merge_many_polarized_task if polarized else merge_many_clear_task
+        layers_before_merge = data_list
         output_data = merger(data_list, trefoil_wcs)
         output_data.meta["FILEVRSN"] = find_first_existing_file(data_list).meta["FILEVRSN"].value
         history_src = next(d for d in data_list if d is not None)
@@ -164,6 +165,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             wcs=trefoil_wcs,
             meta=NormalizedMetadata.load_template("PTM" if polarized else "CTM", "2"),
         )
+        layers_before_merge = []
 
     output_data.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_data.meta["DATE-AVG"] = output_dateobs
@@ -190,9 +192,26 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
                                     output_data.meta["HAS_WFI2"].value,
                                     output_data.meta["HAS_WFI3"].value,
                                     output_data.meta["HAS_NFI4"].value} == {1}
+    output_cubes = [output_data]
 
     if output_filename is not None:
         output_image_task(output_data, output_filename)
 
+    for x_cube in layers_before_merge:
+        meta = NormalizedMetadata.load_template("X" + x_cube.meta["TYPECODE"].value[1] + x_cube.meta["OBSCODE"].value,
+                                                level="2")
+        meta.history = x_cube.meta.history
+        for key in ["FILEVRSN", "MOONDIST", "MOON_X", "MOON_Y"]:
+            meta[key] = output_data.meta[key].value
+        for key in ["OUTLIER", "BADPKTS", "DATE-OBS", "DATE-AVG", "DATE-BEG", "DATE-END", "DATE"]:
+            meta[key] = x_cube.meta[key].value
+        obs_no = x_cube.meta["OBSCODE"].value
+        obs = "NFI" if obs_no == "4" else "WFI"
+        meta[f"CTRX{obs}{obs_no}"] = output_data.meta[f"CTRX{obs}{obs_no}"].value
+        meta[f"CTRY{obs}{obs_no}"] = output_data.meta[f"CTRY{obs}{obs_no}"].value
+        spacecraft = SPACECRAFT_OBSCODE[obs_no]
+        meta[f"HAS_{spacecraft}"] = 1
+        output_cubes.append(NDCube(x_cube.data, meta=meta, wcs=x_cube.wcs, uncertainty=x_cube.uncertainty))
+
     logger.info("ending level 2 core flow")
-    return [output_data]
+    return output_cubes

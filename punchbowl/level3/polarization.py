@@ -42,7 +42,7 @@ def convert_polarization(
     output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
     output = set_spacecraft_location_to_earth(output)
 
-    logger.info("convert2bpb finished")
+    logger.info("convert2bp3 finished")
     output.meta.history.add_now("LEVEL3-convert2bp3", "Convert MZP to B-pB-pBp")
 
     return output

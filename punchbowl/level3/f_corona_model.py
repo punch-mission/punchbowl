@@ -1,3 +1,4 @@
+import os
 import multiprocessing as mp
 from datetime import UTC, datetime
 
@@ -382,6 +383,8 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         output_data = model_fcorona
         uncertainty = np.sqrt(uncertainty) / sample_counts
         meta = NormalizedMetadata.load_template("CFM", "3")
+
+    meta.provenance = [os.path.basename(f) for f in filenames]
 
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE-AVG"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

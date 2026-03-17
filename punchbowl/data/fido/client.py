@@ -128,5 +128,6 @@ class PUNCHClient(GenericClient):
                 rowdict["DataVersion"] = dversion.lower()
                 rowdict["Provider"] = "SwRI"
                 rowdict["Level"] = level.upper()
+                rowdict["FileType"] = file_type
                 metalist.append(rowdict)
         return QueryResponse(metalist, client=self)

@@ -29,7 +29,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.visualize import cmap_punch
-from punchbowl.util import compute_tb
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -157,10 +156,10 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
     elif cube.data.ndim == 3:
         if isinstance(layer, str) and layer.casefold() == "tb":
             if cube.meta["LEVEL"].value == "2":
-                image = compute_tb(cube.data)
+                image = 2 / 3 * np.sum(cube.data, axis=0)
             elif cube.meta["LEVEL"].value == "3":
                 if cube.meta["TYPECODE"].value == "PI": # noqa: SIM108
-                    image = compute_tb(cube.data)
+                    image = 2 / 3 * np.sum(cube.data, axis=0)
                 else:
                     image = cube.data[0]
             else:

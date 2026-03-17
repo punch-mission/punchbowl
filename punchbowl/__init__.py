@@ -6,3 +6,5 @@ try:
   __version__ = importlib.metadata.version("punchbowl")
 except PackageNotFoundError:
   __version__ = "0.0.0"
+
+import punchbowl.data.fido

@@ -1,7 +1,7 @@
 from sunpy.net.attr import SimpleAttr
 
 
-class Polarization(SimpleAttr):
+class FileType(SimpleAttr):
     pass
 
 

@@ -130,7 +130,7 @@ class PUNCHClient(GenericClient):
             # will be matched and the values extracted.
             urlpattern = self.pattern.format(**fdict)
             urlpattern = urlpattern.replace("{", "{{").replace("}", "}}")
-            
+
             scraper = Scraper(format=urlpattern)
             tr = TimeRange(matchdict["Start Time"], matchdict["End Time"])
             filesmeta = scraper._extract_files_meta(tr) # noqa: SLF001

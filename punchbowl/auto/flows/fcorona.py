@@ -1,5 +1,6 @@
 import json
 from datetime import datetime, timedelta
+from collections import Counter
 
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger, task
@@ -18,13 +19,16 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
                                           reference_file: File):
     logger = get_run_logger()
 
-    min_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["min_files_per_half"]
-    max_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_files_per_half"]
+    target_file_types = ['XR'] if reference_file.polarization == 'C' else ['X' + pol for pol in ('M', 'Z', 'P')]
+
     max_hours_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_hours_per_half"]
     t_start = reference_time - timedelta(hours=max_hours_per_half)
     t_end = reference_time + timedelta(hours=max_hours_per_half)
+    min_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["min_files_per_half"]
+    max_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_files_per_half"]
 
-    target_file_type = reference_file.file_type[0] + "T"
+    min_files_per_half *= len(target_file_types)
+    max_files_per_half *= len(target_file_types)
 
     base_query = (session.query(File)
                   .filter(File.state.in_(["created", "progressed"]))
@@ -35,14 +39,14 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     first_half_inputs = (base_query
                          .filter(File.date_obs >= t_start)
                          .filter(File.date_obs <= reference_time)
-                         .filter(File.file_type == target_file_type)
+                         .filter(File.file_type.in_(target_file_types))
                          .filter(File.level == "2")
                          .order_by(File.date_obs.desc())
                          .limit(max_files_per_half).all())
     second_half_inputs = (base_query
                           .filter(File.date_obs >= reference_time)
                           .filter(File.date_obs <= t_end)
-                          .filter(File.file_type == target_file_type)
+                          .filter(File.file_type.in_(target_file_types))
                           .filter(File.level == "2")
                           .order_by(File.date_obs.asc())
                           .limit(max_files_per_half).all())
@@ -51,14 +55,23 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     if enough_L2s:
         all_ready_files = first_half_inputs + second_half_inputs
 
-        logger.info(f"{len(all_ready_files)} Level 2 {target_file_type}{reference_file.observatory} files will be used "
+        n_per_type = Counter([f.file_type + reference_file.observatory for f in first_half_inputs + second_half_inputs])
+        counts = ','.join(f"{count} {kind}" for kind, count in n_per_type.items())
+
+        logger.info(f"{counts} Level 2 files will be used "
                      "for F corona estimation.")
+
+        expected_n = len(first_half_inputs) / 3 + len(second_half_inputs) / 3
+        for kind, count in n_per_type.items():
+            if count < 0.99 * expected_n:
+                raise RuntimeError(f"Unexpectedly missing {kind} files---have {count}, expected {expected_n}")
+
         return [f for f in all_ready_files]
     else:
         status = []
         status.append("not enough inputs")
-        status.append(f"first half: {len(first_half_inputs)} files")
-        status.append(f"second half: {len(second_half_inputs)} files")
+        status.append(f"first half: {Counter([f.file_type for f in first_half_inputs])} files")
+        status.append(f"second half: {Counter([f.file_type for f in second_half_inputs])} files")
         status.append(f"looked for inputs between {t_start.isoformat(' ')} and {t_end.isoformat(' ')}")
         logger.info(f'{reference_file.filename()}: ' + '; '.join(status))
     return []
@@ -103,7 +116,7 @@ def construct_f_corona_background_file_info(level2_files: list[File], pipeline_c
     return [File(
                 level="3",
                 file_type=file_type,
-                observatory="M",
+                observatory=spacecraft,
                 polarization=level2_files[0].polarization,
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
@@ -153,23 +166,23 @@ def construct_f_corona_background_scheduler_flow(pipeline_config_path=None, sess
     for i in range(n, -1, -1):
         t = t0 + i * increment
         for model_type in ["CF", "PF"]:
-            observatory = "M"
-            key = (model_type, observatory, t)
-            model = existing_models.get(key)
-            if model is None:
-                new_model = File(state="waiting",
-                                 level="3",
-                                 file_type=model_type,
-                                 observatory=observatory,
-                                 polarization=model_type[0],
-                                 date_obs=t,
-                                 date_created=datetime.now(),
-                                 file_version=pipeline_config["file_version"],
-                                 software_version=__version__)
-                session.add(new_model)
-                models_to_try_creating.append(new_model)
-            elif model.state == "waiting":
-                models_to_try_creating.append(model)
+            for observatory in ["1", "2", "3", "4"]:
+                key = (model_type, observatory, t)
+                model = existing_models.get(key)
+                if model is None:
+                    new_model = File(state="waiting",
+                                     level="3",
+                                     file_type=model_type,
+                                     observatory=observatory,
+                                     polarization=model_type[0],
+                                     date_obs=t,
+                                     date_created=datetime.now(),
+                                     file_version=pipeline_config["file_version"],
+                                     software_version=__version__)
+                    session.add(new_model)
+                    models_to_try_creating.append(new_model)
+                elif model.state == "waiting":
+                    models_to_try_creating.append(model)
 
     session.commit()
     logger.info(f"There are {len(models_to_try_creating)} waiting models")
@@ -191,7 +204,7 @@ def construct_f_corona_background_scheduler_flow(pipeline_config_path=None, sess
             session, pipeline_config, model.date_obs, model)
         if ready_files:
             to_schedule.append((model, ready_files))
-            logger.info(f"Will schedule {model.file_type} at {model.date_obs}")
+            logger.info(f"Will schedule {model.file_type}{model.observatory} at {model.date_obs}")
             if len(to_schedule) == flows_to_schedule:
                 break
 

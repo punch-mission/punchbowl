@@ -25,6 +25,7 @@ class PUNCHClient(GenericClient):
 
     @classmethod
     def _attrs_module(cls) -> tuple[str, str]:
+        """Tell Fido where our custom attributes are."""
         return "punch", "punchbowl.data.fido.attrs"
 
     @classmethod
@@ -52,7 +53,7 @@ class PUNCHClient(GenericClient):
     @classmethod
     def _get_match_dict(cls, *args: tuple, **kwargs: dict) -> dict: # noqa: ARG003
         """
-        Override of class method to support default value for FileType.
+        Override of class method to support default value for FileType and DataVersion.
 
         Constructs a dictionary using the query and registered Attrs that represents
         all possible values of the extracted metadata for files that matches the query.
@@ -79,6 +80,8 @@ class PUNCHClient(GenericClient):
             attrname = i.__name__
             # only Attr values that are subclas of Simple Attr are stored as list in matchdict
             # since complex attrs like Range can't be compared with string matching.
+            
+            # HERE is where we deviate from the base class method, setting single default values for these two fields.
             if i is FileType:
                 matchdict[attrname] = ["fits"]
             elif i is DataVersion:
@@ -102,6 +105,8 @@ class PUNCHClient(GenericClient):
 
     def search(self, *args: tuple, **kwargs: dict) -> QueryResponse:
         """Override of base class method to run the search, handling PUNCH attrs."""
+        # matchdict will contain all the attributes we support querying. For each attribute, we'll have the
+        # user-selected value if set, or the default if not. For some keys, the 'default' is all possible values.
         matchdict = self._get_match_dict(*args, **kwargs)
         req_codes = matchdict.get("ProductCode")
         req_instrs = matchdict.get("Instrument")
@@ -112,6 +117,7 @@ class PUNCHClient(GenericClient):
         instr_replacements = {"wfi-1": 1, "wfi-2": 2, "wfi-3": 3, "nfi-4": 4, "m": "M"}
 
         metalist = []
+        # For every possible combination of requested values, we have to build and scrape a URL.
         for code, instr, level, dversion, file_type in product(
                 req_codes, req_instrs, req_levels, req_versions, req_file_types):
             code = code.upper() # noqa: PLW2901
@@ -119,15 +125,21 @@ class PUNCHClient(GenericClient):
             fdict = {"ProductCode": code, "Instrument": url_instr, "Level": level,
                      "FileType": file_type}
 
+            # Scraper can only handle dates as "variables" in the url's directory path, so we have to fill in level
+            # and product code. Scraper will handle day/month/year, and "wildcards" in the filename part of the URL
+            # will be matched and the values extracted.
             urlpattern = self.pattern.format(**fdict)
-            urlpattern = urlpattern.replace("{", "{{").replace("}", "}}")
+            
             scraper = Scraper(format=urlpattern)
             tr = TimeRange(matchdict["Start Time"], matchdict["End Time"])
             filesmeta = scraper._extract_files_meta(tr) # noqa: SLF001
+            # filesmeta will contain each file matching the pattern, as well as the matched values for all the "{{
+            # Value}}" fields in the url pattern.
 
             if dversion == "newest":
                 newest_file_by_date = {}
                 for row in filesmeta:
+                    # For each timestamp, we'll track the highest data version we see
                     tstamp = (row["year"], row["month"], row["day"], row["hour"], row["minute"], row["second"])
                     entry = (row["DataVersion"], row)
                     if tstamp in newest_file_by_date:
@@ -135,12 +147,15 @@ class PUNCHClient(GenericClient):
                             newest_file_by_date[tstamp] = entry
                     else:
                         newest_file_by_date[tstamp] = entry
+                # Now we'll extract the newest versions
                 filesmeta = []
                 for key in sorted(newest_file_by_date.keys()):
                     filesmeta.append(newest_file_by_date[key][1])
 
             for row in filesmeta:
                 rowdict = self.post_search_hook(row, matchdict)
+                # For the fields that we pasted into the URL pattern, we now have to put the corresponding values in
+                # the table of files. We can also massage the values a bit.
                 rowdict["ProductCode"] = code
                 rowdict["Instrument"] = instr.upper()
                 rowdict["DataVersion"] = row["DataVersion"].lower()

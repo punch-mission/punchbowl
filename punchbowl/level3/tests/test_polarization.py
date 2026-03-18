@@ -43,3 +43,59 @@ def test_convert_polarization(sample_data_triplet):
     assert np.allclose(output.data[1], pbarray)
     assert np.allclose(output.data[2], pbparray)
 
+
+pbparray_nz = 0.5 * tbarray
+@pytest.fixture
+def sample_data_triplet_pbp_nonzero(sample_ndcube):
+    """
+    Generate a list of sample PUNCH data objects for testing polarization resolving
+    """
+    data_cube = load_ndcube_from_fits(TEST_FILE, include_provenance=False)
+    shape = data_cube.data[0].shape
+    alph = radial_north(shape)
+
+    polar_angles = [-60, 0, 60] * u.degree
+    Bm = (1 / 2) * (tbarray - pbarray * np.cos(2 * (polar_angles[0] - alph)) -
+                    pbparray_nz * np.sin(2 * (polar_angles[0] - alph)))
+    Bz = (1 / 2) * (tbarray - pbarray * np.cos(2 * (polar_angles[1] - alph)) -
+                    pbparray_nz * np.sin(2 * (polar_angles[1] - alph)))
+    Bp = (1 / 2) * (tbarray - pbarray * np.cos(2 * (polar_angles[2] - alph)) -
+                    pbparray_nz * np.sin(2 * (polar_angles[2] - alph)))
+
+    data_mzp = np.stack((Bm, Bz, Bp))
+
+    return NDCube(data=data_mzp, wcs=data_cube.wcs, meta=data_cube.meta)
+
+
+def test_convert_polarization_pbp_nonzero(sample_data_triplet_pbp_nonzero):
+    output = convert_polarization(sample_data_triplet_pbp_nonzero)
+
+    assert isinstance(output, NDCube)
+    assert output.data[0].shape == tbarray.shape
+    assert np.allclose(output.data[0], tbarray)
+    assert np.allclose(output.data[1], pbarray)
+    assert np.allclose(output.data[2], pbparray_nz)
+
+
+@pytest.fixture
+def sample_data_triplet_nopbp_equation(sample_ndcube):
+    """
+    Generate a list of sample PUNCH data objects for testing polarization resolving
+    """
+    data_cube = load_ndcube_from_fits(TEST_FILE, include_provenance=False)
+    shape = data_cube.data[0].shape
+    alph = radial_north(shape)
+
+    polar_angles = [-60, 0, 60] * u.degree
+    Bm = (1 / 2) * (tbarray - pbarray * np.cos(2 * (polar_angles[0] - alph)))
+    Bz = (1 / 2) * (tbarray - pbarray * np.cos(2 * (polar_angles[1] - alph)))
+    Bp = (1 / 2) * (tbarray - pbarray * np.cos(2 * (polar_angles[2] - alph)))
+
+    data_mzp = np.stack((Bm, Bz, Bp))
+
+    return NDCube(data=data_mzp, wcs=data_cube.wcs, meta=data_cube.meta)
+
+
+def test_convert_polarization_nopbp_equation(sample_data_triplet_nopbp_equation):
+    output = convert_polarization(sample_data_triplet_nopbp_equation)
+    assert np.allclose(output.data[2], pbparray_nz) == False

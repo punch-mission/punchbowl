@@ -7,4 +7,4 @@ try:
 except PackageNotFoundError:
   __version__ = "0.0.0"
 
-import punchbowl.data.fido
+from punchbowl.data import fido as fido

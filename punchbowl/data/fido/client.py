@@ -37,12 +37,12 @@ class PUNCHClient(GenericClient):
                           ("2", "L2"),
                           ("3", "L3"),
                           ("Q", "LQ")],
+            a.punch.ProductCode: [(code, code) for code in CODES],
             a.Instrument: [("WFI-1", "Wide Field Imager 1"),
                                ("WFI-2", "Wide Field Imager 2"),
                                ("WFI-3", "Wide Field Imager 3"),
                                ("NFI-4", "Narrow Field Imager"),
                                ("M", "PUNCH Mosaic") ],
-            a.punch.ProductCode: [(code, code) for code in CODES],
             a.punch.DataVersion: [("newest", "Newest available")]
                                  + [(f"{v}{subv}", f"{v}{subv}") for subv in ALPHABET for v in range(2)],
             a.Source: [("PUNCH", "Polarimeter to UNify the Corona and Heliosphere")],

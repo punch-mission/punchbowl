@@ -80,7 +80,7 @@ class PUNCHClient(GenericClient):
             attrname = i.__name__
             # only Attr values that are subclas of Simple Attr are stored as list in matchdict
             # since complex attrs like Range can't be compared with string matching.
-            
+
             # HERE is where we deviate from the base class method, setting single default values for these two fields.
             if i is FileType:
                 matchdict[attrname] = ["fits"]
@@ -129,7 +129,7 @@ class PUNCHClient(GenericClient):
             # and product code. Scraper will handle day/month/year, and "wildcards" in the filename part of the URL
             # will be matched and the values extracted.
             urlpattern = self.pattern.format(**fdict)
-            
+
             scraper = Scraper(format=urlpattern)
             tr = TimeRange(matchdict["Start Time"], matchdict["End Time"])
             filesmeta = scraper._extract_files_meta(tr) # noqa: SLF001

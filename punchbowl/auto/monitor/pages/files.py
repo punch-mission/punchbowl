@@ -22,13 +22,23 @@ def layout():
             html.Div([
                 "Presets: ",
                 dcc.Button(
-                    'All files w/ date_created in last 5 days',
+                    'All files created in last 5 days',
                     id='created-recently',
+                    style={"margin": "10px"}
+                ),
+                dcc.Button(
+                    'All files created today (MT)',
+                    id='created-today',
                     style={"margin": "10px"}
                 ),
                 dcc.Button(
                     'All files w/ date_obs in last 5 days',
                     id='dated-recently',
+                    style={"margin": "10px"}
+                ),
+                dcc.Button(
+                    'All files w/ date_obs today (UTC)',
+                    id='dated-today',
                     style={"margin": "10px"}
                 ),
             ]),
@@ -255,12 +265,54 @@ def preset_created_recently(n_clicks):
     Output("table-date-created", "end_date", allow_duplicate=True),
     Output("file-level-filters", "value", allow_duplicate=True),
     Output("graph_point_time_window", "value", allow_duplicate=True),
+    Input("created-today", "n_clicks"),
+    prevent_initial_call=True,
+)
+def preset_created_today(n_clicks):
+    return (
+        None,
+        None,
+        date.today(),
+        None,
+        [],
+        0,
+    )
+
+
+@callback(
+    Output("table-date-obs", "start_date", allow_duplicate=True),
+    Output("table-date-obs", "end_date", allow_duplicate=True),
+    Output("table-date-created", "start_date", allow_duplicate=True),
+    Output("table-date-created", "end_date", allow_duplicate=True),
+    Output("file-level-filters", "value", allow_duplicate=True),
+    Output("graph_point_time_window", "value", allow_duplicate=True),
     Input("dated-recently", "n_clicks"),
     prevent_initial_call=True,
 )
 def preset_dated_recently(n_clicks):
     return (
         date.today() - timedelta(days=5),
+        None,
+        None,
+        None,
+        [],
+        0,
+    )
+
+
+@callback(
+    Output("table-date-obs", "start_date", allow_duplicate=True),
+    Output("table-date-obs", "end_date", allow_duplicate=True),
+    Output("table-date-created", "start_date", allow_duplicate=True),
+    Output("table-date-created", "end_date", allow_duplicate=True),
+    Output("file-level-filters", "value", allow_duplicate=True),
+    Output("graph_point_time_window", "value", allow_duplicate=True),
+    Input("dated-today", "n_clicks"),
+    prevent_initial_call=True,
+)
+def preset_dated_today(n_clicks):
+    return (
+        date.today(),
         None,
         None,
         None,

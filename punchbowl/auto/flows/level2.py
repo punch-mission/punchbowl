@@ -1,6 +1,7 @@
 import json
 from datetime import UTC, datetime, timedelta
 
+from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
 
@@ -20,7 +21,7 @@ SCIENCE_CLEAR_LEVEL1_TYPES = ["CR"]
 
 @task(cache_policy=NO_CACHE)
 def level2_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    return _level2_query_ready_files(session, polarized=True, pipeline_config=pipeline_config, max_n=max_n)
+    return _level2_query_ready_files(session, polarized=True, pipeline_config=pipeparse_datetime_strline_config, max_n=max_n)
 
 
 @task(cache_policy=NO_CACHE)
@@ -48,8 +49,14 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
     else:
         grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=10)
 
-    # Switch to most-recent-first order
-    grouped_files = grouped_files[::-1]
+    target_date = pipeline_config.get("target_date")
+    target_date = parse_datetime_str(target_date) if target_date else None
+    if target_date:
+        # Sort by closeness to the target date
+        grouped_files.sort(key=lambda group: abs((group[0].date_obs - target_date).total_seconds()))
+    else:
+        # Switch to most-recent-first order
+        grouped_files = grouped_files[::-1]
 
     logger.info(f"{len(grouped_files)} sets of grouped files")
     grouped_ready_files = []

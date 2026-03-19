@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from itertools import pairwise
 from collections import defaultdict
 
-from dateutil.parser import parse as parse_datetime
+from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
 from sqlalchemy import and_
@@ -304,8 +304,14 @@ def level3_CIM_query_ready_files(session, pipeline_config: dict, reference_time=
     grouped_files = [
         group for group in grouped_files if max(f.date_created for f in group) < datetime.now() - timedelta(minutes=2)]
 
-    # Switch to most-recent-first order
-    grouped_files = grouped_files[::-1]
+    target_date = pipeline_config.get("target_date")
+    target_date = parse_datetime_str(target_date) if target_date else None
+    if target_date:
+        # Sort by closeness to the target date
+        grouped_files.sort(key=lambda group: abs((group[0].date_obs - target_date).total_seconds()))
+    else:
+        # Switch to most-recent-first order
+        grouped_files = grouped_files[::-1]
 
     all_files = [f for group in grouped_files for f in group]
 
@@ -523,7 +529,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
     if len(all_ready_files) == 0:
         return []
 
-    t0 = parse_datetime(pipeline_config["flows"]["level3_PAM" if polarized else "level3_CAM"]["t0"])
+    t0 = parse_datetime_str(pipeline_config["flows"]["level3_PAM" if polarized else "level3_CAM"]["t0"])
     increment = timedelta(minutes=32)
 
     end_time = t0

@@ -19,6 +19,19 @@ dash.register_page(__name__)
 
 def layout():
     return html.Div([
+            html.Div([
+                "Presets: ",
+                dcc.Button(
+                    'All files w/ date_created in last 5 days',
+                    id='created-recently',
+                    style={"margin": "10px"}
+                ),
+                dcc.Button(
+                    'All files w/ date_obs in last 5 days',
+                    id='dated-recently',
+                    style={"margin": "10px"}
+                ),
+            ]),
             dbc.Row([
                 dbc.Col([
                     html.Div([
@@ -97,7 +110,7 @@ def layout():
                              page_action="custom",
 
                              filter_action="custom",
-                             filter_query="{file_type} = CR,P*",
+                             filter_query="",
 
                              sort_action="custom",
                              sort_mode="multi",
@@ -192,11 +205,54 @@ def layout():
 @callback(
     Output("interval-component", "interval"),
     Input("auto-refresh", "value"),
+    prevent_initial_call=True,
 )
 def toggle_auto_refresh(auto_refresh_settings):
     if "Enabled" in auto_refresh_settings:
         return REFRESH_RATE * 1000
     return 99999999999999999
+
+
+@callback(
+    Output("table-date-obs", "start_date", allow_duplicate=True),
+    Output("table-date-obs", "end_date", allow_duplicate=True),
+    Output("table-date-created", "start_date", allow_duplicate=True),
+    Output("table-date-created", "end_date", allow_duplicate=True),
+    Output("extra-filters2", "value", allow_duplicate=True),
+    Output("graph_point_time_window", "value", allow_duplicate=True),
+    Input("created-recently", "n_clicks"),
+    prevent_initial_call=True,
+)
+def preset_created_recently(n_clicks):
+    return (
+        None,
+        None,
+        date.today() - timedelta(days=5),
+        None,
+        [],
+        0,
+    )
+
+
+@callback(
+    Output("table-date-obs", "start_date", allow_duplicate=True),
+    Output("table-date-obs", "end_date", allow_duplicate=True),
+    Output("table-date-created", "start_date", allow_duplicate=True),
+    Output("table-date-created", "end_date", allow_duplicate=True),
+    Output("extra-filters2", "value", allow_duplicate=True),
+    Output("graph_point_time_window", "value", allow_duplicate=True),
+    Input("dated-recently", "n_clicks"),
+    prevent_initial_call=True,
+)
+def preset_dated_recently(n_clicks):
+    return (
+        date.today() - timedelta(days=5),
+        None,
+        None,
+        None,
+        [],
+        0,
+    )
 
 
 # It's important that e.g. '>=' appears before '>' or '=', otherwise the latter ones will match '>='

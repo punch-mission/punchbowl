@@ -110,7 +110,8 @@ def layout():
                     ]),
                 ], width="auto", className="gx-5"),
         ]),
-        dash_table.DataTable(id="files-table",
+        dcc.Loading(
+            dash_table.DataTable(id="files-table",
                              data=pd.DataFrame({name: [] for name in USABLE_COLUMNS + ["Count"]}).to_dict("records"),
                              columns=[{"name": col, "id": col.lower().replace(" ", "_")} for col in USABLE_COLUMNS + ["Count"]],
                              page_current=0,
@@ -128,6 +129,8 @@ def layout():
                              fill_width=False,
                              persistence=True, persistence_type="memory",
                              ),
+            overlay_style={"visibility": "visible", "filter": "opacity(65%)"},
+        ),
         html.Hr(),
         dbc.Row([
             dbc.Col(width="auto", align="center", children=[
@@ -202,7 +205,10 @@ def layout():
                 ]),
             ]),
         ]),
-        dcc.Graph(id="file-graph", style={"height": "400"}),
+        dcc.Loading(
+            dcc.Graph(id="file-graph", style={"height": "400"}),
+            overlay_style={"visibility": "visible", "filter": "opacity(65%)"},
+        ),
         dcc.Interval(
             id="interval-component",
             interval=REFRESH_RATE * 1000,  # in milliseconds

@@ -21,7 +21,7 @@ SCIENCE_CLEAR_LEVEL1_TYPES = ["CR"]
 
 @task(cache_policy=NO_CACHE)
 def level2_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    return _level2_query_ready_files(session, polarized=True, pipeline_config=pipeparse_datetime_strline_config, max_n=max_n)
+    return _level2_query_ready_files(session, polarized=True, pipeline_config=pipeline_config, max_n=max_n)
 
 
 @task(cache_policy=NO_CACHE)

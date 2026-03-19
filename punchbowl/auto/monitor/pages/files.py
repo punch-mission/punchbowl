@@ -73,7 +73,15 @@ def layout():
                             ["Existing files", "Failed files"],
                             ["Existing files"],
                             inline=True,
-                            id="extra-filters",
+                            id="file-state-filters",
+                            inputStyle={"margin-left": "10px", "margin-right": "3px"},
+                            persistence=True, persistence_type="memory",
+                        ),
+                        dcc.Checklist(
+                            ["Misc L0s", "Non-pipeline cal files"],
+                            [],
+                            inline=True,
+                            id="weird-file-filters",
                             inputStyle={"margin-left": "10px", "margin-right": "3px"},
                             persistence=True, persistence_type="memory",
                         ),
@@ -95,7 +103,7 @@ def layout():
                             ["L0", "L1", "L2", "L3", "LQ"],
                             ["L1"],
                             inline=True,
-                            id="extra-filters2",
+                            id="file-level-filters",
                             inputStyle={"margin-left": "10px", "margin-right": "3px"},
                             persistence=True, persistence_type="memory",
                         ),
@@ -218,7 +226,7 @@ def toggle_auto_refresh(auto_refresh_settings):
     Output("table-date-obs", "end_date", allow_duplicate=True),
     Output("table-date-created", "start_date", allow_duplicate=True),
     Output("table-date-created", "end_date", allow_duplicate=True),
-    Output("extra-filters2", "value", allow_duplicate=True),
+    Output("file-level-filters", "value", allow_duplicate=True),
     Output("graph_point_time_window", "value", allow_duplicate=True),
     Input("created-recently", "n_clicks"),
     prevent_initial_call=True,
@@ -239,7 +247,7 @@ def preset_created_recently(n_clicks):
     Output("table-date-obs", "end_date", allow_duplicate=True),
     Output("table-date-created", "start_date", allow_duplicate=True),
     Output("table-date-created", "end_date", allow_duplicate=True),
-    Output("extra-filters2", "value", allow_duplicate=True),
+    Output("file-level-filters", "value", allow_duplicate=True),
     Output("graph_point_time_window", "value", allow_duplicate=True),
     Input("dated-recently", "n_clicks"),
     prevent_initial_call=True,
@@ -303,8 +311,8 @@ def split_filter_part(filter_part):
     return [None] * 4
 
 
-def construct_base_query(columns, filter, extra_filters, extra_filters2, include_count, date_obs_start,
-                 date_obs_end, date_created_start, date_created_end):
+def construct_base_query(columns, filter, file_state_filters, file_level_filters, weird_file_filters, include_count,
+                         date_obs_start, date_obs_end, date_created_start, date_created_end):
     # Build the parts of a query common to the table and graph
     cols = []
     join_flow_type = False
@@ -335,19 +343,26 @@ def construct_base_query(columns, filter, extra_filters, extra_filters2, include
                 query = query.where(method(filter_value))
 
     extra_filter_state = []
-    if "Existing files" in extra_filters:
+    if "Existing files" in file_state_filters:
         extra_filter_state.extend(["created", "progressed"])
-    if "Failed files" in extra_filters:
+    if "Failed files" in file_state_filters:
         extra_filter_state.append("failed")
     if extra_filter_state:
         query = query.where(File.state.in_(extra_filter_state))
 
     extra_filter_level = []
-    for value in extra_filters2:
+    for value in file_level_filters:
         if value[0] == "L":
             extra_filter_level.append(value[1:])
     if extra_filter_level:
         query = query.where(File.level.in_(extra_filter_level))
+
+    if 'Misc L0s' not in weird_file_filters:
+        query = query.where(File.file_type.not_in(['DK', 'DY', 'OV', 'PX']))
+
+    if 'Non-pipeline cal files' not in weird_file_filters:
+        query = query.where(File.file_type.not_in(['DS', 'FQ', 'GM', 'GP', 'GR', 'GZ', 'MS', 'RC', 'RM', 'RP', 'RZ',
+                                                   'LM', 'LP', 'LR', 'LZ']))
 
     if date_obs_start:
         query = query.where(File.date_obs >= date_obs_start)
@@ -369,18 +384,20 @@ def construct_base_query(columns, filter, extra_filters, extra_filters2, include
     Input("files-table", "page_size"),
     Input("files-table", "sort_by"),
     Input("files-table", "filter_query"),
-    Input("extra-filters", "value"),
-    Input("extra-filters2", "value"),
+    Input("file-state-filters", "value"),
+    Input("file-level-filters", "value"),
+    Input("weird-file-filters", "value"),
     Input("table-date-obs", "start_date"),
     Input("table-date-obs", "end_date"),
     Input("table-date-created", "start_date"),
     Input("table-date-created", "end_date"),
     Input("manual-refresh", "n_clicks"),
 )
-def update_table(show_in_table, group_by, n, page_current, page_size, sort_by, filter, extra_filters, extra_filters2,
-                 date_obs_start, date_obs_end, date_created_start, date_created_end, refresh_nclicks):
-    query = construct_base_query(group_by, filter, extra_filters, extra_filters2, True, date_obs_start,
-             date_obs_end, date_created_start, date_created_end)
+def update_table(show_in_table, group_by, n, page_current, page_size, sort_by, filter, file_state_filters,
+                 file_level_filters, weird_file_filters, date_obs_start, date_obs_end, date_created_start,
+                 date_created_end, refresh_nclicks):
+    query = construct_base_query(group_by, filter, file_state_filters, file_level_filters, weird_file_filters, True,
+                                 date_obs_start, date_obs_end, date_created_start, date_created_end)
 
     for col in sort_by:
         sort_column = getattr(File, col["column_id"])
@@ -483,8 +500,9 @@ def make_y_axis_labels(dff):
     Input("files-table", "sort_by"),
     Input("graph-color", "value"),
     Input("graph-shape", "value"),
-    Input("extra-filters", "value"),
-    Input("extra-filters2", "value"),
+    Input("file-state-filters", "value"),
+    Input("file-level-filters", "value"),
+    Input("weird-file-filters", "value"),
     Input("graph-x-axis", "value"),
     Input("table-date-obs", "start_date"),
     Input("table-date-obs", "end_date"),
@@ -493,9 +511,9 @@ def make_y_axis_labels(dff):
     Input("graph_point_time_window", "value"),
     Input("manual-refresh", "n_clicks"),
 )
-def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, extra_filters, extra_filters2, graph_x_axis,
-                      date_obs_start, date_obs_end, date_created_start, date_created_end, graph_point_time_window,
-                      refresh_nclicks):
+def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, file_state_filters, file_level_filters,
+                      weird_file_filters, graph_x_axis, date_obs_start, date_obs_end, date_created_start,
+                      date_created_end, graph_point_time_window, refresh_nclicks):
     group_by = [col.lower().replace(" ", "_") for col in group_by]
     color_key = color_key.lower().replace(" ", "_")
     shape_key = shape_key.lower().replace(" ", "_")
@@ -514,8 +532,8 @@ def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, extra_
         exclude_shape_from_keys = True
         query_cols.append(shape_key)
 
-    query = construct_base_query(query_cols, filter, extra_filters, extra_filters2, False, date_obs_start,
-                 date_obs_end, date_created_start, date_created_end)
+    query = construct_base_query(query_cols, filter, file_state_filters, file_level_filters, weird_file_filters,
+                                 False, date_obs_start, date_obs_end, date_created_start, date_created_end)
     if graph_point_time_window > 0:
         col = getattr(File, graph_x_axis)
         y_axis_cols = [getattr(File, c) for c in group_by]

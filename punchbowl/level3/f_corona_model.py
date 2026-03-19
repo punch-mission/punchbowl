@@ -332,7 +332,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         uncertainty = uncertainty["R"]
         meta = NormalizedMetadata.load_template("CF" + cube.meta["OBSCODE"].value, "3")
 
-    meta.provenance = [os.path.basename(f) for f in filenames]
+    meta.provenance = sorted([os.path.basename(f) for f in filenames])
 
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE-AVG"] = average_datetime(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

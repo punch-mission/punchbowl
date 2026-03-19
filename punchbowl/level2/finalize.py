@@ -21,8 +21,8 @@ def finalize_output(output_cube: NDCube, input_cubes: list[NDCube]) -> None:
     output_cube.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     set_spacecraft_location_to_earth(output_cube)
 
-    output_cube.meta.provenance = [fname for d in input_cubes
-        if d is not None and (fname := d.meta.get("FILENAME").value)]
+    output_cube.meta.provenance = sorted([fname for d in input_cubes
+        if d is not None and (fname := d.meta.get("FILENAME").value)])
 
     output_cube.meta["FILEVRSN"] = sample_cube.meta["FILEVRSN"].value
 

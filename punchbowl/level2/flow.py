@@ -170,6 +170,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         meta = NormalizedMetadata.load_template("X" + x_cube.meta["TYPECODE"].value[1] + x_cube.meta["OBSCODE"].value,
                                                 level="2")
         meta.history = x_cube.meta.history
+        meta.provenance = [x_cube.meta["FILENAME"].value]
         for key in ["FILEVRSN", "MOONDIST", "MOON_X", "MOON_Y"]:
             meta[key] = output_data.meta[key].value
         for key in ["OUTLIER", "BADPKTS", "DATE-OBS", "DATE-AVG", "DATE-BEG", "DATE-END", "DATE"]:

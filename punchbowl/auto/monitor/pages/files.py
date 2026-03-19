@@ -131,7 +131,7 @@ def layout():
                         "Extra filters/shortcuts: ",
                         dcc.Checklist(
                             ["L0", "L1", "L2", "L3", "LQ"],
-                            ["L1"],
+                            ["L3"],
                             inline=True,
                             id="file-level-filters",
                             inputStyle={"margin-left": "10px", "margin-right": "3px"},

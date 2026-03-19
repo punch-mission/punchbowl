@@ -15,7 +15,7 @@ from quadprog import solve_qp
 from scipy.interpolate import griddata
 from threadpoolctl import threadpool_limits
 
-from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_many_cubes_iterable
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
@@ -393,8 +393,8 @@ def subtract_f_corona_background(data_object: NDCube,
 
 @punch_task
 def subtract_f_corona_background_task(observation: NDCube,
-                                      before_f_background_model_path: str,
-                                      after_f_background_model_path: str,
+                                      before_f_background_models: list[NDCube],
+                                      after_f_background_models: list[NDCube],
                                       allow_extrapolation: bool = False) -> NDCube:
     """
     Subtracts a background f corona model from an observation.
@@ -406,11 +406,11 @@ def subtract_f_corona_background_task(observation: NDCube,
     observation : NDCube
         an observation to subtract an f corona model from
 
-    before_f_background_model_path : str
-        path to a NDCube f corona background map before the observation
+    before_f_background_models : list[str]
+        NDCube f corona background maps before the observations
 
-    after_f_background_model_path : str
-        path to a NDCube f corona background map after the observation
+    after_f_background_models : list[str]
+        NDCube f corona background maps after the observations
 
     allow_extrapolation : bool
         If true, allow extrapolation beyond the time range spanned by the two F corona models
@@ -424,12 +424,35 @@ def subtract_f_corona_background_task(observation: NDCube,
     logger = get_run_logger()
     logger.info("subtract_f_corona_background started")
 
+    for model in before_f_background_models:
+        if model.meta["OBSCODE"].value != observation.meta["OBSCODE"].value:
+            continue
+        if observation.meta["TYPECODE"].value[1] == "R" and model.meta["TYPECODE"].value[0] == "C":
+            before_model = model
+            break
+        if observation.meta["TYPECODE"].value[1] in ["M", "Z", "P"] and model.meta["TYPECODE"].value[0] == "P":
+            i = ["M", "Z", "P"].index(observation.meta["TYPECODE"].value[1])
+            before_model = NDCube(model.data[i], meta=model.meta, wcs=model.wcs, uncertainty=model.uncertainty[i])
+            break
+    else:
+        raise RuntimeError(f"Could not find before model for {observation.meta['FILENAME']}")
 
-    before_f_corona_model = load_ndcube_from_fits(before_f_background_model_path)
-    after_f_corona_model = load_ndcube_from_fits(after_f_background_model_path)
+    for model in after_f_background_models:
+        if model.meta["OBSCODE"].value != observation.meta["OBSCODE"].value:
+            continue
+        if observation.meta["TYPECODE"].value[1] == "R" and model.meta["TYPECODE"].value[0] == "C":
+            after_model = model
+            break
+        if observation.meta["TYPECODE"].value[1] in ["M", "Z", "P"] and model.meta["TYPECODE"].value[0] == "P":
+            i = ["M", "Z", "P"].index(observation.meta["TYPECODE"].value[1])
+            after_model = NDCube(model.data[i], meta=model.meta, wcs=model.wcs, uncertainty=model.uncertainty[i])
+            break
+    else:
+        raise RuntimeError(f"Could not find after model for {observation.meta['FILENAME']}")
 
-    output = subtract_f_corona_background(observation, before_f_corona_model, after_f_corona_model,
+    output = subtract_f_corona_background(observation, before_model, after_model,
                                           allow_extrapolation=allow_extrapolation)
+
     output.meta.history.add_now("LEVEL3-subtract_f_corona_background", "subtracted f corona background")
 
     logger.info("subtract_f_corona_background finished")

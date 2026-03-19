@@ -9,7 +9,7 @@ from prefect.testing.utilities import prefect_test_harness
 from punchbowl.conftest import prefect_test_fixture
 from punchbowl.data.punch_io import write_ndcube_to_fits
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.level3.flow import level3_PIM_flow
+from punchbowl.level3.flow import level3_PIM_CIM_flow
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -32,9 +32,9 @@ def test_PIM_flow_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixtur
         write_ndcube_to_fits(cube, path)
         paths.append(path)
 
-    output = level3_PIM_flow(data_list,
-                             before_f_corona_model_path, after_f_corona_model_path,
-                             None)
+    output = level3_PIM_CIM_flow(data_list,
+                                 before_f_corona_model_path, after_f_corona_model_path,
+                                 None)
     assert isinstance(output[0], NDCube)
 
 
@@ -56,9 +56,9 @@ def test_PIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_
         write_ndcube_to_fits(cube, path)
         paths.append(path)
 
-    output = level3_PIM_flow(data_list,
-                             before_f_corona_model_path, after_f_corona_model_path,
-                             None)
+    output = level3_PIM_CIM_flow(data_list,
+                                 before_f_corona_model_path, after_f_corona_model_path,
+                                 None)
     assert isinstance(output[0], NDCube)
 
 
@@ -76,7 +76,7 @@ def test_PIM_flow_runs_with_objects_and_calibration_files(tmpdir, sample_ndcube,
     after_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1) + timedelta(hours=5))
     write_ndcube_to_fits(after_f_corona_model, after_f_corona_model_path)
 
-    output = level3_PIM_flow(data_list,
-                             before_f_corona_model_path, after_f_corona_model_path,
-                             None)
+    output = level3_PIM_CIM_flow(data_list,
+                                 before_f_corona_model_path, after_f_corona_model_path,
+                                 None)
     assert isinstance(output[0], NDCube)

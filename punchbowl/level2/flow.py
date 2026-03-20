@@ -15,7 +15,7 @@ from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
 from punchbowl.prefect import punch_flow
-from punchbowl.util import find_first_existing_file, load_image_task, output_image_task
+from punchbowl.util import load_image_task, output_image_task
 
 POLARIZED_FILE_ORDER = ["PM1", "PZ1", "PP1",
                         "PM2", "PZ2", "PP2",
@@ -117,6 +117,10 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             data_list = [j for i in data_list for j in i]
             voter_filenames = ordered_voters
             image_masks = ordered_mask_list
+            # Use the Z state for each file
+            center_inputs = [cube for cube  in ordered_data_list if cube is not None and cube.meta["POLAR"].value == 0]
+        else:
+            center_inputs = data_list
 
         default_trefoil_wcs, default_trefoil_shape = load_trefoil_wcs()
         trefoil_wcs = trefoil_wcs or default_trefoil_wcs
@@ -135,8 +139,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         history_src = next(d for d in data_list if d is not None)
         output_data.meta.history = history_src.meta.history
 
-        centers = find_central_pixel(data_list, find_first_existing_file(data_list).wcs)
-        for center, cube in zip(centers, data_list, strict=False):
+        centers = find_central_pixel(center_inputs, trefoil_wcs)
+        for center, cube in zip(centers, center_inputs, strict=False):
             if center is None:
                 continue
             cx, cy = center
@@ -177,6 +181,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             meta[key] = output_data.meta[key].value
         for key in ["OUTLIER", "BADPKTS", "DATE-OBS", "DATE-AVG", "DATE-BEG", "DATE-END", "DATE"]:
             meta[key] = x_cube.meta[key].value
+
         obs_no = x_cube.meta["OBSCODE"].value
         obs = "NFI" if obs_no == "4" else "WFI"
         meta[f"CTRX{obs}{obs_no}"] = output_data.meta[f"CTRX{obs}{obs_no}"].value

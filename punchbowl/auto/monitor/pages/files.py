@@ -545,6 +545,11 @@ def make_y_axis_labels(dff):
     # Generate the label strings for the plot y axis
     joinables = []
     columns = list(dff.columns)
+
+    if "level" in columns:
+        joinables.append(dff["level"].radd("L"))
+        columns.remove("level")
+
     if "file_type" in columns and "observatory" in columns:
         # If we're grouping by these columns, special-case it to show e.g. "CR2" instead of "CR 2" or "2 CR" or whatever
         joinables.append(dff["file_type"] + dff["observatory"])

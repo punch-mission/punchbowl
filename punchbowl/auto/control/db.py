@@ -73,7 +73,7 @@ Index("get_cal_file", File.file_type, File.observatory, File.date_obs, File.stat
 Index("CNN", File.file_type, File.observatory, File.level, File.state, File.outlier)
 Index("processing_flow_index", File.processing_flow)
 # This is really useful for a files dashboard "show me what we made today" query
-Index("date_created_index", File.date_created)
+Index("date_created_index", File.date_created, File.file_type)
 Index("level0_uniqueness",
       File.level, File.polarization, File.file_type,
       File.observatory, File.file_version, File.date_obs,

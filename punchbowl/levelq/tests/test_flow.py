@@ -41,8 +41,7 @@ def test_ctm_flow_runs_with_filenames(sample_ndcube, tmpdir):
 
 
 def test_cqm_flow_runs_with_filenames(sample_ndcube, tmpdir):
-    data_list = [sample_ndcube(shape=(10, 10), code=code, level="1") for code in ["QR1", "QR2", "QR3"]]
-    data_list.append(sample_ndcube(shape=(10, 10), code="QNN", level="Q"))
+    data_list = [sample_ndcube(shape=(10, 10), code=code, level="1") for code in ["QM1", "QZ1", "QP1", "QM2", "QZ2", "QP2", "QM3", "QZ3", "QP3"]]
 
     paths = []
     for i, cube in enumerate(data_list):
@@ -59,4 +58,4 @@ def test_cqm_flow_runs_with_filenames(sample_ndcube, tmpdir):
     assert output[0].meta["HAS_WFI1"].value == 1
     assert output[0].meta["HAS_WFI2"].value == 1
     assert output[0].meta["HAS_WFI3"].value == 1
-    assert output[0].meta["HAS_NFI4"].value == 1
+    assert output[0].meta["HAS_NFI4"].value == 0

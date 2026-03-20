@@ -159,9 +159,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
     logger = get_run_logger()
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(or_(
-                            and_(File.level == "1", File.file_type == "QM", File.observatory.in_(["1", "2", "3"])),
-                            and_(File.level == "1", File.file_type == "QZ", File.observatory.in_(["1", "2", "3"])),
-                            and_(File.level == "1", File.file_type == "QP", File.observatory.in_(["1", "2", "3"])),
+                            and_(File.level == "1", File.file_type.in_(["QM", "QZ", "QP"]), File.observatory.in_(["1", "2", "3"])),
                             # We're excluding NFI
                             # and_(File.level == "Q", File.file_type == "CN"),
                        )).order_by(File.date_obs.desc()).all())
@@ -185,7 +183,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
         if len(grouped_ready_files) >= max_n:
             break
         # We're excluding NFI
-        # group_is_complete = len(group) == 4
+        # group_is_complete = len(group) == 10
         group_is_complete = len(group) == 9
         if group_is_complete:
             grouped_ready_files.append(group)
@@ -208,7 +206,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
         # range within which to grab L0s.
         center = group[0].date_obs
         search_width = timedelta(minutes=1)
-        search_types = ["CR"]
+        search_types = ["PM, PZ, PP"]
 
         # Grab all the L0s that produce inputs for this trefoil
         expected_inputs = (session.query(File)

@@ -108,7 +108,7 @@ def test_levelq_CQM_query_ready_files_unprocessed_L0(db):
             assert len(ready_file_ids) == 1
 
             level0_file = File(level="0",
-                               file_type="CR",
+                               file_type="PZ",
                                observatory="2",
                                state="progressed",
                                file_version="none",

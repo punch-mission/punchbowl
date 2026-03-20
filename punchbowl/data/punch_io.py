@@ -28,7 +28,7 @@ from ndcube import NDCollection, NDCube
 from PIL import Image, ImageDraw, ImageFont
 
 from punchbowl.data.meta import NormalizedMetadata
-from punchbowl.data.visualize import cmap_punch
+from punchbowl.data.visualize import cmap_punch, radial_distance
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -108,7 +108,8 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               include_meta: bool = True,
                               annotation: str | None = None,
                               color: bool = False,
-                              gamma: float = 1/2.2) -> None:
+                              gamma: float = 1/2.2,
+                              crop: bool = True) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
 
@@ -134,6 +135,8 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
         flag to generate RGB quicklook files, grayscale by default
     gamma : float
         power law exponent used for color normalization
+    crop : bool
+        flag to crop the data to a circular frame within the image bounds, True by default
 
     Returns
     -------
@@ -170,6 +173,13 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
             raise ValueError("Provide a valid data layer (integer layer number or 'tB').")
     else:
         raise ValueError("Provide either two-dimensional or three-dimensional input data for quicklook display.")
+
+    if (cube.meta["LEVEL"].value in ["2", "3", "Q"]) and crop:
+        r = radial_distance(cube.data.shape[-2], cube.data.shape[-1])
+        # TODO - Remove inner boundary with NFI incorporation
+        # TODO - Edit for v0k cropping changes
+        # TODO - Edit note on default cropping values in visualize
+        image *= (r >= 0.13) & (r <= 0.13)
 
     if color:
         mode = "RGBA"

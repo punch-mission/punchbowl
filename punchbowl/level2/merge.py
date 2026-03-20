@@ -71,10 +71,17 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
 
     trefoil_3d_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
 
-    output_cube = NDCube(data=np.stack(data_layers, axis=0),
-                         uncertainty=StdDevUncertainty(np.stack(uncertainty_layers, axis=0)),
-                         wcs = trefoil_3d_wcs,
-                         meta = NormalizedMetadata.load_template(product_code, level=level))
+    if level == "Q":
+        output_cube = NDCube(data=2/3 * np.sum(np.stack(data_layers, axis=0), axis=0),
+                            uncertainty=StdDevUncertainty(np.stack(uncertainty_layers, axis=0)),
+                            wcs = trefoil_wcs,
+                            meta = NormalizedMetadata.load_template(product_code, level=level))
+
+    else:
+        output_cube = NDCube(data=np.stack(data_layers, axis=0),
+                            uncertainty=StdDevUncertainty(np.stack(uncertainty_layers, axis=0)),
+                            wcs = trefoil_3d_wcs,
+                            meta = NormalizedMetadata.load_template(product_code, level=level))
 
     output_cube.meta["OUTLIER"] = encode_outliers([d for d in data if d is not None])
 

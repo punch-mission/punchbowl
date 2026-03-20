@@ -159,7 +159,9 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
     logger = get_run_logger()
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(or_(
-                            and_(File.level == "1", File.file_type == "QR", File.observatory.in_(["1", "2", "3"])),
+                            and_(File.level == "1", File.file_type == "QM", File.observatory.in_(["1", "2", "3"])),
+                            and_(File.level == "1", File.file_type == "QZ", File.observatory.in_(["1", "2", "3"])),
+                            and_(File.level == "1", File.file_type == "QP", File.observatory.in_(["1", "2", "3"])),
                             # We're excluding NFI
                             # and_(File.level == "Q", File.file_type == "CN"),
                        )).order_by(File.date_obs.desc()).all())
@@ -184,7 +186,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
             break
         # We're excluding NFI
         # group_is_complete = len(group) == 4
-        group_is_complete = len(group) == 3
+        group_is_complete = len(group) == 9
         if group_is_complete:
             grouped_ready_files.append(group)
             continue

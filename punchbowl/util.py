@@ -1,6 +1,7 @@
 import os
 import abc
 import warnings
+import threading
 from typing import Any, Self, Generic, TypeVar
 from datetime import UTC, datetime
 from functools import cached_property
@@ -540,8 +541,9 @@ class ShmPickleableNDArray(np.ndarray):
         """
         if self._shm is None:
             return
-        self._shm.close()
         self._shm.unlink()
+        thread = threading.Thread(target=self._shm.close, daemon=True)
+        thread.start()
         self._shm = None
         self.is_freed = True
 

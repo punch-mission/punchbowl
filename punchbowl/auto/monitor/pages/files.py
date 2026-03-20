@@ -68,7 +68,7 @@ def layout():
                         "Show in Table: ",
                         dcc.Checklist(
                             USABLE_COLUMNS,
-                            ["File type", "Observatory"],
+                            ["Level", "File type", "Observatory"],
                             inline=True,
                             id="show-in-table",
                             inputStyle={"margin-left": "10px", "margin-right": "3px"},
@@ -79,7 +79,7 @@ def layout():
                         "Group by: ",
                         dcc.Checklist(
                             USABLE_COLUMNS,
-                            ["File type", "Observatory"],
+                            ["Level", "File type", "Observatory"],
                             inline=True,
                             id="group-by",
                             inputStyle={"margin-left": "10px", "margin-right": "3px"},
@@ -153,7 +153,9 @@ def layout():
 
                              sort_action="custom",
                              sort_mode="multi",
-                             sort_by=[dict(column_id="file_type", direction="asc"), dict(column_id="observatory", direction="asc")],
+                             sort_by=[dict(column_id="level", direction="asc"),
+                                      dict(column_id="file_type", direction="asc"),
+                                      dict(column_id="observatory", direction="asc")],
                              style_table={"overflowX": "auto",
                                           "textAlign": "left"},
                              fill_width=False,

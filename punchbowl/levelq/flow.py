@@ -137,7 +137,7 @@ def levelq_CQM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
         if trefoil_shape is not None:
             quickpunch_mosaic_shape = trefoil_shape
 
-        preprocess_trefoil_inputs(data_list, trim_edges_px, alphas_file)
+        preprocess_trefoil_inputs(data_list, [None] * len(data_list), trim_edges_px, alphas_file)
 
         data_list_mosaic = reproject_many_flow(ordered_data_list, quickpunch_mosaic_wcs, quickpunch_mosaic_shape)
         output_dateobs = average_datetime(

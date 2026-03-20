@@ -3,6 +3,8 @@ Data Product Codes
 
 PUNCH data products are organized into data processing levels from Level 0 (raw camera data) to Level 3 (calibrated science data). Within and across levels distinct data products and calibration files are marked with a unique identifying product code. For data in the spacecraft frame, each spacecraft is marked with a unique numeral identity - 1,2,3 for each WFI, or 4 for NFI.
 
+Note that most PUNCH FITS data products contain the primary data within the first extension HDU, with corresponding uncertainties stored in the second extension HDU.
+
 Data Product Codes
 ------------------
 
@@ -23,16 +25,16 @@ Data Product Codes
      - Standard polarization (PM for -60 degree, PZ for 0 degree, PP for +60 degree polarization) and clear (CR) images (photometrically calibrated)
    * - 2
      - PTM
-     - Polarized science mosaics (Trefoil) in output coordinates, resolved into MZP polarization triplets, and uncertainty layer
+     - Polarized science mosaics (trefoil) in output coordinates, resolved into MZP polarization triplets with uncertainty
    * - 2
      - CTM
-     - Clear science mosaics (Trefoil) in output coordinates, resolved into image and uncertainty layer
+     - Clear science mosaics (trefoil) in output coordinates, resolved into image with uncertainty
    * - 2
      - PNN
-     - Polarized NFI images in output coordinates, resolved into MZP polarization triplets, and uncertainty layer
+     - Polarized NFI images in output coordinates, resolved into MZP polarization triplets with uncertainty
    * - 2
      - CNN
-     - Clear NFI images in output coordinates, resolved into image, and uncertainty layer
+     - Clear NFI images in output coordinates, resolved into image with uncertainty
    * - Q
      - CNN
      - QuickPUNCH NFI images
@@ -52,14 +54,11 @@ Data Product Codes
      - PTM
      - Quicklook Polarized Mosaic images
    * - 3
-     - CAM
-     - Clear low-noise science mosaic, bkg-sub & resolved into B & uncertainty layer
-   * - 3
      - PAN
-     - Polarized low-noise NFI science image, bkg-sub & resolved into B, pB, & uncertainty layer
+     - Polarized low-noise NFI science image, bkg-sub & resolved into B, pB with uncertainty
    * - 3
      - CAN
-     - Clear low-noise NFI science image, bkg-sub & resolved into B & uncertainty layer
+     - Clear low-noise NFI science image, bkg-sub & resolved into B with uncertainty
    * - 3
      - PIM
      - Polarized science mosaics (trefoils), with F-corona subtraction, without starfield subtraction, and still in the MZP system
@@ -68,22 +67,25 @@ Data Product Codes
      - Clear science mosaics (trefoils), with F-corona subtraction and without starfield subtraction
    * - 3
      - PTM
-     - Polarized K PUNCH science mosaics (Trefoil), bkg-sub & resolved into B, pB, & uncertainty layer
+     - Polarized K PUNCH science mosaics (trefoil), bkg-sub & resolved into B, pB with uncertainty
    * - 3
      - CTM
-     - Clear K science mosaics (Trefoil), bkg-sub & resolved into B & uncertainty layer
+     - Clear K science mosaics (trefoil), bkg-sub & resolved into B with uncertainty
    * - 3
      - PNN
-     - Polarized K NFI science image, bkg-sub & resolved into B, pB, & uncertainty layer
+     - Polarized K NFI science image, bkg-sub & resolved into B, pB with uncertainty
    * - 3
      - CNN
-     - Clear K NFI science image, bkg-sub & resolved into B & uncertainty layer
+     - Clear K NFI science image, bkg-sub & resolved into B with uncertainty
    * - 3
      - VAM
      - Mosaic derived wind velocity maps: 1440 pos. angles at various altitudes
    * - 3
      - PAM
-     - Polarized low-noise science mosaic, bkg-sub & resolved into B, pB, & uncertainty layer
+     - Polarized low-noise science mosaic, bkg-sub & resolved into B, pB, pB' with uncertainty
+   * - 3
+     - CAM
+     - Clear low-noise science mosaic, bkg-sub & resolved into B with uncertainty
 
 
 Calibration Product Codes
@@ -140,6 +142,9 @@ Calibration Product Codes
    * - 1
      - RM1, RM2, RM3, RM4, RZ1, RZ2, RZ3, RZ4, RP1, RP2, RP3, RP4, RC1, RC2, RC3, RC4
      - Point Spread Function (PSF) model for the standard polarization and clear states
+   * - 2
+     - MS1, MS2, MS3, MS4
+     - Additional masks applied in L2 immediately before reprojecting and merging..
    * - Q
      - CFN
      - QuickPUNCH NFI images F corona model
@@ -148,25 +153,25 @@ Calibration Product Codes
      - QuickPUNCH Mosaic images (5.4–80 Rsun) F corona model
    * - 3
      - PFM
-     - Polarized mosaic F corona model, resolved into MZP pol. triplets, and uncertainty layer
+     - Polarized mosaic F corona model, resolved into MZP pol. triplets with uncertainty
    * - 3
      - CFM
-     - Clear mosaic F corona model, resolved into image and uncertainty layer
+     - Clear mosaic F corona model, resolved into image with uncertainty
    * - 3
      - PFN
-     - Polarized NFI F-corona model, resolved into MZP pol. triplets, and uncertainty layer
+     - Polarized NFI F-corona model, resolved into MZP pol. triplets with uncertainty
    * - 3
      - CFN
-     - Clear NFI F-corona model, resolved into image and uncertainty layer
+     - Clear NFI F-corona model, resolved into image with uncertainty
    * - 3
      - PSM
-     - Polarized mosaic stellar model, resolved into MZP pol. triplets, and uncertainty layer
+     - Polarized mosaic stellar model, resolved into MZP pol. triplets with uncertainty
    * - 3
      - CSM
-     - Clear mosaic stellar model, resolved into image and uncertainty layer
+     - Clear mosaic stellar model, resolved into image with uncertainty
    * - 3
      - PSN
-     - Polarized NFI stellar model, resolved into MZP pol. triplets, and uncertainty layer
+     - Polarized NFI stellar model, resolved into MZP pol. triplets with uncertainty
    * - 3
      - CSN
-     - Clear NFI stellar model, resolved into image and uncertainty layer
+     - Clear NFI stellar model, resolved into image with uncertainty

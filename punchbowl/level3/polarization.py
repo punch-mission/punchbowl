@@ -26,7 +26,7 @@ def convert_polarization(
                                                         [-60 * u.deg, 0 * u.deg, 60 * u.deg], strict=False)]
     data_collection = NDCollection(collection_contents, aligned_axes="all")
 
-    resolved_data_collection = resolve(data_collection, "bp3", imax_effect=False)
+    resolved_data_collection = resolve(data_collection, "bp3")
 
     new_data = np.stack([resolved_data_collection["B"].data,
                                 resolved_data_collection["pB"].data,

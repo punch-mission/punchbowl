@@ -12,6 +12,7 @@ from copy import deepcopy
 from typing import Any
 from pathlib import Path
 from itertools import repeat
+from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 
 import astropy.units as u
@@ -23,7 +24,7 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, FITSFixedWarning
 from glymur import Jp2k, jp2box
 from matplotlib.colors import PowerNorm
-from ndcube import NDCube
+from ndcube import NDCollection, NDCube
 from PIL import Image, ImageDraw, ImageFont
 
 from punchbowl.data.meta import NormalizedMetadata
@@ -102,12 +103,12 @@ def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
 def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               filename: str,
                               layer: int | str | None = "tb",
-                              vmin: float = 2e-14,
+                              vmin: float = 1e-14,
                               vmax: float = 1e-12,
                               include_meta: bool = True,
                               annotation: str | None = None,
                               color: bool = False,
-                              gamma: float = 1/3.0,
+                              gamma: float = 1/2.2,
                               write_hash: bool = False) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
@@ -163,7 +164,7 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                 if cube.meta["TYPECODE"].value == "PI": # noqa: SIM108
                     image = 2 / 3 * np.sum(cube.data, axis=0)
                 else:
-                    image = cube.data[1]
+                    image = cube.data[0]
             else:
                 raise RuntimeError("Level 0 and 1 data cannot be converted to tB because they're single polarizations.")
         elif isinstance(layer, int):
@@ -457,7 +458,7 @@ def load_many_cubes_iterable(paths: list[str | Path], n_workers: int | None = No
 
 
 def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow_errors: bool = False,
-                    **kwargs: dict) -> list[NDCube | str]:
+                    progress_bar: bool = False, **kwargs: dict) -> list[NDCube | str]:
     """
     Load many NDCubes in parallel.
 
@@ -473,6 +474,8 @@ def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow
     allow_errors
         If True, if an exception is raised when loading a cube, the traceback is yielded rather than an NDCube. If
         False, exceptions are raised in the normal way.
+    progress_bar
+        If True, show a progress bar
     kwargs
         Extra args are passed to `load_NDCube_from_fits`
 
@@ -481,7 +484,11 @@ def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow
     A list of NDCubes (or traceback strings)
 
     """
-    return list(load_many_cubes_iterable(paths, n_workers, allow_errors, **kwargs))
+    iterable = load_many_cubes_iterable(paths, n_workers, allow_errors, **kwargs)
+    if progress_bar:
+        from tqdm.auto import tqdm  # noqa: PLC0415
+        iterable = tqdm(iterable, total=len(paths))
+    return list(iterable)
 
 
 def check_outlier(cube: NDCube) -> bool:
@@ -516,3 +523,46 @@ def decode_outliers(cube: NDCube) -> dict:
         "2": bool(cube.meta["OUTLIER"].value & 0b00100),
         "1": bool(cube.meta["OUTLIER"].value & 0b00010),
     }
+
+
+def remix_collection(data: Sequence[Any] | np.ndarray,
+                    wcs: WCS,
+                    labels: tuple[str, ...] = ("M", "Z", "P"),
+                    indices: tuple[int, ...] = (0, 1, 2),
+                    angles: tuple[u.Quantity, ...] = (-60 * u.deg, 0 * u.deg, 60 * u.deg),
+                    ) -> NDCollection:
+    """
+    Create an NDCollection of image cubes primarily used for solpolpy.
+
+    Parameters
+    ----------
+    data : Sequence or numpy.ndarray
+        Input cubes containing-
+        - a sequence of NDCube-like objects with a ``.data`` attribute, or
+        - a 3D NumPy array / FITS cube with shape ``(nz, ny, nx)``
+    wcs : astropy.wcs.WCS
+        WCS to assign to the output cubes.
+    labels : tuple[str, ...], optional
+        Labels for the collection entries.
+    indices : tuple[int, ...], optional
+        Indices selecting elements from ``data``.
+    angles : tuple[astropy.units.Quantity, ...], optional
+        Polarizer angles stored in the ``POLAR`` metadata.
+
+    Returns
+    -------
+    NDCollection
+        Collection of ``NDCube`` objects with aligned axes.
+
+    """
+    if not (len(labels) == len(indices) == len(angles)):
+        raise ValueError("labels, indices, and angles must have the same length.")
+
+    collection_contents: list[tuple[str, NDCube]] = []
+
+    for label, idx, angle in zip(labels, indices, angles, strict=False):
+        cube = NDCube(data=data[idx].data, wcs=wcs,
+            meta={"POLAR": angle})
+        collection_contents.append((label, cube))
+
+    return NDCollection(collection_contents, aligned_axes="all")

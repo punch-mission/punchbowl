@@ -447,7 +447,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
     all_ready_files = (session.query(File)
                        .filter(File.state == "created")
                        .filter(File.level == "3")
-                       .filter(File.file_type == ("PI" if polarized else "CI"))
+                       .filter(File.file_type == ("PT" if polarized else "CT"))
                        .filter(File.observatory == "M")
                        .filter(File.outlier == 0)
                        .order_by(File.date_obs.desc()).all())
@@ -484,7 +484,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
                 # Check if we've already generated a (presumably incomplete) file for this date_obs.
                 # TODO: it would be better to regenerate the file, but we don't have a way to do that sensibly now
                 if not (session.query(File).filter(File.level == "3")
-                        .filter(File.file_type == ("PI" if polarized else "CI"))
+                        .filter(File.file_type == ("PT" if polarized else "CT"))
                         .filter(File.observatory == "M")
                         .filter(File.date_obs == ref_time)
                         .first()):

@@ -48,7 +48,7 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
     finalize_output(output_data, data_list)
 
     for cube in data_list:
-        obs_no = int(cube.meta["OBSCODE"].value)
+        obs_no = cube.meta["OBSCODE"].value
         obs = "NFI" if obs_no == "4" else "WFI"
         if cube.meta[f"CTRX{obs}{obs_no}"].value > 0:
             output_data[0].meta[f"CTRX{obs}{obs_no}"] = cube.meta[f"CTRX{obs}{obs_no}"].value

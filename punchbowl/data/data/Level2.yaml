@@ -47,7 +47,7 @@ Kinds:
             NAXIS2: 4096
             OBS-MODE: Polar_MZP
             POLARREF: 'Solar'
-        omits: [FILTER]
+        omits: [FILTER, NAXIS3]
 
     Intermediary:
         overrides:

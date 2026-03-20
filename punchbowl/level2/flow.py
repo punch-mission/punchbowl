@@ -134,6 +134,16 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
 
         history_src = next(d for d in data_list if d is not None)
         output_data.meta.history = history_src.meta.history
+
+        centers = find_central_pixel(data_list, find_first_existing_file(data_list).wcs)
+        for center, cube in zip(centers, data_list, strict=False):
+            if center is None:
+                continue
+            cx, cy = center
+            obs_no = cube.meta["OBSCODE"].value
+            obs = "NFI" if obs_no == "4" else "WFI"
+            output_data.meta[f"CTRX{obs}{obs_no}"] = cx
+            output_data.meta[f"CTRY{obs}{obs_no}"] = cy
     else:
         if polarized is None:
             msg = "A polarization state must be provided"
@@ -146,19 +156,9 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             meta=NormalizedMetadata.load_template("PTM" if polarized else "CTM", "2"),
         )
         output_data.meta["DATE-OBS"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        output_data.meta["DATE-BEG"] = output_data.meta["DATE-OBS"]
-        output_data.meta["DATE-END"] = output_data.meta["DATE-OBS"]
+        output_data.meta["DATE-BEG"] = output_data.meta["DATE-OBS"].value
+        output_data.meta["DATE-END"] = output_data.meta["DATE-OBS"].value
         layers_before_merge = []
-
-    centers = find_central_pixel(data_list, find_first_existing_file(data_list).wcs)
-    for center, cube in zip(centers, data_list, strict=False):
-        if center is None:
-            continue
-        cx, cy = center
-        obs_no = cube.meta["OBSCODE"].value
-        obs = "NFI" if obs_no == "4" else "WFI"
-        output_data.meta[f"CTRX{obs}{obs_no}"] = cx
-        output_data.meta[f"CTRY{obs}{obs_no}"] = cy
 
     finalize_output(output_data, data_list)
     output_cubes = [output_data]
@@ -167,6 +167,8 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         output_image_task(output_data, output_filename)
 
     for x_cube in layers_before_merge:
+        if x_cube is None:
+            continue
         meta = NormalizedMetadata.load_template("X" + x_cube.meta["TYPECODE"].value[1] + x_cube.meta["OBSCODE"].value,
                                                 level="2")
         meta.history = x_cube.meta.history

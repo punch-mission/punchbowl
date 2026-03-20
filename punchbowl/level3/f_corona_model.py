@@ -16,7 +16,7 @@ from scipy.interpolate import griddata
 from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.data.punch_io import load_many_cubes_iterable
+from punchbowl.data.punch_io import load_many_cubes_iterable, load_ndcube_from_fits
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
@@ -393,8 +393,8 @@ def subtract_f_corona_background(data_object: NDCube,
 
 @punch_task
 def subtract_f_corona_background_task(observation: NDCube,
-                                      before_f_background_models: list[NDCube],
-                                      after_f_background_models: list[NDCube],
+                                      before_f_background_models: list[NDCube | str],
+                                      after_f_background_models: list[NDCube | str],
                                       allow_extrapolation: bool = False) -> NDCube:
     """
     Subtracts a background f corona model from an observation.
@@ -406,10 +406,10 @@ def subtract_f_corona_background_task(observation: NDCube,
     observation : NDCube
         an observation to subtract an f corona model from
 
-    before_f_background_models : list[str]
+    before_f_background_models : list[NDCube | str]
         NDCube f corona background maps before the observations
 
-    after_f_background_models : list[str]
+    after_f_background_models : list[NDCube | str]
         NDCube f corona background maps after the observations
 
     allow_extrapolation : bool
@@ -423,6 +423,11 @@ def subtract_f_corona_background_task(observation: NDCube,
     """
     logger = get_run_logger()
     logger.info("subtract_f_corona_background started")
+
+    before_f_background_models = [load_ndcube_from_fits(f) if isinstance(f, str) else f
+                                  for f in before_f_background_models]
+    after_f_background_models = [load_ndcube_from_fits(f) if isinstance(f, str) else f
+                                  for f in after_f_background_models]
 
     for model in before_f_background_models:
         if model.meta["OBSCODE"].value != observation.meta["OBSCODE"].value:

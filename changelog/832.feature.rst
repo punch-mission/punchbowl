@@ -1,0 +1,1 @@
+In the files dashboard, file level is now a default group-by column, and is labeled more clearly in the graph.

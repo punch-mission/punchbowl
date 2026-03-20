@@ -177,9 +177,8 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
     if (cube.meta["LEVEL"].value in ["2", "3", "Q"]) and crop:
         r = radial_distance(cube.data.shape[-2], cube.data.shape[-1])
         # TODO - Remove inner boundary with NFI incorporation
-        # TODO - Edit for v0k cropping changes
-        # TODO - Edit note on default cropping values in visualize
-        image *= (r >= 0.13) & (r <= 0.13)
+        # TODO - Add values to config file?
+        image *= (r >= 0.081) & (r <= 0.705)
 
     if color:
         mode = "RGBA"

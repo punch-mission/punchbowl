@@ -1,1 +1,0 @@
-The files dashboard has presets, additional filters, and a "busy" indicator.

@@ -1,1 +1,0 @@
-Fixes a bug with array indexing for multi-dimensional data, and improves memory handling for large animations.

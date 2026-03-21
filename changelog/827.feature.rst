@@ -1,1 +1,0 @@
-Adds f-coronal model input files to provenance.

@@ -1,3 +1,51 @@
+0.0.2. (2026-03-20)
+===================
+
+New Features
+------------
+
+- Added code to forecast moon's appearance in PUNCH FOV (`#760 <https://github.com/punch-mission/punchbowl/pull/760>`__)
+- Updates starfield generation and subtraction. (`#809 <https://github.com/punch-mission/punchbowl/pull/809>`__)
+- Uses the lowest error WCS when aligning images. (`#811 <https://github.com/punch-mission/punchbowl/pull/811>`__)
+- Improves pixel area calculation (`#814 <https://github.com/punch-mission/punchbowl/pull/814>`__)
+- `reproject_cube` accepts options to pass to `reproject` and can skip reprojecting uncertainty (`#818 <https://github.com/punch-mission/punchbowl/pull/818>`__)
+- `load_many_cubes` can show a progress bar. (`#818 <https://github.com/punch-mission/punchbowl/pull/818>`__)
+- Per-spacecraft L2 `MS*` mask files can be provided, which are applied to images before reprojection in L2. (`#821 <https://github.com/punch-mission/punchbowl/pull/821>`__)
+- Estimates angular difference between solar and celestial north at each pixel based on wcs; Improved polarization to and from celestial frame. (`#822 <https://github.com/punch-mission/punchbowl/pull/822>`__)
+- Adds f-coronal model input files to provenance. (`#827 <https://github.com/punch-mission/punchbowl/pull/827>`__)
+- Adds a custom Fido client with PUNCH data support. (`#828 <https://github.com/punch-mission/punchbowl/pull/828>`__)
+- The files dashboard has presets, additional filters, and a "busy" indicator. (`#829 <https://github.com/punch-mission/punchbowl/pull/829>`__)
+- In the files dashboard, file level is now a default group-by column, and is labeled more clearly in the graph. (`#832 <https://github.com/punch-mission/punchbowl/pull/832>`__)
+
+
+Bug Fixes
+---------
+
+- Uses altitude correctly in geodetic location instead of latitude for alignment. (`#801 <https://github.com/punch-mission/punchbowl/pull/801>`__)
+- The files dashboard correctly handles filters without asterisks and files without date_created set. (`#805 <https://github.com/punch-mission/punchbowl/pull/805>`__)
+- Fixes a bug with array indexing for multi-dimensional data, and improves memory handling for large animations. (`#806 <https://github.com/punch-mission/punchbowl/pull/806>`__)
+- A missing comma was resulting in resetting unintended files by the cleaner. This fixes that. (`#808 <https://github.com/punch-mission/punchbowl/pull/808>`__)
+- Fixes a missed mask usage in starfield alignment. (`#811 <https://github.com/punch-mission/punchbowl/pull/811>`__)
+- Fix setting CROTA in DB for L0 files. (`#816 <https://github.com/punch-mission/punchbowl/pull/816>`__)
+- Removes F-corona uncertainty placeholder calculation. (`#820 <https://github.com/punch-mission/punchbowl/pull/820>`__)
+- Fixes and streamlines a few parts in quicklook data visualization. (`#826 <https://github.com/punch-mission/punchbowl/pull/826>`__)
+
+
+Documentation
+-------------
+
+- Small clarifications in the docs about data usage. (`#812 <https://github.com/punch-mission/punchbowl/pull/812>`__)
+- Updates example animation notebook to use CAM data, with notes on using polarized PAM data. (`#815 <https://github.com/punch-mission/punchbowl/pull/815>`__)
+- Adds a few notes to animation notebook on system dependencies and workarounds for data access issues. (`#823 <https://github.com/punch-mission/punchbowl/pull/823>`__)
+- Clarifies data structure in documentation. (`#825 <https://github.com/punch-mission/punchbowl/pull/825>`__)
+
+
+Internal Changes
+----------------
+
+- Logging for L3_PIM mistakenly said it was looking for L3 PTM. (`#808 <https://github.com/punch-mission/punchbowl/pull/808>`__)
+
+
 0.0.21 (2026-02-20)
 ===================
 

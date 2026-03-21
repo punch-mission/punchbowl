@@ -1,1 +1,0 @@
-Adds a few notes to animation notebook on system dependencies and workarounds for data access issues.

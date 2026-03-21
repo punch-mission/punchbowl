@@ -313,14 +313,45 @@ def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
     msg = "No cube found. All inputs are None."
     raise RuntimeError(msg)
 
-def bundle_matched_mzp(m_cubes: list[NDCube],
-                       z_cubes: list[NDCube],
-                       p_cubes: list[NDCube],
-                       threshold: float = 75.0) -> np.ndarray | tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+def get_dateobs(file: str | NDCube) -> datetime:
+    """Convert file path or NDCube to date_obs."""
+    if isinstance(file, NDCube):
+        return file.meta.datetime
+    date = file.split("_")[-2]
+    return datetime.strptime(date, "%Y%m%d%H%M%S")
+
+
+def get_polstate(file: str | NDCube) -> str:
+    """Convert file path or NDCube to date_obs."""
+    if isinstance(file, NDCube):
+        return file.meta["TYPECODE"].value[1]
+    typecode = file.split("_")[-3]
+    return typecode[1]
+
+
+def bundle_matched_mzp(m_cubes: list[NDCube | str],
+                       z_cubes: list[NDCube | str] | None = None,
+                       p_cubes: list[NDCube | str] | None = None,
+                       threshold: float = 75.0) -> list[tuple[NDCube | str, NDCube | str, NDCube | str]]:
     """Search and bundle MZP triplets closest in time."""
-    m_dateobs = [cube.meta.datetime for cube in m_cubes]
-    z_dateobs = [cube.meta.datetime for cube in z_cubes]
-    p_dateobs = [cube.meta.datetime for cube in p_cubes]
+    if z_cubes is None:
+        cubes = m_cubes
+        m_cubes, z_cubes, p_cubes = [], [], []
+        for cube in cubes:
+            pol = get_polstate(cube)
+            if pol == "M":
+                m_cubes.append(cube)
+            elif pol == "Z":
+                z_cubes.append(cube)
+            elif pol == "P":
+                p_cubes.append(cube)
+            else:
+                raise ValueError("Unrecognized pol state")
+
+    m_dateobs = [get_dateobs(cube) for cube in m_cubes]
+    z_dateobs = [get_dateobs(cube) for cube in z_cubes]
+    p_dateobs = [get_dateobs(cube) for cube in p_cubes]
 
     # use Z as the reference
     triplets = []

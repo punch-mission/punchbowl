@@ -29,6 +29,30 @@ def session_fn(session):
                        software_version="none",
                        date_obs=datetime(2023, 1, 1, 0, 0, 0))
 
+    level0_file_PM = File(level="0",
+                       file_type="PM",
+                       observatory="1",
+                       state="progressed",
+                       file_version="none",
+                       software_version="none",
+                       date_obs=datetime(2023, 1, 1, 0, 0, 0))
+
+    level0_file_PZ = File(level="0",
+                       file_type="PZ",
+                       observatory="1",
+                       state="progressed",
+                       file_version="none",
+                       software_version="none",
+                       date_obs=datetime(2023, 1, 1, 0, 0, 0))
+
+    level0_file_PP = File(level="0",
+                       file_type="PP",
+                       observatory="1",
+                       state="progressed",
+                       file_version="none",
+                       software_version="none",
+                       date_obs=datetime(2023, 1, 1, 0, 0, 0))
+
     level1_file_not_ready = File(level="1",
                                  file_type="QR",
                                  observatory="1",
@@ -39,6 +63,30 @@ def session_fn(session):
 
     level1_file = File(level="1",
                        file_type="QR",
+                       observatory="1",
+                       state="created",
+                       file_version="none",
+                       software_version="none",
+                       date_obs=datetime(2023, 1, 1, 0, 0, 0))
+
+    level1_file_QM = File(level="1",
+                       file_type="QM",
+                       observatory="1",
+                       state="created",
+                       file_version="none",
+                       software_version="none",
+                       date_obs=datetime(2023, 1, 1, 0, 0, 0))
+
+    level1_file_QZ = File(level="1",
+                       file_type="QZ",
+                       observatory="1",
+                       state="created",
+                       file_version="none",
+                       software_version="none",
+                       date_obs=datetime(2023, 1, 1, 0, 0, 0))
+
+    level1_file_QP = File(level="1",
+                       file_type="QP",
                        observatory="1",
                        state="created",
                        file_version="none",
@@ -70,8 +118,14 @@ def session_fn(session):
                        date_obs=datetime(2023, 1, 2, 0, 0, 0))
 
     session.add(level0_file)
+    session.add(level0_file_PM)
+    session.add(level0_file_PZ)
+    session.add(level0_file_PP)
     session.add(level1_file_not_ready)
     session.add(level1_file)
+    session.add(level1_file_QM)
+    session.add(level1_file_QZ)
+    session.add(level1_file_QP)
     session.add(levelQ_file)
     session.add(f_corona_before_file)
     session.add(f_corona_after_file)

@@ -206,7 +206,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
         # range within which to grab L0s.
         center = group[0].date_obs
         search_width = timedelta(minutes=1)
-        search_types = ["PM, PZ, PP"]
+        search_types = ["PM", "PZ", "PP"]
 
         # Grab all the L0s that produce inputs for this trefoil
         expected_inputs = (session.query(File)

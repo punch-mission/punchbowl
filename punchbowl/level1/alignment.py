@@ -483,7 +483,7 @@ def solve_pointing(
     # catalog_stars = stars_in_image
 
     candidate_wcs = [refine_pointing_single_step(guess_wcs, observed_tree, catalog_stars, fix_pv = True)]
-    candidate_wcs = [w.result() for w in candidate_wcs]
+    # candidate_wcs = [w.result() for w in candidate_wcs]
     errors = [r[1] for r in candidate_wcs]
     candidate_wcs = [r[0] for r in candidate_wcs]
     best = np.argmin(np.abs(errors))

@@ -47,6 +47,8 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         if `do_uncertainties` is False.
     do_uncertainty : bool
         Whether to reproject the uncertainty layer as well and return a 2 x ny x nx array
+    output_array : np.ndarray
+        Optional, a destination in which to put the output data.
     repro_args : dict
         Additional kwargs to pass to the reproject call
 
@@ -70,28 +72,26 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     time = input_cube.meta.astropy_time
 
     # Trim empty parts of the image, so we don't have to compute coordinates there or reproject those pixels
-    while np.all(np.isnan(input_data[:, 0])):
-        input_data = input_data[:, 1:]
-        input_uncertainty = input_uncertainty[:, 1:] if do_uncertainty else None
+    while np.all(np.isnan(input_data[..., :, 0])):
+        input_data = input_data[..., :, 1:]
+        input_uncertainty = input_uncertainty[..., :, 1:] if do_uncertainty else None
         input_wcs = input_wcs[:, 1:]
-    while np.all(np.isnan(input_data[:, -1])):
-        input_data = input_data[:, :-1]
-        input_uncertainty = input_uncertainty[:, :-1] if do_uncertainty else None
+    while np.all(np.isnan(input_data[..., :, -1])):
+        input_data = input_data[..., :, :-1]
+        input_uncertainty = input_uncertainty[..., :, :-1] if do_uncertainty else None
         input_wcs = input_wcs[:, :-1]
 
-    while np.all(np.isnan(input_data[0])):
-        input_data = input_data[1:]
-        input_uncertainty = input_uncertainty[1:] if do_uncertainty else None
-        input_wcs = input_wcs[1:]
-    while np.all(np.isnan(input_data[-1])):
-        input_data = input_data[:-1]
-        input_uncertainty = input_uncertainty[:-1] if do_uncertainty else None
-        input_wcs = input_wcs[:-1]
+    while np.all(np.isnan(input_data[..., 0, :])):
+        input_data = input_data[..., 1:, :]
+        input_uncertainty = input_uncertainty[..., 1:, :] if do_uncertainty else None
+        input_wcs = input_wcs[1:, :]
+    while np.all(np.isnan(input_data[..., -1, :])):
+        input_data = input_data[..., :-1, :]
+        input_uncertainty = input_uncertainty[..., :-1, :] if do_uncertainty else None
+        input_wcs = input_wcs[:-1, :]
 
-    celestial_source = calculate_celestial_wcs_from_helio(input_wcs, time, output_shape)
-    celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape)
-
-
+    celestial_source = calculate_celestial_wcs_from_helio(input_wcs, time, output_shape[-2:])
+    celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape[-2:])
 
     # When we build mosaics, each input image fills only a portion (less than half) of the output frame. When we
     # reproject, we don't want it spending time looping over all those empty pixels, calculating coordinates,
@@ -125,13 +125,8 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         ymin, ymax = int(np.floor(ys.min())), int(np.ceil(ys.max()))
         xmin = np.max((xmin, 0))
         ymin = np.max((ymin, 0))
-        xmax = np.min((xmax, output_shape[1]))
-        ymax = np.min((ymax, output_shape[0]))
-
-    if output_array is None:
-        output_array = np.full((2 if do_uncertainty else 1, *output_shape), np.nan)
-    elif len(output_array.shape) == 2:
-        output_array = np.expand_dims(output_array, 0)
+        xmax = np.min((xmax, output_shape[-1]))
+        ymax = np.min((ymax, output_shape[-2]))
 
     # We will roll off the uncertainty by the inverse of the distance to the edge of the mask.
     # This allows pixels closer to the center to be weighted more than those on the edge.
@@ -142,7 +137,8 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         rolloff_width = rolloff_width[int(input_cube.meta["OBSCODE"].value) - 1]
 
     if not do_uncertainty:
-        input_data = np.expand_dims(input_data, 0)
+        if len(input_data.shape) == 2:
+            input_data = np.expand_dims(input_data, 0)
     elif rolloff_strength > 0 and rolloff_width > 0:
         image_mask = ((np.isnan(input_data) + (input_data == 0))
                       * (~np.isfinite(input_uncertainty)))
@@ -155,15 +151,26 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     else:
         input_data = np.stack([input_data, input_uncertainty])
 
+    if output_array is None:
+        if do_uncertainty:
+            output_array = np.full((2,  *output_shape), np.nan)
+        else:
+            output_array = np.full(output_shape, np.nan)
+            if len(output_array.shape) == 2:
+                output_array = np.expand_dims(output_array, 0)
+    elif len(output_array.shape) == 2:
+        output_array = np.expand_dims(output_array, 0)
+
     # Reproject will complain if the input and output arrays have different dtypes
     input_data = np.asarray(input_data, dtype=output_array.dtype)
 
+    out_view = output_array[..., ymin:ymax, xmin:xmax]
     reproject.reproject_adaptive(
         (input_data, celestial_source),
         celestial_target[ymin:ymax, xmin:xmax],
-        shape_out=(2 if do_uncertainty else 1, np.max((ymax-ymin, 0)), np.max((xmax-xmin, 0))),
+        shape_out=out_view.shape,
         roundtrip_coords=False, return_footprint=False,
-        output_array=output_array[..., ymin:ymax, xmin:xmax],
+        output_array=out_view,
         conserve_flux=False,
         **repro_args,
     )

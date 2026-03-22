@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.stats import SigmaClip, sigma_clipped_stats
-from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
+from astropy.wcs import WCS, NoConvergence, utils
 from lmfit import Minimizer, Parameters, minimize
 from photutils.background import Background2D, MedianBackground
 from photutils.detection import DAOStarFinder
@@ -738,7 +738,9 @@ def solve_patch_lmfit(star_coords, subcatalog, x, y, window_size, initial_guess=
 
 
 def solve_single_image_distortion(cube, psf_transform=None, catalog=None, initial_distortion=None,
-                                  clear_distortion=True):
+                                  clear_distortion=True, center: tuple[float, float] = (1024.5, 1024.5),
+        platescale: float = 0.0244,
+        mu: float = 0.0):
     if catalog is None:
         catalog = load_gaia_catalog()
         catalog = catalog[catalog["Gmag"] < 10]
@@ -747,32 +749,9 @@ def solve_single_image_distortion(cube, psf_transform=None, catalog=None, initia
     if psf_transform is not None:
         image = psf_transform.apply(image, saturation_threshold=60_000)
 
-    if initial_distortion is not None:
-        num_bins = initial_distortion[0].shape[0]
-        r = np.linspace(0, 2048, num_bins + 1)
-        c = np.linspace(0, 2048, num_bins + 1)
-        r = (r[1:] + r[:-1]) / 2
-        c = (c[1:] + c[:-1]) / 2
+    solved_wcs = solve_pointing(image.copy(), cube.wcs, cube.meta, None,
+                                200, platescale=platescale, mu=mu, center=center)
 
-        err_px, err_py = r, c
-        cpdis1 = DistortionLookupTable(
-            initial_distortion[0].astype(np.float32), (0, 0), (err_px[0], err_py[0]),
-            ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
-        )
-        cpdis2 = DistortionLookupTable(
-            initial_distortion[1].astype(np.float32), (0, 0), (err_px[0], err_py[0]),
-            ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
-        )
-        distortion = WCS(naxis=2)
-        distortion.cpdis1 = cpdis1
-        distortion.cpdis2 = cpdis2
-        distortion.wcs.set_pv([(2, 1, 0.13)])
-        solved_wcs = solve_pointing(image.copy(), cube.wcs, cube.meta,
-                                    distortion=distortion,
-                                    saturation_limit=60_000, set_mu=0.13)
-    else:
-        solved_wcs = solve_pointing(image.copy(), cube.wcs, cube.meta,
-                                    saturation_limit=60_000, set_mu=0.13)
     if clear_distortion:
         solved_wcs.cpdis1 = None
         solved_wcs.cpdis2 = None

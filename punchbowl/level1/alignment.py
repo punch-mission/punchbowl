@@ -391,6 +391,9 @@ def solve_pointing(
         distortion: WCS | None = None,
         distance_from_center: float = 300,
         search_scales: list[int] = (14, 15, 16),
+        center: tuple[float, float] = (1024.5, 1024.5),
+        platescale: float = 0.0244,
+        mu: float = 0.0,
         debug: bool = False,
 ) -> WCS:
     """
@@ -437,42 +440,27 @@ def solve_pointing(
     brightness_mask = brightnesses > minimum_brightness
     observed = observed[brightness_mask[observed_order]]
     observed_tree = KDTree(observed)
-    # return (), (), observed
 
     astrometry_net = astrometry_net_initial_solve(observed, image_wcs.deepcopy(),
                                                   search_scales=search_scales,
                                                   lower_arcsec_per_pixel=wcs_arcsec_per_pixel - 10,
                                                   upper_arcsec_per_pixel=wcs_arcsec_per_pixel + 10)
-    # astrometry_net = None
     if astrometry_net is None:
         astrometry_net = image_wcs.deepcopy()
 
     astrometry_net = convert_cd_matrix_to_pc_matrix(astrometry_net)
 
-    image_center = 1024.5, 1024.5  # (image_data.shape[0]//2 + 0.5, image_data.shape[1]//2 + 0.5)
-    # image_center = (1021.05, 1023.71)  # TODO don't hard code James's values
-    center = astrometry_net.all_pix2world(np.array([image_center]), 0)
+    center_radec = astrometry_net.all_pix2world(np.array(center), 0)
     guess_wcs = astrometry_net.deepcopy()
     guess_wcs.wcs.ctype = "RA---AZP", "DEC--AZP"
-    guess_wcs.wcs.crval = center[0]
-    guess_wcs.wcs.crpix = image_center
-
-    # fp = 34.9811
-    # mu = 0.1104
-    # sensor_pitch = 15 / 1000
-    # platescale = np.arctan(sensor_pitch/fp)
-    # platescale = np.rad2deg(platescale)
-    # guess_wcs.wcs.cdelt = (-platescale, platescale)
-
-    guess_wcs.wcs.cdelt = image_wcs.wcs.cdelt
+    guess_wcs.wcs.crval = center_radec[0]
+    guess_wcs.wcs.crpix = center
+    guess_wcs.wcs.cdelt = (-platescale, platescale)
     guess_wcs.sip = None
+    guess_wcs.wcs.set_pv([(2, 1, mu)])
     if distortion is not None:
         guess_wcs.cpdis1 = distortion.cpdis1
         guess_wcs.cpdis2 = distortion.cpdis2
-        # if distortion.wcs.get_pv():
-        # pv = 0.1104  # TODO don't hard code wfi-1 mu
-        # pv = distortion.wcs.get_pv()[0][-1]
-        # guess_wcs.wcs.set_pv([(2, 1, pv)])
 
     catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=9)
     stars_in_image = find_catalog_in_image(catalog, guess_wcs, (2048, 2048), meta=image_header)
@@ -480,18 +468,12 @@ def solve_pointing(
     ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
     stars_in_image = stars_in_image[ok_stars]
     catalog_stars = SkyCoord(np.array(stars_in_image["RAdeg"]) * u.degree, np.array(stars_in_image["DEdeg"]) * u.degree, frame="icrs")
-    # catalog_stars = stars_in_image
 
     candidate_wcs = [refine_pointing_single_step(guess_wcs, observed_tree, catalog_stars, fix_pv = True)]
-    # candidate_wcs = [w.result() for w in candidate_wcs]
     errors = [r[1] for r in candidate_wcs]
     candidate_wcs = [r[0] for r in candidate_wcs]
     best = np.argmin(np.abs(errors))
-    print(errors[best])
     solved_wcs = candidate_wcs[best]
-    if distortion is not None:
-        solved_wcs.cpdis1 = distortion.cpdis1
-        solved_wcs.cpdis2 = distortion.cpdis2
 
     if debug:
         return solved_wcs, astrometry_net, observed

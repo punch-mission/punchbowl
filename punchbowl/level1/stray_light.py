@@ -435,7 +435,7 @@ def _load_files(filepaths, mosaic_wcs, logger, do_uncertainty, pool, polarized):
     data_array = ShmPickleableNDArray(shape, dtype=np.float32)
     shape = (len(filepaths), 3 if polarized else 1, *mosaic_wcs.array_shape)
     reprojected_array = ShmPickleableNDArray(shape, dtype=np.float32)
-    uncertainty = None
+    uncertainties = None
     metas = []
     wcses = []
     n_failed = 0
@@ -458,17 +458,17 @@ def _load_files(filepaths, mosaic_wcs, logger, do_uncertainty, pool, polarized):
         wcses.append(these_wcses)
 
         if do_uncertainty:
-            if uncertainty is None:
-                uncertainty = np.zeros(data_array.shape[1:], dtype=np.float32)
+            if uncertainties is None:
+                uncertainties = np.zeros(data_array.shape[1:], dtype=np.float32)
             for j, (uncertainty, meta) in enumerate(zip(these_uncertainties, these_metas)):
                 if uncertainty is not None and not meta["OUTLIER"].value:
                     # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
-                    uncertainty[j] += np.nan_to_num(uncertainty.array, posinf=0, neginf=0) ** 2
+                    uncertainties[j] += np.nan_to_num(uncertainty, posinf=0, neginf=0) ** 2
         if (i + 1) % 100 == 0:
             logger.info(f"Loaded {i + 1}/{len(filepaths)} {'triplets' if polarized else 'files'}")
     logger.info(f"Finished loading files, saw {n_failed} failures")
 
-    return data_array, reprojected_array, wcses, metas, uncertainty
+    return data_array, reprojected_array, wcses, metas, uncertainties
 
 
 bottom_crops = [230, 240, 243]
@@ -492,8 +492,10 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
 
     if polarized:
         resolved_cubes = resolve_polarization(cubes)
-        for i, cube in resolved_cubes:
-            repro_input[i] = np.where(np.isinf(cube.uncertainty.array), np.nan, cube.data)
+    else:
+        resolved_cubes = cubes
+    for i, cube in enumerate(resolved_cubes):
+        repro_input[i] = np.where(np.isinf(cube.uncertainty.array), np.nan, cube.data)
 
     y, x = np.mgrid[:2048, :2048]
     repro_input[:, y > 1500 + x] = np.nan
@@ -511,14 +513,17 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
                           output_array=repro_destination,
                           repro_args={"boundary_mode": "ignore", "bad_value_mode": "ignore"},
                           do_uncertainty=False)
-    return [cube.meta for cube in cubes], [cube.wcs for cube in cubes], [cube.uncertainty for cube in cubes]
+    uncerts = [cube.uncertainty.array if cube.uncertainty is not None else None for cube in cubes]
+    return [cube.meta for cube in cubes], [cube.wcs for cube in cubes], uncerts
 
 
-def _subtract_coronal_model(data_slice: np.ndarray, wcs: list[WCS], metas: list[NormalizedMetadata],
+def _subtract_coronal_model(data_slice: np.ndarray, wcses: list[WCS], metas: list[NormalizedMetadata],
                             corona_models: list, corona_model_dates: list, coronal_wcs: WCS):
-    if wcs is None:
+    if wcses is None:
         return
-    dobs = [m[0].datetime if m is not None else None for m in metas]
+    meta = metas[0]
+    wcs = wcses[0]
+    dobs = meta.datetime
     if dobs <= corona_model_dates[0]:
         model = corona_models[0]
     elif dobs >= corona_model_dates[-1]:
@@ -546,7 +551,7 @@ def _subtract_coronal_model(data_slice: np.ndarray, wcs: list[WCS], metas: list[
         for i in range(len(cubes)):
             model[i] = cubes[i].data
 
-    data_slice[:, bottom_crop:] -= model
+    data_slice[:, bottom_crop:, :] -= model
 
 
 @punch_task
@@ -555,8 +560,8 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
                                mask: np.ndarray, pool) -> None:
     logger = get_run_logger()
     logger.info("Making coronal models")
-    corona_models = [[] for _ in range(reprojected_array.shape[1])]
-    corona_model_dates = [[] for _ in range(reprojected_array.shape[1])]
+    corona_models = []
+    corona_model_dates = []
     valid_dates = [m[0].datetime for m in metas if m is not None]
     dstart = valid_dates[0]
     dstop = dstart
@@ -571,6 +576,7 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
         model = ShmPickleableNDArray.empty_like(reprojected_array[0])
         for i in range(reprojected_array.shape[1]):
             model[i] = nan_percentile(reprojected_array[istart:istop, i], 5)
+        np.nan_to_num(model, copy=False)
         corona_models.append(model)
         corona_model_dates.append(mdate)
 
@@ -697,9 +703,10 @@ def estimate_stray_light(filepaths: list[str],
 
     mosaic_wcs, _ = load_trefoil_wcs()
     # Fit the edges of every image in the mosiac by zooming out a tad, and down-size the mosaic
-    mosaic_wcs.wcs.cdelt = 0.024 * 2, 0.024 * 2
-    mosaic_wcs.wcs.crpix = 1024, 1024
-    mosaic_wcs.array_shape = (2048, 2048)
+    model_downscale = 2
+    mosaic_wcs.wcs.cdelt = 0.024 * model_downscale, 0.024 * model_downscale
+    mosaic_wcs.wcs.crpix = 2048 // model_downscale, 2048 // model_downscale
+    mosaic_wcs.array_shape = (4096 // model_downscale, 4096 // model_downscale)
 
     ctx = multiprocessing.get_context("forkserver")
     with ProcessPoolExecutor(num_workers, mp_context=ctx) as pool:
@@ -716,7 +723,7 @@ def estimate_stray_light(filepaths: list[str],
         if image_mask is None:
             image_mask = ~np.all(data_array == 0, axis=(0, 1))
 
-        bottom_crop = bottom_crops[int(valid_meta["OBSCODE"].value) - 1]
+        bottom_crop = bottom_crops[int(valid_meta[0]["OBSCODE"].value) - 1]
         image_mask[:bottom_crop] = 0
 
         start = time.time()
@@ -745,8 +752,8 @@ def estimate_stray_light(filepaths: list[str],
         window_half_width = window_size // 2
         # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
         # stride position fits
-        x_grid = np.arange(window_half_width, data_array.shape[3] - window_half_width, stride)
-        y_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
+        x_grid = np.arange(window_half_width, data_array.shape[-1] - window_half_width, stride)
+        y_grid = np.arange(window_half_width, data_array.shape[-2] - window_half_width, stride)
 
         # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
         # inside the mask for this function's inner loop to get enough samples.
@@ -763,7 +770,7 @@ def estimate_stray_light(filepaths: list[str],
             models = []
             for bin_n, bin_mask in enumerate(bin_masks):
                 models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers[i], fallback_model,
-                                                 strided_image_mask,x_grid, y_grid, window_half_width, image_mask,
+                                                 strided_image_mask, x_grid, y_grid, window_half_width, image_mask,
                                                  data_array[:, i], make_plots_along_the_way, blur_sigma, stride,
                                                  window_size, pool))
             models_per_pol.append(models)
@@ -780,10 +787,10 @@ def estimate_stray_light(filepaths: list[str],
         uncertainty = np.sqrt(uncertainty) / len(filepaths)
 
     out_cubes = []
-    for i in range(len(models)):
+    for i in range(len(models_per_pol)):
         out_type = "S" + valid_meta[i].product_code[1:]
         meta = NormalizedMetadata.load_template(out_type, "1")
-        meta.provenance = sorted([m[i]["FILENAME"] for m in metas if m is not None])
+        meta.provenance = sorted([m[i]["FILENAME"].value for m in metas if m is not None])
         all_date_obses = [m[i].datetime for m in metas if m is not None]
         meta["DATE-AVG"] = average_datetime(all_date_obses).strftime("%Y-%m-%dT%H:%M:%S")
         meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") if reference_time else meta["DATE-AVG"].value
@@ -796,10 +803,10 @@ def estimate_stray_light(filepaths: list[str],
                              f"{max(all_date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
         if fallback_model_path:
             meta.history.add_now("stray light", f"Used {fallback_model_path} as a fallback model")
-        meta["FILEVRSN"] = valid_meta["FILEVRSN"].value
+        meta["FILEVRSN"] = valid_meta[0]["FILEVRSN"].value
 
         # Let's put in a valid, representative WCS, with the right scale and sun-relative pointing, etc.
-        wcs = valid_wcs
+        wcs = valid_wcs[0]
         wcs.cpdis1 = None
         wcs.cpdis2 = None
         out_cube = NDCube(data=np.array(models_per_pol[i]), meta=meta, wcs=wcs,

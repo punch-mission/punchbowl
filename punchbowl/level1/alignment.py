@@ -450,7 +450,7 @@ def solve_pointing(
 
     astrometry_net = convert_cd_matrix_to_pc_matrix(astrometry_net)
 
-    center_radec = astrometry_net.all_pix2world(np.array(center), 0)
+    center_radec = astrometry_net.all_pix2world(np.array([center]), 0)
     guess_wcs = astrometry_net.deepcopy()
     guess_wcs.wcs.ctype = "RA---AZP", "DEC--AZP"
     guess_wcs.wcs.crval = center_radec[0]

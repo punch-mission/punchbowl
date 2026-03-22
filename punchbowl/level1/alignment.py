@@ -667,7 +667,8 @@ def solve_pointing(
 #     return output
 
 
-def solve_patch_lmfit(star_coords, subcatalog, x, y, window_size, initial_guess=None, buffer=0, diagnostic=False):
+def solve_patch_lmfit(input, buffer=0, diagnostic=False):
+    star_coords, subcatalog, x, y, window_size, initial_guess = input
     try:
         xlow = x
         xhigh = x + window_size
@@ -777,7 +778,7 @@ def solve_single_image_distortion(cube, psf_transform=None, catalog=None, initia
     args = [(star_positions, subcatalog, xx[i, j], yy[i, j], 100, np.array([dx[i, j], dy[i, j]]))
             for i, j in itertools.product(range(num_samples), range(num_samples))]
     with ProcessPoolExecutor(128) as pool:
-        out = pool.starmap(solve_patch_lmfit, args)
+        out = pool.map(solve_patch_lmfit, args)
 
     for index, (i, j) in enumerate(itertools.product(range(num_samples), range(num_samples))):
         shift, chi = out[index]

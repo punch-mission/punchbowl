@@ -741,7 +741,7 @@ def solve_patch_lmfit(input, buffer=0, diagnostic=False):
 def solve_single_image_distortion(cube, psf_transform=None, catalog=None, initial_distortion=None,
                                   clear_distortion=True, center: tuple[float, float] = (1024.5, 1024.5),
         platescale: float = 0.0244,
-        mu: float = 0.0):
+        mu: float = 0.0, num_processes=32):
     if catalog is None:
         catalog = load_gaia_catalog()
         catalog = catalog[catalog["Gmag"] < 10]
@@ -777,8 +777,10 @@ def solve_single_image_distortion(cube, psf_transform=None, catalog=None, initia
 
     args = [(star_positions, subcatalog, xx[i, j], yy[i, j], 100, np.array([dx[i, j], dy[i, j]]))
             for i, j in itertools.product(range(num_samples), range(num_samples))]
-    with ProcessPoolExecutor(128) as pool:
+    with ProcessPoolExecutor(num_processes) as pool:
         out = pool.map(solve_patch_lmfit, args)
+
+    out = [o for o in out]
 
     for index, (i, j) in enumerate(itertools.product(range(num_samples), range(num_samples))):
         shift, chi = out[index]

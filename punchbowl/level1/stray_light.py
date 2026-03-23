@@ -2,6 +2,7 @@ import time
 import pathlib
 import warnings
 import multiprocessing
+from logging import Logger
 from datetime import UTC, datetime, timedelta
 from functools import cached_property
 from itertools import repeat, pairwise
@@ -188,7 +189,6 @@ def find_peak_end(bin_values: np.ndarray, peak_location: int, direction: int) ->
 
 class OutOfPointsError(RuntimeError):
     """Raised when the histogram runs out of points."""
-
 
 
 def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1e13, weight: bool = True, # noqa: C901
@@ -430,7 +430,9 @@ def _estimate_stray_light_one_slice(data_array: np.ndarray, y: int, x_grid: np.n
     return result
 
 
-def _load_files(filepaths, mosaic_wcs, logger, do_uncertainty, pool, polarized):
+def _load_files(filepaths: list[str], mosaic_wcs: WCS, logger: Logger, do_uncertainty: bool, pool: ProcessPoolExecutor,
+                polarized: bool) -> tuple[ShmPickleableNDArray, ShmPickleableNDArray, list[WCS],
+                                          list[NormalizedMetadata], np.ndarray]:
     shape = (len(filepaths), 3 if polarized else 1, 2048, 2048)
     data_array = ShmPickleableNDArray(shape, dtype=np.float32)
     shape = (len(filepaths), 3 if polarized else 1, *mosaic_wcs.array_shape)
@@ -460,7 +462,7 @@ def _load_files(filepaths, mosaic_wcs, logger, do_uncertainty, pool, polarized):
         if do_uncertainty:
             if uncertainties is None:
                 uncertainties = np.zeros(data_array.shape[1:], dtype=np.float32)
-            for j, (uncertainty, meta) in enumerate(zip(these_uncertainties, these_metas)):
+            for j, (uncertainty, meta) in enumerate(zip(these_uncertainties, these_metas, strict=True)):
                 if uncertainty is not None and not meta["OUTLIER"].value:
                     # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
                     uncertainties[j] += np.nan_to_num(uncertainty, posinf=0, neginf=0) ** 2
@@ -490,10 +492,8 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
     for i in range(len(cubes)):
         data_destination[:] = cubes[i].data
 
-    if polarized:
-        resolved_cubes = resolve_polarization(cubes)
-    else:
-        resolved_cubes = cubes
+    resolved_cubes = resolve_polarization(cubes) if polarized else cubes
+
     for i, cube in enumerate(resolved_cubes):
         repro_input[i] = np.where(np.isinf(cube.uncertainty.array), np.nan, cube.data)
 
@@ -518,7 +518,7 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
 
 
 def _subtract_coronal_model(data_slice: np.ndarray, wcses: list[WCS], metas: list[NormalizedMetadata],
-                            corona_models: list, corona_model_dates: list, coronal_wcs: WCS):
+                            corona_models: list, corona_model_dates: list, coronal_wcs: WCS) -> None:
     if wcses is None:
         return
     meta = metas[0]
@@ -557,7 +557,7 @@ def _subtract_coronal_model(data_slice: np.ndarray, wcses: list[WCS], metas: lis
 @punch_task
 def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.ndarray,
                                metas: list[list[NormalizedMetadata]], wcses: list[list[WCS]], mosaic_wcs: WCS,
-                               mask: np.ndarray, pool) -> None:
+                               mask: np.ndarray, pool: ProcessPoolExecutor) -> None:
     logger = get_run_logger()
     logger.info("Making coronal models")
     corona_models = []
@@ -592,9 +592,11 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
     logger.info("Models subtracted")
 
 
-def _make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, strided_image_mask,
-                       x_grid, y_grid, window_half_width, image_mask, data_array, make_plots_along_the_way,
-                       blur_sigma, stride, window_size, pool):
+def _make_one_sl_model(bin_n: int, bin_mask: np.ndarray, logger: Logger, outliers: np.ndarray,
+                       fallback_model: np.ndarray, strided_image_mask: np.ndarray,
+                       x_grid: np.ndarray, y_grid: np.ndarray, window_half_width: int, image_mask: np.ndarray,
+                       data_array: np.ndarray, make_plots_along_the_way: bool, blur_sigma: float, stride: int,
+                       window_size: int, pool: ProcessPoolExecutor) -> np.ndarray:
     logger.info(f"Starting bin {bin_n + 1}, containing {np.sum(bin_mask)} images")
 
     n_outliers = np.sum(outliers[bin_mask])
@@ -667,7 +669,7 @@ def _make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, stride
 
 
 @punch_flow
-def estimate_stray_light(filepaths: list[str],
+def estimate_stray_light(filepaths: list[str], # noqa: C901
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
                          stride: int = 10,
@@ -696,10 +698,7 @@ def estimate_stray_light(filepaths: list[str],
     # Make sure things are in temporal order
     filepaths = sorted(filepaths)
 
-    if polarized:
-        inputs_to_load = bundle_matched_mzp(filepaths)
-    else:
-        inputs_to_load = filepaths
+    inputs_to_load = bundle_matched_mzp(filepaths) if polarized else filepaths
 
     mosaic_wcs, _ = load_trefoil_wcs()
     # Fit the edges of every image in the mosiac by zooming out a tad, and down-size the mosaic

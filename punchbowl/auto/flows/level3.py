@@ -516,20 +516,24 @@ def level3_PAM_query_ready_files(session, pipeline_config: dict, reference_time=
 
 def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: dict, reference_time=None, max_n=100):
     logger = get_run_logger()
+    target_type = "P" if polarized else "C"
+    flow_type = f'level3_{target_type}AM'
+    skip_starfield = pipeline_config['flows'][flow_type].get('skip_starfield', False)
+    target_type += "I" if skip_starfield else "T"
     all_ready_files = (session.query(File)
                        .filter(File.state == "created")
                        .filter(File.level == "3")
-                       .filter(File.file_type == ("PT" if polarized else "CT"))
+                       .filter(File.file_type == target_type)
                        .filter(File.observatory == "M")
                        .filter(File.outlier == 0)
                        .order_by(File.date_obs.desc()).all())
     # TODO - need to grab data from sets of rotation. look at movie processor for inspiration
-    logger.info(f"{len(all_ready_files)} Level 3 {'P' if polarized else 'C'}TM files need to be processed to low-noise.")
+    logger.info(f"{len(all_ready_files)} Level 3 {target_type}M files need to be processed to low-noise.")
 
     if len(all_ready_files) == 0:
         return []
 
-    t0 = parse_datetime_str(pipeline_config["flows"]["level3_PAM" if polarized else "level3_CAM"]["t0"])
+    t0 = parse_datetime_str(pipeline_config["flows"][flow_type]["t0"])
     increment = timedelta(minutes=32)
 
     end_time = t0
@@ -556,7 +560,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
                 # Check if we've already generated a (presumably incomplete) file for this date_obs.
                 # TODO: it would be better to regenerate the file, but we don't have a way to do that sensibly now
                 if not (session.query(File).filter(File.level == "3")
-                        .filter(File.file_type == ("PT" if polarized else "CT"))
+                        .filter(File.file_type == (target_type))
                         .filter(File.observatory == "M")
                         .filter(File.date_obs == ref_time)
                         .first()):
@@ -570,8 +574,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
                 break
             current_group = [file]
 
-    cutoff_time = (pipeline_config["flows"]["level3_PAM" if polarized else "level3_CAM"]
-                   .get("ignore_missing_after_days", None))
+    cutoff_time = pipeline_config["flows"][flow_type].get("ignore_missing_after_days", None)
     if cutoff_time is not None:
         cutoff_time = datetime.now(tz=UTC) - timedelta(days=cutoff_time)
 

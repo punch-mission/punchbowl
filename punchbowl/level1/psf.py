@@ -103,7 +103,7 @@ def correct_psf(
     data: NDCube,
     psf_transform: ArrayPSFTransform,
     max_workers: int | None = None,
-    saturation_threshold: float = 55_000,
+    saturation_threshold: float = 2**16-2,
     saturation_dilation: int = 3,
     neighborhood_width: int = 7,
 ) -> NDCube:

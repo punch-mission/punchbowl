@@ -80,8 +80,7 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
 
     output_cube.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],
                                                     ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    output_cube.meta["DATE-AVG"] = average_datetime([d.meta.datetime for d in data if d is not None],
-                                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_cube.meta["DATE-AVG"] = output_cube.meta["DATE-OBS"].value
     output_cube.meta["DATE-BEG"] = min([d.meta.datetime for d in data if d is not None],
                                        ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_cube.meta["DATE-END"] = max([d.meta.datetime for d in data if d is not None],
@@ -114,8 +113,7 @@ def merge_many_clear_task(
 
     data_merged.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],
                                                     ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    data_merged.meta["DATE-AVG"] = average_datetime([d.meta.datetime for d in data if d is not None],
-                                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    data_merged.meta["DATE-AVG"] = data_merged.meta["DATE-OBS"].value
     data_merged.meta["DATE-BEG"] = min([d.meta.datetime for d in data if d is not None],
                                        ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     data_merged.meta["DATE-END"] = max([d.meta.datetime for d in data if d is not None],

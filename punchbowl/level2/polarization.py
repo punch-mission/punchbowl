@@ -15,6 +15,8 @@ def resolve_polarization(data_list: list[NDCube], outsys: str = "mzpsolar") -> l
     ----------
     data_list : List[NDCube]
         List of NDCube objects on which to resolve polarization
+    outsys: str
+        The polarization system to resolve into
 
     Returns
     -------
@@ -31,7 +33,6 @@ def resolve_polarization(data_list: list[NDCube], outsys: str = "mzpsolar") -> l
                                        "POLAROFF": input_collection[k].meta["POLAROFF"].value,
                                        "POLARREF": str(input_collection[k].meta["POLARREF"])}))
                        for k in ["M", "Z", "P"]])
-
     out = []
     resolved_data_collection = solpolpy.resolve(data_collection, outsys)
 

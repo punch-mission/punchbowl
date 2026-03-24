@@ -486,14 +486,14 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
     except Exception as e: # noqa: BLE001
         data_destination[:] = np.nan
         return str(e)
-    bottom_crop = bottom_crops[int(cubes[0].meta["OBSCODE"].value) - 1]
 
-    repro_input = np.empty(data_destination.shape, dtype=data_destination.dtype)
+    bottom_crop = bottom_crops[int(cubes[0].meta["OBSCODE"].value) - 1]
     for i in range(len(cubes)):
-        data_destination[:] = cubes[i].data
+        data_destination[i, :] = cubes[i].data
 
     resolved_cubes = resolve_polarization(cubes) if polarized else cubes
 
+    repro_input = np.empty(data_destination.shape, dtype=data_destination.dtype)
     for i, cube in enumerate(resolved_cubes):
         repro_input[i] = np.where(np.isinf(cube.uncertainty.array), np.nan, cube.data)
 
@@ -545,8 +545,8 @@ def _subtract_coronal_model(data_slice: np.ndarray, wcses: list[WCS], metas: lis
     if data_slice.shape[0] > 1:
         cubes = []
         for i in range(data_slice.shape[0]):
-            metas[i]["POLREF"] = "Solar"
-            cubes.append(NDCube(data=model[i], wcs=wcs[i], meta=metas[i]))
+            metas[i]["POLARREF"] = "Solar"
+            cubes.append(NDCube(data=model[i], wcs=wcses[i][bottom_crop:], meta=metas[i]))
         cubes = resolve_polarization(cubes, "mzpinstru")
         for i in range(len(cubes)):
             model[i] = cubes[i].data
@@ -557,7 +557,7 @@ def _subtract_coronal_model(data_slice: np.ndarray, wcses: list[WCS], metas: lis
 @punch_task
 def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.ndarray,
                                metas: list[list[NormalizedMetadata]], wcses: list[list[WCS]], mosaic_wcs: WCS,
-                               mask: np.ndarray, pool: ProcessPoolExecutor) -> None:
+                               mask: np.ndarray, pool: ProcessPoolExecutor, polarized: bool) -> None:
     logger = get_run_logger()
     logger.info("Making coronal models")
     corona_models = []
@@ -588,7 +588,7 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
                                    repeat(mosaic_wcs))):
         data_array[i] *= mask
         if (i + 1) % 100 == 0:
-            logger.info(f"Corona-subtracted {i + 1}/{len(data_array)} files")
+            logger.info(f"Corona-subtracted {i + 1}/{len(data_array)} {'triplets' if polarized else 'files'}")
     logger.info("Models subtracted")
 
 
@@ -726,7 +726,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         image_mask[:bottom_crop] = 0
 
         start = time.time()
-        _build_and_subtract_corona(reprojected_array, data_array, metas, wcses, mosaic_wcs, image_mask, pool)
+        _build_and_subtract_corona(reprojected_array, data_array, metas, wcses, mosaic_wcs, image_mask, pool, polarized)
         time_corona = time.time() - start
 
         # Free this memory early, as we don't need it anymore

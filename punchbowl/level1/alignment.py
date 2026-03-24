@@ -743,7 +743,7 @@ def solve_patch_lmfit(input, buffer=0, diagnostic=False):
 def solve_single_image_distortion(cube, psf_transform=None, catalog=None, initial_distortion=None,
                                   clear_distortion=True, center: tuple[float, float] = (1024.5, 1024.5),
         platescale: float = 0.0244,
-        mu: float = 0.0, num_processes=32):
+        mu: float = 0.0, num_processes=32, num_neighbors=250, num_bins=256):
     if catalog is None:
         catalog = load_gaia_catalog()
         catalog = catalog[catalog["Gmag"] < 10]
@@ -753,14 +753,15 @@ def solve_single_image_distortion(cube, psf_transform=None, catalog=None, initia
         image = psf_transform.apply(image, saturation_threshold=60_000)
 
     solved_wcs = solve_pointing(image.copy(), cube.wcs, cube.meta, None,
-                                200, platescale=platescale, mu=mu, center=center)
+                                200, platescale=platescale, mu=mu, center=center,
+                                num_neighbors=num_neighbors)
 
     if clear_distortion:
         solved_wcs.cpdis1 = None
         solved_wcs.cpdis2 = None
     subcatalog = find_catalog_in_image(catalog, solved_wcs, (2048, 2048))
 
-    num_samples = 256
+    num_samples = num_bins
     c = np.linspace(0, 2048, num_samples)
     xx, yy = np.meshgrid(c.copy(), c.copy())
     # xx, yy = xx.flatten(), yy.flatten()

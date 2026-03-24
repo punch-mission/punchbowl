@@ -525,7 +525,6 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
                        .filter(File.level == "3")
                        .filter(File.file_type == target_type)
                        .filter(File.observatory == "M")
-                       .filter(File.outlier == 0)
                        .order_by(File.date_obs.desc()).all())
     # TODO - need to grab data from sets of rotation. look at movie processor for inspiration
     logger.info(f"{len(all_ready_files)} Level 3 {target_type}M files need to be processed to low-noise.")
@@ -580,10 +579,10 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
 
     grouped_ready_files = []
     for group in grouped_files:
-        group_is_complete = len(group) == (8 if polarized else 4)
-
         if len(grouped_ready_files) >= max_n:
             break
+
+        group_is_complete = len(group) == (8 if polarized else 4)
 
         if group_is_complete:
             grouped_ready_files.append(group)
@@ -594,8 +593,17 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
             grouped_ready_files.append(group)
             continue
 
-    logger.info(f"{len(grouped_ready_files)} groups heading out")
-    return grouped_ready_files
+    cleaned_ready_groups = []
+    for group in grouped_ready_files:
+        outliers = [f for f in group if f.outlier == 0]
+        for f in outliers:
+            f.state = 'progressed'
+        group = [f for f in group if f.outlier == 0]
+        if group:
+            cleaned_ready_groups.append(group)
+
+    logger.info(f"{len(cleaned_ready_groups)} groups heading out")
+    return cleaned_ready_groups
 
 
 def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out: File,

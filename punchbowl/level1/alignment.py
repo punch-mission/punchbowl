@@ -309,7 +309,7 @@ def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
 
 
 def refine_pointing_single_step(
-        guess_wcs: WCS, observed_tree: KDTree, catalog_stars: SkyCoord, method: str = "powell",
+        guess_wcs: WCS, observed_tree: KDTree, catalog_stars: SkyCoord, method: str = "leastsq",
         ra_tolerance: float = 3, dec_tolerance: float = 3,
         fix_crval: bool = False, fix_crota: bool = False, fix_pv: bool = True, num_neighbors: int = 250) -> WCS:
     """
@@ -396,7 +396,8 @@ def solve_pointing(
         platescale: float = 0.0244,
         mu: float = 0.0,
         debug: bool = False,
-        num_neighbors: int = 250
+        num_neighbors: int = 250,
+        method: str = "leastsq"
 ) -> WCS:
     """
     Carefully determine the pointing of an image using the starfield.
@@ -471,7 +472,7 @@ def solve_pointing(
     stars_in_image = stars_in_image[ok_stars]
     catalog_stars = SkyCoord(np.array(stars_in_image["RAdeg"]) * u.degree, np.array(stars_in_image["DEdeg"]) * u.degree, frame="icrs")
 
-    candidate_wcs = [refine_pointing_single_step(guess_wcs, observed_tree, catalog_stars, fix_pv = True, num_neighbors=num_neighbors)]
+    candidate_wcs = [refine_pointing_single_step(guess_wcs, observed_tree, catalog_stars, fix_pv = True, num_neighbors=num_neighbors, method=method)]
     errors = [r[1] for r in candidate_wcs]
     candidate_wcs = [r[0] for r in candidate_wcs]
     best = np.argmin(np.abs(errors))

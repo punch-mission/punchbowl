@@ -259,7 +259,7 @@ def _residual(params: Parameters,
 def get_errors(wcs: WCS, catalog_stars: SkyCoord, catalog_tree: KDTree,
                observed_stars: np.ndarray, observed_tree: KDTree) -> tuple[np.ndarray, np.ndarray]:
     """Compute errors between expected and observed star locations."""
-    num_neighbors = 50
+    num_neighbors = 250
 
     accumulated_error = []
     for closest_observed_star in observed_stars[-num_neighbors:]:

@@ -28,7 +28,7 @@ from ndcube import NDCollection, NDCube
 from PIL import Image, ImageDraw, ImageFont
 
 from punchbowl.data.meta import NormalizedMetadata
-from punchbowl.data.visualize import cmap_punch
+from punchbowl.data.visualize import cmap_punch, radial_distance
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -108,7 +108,9 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               include_meta: bool = True,
                               annotation: str | None = None,
                               color: bool = False,
-                              gamma: float = 1/2.2) -> None:
+                              gamma: float = 1/2.2,
+                              trim_edge: float | tuple[float, float] | list[float, float] | None = (0.081, 0.705),
+                              ) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
 
@@ -134,6 +136,10 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
         flag to generate RGB quicklook files, grayscale by default
     gamma : float
         power law exponent used for color normalization
+    trim_edge : float, tuple[float, float], list[float, float], None
+        Option to trim the edges of quicklook products to the specified fractional radial distance.
+        One input value trims the outer boundary only, while two trim both the inner and outer boundaries.
+        A reasonable set of values are (0.081, 0.705) for the inner and outer boundaries.
 
     Returns
     -------
@@ -170,6 +176,17 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
             raise ValueError("Provide a valid data layer (integer layer number or 'tB').")
     else:
         raise ValueError("Provide either two-dimensional or three-dimensional input data for quicklook display.")
+
+    if (cube.meta["LEVEL"].value in ["2", "3", "Q"]):
+        if isinstance(trim_edge, (tuple, list)):
+            r_min, r_max = sorted(trim_edge)
+            r = radial_distance(cube.data.shape[-2], cube.data.shape[-1])
+            radial_mask = (r >= r_min) & (r <= r_max)
+        elif isinstance(trim_edge, float):
+            radial_mask = radial_distance(cube.data.shape[-2], cube.data.shape[-1]) < trim_edge
+        else:
+            radial_mask = 1
+        image *= radial_mask
 
     if color:
         mode = "RGBA"

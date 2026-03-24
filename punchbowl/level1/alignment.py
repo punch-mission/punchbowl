@@ -238,7 +238,8 @@ def _residual(params: Parameters,
               catalog_tree: KDTree,
               observed_stars: np.ndarray,
               observed_tree: KDTree,
-              guess_wcs: WCS) -> float:
+              guess_wcs: WCS,
+              num_neighbors: int = 250) -> float:
     refined_wcs = guess_wcs.deepcopy()
     refined_wcs.wcs.cdelt = (-params["platescale"].value, params["platescale"].value)
     refined_wcs.wcs.crval = (params["crval1"].value, params["crval2"].value)
@@ -251,15 +252,15 @@ def _residual(params: Parameters,
     refined_wcs.cpdis1 = guess_wcs.cpdis1
     refined_wcs.cpdis2 = guess_wcs.cpdis2
 
-    errors, _ = get_errors(refined_wcs, catalog_stars, catalog_tree, observed_stars, observed_tree)
+    errors, _ = get_errors(refined_wcs, catalog_stars, catalog_tree, observed_stars, observed_tree,
+                           num_neighbors=num_neighbors)
 
     return errors
 
 
 def get_errors(wcs: WCS, catalog_stars: SkyCoord, catalog_tree: KDTree,
-               observed_stars: np.ndarray, observed_tree: KDTree) -> tuple[np.ndarray, np.ndarray]:
+               observed_stars: np.ndarray, observed_tree: KDTree, num_neighbors=250) -> tuple[np.ndarray, np.ndarray]:
     """Compute errors between expected and observed star locations."""
-    num_neighbors = 250
 
     accumulated_error = []
     for closest_observed_star in observed_stars[-num_neighbors:]:
@@ -310,7 +311,7 @@ def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
 def refine_pointing_single_step(
         guess_wcs: WCS, observed_tree: KDTree, catalog_stars: SkyCoord, method: str = "powell",
         ra_tolerance: float = 3, dec_tolerance: float = 3,
-        fix_crval: bool = False, fix_crota: bool = False, fix_pv: bool = True) -> WCS:
+        fix_crval: bool = False, fix_crota: bool = False, fix_pv: bool = True, num_neighbors: int = 250) -> WCS:
     """
     Perform a single step of pointing refinement.
 
@@ -366,7 +367,7 @@ def refine_pointing_single_step(
                                 catalog_stars.data.lat.to(u.degree).value], axis=-1))
 
     out = minimize(_residual, params, method=method,
-                   args=(catalog_stars, catalog_tree, observed_stars, observed_tree, guess_wcs))
+                   args=(catalog_stars, catalog_tree, observed_stars, observed_tree, guess_wcs, num_neighbors))
 
     result_wcs = guess_wcs.deepcopy()
     result_wcs.wcs.cdelt = (-out.params["platescale"].value, out.params["platescale"].value)
@@ -395,6 +396,7 @@ def solve_pointing(
         platescale: float = 0.0244,
         mu: float = 0.0,
         debug: bool = False,
+        num_neighbors: int = 250
 ) -> WCS:
     """
     Carefully determine the pointing of an image using the starfield.
@@ -469,7 +471,7 @@ def solve_pointing(
     stars_in_image = stars_in_image[ok_stars]
     catalog_stars = SkyCoord(np.array(stars_in_image["RAdeg"]) * u.degree, np.array(stars_in_image["DEdeg"]) * u.degree, frame="icrs")
 
-    candidate_wcs = [refine_pointing_single_step(guess_wcs, observed_tree, catalog_stars, fix_pv = True)]
+    candidate_wcs = [refine_pointing_single_step(guess_wcs, observed_tree, catalog_stars, fix_pv = True, num_neighbors=num_neighbors)]
     errors = [r[1] for r in candidate_wcs]
     candidate_wcs = [r[0] for r in candidate_wcs]
     best = np.argmin(np.abs(errors))

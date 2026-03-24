@@ -110,7 +110,7 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               color: bool = False,
                               gamma: float = 1/2.2,
                               trim_edge: float | tuple[float, float] | list[float, float] | None = (0.081, 0.705),
-                              write_hash: bool = False
+                              write_hash: bool = False,
                               ) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.

@@ -259,7 +259,7 @@ def _residual(params: Parameters,
 def get_errors(wcs: WCS, catalog_stars: SkyCoord, catalog_tree: KDTree,
                observed_stars: np.ndarray, observed_tree: KDTree) -> tuple[np.ndarray, np.ndarray]:
     """Compute errors between expected and observed star locations."""
-    num_neighbors = 25
+    num_neighbors = 50
 
     accumulated_error = []
     for closest_observed_star in observed_stars[-num_neighbors:]:
@@ -345,15 +345,15 @@ def refine_pointing_single_step(
     params = Parameters()
     initial_crota = extract_crota_from_wcs(guess_wcs)
     params.add("crota",
-               value=np.random.uniform(0.99, 1.01)*initial_crota.to(u.rad).value,
+               value=initial_crota.to(u.rad).value,
                min=(initial_crota.to(u.degree) - 3 * u.degree).to(u.rad).value,
                max=(initial_crota.to(u.degree) + 3 * u.degree).to(u.rad).value, vary=not fix_crota)
     params.add("crval1",
-               value=np.random.uniform(0.99, 1.01)*guess_wcs.wcs.crval[0],
+               value=guess_wcs.wcs.crval[0],
                min=guess_wcs.wcs.crval[0]-ra_tolerance,
                max=guess_wcs.wcs.crval[0]+ra_tolerance, vary=not fix_crval)
     params.add("crval2",
-               value=np.random.uniform(0.99, 1.01)*guess_wcs.wcs.crval[1],
+               value=guess_wcs.wcs.crval[1],
                min=guess_wcs.wcs.crval[1]-dec_tolerance,
                max=guess_wcs.wcs.crval[1]+dec_tolerance, vary=not fix_crval)
     params.add("platescale",

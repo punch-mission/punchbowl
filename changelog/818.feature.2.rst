@@ -1,1 +1,0 @@
-`reproject_cube` accepts options to pass to `reproject` and can skip reprojecting uncertainty

@@ -68,7 +68,7 @@ def layout():
                         "Show in Table: ",
                         dcc.Checklist(
                             USABLE_COLUMNS,
-                            ["File type", "Observatory"],
+                            ["Level", "File type", "Observatory"],
                             inline=True,
                             id="show-in-table",
                             inputStyle={"margin-left": "10px", "margin-right": "3px"},
@@ -79,7 +79,7 @@ def layout():
                         "Group by: ",
                         dcc.Checklist(
                             USABLE_COLUMNS,
-                            ["File type", "Observatory"],
+                            ["Level", "File type", "Observatory"],
                             inline=True,
                             id="group-by",
                             inputStyle={"margin-left": "10px", "margin-right": "3px"},
@@ -153,7 +153,9 @@ def layout():
 
                              sort_action="custom",
                              sort_mode="multi",
-                             sort_by=[dict(column_id="file_type", direction="asc"), dict(column_id="observatory", direction="asc")],
+                             sort_by=[dict(column_id="level", direction="asc"),
+                                      dict(column_id="file_type", direction="asc"),
+                                      dict(column_id="observatory", direction="asc")],
                              style_table={"overflowX": "auto",
                                           "textAlign": "left"},
                              fill_width=False,
@@ -543,6 +545,11 @@ def make_y_axis_labels(dff):
     # Generate the label strings for the plot y axis
     joinables = []
     columns = list(dff.columns)
+
+    if "level" in columns:
+        joinables.append(dff["level"].radd("L"))
+        columns.remove("level")
+
     if "file_type" in columns and "observatory" in columns:
         # If we're grouping by these columns, special-case it to show e.g. "CR2" instead of "CR 2" or "2 CR" or whatever
         joinables.append(dff["file_type"] + dff["observatory"])

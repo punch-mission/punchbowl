@@ -7,14 +7,15 @@ from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
-from punchbowl.data.meta import NormalizedMetadata, check_moon_in_fov, set_spacecraft_location_to_earth
+from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
 from punchbowl.level2.bright_structure import identify_bright_structures_task
+from punchbowl.level2.finalize import finalize_output
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
 from punchbowl.prefect import punch_flow
-from punchbowl.util import average_datetime, find_first_existing_file, load_image_task, output_image_task
+from punchbowl.util import load_image_task, output_image_task
 
 POLARIZED_FILE_ORDER = ["PM1", "PZ1", "PP1",
                         "PM2", "PZ2", "PP2",
@@ -95,10 +96,6 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         if polarized is None:
             polarized = data_list[0].meta["TYPECODE"].value[0] == "P"
 
-        output_dateobs = average_datetime([d.meta.datetime for d in data_list]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        output_datebeg = min([d.meta.datetime for d in data_list]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        output_dateend = max([d.meta.datetime for d in data_list]).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-
         if polarized:
             # order the data list so it can be processed properly
             ordered_data_list: list[NDCube | None] = [None for _ in range(len(POLARIZED_FILE_ORDER))]
@@ -121,7 +118,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             voter_filenames = ordered_voters
             image_masks = ordered_mask_list
             # Use the Z state for each file
-            center_inputs = [cube for cube in ordered_data_list if cube is not None and cube.meta["POLAR"].value == 0]
+            center_inputs = [cube for cube  in ordered_data_list if cube is not None and cube.meta["POLAR"].value == 0]
         else:
             center_inputs = data_list
 
@@ -136,8 +133,9 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         data_list = [identify_bright_structures_task(cube, this_voter_filenames)
                      for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
         merger = merge_many_polarized_task if polarized else merge_many_clear_task
+        layers_before_merge = data_list
         output_data = merger(data_list, trefoil_wcs)
-        output_data.meta["FILEVRSN"] = find_first_existing_file(data_list).meta["FILEVRSN"].value
+
         history_src = next(d for d in data_list if d is not None)
         output_data.meta.history = history_src.meta.history
 
@@ -154,9 +152,6 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         if polarized is None:
             msg = "A polarization state must be provided"
             raise ValueError(msg)
-        output_dateobs = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        output_datebeg = output_dateobs
-        output_dateend = output_datebeg
 
         output_data = NDCube(
             data=np.zeros(trefoil_shape),
@@ -164,35 +159,37 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             wcs=trefoil_wcs,
             meta=NormalizedMetadata.load_template("PTM" if polarized else "CTM", "2"),
         )
+        output_data.meta["DATE-OBS"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        output_data.meta["DATE-BEG"] = output_data.meta["DATE-OBS"].value
+        output_data.meta["DATE-END"] = output_data.meta["DATE-OBS"].value
+        layers_before_merge = []
 
-    output_data.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    output_data.meta["DATE-AVG"] = output_dateobs
-    output_data.meta["DATE-OBS"] = output_dateobs
-    output_data.meta["DATE-BEG"] = output_datebeg
-    output_data.meta["DATE-END"] = output_dateend
-    output_data = set_spacecraft_location_to_earth(output_data)
-
-    _, angle_sun, _, _, _, xpix, ypix = check_moon_in_fov(
-        output_data.meta["DATE-OBS"].value, wcs=output_data.wcs,
-        image_shape=trefoil_shape)
-    output_data.meta["MOONDIST"] = angle_sun[0]
-    output_data.meta["MOON_X"] = xpix[0]
-    output_data.meta["MOON_Y"] = ypix[0]
-
-    output_data.meta.provenance = [fname for d in data_list
-        if d is not None and (fname := d.meta.get("FILENAME").value)]
-
-    for d in filter(None, data_list):
-        spacecraft = SPACECRAFT_OBSCODE[d.meta["OBSCODE"].value]
-        output_data.meta[f"HAS_{spacecraft}"] = 1
-
-    output_data.meta["ALL_INPT"] = {output_data.meta["HAS_WFI1"].value,
-                                    output_data.meta["HAS_WFI2"].value,
-                                    output_data.meta["HAS_WFI3"].value,
-                                    output_data.meta["HAS_NFI4"].value} == {1}
+    finalize_output(output_data, data_list)
+    output_cubes = [output_data]
 
     if output_filename is not None:
         output_image_task(output_data, output_filename)
 
+    for x_cube in layers_before_merge:
+        if x_cube is None:
+            continue
+        meta = NormalizedMetadata.load_template("X" + x_cube.meta["TYPECODE"].value[1] + x_cube.meta["OBSCODE"].value,
+                                                level="2")
+        meta.history = x_cube.meta.history
+        meta.provenance = [x_cube.meta["FILENAME"].value]
+        for key in ["FILEVRSN", "MOONDIST", "MOON_X", "MOON_Y"]:
+            meta[key] = output_data.meta[key].value
+        for key in ["OUTLIER", "BADPKTS", "DATE-OBS", "DATE-AVG", "DATE-BEG", "DATE-END", "DATE"]:
+            meta[key] = x_cube.meta[key].value
+
+        obs_no = x_cube.meta["OBSCODE"].value
+        obs = "NFI" if obs_no == "4" else "WFI"
+        meta[f"CTRX{obs}{obs_no}"] = output_data.meta[f"CTRX{obs}{obs_no}"].value
+        meta[f"CTRY{obs}{obs_no}"] = output_data.meta[f"CTRY{obs}{obs_no}"].value
+        spacecraft = SPACECRAFT_OBSCODE[obs_no]
+        meta[f"HAS_{spacecraft}"] = 1
+        set_spacecraft_location_to_earth(x_cube)
+        output_cubes.append(NDCube(x_cube.data, meta=meta, wcs=x_cube.wcs, uncertainty=x_cube.uncertainty))
+
     logger.info("ending level 2 core flow")
-    return [output_data]
+    return output_cubes

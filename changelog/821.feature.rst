@@ -1,1 +1,0 @@
-Per-spacecraft L2 `MS*` mask files can be provided, which are applied to images before reprojection in L2.

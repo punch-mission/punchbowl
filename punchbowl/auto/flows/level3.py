@@ -1,8 +1,10 @@
 import os
 import json
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
+from collections import defaultdict
 
-from dateutil.parser import parse as parse_datetime
+from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
 from sqlalchemy import and_
@@ -11,9 +13,9 @@ from punchbowl import __version__
 from punchbowl.auto.control.db import File, Flow, get_closest_after_file, get_closest_before_file, get_closest_file
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
-from punchbowl.auto.control.util import get_database_session
+from punchbowl.auto.control.util import get_database_session, group_files_by_time
 from punchbowl.auto.flows.util import file_name_to_full_path
-from punchbowl.level3.flow import generate_level3_low_noise_flow, level3_core_flow, level3_PIM_flow
+from punchbowl.level3.flow import generate_level3_low_noise_flow, level3_core_flow, level3_PIM_CIM_flow
 from punchbowl.util import average_datetime
 
 
@@ -31,6 +33,53 @@ def get_valid_fcorona_models(session, f: File, before_timedelta: timedelta, afte
                       .filter(File.file_type == file_type).filter(File.observatory == "M")
                       .filter(File.date_obs >= valid_fcorona_start)
                       .filter(File.date_obs <= valid_fcorona_end).all())
+
+
+def get_fcorona_pairs(session, files: list[File], model_type="PF"):
+    # Get all models
+    models = (session.query(File)
+              .filter(File.file_type == model_type)
+              .order_by(File.date_obs.asc()).all())
+    models_by_obs = defaultdict(list)
+    for model in models:
+        models_by_obs[model.observatory].append(model)
+
+    results = []
+    for file in files:
+        models = models_by_obs[file.observatory]
+        for before_model, after_model in pairwise(models):
+            # All the models are sorted by date_obs, so there will be exactly one pair where the first is before our
+            # file to be calibrated and the second is after
+            if before_model.date_obs < file.date_obs < after_model.date_obs:
+                break
+        else:
+            # We didn't find an appropriate pair, so we must still be waiting for the scheduler to fill in here and
+            # tell us what's what
+            results.append((None, None))
+            continue
+
+        if before_model.state == "created" and after_model.state == "created":
+            # Good to go!
+            results.append((before_model, after_model))
+        elif before_model.state == "impossible" or after_model.state == "impossible":
+            # Flexible mode---since we'll never be able to generate the "intended" models for this file, let's go for
+            # the two closest possible models
+            models = [m for m in models if m.state != "impossible"]
+            models = sorted(models, key=lambda m: abs(m.date_obs - file.date_obs))
+            before_model, after_model = models[:2]
+            if after_model.date_obs < before_model.date_obs:
+                before_model, after_model = after_model, before_model
+
+            if before_model.state == "created" and after_model.state == "created":
+                # Good to go!
+                results.append((before_model, after_model))
+            else:
+                # Wait for files to generate
+                results.append((None, None))
+        else:
+            # If we're here, we're waiting for at least one model to generate, but we do expect it to do so eventually
+            results.append((None, None))
+    return results
 
 
 @task(cache_policy=NO_CACHE)
@@ -227,62 +276,84 @@ def level3_PIM_call_data_processor(call_data: dict, pipeline_config, session=Non
 
 @flow
 def level3_PIM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, level3_PIM_flow, pipeline_config_path, session=session,
+    generic_process_flow_logic(flow_id, level3_PIM_CIM_flow, pipeline_config_path, session=session,
                                call_data_processor=level3_PIM_call_data_processor)
 
 
 @task(cache_policy=NO_CACHE)
 def level3_CIM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
     logger = get_run_logger()
-    all_ready_files = session.query(File).where(and_(and_(File.state == "created",
-                                                          File.level == "2"),
-                                                     File.file_type == "CT")).order_by(File.date_obs.asc()).all()
-    logger.info(f"{len(all_ready_files)} Level 2 CTM files need to be processed.")
+    all_ready_files = (session.query(File).filter(File.state == "created")
+                       .filter(File.level == "2")
+                       # TODO: This line temporarily excludes NFI
+                       .filter(File.observatory.in_(["1", "2", "3"]))
+                       .filter(File.file_type == 'XR')
+                       # The ascending sort order is expected by the file grouping code
+                       .order_by(File.date_obs.asc()).all())
+    logger.info(f"{len(all_ready_files)} ready files")
+    logger.info(f"{len(all_ready_files)} Level 2 XR files need to be processed.")
 
-    actually_ready_files = []
-    for f in all_ready_files:
-        valid_before_fcorona_models = get_valid_fcorona_models(session, f,
-                                                               before_timedelta=timedelta(days=14),
-                                                               after_timedelta=timedelta(days=0),
-                                                               file_type="CF")
-        valid_after_fcorona_models = get_valid_fcorona_models(session, f,
-                                                              before_timedelta=timedelta(days=0),
-                                                              after_timedelta=timedelta(days=14),
-                                                              file_type="CF")
-        if len(valid_before_fcorona_models) >= 1 and len(valid_after_fcorona_models) >= 1:
-            actually_ready_files.append(f)
-            if len(actually_ready_files) >= max_n:
-                break
-    logger.info(f"{len(actually_ready_files)} Level 2 CTM files selected with necessary calibration data.")
+    if len(all_ready_files) == 0:
+        return []
 
-    return [[f.file_id] for f in actually_ready_files]
+    grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=10)
+
+    # Add a slight delay to make sure that we're not scooping up files that are being actively
+    # written out. If we can count on X-file sets to be completely written out, we can skip the
+    # "should we make an incomplete trefoil" logic, deferring that to the L2 scheduler.
+    grouped_files = [
+        group for group in grouped_files if max(f.date_created for f in group) < datetime.now() - timedelta(minutes=2)]
+
+    target_date = pipeline_config.get("target_date")
+    target_date = parse_datetime_str(target_date) if target_date else None
+    if target_date:
+        # Sort by closeness to the target date
+        grouped_files.sort(key=lambda group: abs((group[0].date_obs - target_date).total_seconds()))
+    else:
+        # Switch to most-recent-first order
+        grouped_files = grouped_files[::-1]
+
+    all_files = [f for group in grouped_files for f in group]
+
+    fcorona_models = get_fcorona_pairs(session, all_files, model_type="CF")
+    file_to_fcor_model = {f.file_id: m for f, m in zip(all_files, fcorona_models)}
+
+    actually_ready_groups = []
+    missing_fcor = []
+    for group in grouped_files:
+        all_set = True
+        for f in group:
+            if file_to_fcor_model[f.file_id] == (None, None):
+                missing_fcor.append(f)
+                all_set = False
+            else:
+                f.fcor_models = file_to_fcor_model[f.file_id]
+        if not all_set:
+            continue
+        actually_ready_groups.append(group)
+        if len(actually_ready_groups) >= max_n:
+            break
+    logger.info(f"{len(actually_ready_groups)} Level 2 XR files selected with necessary calibration data.")
+
+    return actually_ready_groups
 
 
 def level3_CIM_construct_flow_info(level2_files: list[File], level3_file: File, pipeline_config: dict,
                                    session=None, reference_time=None):
-    session = get_database_session()  # TODO: replace so this works in the tests by passing in a test
-
     flow_type = "level3_CIM"
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
-    before_models = get_valid_fcorona_models(session,
-                                             level2_files[0],
-                                             before_timedelta=timedelta(days=90),
-                                             after_timedelta=timedelta(days=0),
-                                             file_type="CF")
-    after_models = get_valid_fcorona_models(session,
-                                            level2_files[0],
-                                            before_timedelta=timedelta(days=0),
-                                            after_timedelta=timedelta(days=90),
-                                            file_type="CF")
-    f_corona_before = get_closest_before_file(level2_files[0], before_models)
-    f_corona_after = get_closest_after_file(level2_files[0], after_models)
+    before_models = []
+    after_models = []
+    for file in level2_files:
+        before_models.append(file.fcor_models[0].filename())
+        after_models.append(file.fcor_models[1].filename())
     call_data = json.dumps(
         {
             "data_list": [level2_file.filename() for level2_file in level2_files],
-            "before_f_corona_model_path": f_corona_before.filename(),
-            "after_f_corona_model_path": f_corona_after.filename(),
+            "before_f_corona_model_paths": before_models,
+            "after_f_corona_model_paths": after_models,
         },
     )
     return Flow(
@@ -296,7 +367,7 @@ def level3_CIM_construct_flow_info(level2_files: list[File], level3_file: File, 
 
 
 def level3_CIM_construct_file_info(level2_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
-    input_file = level2_files[0]
+    dates = [f.date_obs for f in level2_files]
 
     return [File(
                 level="3",
@@ -304,12 +375,12 @@ def level3_CIM_construct_file_info(level2_files: list[File], pipeline_config: di
                 observatory="M",
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
-                date_obs=input_file.date_obs,
+                date_obs=average_datetime(dates),
                 state="planned",
-                date_beg=input_file.date_beg,
-                date_end=input_file.date_end,
-                outlier=input_file.outlier,
-                bad_packets=input_file.bad_packets,
+                date_beg=min(dates),
+                date_end=max(dates),
+                outlier=any(f.outlier for f in level2_files),
+                bad_packets=any(f.bad_packets for f in level2_files),
             )]
 
 
@@ -328,7 +399,7 @@ def level3_CIM_scheduler_flow(pipeline_config_path: str | None = None,
 
 
 def level3_CIM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    for key in ["data_list", "before_f_corona_model_path", "after_f_corona_model_path"]:
+    for key in ["data_list", "before_f_corona_model_paths", "after_f_corona_model_paths"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     return call_data
 
@@ -336,7 +407,7 @@ def level3_CIM_call_data_processor(call_data: dict, pipeline_config, session=Non
 @flow
 def level3_CIM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
     # NOTE: this is not a typo... we're using the PIM core flow for this because it's flexible
-    generic_process_flow_logic(flow_id, level3_PIM_flow, pipeline_config_path, session=session,
+    generic_process_flow_logic(flow_id, level3_PIM_CIM_flow, pipeline_config_path, session=session,
                                call_data_processor=level3_CIM_call_data_processor)
 
 
@@ -457,7 +528,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
     if len(all_ready_files) == 0:
         return []
 
-    t0 = parse_datetime(pipeline_config["flows"]["level3_PAM" if polarized else "level3_CAM"]["t0"])
+    t0 = parse_datetime_str(pipeline_config["flows"]["level3_PAM" if polarized else "level3_CAM"]["t0"])
     increment = timedelta(minutes=32)
 
     end_time = t0

@@ -19,7 +19,9 @@ ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 class PUNCHClient(GenericClient):
     """Fido client for fetching PUNCH data from the SDAC."""
 
-    pattern = ("https://umbra.nascom.nasa.gov/punch/{Level}/{ProductCode}{Instrument}/{{year:4d}}/{{month:2d}}/"
+    fits_rootdir = "https://umbra.nascom.nasa.gov/punch"
+    jp2_rootdir = "https://umbra.nascom.nasa.gov/punch/L"
+    pattern = ("{rootdir}/{Level}/{ProductCode}{Instrument}/{{year:4d}}/{{month:2d}}/"
                "{{day:2d}}/PUNCH_L{Level}_{ProductCode}{Instrument}_{{year:4d}}{{month:2d}}{{day:2d}}{{hour:2d}}"
                "{{minute:2d}}{{second:2d}}_v{{DataVersion}}.{FileType}")
 
@@ -123,7 +125,7 @@ class PUNCHClient(GenericClient):
             code = code.upper() # noqa: PLW2901
             url_instr = instr_replacements[instr]
             fdict = {"ProductCode": code, "Instrument": url_instr, "Level": level,
-                     "FileType": file_type}
+                     "FileType": file_type, "rootdir": self.fits_rootdir if file_type == "fits" else self.jp2_rootdir}
 
             # Scraper can only handle dates as "variables" in the url's directory path, so we have to fill in level
             # and product code. Scraper will handle day/month/year, and "wildcards" in the filename part of the URL

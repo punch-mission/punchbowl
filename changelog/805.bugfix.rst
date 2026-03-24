@@ -1,1 +1,0 @@
-The files dashboard correctly handles filters without asterisks and files without date_created set.

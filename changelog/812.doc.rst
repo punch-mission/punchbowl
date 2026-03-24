@@ -1,1 +1,0 @@
-Small clarifications in the docs about data usage.

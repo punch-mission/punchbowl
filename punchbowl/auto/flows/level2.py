@@ -1,6 +1,7 @@
 import json
 from datetime import UTC, datetime, timedelta
 
+from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
 
@@ -48,8 +49,14 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
     else:
         grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=10)
 
-    # Switch to most-recent-first order
-    grouped_files = grouped_files[::-1]
+    target_date = pipeline_config.get("target_date")
+    target_date = parse_datetime_str(target_date) if target_date else None
+    if target_date:
+        # Sort by closeness to the target date
+        grouped_files.sort(key=lambda group: abs((group[0].date_obs - target_date).total_seconds()))
+    else:
+        # Switch to most-recent-first order
+        grouped_files = grouped_files[::-1]
 
     logger.info(f"{len(grouped_files)} sets of grouped files")
     grouped_ready_files = []
@@ -259,7 +266,7 @@ def level2_construct_flow_info(level1_files: list[File], level2_file: File, pipe
 
 
 def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
-    return [File(
+    files = [File(
                 level="2",
                 file_type="CT" if level1_files[0].file_type == "CR" else "PT",
                 observatory="M",
@@ -271,6 +278,21 @@ def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, 
                 bad_packets=any(file.bad_packets for file in level1_files),
                 state="planned",
             )]
+    for f in level1_files:
+        files.append(File(
+                level="2",
+                file_type="XR" if f.file_type == "CR" else "X" + f.file_type[1],
+                observatory=f.observatory,
+                polarization=f.polarization,
+                file_version=pipeline_config["file_version"],
+                software_version=__version__,
+                date_obs=f.date_obs,
+                outlier=f.outlier,
+                bad_packets=f.bad_packets,
+                crota=f.crota,
+                state="planned",
+            ))
+    return files
 
 
 @flow

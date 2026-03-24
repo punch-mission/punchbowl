@@ -1,1 +1,0 @@
-Updates starfield generation and subtraction.

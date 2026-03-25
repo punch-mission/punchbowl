@@ -8,8 +8,13 @@ the Sun’s corona become the solar wind that fills the solar system.
 Four suitcase-sized satellites work together to produce images of the entire inner solar system around the clock.
 You can learn more at the `PUNCH website <https://punch.space.swri.edu/>`_.
 
+How do I get data?
+-----------------
+
+You can learn more at `this page <data/index.html>`_.
+
 Where does `punchbowl` fit in?
---------------------------------------
+------------------------------
 ``punchbowl`` is the data reduction pipeline code for the PUNCH mission. The pipeline, as shown below,
 consists of several segments of processing.
 

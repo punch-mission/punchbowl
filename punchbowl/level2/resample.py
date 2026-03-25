@@ -136,30 +136,21 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     if isinstance(rolloff_width, list):
         rolloff_width = rolloff_width[int(input_cube.meta["OBSCODE"].value) - 1]
 
-    if not do_uncertainty:
-        if len(input_data.shape) == 2:
-            input_data = np.expand_dims(input_data, 0)
-    elif rolloff_strength > 0 and rolloff_width > 0:
-        image_mask = ((np.isnan(input_data) + (input_data == 0))
-                      * (~np.isfinite(input_uncertainty)))
-        distance_to_edge = distance_transform_edt(~image_mask, return_indices=False) + 1
-        cap = rolloff_width * distance_to_edge.max()
-        distance_to_edge[distance_to_edge > cap] = cap
-        rolloff_fractions = distance_to_edge / cap
-        rolloff_fractions = (1 - rolloff_strength) + rolloff_fractions * rolloff_strength
-        input_data = np.stack([input_data, input_uncertainty / np.sqrt(rolloff_fractions)])
-    else:
-        input_data = np.stack([input_data, input_uncertainty])
+    if do_uncertainty:
+        if rolloff_strength > 0 and rolloff_width > 0:
+            image_mask = ((np.isnan(input_data) + (input_data == 0))
+                          * (~np.isfinite(input_uncertainty)))
+            distance_to_edge = distance_transform_edt(~image_mask, return_indices=False) + 1
+            cap = rolloff_width * distance_to_edge.max()
+            distance_to_edge[distance_to_edge > cap] = cap
+            rolloff_fractions = distance_to_edge / cap
+            rolloff_fractions = (1 - rolloff_strength) + rolloff_fractions * rolloff_strength
+            input_data = np.stack([input_data, input_uncertainty / np.sqrt(rolloff_fractions)])
+        else:
+            input_data = np.stack([input_data, input_uncertainty])
 
     if output_array is None:
-        if do_uncertainty:
-            output_array = np.full((2,  *output_shape), np.nan)
-        else:
-            output_array = np.full(output_shape, np.nan)
-            if len(output_array.shape) == 2:
-                output_array = np.expand_dims(output_array, 0)
-    elif len(output_array.shape) == 2:
-        output_array = np.expand_dims(output_array, 0)
+        output_array = np.full((2,  *output_shape), np.nan) if do_uncertainty else np.full(output_shape, np.nan)
 
     # Reproject will complain if the input and output arrays have different dtypes
     input_data = np.asarray(input_data, dtype=output_array.dtype)
@@ -175,8 +166,6 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         **repro_args,
     )
 
-    if not do_uncertainty:
-        output_array = output_array[0]
     return output_array
 
 

@@ -107,7 +107,7 @@ def _write_quicklook(pipeline_config: dict, corresponding_file_db_entry: File, d
                                    corresponding_file_db_entry.filename())
         ql_filename = ql_filename.replace(".fits", ".jp2")
         os.makedirs(os.path.dirname(ql_filename), exist_ok=True)
-        write_ndcube_to_quicklook(data, ql_filename, layer="tB")
+        write_ndcube_to_quicklook(data, ql_filename, layer="tB", write_hash=True)
 
 
 def match_data_with_file_db_entry(data: NDCube, file_db_entry_list):

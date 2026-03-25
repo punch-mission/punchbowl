@@ -110,6 +110,7 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               color: bool = False,
                               gamma: float = 1/2.2,
                               trim_edge: float | tuple[float, float] | list[float, float] | None = (0.081, 0.705),
+                              write_hash: bool = False,
                               ) -> None:
     """
     Write an NDCube to a Quicklook format as a jpeg.
@@ -140,6 +141,8 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
         Option to trim the edges of quicklook products to the specified fractional radial distance.
         One input value trims the outer boundary only, while two trim both the inner and outer boundaries.
         A reasonable set of values are (0.081, 0.705) for the inner and outer boundaries.
+    write_hash : bool
+        writes a .sha hash for each file, this is intended for QuickPUNCH products where the SHA is used
 
     Returns
     -------
@@ -229,6 +232,9 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
         meta_boxes.insert(target_index, fits_box)
     jp2.wrap(filename, boxes=meta_boxes)
     os.remove(tmp_filename)
+
+    if write_hash:
+        write_file_hash(filename)
 
 
 def write_quicklook_to_mp4(files: list[str],

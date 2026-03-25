@@ -19,14 +19,14 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
 from punchbowl.levelq.f_corona_model import construct_qp_f_corona_model
-from punchbowl.levelq.flow import levelq_CNN_core_flow, levelq_CQM_core_flow, levelq_CTM_core_flow
+from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow, levelq_QAM_core_flow, levelq_QNN_core_flow
 from punchbowl.util import average_datetime
 
 
 @task(cache_policy=NO_CACHE)
-def levelq_CNN_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
     logger = get_run_logger()
-    pending_flows = session.query(Flow).filter(Flow.flow_type == "levelq_CNN").filter(Flow.state == "planned").all()
+    pending_flows = session.query(Flow).filter(Flow.flow_type == "levelq_QNN").filter(Flow.state == "planned").all()
     if pending_flows:
         logger.info("A pending flow already exists. Skipping scheduling to let the batch grow.")
         return []
@@ -60,8 +60,8 @@ def levelq_CNN_query_ready_files(session, pipeline_config: dict, reference_time=
 
 
 @task(cache_policy=NO_CACHE)
-def levelq_CNN_construct_flow_info(level1_files: list[File], levelq_file: File, pipeline_config: dict, session=None, reference_time=None):
-    flow_type = "levelq_CNN"
+def levelq_QNN_construct_flow_info(level1_files: list[File], levelq_file: File, pipeline_config: dict, session=None, reference_time=None):
+    flow_type = "levelq_QNN"
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
@@ -84,10 +84,10 @@ def levelq_CNN_construct_flow_info(level1_files: list[File], levelq_file: File, 
 
 
 @task
-def levelq_CNN_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+def levelq_QNN_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
     return [File(
                 level="Q",
-                file_type="CN",
+                file_type="QN",
                 observatory="N",
                 polarization="C",
                 file_version=pipeline_config["file_version"],
@@ -102,11 +102,11 @@ def levelq_CNN_construct_file_info(level1_files: list[File], pipeline_config: di
 
 
 @flow
-def levelq_CNN_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+def levelq_QNN_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
     generic_scheduler_flow_logic(
-        levelq_CNN_query_ready_files,
-        levelq_CNN_construct_file_info,
-        levelq_CNN_construct_flow_info,
+        levelq_QNN_query_ready_files,
+        levelq_QNN_construct_file_info,
+        levelq_QNN_construct_flow_info,
         pipeline_config_path,
         reference_time=reference_time,
         session=session,
@@ -114,7 +114,7 @@ def levelq_CNN_scheduler_flow(pipeline_config_path=None, session=None, reference
     )
 
 
-def levelq_CNN_call_data_processor(call_data: dict, pipeline_config, session) -> dict:
+def levelq_QNN_call_data_processor(call_data: dict, pipeline_config, session) -> dict:
     # Prepend the data root to each input file
     for key in ["data_list"]:
         if call_data[key] is not None:
@@ -149,9 +149,9 @@ def levelq_CNN_call_data_processor(call_data: dict, pipeline_config, session) ->
 
 
 @flow
-def levelq_CNN_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, levelq_CNN_core_flow, pipeline_config_path, session=session,
-                               call_data_processor=levelq_CNN_call_data_processor)
+def levelq_QNN_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
+    generic_process_flow_logic(flow_id, levelq_QNN_core_flow, pipeline_config_path, session=session,
+                               call_data_processor=levelq_QNN_call_data_processor)
 
 
 @task(cache_policy=NO_CACHE)
@@ -159,8 +159,8 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
     logger = get_run_logger()
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(or_(
-                            and_(File.level == "1", File.file_type == "QR", File.observatory.in_(["1", "2", "3"])),
-                            # TODO: We're excluding NFI for now
+                            and_(File.level == "1", File.file_type.in_(["QM", "QZ", "QP"]), File.observatory.in_(["1", "2", "3"])),
+                            # We're excluding NFI
                             # and_(File.level == "Q", File.file_type == "CN"),
                        )).order_by(File.date_obs.desc()).all())
     logger.info(f"{len(all_ready_files)} ready files")
@@ -182,9 +182,9 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
     for group in grouped_files:
         if len(grouped_ready_files) >= max_n:
             break
-        # TODO: We're excluding NFI for now
-        # group_is_complete = len(group) == 4
-        group_is_complete = len(group) == 3
+        # We're excluding NFI
+        # group_is_complete = len(group) == 10
+        group_is_complete = len(group) == 9
         if group_is_complete:
             grouped_ready_files.append(group)
             continue
@@ -206,12 +206,12 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
         # range within which to grab L0s.
         center = group[0].date_obs
         search_width = timedelta(minutes=1)
-        search_types = ["CR"]
+        search_types = ["PM", "PZ", "PP"]
 
         # Grab all the L0s that produce inputs for this trefoil
         expected_inputs = (session.query(File)
                                   .filter(File.level == "0")
-                                  # TODO: This line temporarily excludes NFI
+                                  # This line excludes NFI as designed
                                   .filter(File.observatory.in_(["1", "2", "3"]))
                                   .filter(File.file_type.in_(search_types))
                                   .filter(File.date_obs > center - search_width)
@@ -397,6 +397,149 @@ def levelq_CTM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
     generic_process_flow_logic(flow_id, levelq_CTM_core_flow, pipeline_config_path, session=session,
                                call_data_processor=levelq_CTM_call_data_processor)
 
+@task(cache_policy=NO_CACHE)
+def levelq_QAM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=100):
+    logger = get_run_logger()
+    all_ready_files = (session.query(File)
+                       .filter(File.state == "created")
+                       .filter(File.level == "Q")
+                       .filter(File.file_type == 'CT')
+                       .filter(File.observatory == "M")
+                       .filter(File.outlier == 0)
+                       .order_by(File.date_obs.desc()).all())
+    logger.info(f"{len(all_ready_files)} Level Q CTM files need to be processed to low-noise.")
+
+    if len(all_ready_files) == 0:
+        return []
+
+    t0 = parse_datetime(pipeline_config["flows"]["levelq_QAM"]["t0"])
+    increment = timedelta(minutes=32)
+
+    end_time = t0
+    # I'm sure there's a better way to do this, but let's step forward by increments to the present, and then we'll work
+    # backwards back toward t0
+    while end_time < datetime.now():
+        end_time += increment
+    start_time = end_time - increment
+
+    grouped_files = []
+    current_group = []
+    while all_ready_files:
+        file = all_ready_files.pop(0)
+        if start_time <= file.date_obs < end_time:
+            current_group.append(file)
+        elif file.date_obs > end_time:
+            # Shouldn't happen
+            continue
+        else:
+            # file.date_obs < start_time, so this group is complete
+            if current_group:
+                ref_time = start_time + 0.5 * (end_time - start_time)
+                ref_time = ref_time.replace(microsecond=0)
+                # Check if we've already generated a (presumably incomplete) file for this date_obs.
+                # TODO: it would be better to regenerate the file, but we don't have a way to do that sensibly now
+                if not (session.query(File).filter(File.level == "Q")
+                        .filter(File.file_type == 'CT')
+                        .filter(File.observatory == "M")
+                        .filter(File.date_obs == ref_time)
+                        .first()):
+                    for f in current_group:
+                        f._reference_time = ref_time
+                    grouped_files.append(current_group)
+            while not (start_time <= file.date_obs < end_time) and start_time >= t0:
+                start_time -= increment
+                end_time -= increment
+            if start_time < t0:
+                break
+            current_group = [file]
+
+    cutoff_time = (pipeline_config["flows"]["levelq_QAM"]
+                   .get("ignore_missing_after_days", None))
+    if cutoff_time is not None:
+        cutoff_time = datetime.now(tz=UTC) - timedelta(days=cutoff_time)
+
+    grouped_ready_files = []
+    for group in grouped_files:
+        group_is_complete = len(group) == 4
+
+        if len(grouped_ready_files) >= max_n:
+            break
+
+        if group_is_complete:
+            grouped_ready_files.append(group)
+            continue
+
+        if cutoff_time and min(f.date_created for f in group).replace(tzinfo=UTC) < cutoff_time:
+            # We've waited long enough. Just go ahead and make it.
+            grouped_ready_files.append(group)
+            continue
+
+    logger.info(f"{len(grouped_ready_files)} groups heading out")
+    return grouped_ready_files
+
+
+def levelq_QAM_construct_flow_info(levelq_files: list[File], levelq_file_out: File,
+                                   pipeline_config: dict, session=None, reference_time=None):
+    flow_type = "levelq_QAM"
+    state = "planned"
+    creation_time = datetime.now(UTC)
+    priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    reference_time = levelq_files[0]._reference_time
+
+    call_data = json.dumps(
+        {
+            "data_list": [
+                os.path.join(levelq_file.directory(pipeline_config["root"]), levelq_file.filename())
+                for levelq_file in levelq_files
+            ],
+            "reference_time": reference_time.strftime("%Y-%m-%dT%H:%M:%S"),
+        },
+    )
+    return Flow(
+        flow_type=flow_type,
+        state=state,
+        flow_level="Q",
+        creation_time=creation_time,
+        priority=priority,
+        call_data=call_data,
+    )
+
+
+def levelq_QAM_construct_file_info(levelq_files: list[File], pipeline_config: dict,
+                                   reference_time=None) -> list[File]:
+    reference_time = levelq_files[0]._reference_time
+    return [File(
+                level="3",
+                file_type="QA",
+                observatory="M",
+                polarization="C",
+                file_version=pipeline_config["file_version"],
+                software_version=__version__,
+                date_obs=reference_time,
+                date_beg=min([f.date_obs for f in levelq_files if f.outlier == 0]),
+                date_end=max([f.date_obs for f in levelq_files if f.outlier == 0]),
+                state="planned",
+                # Outlier images are excluded from CAMs and PAMs
+                outlier=0,
+                bad_packets=False,
+            )]
+
+
+@flow
+def levelq_QAM_scheduler_flow(pipeline_config_path=None, session=None):
+    generic_scheduler_flow_logic(
+        levelq_QAM_query_ready_files,
+        levelq_QAM_construct_file_info,
+        levelq_QAM_construct_flow_info,
+        pipeline_config_path,
+        session=session,
+    )
+
+
+@flow
+def levelq_QAM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
+    generic_process_flow_logic(flow_id, levelq_QAM_core_flow, pipeline_config_path, session=session)
+
 
 @task
 def levelq_upload_query_ready_files(session, pipeline_config: dict, reference_time=None):
@@ -404,7 +547,7 @@ def levelq_upload_query_ready_files(session, pipeline_config: dict, reference_ti
     lookback_days = pipeline_config["flows"]["levelq_upload"].get("lookback_days", np.inf)
     query = (session.query(File).filter(File.state == "created")
                            .filter(File.level == "Q")
-                           .filter(File.file_type.in_(["CT", "CN"])))
+                           .filter(File.file_type.in_(["QA", "QN"])))
     if np.isfinite(lookback_days):
         query = query.filter(File.date_obs >= datetime.now(UTC) - timedelta(days=lookback_days))
     all_ready_files = query.all()
@@ -425,6 +568,7 @@ def levelq_upload_construct_flow_info(levelq_files: list[File], intentionally_em
         {
             "data_list": [levelq_file.filename() for levelq_file in levelq_files],
             "bucket_name": pipeline_config["bucket_name"],
+            "jp2_dir": pipeline_config.get('ql_root', pipeline_config['root']),
         },
     )
     return Flow(
@@ -452,9 +596,12 @@ def levelq_upload_scheduler_flow(pipeline_config_path=None, session=None, refere
         session=session,
     )
 
+
 @flow
-def levelq_upload_core_flow(data_list, bucket_name, aws_profile="noaa-prod"):
-    data_list += [fn + ".sha" for fn in data_list]
+def levelq_upload_core_flow(data_list, bucket_name, jp2_dir, aws_profile="noaa-prod"):
+    data_list += ([fn + ".sha" for fn in data_list] +
+                 [file_name_to_full_path(fn, root_dir=jp2_dir).replace(".fits", ".jp2") for fn in data_list] +
+                  [file_name_to_full_path(fn, root_dir=jp2_dir).replace(".fits", ".jp2.sha") for fn in data_list])
     manifest_path = write_manifest(data_list)
     os.system(f"aws --profile {aws_profile} s3 cp {manifest_path} {bucket_name}")
     for file_name in data_list:

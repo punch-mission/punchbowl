@@ -504,7 +504,6 @@ def level3_CTM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
     generic_process_flow_logic(flow_id, level3_core_flow, pipeline_config_path, session=session,
                                call_data_processor=level3_CTM_call_data_processor)
 
-# TODO - repeat below logic for the final PAM set
 @task(cache_policy=NO_CACHE)
 def level3_CAM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=100):
     return _level3_CAMPAM_query_ready_files(session, polarized=False, pipeline_config=pipeline_config, max_n=max_n)

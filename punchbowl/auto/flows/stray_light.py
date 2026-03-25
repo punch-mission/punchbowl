@@ -1,4 +1,5 @@
 import json
+import random
 from datetime import datetime, timedelta
 from collections import defaultdict
 
@@ -28,6 +29,7 @@ def construct_stray_light_check_for_inputs(session,
     min_files_per_half = pipeline_config["flows"]["construct_stray_light"][f"{pol_type}_min_files_per_half"]
     max_files_per_half = pipeline_config["flows"]["construct_stray_light"][f"{pol_type}_max_files_per_half"]
     max_hours_per_half = pipeline_config["flows"]["construct_stray_light"][f"{pol_type}_max_hours_per_half"]
+    file_stride = pipeline_config["flows"]["construct_stray_light"][f"{pol_type}_file_stride"]
     t_start = reference_time - timedelta(hours=max_hours_per_half)
     t_end = reference_time + timedelta(hours=max_hours_per_half)
     L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
@@ -43,9 +45,8 @@ def construct_stray_light_check_for_inputs(session,
     L0_type_mapping = {"SR": "CR", "SM": "PM", "SZ": "PZ", "SP": "PP"}
     L0_target_file_types = [L0_type_mapping["S" + t] for t in out_types]
 
-    if polarized:
-        min_files_per_half *= 3
-        max_files_per_half *= 3
+    count_multiplier = 3 if polarized else 1
+    count_multiplier *= file_stride
 
     base_query = (session.query(File)
                   .filter(File.state.in_(["created", "progressed"]))
@@ -59,7 +60,7 @@ def construct_stray_light_check_for_inputs(session,
                          .filter(File.file_type.in_(target_file_types))
                          .filter(File.level == "1")
                          .order_by(File.date_obs.desc())
-                         .limit(max_files_per_half).all())
+                         .limit(max_files_per_half * count_multiplier).all())
 
     second_half_inputs = (base_query
                           .filter(File.date_obs >= reference_time)
@@ -67,7 +68,7 @@ def construct_stray_light_check_for_inputs(session,
                           .filter(File.file_type.in_(target_file_types))
                           .filter(File.level == "1")
                           .order_by(File.date_obs.asc())
-                          .limit(max_files_per_half).all())
+                          .limit(max_files_per_half * count_multiplier).all())
 
     first_half_L0s = (base_query
                       .filter(File.date_obs >= t_start)
@@ -75,7 +76,7 @@ def construct_stray_light_check_for_inputs(session,
                       .filter(File.file_type.in_(L0_target_file_types))
                       .filter(File.level == "0")
                       .order_by(File.date_obs.desc())
-                      .limit(max_files_per_half).all())
+                      .limit(max_files_per_half * count_multiplier).all())
 
     second_half_L0s = (base_query
                        .filter(File.date_obs >= reference_time)
@@ -83,25 +84,36 @@ def construct_stray_light_check_for_inputs(session,
                        .filter(File.file_type.in_(L0_target_file_types))
                        .filter(File.level == "0")
                        .order_by(File.date_obs.asc())
-                       .limit(max_files_per_half).all())
+                       .limit(max_files_per_half * count_multiplier).all())
 
     # Allow 5% of the L0s to not be processed, in case a few fail
     all_inputs_ready = (len(first_half_inputs) >= 0.95 * len(first_half_L0s)
                         and len(second_half_inputs) >= 0.95 * len(second_half_L0s))
 
     if polarized:
-        first_half_groups = group_l2_inputs(first_half_inputs)
+        first_half_groups = group_l2_inputs(first_half_inputs[::-1])
         second_half_groups = group_l2_inputs(second_half_inputs)
     else:
         first_half_groups = [[f] for f in first_half_inputs]
         second_half_groups = [[f] for f in second_half_inputs]
+
+    if file_stride > 1:
+        random.seed(1)
+        random.shuffle(first_half_groups)
+        random.shuffle(second_half_groups)
+        first_half_groups = first_half_groups[::file_stride]
+        second_half_groups = second_half_groups[::file_stride]
+        # Put both lists in nearest-to-the-reference-date first order
+        first_half_groups.sort(key=lambda g: g[0].date_obs, reverse=True)
+        second_half_groups.sort(key=lambda g: g[0].date_obs)
 
     enough_L1s = len(first_half_groups) > min_files_per_half and len(second_half_groups) > min_files_per_half
     max_L1s = len(first_half_groups) == max_files_per_half and len(second_half_groups) == max_files_per_half
 
     produce = False
     if more_L0_impossible:
-        if len(first_half_L0s) < min_files_per_half or len(second_half_L0s) < min_files_per_half:
+        if (len(first_half_L0s) < min_files_per_half * count_multiplier
+                or len(second_half_L0s) < min_files_per_half * count_multiplier):
             for reference_file in reference_files:
                 reference_file.state = "impossible"
                 # Record who deemed this to be impossible
@@ -110,6 +122,8 @@ def construct_stray_light_check_for_inputs(session,
                 reference_file.date_created = datetime.now()
                 logger.info(f"{reference_file.filename()} marked impossible")
         elif all_inputs_ready and enough_L1s:
+            # Since the two lists of groups are in nearest-to-the-reference-date first order, cutting them to the
+            # same size helps ensure the range they cover is symmetric around the ref date.
             n = min(len(first_half_groups), len(second_half_groups))
             first_half_groups = first_half_groups[:n]
             second_half_groups = second_half_groups[:n]
@@ -121,8 +135,8 @@ def construct_stray_light_check_for_inputs(session,
         all_ready_files = first_half_groups + second_half_groups
         all_ready_files = [f for group in all_ready_files for f in group]
 
-        logger.info(f"{len(all_ready_files)} Level 1 {','.join(target_file_types)}{reference_files[0].observatory} files will be "
-                    "used for stray light estimation.")
+        logger.info(f"{len(all_ready_files)} Level 1 {','.join(target_file_types)}{reference_files[0].observatory} "
+                    "files will be used for stray light estimation.")
         return [f.file_id for f in all_ready_files]
     else:
         status = []
@@ -171,7 +185,8 @@ def construct_stray_light_flow_info(level1_files: list[File],
             "spacecraft": spacecraft,
             "image_mask_path": mask.filename().replace(".fits", ".bin"),
             "window_size": pipeline_config["flows"][flow_type][f"{pol_type}_neighborhood_size"],
-            "fallback_model_path": None if nearest_created_model is None else nearest_created_model.filename()
+            "fallback_model_path": None if nearest_created_model is None else nearest_created_model.filename(),
+            "polarized": is_polarized,
         },
     )
     return Flow(

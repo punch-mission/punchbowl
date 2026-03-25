@@ -18,6 +18,8 @@ For more information about data analysis tools, see the `examples here <auto_exa
 
 For information on more data products, read this `introduction <data overview>`_.
 
+.. image:: example.png
+   :alt: An example PUNCH image
 
 .. toctree::
    :hidden:

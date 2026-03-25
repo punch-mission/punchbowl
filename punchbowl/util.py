@@ -570,20 +570,20 @@ class ShmPickleableNDArray(np.ndarray):
         terminates. This function is only needed to free the memory early, before the process ends. Note that
         accessing the array after freeing the backing memory may result in a segfault.
         """
-        if self._shm is None:
+        if (shm := self._shm) is None:
             return
-        self._shm.unlink()
-        thread = threading.Thread(target=self._shm.close, daemon=True)
-        thread.start()
         self._shm = None
         self.is_freed = True
+        shm.unlink()
+        thread = threading.Thread(target=shm.close, daemon=True)
+        thread.start()
 
     def __del__(self) -> None:
         """Delete the array."""
         if hasattr(super(), "__del__"):
             super().__del__()
 
-        if not self.persist and self._shm is not None:
+        if not self.persist and not self.is_freed:
             self.free()
 
     def __getitem__(self, *args: tuple, **kwargs: dict) -> "ShmPickleableNDArray":
@@ -593,12 +593,27 @@ class ShmPickleableNDArray(np.ndarray):
             raise RuntimeError("Attempt to access array that's already been freed")
         return super().__getitem__(*args, **kwargs)
 
+    def __setitem__(self, *args: tuple, **kwargs: dict) -> None:
+        """Index the array."""
+        if self.orig_array.is_freed:
+            # Guard against segfaults after freeing the shared memory
+            raise RuntimeError("Attempt to access array that's already been freed")
+        return super().__setitem__(*args, **kwargs)
+
     def __repr__(self, *args: tuple, **kwargs: dict) -> str:
         """Repr the array."""
         if self.orig_array.is_freed:
             # Guard against segfaults after freeing the shared memory
             return "<freed ShmPickleableNDArray>"
         return super().__repr__(*args, **kwargs)
+
+    @property
+    def data(self) -> memoryview:
+        """Access array data directly."""
+        if self.orig_array.is_freed:
+            # Guard against segfaults after freeing the shared memory
+            raise RuntimeError("Attempt to access array that's already been freed")
+        return super().data
 
     def __reduce__(self) -> tuple:
         """Pickle the object."""

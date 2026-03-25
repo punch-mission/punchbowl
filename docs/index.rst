@@ -6,14 +6,14 @@
 Welcome to punchbowl's documentation!
 =====================================
 
-- We recommend beginning with the introduction and working through the related concepts.
-- Check out tutorials for examples of performing specific tasks.
-- To understand a specific part of the pipeline, look in the segment descriptions.
-- Explore the full API for full details on functions.
+- We recommend beginning with the `introduction <intro.html>`_ and working through the related concepts.
+- When you're ready to begin, read through documentation on how to `get data <data/index.html>`_.
+- Check out the `examples <auto_examples/index.html>`_ tab for performing specific tasks.
+- To understand a specific part of the pipeline, look in the `segment descriptions <pipeline/index.html>`_.
+- Explore the `full API <autoapi/index.html>`_ for full details on functions.
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Contents:
+   :hidden:
 
    intro
    data/index
@@ -22,10 +22,3 @@ Welcome to punchbowl's documentation!
    help
    contribute
    automation/index
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

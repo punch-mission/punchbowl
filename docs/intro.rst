@@ -8,8 +8,13 @@ the Sun’s corona become the solar wind that fills the solar system.
 Four suitcase-sized satellites work together to produce images of the entire inner solar system around the clock.
 You can learn more at the `PUNCH website <https://punch.space.swri.edu/>`_.
 
+How do I get data?
+-----------------
+
+You can learn more at `this page <data/index.html>`_.
+
 Where does `punchbowl` fit in?
---------------------------------------
+------------------------------
 ``punchbowl`` is the data reduction pipeline code for the PUNCH mission. The pipeline, as shown below,
 consists of several segments of processing.
 
@@ -29,8 +34,8 @@ In addition to the science processing levels, we have QuickPUNCH or Level Q that
 PUNCH and Python
 ----------------
 
-The PUNCH framework is built using Python - an object-oriented language with a large user / code base in astronomy and solar physics. T
-he pipeline and tools for querying / loading PUNCH data use the Python language, along with the SunPy and Astropy software libraries.
+The PUNCH framework is built using Python - an object-oriented language with a large user / code base in astronomy and solar physics.
+The pipeline and tools for querying / loading PUNCH data use the Python language, along with the SunPy and Astropy software libraries.
 A number of useful tutorials exist online, including the official `Python tutorial <https://docs.python.org/3/tutorial/index.html>`_ and the `Hitchhiker's Guide to Python <https://docs.python-guide.org>`_.
 
 In addition to scripts and modules, Python notebooks provide a great way to execute and document a sequence of code cells, with visualizations directly in-line.

@@ -8,7 +8,7 @@ Data output from the PUNCH data processing pipeline are stored and accessible th
 From here PUNCH data products can be queried and requested for download using metadata within the data products.
 See `this example <https://punchbowl.readthedocs.io/en/latest/auto_examples/querying_data.html#sphx-glr-auto-examples-querying-data-py>`_ on how to query the VSO using SunPy's Fido API.
 
-If the VSO is not working properly, you can also pull data directly from the SDAC using ``wget``.
+If that example is not working properly, you can also pull data directly from the SDAC using ``wget``.
 
 .. code-block:: bash
 
@@ -54,7 +54,7 @@ These data can also be bundled together as an NDCube object, either manually or 
 
     cube = load_ndcube_from_fits(filename)
 
-See `this example <https://punchbowl.readthedocs.io/en/latest/auto_examples/data_guide.html#sphx-glr-auto-examples-data-guide-py>`_ on how to use data.
+See `this code example <https://punchbowl.readthedocs.io/en/latest/auto_examples/data_guide.html#sphx-glr-auto-examples-data-guide-py>`_ on how to use data.
 
 Data Projections
 ----------------

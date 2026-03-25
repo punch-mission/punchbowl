@@ -441,7 +441,7 @@ def _load_files(filepaths: list[str], mosaic_wcs: WCS, logger: Logger, do_uncert
     metas = []
     wcses = []
     n_failed = 0
-    logger.info(f"Will read {len(filepaths)} images")
+    logger.info(f"Will read {len(filepaths)} {'triplets' if polarized else 'images'}")
     for i, result in enumerate(pool.map(
             _load_and_reproject, filepaths, repeat(mosaic_wcs), data_array, reprojected_array, repeat(polarized))):
         if isinstance(result, str):
@@ -497,14 +497,25 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
     for i, cube in enumerate(resolved_cubes):
         repro_input[i] = np.where(np.isinf(cube.uncertainty.array), np.nan, cube.data)
 
+    # Now we prepare the image that gets reprojected and used to build the coronal background, and we trim
+    # aggressively to remove areas that are usually low-quality
     y, x = np.mgrid[:2048, :2048]
-    repro_input[:, y > 1500 + x] = np.nan
-    repro_input[:, y > 1500 + (2048 - x)] = np.nan
-    repro_input[:, y < 600 - x] = np.nan
-    repro_input[:, y < 600 - (2048 - x)] = np.nan
 
-    repro_input = repro_input[:, bottom_crop:, 200:-200]
-    wcs_cropped = cubes[0].wcs[bottom_crop:, 200:-200]
+    # Clip the upper corners
+    repro_input[:, y > 1300 + x] = np.nan
+    repro_input[:, y > 1300 + (2048 - x)] = np.nan
+
+    # Clip the lower-left corner, including a good portion of the bottom edge
+    repro_input[:, y < 800 - x] = np.nan
+    repro_input[:, y < 600 - .5 * x] = np.nan
+
+    # Clip the lower-right corner, including a good portion of the bottom edge
+    repro_input[:, y < 800 - (2048 - x)] = np.nan
+    repro_input[:, y < 600 - .5 * (2048 - x)] = np.nan
+
+    # Don't even reproject the sides and bottom
+    repro_input = repro_input[:, bottom_crop:, 300:-300]
+    wcs_cropped = cubes[0].wcs[bottom_crop:, 300:-300]
 
     with warnings.catch_warnings(), np.errstate(all="ignore"):
         warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")
@@ -766,6 +777,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         models_per_pol = []
         start = time.time()
         for i in range(data_array.shape[1]):
+            logger.info(f"Starting SL modeling for polarization state {i+1}")
             models = []
             for bin_n, bin_mask in enumerate(bin_masks):
                 models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers[i], fallback_model,

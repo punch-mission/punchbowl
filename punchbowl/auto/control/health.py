@@ -1,3 +1,4 @@
+import socket
 from datetime import datetime
 
 import psutil
@@ -26,9 +27,7 @@ def health_monitor(pipeline_config_path: str = None):
                                   memory_percentage=memory_percentage,
                                   disk_usage=disk_usage,
                                   disk_percentage=disk_percentage,
-                                  num_pids=num_pids)
+                                  num_pids=num_pids,
+                                  host=socket.gethostname())
         session.add(new_health_entry)
         session.commit()
-
-
-# TODO add zombie monitor!

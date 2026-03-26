@@ -58,8 +58,9 @@ def layout():
                 ),
                 dcc.Dropdown(
                     id="host-selector",
-                    options=["phoenix", "chimera"],
-                    value="phoenix",
+                    options=["phoenix.spaceops.swri.org",
+                             "chimera.spaceops.swri.org"],
+                    value="phoenix.spaceops.swri.org",
                     clearable=False,
                     style={"width": "50%"},
                     persistence=True, persistence_type="memory"

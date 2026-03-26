@@ -14,6 +14,7 @@ from sunpy.sun import constants
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.prefect import punch_flow
 
 
 def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: float) -> tuple[int, int]:
@@ -277,7 +278,7 @@ def compute_all_bands(acc: np.ndarray, ycen_band_rs: np.ndarray, r_band_half_wid
 
     avg_speeds = []
     sigmas = []
-    for (ylo, yhi) in zip(*ylohi, strict=False):
+    for (ylo, yhi) in zip(*ylohi, strict=True):
         acc_k = acc[:, int(ylo):int(yhi) + 1, ...].mean(axis=1)
         # The modulus must be zero
         azimuth_bin_size = acc_k.shape[1] // velocity_azimuth_bins
@@ -427,7 +428,7 @@ def plot_flow_map(filename: str | None, data: NDCube, cmap: str = "magma") -> No
         plt.savefig(filename)
     return fig
 
-
+@punch_flow(log_prints=True, timeout_seconds=21_600)
 def track_velocity(files: list[str],
                    delta_t: int = 12,
                    sparsity: int = 2,

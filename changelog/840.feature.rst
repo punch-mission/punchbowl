@@ -1,1 +1,1 @@
-`!=` filters in the files dashbaord now handle wildcards and multiple filters correctly.
+`!=` filters in the files dashboard now handle wildcards and multiple filters correctly.

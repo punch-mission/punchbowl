@@ -6,7 +6,7 @@ from logging import Logger
 from datetime import UTC, datetime, timedelta
 from functools import cached_property
 from itertools import repeat, pairwise
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 import numba
 import numpy as np
@@ -514,16 +514,16 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
     repro_input[:, y > 1300 + (2048 - x)] = np.nan
 
     # Clip the lower-left corner, including a good portion of the bottom edge
-    repro_input[:, y < 800 - x] = np.nan
-    repro_input[:, y < 600 - .5 * x] = np.nan
+    repro_input[:, y < 1200 - 1.3 * x] = np.nan
+    repro_input[:, y < 850 - 0.75 * x] = np.nan
 
     # Clip the lower-right corner, including a good portion of the bottom edge
-    repro_input[:, y < 800 - (2048 - x)] = np.nan
-    repro_input[:, y < 600 - .5 * (2048 - x)] = np.nan
+    repro_input[:, y < 1200 - 1.3 * (2048 - x)] = np.nan
+    repro_input[:, y < 850 - 0.75 * (2048 - x)] = np.nan
 
     # Don't even reproject the sides and bottom
-    repro_input = repro_input[:, bottom_crop:, 300:-300]
-    wcs_cropped = cubes[0].wcs[bottom_crop:, 300:-300]
+    repro_input = repro_input[:, bottom_crop:, 350:-350]
+    wcs_cropped = cubes[0].wcs[bottom_crop:, 350:-350]
 
     with warnings.catch_warnings(), np.errstate(all="ignore"):
         warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")
@@ -583,10 +583,8 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
     corona_model_dates = []
     valid_dates = [m[0].datetime for m in metas if m is not None]
     dstart = valid_dates[0]
-    dstop = dstart
+    dstop = dstart + timedelta(hours=30)
     while dstop < valid_dates[-1]:
-        dstart = dstop
-        dstop = dstart + timedelta(hours=24)
         istart = np.argmin([np.abs((m[0].datetime - dstart).total_seconds()) if m is not None else 9e99 for m in metas])
         istop = np.argmin([np.abs((m[0].datetime - dstop).total_seconds()) if m is not None else 9e99 for m in metas])
         if istop - istart < 50:
@@ -595,9 +593,17 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
         model = ShmPickleableNDArray.empty_like(reprojected_array[0])
         for i in range(reprojected_array.shape[1]):
             model[i] = nan_percentile(reprojected_array[istart:istop, i], 5)
+
+        def blur_one_image(i: int) -> None:
+            model[i] = nan_gaussian(model[i], 3.5) # noqa: B023
+        with ThreadPoolExecutor(len(model)) as p:
+            p.map(blur_one_image, range(len(model)))
+
         np.nan_to_num(model, copy=False)
         corona_models.append(model)
         corona_model_dates.append(mdate)
+        dstart += timedelta(hours=24)
+        dstop += timedelta(hours=24)
 
     logger.info("Models made; subtracting")
 

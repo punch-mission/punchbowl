@@ -1,0 +1,1 @@
+Allow duplicating control flows by host, e.g. "launcher-chimera" runs on chimera while "launcher-phoenix" runs on phoenix.

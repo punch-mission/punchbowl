@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, get_run_logger
-from sqlalchemy import func, text
+from sqlalchemy import between, func, not_
 
 from punchbowl import __version__
 from punchbowl.auto.control.db import File, Flow
@@ -53,6 +53,15 @@ def construct_stray_light_check_for_inputs(session,
                   .filter(File.observatory == reference_files[0].observatory)
                   .filter(~File.bad_packets)
                   )
+
+    if reference_time.month in (3, 4) and reference_time.year == 2026 and reference_files[0].observatory == "1":
+        # There was a week where WFI1's pointing was off. The images are surely marked as outliers, but it might be
+        # enough outlier images that the SL code thins it's eclipse season and uses them anyway.
+        # TODO: do this in a better way
+        base_query = base_query.where(not_(between(File.date_obs,
+                                                   datetime(2026, 3, 18, 15, 0),
+                                                   datetime(2026, 3, 26, 0, 0),
+                                                   )))
 
     first_half_inputs = (base_query
                          .filter(File.date_obs >= t_start)

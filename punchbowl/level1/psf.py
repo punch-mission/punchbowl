@@ -103,7 +103,7 @@ def correct_psf(
     data: NDCube,
     psf_transform: ArrayPSFTransform,
     max_workers: int | None = None,
-    saturation_threshold: float = 2**16-2,
+    saturation_threshold: float | None = None,
     saturation_dilation: int = 3,
     neighborhood_width: int = 7,
 ) -> NDCube:
@@ -133,6 +133,9 @@ def correct_psf(
         The corrected image
 
     """
+    if saturation_threshold is None:
+        saturation_threshold = data.meta["DSATVAL"].value * 0.99
+
     new_data = psf_transform.apply(data.data, workers=max_workers,
                                    saturation_threshold=saturation_threshold,
                                    saturation_dilation=saturation_dilation,

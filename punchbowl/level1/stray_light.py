@@ -618,7 +618,7 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
 
 
 def _make_one_sl_model(bin_n: int, bin_mask: np.ndarray, logger: Logger, outliers: np.ndarray,
-                       fallback_model: np.ndarray, strided_image_mask: np.ndarray,
+                       strided_image_mask: np.ndarray,
                        x_grid: np.ndarray, y_grid: np.ndarray, window_half_width: int, image_mask: np.ndarray,
                        data_array: np.ndarray, make_plots_along_the_way: bool, blur_sigma: float, stride: int,
                        window_size: int, pool: ProcessPoolExecutor) -> np.ndarray:
@@ -626,11 +626,11 @@ def _make_one_sl_model(bin_n: int, bin_mask: np.ndarray, logger: Logger, outlier
 
     n_outliers = np.sum(outliers[bin_mask])
     logger.info(f"{n_outliers} outliers in this bin")
-    if fallback_model is not None and n_outliers > 0.1 * np.sum(bin_mask):
-        logger.info("Too many outliers; using fallback model for this bin")
-        return fallback_model[bin_n]
 
-    bin_mask = bin_mask * ~outliers
+    if n_outliers < 0.1 * np.sum(bin_mask):
+        # If there's a few outliers, ignore them. If there's lots, we're probably at eclipse season and we have to
+        # buckle up and use them anyway.
+        bin_mask = bin_mask * ~outliers
 
     logger.info("Beginning model fitting")
 
@@ -704,7 +704,6 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                          crota_bin_width: float = 45,
                          image_mask_path: str | None = None,
                          make_plots_along_the_way: bool = False,
-                         fallback_model_path: str | None = None,
                          polarized: bool = False,
                          num_workers: int | None = None) -> list[NDCube]:
     """Estimate the fixed stray light pattern using a percentile."""
@@ -715,8 +714,6 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
     logger.info(f"Running with {len(filepaths)} input files")
     if isinstance(reference_time, str):
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC)
-
-    fallback_model = load_ndcube_from_fits(fallback_model_path).data if isinstance(fallback_model_path, str) else None
 
     image_mask = load_mask_file(image_mask_path) if image_mask_path is not None else None
 
@@ -794,7 +791,7 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
             logger.info(f"Starting SL modeling for polarization state {i+1}")
             models = []
             for bin_n, bin_mask in enumerate(bin_masks):
-                models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers[i], fallback_model,
+                models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers[i],
                                                  strided_image_mask, x_grid, y_grid, window_half_width, image_mask,
                                                  data_array[:, i], make_plots_along_the_way, blur_sigma, stride,
                                                  window_size, pool))
@@ -826,8 +823,6 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
                              f"Generated with {len(meta.provenance)} files running from "
                              f"{min(all_date_obses).strftime('%Y-%m-%dT%H:%M:%S')} to "
                              f"{max(all_date_obses).strftime('%Y-%m-%dT%H:%M:%S')}")
-        if fallback_model_path:
-            meta.history.add_now("stray light", f"Used {fallback_model_path} as a fallback model")
         meta["FILEVRSN"] = valid_meta[0]["FILEVRSN"].value
 
         # Let's put in a valid, representative WCS, with the right scale and sun-relative pointing, etc.

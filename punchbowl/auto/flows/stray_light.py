@@ -164,16 +164,6 @@ def construct_stray_light_flow_info(level1_files: list[File],
     mask = get_mask_file(level1_files[0], pipeline_config, session=session)
     pol_type = 'pol' if is_polarized else 'clear'
 
-    dt = func.abs(func.timestampdiff(text("second"), File.date_obs, reference_time))
-    # TODO: do we need this?
-    # nearest_created_model = (
-    #         session.query(File)
-    #         .where(File.file_type == file_type)
-    #         .where(File.observatory == spacecraft)
-    #         .where(File.state == 'created')
-    #         .order_by(dt.asc()).first())
-    nearest_created_model = None
-
     call_data = json.dumps(
         {
             "filepaths": [level1_file.filename() for level1_file in level1_files],
@@ -181,7 +171,6 @@ def construct_stray_light_flow_info(level1_files: list[File],
             "spacecraft": spacecraft,
             "image_mask_path": mask.filename().replace(".fits", ".bin"),
             "window_size": pipeline_config["flows"][flow_type][f"{pol_type}_neighborhood_size"],
-            "fallback_model_path": None if nearest_created_model is None else nearest_created_model.filename(),
             "polarized": is_polarized,
         },
     )
@@ -344,7 +333,7 @@ def construct_stray_light_scheduler_flow(pipeline_config_path=None, session=None
 
 def construct_stray_light_call_data_processor(call_data: dict, pipeline_config, session) -> dict:
     # Prepend the directory path to each input file
-    for key in ["filepaths", "image_mask_path", "fallback_model_path"]:
+    for key in ["filepaths", "image_mask_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     del call_data["spacecraft"]
     call_data["num_workers"] = 30

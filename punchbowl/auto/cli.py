@@ -29,16 +29,19 @@ def main():
     run_parser.add_argument("config", type=str, help="Path to config.")
     run_parser.add_argument("--launch-prefect", action="store_true", help="Launch the prefect server")
     run_parser.add_argument("--no-dask-cluster", action="store_true", help="Skip launching the dask cluster")
+    run_parser.add_argument("--only-enabled-flows", action="store_true",
+                            default=False,
+                            help="Only deploy enabled flows to Prefect")
     serve_control_parser.add_argument("config", type=str, help="Path to config.")
     serve_data_parser.add_argument("config", type=str, help="Path to config.")
     args = parser.parse_args()
 
     if args.command == "run":
-        run(args.config, args.launch_prefect, not args.no_dask_cluster)
+        run(args.config, args.launch_prefect, not args.no_dask_cluster, args.only_enabled_flows)
     elif args.command == "serve-data":
-        run_data(args.config)
+        run_data(args.config, args.only_enabled_flows)
     elif args.command == "serve-control":
-        run_control(args.config)
+        run_control(args.config, args.only_enabled_flows)
     else:
         parser.print_help()
 
@@ -52,7 +55,7 @@ def find_flow(target_flow, subpackage="flows") -> Flow:
                     return obj
     raise RuntimeError(f"No flow found for {target_flow}")
 
-def construct_flows_to_serve(configuration_path, include_data=True, include_control=True):
+def construct_flows_to_serve(configuration_path, include_data=True, include_control=True, only_enabled=False):
     config = load_pipeline_configuration(configuration_path)
 
     # create each kind of flow. add both the scheduler and process flow variant of it.
@@ -75,7 +78,8 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
                 ),
                 parameters={"pipeline_config_path": configuration_path},
             )
-            flows_to_serve.append(flow_deployment)
+            if (only_enabled and config['flows'][flow_name].get("enabled", True)) or not only_enabled:
+                flows_to_serve.append(flow_deployment)
 
             # then we deploy the corresponding process flow
             specific_name = flow_name + "_process_flow"
@@ -92,7 +96,8 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
                 parameters={"pipeline_config_path": configuration_path},
                 concurrency_limit=concurrency_config,
             )
-            flows_to_serve.append(flow_deployment)
+            if (only_enabled and config['flows'][flow_name].get("enabled", True)) or not only_enabled:
+                flows_to_serve.append(flow_deployment)
 
     if include_control:
         # there are special control flows that manage the pipeline instead of processing data
@@ -111,21 +116,24 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
                 parameters={"pipeline_config_path": configuration_path},
                 concurrency_limit=concurrency_config,
             )
-            flows_to_serve.append(flow_deployment)
+            if (only_enabled and config['control'][flow_name].get("enabled", True)) or not only_enabled:
+                flows_to_serve.append(flow_deployment)
     return flows_to_serve
 
-def run_data(configuration_path):
+def run_data(configuration_path, only_enabled):
     with get_client(sync_client=True) as client:
         client.create_concurrency_limit(tag="reproject", concurrency_limit=50)
         client.create_concurrency_limit(tag="image_loader", concurrency_limit=50)
     configuration_path = str(Path(configuration_path).resolve())
-    serve(*construct_flows_to_serve(configuration_path, include_control=False, include_data=True))
+    serve(*construct_flows_to_serve(configuration_path, include_control=False, include_data=True,
+                                    only_enabled=only_enabled))
 
-def run_control(configuration_path):
+def run_control(configuration_path, only_enabled):
     configuration_path = str(Path(configuration_path).resolve())
-    serve(*construct_flows_to_serve(configuration_path, include_control=True, include_data=False))
+    serve(*construct_flows_to_serve(configuration_path, include_control=True, include_data=False,
+                                    only_enabled=only_enabled))
 
-def run(configuration_path, launch_prefect=False, launch_dask_cluster=False):
+def run(configuration_path, launch_prefect=False, launch_dask_cluster=False, only_enabled=False):
     now = datetime.now()
 
     configuration_path = str(Path(configuration_path).resolve())
@@ -170,10 +178,18 @@ def run(configuration_path, launch_prefect=False, launch_dask_cluster=False):
             # These processes send a _lot_ of output, so we let it go to the screen instead of making the log file
             # enormous
             def data_process_launcher() -> subprocess.Popen:
-                return subprocess.Popen([*numa_prefix_workers, "punchpipe", "serve-data", configuration_path])
+                if only_enabled:
+                    return subprocess.Popen([*numa_prefix_workers, "punchpipe", "serve-data",
+                                             "--only-enabled-flows", configuration_path])
+                else:
+                    return subprocess.Popen([*numa_prefix_workers, "punchpipe", "serve-data", configuration_path])
 
             def control_process_launcher() -> subprocess.Popen:
-                return subprocess.Popen([*numa_prefix_control, "punchpipe", "serve-control", configuration_path])
+                if only_enabled:
+                    return subprocess.Popen([*numa_prefix_control, "punchpipe", "serve-control",
+                                             "--only-enabled-flows", configuration_path])
+                else:
+                    return subprocess.Popen([*numa_prefix_control, "punchpipe", "serve-control", configuration_path])
 
             data_process = data_process_launcher()
             control_process = control_process_launcher()

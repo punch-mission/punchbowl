@@ -487,6 +487,14 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
         data_destination[:] = np.nan
         return str(e)
 
+    for cube in cubes:
+        if not np.any(np.isfinite(cube.uncertainty.array)):
+            # If this happens, when reproject_cube trims all-bad
+            # rows/columns, it makes a zero-size array and the
+            # reprojection crashes.
+            data_destination[:] = np.nan
+            return f"All-bad image {cube.meta['FILENAME'].value}"
+
     bottom_crop = bottom_crops[int(cubes[0].meta["OBSCODE"].value) - 1]
     for i in range(len(cubes)):
         data_destination[i, :] = cubes[i].data

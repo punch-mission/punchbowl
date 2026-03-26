@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 import argparse
 import warnings
 import traceback
@@ -54,6 +55,7 @@ def gather_planned_flows(session, enabled_flows, max_n=None):
 
 def worker_init(config_path):
     global session, flow_type_to_runner, path_to_config
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     with disable_run_logger(), warnings.catch_warnings():
         # Otherwise warning spam will hide any progress messages
         warnings.simplefilter("ignore")
@@ -105,6 +107,8 @@ if __name__ == "__main__":
     parser.add_argument("-w", "--n-workers", type=int, help="Number of workers")
     args = parser.parse_args()
     config_path = args.config
+
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
     session = get_database_session(engine_kwargs=dict(isolation_level="READ COMMITTED"))
 

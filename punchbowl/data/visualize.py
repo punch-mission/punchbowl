@@ -255,7 +255,7 @@ def plot_punch(  # noqa: C901
     trim_edge : float, tuple[float, float], list[float, float], None
         Option to trim the edges of low-noise mosaic products to the specified fractional radial distance.
         One input value trims the outer boundary only, while two trim both the inner and outer boundaries.
-        A reasonable set of values are (0.13, 0.68) for the inner and outer boundaries.
+        A reasonable set of values are (0.081, 0.705) for the inner and outer boundaries.
     save_path : str or Path, optional
         When provided, saves the figure to file directly without plotting on screen
     dpi : int, optional

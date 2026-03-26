@@ -74,7 +74,7 @@ FOV by averaging across 32 minutes of PUNCH data acquisition. In addition, a win
 Level Q: QuickPUNCH
 -------------------
 
-These are images, derived from the Level 2 data, that are intended to be useful for space weather forecasting.  They use a time-asymmetric
+These images are intended to be useful for space weather forecasting.  They use a time-asymmetric
 background modeling scheme that permits low-latency production.  They're produced for NOAA's space weather forecasting infrastructure,
 but are also made available to other users.
 
@@ -90,11 +90,10 @@ image plane into quarters. Each quarter is fit and filtered separately, with the
 not contain a planet or the Moon in that quarter. This quartering approach, combined with outlier image rejection,
 tends to reduce an initial set of 1000 images to about 500 that are actually fit for any one quarter of the image.
 
-Because this PCa approach removes the F corona from the NFI images but we are not yet subtracting the F corona from
+Because this PCA approach removes the F corona from the NFI images but we are not yet subtracting the F corona from
 WFI images, NFI is currently excluded from the CTM mosaics, but this will be changed in the future.
 
 Level L: QuickLook
 ------------------
 
-These images are intended for viewing and are published in JPEG2000 (.jp2) format.  They're derived using the same time-asymmetric background as
-QuickPUNCH.
+These images are intended for viewing and are published in JPEG2000 (.jp2) format.

@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 from dash import Input, Output, State, callback, dash_table, dcc, html
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.monitor.app import get_database_session
@@ -344,19 +344,19 @@ def preset_dated_today(n_clicks):
 
 
 # It's important that e.g. '>=' appears before '>' or '=', otherwise the latter ones will match '>='
-operators = [(["ge ", ">="], "__ge__"),
-             (["le ", "<="], "__le__"),
-             (["lt ", "<"], "__lt__"),
-             (["gt ", ">"], "__gt__"),
-             (["ne ", "!="], "__ne__"),
-             (["eq ", "="], "__eq__"),
-             (["contains "], "contains"),
-             (["datestartswith "], None),
+operators = [(["ge ", ">="], "__ge__", None),
+             (["le ", "<="], "__le__", None),
+             (["lt ", "<"], "__lt__", None),
+             (["gt ", ">"], "__gt__", None),
+             (["ne ", "!="], "__ne__", and_),
+             (["eq ", "="], "__eq__", or_),
+             (["contains "], "contains", or_),
+             (["datestartswith "], None, None),
             ]
 
 
 def split_filter_part(filter_part):
-    for input_operators, py_method in operators:
+    for input_operators, py_method, combine_fcn in operators:
         for input_operator in input_operators:
             if input_operator in filter_part:
                 name_part, value = filter_part.split(input_operator, 1)
@@ -385,9 +385,24 @@ def split_filter_part(filter_part):
                             value = parsed_values
                             if py_method is None:
                                 py_method = '__eq__'
+                        if input_operator in ["!=", "ne"]:
+                            values = value.split(",")
+                            py_method = None
+                            parsed_values = []
+                            for v in values:
+                                v = v.strip()
+                                if '*' in v:
+                                    v = v.replace('*', '%')
+                                    py_method = "notlike"
+                                parsed_values.append(v)
+                            if len(parsed_values) == 1:
+                                parsed_values = parsed_values[0]
+                            value = parsed_values
+                            if py_method is None:
+                                py_method = '__ne__'
                 # word operators need spaces after them in the filter string,
                 # but we don't want these later
-                return column_name, input_operator.strip(), value, py_method
+                return column_name, input_operator.strip(), value, py_method, combine_fcn
     return [None] * 4
 
 
@@ -412,13 +427,13 @@ def construct_base_query(columns, filter, file_state_filters, file_level_filters
         query = query.join(Flow, Flow.flow_id == File.processing_flow)
 
     for filter_part in filter.split(" && "):
-        col_name, operator, filter_value, py_method = split_filter_part(filter_part)
+        col_name, operator, filter_value, py_method, combine_fcn = split_filter_part(filter_part)
         if col_name is not None:
             column = getattr(File, col_name)
             method = getattr(column, py_method)
             if isinstance(filter_value, list):
                 conditions = [method(value) for value in filter_value]
-                query = query.where(or_(*conditions))
+                query = query.where(combine_fcn(*conditions))
             else:
                 query = query.where(method(filter_value))
 

@@ -309,7 +309,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
             logger.info(f"Loaded {i+1}/{len(filenames)} files")
     # Crop the unused end of the array if we had a few files that errored out
     for t in types:
-        data_cube[t] = data_cube[t][:j[t]+1]
+        data_cube[t] = data_cube[t][:j[t]]
 
     logger.info(f"end of data loading, saw {n_failed} failures")
 

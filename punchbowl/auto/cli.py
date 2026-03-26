@@ -1,5 +1,6 @@
 import os
 import time
+import socket
 import inspect
 import argparse
 import traceback
@@ -103,7 +104,13 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
         # there are special control flows that manage the pipeline instead of processing data
         # time to kick those off!
         for flow_name in config["control"]:
-            flow_function = find_flow(flow_name, "control")
+            if "-" in flow_name:
+                generic_flow_name, host = flow_name.split("-")
+            else:
+                generic_flow_name = flow_name
+                host = socket.gethostname()
+
+            flow_function = find_flow(generic_flow_name, "control")
             concurrency_config = ConcurrencyLimitConfig(
                     limit=1,
                     collision_strategy=ConcurrencyLimitStrategy.CANCEL_NEW,
@@ -111,7 +118,7 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
             flow_deployment = flow_function.to_deployment(
                 name=flow_name,
                 description=config["control"][flow_name].get("description", ""),
-                tags=["control"],
+                tags=["control", f"control-{host}"],
                 cron=config["control"][flow_name].get("schedule", "* * * * *"),
                 parameters={"pipeline_config_path": configuration_path},
                 concurrency_limit=concurrency_config,

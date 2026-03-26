@@ -1,0 +1,1 @@
+`!=` filters in the files dashbaord now handle wildcards and multiple filters correctly.

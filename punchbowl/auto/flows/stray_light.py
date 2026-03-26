@@ -11,7 +11,7 @@ from punchbowl import __version__
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
-from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
+from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.level1 import get_mask_file
 from punchbowl.auto.flows.level2 import group_l2_inputs
 from punchbowl.auto.flows.util import file_name_to_full_path
@@ -21,7 +21,7 @@ from punchbowl.level1.stray_light import estimate_stray_light
 def construct_stray_light_check_for_inputs(session,
                                            pipeline_config: dict,
                                            reference_time: datetime,
-                                           reference_files: File):
+                                           reference_files: list[File]):
     logger = get_run_logger()
 
     polarized = reference_files[0].file_type != "SR"
@@ -99,13 +99,9 @@ def construct_stray_light_check_for_inputs(session,
 
     if file_stride > 1:
         random.seed(1)
-        random.shuffle(first_half_groups)
-        random.shuffle(second_half_groups)
-        first_half_groups = first_half_groups[::file_stride]
-        second_half_groups = second_half_groups[::file_stride]
-        # Put both lists in nearest-to-the-reference-date first order
-        first_half_groups.sort(key=lambda g: g[0].date_obs, reverse=True)
-        second_half_groups.sort(key=lambda g: g[0].date_obs)
+        # Apply a stride that doesn't phase weirdly with where we are in a roll position
+        first_half_groups = [random.choice(pair) for pair in batched(first_half_groups, file_stride)]
+        second_half_groups = [random.choice(pair) for pair in batched(second_half_groups, file_stride)]
 
     enough_L1s = len(first_half_groups) > min_files_per_half and len(second_half_groups) > min_files_per_half
     max_L1s = len(first_half_groups) == max_files_per_half and len(second_half_groups) == max_files_per_half

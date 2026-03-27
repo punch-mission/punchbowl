@@ -283,15 +283,16 @@ def level3_PIM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
 @task(cache_policy=NO_CACHE)
 def level3_CIM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
     logger = get_run_logger()
+    target_type = 'XP' if polarized else 'XR'
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(File.level == "2")
                        # TODO: This line temporarily excludes NFI
                        .filter(File.observatory.in_(["1", "2", "3"]))
-                       .filter(File.file_type == 'XR')
+                       .filter(File.file_type == target_type)
                        # The ascending sort order is expected by the file grouping code
                        .order_by(File.date_obs.asc()).all())
     logger.info(f"{len(all_ready_files)} ready files")
-    logger.info(f"{len(all_ready_files)} Level 2 XR files need to be processed.")
+    logger.info(f"{len(all_ready_files)} Level 2 {target_type} files need to be processed.")
 
     if len(all_ready_files) == 0:
         return []
@@ -315,7 +316,7 @@ def level3_CIM_query_ready_files(session, pipeline_config: dict, reference_time=
 
     all_files = [f for group in grouped_files for f in group]
 
-    fcorona_models = get_fcorona_pairs(session, all_files, model_type="CF")
+    fcorona_models = get_fcorona_pairs(session, all_files, model_type="PF" if polarized else "CF")
     file_to_fcor_model = {f.file_id: m for f, m in zip(all_files, fcorona_models)}
 
     actually_ready_groups = []
@@ -333,7 +334,7 @@ def level3_CIM_query_ready_files(session, pipeline_config: dict, reference_time=
         actually_ready_groups.append(group)
         if len(actually_ready_groups) >= max_n:
             break
-    logger.info(f"{len(actually_ready_groups)} Level 2 XR files selected with necessary calibration data.")
+    logger.info(f"{len(actually_ready_groups)} Level 2 {target_type} files selected with necessary calibration data.")
 
     return actually_ready_groups
 

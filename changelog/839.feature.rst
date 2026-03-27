@@ -1,1 +1,1 @@
-Allows deploying only enabled flows.
+Allows deploying flows only on certain machines using "run-on" option.

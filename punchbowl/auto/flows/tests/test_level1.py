@@ -453,6 +453,8 @@ def test_level1_early_construct_flow_info(db, prefect_test_fixture):
     level0_file[0].quartic_model = level0_file[0]
     level0_file[0].vignetting_functions = level0_file[0], None
     level0_file[0].mask_file = level0_file[0]
+    level0_file[0].psf_path = level0_file[0].filename()
+    level0_file[0].distortion_path = level0_file[0]
 
     despike_neighbors = [File(level="0",
                        file_type=file_type,
@@ -560,10 +562,8 @@ def test_level1_late_scheduler_flow(db):
     assert len(results) == 1
 
     call_data = json.loads(results[0].call_data)
-    assert call_data["psf_model_path"][-7:] == 'v1.fits'
     assert call_data["stray_light_before_path"][-7:] == 'v1.fits'
     assert call_data["stray_light_after_path"][-7:] == 'v1.fits'
-    assert call_data["distortion_path"][-7:] == 'v1.fits'
     assert call_data["mask_path"][-6:] == 'v1.bin'
 
 

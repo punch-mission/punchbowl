@@ -7,7 +7,7 @@ from prefect import get_run_logger
 from punchbowl.prefect import punch_task
 
 
-def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
+def resolve_polarization(data_list: list[NDCube], outsys: str = "mzpsolar") -> list[NDCube]:
     """
     Take a set of input data in the camera MZP frame and convert to the solar MZP frame.
 
@@ -15,6 +15,8 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
     ----------
     data_list : List[NDCube]
         List of NDCube objects on which to resolve polarization
+    outsys: str
+        The polarization system to resolve into
 
     Returns
     -------
@@ -31,11 +33,12 @@ def resolve_polarization(data_list: list[NDCube]) -> list[NDCube]:
                                        "POLAROFF": input_collection[k].meta["POLAROFF"].value,
                                        "POLARREF": str(input_collection[k].meta["POLARREF"])}))
                        for k in ["M", "Z", "P"]])
-
     out = []
-    resolved_data_collection = solpolpy.resolve(data_collection,
-                                                "mzpsolar")
+    resolved_data_collection = solpolpy.resolve(data_collection, outsys)
+
     for key in resolved_data_collection:
+        # The resolved cube's meta is a "normal" header object, not our NormalizedMetadata, so no .value!
+        input_collection[key].meta["POLARREF"] = resolved_data_collection[key].meta["POLARREF"]
         resolved_data_collection[key].meta = input_collection[key].meta
         resolved_data_collection[key].uncertainty = input_collection[key].uncertainty
         out.append(resolved_data_collection[key])

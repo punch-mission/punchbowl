@@ -403,7 +403,7 @@ def split_filter_part(filter_part):
                 # word operators need spaces after them in the filter string,
                 # but we don't want these later
                 return column_name, input_operator.strip(), value, py_method, combine_fcn
-    return [None] * 4
+    return [None] * 5
 
 
 def construct_base_query(columns, filter, file_state_filters, file_level_filters, weird_file_filters, include_count,

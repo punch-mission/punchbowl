@@ -21,6 +21,7 @@ Level:
         omits: [LOS_ALT, HCIX_VOB, HCIY_VOB, HCIZ_VOB, HAEX_OBS, HAEY_OBS, HAEZ_OBS]
     File Generation Diagnostics:
         omits: [RPSFVRSN, RMSFVRSN]
+    Quirks for files not generally used by the public:
     Fixity:
     History:
 
@@ -40,14 +41,8 @@ Kinds:
             POLARREF: 'Solar'
         omits: [FILTER, POLAR]
 
-    Polarized_intermed:
-        overrides:
-            NAXIS: 2
-            NAXIS1: 4096
-            NAXIS2: 4096
-            OBS-MODE: Polar_MZP
-            POLARREF: 'Solar'
-        omits: [FILTER, NAXIS3]
+    NoQuirks:
+        omits: ["Quirks for files not generally used by the public"]
 
     Intermediary:
         overrides:
@@ -89,7 +84,7 @@ Kinds:
 # Product specifications
 Products:
     PTM:
-        kinds: [Polarized]
+        kinds: [Polarized, NoQuirks]
         overrides:
             TITLE: PUNCH Level-2 Polarized Mosaic
             OBSTYPE: Polarized mosaic
@@ -99,7 +94,7 @@ Products:
             OBSCODE: M
 
     PNN:
-        kinds: [Polarized]
+        kinds: [Polarized, NoQuirks]
         overrides:
             NAXIS1: 2048
             NAXIS2: 2048
@@ -113,7 +108,7 @@ Products:
             ALL_INPT: 1
 
     CTM:
-        kinds: [Unpolarized]
+        kinds: [Unpolarized, NoQuirks]
         overrides:
             TITLE: PUNCH Level-2 Unpolarized Mosaic
             OBSTYPE: Unpolarized mosaic
@@ -123,7 +118,7 @@ Products:
             OBSCODE: M
 
     CNN:
-        kinds: [Unpolarized]
+        kinds: [Unpolarized, NoQuirks]
         overrides:
             NAXIS1: 2048
             NAXIS2: 2048
@@ -136,32 +131,8 @@ Products:
             HAS_NFI4: 1
             ALL_INPT: 1
 
-    XM?:
-        kinds: [Polarized_intermed, Intermediary]
-        overrides:
-            TITLE: PUNCH Level-2 {craftname} Polarized Image, Intermediary
-            OBSTYPE: Polarized {crafttype} image
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: "{craftid}"
-            TYPECODE: XM
-            OBSLAYR1: Polar_M
-            POLAR: -60
-
-    XZ?:
-        kinds: [Polarized_intermed, Intermediary]
-        overrides:
-            TITLE: PUNCH Level-2 {craftname} Polarized Image, Intermediary
-            OBSTYPE: Polarized {crafttype} image
-            INSTRUME: "{craftname}"
-            TELESCOP: "{obsname}"
-            OBSCODE: "{craftid}"
-            TYPECODE: XZ
-            OBSLAYR1: Polar_Z
-            POLAR: 0
-
     XP?:
-        kinds: [Polarized_intermed, Intermediary]
+        kinds: [Polarized, Intermediary]
         overrides:
             TITLE: PUNCH Level-2 {craftname} Polarized Image, Intermediary
             OBSTYPE: Polarized {crafttype} image
@@ -169,7 +140,9 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
             TYPECODE: XP
-            OBSLAYR1: Polar_P
+            OBSLAYR1: Polar_M
+            OBSLAYR2: Polar_Z
+            OBSLAYR3: Polar_P
             POLAR: +60
 
     XR?:

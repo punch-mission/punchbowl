@@ -6,6 +6,7 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 from prefect import get_run_logger
 
+from punchbowl.auto.control.util import batched
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
 from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
 from punchbowl.level2.bright_structure import identify_bright_structures_task
@@ -170,26 +171,76 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
     if output_filename is not None:
         output_image_task(output_data, output_filename)
 
-    for x_cube in layers_before_merge:
-        if x_cube is None:
-            continue
-        meta = NormalizedMetadata.load_template("X" + x_cube.meta["TYPECODE"].value[1] + x_cube.meta["OBSCODE"].value,
-                                                level="2")
-        meta.history = x_cube.meta.history
-        meta.provenance = [x_cube.meta["FILENAME"].value]
-        for key in ["FILEVRSN", "MOONDIST", "MOON_X", "MOON_Y"]:
-            meta[key] = output_data.meta[key].value
-        for key in ["OUTLIER", "BADPKTS", "DATE-OBS", "DATE-AVG", "DATE-BEG", "DATE-END", "DATE"]:
-            meta[key] = x_cube.meta[key].value
+    x_outputs = []
+    if polarized:
+        groups = batched(layers_before_merge, 3)
+        for group in groups:
+            if group[0] is None:
+                continue
+            meta = NormalizedMetadata.load_template("XP" + group[0].meta["OBSCODE"].value,
+                                                    level="2")
+            meta.history = group[0].meta.history
+            meta.provenance = [c.meta["FILENAME"].value for c in group]
+            meta["OUTLIER"] = any(c.meta["OUTLIER"].value for c in group)
+            meta["BADPKTS"] = any(c.meta["BADPKTS"].value for c in group)
 
-        obs_no = x_cube.meta["OBSCODE"].value
-        obs = "NFI" if obs_no == "4" else "WFI"
-        meta[f"CTRX{obs}{obs_no}"] = output_data.meta[f"CTRX{obs}{obs_no}"].value
-        meta[f"CTRY{obs}{obs_no}"] = output_data.meta[f"CTRY{obs}{obs_no}"].value
-        spacecraft = SPACECRAFT_OBSCODE[obs_no]
-        meta[f"HAS_{spacecraft}"] = 1
-        set_spacecraft_location_to_earth(x_cube)
-        output_cubes.append(NDCube(x_cube.data, meta=meta, wcs=x_cube.wcs, uncertainty=x_cube.uncertainty))
+            obs_no = group[0].meta["OBSCODE"].value
+            obs = "NFI" if obs_no == "4" else "WFI"
+            meta[f"CTRX{obs}{obs_no}"] = output_data.meta[f"CTRX{obs}{obs_no}"].value
+            meta[f"CTRY{obs}{obs_no}"] = output_data.meta[f"CTRY{obs}{obs_no}"].value
+            spacecraft = SPACECRAFT_OBSCODE[obs_no]
+            meta[f"HAS_{spacecraft}"] = 1
+            data = np.stack([c.data for c in group])
+            uncert = np.stack([c.uncertainty.array for c in group])
+            x_outputs.append((data, uncert, meta, group[0].wcs))
+    else:
+        for x_cube in layers_before_merge:
+            if x_cube is None:
+                continue
+            meta = NormalizedMetadata.load_template(
+                "X" + x_cube.meta["TYPECODE"].value[1] + x_cube.meta["OBSCODE"].value,
+                level="2")
+            meta.history = x_cube.meta.history
+            meta.provenance = [x_cube.meta["FILENAME"].value]
+            meta["OUTLIER"] = x_cube.meta["OUTLIER"].value
+            meta["BADPKTS"] = x_cube.meta["BADPKTS"].value
+
+            obs_no = x_cube.meta["OBSCODE"].value
+            obs = "NFI" if obs_no == "4" else "WFI"
+            meta[f"CTRX{obs}{obs_no}"] = output_data.meta[f"CTRX{obs}{obs_no}"].value
+            meta[f"CTRY{obs}{obs_no}"] = output_data.meta[f"CTRY{obs}{obs_no}"].value
+            spacecraft = SPACECRAFT_OBSCODE[obs_no]
+            meta[f"HAS_{spacecraft}"] = 1
+
+            data = x_cube.data
+            uncert = x_cube.uncertainty.array
+            x_outputs.append((data, uncert, meta, x_cube.wcs))
+
+    for data, uncert, meta, wcs in x_outputs:
+        for key in ["FILEVRSN", "MOONDIST", "MOON_X", "MOON_Y", "DATE",
+                    "DATE-OBS", "DATE-BEG", "DATE-END", "DATE-AVG"]:
+            meta[key] = output_data.meta[key].value
+
+        cropx = [0, data.shape[-1] - 1]
+        cropy = [0, data.shape[-2] - 1]
+        while not np.any(np.isfinite(uncert[..., cropy[0], :])):
+            cropy[0] += 1
+        while not np.any(np.isfinite(uncert[..., cropy[1], :])):
+            cropy[1] -= 1
+        while not np.any(np.isfinite(uncert[..., :, cropx[0]])):
+            cropx[0] += 1
+        while not np.any(np.isfinite(uncert[..., :, cropx[1]])):
+            cropx[1] -= 1
+        meta["CROPX1"] = cropx[0]
+        meta["CROPX2"] = cropx[1]
+        meta["CROPY1"] = cropy[0]
+        meta["CROPY2"] = cropy[1]
+        meta["FULXSIZE"] = data.shape[-1]
+        meta["FULYSIZE"] = data.shape[-2]
+        output_x_cube = NDCube(data[..., cropy[0]:cropy[-1], cropx[0]:cropx[-1]], meta=meta, wcs=wcs,
+                               uncertainty=StdDevUncertainty(uncert[..., cropy[0]:cropy[-1], cropx[0]:cropx[-1]]))
+        set_spacecraft_location_to_earth(output_x_cube)
+        output_cubes.append(output_x_cube)
 
     logger.info("ending level 2 core flow")
     return output_cubes

@@ -280,8 +280,8 @@ async def launcher(pipeline_config_path=None):
         pipeline_config_path = await Variable.get("punchpipe_config", "punchpipe_config.yaml")
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
     flow_weights, flow_enabled, flow_batch_sizes, flow_hosts = load_flow_data(pipeline_config)
-    logger.info(f"Enabled flows on {current_host}: {', '.join([flow for flow, enabled in flow_enabled.items()
-                                             if enabled and flow_hosts[flow] == current_host])}")
+    enabled_flows = [flow for flow, enabled in flow_enabled.items() if enabled and flow_hosts[flow] == current_host]
+    logger.info(f"Enabled flows on {current_host}: {', '.join(enabled_flows)}")
 
     logger.info("Establishing database connection")
     session = get_database_session()

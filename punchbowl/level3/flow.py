@@ -6,6 +6,7 @@ import numpy as np
 from ndcube import NDCube
 from prefect import get_run_logger
 
+from punchbowl.auto.control.cache_layer.loader_base_class import DataLoader
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.meta import MetaField, NormalizedMetadata, set_spacecraft_location_to_earth
 from punchbowl.level2.finalize import finalize_output
@@ -21,8 +22,8 @@ from punchbowl.util import load_image_task, output_image_task
 
 @punch_flow
 def level3_PIM_CIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
-                        before_f_corona_model_paths: list[str],
-                        after_f_corona_model_paths: list[str],
+                        before_f_corona_model_paths: list[str | DataLoader],
+                        after_f_corona_model_paths: list[str | DataLoader],
                         output_filename: str | None = None) -> list[NDCube]:
     """Level 3 PIM/CIM flow."""
     logger = get_run_logger()
@@ -45,8 +46,10 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
     new_type = "PIM" if polarized else "CIM"
     trefoil_wcs = data_list[0].wcs.celestial
 
-    before_f_corona_models = [load_ndcube_from_fits(path) for path in before_f_corona_model_paths]
-    after_f_corona_models = [load_ndcube_from_fits(path) for path in after_f_corona_model_paths]
+    before_f_corona_models = [load_ndcube_from_fits(path) if isinstance(path, str)
+                              else path.load() for path in before_f_corona_model_paths]
+    after_f_corona_models = [load_ndcube_from_fits(path) if isinstance(path, str)
+                              else path.load()  for path in after_f_corona_model_paths]
 
     data_list = [subtract_f_corona_background_task(d,
                                                    before_f_corona_models,

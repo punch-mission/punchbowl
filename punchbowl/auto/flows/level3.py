@@ -10,6 +10,7 @@ from prefect.cache_policies import NO_CACHE
 from sqlalchemy import and_
 
 from punchbowl import __version__
+from punchbowl.auto.control import cache_layer
 from punchbowl.auto.control.db import File, Flow, get_closest_after_file, get_closest_before_file, get_closest_file
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
@@ -245,6 +246,11 @@ def level3_PIM_scheduler_flow(pipeline_config_path: str | None = None,
 def level3_PIM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
     for key in ["data_list", "before_f_corona_model_paths", "after_f_corona_model_paths"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
+
+    call_data["before_f_corona_model_paths"] = [cache_layer.f_corona.wrap_if_appropriate(p)
+                                                for p in call_data["before_f_corona_model_paths"]]
+    call_data["after_f_corona_model_paths"] = [cache_layer.f_corona.wrap_if_appropriate(p)
+                                               for p in call_data["after_f_corona_model_paths"]]
     return call_data
 
 
@@ -376,6 +382,11 @@ def level3_CIM_scheduler_flow(pipeline_config_path: str | None = None,
 def level3_CIM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
     for key in ["data_list", "before_f_corona_model_paths", "after_f_corona_model_paths"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
+
+    call_data["before_f_corona_model_paths"] = [cache_layer.f_corona.wrap_if_appropriate(p)
+                                                for p in call_data["before_f_corona_model_paths"]]
+    call_data["after_f_corona_model_paths"] = [cache_layer.f_corona.wrap_if_appropriate(p)
+                                               for p in call_data["after_f_corona_model_paths"]]
     return call_data
 
 

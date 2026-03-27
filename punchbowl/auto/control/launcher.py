@@ -1,3 +1,4 @@
+import socket
 import asyncio
 from math import ceil
 from random import shuffle
@@ -11,16 +12,18 @@ from prefect.variables import Variable
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.orm import Session
 
+from punchbowl.auto.cli import shorten_host
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
 
 
 @task(cache_policy=NO_CACHE)
-def gather_planned_flows(session, weight_to_launch, max_flows_to_launch, flow_weights, flow_enabled, flow_batch_sizes):
+def gather_planned_flows(session, weight_to_launch, max_flows_to_launch, flow_weights, flow_enabled, flow_batch_sizes, flow_hosts):
     # We'll have to grab a bunch of possible flows to launch from the DB, and then on our end apply the weights and the
     # maximum-weight limit. But we can use the smallest weight to set an upper bound on how many launchable flows to
     # retrieve.
-    enabled_flows = [flow for flow, enabled in flow_enabled.items() if enabled]
+    current_host = shorten_host(socket.gethostname())
+    enabled_flows = [flow for flow, enabled in flow_enabled.items() if enabled and flow_hosts[flow] == current_host]
     if enabled_flows:
         max_to_select = weight_to_launch / min([flow_weights[k] for k in enabled_flows])
     else:
@@ -72,7 +75,7 @@ def gather_planned_flows(session, weight_to_launch, max_flows_to_launch, flow_we
 
 
 @task(cache_policy=NO_CACHE)
-def count_flows(session, weights):
+def count_flows(session, weights, flow_hosts):
     n_planned, n_running = 0, 0
     weight_planned, weight_running = 0, 0
     rows = session.execute(
@@ -81,14 +84,17 @@ def count_flows(session, weights):
         .where(Flow.state.in_(("planned", "running", "launched")))
         .group_by(Flow.state, Flow.flow_type),
     ).all()
+
+    current_host = shorten_host(socket.gethostname())
     # We won't get results for states that aren't actually in the database, so we have to inspect the returned rows
     for state, flow_type, count in rows:
-        if state == "planned":
-            n_planned += count
-            weight_planned += count * weights[flow_type]
-        else:
-            n_running += count
-            weight_running += count * weights[flow_type]
+        if current_host == flow_hosts[flow_type]:
+            if state == "planned":
+                n_planned += count
+                weight_planned += count * weights[flow_type]
+            else:
+                n_running += count
+                weight_running += count * weights[flow_type]
     return n_running, n_planned, weight_planned, weight_running
 
 
@@ -245,11 +251,13 @@ def load_flow_data(pipeline_config):
     flow_weights = dict()
     flow_enabled = dict()
     flow_batch_size = dict()
+    flow_hosts = dict()
     for flow_type in pipeline_config["flows"]:
         flow_enabled[flow_type] = pipeline_config["flows"][flow_type].get("enabled", True) is True
         flow_weights[flow_type] = pipeline_config["flows"][flow_type].get("launch_weight", 1)
         flow_batch_size[flow_type] = pipeline_config["flows"][flow_type].get("batch_size", 1)
-    return flow_weights, flow_enabled, flow_batch_size
+        flow_hosts[flow_type] = pipeline_config["flows"][flow_type].get("run-on", shorten_host(socket.gethostname()))
+    return flow_weights, flow_enabled, flow_batch_size, flow_hosts
 
 
 @flow
@@ -265,13 +273,15 @@ async def launcher(pipeline_config_path=None):
     Nothing
 
     """
+    current_host = shorten_host(socket.gethostname())
     logger = get_run_logger()
 
     if pipeline_config_path is None:
         pipeline_config_path = await Variable.get("punchpipe_config", "punchpipe_config.yaml")
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    flow_weights, flow_enabled, flow_batch_sizes = load_flow_data(pipeline_config)
-    logger.info(f"Enabled flows: {', '.join([flow for flow, enabled in flow_enabled.items() if enabled])}")
+    flow_weights, flow_enabled, flow_batch_sizes, flow_hosts = load_flow_data(pipeline_config)
+    logger.info(f"Enabled flows on {current_host}: {', '.join([flow for flow, enabled in flow_enabled.items()
+                                             if enabled and flow_hosts[flow] == current_host])}")
 
     logger.info("Establishing database connection")
     session = get_database_session()
@@ -279,8 +289,9 @@ async def launcher(pipeline_config_path=None):
     escalate_long_waiting_flows(session, pipeline_config)
 
     # Perform the launcher flow responsibilities
-    num_running_flows, num_planned_flows, weight_planned, weight_running = count_flows(session, flow_weights)
-    logger.info(f"There are {num_running_flows} flows running right now (weight {weight_running:.2f}) and {num_planned_flows} planned flows (weight {weight_planned:.2f}).")
+    num_running_flows, num_planned_flows, weight_planned, weight_running = count_flows(session, flow_weights, flow_hosts)
+    logger.info(f"There are {num_running_flows} flows running right now on {current_host} "
+                f"(weight {weight_running:.2f}) and {num_planned_flows} planned flows (weight {weight_planned:.2f}).")
     max_weight_running = pipeline_config["control"]["launcher"]["max_weight_running"]
     max_weight_to_launch = pipeline_config["control"]["launcher"]["max_weight_to_launch_at_once"]
     max_flows_to_launch = pipeline_config["control"]["launcher"]["max_flows_to_launch_at_once"]
@@ -289,7 +300,7 @@ async def launcher(pipeline_config_path=None):
         weight_planned, weight_running, max_weight_running, max_weight_to_launch, max_flows_to_launch)
 
     flows_to_launch, tags_by_flow, selected_weight, number_of_flows, counts_per_type = gather_planned_flows(
-        session, weight_to_launch, max_flows_to_launch, flow_weights, flow_enabled, flow_batch_sizes)
+        session, weight_to_launch, max_flows_to_launch, flow_weights, flow_enabled, flow_batch_sizes, flow_hosts)
     ids = [[flow.flow_id for flow in batch] for batch in flows_to_launch]
     logger.info(f"{number_of_flows} flows (weight {selected_weight:.2f}) with IDs of {ids} will be launched.")
     counts = [f"{counts_per_type[type]} {type}" for type in sorted(counts_per_type.keys())]

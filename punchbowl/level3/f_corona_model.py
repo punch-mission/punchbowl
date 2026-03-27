@@ -1,6 +1,8 @@
 import os
+import multiprocessing
 import multiprocessing as mp
 from datetime import UTC, datetime
+from concurrent.futures import ProcessPoolExecutor
 
 import astropy
 import numba
@@ -16,11 +18,11 @@ from scipy.interpolate import griddata
 from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.data.punch_io import load_many_cubes_iterable, load_ndcube_from_fits
+from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import average_datetime, interpolate_data, nan_percentile
+from punchbowl.util import ShmPickleableNDArray, average_datetime, interpolate_data, nan_percentile
 
 
 def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
@@ -175,7 +177,6 @@ def model_fcorona_for_cube(cube: np.ndarray) -> np.ndarray:
         Nothing
 
     """
-    cube[cube == 0] = np.nan
     return nan_percentile(cube, 3)
 
 def _model_fcorona_for_cube_inner(xt: np.ndarray,
@@ -246,6 +247,26 @@ def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
     return griddata((x, y), known_values, (grid_x, grid_y), method="cubic")
 
 
+def _load_file(path: str, data_destination: ShmPickleableNDArray) -> tuple[np.ndarray, datetime, str]:
+    data_destination[:] = np.nan
+    try:
+        cube = load_ndcube_from_fits(path, include_provenance=False, dtype=np.float32)
+    except Exception as e:  # noqa: BLE001
+        return str(e)
+    cropx = cube.meta["CROPX1"].value, cube.meta["CROPX2"].value
+    cropy = cube.meta["CROPY1"].value, cube.meta["CROPY2"].value
+
+    data_destination[:, cropy[0]:cropy[1], cropx[0]:cropx[1]] = (
+        np.where(np.isfinite(cube.uncertainty.array), cube.data, np.nan)
+    )
+    np.nan_to_num(cube.uncertainty.array, nan=0, posinf=0, neginf=0, copy=False)
+    # Square the array in-place
+    cube.uncertainty.array *= cube.uncertainty.array
+    uncert = np.zeros(data_destination.shape, dtype=np.float32)
+    uncert[..., cropy[0]:cropy[1], cropx[0]:cropx[1]] = cube.uncertainty.array
+    return uncert.squeeze(), cube.meta.datetime, cube.meta["OBSCODE"].value
+
+
 @punch_flow(log_prints=True)
 def construct_f_corona_model(filenames: list[str], # noqa: C901
                              reference_time: str | None = None,
@@ -274,63 +295,51 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
 
     number_of_data_frames = len(filenames)
 
-    types = ["M", "Z", "P"] if polarized else ["R"]
-    uncertainty = {t: np.zeros(trefoil_shape) for t in types}
-    sample_counts = {t: np.zeros(trefoil_shape, dtype=int) for t in types}
-    data_cube = {t: np.empty((number_of_data_frames, *trefoil_shape), dtype=float) for t in types}
+    uncertainty = np.zeros((3, *trefoil_shape) if polarized else trefoil_shape)
+    sample_counts = np.zeros((3 if polarized else 1, *trefoil_shape) , dtype=int)
+    data_cube = ShmPickleableNDArray((number_of_data_frames, 3 if polarized else 1, *trefoil_shape), dtype=np.float32)
 
     logger.info("beginning data loading")
     dates = []
     n_failed = 0
-    j = dict.fromkeys(types, 0)
-    for i, result in enumerate(load_many_cubes_iterable(filenames, allow_errors=True, include_provenance=False,
-                                                        n_workers=num_loaders)):
-        if isinstance(result, str):
-            logger.warning(f"Loading {filenames[i]} failed")
-            logger.warning(result)
-            n_failed += 1
-            if n_failed > 0.05 * len(filenames):
-                raise RuntimeError(f"{n_failed} files failed to load, stopping")
-            continue
-        cube = result
-        t = cube.meta["TYPECODE"].value[1]
-        dates.append(cube.meta.datetime)
+    ctx = multiprocessing.get_context("forkserver")
+    with ProcessPoolExecutor(num_loaders, mp_context=ctx) as pool:
+        for i, result in enumerate(pool.map(_load_file, filenames, data_cube)):
+            if isinstance(result, str):
+                logger.warning(f"Loading {filenames[i]} failed")
+                logger.warning(result)
+                n_failed += 1
+                if n_failed > 0.05 * len(filenames):
+                    raise RuntimeError(f"{n_failed} files failed to load, stopping")
+                continue
+            this_uncertainty, date, obscode = result
+            dates.append(date)
 
-        data_cube[t][j[t]] = np.where(np.isfinite(cube.uncertainty.array), cube.data, np.nan)
+            sample_counts += this_uncertainty != 0
+            uncertainty += this_uncertainty
 
-        np.nan_to_num(cube.uncertainty.array, nan=0, posinf=0, neginf=0, copy=False)
-        sample_counts[t] += cube.uncertainty.array != 0
-        # Square the array in-place
-        cube.uncertainty.array *= cube.uncertainty.array
-        uncertainty[t] += cube.uncertainty.array
-
-        j[t] += 1
-        if (i + 1) % 50 == 0:
-            logger.info(f"Loaded {i+1}/{len(filenames)} files")
-    # Crop the unused end of the array if we had a few files that errored out
-    for t in types:
-        data_cube[t] = data_cube[t][:j[t]]
+            if (i + 1) % 50 == 0:
+                logger.info(f"Loaded {i+1}/{len(filenames)} files")
 
     logger.info(f"end of data loading, saw {n_failed} failures")
 
-    models = {}
-    for t in types:
-        model_fcorona = model_fcorona_for_cube(data_cube[t])
-        model_fcorona[sample_counts[t] == 0] = np.nan
+    models = []
+    for i in range(data_cube.shape[1]):
+        model_fcorona = model_fcorona_for_cube(data_cube[:, i])
+        model_fcorona[sample_counts[i] == 0] = np.nan
         if fill_nans:
             model_fcorona = fill_nans_with_interpolation(model_fcorona)
-        models[t] = model_fcorona
-        uncertainty[t] = np.sqrt(uncertainty[t]) / sample_counts[t]
+        models.append(model_fcorona)
+
+    uncertainty = np.sqrt(uncertainty) / sample_counts
 
     if polarized:
-        output_data = np.stack([models["M"], models["Z"], models["P"]], axis=0)
-        uncertainty = np.stack([uncertainty["M"], uncertainty["Z"], uncertainty["P"]], axis=0)
-        meta = NormalizedMetadata.load_template("PF" + cube.meta["OBSCODE"].value, "3")
+        output_data = np.stack(models, axis=0)
+        meta = NormalizedMetadata.load_template("PF" + obscode, "3")
         trefoil_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
     else:
-        output_data = models["R"]
-        uncertainty = uncertainty["R"]
-        meta = NormalizedMetadata.load_template("CF" + cube.meta["OBSCODE"].value, "3")
+        output_data = models[0]
+        meta = NormalizedMetadata.load_template("CF" + obscode, "3")
 
     meta.provenance = sorted([os.path.basename(f) for f in filenames])
 
@@ -435,9 +444,8 @@ def subtract_f_corona_background_task(observation: NDCube,
         if observation.meta["TYPECODE"].value[1] == "R" and model.meta["TYPECODE"].value[0] == "C":
             before_model = model
             break
-        if observation.meta["TYPECODE"].value[1] in ["M", "Z", "P"] and model.meta["TYPECODE"].value[0] == "P":
-            i = ["M", "Z", "P"].index(observation.meta["TYPECODE"].value[1])
-            before_model = NDCube(model.data[i], meta=model.meta, wcs=model.wcs, uncertainty=model.uncertainty[i])
+        if observation.meta["TYPECODE"].value[1] == "P" and model.meta["TYPECODE"].value[0] == "P":
+            before_model = model
             break
     else:
         raise RuntimeError(f"Could not find before model for {observation.meta['FILENAME']}")
@@ -448,9 +456,8 @@ def subtract_f_corona_background_task(observation: NDCube,
         if observation.meta["TYPECODE"].value[1] == "R" and model.meta["TYPECODE"].value[0] == "C":
             after_model = model
             break
-        if observation.meta["TYPECODE"].value[1] in ["M", "Z", "P"] and model.meta["TYPECODE"].value[0] == "P":
-            i = ["M", "Z", "P"].index(observation.meta["TYPECODE"].value[1])
-            after_model = NDCube(model.data[i], meta=model.meta, wcs=model.wcs, uncertainty=model.uncertainty[i])
+        if observation.meta["TYPECODE"].value[1] == "P" and model.meta["TYPECODE"].value[0] == "P":
+            after_model = model
             break
     else:
         raise RuntimeError(f"Could not find after model for {observation.meta['FILENAME']}")

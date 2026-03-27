@@ -84,6 +84,10 @@ def flow_hosts():
     current_host = shorten_host(socket.gethostname())
     return {"level0": current_host, "level1": current_host}
 
+@pytest.fixture()
+def mixed_hosts():
+    current_host = shorten_host(socket.gethostname())
+    return {"level0": current_host, "level1": "otherhost"}
 
 def test_gather_queued_flows(db, flow_weights, flow_batch_sizes, flow_hosts):
     planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
@@ -101,6 +105,22 @@ def test_gather_queued_flows(db, flow_weights, flow_batch_sizes, flow_hosts):
     assert selected_weight == 3
     assert number_of_flows == 2
 
+def test_gather_queued_flows_with_mixed_hosts(db, flow_weights, flow_batch_sizes, mixed_hosts):
+    planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
+        db, 6, 3, flow_weights, {"level0": True, "level1": True}, flow_batch_sizes, mixed_hosts)
+    assert len(planned_ids) == 1
+    assert count_per_type["level0"] == 1
+    assert count_per_type["level1"] == 0
+    assert selected_weight == 1
+    assert number_of_flows == 1
+    planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
+        db, 3, 3, flow_weights,{"level0": True, "level1": True}, flow_batch_sizes, mixed_hosts)
+    assert len(planned_ids) == 1
+    assert count_per_type["level0"] == 1
+    assert count_per_type["level1"] == 0
+    assert selected_weight == 1
+    assert number_of_flows == 1
+
 
 def test_count_running_flows(db, flow_weights, flow_hosts):
     running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
@@ -109,6 +129,12 @@ def test_count_running_flows(db, flow_weights, flow_hosts):
     assert weight_running == 0
     assert weight_planned == 5
 
+def test_count_running_flows_with_mixed_hosts(db, flow_weights, mixed_hosts):
+    running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, mixed_hosts)
+    assert running_count == 0
+    assert planned_count == 1
+    assert weight_running == 0
+    assert weight_planned == 1
 
 def test_escalate_long_waiting_flows(db):
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")

@@ -1,0 +1,4 @@
+The stray light model generation has been improved by running an "all-corona" background removal first, so the stray
+light being estimated is a more dominant signal. The "fall-back model" has also been removed---instead, large amounts
+of outlier images are just used to make stray light models, which tends to be a "lesser evil" approach. Alignment and
+PSF correction have been moved to L1_early to support this change.

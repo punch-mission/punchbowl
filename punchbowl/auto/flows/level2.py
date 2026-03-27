@@ -278,18 +278,21 @@ def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, 
                 bad_packets=any(file.bad_packets for file in level1_files),
                 state="planned",
             )]
-    for f in level1_files:
+
+    unique_obses = {f.observatory for f in level1_files}
+    for obs in unique_obses:
+        input_files = [f for f in level1_files if f.observatory == obs]
         files.append(File(
                 level="2",
-                file_type="XR" if f.file_type == "CR" else "X" + f.file_type[1],
-                observatory=f.observatory,
-                polarization=f.polarization,
+                file_type="XR" if input_files[0].file_type == "CR" else "XP",
+                observatory=obs,
+                polarization='C' if input_files[0].file_type == "CR" else 'Y',
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
-                date_obs=f.date_obs,
-                outlier=f.outlier,
-                bad_packets=f.bad_packets,
-                crota=f.crota,
+                date_obs=files[0].date_obs,
+                outlier=any(f.outlier for f in files),
+                bad_packets=any(f.bad_packets for f in files),
+                crota=input_files[0].crota,
                 state="planned",
             ))
     return files

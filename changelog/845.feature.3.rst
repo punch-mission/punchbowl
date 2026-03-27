@@ -1,0 +1,1 @@
+F corona modelling is significantly faster, using cropped X files and shared memory for loading.

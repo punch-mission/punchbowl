@@ -16,8 +16,12 @@ THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 @pytest.mark.parametrize('as_cubes', [True, False])
 def test_PIM_flow_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixture, as_cubes):
-    data_list = [sample_ndcube(shape=(10, 10), code=f"X{pol}{obs + 1}", level="2")
-                 for pol in ['M', 'Z', 'P'] for obs in range(4)]
+    data_list = [sample_ndcube(shape=(3, 10, 10), code=f"XP{obs + 1}", level="2") for obs in range(4)]
+    for c in data_list:
+        c.meta['CROPX2'] = 10
+        c.meta['CROPY2'] = 10
+        c.meta['FULXSIZE'] = 10
+        c.meta['FULYSIZE'] = 10
 
     before_models = []
     for i, f in enumerate(data_list):
@@ -54,6 +58,11 @@ def test_PIM_flow_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixtur
 
 def test_PIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixture):
     data_list = [sample_ndcube(shape=(10, 10), code=f"XR{obs + 1}", level="2") for obs in range(4)]
+    for c in data_list:
+        c.meta['CROPX2'] = 10
+        c.meta['CROPY2'] = 10
+        c.meta['FULXSIZE'] = 10
+        c.meta['FULYSIZE'] = 10
 
     before_models = []
     for i, f in enumerate(data_list):

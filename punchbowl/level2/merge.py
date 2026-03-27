@@ -54,34 +54,31 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
 
         if len(polar_data) > 0:
             data_merged = _merge_ndcubes(polar_data)
-            data_merged.meta = NormalizedMetadata.load_template(product_code, level=level)
 
             if maintain_nans:
                 data_stack = np.stack([d.data for d in polar_data], axis=-1)
                 was_nan = np.all(np.isnan(data_stack), axis=-1)
                 data_merged.data[was_nan] = np.nan
-        else:
-            data_merged = NDCube(data = np.zeros((4096, 4096)),
-                                uncertainty = StdDevUncertainty(np.full((4096, 4096), np.inf)),
-                                wcs = trefoil_wcs,
-                                meta = NormalizedMetadata.load_template(product_code, level=level))
 
-        data_layers.append(data_merged.data)
-        uncertainty_layers.append(data_merged.uncertainty.array)
+            data_layers.append(data_merged.data)
+            uncertainty_layers.append(data_merged.uncertainty.array)
+        else:
+            data_layers.append(np.zeros((4096, 4096)))
+            uncertainty_layers.append(np.full((4096, 4096), np.inf))
 
     trefoil_3d_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
 
     if level == "Q":
         output_cube = NDCube(data=2/3 * np.sum(np.stack(data_layers, axis=0), axis=0),
                             uncertainty=StdDevUncertainty(np.stack(uncertainty_layers, axis=0)),
-                            wcs = trefoil_wcs,
-                            meta = NormalizedMetadata.load_template(product_code, level=level))
+                            wcs=trefoil_wcs,
+                            meta=NormalizedMetadata.load_template(product_code, level=level))
 
     else:
         output_cube = NDCube(data=np.stack(data_layers, axis=0),
                             uncertainty=StdDevUncertainty(np.stack(uncertainty_layers, axis=0)),
-                            wcs = trefoil_3d_wcs,
-                            meta = NormalizedMetadata.load_template(product_code, level=level))
+                            wcs=trefoil_3d_wcs,
+                            meta=NormalizedMetadata.load_template(product_code, level=level))
 
     output_cube.meta["OUTLIER"] = encode_outliers([d for d in data if d is not None])
 

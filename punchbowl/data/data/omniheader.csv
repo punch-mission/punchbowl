@@ -271,8 +271,15 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 17,keyword,RPSFVRSN,,regularizepsf software version number,str,TRUE,TRUE,
 17,keyword,RMSFVRSN,,remove_starfield software version number,str,TRUE,TRUE,
 17,keyword,HOSTNAME,,Name of server that created this file,str,TRUE,TRUE,
-18,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
-18,keyword,CHECKSUM,,,str,TRUE,TRUE,
-18,keyword,DATASUM,,,str,TRUE,TRUE,0
-19,section,COMMENT,History,,str,TRUE,TRUE,History
-19,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline
+18,section,COMMENT,Quirks for files not generally used by the public,,str,TRUE,TRUE,Quirks for files not generally used by the public
+18,keyword,CROPX1,,saved file begins at this column of the mosaic,int,TRUE,TRUE,0
+18,keyword,CROPY1,,saved file begins at this row of the mosaic,int,TRUE,TRUE,0
+18,keyword,CROPX2,,saved file goes up to but not including this mosaic column,int,FALSE,TRUE,2048
+18,keyword,CROPY2,,saved file goes up to but not including this mosaic row,int,FALSE,TRUE,2048
+18,keyword,FULXSIZE,,uncropped image size,int,FALSE,TRUE,2048
+18,keyword,FULYSIZE,,uncropped image size,int,FALSE,TRUE,2048
+19,section,COMMENT,Fixity,,str,TRUE,TRUE,Fixity
+19,keyword,CHECKSUM,,,str,TRUE,TRUE,
+19,keyword,DATASUM,,,str,TRUE,TRUE,0
+20,section,COMMENT,History,,str,TRUE,TRUE,History
+20,keyword,HISTORY,Records of processing from pipeline,,str,TRUE,TRUE,Records of processing from pipeline

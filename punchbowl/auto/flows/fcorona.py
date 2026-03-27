@@ -19,7 +19,7 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
                                           reference_file: File):
     logger = get_run_logger()
 
-    target_file_types = ['XR'] if reference_file.polarization == 'C' else ['X' + pol for pol in ('M', 'Z', 'P')]
+    target_file_types = ['XR'] if reference_file.polarization == 'C' else ['XP']
 
     max_hours_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_hours_per_half"]
     t_start = reference_time - timedelta(hours=max_hours_per_half)
@@ -54,18 +54,8 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     enough_L2s = len(first_half_inputs) > min_files_per_half and len(second_half_inputs) > min_files_per_half
     if enough_L2s:
         all_ready_files = first_half_inputs + second_half_inputs
-
-        n_per_type = Counter([f.file_type + reference_file.observatory for f in first_half_inputs + second_half_inputs])
-        counts = ','.join(f"{count} {kind}" for kind, count in n_per_type.items())
-
-        logger.info(f"{counts} Level 2 files will be used "
+        logger.info(f"{len(all_ready_files)} Level 2 files will be used "
                      "for F corona estimation.")
-
-        expected_n = len(first_half_inputs) / 3 + len(second_half_inputs) / 3
-        for kind, count in n_per_type.items():
-            if count < 0.99 * expected_n:
-                raise RuntimeError(f"Unexpectedly missing {kind} files---have {count}, expected {expected_n}")
-
         return [f for f in all_ready_files]
     else:
         status = []

@@ -319,7 +319,7 @@ def get_dateobs(file: str | NDCube) -> datetime:
     if isinstance(file, NDCube):
         return file.meta.datetime
     date = file.split("_")[-2]
-    return datetime.strptime(date, "%Y%m%d%H%M%S")
+    return datetime.strptime(date, "%Y%m%d%H%M%S") # noqa: DTZ007
 
 
 def get_polstate(file: str | NDCube) -> str:

@@ -177,27 +177,7 @@ def level3_PTM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
 
 @task(cache_policy=NO_CACHE)
 def level3_PIM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
-    all_ready_files = session.query(File).where(and_(and_(File.state == "created",
-                                                          File.level == "2"),
-                                                     File.file_type == "PT")).order_by(File.date_obs.asc()).all()
-    logger.info(f"{len(all_ready_files)} Level 2 PTM files need to be processed.")
-
-    actually_ready_files = []
-    for f in all_ready_files:
-        valid_before_fcorona_models = get_valid_fcorona_models(session, f,
-                                                               before_timedelta=timedelta(days=14),
-                                                               after_timedelta=timedelta(days=0))
-        valid_after_fcorona_models = get_valid_fcorona_models(session, f,
-                                                               before_timedelta=timedelta(days=0),
-                                                               after_timedelta=timedelta(days=14))
-        if len(valid_before_fcorona_models) >= 1 and len(valid_after_fcorona_models) >= 1:
-            actually_ready_files.append(f)
-            if len(actually_ready_files) >= max_n:
-                break
-    logger.info(f"{len(actually_ready_files)} Level 2 PTM files selected with necessary calibration data.")
-
-    return [[f.file_id] for f in actually_ready_files]
+    return level3_CIM_PIM_query_ready_files(session, pipeline_config, reference_time, max_n, polarized=True)
 
 
 def level3_PIM_construct_flow_info(level2_files: list[File], level3_file: File, pipeline_config: dict,
@@ -208,22 +188,16 @@ def level3_PIM_construct_flow_info(level2_files: list[File], level3_file: File, 
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
-    before_models = get_valid_fcorona_models(session,
-                                             level2_files[0],
-                                             before_timedelta=timedelta(days=90),
-                                             after_timedelta=timedelta(days=0))
-    after_models = get_valid_fcorona_models(session,
-                                            level2_files[0],
-                                            before_timedelta=timedelta(days=0),
-                                            after_timedelta=timedelta(days=90))
-    f_corona_before = get_closest_before_file(level2_files[0], before_models)
-    f_corona_after = get_closest_after_file(level2_files[0], after_models)
+    before_models = []
+    after_models = []
+    for file in level2_files:
+        before_models.append(file.fcor_models[0].filename())
+        after_models.append(file.fcor_models[1].filename())
     call_data = json.dumps(
         {
             "data_list": [level2_file.filename() for level2_file in level2_files],
-            # TODO put magic numbers in config
-            "before_f_corona_model_path": f_corona_before.filename(),
-            "after_f_corona_model_path": f_corona_after.filename(),
+            "before_f_corona_model_paths": before_models,
+            "after_f_corona_model_paths": after_models,
         },
     )
     return Flow(
@@ -269,7 +243,7 @@ def level3_PIM_scheduler_flow(pipeline_config_path: str | None = None,
 
 
 def level3_PIM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    for key in ["data_list", "before_f_corona_model_path", "after_f_corona_model_path"]:
+    for key in ["data_list", "before_f_corona_model_paths", "after_f_corona_model_paths"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     return call_data
 
@@ -281,7 +255,7 @@ def level3_PIM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
 
 
 @task(cache_policy=NO_CACHE)
-def level3_CIM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+def level3_CIM_PIM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99, polarized: bool=False):
     logger = get_run_logger()
     target_type = 'XP' if polarized else 'XR'
     all_ready_files = (session.query(File).filter(File.state == "created")
@@ -390,7 +364,7 @@ def level3_CIM_scheduler_flow(pipeline_config_path: str | None = None,
                               session=None,
                               reference_time: datetime | None = None):
     generic_scheduler_flow_logic(
-        level3_CIM_query_ready_files,
+        level3_CIM_PIM_query_ready_files,
         level3_CIM_construct_file_info,
         level3_CIM_construct_flow_info,
         pipeline_config_path,

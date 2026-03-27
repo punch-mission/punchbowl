@@ -1,38 +1,42 @@
+import time
 import pathlib
 import warnings
 import multiprocessing
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from functools import cached_property
-from itertools import pairwise
-from collections.abc import Generator
+from itertools import repeat, pairwise
+from concurrent.futures import ProcessPoolExecutor
 
+import numba
 import numpy as np
+import reproject
 import scipy
 from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from lmfit import Parameters, minimize
 from lmfit.minimizer import MinimizerResult
 from ndcube import NDCube
 from prefect import get_run_logger
-from skimage.restoration import inpaint
 
-from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
-from punchbowl.data.punch_io import load_many_cubes_iterable
+from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits, load_trefoil_wcs
 from punchbowl.exceptions import (
     CantInterpolateWarning,
     IncorrectPolarizationStateError,
     IncorrectTelescopeError,
     InvalidDataError,
 )
+from punchbowl.level2.resample import reproject_cube
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import (
     DataLoader,
+    ShmPickleableNDArray,
     average_datetime,
     inpaint_nans,
     interpolate_data,
     load_mask_file,
     nan_gaussian,
-    parallel_sort_first_axis,
+    nan_percentile,
 )
 
 
@@ -403,25 +407,19 @@ def fit_skew(stack: np.ndarray, ret_all: bool = False, x_scale_factor: float = 1
 REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS = 0.5
 
 
-def _estimate_stray_light_one_slice(y: int, data_slice: np.ndarray, x_grid: np.ndarray, half_width: int) -> np.ndarray:
+def _estimate_stray_light_one_slice(data_array: np.ndarray, y: int, x_grid: np.ndarray, half_width: int,
+                                    bin_mask: np.ndarray) -> np.ndarray:
     """This is our parallel worker, computing the stray light model for one y coordinate.""" # noqa: D401 D404
-    # Control the extra noise we add to the data to prevent concentric bands that would otherwise appear
-    noise_mode = 2e-13
-    noise_hwhm = 2.25e-13 - 1.8e-13
-    noise_amp = 0.2
-
     result = np.empty(x_grid.shape)
     for j, x in enumerate(x_grid):
-        stack = data_slice[:, :, x - half_width:x + half_width + 1]
+        stack = data_array[bin_mask,
+                           y - half_width : y + half_width + 1,
+                           x - half_width : x + half_width + 1].ravel()
         n_pts = stack.size
-        stack = stack[stack > 1e-15]
+        stack = stack[np.abs(stack) > 1e-17]
         if stack.size < n_pts * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS:
             r = np.nan
         else:
-            # A seed that's unique per pixel yet deterministic
-            rng = np.random.default_rng(10000 * y + x)
-            noise = noise_amp * rng.normal(scale=np.sqrt(stack / noise_mode) * noise_hwhm, size=stack.size)
-            stack += noise
             try:
                 r = fit_skew(stack, False)
             except OutOfPointsError:
@@ -430,8 +428,215 @@ def _estimate_stray_light_one_slice(y: int, data_slice: np.ndarray, x_grid: np.n
     return result
 
 
+def _load_files(filepaths, mosaic_wcs, logger, do_uncertainty, pool):
+    data_array = ShmPickleableNDArray((len(filepaths), 2048, 2048), dtype=np.float32)
+    reprojected_array = ShmPickleableNDArray((len(filepaths), *mosaic_wcs.array_shape), dtype=np.float32)
+    uncertainty = None
+    metas = []
+    wcses = []
+    n_failed = 0
+    logger.info(f"Will read {len(filepaths)} images")
+    for i, result in enumerate(pool.map(
+            _load_and_reproject, filepaths, repeat(mosaic_wcs), data_array, reprojected_array)):
+        if isinstance(result, str):
+            logger.warning(f"Loading {filepaths[i]} failed")
+            logger.warning(result)
+            n_failed += 1
+            metas.append(None)
+            wcses.append(None)
+            if n_failed > .05 * len(filepaths):
+                raise RuntimeError(f"{n_failed} files failed to load, stopping")
+            continue
+        # We need to save a sample cube (not a string/error message) for the end of this flow
+        cube = result
+        metas.append(cube.meta)
+        wcses.append(cube.wcs)
+
+        if do_uncertainty and not cube.meta["OUTLIER"].value:
+            if uncertainty is None:
+                uncertainty = np.zeros_like(cube.data)
+            if cube.uncertainty is not None:
+                # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
+                uncertainty += np.nan_to_num(cube.uncertainty.array, posinf=0, neginf=0) ** 2
+        if (i + 1) % 100 == 0:
+            logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
+    logger.info(f"Finished loading files, saw {n_failed} failures")
+
+    return data_array, reprojected_array, wcses, metas, uncertainty, cube
+
+
+bottom_crops = [230, 240, 243]
+
+
+def _load_and_reproject(path: str, target_wcs: WCS, data_destination: np.ndarray, repro_destination: np.ndarray,
+                        ) -> tuple[NDCube, np.ndarray] | str:
+    repro_destination[:] = np.nan
+    try:
+        cube = load_ndcube_from_fits(path, dtype=np.float32, include_provenance=False)
+    except Exception as e: # noqa: BLE001
+        data_destination[:] = np.nan
+        return str(e)
+    bottom_crop = bottom_crops[int(cube.meta["OBSCODE"].value) - 1]
+    data = cube.data
+    data_destination[:] = cube.data
+    cube = NDCube(data_destination, meta=cube.meta, wcs=cube.wcs, uncertainty=cube.uncertainty)
+
+    data[np.isinf(cube.uncertainty.array)] = np.nan
+
+    y, x = np.mgrid[:2048, :2048]
+    data[y > 1500 + x] = np.nan
+    data[y > 1500 + (2048 - x)] = np.nan
+    data[y < 600 - x] = np.nan
+    data[y < 600 - (2048 - x)] = np.nan
+
+    data = data[bottom_crop:, 200:-200]
+    wcs_cropped = cube.wcs[bottom_crop:, 200:-200]
+
+    with warnings.catch_warnings(), np.errstate(all="ignore"):
+        warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")
+        reproject_cube.fn(NDCube(data, meta=cube.meta, wcs=wcs_cropped), target_wcs, repro_destination.shape,
+                          rolloff_strength=0, rolloff_width=0,
+                          output_array=repro_destination,
+                          repro_args={"boundary_mode": "ignore", "bad_value_mode": "ignore"},
+                          do_uncertainty=False)
+    return cube
+
+
+def _subtract_coronal_model(data_slice: np.ndarray, wcs: WCS, dobs: datetime, corona_models: list,
+                            corona_model_dates: list, coronal_wcs: WCS):
+    if wcs is None:
+        return
+    if dobs <= corona_model_dates[0]:
+        model = corona_models[0]
+    elif dobs >= corona_model_dates[-1]:
+        model = corona_models[-1]
+    else:
+        for i, j in pairwise(range(len(corona_model_dates))):
+            if corona_model_dates[i] < dobs <= corona_model_dates[j]:
+                break
+        model = ((corona_models[j] - corona_models[i])
+                 * ((dobs - corona_model_dates[i]).total_seconds()
+                    / (corona_model_dates[j] - corona_model_dates[i]).total_seconds())
+                 + corona_models[i])
+    bottom_crop = 200
+    model = reproject.reproject_adaptive((model, coronal_wcs), wcs[bottom_crop:], (2048 - bottom_crop, 2048),
+                                         roundtrip_coords=False, return_footprint=False, bad_value_mode="ignore",
+                                         boundary_mode="ignore")
+    np.nan_to_num(model, copy=False)
+    data_slice[bottom_crop:] -= model
+
+
+@punch_task
+def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.ndarray, metas: list[NormalizedMetadata],
+                               wcses: list[WCS], mosaic_wcs: WCS, mask: np.ndarray, pool) -> None:
+    logger = get_run_logger()
+    logger.info("Making coronal models")
+    corona_models = []
+    corona_model_dates = []
+    valid_dates = [m.datetime for m in metas if m is not None]
+    dstart = valid_dates[0]
+    dstop = dstart
+    while dstop < valid_dates[-1]:
+        dstart = dstop
+        dstop = dstart + timedelta(hours=24)
+        istart = np.argmin([np.abs((m.datetime - dstart).total_seconds()) if m is not None else 9e99 for m in metas])
+        istop = np.argmin([np.abs((m.datetime - dstop).total_seconds()) if m is not None else 9e99 for m in metas])
+        if istop - istart < 50:
+            continue
+        model = nan_percentile(reprojected_array[istart:istop], 5)
+        model = ShmPickleableNDArray.from_array(model)
+        mdate = average_datetime([m.datetime for m in metas[istart:istop] if m is not None])
+        corona_models.append(model)
+        corona_model_dates.append(mdate)
+
+    logger.info("Models made; subtracting")
+
+    for i, _ in enumerate(pool.map(_subtract_coronal_model,
+                                     data_array, wcses, [m.datetime if m is not None else None for m in metas],
+                                     repeat(corona_models), repeat(corona_model_dates),
+                                     repeat(mosaic_wcs))):
+        data_array[i] *= mask
+        if (i + 1) % 100 == 0:
+            logger.info(f"Corona-subtracted {i + 1}/{len(data_array)} files")
+    logger.info("Models subtracted")
+
+
+def _make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, strided_image_mask,
+                       x_grid, y_grid, window_half_width, image_mask, data_array, make_plots_along_the_way,
+                       blur_sigma, stride, window_size, pool):
+    logger.info(f"Starting bin {bin_n + 1}, containing {np.sum(bin_mask)} images")
+
+    n_outliers = np.sum(outliers[bin_mask])
+    logger.info(f"{n_outliers} outliers in this bin")
+    if fallback_model is not None and n_outliers > 0.1 * np.sum(bin_mask):
+        logger.info("Too many outliers; using fallback model for this bin")
+        return fallback_model[bin_n]
+
+    bin_mask = bin_mask * ~outliers
+
+    logger.info("Beginning model fitting")
+
+    stray_light_estimate = np.stack(list(pool.map(
+            _estimate_stray_light_one_slice, repeat(data_array), y_grid, repeat(x_grid), repeat(window_half_width),
+            repeat(bin_mask))), axis=0)
+
+    logger.info("Finished model fitting")
+
+    if make_plots_along_the_way:
+        import matplotlib.pyplot as plt  # noqa: PLC0415
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Raw")
+        plt.show()
+
+    # Fill spots where the fitting didn't succeed. But don't fill stuff outside the image mask.
+    stray_light_estimate[~strided_image_mask] = 0
+    stray_light_estimate = inpaint_nans(stray_light_estimate, kernel_size=5)
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("post inpaint")
+        plt.show()
+
+    # Now the outer masked region needs to be NaNs so it doesn't impact the Gaussian blurring we're about to do.
+    stray_light_estimate[~strided_image_mask] = np.nan
+
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Filled")
+        plt.show()
+
+    if blur_sigma:
+        stray_light_estimate = nan_gaussian(stray_light_estimate, blur_sigma)
+
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Blurred")
+        plt.show()
+
+    stray_light_estimate[~strided_image_mask] = 0
+
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Masked")
+        plt.show()
+    if stride > 1 or window_size > 1:
+        # Upsample to a proper output size
+        interper = scipy.interpolate.RegularGridInterpolator(
+                (y_grid, x_grid), stray_light_estimate, method="linear", bounds_error=False, fill_value=None)
+        out_y, out_x = np.mgrid[:data_array.shape[1], :data_array.shape[2]]
+        stray_light_estimate = interper(np.stack((out_y, out_x), axis=-1))
+        stray_light_estimate *= image_mask
+
+    if make_plots_along_the_way:
+        plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
+        plt.title("Interped, final")
+        plt.show()
+
+    logger.info(f"Finished with bin {bin_n + 1}")
+    return stray_light_estimate
+
+
 @punch_flow
-def estimate_stray_light(filepaths: list[str],  # noqa: C901
+def estimate_stray_light(filepaths: list[str],
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
                          stride: int = 10,
@@ -442,10 +647,10 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
                          image_mask_path: str | None = None,
                          make_plots_along_the_way: bool = False,
                          fallback_model_path: str | None = None,
-                         num_workers: int | None = None,
-                         num_loaders: int | None = None) -> list[NDCube]:
+                         num_workers: int | None = None) -> list[NDCube]:
     """Estimate the fixed stray light pattern using a percentile."""
     logger = get_run_logger()
+    numba.set_num_threads(num_workers)
     if window_size % 2 == 0:
         raise ValueError("Window size must be odd")
     logger.info(f"Running with {len(filepaths)} input files")
@@ -455,222 +660,90 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
     fallback_model = load_ndcube_from_fits(fallback_model_path).data if isinstance(fallback_model_path, str) else None
 
     image_mask = load_mask_file(image_mask_path) if image_mask_path is not None else None
-    strided_image_mask = None
 
-    data_array = None
-    uncertainty = None
-    metas = []
-    j = 0
-    n_failed = 0
-    logger.info(f"Will read {len(filepaths)} images")
-    if isinstance(filepaths[0], NDCube):
-        iterable = filepaths
-    else:
-        iterable = load_many_cubes_iterable(filepaths, n_workers=num_loaders, allow_errors=True,
-                                            include_uncertainty=do_uncertainty,
-                                            include_provenance=False, dtype=np.float32)
-    for i, result in enumerate(iterable):
-        if isinstance(result, str):
-            logger.warning(f"Loading {filepaths[i]} failed")
-            logger.warning(result)
-            n_failed += 1
-            if n_failed > .05 * len(filepaths):
-                raise RuntimeError(f"{n_failed} files failed to load, stopping")
-            continue
-        # We need to save a sample cube (not a string/error message) for the end of this flow
-        cube = result
-        if data_array is None:
-            data_array = np.empty((len(filepaths), *cube.data.shape), dtype=cube.data.dtype)
-        data_array[j] = cube.data
-        j += 1
-        metas.append(cube.meta)
+    # Make sure things are in temporal order
+    filepaths = sorted(filepaths)
 
-        if do_uncertainty and not cube.meta["OUTLIER"].value:
-            if uncertainty is None:
-                uncertainty = np.zeros_like(cube.data)
-            if cube.uncertainty is not None:
-                # The final uncertainty is sqrt(sum(square(input uncertainties))), so we accumulate the squares here
-                uncertainty += np.nan_to_num(cube.uncertainty.array, posinf=0, neginf=0) ** 2
-        if (i + 1) % 100 == 0:
-            logger.info(f"Loaded {i + 1}/{len(filepaths)} files")
-    logger.info(f"Finished loaded files, saw {n_failed} failures")
-    data_array = data_array[:j]
-    outliers = np.array([m["OUTLIER"].value for m in metas])
+    mosaic_wcs, _ = load_trefoil_wcs()
+    # Fit the edges of every image in the mosiac by zooming out a tad
+    mosaic_wcs.wcs.cdelt = 0.024 * 2, 0.024 * 2
+    mosaic_wcs.wcs.crpix = 1024, 1024
+    mosaic_wcs.array_shape = (2048, 2048)
 
-    if image_mask is None:
-        image_mask = ~np.all(data_array == 0, axis=0)
+    ctx = multiprocessing.get_context("forkserver")
+    with ProcessPoolExecutor(num_workers, mp_context=ctx) as pool:
+        start = time.time()
+        data_array, reprojected_array, wcses, metas, uncertainty, cube = _load_files(
+                filepaths, mosaic_wcs, logger, do_uncertainty, pool)
+        time_loading = time.time() - start
+        outliers = np.array([True if m is None else m["OUTLIER"].value != 0 for m in metas])
 
-    # Build our CROTA bins
-    bin_centers = np.linspace(-180, 180, n_crota_bins, endpoint=False)
-    bin_starts = bin_centers - crota_bin_width / 2
-    bin_stops = bin_centers + crota_bin_width / 2
+        if image_mask is None:
+            image_mask = ~np.all(data_array == 0, axis=0)
 
-    crota_is_in_bin = (lambda crota, binn: ((bin_starts[binn] < crota <= bin_stops[binn])
-                                         or (bin_starts[binn] < crota - 360 <= bin_stops[binn])
-                                         or (bin_starts[binn] < crota + 360 <= bin_stops[binn])))
+        bottom_crop = bottom_crops[int(cube.meta["OBSCODE"].value) - 1]
+        image_mask[:bottom_crop] = 0
 
-    bin_masks = []
-    for binn in range(n_crota_bins):
-        mask = np.array([crota_is_in_bin(m["CROTA"].value, binn) for m in metas])
-        bin_masks.append(mask)
-        logger.info(f"Bin centered at CROTA {bin_centers[binn]} has {np.sum(mask)} images")
+        start = time.time()
+        _build_and_subtract_corona(reprojected_array, data_array, metas, wcses, mosaic_wcs, image_mask, pool)
+        time_corona = time.time() - start
 
-    window_half_width = window_size // 2
-    # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
-    # stride position fits
-    x_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
-    y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
+        # Free this memory early, as we don't need it anymore
+        reprojected_array.free()
+        del reprojected_array
 
-    # We'll use this later for calculating percentile equivalents
-    sorted_data = data_array[:, y_grid][:, :, x_grid]
-    sorted_data = parallel_sort_first_axis(sorted_data, inplace=True)
+        # Build our CROTA bins
+        bin_centers = np.linspace(-180, 180, n_crota_bins, endpoint=False)
+        bin_starts = bin_centers - crota_bin_width / 2
+        bin_stops = bin_centers + crota_bin_width / 2
 
-    models = []
-    for bin_n, bin_mask in enumerate(bin_masks):
-        logger.info(f"Starting bin {bin_n + 1}, containing {np.sum(bin_mask)} images")
+        crota_is_in_bin = (lambda crota, binn: ((bin_starts[binn] < crota <= bin_stops[binn])
+                                             or (bin_starts[binn] < crota - 360 <= bin_stops[binn])
+                                             or (bin_starts[binn] < crota + 360 <= bin_stops[binn])))
 
-        n_outliers = np.sum(outliers[bin_mask])
-        logger.info(f"{n_outliers} outliers in this bin")
-        if fallback_model is not None and n_outliers > 0.1 * np.sum(bin_mask):
-            logger.info("Too many outliers; using fallback model for this bin")
-            models.append(fallback_model[bin_n])
-            continue
+        bin_masks = []
+        for binn in range(n_crota_bins):
+            mask = np.array([False if m is None else crota_is_in_bin(m["CROTA"].value, binn) for m in metas])
+            bin_masks.append(mask)
+            logger.info(f"Bin centered at CROTA {bin_centers[binn]} has {np.sum(mask)} images")
 
-        bin_mask = bin_mask * ~outliers # noqa: PLW2901
+        window_half_width = window_size // 2
+        # Build a grid with `stride` as the spacing, but exclude from the edges so that the window we use at each
+        # stride position fits
+        x_grid = np.arange(window_half_width, data_array.shape[2] - window_half_width, stride)
+        y_grid = np.arange(window_half_width, data_array.shape[1] - window_half_width, stride)
 
         # Downsample the image mask carefully, to have each superpixel indicate whether it contains enough pixels
         # inside the mask for this function's inner loop to get enough samples.
-        if strided_image_mask is None:
-            strided_image_mask = np.empty((y_grid.size, x_grid.size), dtype=bool)
-            for i, y in enumerate(y_grid):
-                for j, x in enumerate(x_grid):
-                    sample = image_mask[y - window_half_width:y + window_half_width + 1,
-                                        x - window_half_width:x + window_half_width + 1]
-                    strided_image_mask[i, j] = sample.sum() > sample.size * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS
+        strided_image_mask = np.empty((y_grid.size, x_grid.size), dtype=bool)
+        for i, y in enumerate(y_grid):
+            for j, x in enumerate(x_grid):
+                sample = image_mask[y - window_half_width:y + window_half_width + 1,
+                x - window_half_width:x + window_half_width + 1]
+                strided_image_mask[i, j] = sample.sum() > sample.size * REQUIRED_FRACTION_OF_NEIGHBORHOOD_PIXELS
 
-        def args() -> Generator[tuple]:
-            for y in y_grid:
-                # We can't fork when running under Prefect, so we have to just copy chunks of the data cube to each
-                # worker.
-                data_slice = data_array[bin_mask, y - window_half_width:y + window_half_width + 1, :] # noqa: B023 F821
-                yield y, data_slice, x_grid, window_half_width
+        models = []
+        start = time.time()
+        for bin_n, bin_mask in enumerate(bin_masks):
+            models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers, fallback_model, strided_image_mask,
+                       x_grid, y_grid, window_half_width, image_mask, data_array, make_plots_along_the_way,
+                       blur_sigma, stride, window_size, pool))
+        time_making_models = time.time() - start
 
-        logger.info("Beginning model fitting")
-        ctx = multiprocessing.get_context("forkserver")
-        with ctx.Pool(num_workers) as p:
-            stray_light_estimate = np.stack(p.starmap(_estimate_stray_light_one_slice, args()), axis=0)
-
-        logger.info("Finished model fitting")
-
-        if make_plots_along_the_way:
-            import matplotlib.pyplot as plt  # noqa: PLC0415
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Raw")
-            plt.show()
-
-        # Fill spots where the fitting didn't succeed. But don't fill stuff outside the image mask.
-        stray_light_estimate[~strided_image_mask] = 0
-        stray_light_estimate = inpaint_nans(stray_light_estimate, kernel_size=5)
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("post inpaint")
-            plt.show()
-
-        # Now compute a percentile-equivalent value for each pixel in the model---i.e., what percentile would we have
-        # to take of the input data to produce the model value. We use this to flag the fits in the equatorial region
-        # that are wonky. (The closer you get to the equatorial region, the more subtle the lowest peak gets,
-        # until eventually you can't identify it anymore. That lost of the peak means the fitting jumps to a
-        # different peak and there's a discontinuity in the model, and that discontinuity is the main thing we want
-        # to identify and mask out.) For this to be a *true* percentile equivalent, we should only be considering the
-        # data in this orbital bin, but it just turns out that the problem region we want to flag doesn't stand out
-        # much if we do that, but it stands out *very* clearly if we compute these percentile-equivalents using the
-        # entire data cube, so we do that.
-        percentiles = np.argmin(np.abs(sorted_data - stray_light_estimate), axis=0) / sorted_data.shape[0] * 100
-        if make_plots_along_the_way:
-            plt.imshow(percentiles, vmin=0, vmax=80, origin="lower")
-            plt.title("Percentiles")
-            plt.show()
-
-        # ID and process the region we want to mask and replace
-        bad_region = percentiles >= 70
-        bad_region = scipy.ndimage.binary_fill_holes(bad_region)
-        bad_region = scipy.ndimage.binary_opening(bad_region, iterations=int(np.ceil(2*stride/10)))
-        bad_region = scipy.ndimage.binary_dilation(bad_region, iterations=int(np.ceil(8*stride/10)))
-        bad_region *= strided_image_mask
-
-        if make_plots_along_the_way:
-            plt.imshow(bad_region, vmin=0, vmax=1, origin="lower")
-            plt.title("bad region")
-            plt.show()
-
-        # Produce a fill value for that region. We don't want the masked outer edges of the image to influence the
-        # fill values we produce, so we include them in the "pixels to inpaint" mask. That produces fill values for
-        # those pixels which we don't need or use, but it prevents those pixels from being considered as input pixels
-        # to inpaint from, and that's the important thing.
-        inpaint_mask = bad_region + ~strided_image_mask
-        try:
-            # Sometimes this raises `ValueError: zero-size array to reduction operation minimum which has no identity`
-            inpainted = inpaint.inpaint_biharmonic(stray_light_estimate, inpaint_mask)
-        except ValueError:
-            logger.info("inpaint failed; using fallback model for this bin")
-            models.append(fallback_model[bin_n])
-            continue
-
-
-        if make_plots_along_the_way:
-            plt.imshow(inpainted, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Inpainted")
-            plt.show()
-
-        stray_light_estimate[bad_region] = inpainted[bad_region]
-
-        # Now the outer masked region needs to be NaNs so it doesn't impact the Gaussian blurring we're about to do.
-        stray_light_estimate[~strided_image_mask] = np.nan
-
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Filled")
-            plt.show()
-
-        if blur_sigma:
-            stray_light_estimate = nan_gaussian(stray_light_estimate, blur_sigma)
-
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Blurred")
-            plt.show()
-
-        stray_light_estimate[~strided_image_mask] = 0
-
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Masked")
-            plt.show()
-        if stride > 1 or window_size > 1:
-            # Upsample to a proper output size
-            interper = scipy.interpolate.RegularGridInterpolator(
-                    (y_grid, x_grid), stray_light_estimate, method="linear", bounds_error=False, fill_value=None)
-            out_y, out_x = np.mgrid[:data_array.shape[1], :data_array.shape[2]]
-            stray_light_estimate = interper(np.stack((out_y, out_x), axis=-1))
-            stray_light_estimate *= image_mask
-
-        if make_plots_along_the_way:
-            plt.imshow(stray_light_estimate, vmin=0, vmax=.5e-12, origin="lower")
-            plt.title("Interped, final")
-            plt.show()
-
-        models.append(stray_light_estimate)
-        logger.info(f"Finished with bin {bin_n + 1}")
-
+    # Free this memory early, as we don't need it anymore
+    data_array.free()
     del data_array
+
+    logger.info(f"Spent {time_loading:.1f} s loading & reprojecting, {time_corona:.1f} s subtracting corona, and "
+                f"{time_making_models:.1f} s making SL models")
 
     if do_uncertainty:
         uncertainty = np.sqrt(uncertainty) / len(filepaths)
 
-    out_type = "S" + metas[0].product_code[1:]
+    out_type = "S" + cube.meta.product_code[1:]
     meta = NormalizedMetadata.load_template(out_type, "1")
-    meta.provenance = [m["FILENAME"] for m in metas]
-    all_date_obses = [m.datetime for m in metas]
+    meta.provenance = [m["FILENAME"] for m in metas if m is not None]
+    all_date_obses = [m.datetime for m in metas if m is not None]
     meta["DATE-AVG"] = average_datetime(all_date_obses).strftime("%Y-%m-%dT%H:%M:%S")
     meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S") if reference_time else meta["DATE-AVG"].value
     meta["DATE-BEG"] = min(all_date_obses).strftime("%Y-%m-%dT%H:%M:%S")
@@ -686,6 +759,8 @@ def estimate_stray_light(filepaths: list[str],  # noqa: C901
 
     # Let's put in a valid, representative WCS, with the right scale and sun-relative pointing, etc.
     wcs = cube.wcs
+    wcs.cpdis1 = None
+    wcs.cpdis2 = None
     out_cube = NDCube(data=np.array(models), meta=meta, wcs=wcs, uncertainty=StdDevUncertainty(uncertainty))
 
     return [out_cube]

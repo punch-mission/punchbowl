@@ -95,12 +95,6 @@ Kinds:
             OBSLAYR1: Unpolarized
             POLAR: -999
 
-    Xfile:
-        omits: [RPSFVRSN]
-
-    Yfile:
-        omits: [RPSFVRSN]
-
 
 # Product specifications
 Products:
@@ -321,7 +315,7 @@ Products:
         omits: [FILTER, OBS-MODE, POLAR]
 
     XM?:
-        kinds: [Polarized, PM, Xfile]
+        kinds: [Polarized, PM]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -331,7 +325,7 @@ Products:
             TYPECODE: XM
 
     XZ?:
-        kinds: [Polarized, PZ, Xfile]
+        kinds: [Polarized, PZ]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -341,7 +335,7 @@ Products:
             TYPECODE: XZ
 
     XP?:
-        kinds: [Polarized, PP, Xfile]
+        kinds: [Polarized, PP]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -351,7 +345,7 @@ Products:
             TYPECODE: XP
 
     XR?:
-        kinds: [Unpolarized, CR, Xfile]
+        kinds: [Unpolarized, CR]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Clear Image, Xperimental
             OBSTYPE: Unpolarized {crafttype} image
@@ -361,7 +355,7 @@ Products:
             TYPECODE: XR
 
     YM?:
-        kinds: [Polarized, PM, Yfile]
+        kinds: [Polarized, PM]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -371,7 +365,7 @@ Products:
             TYPECODE: YM
 
     YZ?:
-        kinds: [Polarized, PZ, Yfile]
+        kinds: [Polarized, PZ]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -381,7 +375,7 @@ Products:
             TYPECODE: YZ
 
     YP?:
-        kinds: [Polarized, PP, Yfile]
+        kinds: [Polarized, PP]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Polarized Image, Xperimental
             OBSTYPE: Polarized {crafttype} image
@@ -391,7 +385,7 @@ Products:
             TYPECODE: YP
 
     YR?:
-        kinds: [Unpolarized, CR, Yfile]
+        kinds: [Unpolarized, CR]
         overrides:
             TITLE: PUNCH Level-1 {craftname} Clear Image, Xperimental
             OBSTYPE: Unpolarized {crafttype} image

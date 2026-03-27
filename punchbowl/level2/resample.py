@@ -12,10 +12,11 @@ from punchbowl.prefect import punch_flow, punch_task
 
 
 @punch_task(tags=["reproject"])
-def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int, int],
+def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int, int], # noqa: C901
                    rolloff_strength: float | list[float] = 1,
                    rolloff_width: float | list[float] = .25,
                    do_uncertainty: bool = True,
+                   output_array: np.ndarray | None = None,
                    repro_args: dict | None = None) -> np.ndarray:
     """
     Core reprojection function.
@@ -63,18 +64,41 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
     if repro_args is None:
         repro_args = {}
 
+    input_data = input_cube.data
     input_wcs = input_cube.wcs
+    input_uncertainty = input_cube.uncertainty.array if do_uncertainty else None
     time = input_cube.meta.astropy_time
+
+    # Trim empty parts of the image, so we don't have to compute coordinates there or reproject those pixels
+    while np.all(np.isnan(input_data[:, 0])):
+        input_data = input_data[:, 1:]
+        input_uncertainty = input_uncertainty[:, 1:] if do_uncertainty else None
+        input_wcs = input_wcs[:, 1:]
+    while np.all(np.isnan(input_data[:, -1])):
+        input_data = input_data[:, :-1]
+        input_uncertainty = input_uncertainty[:, :-1] if do_uncertainty else None
+        input_wcs = input_wcs[:, :-1]
+
+    while np.all(np.isnan(input_data[0])):
+        input_data = input_data[1:]
+        input_uncertainty = input_uncertainty[1:] if do_uncertainty else None
+        input_wcs = input_wcs[1:]
+    while np.all(np.isnan(input_data[-1])):
+        input_data = input_data[:-1]
+        input_uncertainty = input_uncertainty[:-1] if do_uncertainty else None
+        input_wcs = input_wcs[:-1]
 
     celestial_source = calculate_celestial_wcs_from_helio(input_wcs, time, output_shape)
     celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape)
+
+
 
     # When we build mosaics, each input image fills only a portion (less than half) of the output frame. When we
     # reproject, we don't want it spending time looping over all those empty pixels, calculating coordinates,
     # etc. So here we find a bounding box around the input in the output frame and crop to that before reprojecting.
     # To start, here we make a grid of points along the edges of the input image.
-    xs = np.linspace(-1, input_cube.data.shape[-1], 60)
-    ys = np.linspace(-1, input_cube.data.shape[-2], 60)
+    xs = np.linspace(-1, input_data.shape[-1], 60)
+    ys = np.linspace(-1, input_data.shape[-2], 60)
     edgex = np.concatenate((xs, # bottom edge
                             np.full(len(ys), xs[-1]), # right edge
                             xs, # top edge
@@ -104,7 +128,10 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         xmax = np.min((xmax, output_shape[1]))
         ymax = np.min((ymax, output_shape[0]))
 
-    output_array = np.full((2 if do_uncertainty else 1, *output_shape), np.nan)
+    if output_array is None:
+        output_array = np.full((2 if do_uncertainty else 1, *output_shape), np.nan)
+    elif len(output_array.shape) == 2:
+        output_array = np.expand_dims(output_array, 0)
 
     # We will roll off the uncertainty by the inverse of the distance to the edge of the mask.
     # This allows pixels closer to the center to be weighted more than those on the edge.
@@ -115,21 +142,21 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         rolloff_width = rolloff_width[int(input_cube.meta["OBSCODE"].value) - 1]
 
     if not do_uncertainty:
-        input_data = np.expand_dims(input_cube.data, 0)
+        input_data = np.expand_dims(input_data, 0)
     elif rolloff_strength > 0 and rolloff_width > 0:
-        image_mask = ((np.isnan(input_cube.data) + (input_cube.data == 0))
-                      * (~np.isfinite(input_cube.uncertainty.array)))
+        image_mask = ((np.isnan(input_data) + (input_data == 0))
+                      * (~np.isfinite(input_uncertainty)))
         distance_to_edge = distance_transform_edt(~image_mask, return_indices=False) + 1
         cap = rolloff_width * distance_to_edge.max()
         distance_to_edge[distance_to_edge > cap] = cap
         rolloff_fractions = distance_to_edge / cap
         rolloff_fractions = (1 - rolloff_strength) + rolloff_fractions * rolloff_strength
-        input_data = np.stack([input_cube.data, input_cube.uncertainty.array / np.sqrt(rolloff_fractions)])
+        input_data = np.stack([input_data, input_uncertainty / np.sqrt(rolloff_fractions)])
     else:
-        input_data = np.stack([input_cube.data, input_cube.uncertainty.array])
+        input_data = np.stack([input_data, input_uncertainty])
 
     # Reproject will complain if the input and output arrays have different dtypes
-    input_data = np.asarray(input_data, dtype=float)
+    input_data = np.asarray(input_data, dtype=output_array.dtype)
 
     reproject.reproject_adaptive(
         (input_data, celestial_source),

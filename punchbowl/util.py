@@ -1,11 +1,15 @@
 import os
 import abc
 import warnings
-from typing import Generic, TypeVar
+import threading
+from typing import Any, Self, Generic, TypeVar
 from datetime import UTC, datetime
+from functools import cached_property
+from multiprocessing.shared_memory import SharedMemory
 
 import numba
 import numpy as np
+from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
 from numpy.typing import ArrayLike
@@ -427,3 +431,154 @@ def compute_tb(data: NDCube | np.ndarray) -> np.ndarray:
         return data.data[0, ...]
 
     return 2/3 * np.sum(data.data, axis=0)
+
+
+def censor_wcs(wcs: WCS, obstime: bool = True, observer: bool = True) -> WCS:
+    """
+    Remove observer details from a WCS.
+
+    When input images have slightly different viewpoints, Sunpy will say this
+    is an invalid coordinate transformation. Here we censor information from the
+    WCS to pacify Sunpy.
+    """
+    wcs = wcs.deepcopy()
+    if observer:
+        wcs.wcs.aux.hgln_obs = None
+        wcs.wcs.aux.hglt_obs = None
+        wcs.wcs.aux.dsun_obs = None
+    if obstime:
+        wcs.wcs.dateobs = ""
+        wcs.wcs.dateavg = ""
+        wcs.wcs.datebeg = ""
+        wcs.wcs.dateend = ""
+    return wcs
+
+
+class ShmPickleableNDArray(np.ndarray):
+    """
+    A numpy array backed by shared memory that pickles without copying data.
+
+    Pickling happens by only transmitting the shared memory name (and array shape, etc.) and re-connecting to the
+    shared memory on the receiving side, without ever pickling or copying the array contents. This is extremely
+    useful when multi-processing with large data arrays, as data can be sent back and forth between workers with zero
+    copying, and in a very seamless way.
+
+    Python spawns a tracker process that ensures the shared memory is freed after the main process terminates. Memory
+    is also freed when an array is deleted (when Python determines the array's reference count has dropped to
+    zero)---this implies that any views have also been deleted, since views keep a reference to their base array.
+
+    ShmPickleableNDArray supports indexing and slicing, creating views into the same shared-memory array the same way
+    that normal NDArrays do. Note that operations that produce a copy of the data, suce as "advanced indexing" (
+    indexing with an array of booleans or integers) produces a new array not backed by shared memory, which will not
+    enjoy any advantages when pickling. In such a case, the resulting array will raise a RuntimeError if it is pickled.
+    """
+
+    def __new__(cls, shape: tuple, dtype: np.dtype = np.float64, buffer_name: str | None = None, strides: Any = None,
+                offset: int = 0, persist: bool = False, **kwargs: dict) -> Self:
+        """Create a new array."""
+        nbytes = 1
+        if isinstance(shape, int):
+            nbytes *= shape
+        else:
+            for e in shape:
+                nbytes *= e
+        nbytes *= np.dtype(dtype).itemsize
+
+        # size is ignored if create is False
+        shm = SharedMemory(create=buffer_name is None, size=nbytes, track=True, name=buffer_name)
+
+        obj = super().__new__(cls, shape=shape, dtype=dtype, buffer=shm.buf, strides=strides,
+                              offset=offset, **kwargs)
+        obj._shm = shm
+        obj.persist = persist
+        return obj
+
+    def __array_finalize__(self, obj: Any) -> None:
+        """Finalize array setup."""
+        if not hasattr(self, "persist"):
+            self.persist = True
+        if not hasattr(self, "_shm"):
+            self._shm = None
+        self.is_freed = getattr(obj, "is_freed", False)
+
+    @classmethod
+    def from_array(cls, array: np.ndarray) -> "ShmPickleableNDArray":
+        """Convert an array into a ShmPickleableNDArray."""
+        obj = ShmPickleableNDArray.empty_like(array)
+        obj[:] = array
+        return obj
+
+    @classmethod
+    def empty_like(cls, array: np.ndarray) -> "ShmPickleableNDArray":
+        """Create an empty array like the given array."""
+        return ShmPickleableNDArray(array.shape, array.dtype)
+
+    @cached_property
+    def orig_array(self) -> "ShmPickleableNDArray":
+        """Get the whole underlying array."""
+        base = self
+        while isinstance(base.base, ShmPickleableNDArray):
+            base = base.base
+        return base
+
+    @property
+    def shm(self) -> SharedMemory:
+        """Access the base shared memory."""
+        return self.orig_array._shm # noqa: SLF001
+
+    @property
+    def numpy(self) -> np.ndarray:
+        """Convert to a plain numpy array."""
+        return np.array(self)
+
+    def free(self) -> None:
+        """
+        Free shared memory immediately.
+
+        Each shared memory object has a tracker process that ensures it is freed when the process that created it
+        terminates. This function is only needed to free the memory early, before the process ends. Note that
+        accessing the array after freeing the backing memory may result in a segfault.
+        """
+        if self._shm is None:
+            return
+        self._shm.unlink()
+        thread = threading.Thread(target=self._shm.close, daemon=True)
+        thread.start()
+        self._shm = None
+        self.is_freed = True
+
+    def __del__(self) -> None:
+        """Delete the array."""
+        if hasattr(super(), "__del__"):
+            super().__del__()
+
+        if not self.persist and self._shm is not None:
+            self.free()
+
+    def __getitem__(self, *args: tuple, **kwargs: dict) -> "ShmPickleableNDArray":
+        """Index the array."""
+        if self.orig_array.is_freed:
+            # Guard against segfaults after freeing the shared memory
+            raise RuntimeError("Attempt to access array that's already been freed")
+        return super().__getitem__(*args, **kwargs)
+
+    def __repr__(self, *args: tuple, **kwargs: dict) -> str:
+        """Repr the array."""
+        if self.orig_array.is_freed:
+            # Guard against segfaults after freeing the shared memory
+            return "<freed ShmPickleableNDArray>"
+        return super().__repr__(*args, **kwargs)
+
+    def __reduce__(self) -> tuple:
+        """Pickle the object."""
+        base = self.orig_array
+        if base._shm is None: # noqa: SLF001
+            raise RuntimeError(
+                "Pickling an ShmPickleableNDArray view of a non-ShmPickleableNDArray array. "
+                "Use ShmPickleableNDArray.numpy?")
+        base_bounds = np.lib.array_utils.byte_bounds(base)
+        our_bounds = np.lib.array_utils.byte_bounds(self)
+        offset = our_bounds[0] - base_bounds[0]
+
+        return ShmPickleableNDArray.__new__, (ShmPickleableNDArray, self.shape, self.dtype, self.shm.name,
+                                              self.strides, offset, True)

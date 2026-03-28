@@ -318,7 +318,7 @@ def update_file_cards(n):
     Input("plot-range", "start_date"),
     Input("plot-range", "end_date"),
     Input("machine-stat-smoothing", "value"),
-    Input("host-selector", "host")
+    Input("host-selector", "value")
 )
 def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window, host):
     axis_labels = {"cpu_usage": "CPU Usage %",
@@ -334,6 +334,9 @@ def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window, h
              .where(Health.host == host))
     with get_database_session() as session:
         df = pd.read_sql_query(query, session.connection())
+
+    # This can't be smoothed
+    df = df.drop('host', axis=1)
 
     if smooth_window is not None and smooth_window > 1:
         smooth_window = int(round(smooth_window))

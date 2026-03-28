@@ -631,7 +631,7 @@ def level1_early_construct_flow_info(level0_files: list[File], level1_files: lis
 
 def level1_early_construct_flow_info_phoenix(level0_files: list[File], level1_files: list[File],
                                pipeline_config: dict, session=None, reference_time=None):
-    flow_type = "level1_early_phoneix"
+    flow_type = "level1_early_phoenix"
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]

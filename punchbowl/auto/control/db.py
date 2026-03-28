@@ -130,7 +130,7 @@ class Health(Base):
     disk_usage = Column(Float, nullable=False)
     disk_percentage = Column(Float, nullable=False)
     num_pids = Column(Integer, nullable=False)
-
+    host = Column(String(64), nullable=False)
 
 class PacketHistory(Base):
     __tablename__ = "packet_history"

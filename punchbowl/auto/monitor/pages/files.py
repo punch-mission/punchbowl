@@ -548,7 +548,7 @@ def update_visible_columns(show_in_table, group_by_selection, current_sort, curr
 
     new_filter_parts = []
     for filter_part in current_filter.split(" && "):
-        col_name, operator, filter_value, py_method = split_filter_part(filter_part)
+        col_name, operator, filter_value, py_method, combiner = split_filter_part(filter_part)
         if col_name in current_col_ids:
             new_filter_parts.append(filter_part)
     current_filter = " && ".join(new_filter_parts)

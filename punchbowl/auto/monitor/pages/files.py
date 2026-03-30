@@ -4,11 +4,15 @@ import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
-from dash import Input, Output, State, callback, dash_table, dcc, html
+import plotly.io as pio
+from dash import Input, Output, Patch, State, callback, dash_table, dcc, html
+from dash_bootstrap_templates import load_figure_template
 from sqlalchemy import and_, func, or_, select
 
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.monitor.app import get_database_session
+
+load_figure_template(["bootstrap", "bootstrap_dark"])
 
 REFRESH_RATE = 60  # seconds
 
@@ -16,6 +20,9 @@ USABLE_COLUMNS = ["Level", "File type", "Flow type", "Observatory", "File versio
 PAGE_SIZE = 100
 
 dash.register_page(__name__)
+
+LIGHT_THEME = 'bootstrap'
+DARK_THEME = 'bootstrap_dark'
 
 def layout():
     return html.Div([
@@ -238,7 +245,9 @@ def layout():
             ]),
         ]),
         dcc.Loading(
-            dcc.Graph(id="file-graph", style={"height": "400"}),
+            # display: none hides the graph until it populates, because I'm not sure how to set dark mode while the graph
+            # is loading
+            dcc.Graph(id="file-graph", style={"height": "400", "display": "none"}),
             overlay_style={"visibility": "visible", "filter": "opacity(65%)"},
         ),
         dcc.Interval(
@@ -610,10 +619,11 @@ def make_y_axis_labels(dff):
     Input("table-date-created", "end_date"),
     Input("graph_point_time_window", "value"),
     Input("manual-refresh", "n_clicks"),
+    State("color-mode-switch", "value"),
 )
 def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, file_state_filters, file_level_filters,
                       weird_file_filters, graph_x_axis, date_obs_start, date_obs_end, date_created_start,
-                      date_created_end, graph_point_time_window, refresh_nclicks):
+                      date_created_end, graph_point_time_window, refresh_nclicks, light_mode):
     group_by = [col.lower().replace(" ", "_") for col in group_by]
     color_key = color_key.lower().replace(" ", "_")
     shape_key = shape_key.lower().replace(" ", "_")
@@ -691,10 +701,25 @@ def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, file_s
                      symbol=shape_key if shape_key != "nothing" else None,
                      category_orders=category_orders,
                      hover_data={"date_created": "|%Y-%m-%d %H:%M:%S", "date_obs": "|%Y-%m-%d %H:%M:%S"},
-                     color_discrete_sequence=px.colors.qualitative.D3)
+                     color_discrete_sequence=px.colors.qualitative.D3,
+                     template=LIGHT_THEME if light_mode else DARK_THEME)
     fig.update_xaxes(title_text=graph_x_axis)
 
     # Adjust the plot height
     new_style = {"height": f"{150 + len(labels) * 30}px", "min-height": "400px"}
 
     return fig, new_style
+
+
+@callback(
+    Output("file-graph", "figure", allow_duplicate=True),
+    Input("color-mode-switch", "value"),
+    prevent_initial_call=True,
+)
+def update_figure_template(light_mode):
+    # When using Patch() to update the figure template, you must use the figure template dict
+    # from plotly.io  and not just the template name
+    template = pio.templates[LIGHT_THEME if light_mode else DARK_THEME]
+    patched_figure = Patch()
+    patched_figure["layout"]["template"] = template
+    return patched_figure

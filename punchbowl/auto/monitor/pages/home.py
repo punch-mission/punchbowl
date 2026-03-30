@@ -5,11 +5,15 @@ import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
-from dash import Input, Output, callback, dash_table, dcc, html
+import plotly.io as pio
+from dash import Input, Output, Patch, State, callback, dash_table, dcc, html
+from dash_bootstrap_templates import load_figure_template
 from sqlalchemy import select
 
 from punchbowl.auto.control.db import Flow, Health
 from punchbowl.auto.monitor.app import get_database_session
+
+load_figure_template(["bootstrap", "bootstrap_dark"])
 
 REFRESH_RATE = 60  # seconds
 
@@ -22,9 +26,14 @@ PAGE_SIZE = 15
 
 dash.register_page(__name__, path="/")
 
+LIGHT_THEME = 'bootstrap'
+DARK_THEME = 'bootstrap_dark'
+
 def layout():
     return html.Div([
-        dcc.Graph(id="machine-graph"),
+        # display: none hides the graph until it populates, because I'm not sure how to set dark mode while the graph
+        # is loading
+        dcc.Graph(id="machine-graph", style={"display": "none"}),
         dbc.Row(align="center", children=[
             dbc.Col(width="auto", children=[
                 dcc.DatePickerRange(id="plot-range",
@@ -77,9 +86,11 @@ def layout():
             id="file-status-cards",
         ),
         html.Div([
-            html.Div(children=[dcc.Graph(id="flow-throughput")], style={"padding": 10, "flex": 1}),
+            # display: none hides the graph until it populates, because I'm not sure how to set dark mode while the
+            # graph is loading
+            html.Div(children=[dcc.Graph(id="flow-throughput", style={"display": "none"})], style={"padding": 10, "flex": 1}),
 
-            html.Div(children=[dcc.Graph(id="flow-duration")], style={"padding": 10, "flex": 1}),
+            html.Div(children=[dcc.Graph(id="flow-duration", style={"display": "none"})], style={"padding": 10, "flex": 1}),
         ], style={"display": "flex", "flexDirection": "row"}),
         dash_table.DataTable(id="flows-table",
                              data=pd.DataFrame({name: [] for name in column_names}).to_dict("records"),
@@ -185,8 +196,9 @@ def create_card_content(level: int | str, type: str | None, status: str, message
 @callback(
     Output("status-cards", "children"),
     Input("interval-component", "n_intervals"),
+    Input("color-mode-switch", "value"),
 )
-def update_cards(n):
+def update_flow_cards(n, light_mode):
     with get_database_session() as session:
         reference_time = datetime.now() - timedelta(hours=24)
         query = (f"SELECT flow_level AS level, flow_type, SUM(state = 'completed') AS n_good, "
@@ -213,7 +225,7 @@ def update_cards(n):
 
         if len(sub_df) == 0:
             cards.append(dbc.Col(dbc.Card(create_card_content(level,  type, "", "No activity"),
-                                          color="light", inverse=False)))
+                                          color="light" if light_mode else "dark", inverse=False)))
             continue
 
         n_good, n_bad, n_running = sub_df["n_good"].sum(), sub_df["n_bad"].sum(), sub_df["n_running"].sum()
@@ -224,7 +236,7 @@ def update_cards(n):
         message = (f"{n_good:.0f} ✅     {n_bad + n_timed_out:.0f} ⛔     {n_launched:.0f} 🚀     {n_running:.0f} ⏳     "
                    f"{n_planned:.0f} 💭")
         if n_good == 0 and n_bad == 0 and n_planned == 0 and n_launched == 0 and n_running == 0:
-            color = "light"
+            color = "light" if light_mode else "dark"
             status = ""
             message = "No activity"
         elif (n_good > 0 and n_bad / n_good > 0.95) or (n_good == 0 and n_bad):
@@ -262,8 +274,9 @@ def create_file_card_content(level: int | str, type: str | None, status: str, me
 @callback(
     Output("file-status-cards", "children"),
     Input("interval-component", "n_intervals"),
+    Input("color-mode-switch", "value"),
 )
-def update_file_cards(n):
+def update_file_cards(n, light_mode):
     query = ("SELECT level, file_type, SUM(state = 'created') AS n_created, "
              "SUM(state = 'failed') AS n_failed, SUM(state = 'planned') AS n_planned, "
              "SUM(state = 'creating') AS n_creating, SUM(state = 'progressed') AS n_progressed, "
@@ -280,7 +293,7 @@ def update_file_cards(n):
 
         if len(sub_df) == 0:
             cards.append(dbc.Col(dbc.Card(create_file_card_content(level, type, "", "No activity"),
-                                          color="light", inverse=False)))
+                                          color="light" if light_mode else "dark", inverse=False)))
             continue
 
         n_created, n_failed = sub_df["n_created"].sum(), sub_df["n_failed"].sum()
@@ -297,7 +310,7 @@ def update_file_cards(n):
         message = (f"{n_good:.0f} ✅ {sub_status}\n{n_failed + n_timed_out:.0f} ⛔     {n_creating:.0f} ⏳     "
                    f"{n_planned:.0f} 💭️")
         if n_good == 0 and n_failed == 0:
-            color = "light"
+            color = "light" if light_mode else "dark"
             status = ""
             message = "No activity"
         elif n_failed / n_good > 0.95:
@@ -315,14 +328,16 @@ def update_file_cards(n):
 
 @callback(
     Output("machine-graph", "figure"),
+    Output("machine-graph", "style"),
     Input("interval-component", "n_intervals"),
     Input("machine-stat", "value"),
     Input("plot-range", "start_date"),
     Input("plot-range", "end_date"),
     Input("machine-stat-smoothing", "value"),
-    Input("host-selector", "value")
+    Input("host-selector", "value"),
+    State("color-mode-switch", "value"),
 )
-def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window, host):
+def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window, host, light_mode):
     axis_labels = {"cpu_usage": "CPU Usage %",
                    "memory_usage": "Memory Usage[GB]",
                    "memory_percentage": "Memory Usage %",
@@ -344,18 +359,22 @@ def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window, h
         smooth_window = int(round(smooth_window))
         df = df.rolling(f"{smooth_window}min", on="datetime", center=True, min_periods=0).mean()
 
-    fig = px.line(df, x="datetime", y=machine_stat, title="Machine stats")
+    fig = px.line(df, x="datetime", y=machine_stat, title="Machine stats",
+                  template=LIGHT_THEME if light_mode else DARK_THEME)
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text=axis_labels[machine_stat])
 
-    return fig
+    return fig, {}
 
 @callback(
     Output("flow-throughput", "figure"),
     Output("flow-duration", "figure"),
+    Output("flow-throughput", "style"),
+    Output("flow-duration", "style"),
     Input("interval-component", "n_intervals"),
+    State("color-mode-switch", "value"),
 )
-def update_flow_stats(n):
+def update_flow_stats(n, light_mode):
     now = datetime.now()
     reference_time = now - timedelta(hours=72)
     query = ("SELECT flow_type, end_time AS hour, AVG(TIMEDIFF(end_time, start_time)) AS duration, "
@@ -392,12 +411,30 @@ def update_flow_stats(n):
         df.loc[df["hour"] == now_index, "count"] = None
 
     fig_throughput = px.line(df, x="hour", y="count", color="flow_type", line_dash="state",
-                             title="Flow throughput (current hour's throughput is extrapolated)")
+                             title="Flow throughput (current hour's throughput is extrapolated)",
+                             template=LIGHT_THEME if light_mode else DARK_THEME)
     fig_throughput.update_xaxes(title_text="Time")
     fig_throughput.update_yaxes(title_text="Flow runs per hour")
     fig_duration = px.line(df[df["state"] == "completed"], x="hour", y="duration", color="flow_type",
-                           title="Flow duration")
+                           title="Flow duration",
+                           template=LIGHT_THEME if light_mode else DARK_THEME)
     fig_duration.update_xaxes(title_text="Time")
     fig_duration.update_yaxes(title_text="Average flow duration (s)")
 
-    return fig_throughput, fig_duration
+    return fig_throughput, fig_duration, {}, {}
+
+
+@callback(
+    Output("machine-graph", "figure", allow_duplicate=True),
+    Output("flow-throughput", "figure", allow_duplicate=True),
+    Output("flow-duration", "figure", allow_duplicate=True),
+    Input("color-mode-switch", "value"),
+    prevent_initial_call=True,
+)
+def update_figure_template(light_mode):
+    # When using Patch() to update the figure template, you must use the figure template dict
+    # from plotly.io  and not just the template name
+    template = pio.templates[LIGHT_THEME if light_mode else DARK_THEME]
+    patched_figure = Patch()
+    patched_figure["layout"]["template"] = template
+    return patched_figure, patched_figure, patched_figure

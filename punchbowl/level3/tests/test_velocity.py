@@ -135,6 +135,7 @@ def test_sample_radial_outflows(tmpdir):
         meta['DATE-BEG'] = "2024-01-01T00:00:00"
         meta['DATE-END'] = "2024-01-01T00:00:00"
         meta['DATE-AVG'] = "2024-01-01T00:00:00"
+        meta["OBS-MODE"] = "Polarized"
 
         # Create NDCube
         uncertainty = StdDevUncertainty(np.zeros_like(radial_outflow_data))

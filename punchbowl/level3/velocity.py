@@ -74,8 +74,12 @@ def preprocess_image(data: NDCube, max_radius_px: int, num_azimuth_bins: int, az
 
     """
     # Replace with appropriate preprocessing needed to clean-up. We need to have finite values for the polar remap
-    image = data.data[0,...]
     header = data.meta.to_fits_header(wcs=data.wcs)
+
+    if header["OBS-MODE"] == "Polarized":
+        image = data.data[0, ...]
+    elif header["OBS-MODE"] == "Unpolarized":
+        image = data.data[...]
 
     image[~np.isfinite(image)] = 0
 

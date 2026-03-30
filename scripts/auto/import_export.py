@@ -171,7 +171,7 @@ class ExportedFile:
 
             if parent is not None:
                 # Stray light, F-corona, and starfield models shouldn't affect the parents' state
-                if self.file_type[0] != 'S' and self.file_type not in ['PF', 'CF', 'PS', 'CS']:
+                if self.file_type[0] not in ('T', 'S') and self.file_type not in ['PF', 'CF', 'PS', 'CS']:
                     parent.state = parent_state
                 if not (session.query(FileRelationship)
                         .where(FileRelationship.parent == parent.file_id)

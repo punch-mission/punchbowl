@@ -51,6 +51,7 @@ def synthetic_data(tmpdir):
         meta['DATE-BEG'] = "2024-01-01T00:00:00"
         meta['DATE-END'] = "2024-01-01T00:00:00"
         meta['DATE-AVG'] = "2024-01-01T00:00:00"
+        meta["OBS-MODE"] = "Polarized"
 
         # Create NDCube
         uncertainty = StdDevUncertainty(np.zeros_like(data))
@@ -102,6 +103,7 @@ def test_with_bad_data(tmpdir):
     meta['DATE-BEG'] = "2024-01-01T00:00:00"
     meta['DATE-END'] = "2024-01-01T00:00:00"
     meta['DATE-AVG'] = "2024-01-01T00:00:00"
+    meta["OBS-MODE"] = "Polarized"
 
     # Create NDCube
     uncertainty = StdDevUncertainty(np.zeros_like(data))

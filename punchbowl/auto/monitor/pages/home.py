@@ -1,3 +1,4 @@
+import socket
 from datetime import datetime, timedelta
 
 import dash
@@ -59,8 +60,9 @@ def layout():
                 dcc.Dropdown(
                     id="host-selector",
                     options=["phoenix.spaceops.swri.org",
-                             "chimera.spaceops.swri.org"],
-                    value="phoenix.spaceops.swri.org",
+                             "chimera.spaceops.swri.org",
+                             "punch190.spaceops.swri.org"],
+                    value=socket.gethostname(),
                     clearable=False,
                     style={"width": "50%"},
                     persistence=True, persistence_type="memory"

@@ -582,9 +582,11 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
     corona_models = []
     corona_model_dates = []
     valid_dates = [m[0].datetime for m in metas if m is not None]
-    dstart = valid_dates[0]
+    dstart = valid_dates[0] - timedelta(hours=24)
     dstop = dstart + timedelta(hours=30)
     while dstop < valid_dates[-1]:
+        dstart += timedelta(hours=24)
+        dstop += timedelta(hours=24)
         istart = np.argmin([np.abs((m[0].datetime - dstart).total_seconds()) if m is not None else 9e99 for m in metas])
         istop = np.argmin([np.abs((m[0].datetime - dstop).total_seconds()) if m is not None else 9e99 for m in metas])
         if istop - istart < 50:
@@ -602,8 +604,6 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
         np.nan_to_num(model, copy=False)
         corona_models.append(model)
         corona_model_dates.append(mdate)
-        dstart += timedelta(hours=24)
-        dstop += timedelta(hours=24)
 
     logger.info("Models made; subtracting")
 

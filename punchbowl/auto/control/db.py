@@ -74,6 +74,7 @@ Index("CNN", File.file_type, File.observatory, File.level, File.state, File.outl
 Index("processing_flow_index", File.processing_flow)
 # This is really useful for a files dashboard "show me what we made today" query
 Index("date_created_index", File.date_created, File.file_type, File.level)
+Index("dash_file_cards", File.level, File.file_type, File.state)
 Index("level0_uniqueness",
       File.level, File.polarization, File.file_type,
       File.observatory, File.file_version, File.date_obs,

@@ -193,12 +193,12 @@ def update_cards(n):
                   "SUM(state = 'failed') AS n_bad, SUM(state = 'running') AS n_running,"
                  f"SUM(state = 'timed_out') AS n_timed_out "
                  f"FROM flows WHERE start_time > '{reference_time}' "
-                  "GROUP BY level, flow_type;")
+                  "AND state not in ('launched', 'planned') GROUP BY level, flow_type;")
         df = pd.read_sql_query(query, session.connection())
         # These states don't have a start_time set
         query = ("SELECT flow_level AS level, flow_type, "
                  "SUM(state = 'launched') AS n_launched, SUM(state = 'planned') AS n_planned "
-                 "FROM flows GROUP BY level, flow_type;")
+                 "FROM flows where state in ('launched', 'planned') GROUP BY level, flow_type;")
         second_df = pd.read_sql_query(query, session.connection())
     df = df.dropna().merge(second_df.dropna().set_index("level"), on=["level", "flow_type"], how="outer")
     df = df.infer_objects()
@@ -369,9 +369,12 @@ def update_flow_stats(n):
     dates = pd.date_range(reference_time, now, freq=timedelta(hours=1)).floor("h")
     additions = []
     for flow_type in df.flow_type.unique():
+        m_flowtype = df.flow_type == flow_type
         for d in dates:
+            m_date = df.hour == d
             for state in ["failed", "completed"]:
-                if len(df.query("hour == @d and state == @state and flow_type == @flow_type")) == 0:
+                m_state = df.state == state
+                if sum(m_flowtype * m_date * m_state) == 0:
                     additions.append([flow_type, d, None, 0, state])
     df = pd.concat([df, pd.DataFrame(additions, columns=df.columns)], ignore_index=True)
     df.sort_values(["state", "hour"], inplace=True)

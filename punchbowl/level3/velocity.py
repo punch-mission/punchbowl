@@ -52,7 +52,7 @@ def preprocess_image(data: NDCube,
                      max_radius_px: int,
                      num_azimuth_bins: int,
                      az_bin: int,
-                     normalize:bool = True) -> np.ndarray:
+                     normalize: bool = True) -> np.ndarray:
     """
     Normalize and preprocess FITS image by removing bad values and scaling.
 
@@ -69,6 +69,9 @@ def preprocess_image(data: NDCube,
 
     az_bin: int
         Binning factor for binning the polar remapped image over the azimuth. The binning rule is currently numpy.mean()
+
+    normalize: bool
+        Whether to normalize the image with radial processing and flat-like correction
 
     Returns
     -------

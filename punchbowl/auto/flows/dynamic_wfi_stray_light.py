@@ -131,9 +131,11 @@ def construct_dynamic_stray_light_check_for_inputs(session,
     first_half_pairs = collect_pairs_by_phase(first_half_phases, first_phase, second_phase)
     second_half_pairs = collect_pairs_by_phase(second_half_phases, first_phase, second_phase)
 
-    enough_L1s = len(first_half_pairs) > min_files_per_half / 2 and len(second_half_pairs) > min_files_per_half / 2
-    max_L1s = len(first_half_pairs) == max_files_per_half / 2 and len(second_half_pairs) == max_files_per_half / 2
+    first_half_inputs = first_half_inputs[::-1]
+    first_half_pairs = first_half_pairs[::-1]
 
+    enough_L1s = len(first_half_pairs) > min_files_per_half / 2 and len(second_half_pairs) > min_files_per_half / 2
+    max_L1s = len(first_half_pairs) >= max_files_per_half / 2 and len(second_half_pairs) >= max_files_per_half / 2
     produce = False
     if more_L0_impossible:
         if len(first_half_L0s) < min_files_per_half or len(second_half_L0s) < min_files_per_half:
@@ -143,15 +145,18 @@ def construct_dynamic_stray_light_check_for_inputs(session,
             reference_file.software_version = __version__
             reference_file.date_created = datetime.now()
             logger.info(f"{reference_file.filename()} marked impossible")
-        elif all_inputs_ready and enough_L1s:
-            n = min(len(first_half_pairs), len(second_half_pairs), int(max_files_per_half / 2))
-            first_half_pairs = first_half_pairs[:n]
-            second_half_pairs = second_half_pairs[:n]
+        elif (all_inputs_ready and enough_L1s) or max_L1s:
             produce = True
     elif max_L1s:
         produce = True
 
     if produce:
+        # Since the two lists of groups are in nearest-to-the-reference-date first order, cutting them to the
+        # same size helps ensure the range they cover is symmetric around the ref date.
+        n = min(len(first_half_pairs), len(second_half_pairs), int(max_files_per_half / 2))
+        first_half_pairs = first_half_pairs[:n]
+        second_half_pairs = second_half_pairs[:n]
+
         all_ready_files = [x for y in first_half_pairs for x in y] + [x for y in second_half_pairs for x in y]
         logger.info(f"{len(all_ready_files)} Level 1 {target_file_type}{reference_file.observatory} files will be used "
                      "for dynamic WFI stray light estimation.")

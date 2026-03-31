@@ -20,7 +20,7 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
                                           reference_file: File):
     logger = get_run_logger()
 
-    polarized = reference_file.file_type != "SR"
+    polarized = reference_file.file_type != "CF"
     pol_type = 'pol' if polarized else 'clear'
     target_file_type = 'XP' if polarized else 'XR'
 

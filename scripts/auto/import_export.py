@@ -248,7 +248,8 @@ if __name__ == "__main__":
         if args.dcreate_end:
             query = query.where(File.date_created < parse_datetime_str(args.dcreate_end))
 
-        files = query.all()
+        # Order so that parents always get imported before their children
+        files = query.order_by(File.date_created.asc()).all()
 
         files = [ExportedFile.export_File(f, session) for f in tqdm(files)]
 

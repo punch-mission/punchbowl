@@ -181,13 +181,6 @@ def determine_wcs(filenames: list, map_scale: float) -> WCS:
 
     # Find the center of all the images
     crval = circmean(ras, low=0, high=360), circmean(decs, low=-90, high=90)
-    dec_min = np.min(decs)
-    dec_max = np.max(decs)
-
-    # Wrap the RAs to be centered on the center and then find the bounds
-    ras_rel = (ras - crval[0] + 180) % 360
-    ras_min = np.min(ras_rel) - 180 + crval[0]
-    ras_max = np.max(ras_rel) - 180 + crval[0]
 
     # Start with an all-sky WCS, which we'll crop in
     shape = [floor(180 / map_scale), floor(360 / map_scale)]
@@ -202,8 +195,9 @@ def determine_wcs(filenames: list, map_scale: float) -> WCS:
     starfield_wcs.array_shape = shape
 
     # Find the crop bounds
-    xmin, ymin = starfield_wcs.world_to_pixel_values(ras_min, dec_min)
-    xmax, ymax = starfield_wcs.world_to_pixel_values(ras_max, dec_max)
+    xs, ys = starfield_wcs.world_to_pixel_values(ras, decs)
+    xmin, xmax = xs.min(), xs.max()
+    ymin, ymax = ys.min(), ys.max()
     margin = 5 # In degrees
     xmin = int(xmin - margin / map_scale)
     ymin = int(ymin - margin / map_scale)

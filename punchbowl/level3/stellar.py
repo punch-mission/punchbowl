@@ -133,7 +133,7 @@ class PUNCHImageProcessor(ImageProcessor):
 
     def load_image(self, filename: str) -> ImageHolder:
         """Load an image."""
-        cube = load_ndcube_from_fits(filename, key=self.key)
+        cube = load_ndcube_from_fits(filename, key=self.key, include_provenance=False, include_uncertainty=False)
 
         if self.layer is None:  # clear data
             data = cube.data

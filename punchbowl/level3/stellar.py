@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import astropy.units as u
 import numpy as np
 import remove_starfield
+from astropy.io import fits
 from astropy.io.fits import getheader
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
@@ -13,6 +14,7 @@ from ndcube import NDCollection, NDCube
 from prefect import get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
+from scipy.stats import circmean
 from solpolpy import resolve
 from solpolpy.util import solnorth_from_wcs
 
@@ -146,6 +148,70 @@ class PUNCHImageProcessor(ImageProcessor):
         return ImageHolder(data, cube.wcs.celestial, cube.meta)
 
 
+def determine_wcs(filenames: list, map_scale: float) -> WCS:
+    """Calculate a tightly-cropped model WCS."""
+    # Load a sample of WCSes and see where they fall in the sky
+    wcs_sample = []
+    filenames = sorted(filenames)
+    # Load a sample evenly-spaced through the files, being sure to include the first and last images
+    indices = np.linspace(0, len(filenames) - 1, 150, dtype=int)
+    for i in indices:
+        path = filenames[i]
+        with fits.open(path) as hdul:
+            wcs = WCS(hdul[1].header, hdul, key="A")
+            wcs_sample.append(wcs)
+
+    # Get the coordinates of the edge of each image
+    ras = []
+    decs = []
+    xs = np.linspace(-1, wcs_sample[0].array_shape[1], 500)
+    ys = np.linspace(-1, wcs_sample[0].array_shape[1], 500)
+    edgex = np.concatenate((xs,  # bottom edge
+                            np.full(len(ys), xs[-1]),  # right edge
+                            xs,  # top edge
+                            np.full(len(ys), xs[0])))  # left edge
+    edgey = np.concatenate((np.full(len(xs), ys[0]),  # bottom edge
+                            ys,  # right edge
+                            np.full(len(xs), ys[-1]),  # top edge
+                            ys))  # left edge
+    for wcs in wcs_sample:
+        w = wcs.pixel_to_world(edgex, edgey)
+        ras.extend(w.ra.deg.ravel())
+        decs.extend(w.dec.deg.ravel())
+
+    # Find the center of all the images
+    crval = circmean(ras, low=0, high=360), circmean(decs, low=-90, high=90)
+    dec_min = np.min(decs)
+    dec_max = np.max(decs)
+
+    # Wrap the RAs to be centered on the center and then find the bounds
+    ras_rel = (ras - crval[0] + 180) % 360
+    ras_min = np.min(ras_rel) - 180 + crval[0]
+    ras_max = np.max(ras_rel) - 180 + crval[0]
+
+    # Start with an all-sky WCS, which we'll crop in
+    shape = [floor(180 / map_scale), floor(360 / map_scale)]
+    starfield_wcs = WCS(naxis=2)
+    # n.b. it seems the RA wrap point is chosen so there's 180 degrees
+    # included on either side of crpix
+    starfield_wcs.wcs.crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
+    starfield_wcs.wcs.crval = crval
+    starfield_wcs.wcs.cdelt = map_scale, map_scale
+    starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
+    starfield_wcs.wcs.cunit = "deg", "deg"
+    starfield_wcs.array_shape = shape
+
+    # Find the crop bounds
+    xmin, ymin = starfield_wcs.world_to_pixel_values(ras_min, dec_min)
+    xmax, ymax = starfield_wcs.world_to_pixel_values(ras_max, dec_max)
+    margin = 5 # In degrees
+    xmin = int(xmin - margin / map_scale)
+    ymin = int(ymin - margin / map_scale)
+    xmax = int(xmax + margin / map_scale)
+    ymax = int(ymax + margin / map_scale)
+    return starfield_wcs[ymin:ymax, xmin:xmax]
+
+
 @punch_flow(log_prints=True, timeout_seconds=21_600)
 def generate_starfield_background(
         filenames: list[str],
@@ -171,16 +237,7 @@ def generate_starfield_background(
         msg = "filenames cannot be empty"
         raise ValueError(msg)
 
-    shape = [floor(132 / map_scale), floor(360 / map_scale)]
-    starfield_wcs = WCS(naxis=2)
-    # n.b. it seems the RA wrap point is chosen so there's 180 degrees
-    # included on either side of crpix
-    starfield_wcs.wcs.crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
-    starfield_wcs.wcs.crval = 270, -23.5
-    starfield_wcs.wcs.cdelt = map_scale, map_scale
-    starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
-    starfield_wcs.wcs.cunit = "deg", "deg"
-    starfield_wcs.array_shape = shape
+    starfield_wcs = determine_wcs(filenames, map_scale)
 
     date_obses = [getheader(f, 1)["DATE-OBS"] for f in filenames]
     times = [datetime.fromisoformat(d) for d in date_obses]
@@ -202,6 +259,7 @@ def generate_starfield_background(
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
+            handle_wrap_point=False,
             target_mem_usage=target_mem_usage)
         logger.info("Ending m starfield")
 
@@ -214,6 +272,7 @@ def generate_starfield_background(
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
+            handle_wrap_point=False,
             target_mem_usage=target_mem_usage)
         logger.info("Ending z starfield")
 
@@ -226,6 +285,7 @@ def generate_starfield_background(
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
+            handle_wrap_point=False,
             target_mem_usage=target_mem_usage)
         logger.info("Ending p starfield")
 
@@ -241,6 +301,7 @@ def generate_starfield_background(
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
             processor=PUNCHImageProcessor(None, apply_mask=True, key="A"),
+            handle_wrap_point=False,
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
         out_data = starfield_clear.starfield
@@ -307,21 +368,24 @@ def subtract_starfield_background_task(data_object: NDCube,
                 NDCube(data=np.stack((data_object.data[0], data_object.uncertainty.array[0])),
                        wcs=data_object.wcs[0],
                        meta=data_object.meta),
-                       processor=PUNCHImageProcessor(layer=0, key="A"))
+                handle_wrap_point=False,
+                processor=PUNCHImageProcessor(layer=0, key="A"))
             starfield_model_z = Starfield(np.stack((star_datacube.data[1], star_datacube.uncertainty.array[1])),
                                           wcs_celestial[1])
             subtracted_z = starfield_model_z.subtract_from_image(
                 NDCube(data=np.stack((data_object.data[1], data_object.uncertainty.array[1])),
                        wcs=data_object.wcs[1],
                        meta=data_object.meta),
-                       processor=PUNCHImageProcessor(layer=1, key="A"))
+                handle_wrap_point=False,
+                processor=PUNCHImageProcessor(layer=1, key="A"))
             starfield_model_p = Starfield(np.stack((star_datacube.data[2], star_datacube.uncertainty.array[2])),
                                           wcs_celestial[2])
             subtracted_p = starfield_model_p.subtract_from_image(
                 NDCube(data=np.stack((data_object.data[2], data_object.uncertainty.array[2])),
                        wcs=data_object.wcs[2],
                        meta=data_object.meta),
-                       processor=PUNCHImageProcessor(layer=2, key="A"))
+                handle_wrap_point=False,
+                processor=PUNCHImageProcessor(layer=2, key="A"))
 
             data_object.data[...] = np.stack([subtracted_m.subtracted[0],
                                               subtracted_z.subtracted[0],
@@ -336,7 +400,8 @@ def subtract_starfield_background_task(data_object: NDCube,
                 NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
                        wcs=data_object.wcs,
                        meta=data_object.meta),
-                       processor=PUNCHImageProcessor(key="A"))
+                handle_wrap_point=False,
+                processor=PUNCHImageProcessor(key="A"))
 
             data_object.data[...] = subtracted.subtracted[0]
             data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 +

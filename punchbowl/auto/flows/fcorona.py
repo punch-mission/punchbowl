@@ -69,8 +69,8 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     else:
         status = []
         status.append("not enough inputs")
-        status.append(f"first half: {Counter([f.file_type for f in first_half_inputs])} files")
-        status.append(f"second half: {Counter([f.file_type for f in second_half_inputs])} files")
+        status.append(f"first half: {len(first_half_inputs)} files")
+        status.append(f"second half: {len(second_half_inputs)} files")
         status.append(f"looked for inputs between {t_start.isoformat(' ')} and {t_end.isoformat(' ')}")
         logger.info(f'{reference_file.filename()}: ' + '; '.join(status))
     return []

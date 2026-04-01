@@ -1,1 +1,0 @@
-Allow get_database_session to take a custom credential name

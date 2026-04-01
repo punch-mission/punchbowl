@@ -1,1 +1,0 @@
-Modified velocity.py to work with Clears and Polarized; solar north made to angle zero in polarmap.

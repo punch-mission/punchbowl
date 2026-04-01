@@ -1,4 +1,46 @@
-0.0.2. (2026-03-20)
+0.0.23 (2026-04-01)
+===================
+
+New Features
+------------
+
+- Update the QuickPUNCH products to their new definitions. (`#813 <https://github.com/punch-mission/punchbowl/pull/813>`__)
+- Begin writing hashes for JP2 files. (`#813 <https://github.com/punch-mission/punchbowl/pull/813>`__)
+- Allow get_database_session to take a custom credential name (`#824 <https://github.com/punch-mission/punchbowl/pull/824>`__)
+- F corona models are now built per-instrument, to account for the coupling between them and stray light models. (`#830 <https://github.com/punch-mission/punchbowl/pull/830>`__)
+- Crops quicklook images to a circle circumscribed within the output square dimensions. (`#834 <https://github.com/punch-mission/punchbowl/pull/834>`__)
+- CAM/PAM can be configured to use *IM or *TM as input (`#836 <https://github.com/punch-mission/punchbowl/pull/836>`__)
+- `!=` filters in the files dashboard now handle wildcards and multiple filters correctly. (`#840 <https://github.com/punch-mission/punchbowl/pull/840>`__)
+- ShmPickleableNDArray, a shared-memory-backed numpy array that pickles and un-pickles extremely efficiently. (`#843 <https://github.com/punch-mission/punchbowl/pull/843>`__)
+- The stray light model generation has been improved by running an "all-corona" background removal first, so the stray
+  light being estimated is a more dominant signal. The "fall-back model" has also been removed---instead, large amounts
+  of outlier images are just used to make stray light models, which tends to be a "lesser evil" approach. Alignment and
+  PSF correction have been moved to L1_early to support this change. (`#843 <https://github.com/punch-mission/punchbowl/pull/843>`__)
+- Change L2 X files to be cropped and contain all polarization layers, speeding up the L3 flows. (`#845 <https://github.com/punch-mission/punchbowl/pull/845>`__)
+- F corona modelling is significantly faster, using cropped X files and shared memory for loading. (`#845 <https://github.com/punch-mission/punchbowl/pull/845>`__)
+- Use the shared memory cache for F corona models. (`#845 <https://github.com/punch-mission/punchbowl/pull/845>`__)
+- Modified velocity.py to work with Clears and Polarized; solar north made to angle zero in polarmap. (`#847 <https://github.com/punch-mission/punchbowl/pull/847>`__)
+
+
+Bug Fixes
+---------
+
+- CAM/PAM scheduling no longer waits if some inputs are outlier images (`#836 <https://github.com/punch-mission/punchbowl/pull/836>`__)
+
+
+Documentation
+-------------
+
+- Improves the text for the landing page for data and a few other small docs improvements. (`#837 <https://github.com/punch-mission/punchbowl/pull/837>`__)
+
+
+Internal Changes
+----------------
+
+- Speedster now suppresses log messages from `httpx`. (`#841 <https://github.com/punch-mission/punchbowl/pull/841>`__)
+
+
+0.0.22 (2026-03-20)
 ===================
 
 New Features

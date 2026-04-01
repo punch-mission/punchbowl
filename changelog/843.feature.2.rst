@@ -1,1 +1,0 @@
-ShmPickleableNDArray, a shared-memory-backed numpy array that pickles and un-pickles extremely efficiently.

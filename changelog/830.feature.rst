@@ -1,1 +1,0 @@
-F corona models are now built per-instrument, to account for the coupling between them and stray light models.

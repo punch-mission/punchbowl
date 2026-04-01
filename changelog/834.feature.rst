@@ -1,1 +1,0 @@
-Crops quicklook images to a circle circumscribed within the output square dimensions.

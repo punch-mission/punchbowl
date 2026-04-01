@@ -257,8 +257,7 @@ def generate_starfield_background(
             handle_wrap_point=False,
             target_mem_usage=target_mem_usage)
         logger.info("Ending m starfield")
-        pfilter_data = percentile_filter(starfield_m.starfield, 5, 10)
-        out_data_m = (starfield_m.starfield - pfilter_data) * 0.9
+        out_data_m = starfield_m.starfield - percentile_filter(starfield_m.starfield, 5, 10)
         out_data_m[out_data_m < 0] = 0
 
         logger.info("Starting z starfield")
@@ -273,8 +272,7 @@ def generate_starfield_background(
             handle_wrap_point=False,
             target_mem_usage=target_mem_usage)
         logger.info("Ending z starfield")
-        pfilter_data = percentile_filter(starfield_z.starfield, 5, 10)
-        out_data_z = (starfield_z.starfield - pfilter_data) * 0.9
+        out_data_z = starfield_z.starfield - percentile_filter(starfield_z.starfield, 5, 10)
         out_data_z[out_data_z < 0] = 0
 
         logger.info("Starting p starfield")
@@ -289,8 +287,7 @@ def generate_starfield_background(
             handle_wrap_point=False,
             target_mem_usage=target_mem_usage)
         logger.info("Ending p starfield")
-        pfilter_data = percentile_filter(starfield_p.starfield, 5, 10)
-        out_data_p = (starfield_p.starfield - pfilter_data) * 0.9
+        out_data_p = starfield_p.starfield - percentile_filter(starfield_p.starfield, 5, 10)
         out_data_p[out_data_p < 0] = 0
 
         out_data = np.stack([out_data_m, out_data_z, out_data_p], axis=0)
@@ -308,9 +305,7 @@ def generate_starfield_background(
             handle_wrap_point=False,
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
-        out_data = starfield_clear.starfield
-        pfilter_data = percentile_filter(out_data, 5, 10)
-        out_data = (out_data - pfilter_data) * 0.9
+        out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, 5, 10)
         out_data[out_data < 0] = 0
         out_wcs = calculate_helio_wcs_from_celestial(starfield_clear.wcs,
                                                         meta.astropy_time,

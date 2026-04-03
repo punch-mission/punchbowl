@@ -6,6 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from dateutil.parser import parse as parse_datetime_str
+from sqlalchemy import or_
 from sqlalchemy.orm import aliased
 from tqdm import tqdm
 
@@ -170,7 +171,7 @@ class ExportedFile:
 
             if parent is not None:
                 # Stray light, F-corona, and starfield models shouldn't affect the parents' state
-                if self.file_type[0] != 'S' and self.file_type not in ['PF', 'CF', 'PS', 'CS']:
+                if self.file_type[0] not in ('T', 'S') and self.file_type not in ['PF', 'CF', 'PS', 'CS']:
                     parent.state = parent_state
                 if not (session.query(FileRelationship)
                         .where(FileRelationship.parent == parent.file_id)
@@ -229,7 +230,11 @@ if __name__ == "__main__":
         if args.level:
             query = query.where(File.level.in_(args.level))
         if args.type:
-            query = query.where(File.file_type.in_(args.type))
+            if any('%' in t for t in args.type):
+                conditions = [File.file_type.like(t) for t in args.type]
+                query = query.where(or_(*conditions))
+            else:
+                query = query.where(File.file_type.in_(args.type))
         if args.obs:
             query = query.where(File.observatory.in_(args.obs))
         if args.file_version:
@@ -243,7 +248,8 @@ if __name__ == "__main__":
         if args.dcreate_end:
             query = query.where(File.date_created < parse_datetime_str(args.dcreate_end))
 
-        files = query.all()
+        # Order so that parents always get imported before their children
+        files = query.order_by(File.date_created.asc()).all()
 
         files = [ExportedFile.export_File(f, session) for f in tqdm(files)]
 

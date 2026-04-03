@@ -430,6 +430,7 @@ def _estimate_stray_light_one_slice(data_array: np.ndarray, y: int, x_grid: np.n
     return result
 
 
+@punch_task
 def _load_files(filepaths: list[str], mosaic_wcs: WCS, logger: Logger, do_uncertainty: bool, pool: ProcessPoolExecutor,
                 polarized: bool) -> tuple[ShmPickleableNDArray, ShmPickleableNDArray, list[WCS],
                                           list[NormalizedMetadata], np.ndarray]:
@@ -582,9 +583,11 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
     corona_models = []
     corona_model_dates = []
     valid_dates = [m[0].datetime for m in metas if m is not None]
-    dstart = valid_dates[0]
+    dstart = valid_dates[0] - timedelta(hours=24)
     dstop = dstart + timedelta(hours=30)
     while dstop < valid_dates[-1]:
+        dstart += timedelta(hours=24)
+        dstop += timedelta(hours=24)
         istart = np.argmin([np.abs((m[0].datetime - dstart).total_seconds()) if m is not None else 9e99 for m in metas])
         istop = np.argmin([np.abs((m[0].datetime - dstop).total_seconds()) if m is not None else 9e99 for m in metas])
         if istop - istart < 50:
@@ -602,8 +605,6 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
         np.nan_to_num(model, copy=False)
         corona_models.append(model)
         corona_model_dates.append(mdate)
-        dstart += timedelta(hours=24)
-        dstop += timedelta(hours=24)
 
     logger.info("Models made; subtracting")
 
@@ -615,6 +616,21 @@ def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.nda
         if (i + 1) % 100 == 0:
             logger.info(f"Corona-subtracted {i + 1}/{len(data_array)} {'triplets' if polarized else 'files'}")
     logger.info("Models subtracted")
+
+
+@punch_task
+def _make_set_of_sl_models(bin_masks: list, logger: Logger, outliers: np.ndarray,
+                       strided_image_mask: np.ndarray,
+                       x_grid: np.ndarray, y_grid: np.ndarray, window_half_width: int, image_mask: np.ndarray,
+                       data_array: np.ndarray, make_plots_along_the_way: bool, blur_sigma: float, stride: int,
+                       window_size: int, pool: ProcessPoolExecutor) -> list:
+    models = []
+    for bin_n, bin_mask in enumerate(bin_masks):
+        models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers,
+                                         strided_image_mask, x_grid, y_grid, window_half_width, image_mask,
+                                         data_array, make_plots_along_the_way, blur_sigma, stride,
+                                         window_size, pool))
+    return models
 
 
 def _make_one_sl_model(bin_n: int, bin_mask: np.ndarray, logger: Logger, outliers: np.ndarray,
@@ -694,7 +710,7 @@ def _make_one_sl_model(bin_n: int, bin_mask: np.ndarray, logger: Logger, outlier
 
 
 @punch_flow
-def estimate_stray_light(filepaths: list[str], # noqa: C901
+def estimate_stray_light(filepaths: list[str],
                          do_uncertainty: bool = True,
                          reference_time: datetime | str | None = None,
                          stride: int = 10,
@@ -789,13 +805,9 @@ def estimate_stray_light(filepaths: list[str], # noqa: C901
         start = time.time()
         for i in range(data_array.shape[1]):
             logger.info(f"Starting SL modeling for polarization state {i+1}")
-            models = []
-            for bin_n, bin_mask in enumerate(bin_masks):
-                models.append(_make_one_sl_model(bin_n, bin_mask, logger, outliers[i],
-                                                 strided_image_mask, x_grid, y_grid, window_half_width, image_mask,
-                                                 data_array[:, i], make_plots_along_the_way, blur_sigma, stride,
-                                                 window_size, pool))
-            models_per_pol.append(models)
+            models_per_pol.append(_make_set_of_sl_models(
+                bin_masks, logger, outliers[i], strided_image_mask, x_grid, y_grid, window_half_width, image_mask,
+                data_array[:, i], make_plots_along_the_way, blur_sigma, stride, window_size, pool))
         time_making_models = time.time() - start
 
     # Free this memory early, as we don't need it anymore

@@ -1,0 +1,1 @@
+Shifting masking in the starfield image processor before polarization transformations, to ensure masking.

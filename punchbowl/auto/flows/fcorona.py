@@ -1,4 +1,5 @@
 import json
+import random
 from datetime import datetime, timedelta
 from collections import Counter
 
@@ -10,7 +11,7 @@ from punchbowl import __version__
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
-from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
+from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level3.f_corona_model import construct_f_corona_model
 
@@ -19,16 +20,18 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
                                           reference_file: File):
     logger = get_run_logger()
 
-    target_file_types = ['XR'] if reference_file.polarization == 'C' else ['XP']
+    polarized = reference_file.file_type != "CF"
+    pol_type = 'pol' if polarized else 'clear'
+    target_file_type = 'XP' if polarized else 'XR'
 
-    max_hours_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_hours_per_half"]
+    max_hours_per_half = pipeline_config["flows"]["construct_f_corona_background"][f"{pol_type}_max_hours_per_half"]
     t_start = reference_time - timedelta(hours=max_hours_per_half)
     t_end = reference_time + timedelta(hours=max_hours_per_half)
-    min_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["min_files_per_half"]
-    max_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_files_per_half"]
+    min_files_per_half = pipeline_config["flows"]["construct_f_corona_background"][f"{pol_type}_min_files_per_half"]
+    max_files_per_half = pipeline_config["flows"]["construct_f_corona_background"][f"{pol_type}_max_files_per_half"]
+    file_stride = pipeline_config["flows"]["construct_stray_light"].get(f"{pol_type}_file_stride", 1)
 
-    min_files_per_half *= len(target_file_types)
-    max_files_per_half *= len(target_file_types)
+    count_multiplier = file_stride
 
     base_query = (session.query(File)
                   .filter(File.state.in_(["created", "progressed"]))
@@ -39,17 +42,23 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     first_half_inputs = (base_query
                          .filter(File.date_obs >= t_start)
                          .filter(File.date_obs <= reference_time)
-                         .filter(File.file_type.in_(target_file_types))
+                         .filter(File.file_type == target_file_type)
                          .filter(File.level == "2")
                          .order_by(File.date_obs.desc())
-                         .limit(max_files_per_half).all())
+                         .limit(max_files_per_half * count_multiplier).all())
     second_half_inputs = (base_query
                           .filter(File.date_obs >= reference_time)
                           .filter(File.date_obs <= t_end)
-                          .filter(File.file_type.in_(target_file_types))
+                          .filter(File.file_type == target_file_type)
                           .filter(File.level == "2")
                           .order_by(File.date_obs.asc())
-                          .limit(max_files_per_half).all())
+                          .limit(max_files_per_half * count_multiplier).all())
+
+    if file_stride > 1:
+        random.seed(1)
+        # Apply a stride that doesn't phase weirdly with where we are in a roll position
+        first_half_inputs = [random.choice(pair) for pair in batched(first_half_inputs, file_stride)]
+        second_half_inputs = [random.choice(pair) for pair in batched(second_half_inputs, file_stride)]
 
     enough_L2s = len(first_half_inputs) > min_files_per_half and len(second_half_inputs) > min_files_per_half
     if enough_L2s:
@@ -60,8 +69,8 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     else:
         status = []
         status.append("not enough inputs")
-        status.append(f"first half: {Counter([f.file_type for f in first_half_inputs])} files")
-        status.append(f"second half: {Counter([f.file_type for f in second_half_inputs])} files")
+        status.append(f"first half: {len(first_half_inputs)} files")
+        status.append(f"second half: {len(second_half_inputs)} files")
         status.append(f"looked for inputs between {t_start.isoformat(' ')} and {t_end.isoformat(' ')}")
         logger.info(f'{reference_file.filename()}: ' + '; '.join(status))
     return []

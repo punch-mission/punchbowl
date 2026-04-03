@@ -165,8 +165,13 @@ def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: da
 
     with warnings.catch_warnings():
         warnings.filterwarnings(action="ignore", message=".*CROTA.*Human-readable solar north pole angle.*")
+        # Make just a representative WCS with arbitrary pointing to aid in interpreting the models. Distortion is
+        # probably overkill.
+        del header["CPDIS1"]
+        del header["CPDIS2"]
+        del header["DP1"]
+        del header["DP2"]
         wcs = WCS(header)
-    wcs.wcs.pc = np.eye(2)
     return [NDCube(data=diff_maps, meta=meta, wcs=wcs)]
 
 

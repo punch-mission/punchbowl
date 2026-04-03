@@ -100,7 +100,7 @@ def construct_stray_light_check_for_inputs(session,
                         and len(second_half_inputs) >= 0.95 * len(second_half_L0s))
 
     if polarized:
-        first_half_groups = group_l2_inputs(first_half_inputs[::-1])
+        first_half_groups = group_l2_inputs(first_half_inputs[::-1])[::-1]
         second_half_groups = group_l2_inputs(second_half_inputs)
     else:
         first_half_groups = [[f] for f in first_half_inputs]
@@ -113,7 +113,7 @@ def construct_stray_light_check_for_inputs(session,
         second_half_groups = [random.choice(pair) for pair in batched(second_half_groups, file_stride)]
 
     enough_L1s = len(first_half_groups) > min_files_per_half and len(second_half_groups) > min_files_per_half
-    max_L1s = len(first_half_groups) == max_files_per_half and len(second_half_groups) == max_files_per_half
+    max_L1s = len(first_half_groups) >= max_files_per_half and len(second_half_groups) >= max_files_per_half
 
     produce = False
     if more_L0_impossible:
@@ -126,17 +126,18 @@ def construct_stray_light_check_for_inputs(session,
                 reference_file.software_version = __version__
                 reference_file.date_created = datetime.now()
                 logger.info(f"{reference_file.filename()} marked impossible")
-        elif all_inputs_ready and enough_L1s:
-            # Since the two lists of groups are in nearest-to-the-reference-date first order, cutting them to the
-            # same size helps ensure the range they cover is symmetric around the ref date.
-            n = min(len(first_half_groups), len(second_half_groups))
-            first_half_groups = first_half_groups[:n]
-            second_half_groups = second_half_groups[:n]
+        elif (all_inputs_ready and enough_L1s) or max_L1s:
             produce = True
     elif max_L1s:
         produce = True
 
     if produce:
+        # Since the two lists of groups are in nearest-to-the-reference-date first order, cutting them to the
+        # same size helps ensure the range they cover is symmetric around the ref date.
+        n = min(len(first_half_groups), len(second_half_groups))
+        first_half_groups = first_half_groups[:n]
+        second_half_groups = second_half_groups[:n]
+
         all_ready_files = first_half_groups + second_half_groups
         all_ready_files = [f for group in all_ready_files for f in group]
 
@@ -345,7 +346,7 @@ def construct_stray_light_call_data_processor(call_data: dict, pipeline_config, 
     for key in ["filepaths", "image_mask_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     del call_data["spacecraft"]
-    call_data["num_workers"] = 30
+    call_data["num_workers"] = 50
     return call_data
 
 

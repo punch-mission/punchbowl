@@ -1,5 +1,6 @@
 import os
 import time
+import signal
 import logging
 import argparse
 import warnings
@@ -19,6 +20,15 @@ from yaml.loader import FullLoader
 from punchbowl.auto.cli import find_flow
 from punchbowl.auto.control.db import Flow
 from punchbowl.auto.control.util import get_database_session
+
+interrupted = False
+def interrupt_handler(sig, frame):
+    global interrupted
+    interrupted = True
+    signal.signal(signal.SIGINT, original_interrupt_handler)
+    print("Will halt after this batch. Press Ctrl-C again to interrupt now.")
+
+original_interrupt_handler = signal.signal(signal.SIGINT, interrupt_handler)
 
 
 def load_pipeline_configuration(path: str = None) -> dict:
@@ -129,6 +139,8 @@ if __name__ == "__main__":
         if args.n_batches:
             print(f"Will stop after {args.n_batches} batches")
         while True:
+            if interrupted:
+                break
             pipeline_config = load_pipeline_configuration(config_path)
             enabled_flows = load_enabled_flows(pipeline_config)
 

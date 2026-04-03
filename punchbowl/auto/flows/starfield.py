@@ -1,4 +1,5 @@
 import json
+import random
 from datetime import datetime, timedelta
 
 from prefect import flow, get_run_logger, task
@@ -8,7 +9,7 @@ from punchbowl import __version__
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
-from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
+from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level3.stellar import generate_starfield_background
 
@@ -18,17 +19,17 @@ def starfield_background_query_ready_files(session, pipeline_config: dict,
                                            reference_time: datetime, reference_file: File):
     logger = get_run_logger()
 
-    data_type = {"PS": "polarized", "CS": "clear"}[reference_file.file_type]
+    data_type = {"PS": "pol", "CS": "clear"}[reference_file.file_type]
 
-    before_min_files = pipeline_config["flows"]["construct_starfield_background"]["before_min_files"][data_type]
-    before_max_files = pipeline_config["flows"]["construct_starfield_background"]["before_max_files"][data_type]
-    after_min_files = pipeline_config["flows"]["construct_starfield_background"]["after_min_files"][data_type]
-    after_max_files = pipeline_config["flows"]["construct_starfield_background"]["after_max_files"][data_type]
+    before_min_files = pipeline_config["flows"]["construct_starfield_background"][f"{data_type}_before_min_files"]
+    before_max_files = pipeline_config["flows"]["construct_starfield_background"][f"{data_type}_before_max_files"]
+    after_min_files = pipeline_config["flows"]["construct_starfield_background"][f"{data_type}_after_min_files"]
+    after_max_files = pipeline_config["flows"]["construct_starfield_background"][f"{data_type}_after_max_files"]
 
     days_before = pipeline_config["flows"]["construct_starfield_background"]["days_before"]
     days_after = pipeline_config["flows"]["construct_starfield_background"]["days_after"]
 
-    image_cadence = pipeline_config["flows"]["construct_starfield_background"]["image_cadence"][data_type]
+    image_cadence = pipeline_config["flows"]["construct_starfield_background"][f"{data_type}_image_cadence"]
 
     t_start = reference_time - timedelta(days=days_before)
     t_end = reference_time + timedelta(days=days_after)
@@ -56,8 +57,15 @@ def starfield_background_query_ready_files(session, pipeline_config: dict,
                           .order_by(File.date_obs.asc()).all())
     logger.info("Count of before and after halves pre-cadence step: "
                 f"{len(first_half_inputs)}, {len(second_half_inputs)}")
-    first_half_inputs = first_half_inputs[::image_cadence][0:before_max_files]
-    second_half_inputs = second_half_inputs[::image_cadence][0:after_max_files]
+
+    if image_cadence > 1:
+        random.seed(1)
+        # Apply a stride that doesn't phase weirdly with where we are in a roll position
+        first_half_inputs = [random.choice(pair) for pair in batched(first_half_inputs, image_cadence)]
+        second_half_inputs = [random.choice(pair) for pair in batched(second_half_inputs, image_cadence)]
+
+    first_half_inputs = first_half_inputs[0:before_max_files]
+    second_half_inputs = second_half_inputs[0:after_max_files]
     logger.info("Count of before and after halves post-cadence step: "
                 f"{len(first_half_inputs)}, {len(second_half_inputs)}")
 

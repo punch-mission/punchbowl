@@ -160,6 +160,8 @@ def determine_wcs(filenames: list, map_scale: float) -> WCS:
         path = filenames[i]
         with fits.open(path) as hdul:
             wcs = WCS(hdul[1].header, hdul, key="A")
+            if hdul[1].header["NAXIS"] == 3:
+                    wcs = wcs.dropaxis(2)
             wcs_sample.append(wcs)
 
     # Get the coordinates of the edge of each image

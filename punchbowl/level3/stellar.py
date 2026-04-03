@@ -42,10 +42,9 @@ def polarize_solar_to_celestial(input_data: NDCube) -> NDCube:
     mzp_angles = [-60, 0, 60]*u.degree
 
     ncols, nrows = input_data.data[0].shape
-    full_header = input_data.meta.to_fits_header(wcs=input_data.wcs,
-                                                write_celestial_wcs=not False)
-    wcs1 = WCS(full_header).dropaxis(2)
-    wcs2 = WCS(full_header, key="A").dropaxis(2)
+    wcs1 = (calculate_helio_wcs_from_celestial(input_data.wcs, input_data.meta.astropy_time, input_data.data.shape)
+            .deepcopy().dropaxis(2))
+    wcs2 = input_data.data.deepcopy().dropaxis(2)
 
     # Converting polarization w.r.t. Celestial North
     angle_solar_north = solnorth_from_wcs(wcs1, (nrows, ncols))
@@ -88,10 +87,9 @@ def polarize_celestial_to_solar(input_data: NDCube) -> NDCube:
     """
     # Compute new angles for celestial frame
     ncols, nrows = input_data.data[0].shape
-    full_header = input_data.meta.to_fits_header(wcs=input_data.wcs,
-                                                write_celestial_wcs=not False)
-    wcs1 = WCS(full_header).dropaxis(2)
-    wcs2 = WCS(full_header, key="A").dropaxis(2)
+    wcs1 = (calculate_helio_wcs_from_celestial(input_data.wcs, input_data.meta.astropy_time, input_data.data.shape)
+            .deepcopy().dropaxis(2))
+    wcs2 = input_data.data.deepcopy().dropaxis(2)
 
     # Converting polarization w.r.t. Celestial North
     angle_solar_north = solnorth_from_wcs(wcs1, (nrows, ncols))

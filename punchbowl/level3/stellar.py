@@ -138,6 +138,9 @@ class PUNCHImageProcessor(ImageProcessor):
         """Load an image."""
         cube = load_ndcube_from_fits(filename, key=self.key, include_provenance=False, include_uncertainty=False)
 
+        if self.apply_mask:
+            mask = (cube.data[self.layer] == 0) if self.layer is not None else (cube.data == 0)
+
         if self.layer is None:  # clear data
             data = cube.data
         else:  # it's polarized
@@ -145,7 +148,7 @@ class PUNCHImageProcessor(ImageProcessor):
             data = cube.data[self.layer]
 
         if self.apply_mask:
-            data[data==0] = np.nan
+            data[mask] = np.nan
         return ImageHolder(data, cube.wcs.celestial, cube.meta)
 
 

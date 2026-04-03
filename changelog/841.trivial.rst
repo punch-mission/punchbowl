@@ -1,1 +1,0 @@
-Speedster now suppresses log messages from `httpx`.

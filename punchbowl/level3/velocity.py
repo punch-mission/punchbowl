@@ -48,7 +48,11 @@ def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: flo
     return [ylo_band_idx, yhi_band_idx]
 
 
-def preprocess_image(data: NDCube, max_radius_px: int, num_azimuth_bins: int, az_bin: int) -> np.ndarray:
+def preprocess_image(data: NDCube,
+                     max_radius_px: int,
+                     num_azimuth_bins: int,
+                     az_bin: int,
+                     normalize: bool = True) -> np.ndarray:
     """
     Normalize and preprocess FITS image by removing bad values and scaling.
 
@@ -66,6 +70,9 @@ def preprocess_image(data: NDCube, max_radius_px: int, num_azimuth_bins: int, az
     az_bin: int
         Binning factor for binning the polar remapped image over the azimuth. The binning rule is currently numpy.mean()
 
+    normalize: bool
+        Whether to normalize the image with radial processing and flat-like correction
+
     Returns
     -------
     np.ndarray, dict
@@ -74,22 +81,36 @@ def preprocess_image(data: NDCube, max_radius_px: int, num_azimuth_bins: int, az
 
     """
     # Replace with appropriate preprocessing needed to clean-up. We need to have finite values for the polar remap
-    image = data.data[0,...]
     header = data.meta.to_fits_header(wcs=data.wcs)
+
+    if header["OBS-MODE"] == "Polarized":
+        image = data.data[0, ...]
+    elif header["OBS-MODE"] == "Unpolarized":
+        image = data.data[...]
 
     image[~np.isfinite(image)] = 0
 
     polar_image = cv.warpPolar(image.astype(np.float64), [int(max_radius_px), int(num_azimuth_bins)],
                                [header["CRPIX1"], header["CRPIX2"]], max_radius_px, cv.INTER_CUBIC)
 
+    # Shift azimuthal origin from +x (East) to +y (North)
+    # Roll by -N/4 so that row 0 now corresponds to 90° (North)
+    shift = num_azimuth_bins // 4
+    polar_image = np.roll(polar_image, -shift, axis=0)
+
     polar_image_binned = polar_image.T.reshape([polar_image.shape[1],
                                                 polar_image.shape[0] // az_bin, az_bin]).mean(axis=2)
 
-    # Remove background radially by taking the mean over the radial axis (From Craig's original implementation)
-    polar_image_binned_radial_bkg = polar_image_binned - np.mean(polar_image_binned, axis=0)
-    # Flat-fielding further: dividing by RMS value along the radial axis
-    ff_rms = np.sqrt(np.mean(polar_image_binned_radial_bkg ** 2, axis=0))
-    processed_image = polar_image_binned_radial_bkg / ff_rms
+    if normalize:
+        # Remove background radially by taking the mean over the radial axis
+        # (From Craig's original implementation)
+        polar_image_binned_radial_bkg = polar_image_binned - np.mean(polar_image_binned, axis=0)
+        # Flat-fielding further: dividing by RMS value along the radial axis
+        ff_rms = np.sqrt(np.mean(polar_image_binned_radial_bkg ** 2, axis=0))
+        processed_image = polar_image_binned_radial_bkg / ff_rms
+    else:
+        processed_image = polar_image_binned
+
     # Clean-up, as divide by zero will occur
     processed_image[~np.isfinite(processed_image)] = 0
 

@@ -1,1 +1,0 @@
-CAM/PAM can be configured to use *IM or *TM as input

@@ -56,6 +56,15 @@ def layout():
                     style={"width": "50%"},
                     persistence=True, persistence_type="memory",
                 ),
+                dcc.Dropdown(
+                    id="host-selector",
+                    options=["phoenix.spaceops.swri.org",
+                             "chimera.spaceops.swri.org"],
+                    value="phoenix.spaceops.swri.org",
+                    clearable=False,
+                    style={"width": "50%"},
+                    persistence=True, persistence_type="memory"
+                )
             ]),
         ]),
         html.Hr(),
@@ -309,8 +318,9 @@ def update_file_cards(n):
     Input("plot-range", "start_date"),
     Input("plot-range", "end_date"),
     Input("machine-stat-smoothing", "value"),
+    Input("host-selector", "host")
 )
-def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window):
+def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window, host):
     axis_labels = {"cpu_usage": "CPU Usage %",
                    "memory_usage": "Memory Usage[GB]",
                    "memory_percentage": "Memory Usage %",
@@ -318,7 +328,10 @@ def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window):
                    "disk_percentage": "Disk Usage %",
                    "num_pids": "Process Count"}
 
-    query = select(Health).where(Health.datetime > start_date).where(Health.datetime < end_date)
+    query = (select(Health)
+             .where(Health.datetime > start_date)
+             .where(Health.datetime < end_date)
+             .where(Health.host == host))
     with get_database_session() as session:
         df = pd.read_sql_query(query, session.connection())
 

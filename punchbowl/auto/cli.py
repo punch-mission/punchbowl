@@ -1,5 +1,6 @@
 import os
 import time
+import socket
 import inspect
 import argparse
 import traceback
@@ -16,6 +17,9 @@ from prefect.variables import Variable
 from punchbowl.auto.control.util import load_pipeline_configuration
 
 THIS_DIR = os.path.dirname(__file__)
+
+def shorten_host(hostname):
+    return hostname.split(".")[0]
 
 def main():
     """Run the PUNCH automated pipeline"""
@@ -53,6 +57,7 @@ def find_flow(target_flow, subpackage="flows") -> Flow:
     raise RuntimeError(f"No flow found for {target_flow}")
 
 def construct_flows_to_serve(configuration_path, include_data=True, include_control=True):
+    current_host = shorten_host(socket.gethostname())
     config = load_pipeline_configuration(configuration_path)
 
     # create each kind of flow. add both the scheduler and process flow variant of it.
@@ -63,11 +68,12 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
             specific_name = flow_name + "_scheduler_flow"
             specific_tags = config["flows"][flow_name].get("tags", [])
             specific_description = config["flows"][flow_name].get("description", "")
+            desired_host = shorten_host(config["flows"][flow_name].get("run-on", current_host))
             flow_function = find_flow(specific_name)
             flow_deployment = flow_function.to_deployment(
                 name=specific_name,
                 description="Scheduler: " + specific_description,
-                tags = ["scheduler"] + specific_tags,
+                tags = ["scheduler", desired_host] + specific_tags,
                 cron=config["flows"][flow_name].get("schedule", None),
                 concurrency_limit=ConcurrencyLimitConfig(
                     limit=1,
@@ -75,7 +81,8 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
                 ),
                 parameters={"pipeline_config_path": configuration_path},
             )
-            flows_to_serve.append(flow_deployment)
+            if  desired_host == current_host:
+                flows_to_serve.append(flow_deployment)
 
             # then we deploy the corresponding process flow
             specific_name = flow_name + "_process_flow"
@@ -88,30 +95,34 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
             flow_deployment = flow_function.to_deployment(
                 name=specific_name,
                 description="Process: " + specific_description,
-                tags = ["process"] + specific_tags,
+                tags = ["process", desired_host] + specific_tags,
                 parameters={"pipeline_config_path": configuration_path},
                 concurrency_limit=concurrency_config,
             )
-            flows_to_serve.append(flow_deployment)
+            # only deploy if the host matches the desired host
+            if desired_host == current_host:
+                flows_to_serve.append(flow_deployment)
 
     if include_control:
         # there are special control flows that manage the pipeline instead of processing data
         # time to kick those off!
         for flow_name in config["control"]:
+            desired_host = shorten_host(config['control'][flow_name].get("run-on", current_host))
             flow_function = find_flow(flow_name, "control")
             concurrency_config = ConcurrencyLimitConfig(
                     limit=1,
                     collision_strategy=ConcurrencyLimitStrategy.CANCEL_NEW,
                 )
             flow_deployment = flow_function.to_deployment(
-                name=flow_name,
+                name=flow_name+"-"+desired_host,
                 description=config["control"][flow_name].get("description", ""),
-                tags=["control"],
+                tags=["control", desired_host],
                 cron=config["control"][flow_name].get("schedule", "* * * * *"),
                 parameters={"pipeline_config_path": configuration_path},
                 concurrency_limit=concurrency_config,
             )
-            flows_to_serve.append(flow_deployment)
+            if desired_host == current_host:
+                flows_to_serve.append(flow_deployment)
     return flows_to_serve
 
 def run_data(configuration_path):

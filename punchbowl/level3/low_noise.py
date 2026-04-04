@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 import numpy as np
+from dateutil.parser import ParserError
 from dateutil.parser import parse as parse_datetime
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCube
@@ -46,10 +47,16 @@ def create_low_noise_task(cubes: list[NDCube], reference_time: str | datetime | 
 
     mean_date = average_datetime([cube.meta.datetime for cube in cubes])
     date_obs = mean_date if reference_time is None else reference_time
-    times_beg = np.array([parse_datetime(cube.meta["DATE-BEG"].value).replace(tzinfo=UTC).timestamp()
-                          for cube in cubes])
-    times_end = np.array([parse_datetime(cube.meta["DATE-END"].value).replace(tzinfo=UTC).timestamp()
-                          for cube in cubes])
+    try:
+        times_beg = np.array([parse_datetime(cube.meta["DATE-BEG"].value).replace(tzinfo=UTC).timestamp()
+                            for cube in cubes])
+        times_end = np.array([parse_datetime(cube.meta["DATE-END"].value).replace(tzinfo=UTC).timestamp()
+                            for cube in cubes])
+    except ParserError:
+        times_beg = np.array([parse_datetime(cube.meta["DATE-OBS"].value).replace(tzinfo=UTC).timestamp()
+                            for cube in cubes])
+        times_end = np.array([parse_datetime(cube.meta["DATE-OBS"].value).replace(tzinfo=UTC).timestamp()
+                            for cube in cubes])
 
     new_meta["TYPECODE"] = new_code[0:2]
     new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

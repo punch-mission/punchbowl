@@ -105,10 +105,14 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     """Level 3 CTM flow."""
     logger = get_run_logger()
 
-    logger.info("beginning level 3 CTM flow")
-    data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
     is_polarized = data_list[0].meta["TYPECODE"].value == "PT"
-    data_list = [subtract_starfield_background_task(d, starfield_background_path) for d in data_list]
+    kind = "PTM" if is_polarized else "CTM"
+
+    logger.info(f"beginning level 3 {kind} flow")
+    data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+    data_list = [subtract_starfield_background_task(d,
+                                                    starfield_background_path,
+                                                    is_polarized=is_polarized) for d in data_list]
     if is_polarized:
         data_list = [convert_polarization(d) for d in data_list]
 
@@ -135,7 +139,7 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     if output_filename is not None:
         output_image_task(out_data_list[0], output_filename)
 
-    logger.info("ending level 3 CTM core flow")
+    logger.info(f"ending level 3 {kind} core flow")
 
     return out_data_list
 

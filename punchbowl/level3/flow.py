@@ -107,7 +107,7 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
 
     logger.info("beginning level 3 flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
-    is_polarized = data_list[0].meta["TYPECODE"].value == "PT"
+    is_polarized = data_list[0].meta["TYPECODE"].value == "PI"
     data_list = [subtract_starfield_background_task(d,
                                                     starfield_background_path,
                                                     is_polarized=is_polarized) for d in data_list]

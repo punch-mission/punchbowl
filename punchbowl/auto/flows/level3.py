@@ -165,7 +165,7 @@ def level3_PTM_scheduler_flow(pipeline_config_path=None, session=None, reference
 
 
 def level3_PTM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    for key in ["data_list", "before_f_corona_model_path", "after_f_corona_model_path", "starfield_background_path"]:
+    for key in ["data_list", "starfield_background_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     return call_data
 

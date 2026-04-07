@@ -18,6 +18,11 @@ def _merge_ndcubes(cubes: list[NDCube | None], reference_cube_index: int | None 
     if reference_cube_index is None:
         reference_cube_index = len(cubes)//2 - 1
 
+    # TODO - add a warning
+    for cube in cubes:
+        if cube.uncertainty is None:
+            cube.uncertainty = StdDevUncertainty(np.sqrt(np.abs(cube.data)))
+
     data_stack = np.stack([cube.data for cube in cubes], axis=0)
     uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes])
 

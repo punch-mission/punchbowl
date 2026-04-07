@@ -86,21 +86,21 @@ def get_fcorona_pairs(session, files: list[File], model_type="PF"):
 @task(cache_policy=NO_CACHE)
 def level3_PTM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
     logger = get_run_logger()
-    all_ready_files = session.query(File).where(and_(and_(File.state.in_(["progressed", "created"]),
-                                                          File.level == "2"),
-                                                     File.file_type == "PT")).order_by(File.date_obs.asc()).all()
-    logger.info(f"{len(all_ready_files)} Level 3 PTM files need to be processed.")
+    all_ready_files = session.query(File).where(and_(and_(File.state.in_(["created"]),
+                                                          File.level == "3"),
+                                                     File.file_type == "PI")).order_by(File.date_obs.asc()).all()
+    logger.info(f"{len(all_ready_files)} Level 3 PIM files need to be processed.")
 
     actually_ready_files = []
     for f in all_ready_files:
         # TODO put magic numbers in config
-        valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=14))
+        valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=14), file_type="PS")
 
         if len(valid_starfields) >= 1:
             actually_ready_files.append(f)
             if len(actually_ready_files) >= max_n:
                 break
-    logger.info(f"{len(actually_ready_files)} Level 3 PTM files selected with necessary calibration data.")
+    logger.info(f"{len(actually_ready_files)} Level 3 PIM files selected with necessary calibration data.")
 
     return [[f.file_id] for f in actually_ready_files]
 
@@ -165,7 +165,7 @@ def level3_PTM_scheduler_flow(pipeline_config_path=None, session=None, reference
 
 
 def level3_PTM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    for key in ["data_list", "before_f_corona_model_path", "after_f_corona_model_path", "starfield_background_path"]:
+    for key in ["data_list", "starfield_background_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     return call_data
 

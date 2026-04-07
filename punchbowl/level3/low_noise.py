@@ -1,12 +1,10 @@
 from datetime import UTC, datetime
 
-import astropy.units as u
 import numpy as np
-import solpolpy
-from astropy.nddata import StdDevUncertainty
+from dateutil.parser import ParserError
 from dateutil.parser import parse as parse_datetime
 from dateutil.parser import parse as parse_datetime_str
-from ndcube import NDCollection, NDCube
+from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import check_outlier
@@ -29,25 +27,7 @@ def create_low_noise_task(cubes: list[NDCube], reference_time: str | datetime | 
     reference_cube_index = len(cubes)//2 - 1
     new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index)
 
-    if new_cube.data.ndim == 3:
-        mzp_map = [-60, 0, 60]
-        layer_map = {"M": 0, "Z": 1, "P": 2}
-
-        mzp_collection = NDCollection(
-            [(k, NDCube(
-                data=new_cube.data[layer_map[k], ...],
-                wcs=new_cube.wcs[layer_map[k]],
-                meta={
-                    "POLAR": mzp_map[layer_map[k]] * u.degree,
-                    "POLAROFF": 0,
-                    "POLARREF": "solar",
-                },
-            ))
-            for k in ["M", "Z", "P"]],
-            aligned_axes=(0, 1),
-        )
-
-        bpb_collection = solpolpy.resolve(mzp_collection, "bp3")
+    # TODO - will need to restore polarization resolution for starfield skipping
 
     new_code = cubes[0].meta.product_code[0] + "A" + cubes[0].meta.product_code[2]
     new_meta = NormalizedMetadata.load_template(new_code, "3")
@@ -67,10 +47,16 @@ def create_low_noise_task(cubes: list[NDCube], reference_time: str | datetime | 
 
     mean_date = average_datetime([cube.meta.datetime for cube in cubes])
     date_obs = mean_date if reference_time is None else reference_time
-    times_beg = np.array([parse_datetime(cube.meta["DATE-BEG"].value).replace(tzinfo=UTC).timestamp()
-                          for cube in cubes])
-    times_end = np.array([parse_datetime(cube.meta["DATE-END"].value).replace(tzinfo=UTC).timestamp()
-                          for cube in cubes])
+    try:
+        times_beg = np.array([parse_datetime(cube.meta["DATE-BEG"].value).replace(tzinfo=UTC).timestamp()
+                            for cube in cubes])
+        times_end = np.array([parse_datetime(cube.meta["DATE-END"].value).replace(tzinfo=UTC).timestamp()
+                            for cube in cubes])
+    except ParserError:
+        times_beg = np.array([parse_datetime(cube.meta["DATE-OBS"].value).replace(tzinfo=UTC).timestamp()
+                            for cube in cubes])
+        times_end = np.array([parse_datetime(cube.meta["DATE-OBS"].value).replace(tzinfo=UTC).timestamp()
+                            for cube in cubes])
 
     new_meta["TYPECODE"] = new_code[0:2]
     new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -82,14 +68,5 @@ def create_low_noise_task(cubes: list[NDCube], reference_time: str | datetime | 
                                                   tz=UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     new_cube.meta = new_meta
-
-    if new_cube.data.ndim == 3:
-        # # TODO - Fully propagate uncertainty
-        new_uncertainty = np.copy(new_cube.uncertainty.array[0,...])
-        new_uncertainty = np.stack([new_uncertainty] * 3, axis=0)
-        return NDCube(data = np.stack([bpb_collection[k].data for k in ["B", "pB", "pBp"]]),
-                           uncertainty=StdDevUncertainty(new_uncertainty),
-                           wcs=new_cube.wcs,
-                           meta=new_cube.meta)
 
     return new_cube

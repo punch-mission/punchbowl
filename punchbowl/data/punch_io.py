@@ -295,10 +295,11 @@ def write_ndcube_to_fits(cube: NDCube,
         )
         raise ValueError(msg)
 
+    cube.meta["FILENAME"] = os.path.basename(filename)
+
     meta = cube.meta if skip_stats else _update_statistics(cube)
 
     full_header = meta.to_fits_header(wcs=cube.wcs, write_celestial_wcs=not skip_wcs_conversion)
-    full_header["FILENAME"] = os.path.basename(filename)
 
     hdu_data = fits.CompImageHDU(data=cube.data.astype(np.float32) if cube.data.dtype == np.float64 else cube.data,
                                  header=full_header,

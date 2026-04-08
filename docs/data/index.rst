@@ -3,12 +3,14 @@ Data
 
 Welcome to PUNCH data!
 
-Our latest version of data is 0j (learn more about `data versions <data_versions.html>`_).
+Our latest version of data is 0k (learn more about `data versions <data_versions.html>`_).
 We will begin providing browse data and movies soon.
 
 PUNCH is still being calibrated, but you can take a look at the most up to date data
 through the `Get Data <https://punch.space.swri.edu/punch_science_getdata.php>`_ page on our PUNCH website.
 The most commonly used data products are L3_PAM (polarized) and L3_CAM (clear) low-noise mosaics.
+
+Note that from data level 1 and onward, all data is represented in units of Mean Solar Brightness (MSB).
 
 For more information about how to download data, see this `data access <access.html>`_ page.
 

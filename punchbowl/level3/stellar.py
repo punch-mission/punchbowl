@@ -134,7 +134,8 @@ class PUNCHImageProcessor(ImageProcessor):
 
     def load_image(self, filename: str) -> ImageHolder:
         """Load an image."""
-        cube = load_ndcube_from_fits(filename, key=self.key, include_provenance=False, include_uncertainty=False)
+        cube = load_ndcube_from_fits(filename, key=self.key, include_provenance=False, include_uncertainty=False,
+                                     dtype=np.float32)
 
         if self.apply_mask:
             mask = (cube.data[self.layer] == 0) if self.layer is not None else (cube.data == 0)
@@ -258,6 +259,7 @@ def generate_starfield_background(
             n_procs=n_procs,
             processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
             handle_wrap_point=False,
+            dtype=np.float32,
             target_mem_usage=target_mem_usage)
         logger.info("Ending m starfield")
         out_data_m = starfield_m.starfield - percentile_filter(starfield_m.starfield, 5, 10)
@@ -273,6 +275,7 @@ def generate_starfield_background(
             n_procs=n_procs,
             processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
             handle_wrap_point=False,
+            dtype=np.float32,
             target_mem_usage=target_mem_usage)
         logger.info("Ending z starfield")
         out_data_z = starfield_z.starfield - percentile_filter(starfield_z.starfield, 5, 10)
@@ -288,6 +291,7 @@ def generate_starfield_background(
             n_procs=n_procs,
             processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
             handle_wrap_point=False,
+            dtype=np.float32,
             target_mem_usage=target_mem_usage)
         logger.info("Ending p starfield")
         out_data_p = starfield_p.starfield - percentile_filter(starfield_p.starfield, 5, 10)
@@ -306,6 +310,7 @@ def generate_starfield_background(
             n_procs=n_procs,
             processor=PUNCHImageProcessor(None, apply_mask=True, key="A"),
             handle_wrap_point=False,
+            dtype=np.float32,
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
         out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, 5, 10)

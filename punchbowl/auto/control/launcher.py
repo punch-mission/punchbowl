@@ -121,7 +121,7 @@ def escalate_long_waiting_flows(session, pipeline_config):
 
 
 def determine_launchable_flow_count(weight_planned, weight_running, max_weight_running, max_weight_to_launch,
-                                    max_flows_to_launch):
+                                    max_flows_to_launch, max_flows_running, num_running_flows):
     logger = get_run_logger()
     amount_to_launch = max_weight_running - weight_running
     logger.info(f"Total weight {amount_to_launch:.2f} can be launched at this time.")
@@ -130,7 +130,12 @@ def determine_launchable_flow_count(weight_planned, weight_running, max_weight_r
     amount_to_launch = max(0, amount_to_launch)
     logger.info(f"Will launch up to {amount_to_launch:.2f} weight and {max_flows_to_launch} flows")
 
-    return min(amount_to_launch, weight_planned), max_flows_to_launch
+    number_launchable = max_flows_running - num_running_flows
+    n_to_launch = min(number_launchable, max_flows_to_launch)
+    logger.info(f"{num_running_flows} flows running now. Max {max_flows_running} total, {max_flows_to_launch} per "
+                f"launch window. Launching up to {n_to_launch}.")
+
+    return min(amount_to_launch, weight_planned), n_to_launch
 
 
 @task(cache_policy=NO_CACHE)
@@ -295,9 +300,11 @@ async def launcher(pipeline_config_path=None):
     max_weight_running = pipeline_config["control"]["launcher"]["max_weight_running"]
     max_weight_to_launch = pipeline_config["control"]["launcher"]["max_weight_to_launch_at_once"]
     max_flows_to_launch = pipeline_config["control"]["launcher"]["max_flows_to_launch_at_once"]
+    max_flows_running = pipeline_config["control"]["launcher"]["max_flows_running"]
 
     weight_to_launch, max_flows_to_launch = determine_launchable_flow_count(
-        weight_planned, weight_running, max_weight_running, max_weight_to_launch, max_flows_to_launch)
+        weight_planned, weight_running, max_weight_running, max_weight_to_launch, max_flows_to_launch,
+        max_flows_running, num_running_flows)
 
     flows_to_launch, tags_by_flow, selected_weight, number_of_flows, counts_per_type = gather_planned_flows(
         session, weight_to_launch, max_flows_to_launch, flow_weights, flow_enabled, flow_batch_sizes, flow_hosts)

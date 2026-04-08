@@ -1,5 +1,6 @@
 import os
 import re
+import socket
 from math import inf
 from datetime import UTC, datetime
 from itertools import islice
@@ -65,8 +66,20 @@ def load_pipeline_configuration(path: str = None) -> dict:
         path = run_coro_as_sync(path)
     with open(path) as f:
         config = yaml.load(f, Loader=FullLoader)
+    hostify_config(config)
     # TODO: add validation
     return config
+
+
+def hostify_config(config):
+    tag = '-' + socket.gethostname().split(".")[0]
+    for key in list(config.keys()):
+        if isinstance(config[key], dict):
+            hostify_config(config[key])
+        if isinstance(key, str) and key.endswith(tag):
+            new_key = key.replace(tag, '')
+            config[new_key] = config[key]
+            del config[key]
 
 
 def load_quicklook_scaling(level: str = None, product: str = None, obscode: str = None, path: str = None) -> (float, float):

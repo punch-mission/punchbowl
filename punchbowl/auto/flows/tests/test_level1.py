@@ -34,7 +34,7 @@ def prefect_test_fixture():
 def session_fn(session):
     level0_file = File(level="0",
                        file_type='PM',
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='none',
@@ -44,7 +44,7 @@ def session_fn(session):
 
     level0_file2 = File(level="0",
                        file_type='PZ',
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='Z',
                        file_version='none',
@@ -54,7 +54,7 @@ def session_fn(session):
 
     level0_file3 = File(level="0",
                        file_type='PP',
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='P',
                        file_version='none',
@@ -64,7 +64,7 @@ def session_fn(session):
 
     level0_file4 = File(level="0",
                        file_type='CR',
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='C',
                        file_version='none',
@@ -74,7 +74,7 @@ def session_fn(session):
 
     level1_file = File(level="1",
                        file_type="PM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='none',
@@ -83,7 +83,7 @@ def session_fn(session):
 
     level1_x_file = File(level="1",
                        file_type="XM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='none',
@@ -92,7 +92,7 @@ def session_fn(session):
 
     level1_y_file = File(level="1",
                        file_type="YM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='none',
@@ -101,7 +101,7 @@ def session_fn(session):
 
     psf_model2 = File(level="1",
                        file_type="RM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='0b',
@@ -110,7 +110,7 @@ def session_fn(session):
 
     psf_model1 = File(level="1",
                        file_type="RM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='1',
@@ -119,7 +119,7 @@ def session_fn(session):
 
     psf_model0 = File(level="1",
                        file_type="RM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='0b',
@@ -128,7 +128,7 @@ def session_fn(session):
 
     quartic_fit_coeffs2 = File(level="1",
                        file_type="FQ",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='0b',
                        software_version='none',
@@ -136,7 +136,7 @@ def session_fn(session):
 
     quartic_fit_coeffs1 = File(level="1",
                        file_type="FQ",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='1',
                        software_version='none',
@@ -144,7 +144,7 @@ def session_fn(session):
 
     quartic_fit_coeffs0 = File(level="1",
                        file_type="FQ",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='0b',
                        software_version='none',
@@ -152,7 +152,7 @@ def session_fn(session):
 
     vignetting_function2 = File(level="1",
                        file_type="GM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='0b',
                        software_version='none',
@@ -160,7 +160,7 @@ def session_fn(session):
 
     vignetting_function1 = File(level="1",
                        file_type="GM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='1',
                        software_version='none',
@@ -168,7 +168,7 @@ def session_fn(session):
 
     vignetting_function0 = File(level="1",
                        file_type="GM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='0b',
                        software_version='none',
@@ -176,7 +176,7 @@ def session_fn(session):
 
     stray_light_before2 = File(level="1",
                        file_type="SM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='1',
@@ -185,7 +185,7 @@ def session_fn(session):
 
     stray_light_before1 = File(level="1",
                        file_type="SM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='2',
@@ -194,7 +194,7 @@ def session_fn(session):
 
     stray_light_after1 = File(level="1",
                        file_type="SM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='2',
@@ -203,7 +203,7 @@ def session_fn(session):
 
     stray_light_after0 = File(level="1",
                        file_type="SM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='1',
@@ -212,7 +212,7 @@ def session_fn(session):
 
     dyn_stray_light_before2 = File(level="1",
                        file_type="TM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='1',
@@ -221,7 +221,7 @@ def session_fn(session):
 
     dyn_stray_light_before1 = File(level="1",
                        file_type="TM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='2',
@@ -230,7 +230,7 @@ def session_fn(session):
 
     dyn_stray_light_after1 = File(level="1",
                        file_type="TM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='2',
@@ -239,7 +239,7 @@ def session_fn(session):
 
     dyn_stray_light_after0 = File(level="1",
                        file_type="TM",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        polarization='M',
                        file_version='1',
@@ -248,7 +248,7 @@ def session_fn(session):
 
     distortion2 = File(level="1",
                        file_type="DS",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='0b',
                        software_version='none',
@@ -256,7 +256,7 @@ def session_fn(session):
 
     distortion1 = File(level="1",
                        file_type="DS",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='1',
                        software_version='none',
@@ -264,7 +264,7 @@ def session_fn(session):
 
     distortion0 = File(level="1",
                        file_type="DS",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='0b',
                        software_version='none',
@@ -272,7 +272,7 @@ def session_fn(session):
 
     mask_file2 = File(level="1",
                        file_type="MS",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='0b',
                        software_version='none',
@@ -280,7 +280,7 @@ def session_fn(session):
 
     mask_file1 = File(level="1",
                        file_type="MS",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='1',
                        software_version='none',
@@ -288,7 +288,7 @@ def session_fn(session):
 
     mask_file0 = File(level="1",
                        file_type="MS",
-                       observatory='2',
+                       observatory='1',
                        state='created',
                        file_version='0b',
                        software_version='none',

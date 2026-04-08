@@ -157,8 +157,14 @@ def run(configuration_path, launch_prefect=False, launch_dask_cluster=False):
         try:
             numa_prefix_control = ["numactl", "--localalloc", "--physcpubind=0-11"]
             numa_prefix_workers = ["numactl", "--localalloc", "--physcpubind=12-63,64-125,192-255"]
+            # This starts our pipeline in a cgroup context in which the collective memory use of the pipeline and
+            # all subprocesses, including shared memory, is capped at a certain amount. If we approach an
+            # out-of-memory condition, this hopefully contains it to the pipeline while keeping the rest of the
+            # server (including, critically, SSH access) healthy.
+            mem_limit_prefix = ["systemd-run", "--scope", "-p", "MemoryMax=1800G", "-p", "MemoryHigh=1700G", "--user",
+                                "--description", "Limit pipeline memory"]
             if launch_prefect:
-                print("Launcing prefect")
+                print("Launching prefect")
                 prefect_process = subprocess.Popen(
                     [*numa_prefix_control, "prefect", "server", "start", "--no-services"], stdout=f, stderr=f)
                 time.sleep(5)
@@ -181,7 +187,8 @@ def run(configuration_path, launch_prefect=False, launch_dask_cluster=False):
             # These processes send a _lot_ of output, so we let it go to the screen instead of making the log file
             # enormous
             def data_process_launcher() -> subprocess.Popen:
-                return subprocess.Popen([*numa_prefix_workers, "punchpipe", "serve-data", configuration_path])
+                return subprocess.Popen([*mem_limit_prefix, *numa_prefix_workers, "punchpipe", "serve-data",
+                                         configuration_path])
 
             def control_process_launcher() -> subprocess.Popen:
                 return subprocess.Popen([*numa_prefix_control, "punchpipe", "serve-control", configuration_path])

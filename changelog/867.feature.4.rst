@@ -1,0 +1,1 @@
+Starfield generation uses 32-bit floats to reduce memory pressure.

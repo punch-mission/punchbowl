@@ -158,7 +158,7 @@ def test_filter_for_launchable_flows(db, flow_weights, flow_hosts):
         running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
         max_weight_running = 30
         ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
-            weight_planned, weight_running, max_weight_running, math.inf, 10)
+            weight_planned, weight_running, max_weight_running, math.inf, 10, 100, running_count)
         assert ready_to_launch_weight == 5
         assert max_flows_to_launch == 10
 
@@ -168,7 +168,7 @@ def test_filter_for_launchable_flows_with_max_of_1(db, flow_weights, flow_batch_
         running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
         max_weight_running = 1
         ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
-            weight_planned, weight_running, max_weight_running, math.inf, 10)
+            weight_planned, weight_running, max_weight_running, math.inf, 10, 100, running_count)
         assert ready_to_launch_weight == 1
         assert max_flows_to_launch == 10
         flows, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
@@ -184,9 +184,19 @@ def test_filter_for_launchable_flows_with_max_of_0(db, flow_weights, flow_hosts)
         running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
         max_weight_running = 0
         ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
-            weight_planned, weight_running, max_weight_running, math.inf, 0)
+            weight_planned, weight_running, max_weight_running, math.inf, 0, 100, running_count)
         assert ready_to_launch_weight == 0
         assert max_flows_to_launch == 0
+
+
+def test_filter_for_launchable_flows_cap_by_number(db, flow_weights, flow_hosts):
+    with prefect_test_harness(), disable_run_logger():
+        running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
+        max_weight_running = 100
+        ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
+            weight_planned, weight_running, max_weight_running, math.inf, 100, 1, running_count)
+        assert ready_to_launch_weight > 0
+        assert max_flows_to_launch == 1
 
 
 def test_filter_for_launchable_flows_with_empty_db(db_empty, flow_weights, flow_hosts):
@@ -194,6 +204,6 @@ def test_filter_for_launchable_flows_with_empty_db(db_empty, flow_weights, flow_
         running_count, planned_count, weight_planned, weight_running = count_flows.fn(db_empty, flow_weights, flow_hosts)
         max_weight_running = 30
         ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
-            weight_planned, weight_running, max_weight_running, math.inf, 20)
+            weight_planned, weight_running, max_weight_running, math.inf, 20, 100, running_count)
         assert ready_to_launch_weight == 0
         assert max_flows_to_launch == 20

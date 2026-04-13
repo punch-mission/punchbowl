@@ -1,0 +1,1 @@
+Allows setting of dtype in polarization conversion, to assist in polarized starfield model generation.

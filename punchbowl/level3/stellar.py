@@ -31,7 +31,7 @@ from punchbowl.util import average_datetime
 warnings.filterwarnings("ignore")
 
 
-def polarize_solar_to_celestial(input_data: NDCube) -> NDCube:
+def polarize_solar_to_celestial(input_data: NDCube, dtype: None | type = None) -> NDCube:
     """
     Convert polarization from mzpsolar to Celestial frame.
 
@@ -66,7 +66,7 @@ def polarize_solar_to_celestial(input_data: NDCube) -> NDCube:
     celestial_data_collection = resolve(data_collection, "npol", out_angles=new_angles)
 
     valid_keys = [key for key in celestial_data_collection if key != "alpha"]
-    new_data = [celestial_data_collection[key].data for key in valid_keys]
+    new_data = np.array([celestial_data_collection[key].data for key in valid_keys], dtype=dtype)
     new_wcs = input_data.wcs.copy()
 
     output_meta = NormalizedMetadata.load_template("PTM", "3")
@@ -78,7 +78,7 @@ def polarize_solar_to_celestial(input_data: NDCube) -> NDCube:
     return output
 
 
-def polarize_celestial_to_solar(input_data: NDCube) -> NDCube:
+def polarize_celestial_to_solar(input_data: NDCube, dtype: None | type = None) -> NDCube:
     """
     Convert polarization from Celestial frame to mzpsolar.
 
@@ -111,7 +111,7 @@ def polarize_celestial_to_solar(input_data: NDCube) -> NDCube:
     solar_data_collection = resolve(data_collection, "mzpsolar", in_angles=new_angles)
 
     valid_keys = [key for key in solar_data_collection if key != "alpha"]
-    new_data = [solar_data_collection[key].data for key in valid_keys]
+    new_data = np.array([solar_data_collection[key].data for key in valid_keys], dtype=dtype)
     new_wcs = input_data.wcs.copy()
 
     output_meta = NormalizedMetadata.load_template("PTM", "3")
@@ -143,7 +143,7 @@ class PUNCHImageProcessor(ImageProcessor):
         if self.layer is None:  # clear data
             data = cube.data
         else:  # it's polarized
-            cube = polarize_solar_to_celestial(cube)
+            cube = polarize_solar_to_celestial(cube, dtype=np.float32)
             data = cube.data[self.layer]
 
         if self.apply_mask:

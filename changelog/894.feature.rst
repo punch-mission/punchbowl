@@ -1,0 +1,1 @@
+Defaults quicklook layer to pB for polarized mosaics.

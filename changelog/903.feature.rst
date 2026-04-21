@@ -1,0 +1,1 @@
+Improves handling for metadata to avoid comment card overflow and shifts a few keys.

@@ -46,6 +46,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,INSTRUME,,Instrument name,str,TRUE,TRUE,
 4,keyword,TELESCOP,,Satellite name,str,TRUE,TRUE,
 4,keyword,OBSRVTRY,PUNCH,Observatory name,str,TRUE,TRUE,PUNCH
+4,keyword,DETECTOR,PUNCH,CCD detector 2048x2048 pixels,str,TRUE,TRUE,CCD 2Kx2K
 4,keyword,HAS_WFI1,0,Includes WFI-1 data,int,TRUE,TRUE,0
 4,keyword,HAS_WFI2,0,Includes WFI-2 data,int,TRUE,TRUE,0
 4,keyword,HAS_WFI3,0,Includes WFI-3 data,int,TRUE,TRUE,0
@@ -63,7 +64,6 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 5,section,COMMENT,World Coordinate System,,str,TRUE,TRUE,World Coordinate System
 5,keyword,CROTA,,[deg] Human-readable solar north pole angle,float,TRUE,TRUE,
 6,section,COMMENT,Camera and Readout State,,str,TRUE,TRUE,Camera and Readout State
-6,keyword,DETECTOR,CCD 2Kx2K,CCD detector 2048x2048 pixels,str,TRUE,TRUE,CCD 2Kx2K
 6,keyword,COM_SET,,compression setting,int,TRUE,TRUE,
 6,keyword,ACQ_SET,,acquisition setting,int,TRUE,TRUE,
 6,keyword,EXPTIME,,[s] commanded exposure time,float,TRUE,TRUE,
@@ -257,13 +257,13 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 16,keyword,LZTIME,,Time of LZ packet,str,TRUE,TRUE,
 16,keyword,CCDTEMP,,Camera Detector (CCD) Temp,float,TRUE,TRUE,
 16,keyword,ICMTEMP,,Camera ICM Temp Primary,float,TRUE,TRUE,
-16,keyword,FORTEMP,,Baffle Forward +Y Temp (NFI) or OLA Temp Primary (WFI),float,TRUE,TRUE,
-16,keyword,AFTTEMP,,Baffle Aft +Z Temp (NFI) or PFW Clamshell Temp Primary (WFI),float,TRUE,TRUE,
+16,keyword,FORTEMP,,NFI Baffle Fore +Y Temp / WFI OLA Temp Primary,float,TRUE,TRUE,
+16,keyword,AFTTEMP,,NFI Baffle Aft +Z Temp / WFI PFW Temp Primary,float,TRUE,TRUE,
 16,keyword,PFWTEMP,,PFW Motor Temp,float,TRUE,TRUE,
-16,keyword,DOORTEMP,,Door Actuator Temp (NFI) or Radiator Center Temp (WFI),float,TRUE,TRUE,
+16,keyword,DOORTEMP,,NFI Door Actuator Temp / WFI Radiator Ctr Temp,float,TRUE,TRUE,
 16,keyword,CEBTEMP,,CEB Base Temp Primary,float,TRUE,TRUE,
-16,keyword,HOUSTEMP,,Electronics Side Temp (STEAM) or Camera Housing -X Temp (WFI),float,TRUE,TRUE,
-16,keyword,FINGTEMP,,Detector Side Temp Primary (STEAM) or Cold Finger +Z Temp (WFI),float,TRUE,TRUE,
+16,keyword,HOUSTEMP,,STEAM Elec Side Temp / WFI Camera -X Temp,float,TRUE,TRUE,
+16,keyword,FINGTEMP,,STEAM Detector Temp / WFI Cold Finger +Z Temp,float,TRUE,TRUE,
 16,keyword,FPGATEMP,,FPGA Temperature,float,TRUE,TRUE,
 17,section,COMMENT,File Generation Diagnostics,,str,TRUE,TRUE,File Generation Diagnostics
 17,keyword,BOWLVRSN,,punchbowl software version number,str,TRUE,TRUE,

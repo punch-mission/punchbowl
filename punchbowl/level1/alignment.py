@@ -787,6 +787,8 @@ def align_task(data_object: NDCube, distortion_path: str | None, max_workers: in
         data object to align
     distortion_path: str | None
         path to a distortion model
+    max_workers : int
+        number of parallel workers to use
 
     Returns
     -------

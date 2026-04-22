@@ -23,6 +23,7 @@ Level:
             BUNIT: sqrt(DN)
     Solar Reference Data:
     Spacecraft Location & Environment:
+        omits: [MOONDIST, MOON_X, MOON_Y]
     Camera Electronics Board:
     Polarizing Filter Wheel:
     LZ Packet Info:

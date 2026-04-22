@@ -397,7 +397,7 @@ def unpack_n_bit_values(packed: bytes, byteorder: str, n_bits=19) -> np.ndarray:
 
 def organize_lz_fits_keywords(lz_packet_db, lz_packet):
     def temperature_formula(value):
-        return -7.19959E-11*(value**3)+1.74252E-06*(value**2)+(0.067873*value)-239.6134821
+        return round(-7.19959E-11*(value**3)+1.74252E-06*(value**2)+(0.067873*value)-239.6134821, 3)
     return {
         "LZTIME": lz_packet_db.timestamp.isoformat(),
         "CCDTEMP": temperature_formula(int(lz_packet["LZ_P1_P01_NFI_DET_PRI__WFI_DET_PRI"])),

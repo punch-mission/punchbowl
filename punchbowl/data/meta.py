@@ -350,14 +350,9 @@ class NormalizedMetadata(Mapping):
                             else:
                                 new_keyword = keyword_parts[0] + key + "." + ".".join(keyword_parts[1:])
 
-                            hdr.append(
-                                (
-                                new_keyword,
-                                card[1],
-                                card[2],
-                                ),
-                                end=True,
-                            )
+                            new_card = fits.Card(new_keyword, card[1], card[2])
+                            new_card.verify("fix")
+                            hdr.append(new_card, end=True)
                 hdr["CROTA"] = (extract_crota_from_wcs(wcs)).to(u.deg).value
 
         # add the history section

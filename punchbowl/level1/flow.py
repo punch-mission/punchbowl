@@ -167,7 +167,7 @@ def level1_early_core_flow(  # noqa: C901
                 data.meta.history.add_now("LEVEL1-align", "Image has bad packets; no alignment applied")
                 logger.info("Bad packets---alignment skipped")
             else:
-                data = align_task(data, distortion_path)
+                data = align_task(data, distortion_path, max_workers=max_workers)
 
         if mask is not None:
             data.data[~mask] = 0

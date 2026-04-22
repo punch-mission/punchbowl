@@ -777,7 +777,7 @@ def build_distortion_model(
 
 
 @punch_task
-def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
+def align_task(data_object: NDCube, distortion_path: str | None, max_workers: int = 4) -> NDCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.
 
@@ -813,7 +813,7 @@ def align_task(data_object: NDCube, distortion_path: str | None) -> NDCube:
 
     observatory = "nfi" if data_object.meta["OBSCODE"].value == "4" else "wfi"
     celestial_output = solve_pointing(refining_data, celestial_input, data_object.meta, distortion,
-                                      saturation_limit=60_000, observatory=observatory)
+                                      saturation_limit=60_000, observatory=observatory, n_workers=max_workers)
 
     recovered_wcs = calculate_helio_wcs_from_celestial(celestial_output,
                                                        data_object.meta.astropy_time,

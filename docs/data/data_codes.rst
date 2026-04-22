@@ -165,10 +165,10 @@ Calibration Product Codes
      - Clear NFI F-corona model, resolved into image with uncertainty
    * - 3
      - PSM
-     - Polarized mosaic stellar model, resolved into MZP pol. triplets with uncertainty
+     - Polarized mosaic starfield model in celestial coordinates, resolved into MZP pol. triplets with uncertainty
    * - 3
      - CSM
-     - Clear mosaic stellar model, resolved into image with uncertainty
+     - Clear mosaic starfield model in celestial coordinates, resolved into image with uncertainty
    * - 3
      - PSN
      - Polarized NFI stellar model, resolved into MZP pol. triplets with uncertainty

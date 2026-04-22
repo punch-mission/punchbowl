@@ -30,7 +30,7 @@ def resolve_polarization(data_list: list[NDCube], outsys: str = "mzpsolar") -> l
     data_collection = NDCollection([(k, NDCube(data=input_collection[k].data,
                                  wcs=input_collection[k].wcs,
                                  meta={"POLAR": input_collection[k].meta["POLAR"].value * u.degree,
-                                       "POLAROFF": input_collection[k].meta["POLAROFF"].value,
+                                       "POLAROFF": 90, #TODO: Update this before reprocessing all L0
                                        "POLARREF": str(input_collection[k].meta["POLARREF"])}))
                        for k in ["M", "Z", "P"]])
     out = []

@@ -1,0 +1,1 @@
+Temporarily hardcoded POLAROFF to 90 at Level 1

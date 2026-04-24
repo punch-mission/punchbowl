@@ -17,6 +17,7 @@ load_figure_template(["bootstrap", "bootstrap_dark"])
 REFRESH_RATE = 60  # seconds
 
 USABLE_COLUMNS = ["Level", "File type", "Flow type", "Observatory", "File version", "Polarization", "State", "Outlier"]
+COLOR_COLUMNS = ["Level", "File type", "Flow type", "Observatory", "File version", "Polarization", "State", "Outlier", "Outlier-binary"]
 PAGE_SIZE = 100
 
 dash.register_page(__name__)
@@ -177,7 +178,7 @@ def layout():
                     "Color points by: ",
                     dcc.Dropdown(
                         id="graph-color",
-                        options=["Nothing"] + USABLE_COLUMNS,
+                        options=["Nothing"] + COLOR_COLUMNS,
                         value="Observatory",
                         clearable=False,
                         style={"width" :"400px"},
@@ -626,6 +627,10 @@ def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, file_s
                       date_created_end, graph_point_time_window, refresh_nclicks, light_mode):
     group_by = [col.lower().replace(" ", "_") for col in group_by]
     color_key = color_key.lower().replace(" ", "_")
+    make_color_binary = False
+    if color_key == 'outlier-binary':
+        color_key = 'outlier'
+        make_color_binary = True
     shape_key = shape_key.lower().replace(" ", "_")
 
     query_cols = group_by + ["date_created", "date_obs"]
@@ -656,6 +661,8 @@ def update_file_graph(n, group_by, filter, sort_by, color_key, shape_key, file_s
     # Extract the data that sets shape and color, and then remove if necessary
     if color_key != "nothing":
         color_data = dff[color_key]
+        if make_color_binary:
+            color_data = color_data > 0
         if exclude_color_from_keys:
             dff = dff.drop(color_key, axis=1)
     if shape_key != "nothing":

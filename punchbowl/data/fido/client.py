@@ -155,7 +155,7 @@ class PUNCHClient(GenericClient):
                 for key in sorted(newest_file_by_date.keys()):
                     filesmeta.append(newest_file_by_date[key][1])
             else:
-                filesmeta = [f for f in filesmeta if f['DataVersion'] == dversion]
+                filesmeta = [f for f in filesmeta if f["DataVersion"] == dversion]
 
             for row in filesmeta:
                 rowdict = self.post_search_hook(row, matchdict)

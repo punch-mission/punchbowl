@@ -1,0 +1,1 @@
+When non-square-root-compressed data is acquired, appropriately scale the color bar range in the daily movies.

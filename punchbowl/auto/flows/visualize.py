@@ -127,9 +127,11 @@ def movie_core_flow(file_list: list, product_code: str, output_movie_dir: str,
 
             vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
 
-            if cube.meta["LEVEL"].value == 0 and cube.meta["ISSQRT"].value == 0:
-                vmin = vmin**2
-                vmax = vmax**2
+            if cube.meta["LEVEL"].value == "0" and cube.meta["ISSQRT"].value == 0 and cube.meta['SCALE'].value != 0:
+                # The values in the config file are sqrt-encoded, so need to undo it. SCALE is only used in
+                # sqrt-encoded data, but this assumes the value is not changed when sqrting is turned off.
+                vmin = vmin**2 / cube.meta['SCALE'].value
+                vmax = vmax**2 / cube.meta['SCALE'].value
 
             write_ndcube_to_quicklook(cube, filename=img_file, annotation=annotation, vmin=vmin, vmax=vmax)
 

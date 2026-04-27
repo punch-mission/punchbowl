@@ -134,7 +134,7 @@ def correct_psf(
 
     """
     if saturation_threshold is None:
-        saturation_threshold = data.meta["DSATVAL"].value * 0.99
+        saturation_threshold = data.meta["DSATVAL"].value
 
     new_data = psf_transform.apply(data.data, workers=max_workers,
                                    saturation_threshold=saturation_threshold,

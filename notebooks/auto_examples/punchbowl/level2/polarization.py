@@ -1,0 +1,77 @@
+
+import astropy.units as u
+import solpolpy
+from ndcube import NDCollection, NDCube
+from prefect import get_run_logger
+
+from punchbowl.prefect import punch_task
+
+
+def resolve_polarization(data_list: list[NDCube], outsys: str = "mzpsolar") -> list[NDCube]:
+    """
+    Take a set of input data in the camera MZP frame and convert to the solar MZP frame.
+
+    Parameters
+    ----------
+    data_list : List[NDCube]
+        List of NDCube objects on which to resolve polarization
+    outsys: str
+        The polarization system to resolve into
+
+    Returns
+    -------
+    List[NDCube]
+        modified version of the input with polarization resolved
+
+    """
+    # Unpack data into a NDCollection object
+    data_dictionary = list(zip(["M", "Z", "P"], data_list, strict=False))
+    input_collection = NDCollection(data_dictionary)
+    data_collection = NDCollection([(k, NDCube(data=input_collection[k].data,
+                                 wcs=input_collection[k].wcs,
+                                 meta={"POLAR": input_collection[k].meta["POLAR"].value * u.degree,
+                                       "POLAROFF": 90, #TODO: Update this before reprocessing all L0
+                                       "POLARREF": str(input_collection[k].meta["POLARREF"])}))
+                       for k in ["M", "Z", "P"]])
+    out = []
+    resolved_data_collection = solpolpy.resolve(data_collection, outsys)
+
+    for key in resolved_data_collection:
+        # The resolved cube's meta is a "normal" header object, not our NormalizedMetadata, so no .value!
+        input_collection[key].meta["POLARREF"] = resolved_data_collection[key].meta["POLARREF"]
+        resolved_data_collection[key].meta = input_collection[key].meta
+        resolved_data_collection[key].uncertainty = input_collection[key].uncertainty
+        out.append(resolved_data_collection[key])
+
+    return out
+
+
+@punch_task
+def resolve_polarization_task(data_list: list[NDCube | None]) -> list[NDCube | None]:
+    """
+    Prefect task for polarization resolving.
+
+    Parameters
+    ----------
+    data_list : List[NDCube]
+        List of NDCube objects on which to resolve polarization
+
+    Returns
+    -------
+    List[NDCube]
+        modified version of the input with polarization resolved
+
+    """
+    logger = get_run_logger()
+
+    if None in data_list:
+        logger.info("Skipping polarization resolution because one of the images was None.")
+        return [None, None, None]
+
+    logger.info("resolve_polarization started")
+    data_list = resolve_polarization(data_list)
+    logger.info("resolve_polarization ended")
+
+    for data_object in data_list:
+        data_object.meta.history.add_now("LEVEL2-resolve_polarization", "polarization resolved")
+    return data_list

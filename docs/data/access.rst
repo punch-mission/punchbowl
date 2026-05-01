@@ -7,7 +7,7 @@ Recommended Level 3 Products
 -----------------------------
 
 For most science use cases, the recommended starting point is the Level 3 **CAM**
-(Clear low-noise science mosaic) and **PAM** (Polarized low-noise science mosaic) products.
+(Clear/unpolarized low-noise science mosaic) and **PAM** (Polarized low-noise science mosaic) products.
 Both are fully background and starfield subtracted and mosaicked across the PUNCH field of view,
 giving you the cleanest possible signal for heliospheric science.
 CAM provides total brightness (B) with uncertainty, while PAM additionally resolves
@@ -18,7 +18,7 @@ improvement in signal-to-noise relative to other products.
 
 Researchers who need intermediate data products — for example to inspect F-corona
 subtraction before the final background removal, or to carry out their own starfield
-subtraction — should consider the **CIM** (Clear science trefoil with F-corona subtraction)
+subtraction — should consider the **CIM** (Clear/unpolarized science trefoil with F-corona subtraction)
 and **PIM** (Polarized science trefoil with F-corona subtraction) products. CIM and PIM
 retain the trefoil geometry of the full PUNCH field of view but stop short of the full
 background subtraction pipeline applied to CAM and PAM. They are particularly useful for

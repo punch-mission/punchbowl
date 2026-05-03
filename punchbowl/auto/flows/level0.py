@@ -886,11 +886,11 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
     needed_tlm_paths = [p.path for p in needed_tlm_paths]
 
     # parse any TLM files
-    tlm_contents = []
+    tlm_contents = {}
     for tlm_id, tlm_path in tlm_id_to_tlm_path.items():
         parsed_contents = TLMLoader(tlm_path, defs, apid_name2num).load()
         if parsed_contents is not None:
-            tlm_contents.append(parsed_contents)
+            tlm_contents[tlm_id] = parsed_contents
         else:
             skip_image = True
             skip_reason = "Could not load all needed TLM files"
@@ -919,8 +919,7 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
                 best_packet = max(order_dict[sequence_count])
                 packet_entry = packet_entry_mapping[best_packet]
                 ordered_image_packet_entries.append(packet_entry)
-                tlm_content_index = needed_tlm_paths.index(tlm_id_to_tlm_path[packet_entry.tlm_id])
-                selected_tlm_contents = tlm_contents[tlm_content_index]
+                selected_tlm_contents = tlm_contents[packet_entry.tlm_id]
                 ordered_image_content.append(
                     selected_tlm_contents["SCI_XFI"]["SCI_XFI_IMG_DATA"][packet_entry.packet_index])
                 sequence_counter.append(

@@ -17,6 +17,19 @@ The PUNCH mission and the SDAC data repository only supports the most recent ver
 
 A history of data version releases is given below.
 
+Version 0k
+----------
+- Released April 1, 206
+- Turned on starfield removal 
+- Improved bias/dark noise estimates
+- Refined pixel area calculation in https://github.com/punch-mission/punchbowl/pull/814
+- Moved quicklook JPEG-2000s to an L subdirectory
+- Added per instrument F-corona calcuation in https://github.com/punch-mission/punchbowl/pull/830
+- Added custom Fido client in https://github.com/punch-mission/punchbowl/pull/828
+- Corrected polarization calculations in https://github.com/punch-mission/punchbowl/pull/822
+- Added per-WFI masks to applied in level 2 before merging in https://github.com/punch-mission/punchbowl/pull/821
+- Reworked stray light calculations in https://github.com/punch-mission/punchbowl/pull/843
+
 Version 0j
 ----------
 - Released February 10, 2026

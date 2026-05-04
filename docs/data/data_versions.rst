@@ -24,7 +24,7 @@ Version 0k
 - Improved bias/dark noise estimates
 - Refined pixel area calculation in https://github.com/punch-mission/punchbowl/pull/814
 - Moved quicklook JPEG-2000s to an L subdirectory
-- Added per instrument F-corona calcuation in https://github.com/punch-mission/punchbowl/pull/830
+- Added per instrument F-corona calculation in https://github.com/punch-mission/punchbowl/pull/830
 - Added custom Fido client in https://github.com/punch-mission/punchbowl/pull/828
 - Corrected polarization calculations in https://github.com/punch-mission/punchbowl/pull/822
 - Added per-WFI masks to applied in level 2 before merging in https://github.com/punch-mission/punchbowl/pull/821

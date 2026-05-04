@@ -20,7 +20,7 @@ A history of data version releases is given below.
 Version 0k
 ----------
 - Released April 1, 206
-- Turned on starfield removal 
+- Turned on starfield removal
 - Improved bias/dark noise estimates
 - Refined pixel area calculation in https://github.com/punch-mission/punchbowl/pull/814
 - Moved quicklook JPEG-2000s to an L subdirectory

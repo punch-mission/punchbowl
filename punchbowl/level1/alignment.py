@@ -1,25 +1,21 @@
 import os
 import copy
-import warnings
-import multiprocessing
+import itertools
 from collections.abc import Callable
-from concurrent.futures import ProcessPoolExecutor
 
 import astrometry
 import astropy.units as u
 import numpy as np
 import pandas as pd
-import scipy
-import sep
+from astropy import modeling
 from astropy.coordinates import EarthLocation, SkyCoord
 from astropy.io import fits
-from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
-from lmfit import Parameters, minimize
+from astropy.stats import SigmaClip, sigma_clipped_stats
+from astropy.wcs import WCS, NoConvergence, utils
 from ndcube import NDCube
-from prefect import get_run_logger
-from regularizepsf import ArrayPSFTransform
+from photutils.background import Background2D, MedianBackground
+from photutils.detection import DAOStarFinder
 from scipy.spatial import KDTree
-from skimage.transform import resize
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
@@ -55,94 +51,6 @@ def download_gaia_data(out_path: str, dimmest_mag: float = 9) -> None:
     results["RAdeg"] = np.round(results["RAdeg"], 7)
     results["DEdeg"] = np.round(results["DEdeg"], 7)
     results.to_pandas(index="source_id").to_csv(out_path)
-
-
-def filter_distortion_table(data: np.ndarray, blur_sigma: float = 4, med_filter_size: float = 3) -> np.ndarray:
-    """
-    Filter a copy of the distortion lookup table.
-
-    Any rows/columns at the edges that are all NaNs will be removed and
-    replaced with a copy of the closest non-removed edge at the end of
-    processing.
-
-    Any NaN values that don't form a complete edge row/column will be replaced
-    with the median of all surrounding non-NaN pixels.
-
-    Then median filtering is performed across the whole map to remove outliers,
-    and Gaussian filtering is applied to accept only slowly-varying
-    distortions.
-
-    Parameters
-    ----------
-    data
-        The distortion map to be filtered
-    blur_sigma : float
-        The number of pixels constituting one standard deviation of the
-        Gaussian kernel. Set to 0 to disable Gaussian blurring.
-    med_filter_size : int
-        The size of the local neighborhood to consider for median filtering.
-        Set to 0 to disable median filtering.
-
-    Notes
-    -----
-    Modified from https://github.com/svank/wispr_analysis/blob/main/wispr_analysis/image_alignment.py
-
-    """
-    data = data.copy()
-
-    # Trim empty (all-nan) rows and columns
-    trimmed = []
-    i = 0
-    while np.all(np.isnan(data[0])):
-        i += 1
-        data = data[1:]
-    trimmed.append(i)
-
-    i = 0
-    while np.all(np.isnan(data[-1])):
-        i += 1
-        data = data[:-1]
-    trimmed.append(i)
-
-    i = 0
-    while np.all(np.isnan(data[:, 0])):
-        i += 1
-        data = data[:, 1:]
-    trimmed.append(i)
-
-    i = 0
-    while np.all(np.isnan(data[:, -1])):
-        i += 1
-        data = data[:, :-1]
-    trimmed.append(i)
-
-    # Replace interior nan values with the median of the surrounding values.
-    # We're filling in from neighboring pixels, so if there are any nan pixels
-    # fully surrounded by nan pixels, we need to iterate a few times.
-    while np.any(np.isnan(data)):
-        nans = np.nonzero(np.isnan(data))
-        replacements = np.zeros_like(data)
-        with warnings.catch_warnings():
-            warnings.filterwarnings(action="ignore", message="All-NaN slice")
-            for r, c in zip(*nans, strict=False):
-                r1, r2 = r - 1, r + 2
-                c1, c2 = c - 1, c + 2
-                r1, r2 = max(r1, 0), min(r2, data.shape[0])
-                c1, c2 = max(c1, 0), min(c2, data.shape[1])
-
-                replacements[r, c] = np.nanmedian(data[r1:r2, c1:c2])
-        data[nans] = replacements[nans]
-
-    # Median-filter the whole image
-    if med_filter_size:
-        data = scipy.ndimage.median_filter(data, size=med_filter_size, mode="reflect")
-
-    # Gaussian-blur the whole image
-    if blur_sigma > 0:
-        data = scipy.ndimage.gaussian_filter(data, sigma=blur_sigma)
-
-    # Replicate the edge rows/columns to replace those we trimmed earlier
-    return np.pad(data, [trimmed[0:2], trimmed[2:]], mode="edge")
 
 
 def get_data_path(path: str) -> str:
@@ -190,7 +98,9 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
 
 
 def find_catalog_in_image(
-        catalog: pd.DataFrame, wcs: WCS, image_shape: tuple[int, int], mask: Callable | None = None,
+        catalog: pd.DataFrame,
+        wcs: WCS, image_shape: tuple[int, int],
+        mask: Callable | None = None,
         mode: str = "all",
 ) -> pd.DataFrame:
     """
@@ -234,51 +144,6 @@ def find_catalog_in_image(
     reduced_catalog["x_pix"] = xs[bounds_mask]
     reduced_catalog["y_pix"] = ys[bounds_mask]
     return reduced_catalog
-
-
-def find_star_coordinates(image_data: np.ndarray,
-                          saturation_limit: float = np.inf,
-                          max_distance_from_center: float = 700,
-                          background_size: int = 16,
-                          detection_threshold: float = 5.0) -> np.ndarray:
-    """
-    Extract the coordinates of observed stars in an image using sep.
-
-    Parameters
-    ----------
-    image_data : np.ndarray
-        an array of an image
-    saturation_limit : float
-        stars brighter than this are ignored
-    max_distance_from_center: float
-        only returns stars at most this distance from the center of the image
-    background_size: int
-        pixel size used by sep when building background model
-    detection_threshold : float
-        number of sigma brighter than noise level a star must be for detection
-
-    Returns
-    -------
-    np.ndarray
-        pixel coordinates of stars that are present in the image
-
-    """
-    image_copy = image_data.copy()
-    image_copy[image_copy > saturation_limit] = 0
-    if background_size > 0:
-        background = sep.Background(image_data, bw=background_size, bh=background_size)
-        image_sub = image_data - background
-        objects = sep.extract(image_sub, detection_threshold, err=background.globalrms)
-    else:
-        image_sub = image_data
-        objects = sep.extract(image_sub, detection_threshold)
-    objects = pd.DataFrame(objects).sort_values("flux")
-    observed_coords = np.stack([objects["x"], objects["y"]], axis=-1)
-
-    center = image_data.shape[0] // 2, image_data.shape[1] // 2
-    distance = np.sqrt(np.square(observed_coords[:, 0] - center[0]) + np.square(observed_coords[:, 1] - center[1]))
-    return observed_coords[distance < max_distance_from_center, :]
-
 
 def astrometry_net_initial_solve(observed_coords: np.ndarray,
                                  image_wcs: WCS,
@@ -339,74 +204,6 @@ def astrometry_net_initial_solve(observed_coords: np.ndarray,
         return None
 
 
-def _residual(params: Parameters,
-              catalog_stars: SkyCoord,
-              observed_tree: KDTree,
-              guess_wcs: WCS,
-              max_error: float = 30) -> float:
-    """
-    Residual used when optimizing the pointing.
-
-    Parameters
-    ----------
-    params : Parameters
-        optimization parameters from lmfit
-    catalog_stars : SkyCoord
-        image catalog of stars to match against
-    observed_tree : KDTree
-        a KDTree of the pixel coordinates of the observed stars
-    guess_wcs : WCS
-        initial guess of the world coordinate system, must overlap with the true WCS
-    max_error: float
-        stars more distant than this are complete misses, and their error is zeroed out
-
-    Returns
-    -------
-    np.ndarray
-        residual
-
-    """
-    refined_wcs = guess_wcs.deepcopy()
-    refined_wcs.wcs.cdelt = (-params["platescale"].value, params["platescale"].value)
-    refined_wcs.wcs.crval = (params["crval1"].value, params["crval2"].value)
-    refined_wcs.wcs.pc = np.array(
-        [
-            [np.cos(params["crota"]), -np.sin(params["crota"])],
-            [np.sin(params["crota"]), np.cos(params["crota"])],
-        ],
-    )
-    refined_wcs.cpdis1 = guess_wcs.cpdis1
-    refined_wcs.cpdis2 = guess_wcs.cpdis2
-
-    errors, _ = get_errors(refined_wcs, catalog_stars, observed_tree)
-    errors = errors[errors < max_error]
-    return np.nansum(np.abs(errors)) / len(errors)
-
-
-def get_errors(wcs: WCS, catalog_stars: SkyCoord | tuple[np.ndarray, np.ndarray],
-               observed_stars: np.ndarray | KDTree) -> tuple[np.ndarray, np.ndarray]:
-    """Compute errors between expected and observed star locations."""
-    if isinstance(observed_stars, np.ndarray):
-        observed_stars = KDTree(observed_stars)
-    if isinstance(catalog_stars, SkyCoord):
-        try:
-            xs, ys = catalog_stars.to_pixel(wcs, mode="all")
-        except NoConvergence as e:
-            xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
-    else:
-        xs, ys = catalog_stars
-    refined_coords = np.stack([xs, ys], axis=-1)
-
-    errors = np.empty(refined_coords.shape[0])
-    closest_stars = np.empty(refined_coords.shape)
-    for coord_i, coord in enumerate(refined_coords):
-        dd, ii = observed_stars.query(coord, k=1)
-        errors[coord_i] = dd
-        closest_stars[coord_i] = observed_stars.data[ii]
-
-    return errors, closest_stars
-
-
 def extract_crota_from_wcs(wcs: WCS) -> tuple[float, float]:
     """Extract CROTA from a WCS."""
     delta_ratio = abs(wcs.wcs.cdelt[1]) / abs(wcs.wcs.cdelt[0])
@@ -434,199 +231,6 @@ def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
     return new_wcs
 
 
-def refine_pointing_single_step(
-        guess_wcs: WCS, observed_tree: KDTree, catalog_stars: SkyCoord, method: str = "least_squares",
-        ra_tolerance: float = 10, dec_tolerance: float = 5,
-        fix_crval: bool = False, fix_crota: bool = False, fix_pv: bool = True) -> WCS:
-    """
-    Perform a single step of pointing refinement.
-
-    Parameters
-    ----------
-    guess_wcs : WCS
-        the initial guess for the world coordinate system
-    observed_tree: KDTree
-        coordinates of the observed star positions extracted from the image, as a tree
-    catalog_stars : SkyCoord
-        the coordinates of known stars to be matched with the observed stars
-    method : str
-        method used by lmfit for minimization
-    ra_tolerance : float
-        how many degrees the guess WCS is allowed to be incorrect by in right ascension
-    dec_tolerance : float
-        how many degrees the guess WCS is allowed to be incorrect by in declination
-    fix_crval : bool
-        if True the crval is not allowed to vary, otherwise it can be fit
-    fix_crota : bool
-        if True the crota is not allowed to vary, otherwise it can be fit
-    fix_pv : bool
-        if True the pv is not allowed to vary, otherwise it can be fit
-
-    Returns
-    -------
-    WCS
-        the new world coordinate system
-
-    """
-    # set up the optimization
-    params = Parameters()
-    initial_crota = extract_crota_from_wcs(guess_wcs)
-    params.add("crota", value=initial_crota.to(u.rad).value,
-               min=-np.pi, max=np.pi, vary=not fix_crota)
-    params.add("crval1", value=guess_wcs.wcs.crval[0],
-               min=guess_wcs.wcs.crval[0] - ra_tolerance,
-               max=guess_wcs.wcs.crval[0] + ra_tolerance, vary=not fix_crval)
-    params.add("crval2", value=guess_wcs.wcs.crval[1],
-               min=guess_wcs.wcs.crval[1] - dec_tolerance,
-               max=guess_wcs.wcs.crval[1] + dec_tolerance, vary=not fix_crval)
-    params.add("platescale", value=abs(guess_wcs.wcs.cdelt[0]), min=0, max=1, vary=False)
-    pv = guess_wcs.wcs.get_pv()[0][-1] if guess_wcs.wcs.get_pv() else 0.0
-    params.add("pv", value=pv, min=0.0, max=1.0, vary=not fix_pv)
-
-    out = minimize(_residual, params, method=method,
-                   args=(catalog_stars, observed_tree, guess_wcs),
-                   max_nfev=1000, calc_covar=False)
-    result_wcs = guess_wcs.deepcopy()
-    result_wcs.wcs.cdelt = (-out.params["platescale"].value, out.params["platescale"].value)
-    result_wcs.wcs.crval = (out.params["crval1"].value, out.params["crval2"].value)
-    result_wcs.wcs.pc = np.array(
-        [
-            [np.cos(out.params["crota"].value), -np.sin(out.params["crota"].value)],
-            [np.sin(out.params["crota"].value), np.cos(out.params["crota"].value)],
-        ],
-    )
-    result_wcs.cpdis1 = guess_wcs.cpdis1
-    result_wcs.cpdis2 = guess_wcs.cpdis2
-    result_wcs.wcs.set_pv([(2, 1, out.params["pv"].value)])
-
-    return result_wcs, out.residual[0]
-
-
-def solve_pointing(
-        image_data: np.ndarray,
-        image_wcs: WCS,
-        image_header: NormalizedMetadata,
-        distortion: WCS | None = None,
-        saturation_limit: float = np.inf,
-        observatory: str = "wfi",
-        n_rounds: int = 175,
-        n_workers: int = 4) -> WCS:
-    """
-    Carefully determine the pointing of an image using the starfield.
-
-    Parameters
-    ----------
-    image_data : np.ndarray
-        a 2D image, preferably with cosmic rays reduced
-    image_wcs : WCS
-        a guess world coordinate system
-    image_header : NormalizedMetadata
-        the image's metadata
-    distortion : WCS | None
-        a distortion WCS to use when fitting
-    saturation_limit : float
-        the maximum star brightness to utilize
-    observatory : str
-        "wfi" or "nfi"
-    n_rounds : int
-        the number of iterations to run for pointing refinement
-    n_workers : int
-        the number of parallel workers to use for pointing refinement
-
-    Returns
-    -------
-    WCS
-        the new world coordinate system
-
-    """
-    logger = get_run_logger()
-
-    wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
-    if observatory == "wfi":
-        search_scales = (14, 15, 16)
-        max_distance = 700
-        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=5.0,
-                                         max_distance_from_center=max_distance)
-
-        def mask(observed: np.ndarray) -> np.ndarray:
-            distances = np.sqrt(np.square(observed[:, 0] - 1024) + np.square(observed[:, 1] - 1024))
-            return distances < max_distance
-    elif observatory == "nfi":
-        search_scales = (11, 12, 13, 14)
-        # We handle max_distance_from_center separately in our mask function, to do it relative to the occulter center
-        observed = find_star_coordinates(image_data, saturation_limit=saturation_limit, detection_threshold=3.0,
-                                         max_distance_from_center=9999)
-
-        def mask(observed: np.ndarray) -> np.ndarray:
-            distances = np.sqrt(np.square(observed[:, 0] - 1013.5) + np.square(observed[:, 1] - 1036.4))
-            distance_mask = distances > 220
-            distance_mask *= distances < 930
-            donut_edge_mask = (distances > 830) * (distances < 870)
-            pylon_mask = (observed[:, 0] > 850) * (observed[:, 0] < 1200) * (observed[:, 1] < 1024)
-            glint_mask = (observed[:, 0] > 475) * (observed[:, 0] < 1550) * (observed[:, 1] < 950) * (
-                    observed[:, 1] > 600)
-            return distance_mask * ~pylon_mask * ~glint_mask * ~donut_edge_mask
-
-
-    else:
-        msg = f"Unknown observatory = {observatory}"
-        raise ValueError(msg)
-    observed = observed[mask(observed)]
-    astrometry_net = astrometry_net_initial_solve(observed, image_wcs.deepcopy(),
-                                                  search_scales=search_scales,
-                                                  lower_arcsec_per_pixel=wcs_arcsec_per_pixel - 10,
-                                                  upper_arcsec_per_pixel=wcs_arcsec_per_pixel + 10)
-    if astrometry_net is None:
-        logger.warning("Astrometry.net initial solution failed. Falling back to spacecraft WCS.")
-        astrometry_net = image_wcs.deepcopy()
-
-    astrometry_net = convert_cd_matrix_to_pc_matrix(astrometry_net)
-
-    image_center = (image_data.shape[0] // 2 + 0.5, image_data.shape[1] // 2 + 0.5)
-    center = astrometry_net.all_pix2world(np.array([image_center]), 0)
-    guess_wcs = astrometry_net.deepcopy()
-    guess_wcs.wcs.ctype = "RA---AZP", "DEC--AZP"
-    guess_wcs.wcs.crval = center[0]
-    guess_wcs.wcs.crpix = image_center
-    guess_wcs.wcs.cdelt = image_wcs.wcs.cdelt
-    guess_wcs.sip = None
-    if distortion is not None:
-        guess_wcs.cpdis1 = distortion.cpdis1
-        guess_wcs.cpdis2 = distortion.cpdis2
-        if distortion.wcs.get_pv():
-            pv = distortion.wcs.get_pv()[0][-1]
-            guess_wcs.wcs.set_pv([(2, 1, pv)])
-
-    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=7)
-    stars_in_image = find_catalog_in_image(catalog, guess_wcs, (2048, 2048))
-
-    ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
-    stars_in_image = stars_in_image[ok_stars]
-
-    catalog_stars = prep_star_coords(stars_in_image, image_header)
-
-    indices = np.arange(len(catalog_stars))
-    rng = np.random.default_rng(seed=1)
-    candidate_wcs = []
-    observed_tree = KDTree(observed)
-    mp_context = multiprocessing.get_context("forkserver")
-    with ProcessPoolExecutor(n_workers, mp_context) as p:
-        for _ in range(n_rounds):
-            sample = catalog_stars[rng.choice(indices, 15, replace=False)]
-            candidate_wcs.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))
-    candidate_wcs = [w.result() for w in candidate_wcs]
-    errors = [r[1] for r in candidate_wcs]
-    candidate_wcs = [r[0] for r in candidate_wcs]
-    best = np.argmin(np.abs(errors))
-
-    solved_wcs = candidate_wcs[best]
-    if distortion is not None:
-        solved_wcs.cpdis1 = distortion.cpdis1
-        solved_wcs.cpdis2 = distortion.cpdis2
-
-    return solved_wcs
-
-
 def prep_star_coords(stars_in_image: pd.DataFrame, image_header: NormalizedMetadata) -> SkyCoord:
     """
     Convert ICRS coordinates to GCRS and put in a SkyCoord that says its ICRS.
@@ -648,133 +252,157 @@ def prep_star_coords(stars_in_image: pd.DataFrame, image_header: NormalizedMetad
     ).transform_to("gcrs")
     return SkyCoord(catalog_stars.ra, catalog_stars.dec, frame="icrs")
 
+def _get_fitted_parameter_from_ensemble_measurements(measurements: np.ndarray,
+                                                     histogram_range=0.03,
+                                                     guess_stddev=0.05,
+                                                     num_bins=50):
+    counts, bin_edges = np.histogram(measurements, num_bins,
+                                     range=(np.min(measurements) - histogram_range,
+                                            np.max(measurements) + histogram_range))
+    bin_centers = bin_edges[:-1] + (bin_edges[1] - bin_edges[0]) / 2
+    fitter = modeling.fitting.LevMarLSQFitter()
+    model = modeling.models.Gaussian1D(amplitude=np.max(counts), mean=bin_centers[np.argmax(counts)],
+                                       stddev=guess_stddev)
+    fitted_model = fitter(model, bin_centers, counts)
+    return fitted_model.parameters[1]
 
-def measure_wcs_error(
-        image_data: np.ndarray,
-        wcs: WCS,
-        image_header: NormalizedMetadata,
-        dimmest_magnitude: float = 6.0,
-        max_error: float = 15.0, debug: bool = True) -> float:
-    """Estimate the error in the WCS based on an image."""
-    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
-    stars_in_image = find_catalog_in_image(catalog, wcs, image_data.shape)
-    catalog_stars = prep_star_coords(stars_in_image, image_header)
+def find_star_coordinates(image, return_fluxes=False):
+    try:
+        sigma_clip = SigmaClip(sigma=3.0)
+        bkg_estimator = MedianBackground()
+        bkg = Background2D(image, (10, 10), filter_size=(5, 5),
+                           sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
 
-    observed_coords = find_star_coordinates(
-        image_data,
-        detection_threshold=15.0,
-        max_distance_from_center=800,
-        saturation_limit=1000)
+        mean, median, std = sigma_clipped_stats(image - bkg.background, sigma=3.0)
+        daofind = DAOStarFinder(fwhm=3.0, threshold=5. * std)
+        sources = daofind(image - bkg.background)
+        sources.sort("flux")
 
-    errors, _ = get_errors(wcs, catalog_stars, observed_coords)
+        if return_fluxes:
+            return np.stack([sources["xcentroid"], sources["ycentroid"], sources["flux"]], axis=-1)
+        return np.stack([sources["xcentroid"], sources["ycentroid"]], axis=-1)
 
-    errors = errors[errors <= max_error]
-    if debug:
-        return np.sqrt(np.mean(np.square(errors))), errors
-    return np.sqrt(np.mean(np.square(errors)))
+    except Exception as e:
+        print(e)
+        return np.array([[], []]).T
 
+def solve_center(cube,
+                 anet_cutout=400,
+                 cutout_width=100,
+                 search_scales: list[int] = (14, 15, 16),
+                 count=150,
+                 num_samples=50_000,
+                 error_threshold=1.0 * 0.0225,
+                 match_criterion=7.0 * 0.0225,
+                 distortion=None):
+    anet_start_index = (cube.data.shape[0] - anet_cutout) // 2
+    anet_end_index = anet_start_index + anet_cutout
+    image = cube.data[anet_start_index:anet_end_index, anet_start_index:anet_end_index]
+    anet_cutout_wcs = cube.wcs.deepcopy()
+    anet_cutout_wcs.wcs.crpix = anet_cutout / 2 + 0.5, anet_cutout / 2 + 0.5
+    wcs_arcsec_per_pixel = anet_cutout_wcs.wcs.cdelt[1] * 3600
 
-def build_distortion_model(
-        l0_paths: list[str],
-        dimmest_magnitude: float = 6.5,
-        num_bins: int = 60,
-        psf_transform: ArrayPSFTransform | None = None) -> WCS:
-    """Create a distortion model from a set of PUNCH L0 images."""
-    refined_wcses = []
-    image_cube = []
-    image_metas = []
-    for path in l0_paths:
-        with fits.open(path) as hdul:
-            image_head = hdul[1].header
-            image_data = hdul[1].data.astype(float)
-            image_data = image_data ** 2 / image_head["SCALE"]
-            if psf_transform is not None:
-                saturation_threshold = image_head["DSATVAL"] ** 2 / image_head["SCALE"] * 0.9
-                image_data = psf_transform.apply(image_data,
-                                                 saturation_threshold=saturation_threshold).copy()
-            img_shape = image_data.shape
-            image_wcs = WCS(hdul[1].header, hdul, key="A")
-            mask = image_data != 0
+    image_positions = find_star_coordinates(image.copy(), return_fluxes=True)
 
-        meta = NormalizedMetadata.from_fits_header(image_head)
-        solved_wcs = solve_pointing(image_data, image_wcs, meta)
+    astrometry_net_wcs = astrometry_net_initial_solve(image_positions,
+                                                  anet_cutout_wcs.deepcopy(),
+                                                  search_scales=search_scales,
+                                                  num_stars=100,
+                                                  lower_arcsec_per_pixel=wcs_arcsec_per_pixel - 5,
+                                                  upper_arcsec_per_pixel=wcs_arcsec_per_pixel + 5)
 
-        image_cube.append(image_data)
-        refined_wcses.append(solved_wcs)
-        image_metas.append(meta)
+    astrometry_net_wcs = convert_cd_matrix_to_pc_matrix(astrometry_net_wcs)
 
-    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
-    all_distortions = []
+    center = anet_cutout / 2 + 0.5, anet_cutout / 2 + 0.5
+    center_radec = astrometry_net_wcs.all_pix2world(np.array([center]), 0)
 
-    for image_data, new_wcs, meta in zip(image_cube, refined_wcses, image_metas, strict=False):
-        stars_in_image = find_catalog_in_image(catalog, new_wcs, image_data.shape)
-        catalog_stars = prep_star_coords(stars_in_image, meta)
-        expected_coords = catalog_stars.to_pixel(new_wcs)
+    guess_wcs = astrometry_net_wcs.deepcopy()
+    guess_wcs.wcs.ctype = "RA---AZP", "DEC--AZP"
+    guess_wcs.wcs.crval = center_radec[0]
+    guess_wcs.wcs.crpix = center
+    guess_wcs.wcs.cdelt = cube.wcs.wcs.cdelt
+    guess_wcs.sip = None
+    guess_wcs.cpdis1 = None
+    guess_wcs.cpdis2 = None
 
-        observed_coords = find_star_coordinates(image_data,
-                                                max_distance_from_center=1200,
-                                                detection_threshold=25.0,
-                                                saturation_limit=1000)
+    image_positions = np.stack(guess_wcs.pixel_to_world_values(image_positions[:, 0], image_positions[:, 1]), axis=1)
+    catalog_found = find_catalog_in_image(load_gaia_catalog(), guess_wcs, image.shape)
 
-        distances, matched_stars = get_errors(new_wcs, expected_coords, observed_coords)
+    # TODO somewhere we should prep atar coords
 
-        for i in range(len(expected_coords)):
-            all_distortions.append({"distance": distances[i],
-                                    "ox": matched_stars[i][0],
-                                    "oy": matched_stars[i][1],
-                                    "nx": expected_coords[i][0],
-                                    "ny": expected_coords[i][1]})
-    df = pd.DataFrame(all_distortions)
+    image_positions = image_positions[-int(1.5 * len(catalog_found)):]
 
-    xbins, r, c, _ = scipy.stats.binned_statistic_2d(
-        df["oy"],
-        df["ox"],
-        df["ox"] - df["nx"],
-        "median",
-        (num_bins, num_bins),
-        expand_binnumbers=True,
-        range=((0, img_shape[1]), (0, img_shape[0])),
-    )
+    image_position_tree = KDTree(image_positions[:, :2])
+    catalog_positions = np.stack([catalog_found["RAdeg"], catalog_found["DEdeg"]], axis=-1)
+    catalog_position_tree = KDTree(catalog_positions)
 
-    ybins, _, _, _ = scipy.stats.binned_statistic_2d(
-        df["oy"],
-        df["ox"],
-        df["oy"] - df["ny"],
-        "median",
-        (num_bins, num_bins),
-        expand_binnumbers=True,
-        range=((0, img_shape[1]), (0, img_shape[0])),
-    )
+    catalog_count, image_count = count, count
 
-    mask = resize(mask, (num_bins, num_bins))
+    _, image_ids = image_position_tree.query((cutout_width / 2, cutout_width / 2), k=image_count)
+    _, catalog_ids = catalog_position_tree.query((cutout_width / 2, cutout_width / 2), k=catalog_count)
 
-    xbins *= mask
-    ybins *= mask
+    catalog_triangles = np.array(list(itertools.combinations(catalog_ids, 3)))
 
-    xbins = filter_distortion_table(xbins, 1.1, 1) * mask
-    ybins = filter_distortion_table(ybins, 1.1, 1) * mask
+    chosen_catalog_triangle_indices = np.random.choice(len(catalog_triangles), size=num_samples, replace=False)
 
-    r = np.linspace(0, 2048, num_bins + 1)
-    c = np.linspace(0, 2048, num_bins + 1)
-    r = (r[1:] + r[:-1]) / 2
-    c = (c[1:] + c[:-1]) / 2
+    angles, translations = [], []
 
-    err_px, err_py = r, c
-    cpdis1 = DistortionLookupTable(
-        -xbins.astype(np.float32), (0, 0), (err_px[0], err_py[0]),
-        ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
-    )
-    cpdis2 = DistortionLookupTable(
-        -ybins.astype(np.float32), (0, 0), (err_px[0], err_py[0]),
-        ((err_px[1] - err_px[0]), (err_py[1] - err_py[0])),
-    )
+    for chosen_catalog_triangle_index in chosen_catalog_triangle_indices:
+        ds, matches = image_position_tree.query(catalog_positions[catalog_triangles[chosen_catalog_triangle_index]], k=1)
+        if np.all(ds < match_criterion):
+            catalog_tri = catalog_positions[catalog_triangles[chosen_catalog_triangle_index]]
+            image_tri = image_positions[matches][..., :2]
 
-    out_wcs = solved_wcs.copy()
-    out_wcs.cpdis1 = cpdis1
-    out_wcs.cpdis2 = cpdis2
+            image_tri_centroid = np.sum(image_tri, axis=0) / 3
+            catalog_tri_centroid = np.sum(catalog_tri, axis=0) / 3
 
-    return out_wcs
+            t = image_tri_centroid - catalog_tri_centroid
 
+            shifted_image_tri = image_tri
+            shifted_catalog_tri = catalog_tri #+ t  # TODO should I really shift?
+
+            ee = image_tri - (catalog_tri + t)
+            ee_norm = np.sum(np.linalg.norm(ee, axis=1))  # TODO should include the rotation!
+
+            a1 = (np.atan2(shifted_catalog_tri[0][1] - cutout_width / 2, shifted_catalog_tri[0][0] - cutout_width / 2)
+                  - np.atan2(shifted_image_tri[0][1] - cutout_width / 2, shifted_image_tri[0][0] - cutout_width / 2))
+            a2 = (np.atan2(shifted_catalog_tri[1][1] - cutout_width / 2, shifted_catalog_tri[1][0] - cutout_width / 2)
+                  - np.atan2(shifted_image_tri[1][1] - cutout_width / 2, shifted_image_tri[1][0] - cutout_width / 2))
+            a3 = (np.atan2(shifted_catalog_tri[2][1] - cutout_width / 2, shifted_catalog_tri[2][0] - cutout_width / 2)
+                  - np.atan2(shifted_image_tri[2][1] - cutout_width / 2, shifted_image_tri[2][0] - cutout_width / 2))
+            a = np.rad2deg(np.mean([a1, a2, a3]))
+
+            if ee_norm < error_threshold:
+                translations.append(t)
+                angles.append(a)
+
+    angles, translations = np.array(angles), np.array(translations)
+
+    dx = _get_fitted_parameter_from_ensemble_measurements(translations[:, 0],
+                                                          histogram_range=0.04, guess_stddev=0.05, num_bins=50)
+    dy = _get_fitted_parameter_from_ensemble_measurements(translations[:, 1],
+                                                          histogram_range=0.04, guess_stddev=0.05, num_bins=50)
+    da = _get_fitted_parameter_from_ensemble_measurements(angles,
+                                                          histogram_range=0.05, guess_stddev=0.05, num_bins=50)
+
+    new_wcs = guess_wcs.deepcopy()
+    cdelt1, cdelt2 = new_wcs.wcs.cdelt
+    new_wcs.wcs.crpix = (cube.data.shape[0]/2 + 0.5, cube.data.shape[1]/2 + 0.5)
+    new_wcs.wcs.crval -= np.array([dx, dy])
+    new_crota = extract_crota_from_wcs(guess_wcs) + da * u.degree
+    new_wcs.wcs.pc = np.array(
+        [
+            [np.cos(new_crota), np.sin(new_crota) * (cdelt1 / cdelt2)],
+            [-np.sin(new_crota) * (cdelt2 / cdelt1), np.cos(new_crota)],
+        ])
+
+    if distortion is not None:
+        new_wcs.cpdis1 = distortion.cpdis1
+        new_wcs.cpdis2 = distortion.cpdis2
+
+    return new_wcs
+
+# TODO add code that determines the distortion
 
 @punch_task
 def align_task(data_object: NDCube, distortion_path: str | None, max_workers: int = 4) -> NDCube:
@@ -814,6 +442,7 @@ def align_task(data_object: NDCube, distortion_path: str | None, max_workers: in
         distortion = None
 
     observatory = "nfi" if data_object.meta["OBSCODE"].value == "4" else "wfi"
+    # TODO : replace with center solver
     celestial_output = solve_pointing(refining_data, celestial_input, data_object.meta, distortion,
                                       saturation_limit=60_000, observatory=observatory, n_workers=max_workers)
 

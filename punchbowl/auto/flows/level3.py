@@ -95,7 +95,6 @@ def level3_PTM_query_ready_files(session, pipeline_config: dict, reference_time=
 
     actually_ready_files = []
     for f in all_ready_files:
-        # TODO put magic numbers in config
         valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=starfield_window), file_type="PS")
 
         if len(valid_starfields) >= 2:
@@ -417,7 +416,6 @@ def level3_CTM_query_ready_files(session, pipeline_config: dict, reference_time=
 
     actually_ready_files = []
     for f in all_ready_files:
-        # # TODO put magic numbers in config
         valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=starfield_window), file_type="CS")
 
         if len(valid_starfields) >= 2:

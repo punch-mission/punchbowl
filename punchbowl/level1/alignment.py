@@ -326,7 +326,7 @@ def solve_center(cube,
     guess_wcs.cpdis2 = None
 
     image_positions = np.stack(guess_wcs.pixel_to_world_values(image_positions[:, 0], image_positions[:, 1]), axis=1)
-    catalog_found = find_catalog_in_image(load_gaia_catalog(), guess_wcs, image.shape, meta=cube.meta)
+    catalog_found = find_catalog_in_image(load_gaia_catalog(), guess_wcs, image.shape)
 
     # TODO somewhere we should prep atar coords
 

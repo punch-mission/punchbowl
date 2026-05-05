@@ -359,7 +359,7 @@ def solve_center(cube,
             t = image_tri_centroid - catalog_tri_centroid
 
             shifted_image_tri = image_tri
-            shifted_catalog_tri = catalog_tri + t  # TODO should I really shift?
+            shifted_catalog_tri = catalog_tri #+ t  # TODO should I really shift?
 
             ee = image_tri - (catalog_tri + t)
             ee_norm = np.sum(np.linalg.norm(ee, axis=1))  # TODO should include the rotation!

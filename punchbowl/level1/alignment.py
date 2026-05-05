@@ -387,7 +387,7 @@ def solve_center(cube,
 
     new_wcs = guess_wcs.deepcopy()
     cdelt1, cdelt2 = new_wcs.wcs.cdelt
-    new_wcs.wcs.crpix = (cube.data.shape[0] + 0.5, cube.data.shape[1] + 0.5)
+    new_wcs.wcs.crpix = (cube.data.shape[0]/2 + 0.5, cube.data.shape[1]/2 + 0.5)
     new_wcs.wcs.crval -= np.array([dx, dy])
     new_crota = extract_crota_from_wcs(guess_wcs) + da * u.degree
     new_wcs.wcs.pc = np.array(

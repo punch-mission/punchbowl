@@ -389,35 +389,41 @@ def subtract_starfield_background_task(data_object: NDCube,
         union_wcs, union_shape = find_optimal_celestial_wcs(
             [(shape_before, wcs_celestial_before),
             (shape_after,  wcs_celestial_after)],
-            auto_rotate=False)
+            auto_rotate=False, projection="CAR")
 
         starfield_reprojected_before = reproject_interp(
-            (star_datacube_before.data, wcs_celestial_before),
+            (np.stack([star_datacube_before.data, star_datacube_before.uncertainty.array], axis=0),
+            wcs_celestial_before),
             union_wcs,
             shape_out=union_shape,
             return_footprint=False)
 
         starfield_reprojected_after = reproject_interp(
-            (star_datacube_after.data, wcs_celestial_after),
+            (np.stack([star_datacube_after.data, star_datacube_after.uncertainty.array], axis=0),
+            wcs_celestial_after),
             union_wcs,
             shape_out=union_shape,
             return_footprint=False)
 
-        # TODO - uncertainty!
-        starfield_before = NDCube(data=starfield_reprojected_before, wcs = union_wcs, meta=star_datacube_before.meta)
-        starfield_after = NDCube(data=starfield_reprojected_after, wcs = union_wcs, meta=star_datacube_after.meta)
+        starfield_before = NDCube(data=starfield_reprojected_before[0],
+                                uncertainty = StdDevUncertainty(starfield_reprojected_before[1]),
+                                wcs = union_wcs, meta=star_datacube_before.meta)
+        starfield_after = NDCube(data=starfield_reprojected_after[0],
+                                uncertainty = StdDevUncertainty(starfield_reprojected_after[1]),
+                                wcs = union_wcs, meta=star_datacube_after.meta)
 
-        starfield_data_interpolated = interpolate_data(starfield_before,
-                                                       starfield_after,
-                                                       data_object.meta.datetime,
-                                                       allow_extrapolation=False,
-                                                       and_uncertainty=False)
+        starfield_data_interpolated, starfield_uncert_interpolated = interpolate_data(starfield_before,
+                                                        starfield_after,
+                                                        data_object.meta.datetime,
+                                                        allow_extrapolation=False,
+                                                        and_uncertainty=True,
+                                                        infill_nans=True)
         # TODO - metadata...
-        star_datacube = NDCube(data=starfield_data_interpolated, uncertainty=None, wcs = union_wcs,
-                               meta=star_datacube_before.meta)
+        star_datacube = NDCube(data=starfield_data_interpolated,
+                            uncertainty=StdDevUncertainty(starfield_uncert_interpolated),
+                            wcs = union_wcs,
+                            meta=star_datacube_before.meta)
         wcs_celestial = union_wcs
-
-        # TODO - missing spots in one starfield, take any good data. Maybe add into interpolation code...
 
         original_mask = data_object.data == 0
 

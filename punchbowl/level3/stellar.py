@@ -14,6 +14,8 @@ from ndcube import NDCollection, NDCube
 from prefect import get_run_logger
 from remove_starfield import ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
+from reproject import reproject_interp
+from reproject.mosaicking import find_optimal_celestial_wcs
 from scipy.ndimage import percentile_filter
 from scipy.stats import circmean
 from solpolpy import resolve
@@ -25,8 +27,9 @@ from punchbowl.data.wcs import (
     calculate_helio_wcs_from_celestial,
     celestial_north_from_wcs,
 )
+from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import average_datetime
+from punchbowl.util import average_datetime, interpolate_data
 
 warnings.filterwarnings("ignore")
 
@@ -334,7 +337,8 @@ def generate_starfield_background(
 
 @punch_task
 def subtract_starfield_background_task(data_object: NDCube,
-                                       starfield_background_path: str | None,
+                                       before_starfield_path: str | None,
+                                       after_starfield_path: str | None,
                                        is_polarized: bool = False) -> NDCube:
     """
     Subtracts a background starfield from an input data frame.
@@ -346,8 +350,10 @@ def subtract_starfield_background_task(data_object: NDCube,
     ----------
     data_object : NDCube
         A NDCube data frame to be background subtracted
-    starfield_background_path : str
-        path to a NDCube background starfield map
+    before_starfield_path : str
+        path to a NDCube background starfield map centered before the observation
+    after_starfield_path : str
+        path to a NDCube background starfield map centered after the observation
     is_polarized : bool
         whether the data is polarized
 
@@ -360,17 +366,69 @@ def subtract_starfield_background_task(data_object: NDCube,
     logger = get_run_logger()
     logger.info("subtract_starfield_background started")
 
-    if starfield_background_path is None:
+    if before_starfield_path is None and after_starfield_path is None:
         output = data_object
         output.meta.history.add_now("LEVEL3-subtract_starfield_background",
                                            "starfield subtraction skipped since path is empty")
+    elif before_starfield_path is None or after_starfield_path is None:
+        raise InvalidDataError("subtract_starfield_background requires two input starfield models.")
     else:
-        star_datacube = load_ndcube_from_fits(starfield_background_path)
-        wcs_celestial = calculate_celestial_wcs_from_helio(star_datacube.wcs)
-        wcs_celestial.wcs.cdelt[0] = wcs_celestial.wcs.cdelt[0] * -1
+        star_datacube_before = load_ndcube_from_fits(before_starfield_path)
+        star_datacube_after = load_ndcube_from_fits(after_starfield_path)
+
+        shape_before = star_datacube_before.data.shape[-2:]
+        shape_after = star_datacube_after.data.shape[-2:]
+
+        wcs_celestial_before = calculate_celestial_wcs_from_helio(star_datacube_before.wcs)
+        wcs_celestial_before.wcs.cdelt[0] = wcs_celestial_before.wcs.cdelt[0] * -1
+
+        wcs_celestial_after = calculate_celestial_wcs_from_helio(star_datacube_after.wcs)
+        wcs_celestial_after.wcs.cdelt[0] = wcs_celestial_after.wcs.cdelt[0] * -1
+
+        # TODO - Test with polarized data...
+        union_wcs, union_shape = find_optimal_celestial_wcs(
+            [(shape_before, wcs_celestial_before),
+            (shape_after,  wcs_celestial_after)],
+            auto_rotate=False, projection="CAR")
+
+        starfield_reprojected_before = reproject_interp(
+            (np.stack([star_datacube_before.data, star_datacube_before.uncertainty.array], axis=0),
+            wcs_celestial_before),
+            union_wcs,
+            shape_out=union_shape,
+            return_footprint=False)
+
+        starfield_reprojected_after = reproject_interp(
+            (np.stack([star_datacube_after.data, star_datacube_after.uncertainty.array], axis=0),
+            wcs_celestial_after),
+            union_wcs,
+            shape_out=union_shape,
+            return_footprint=False)
+
+        starfield_before = NDCube(data=starfield_reprojected_before[0],
+                                uncertainty = StdDevUncertainty(starfield_reprojected_before[1]),
+                                wcs = union_wcs, meta=star_datacube_before.meta)
+        starfield_after = NDCube(data=starfield_reprojected_after[0],
+                                uncertainty = StdDevUncertainty(starfield_reprojected_after[1]),
+                                wcs = union_wcs, meta=star_datacube_after.meta)
+
+        starfield_data_interpolated, starfield_uncert_interpolated = interpolate_data(starfield_before,
+                                                        starfield_after,
+                                                        data_object.meta.datetime,
+                                                        allow_extrapolation=False,
+                                                        and_uncertainty=True,
+                                                        infill_nans=True)
+        # TODO - metadata...
+        star_datacube = NDCube(data=starfield_data_interpolated,
+                            uncertainty=StdDevUncertainty(starfield_uncert_interpolated),
+                            wcs = union_wcs,
+                            meta=star_datacube_before.meta)
+        wcs_celestial = union_wcs
 
         original_mask = data_object.data == 0
 
+        # TODO - Think about where to do the interpolation at this stage...
+        # Is this going to require a change in the subtraction code to avoid more reprojections back and forth?
         if is_polarized:
             starfield_model_m = Starfield(np.stack((star_datacube.data[0], star_datacube.uncertainty.array[0])),
                                           wcs_celestial[0])

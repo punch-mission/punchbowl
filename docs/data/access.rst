@@ -1,8 +1,6 @@
 Accessing PUNCH Data
 ====================
 
-Which Product to look for?
---------------------------
 Recommended Level 3 Products
 -----------------------------
 
@@ -16,17 +14,7 @@ choice for studies of the CMEs, shocks, solar wind etc. These products
 represent one full spacecraft rotation cycle with a significant
 improvement in signal-to-noise relative to other products.
 
-Researchers who need intermediate data products — for example to inspect F-corona
-subtraction before the final background removal, or to carry out their own starfield
-subtraction — should consider the **CIM** (Clear/total brightness science trefoil with F-corona subtraction)
-and **PIM** (Polarized science trefoil with F-corona subtraction) products. CIM and PIM
-retain the trefoil geometry of the full PUNCH field of view but stop short of the full
-background subtraction pipeline applied to CAM and PAM. They are particularly useful for
-validating custom reduction steps or for science cases that are sensitive to how the
-background model is constructed.
-
 If you are unsure which product to start with, download a CAM or PAM file first.
-Use CIM/PIM only if your analysis requires it.
 
 Downloading Data
 ----------------

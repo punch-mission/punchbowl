@@ -584,7 +584,7 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
 
     cleaned_ready_groups = []
     for group in grouped_ready_files:
-        outliers = [f for f in group if f.outlier == 0]
+        outliers = [f for f in group if f.outlier != 0]
         for f in outliers:
             f.state = 'progressed'
         group = [f for f in group if f.outlier == 0]

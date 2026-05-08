@@ -91,12 +91,13 @@ def level3_PTM_query_ready_files(session, pipeline_config: dict, reference_time=
                                                      File.file_type == "PI")).order_by(File.date_obs.asc()).all()
     logger.info(f"{len(all_ready_files)} Level 3 PIM files need to be processed.")
 
+    starfield_window = pipeline_config["flows"]["level3_PTM"]["starfield_window"]
+
     actually_ready_files = []
     for f in all_ready_files:
-        # TODO put magic numbers in config
-        valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=14), file_type="PS")
+        valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=starfield_window), file_type="PS")
 
-        if len(valid_starfields) >= 1:
+        if len(valid_starfields) >= 2:
             actually_ready_files.append(f)
             if len(actually_ready_files) >= max_n:
                 break
@@ -113,15 +114,21 @@ def level3_PTM_construct_flow_info(level2_files: list[File], level3_file: File,
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    starfield_window = pipeline_config["flows"][flow_type]["starfield_window"]
 
-    starfield = get_closest_file(level2_files[0],
-                                 get_valid_starfields(session,
-                                                      level2_files[0],
-                                                      timedelta_window=timedelta(days=14)))
+    starfield_files = get_valid_starfields(session,
+                                            level2_files[0],
+                                            timedelta_window=timedelta(days=starfield_window),
+                                            file_type="PS")
+
+    before_starfield_path = get_closest_before_file(level2_files[0], starfield_files).filename()
+    after_starfield_path = get_closest_after_file(level2_files[0], starfield_files).filename()
+
     call_data = json.dumps(
         {
             "data_list": [level2_file.filename() for level2_file in level2_files],
-            "starfield_background_path": starfield.filename(),
+            "before_starfield_path": before_starfield_path,
+            "after_starfield_path": after_starfield_path,
         },
     )
     return Flow(
@@ -166,7 +173,7 @@ def level3_PTM_scheduler_flow(pipeline_config_path=None, session=None, reference
 
 
 def level3_PTM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    for key in ["data_list", "starfield_background_path"]:
+    for key in ["data_list", "before_starfield_path", "after_starfield_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     return call_data
 
@@ -408,12 +415,13 @@ def level3_CTM_query_ready_files(session, pipeline_config: dict, reference_time=
                                                      File.file_type == "CI")).order_by(File.date_obs.asc()).all()
     logger.info(f"{len(all_ready_files)} Level 3 CIM files need to be processed.")
 
+    starfield_window = pipeline_config["flows"]["level3_CTM"]["starfield_window"]
+
     actually_ready_files = []
     for f in all_ready_files:
-        # # TODO put magic numbers in config
-        valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=14), file_type="CS")
+        valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=starfield_window), file_type="CS")
 
-        if len(valid_starfields) >= 1:
+        if len(valid_starfields) >= 2:
             actually_ready_files.append(f)
             if len(actually_ready_files) >= max_n:
                 break
@@ -430,16 +438,21 @@ def level3_CTM_construct_flow_info(level2_files: list[File], level3_file: File,
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    starfield_window = pipeline_config["flows"][flow_type]["starfield_window"]
 
-    starfield = get_closest_file(level2_files[0],
-                                 get_valid_starfields(session,
-                                                      level2_files[0],
-                                                      timedelta_window=timedelta(days=90),
-                                                      file_type="CS"))
+    starfield_files = get_valid_starfields(session,
+                                            level2_files[0],
+                                            timedelta_window=timedelta(days=starfield_window),
+                                            file_type="CS")
+
+    before_starfield_path = get_closest_before_file(level2_files[0], starfield_files).filename()
+    after_starfield_path = get_closest_after_file(level2_files[0], starfield_files).filename()
+
     call_data = json.dumps(
         {
             "data_list": [level2_file.filename() for level2_file in level2_files],
-            "starfield_background_path": starfield.filename(),
+            "before_starfield_path": before_starfield_path,
+            "after_starfield_path": after_starfield_path,
         },
     )
     return Flow(
@@ -484,7 +497,7 @@ def level3_CTM_scheduler_flow(pipeline_config_path=None, session=None, reference
 
 
 def level3_CTM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    for key in ["data_list" , "starfield_background_path"]:
+    for key in ["data_list" , "before_starfield_path", "after_starfield_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     return call_data
 

@@ -270,7 +270,7 @@ def nan_gaussian(image: np.ndarray, sigma: float) -> np.ndarray:
 
 def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime, time_key: str = "DATE-OBS",
                      allow_extrapolation: bool = False, and_uncertainty: bool = False,
-                     ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+                     infill_nans: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Interpolates between two data objects."""
     before_date = parse_datetime(data_before.meta[time_key].value + " UTC").timestamp()
     after_date = parse_datetime(data_after.meta[time_key].value + " UTC").timestamp()
@@ -296,10 +296,18 @@ def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: dat
         data_interpolated = ((data_after.data - data_before.data)
                               * (observation_date - before_date) / (after_date - before_date)
                               + data_before.data)
+        if infill_nans:
+            data_before_nan = np.isnan(data_before.data)
+            data_after_nan = np.isnan(data_after.data)
+            data_interpolated[data_before_nan] = data_after.data[data_before_nan]
+            data_interpolated[data_after_nan] = data_before.data[data_after_nan]
         if and_uncertainty:
             uncert_interpolated = ((data_after.uncertainty.array - data_before.uncertainty.array)
                                   * (observation_date - before_date) / (after_date - before_date)
                                   + data_before.uncertainty.array)
+            if infill_nans:
+                uncert_interpolated[data_before_nan] = data_after.uncertainty.array[data_before_nan]
+                uncert_interpolated[data_after_nan] = data_before.uncertainty.array[data_after_nan]
 
     if and_uncertainty:
         return data_interpolated, uncert_interpolated

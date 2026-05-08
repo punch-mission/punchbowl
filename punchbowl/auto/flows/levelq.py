@@ -412,7 +412,7 @@ def levelq_QAM_query_ready_files(session, pipeline_config: dict, reference_time=
     if len(all_ready_files) == 0:
         return []
 
-    t0 = parse_datetime(pipeline_config["flows"]["levelq_QAM"]["t0"])
+    t0 = parse_datetime_str(pipeline_config["flows"]["levelq_QAM"]["t0"])
     increment = timedelta(minutes=32)
 
     end_time = t0

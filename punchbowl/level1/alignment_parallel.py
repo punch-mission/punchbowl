@@ -95,19 +95,18 @@ def _residual(params: Parameters,
         residual
 
     """
-    refined_wcs = guess_wcs.deepcopy()
-    refined_wcs.wcs.cdelt = (-params["platescale"].value, params["platescale"].value)
-    refined_wcs.wcs.crval = (params["crval1"].value, params["crval2"].value)
-    refined_wcs.wcs.pc = np.array(
+    guess_wcs.wcs.cdelt = (-params["platescale"].value, params["platescale"].value)
+    guess_wcs.wcs.crval = (params["crval1"].value, params["crval2"].value)
+    guess_wcs.wcs.pc = np.array(
         [
             [np.cos(params["crota"]), -np.sin(params["crota"])],
             [np.sin(params["crota"]), np.cos(params["crota"])],
         ],
     )
-    refined_wcs.cpdis1 = guess_wcs.cpdis1
-    refined_wcs.cpdis2 = guess_wcs.cpdis2
+    guess_wcs.cpdis1 = guess_wcs.cpdis1
+    guess_wcs.cpdis2 = guess_wcs.cpdis2
 
-    errors, _ = get_errors(refined_wcs, catalog_stars, observed_tree)
+    errors, _ = get_errors(guess_wcs, catalog_stars, observed_tree)
     errors = errors[errors < max_error]
     return np.nansum(np.abs(errors)) / len(errors)
 

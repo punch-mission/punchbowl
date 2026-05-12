@@ -1,0 +1,1 @@
+Alignment uses a median of the iterations that are run, allowing much fewer iterations to be used.

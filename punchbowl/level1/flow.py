@@ -76,6 +76,7 @@ def level1_early_core_flow(  # noqa: C901
     psf_model_path: str | DataLoader | None = None,
     max_workers: int | None = None,
     n_alignment_workers: int | None = None,
+    n_alignment_iterations: int = 50,
     output_filename: list[str] | None = None,
     mask_path: str | None = None,
 ) -> list[NDCube]:
@@ -168,7 +169,8 @@ def level1_early_core_flow(  # noqa: C901
                 data.meta.history.add_now("LEVEL1-align", "Image has bad packets; no alignment applied")
                 logger.info("Bad packets---alignment skipped")
             else:
-                data = align_task(data, distortion_path, max_workers=n_alignment_workers or max_workers)
+                data = align_task(data, distortion_path, max_workers=n_alignment_workers or max_workers,
+                                  n_rounds=n_alignment_iterations)
 
         if mask is not None:
             data.data[~mask] = 0

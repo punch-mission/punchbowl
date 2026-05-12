@@ -363,7 +363,7 @@ def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
     return new_wcs
 
 
-def solve_pointing(
+def solve_pointing( # noqa: C901
         image_data: np.ndarray,
         image_wcs: WCS,
         image_header: NormalizedMetadata,
@@ -481,7 +481,23 @@ def solve_pointing(
     solved_wcs = guess_wcs
     cdelt = np.median(platescales)
     solved_wcs.wcs.cdelt = -cdelt, cdelt
-    solved_wcs.wcs.crval = np.median(crval1s), np.median(crval2s)
+
+    crval1s = np.array(crval1s)
+    if np.any(crval1s < 5) and np.any(crval1s > 355):
+        # We're straddling the wrap point, at 360 -> 0 deg
+        # Shift the high values down to -180-or-so
+        crval1s[crval1s > 180] -= 360
+        crval1 = np.median(crval1s)
+        crval1 %= 360
+    else:
+        crval1 = np.median(crval1s)
+
+    solved_wcs.wcs.crval = crval1, np.median(crval2s)
+    crotas = np.array(crotas)
+    if np.any(crotas < -170 * np.pi / 180) and np.any(crotas > 170 * np.pi / 180):
+        # We're straddling the wrap point, at 180 -> -180 deg
+        # Shift the negative values up to 180 + change
+        crotas %= 2 * np.pi
     crota = np.median(crotas)
     solved_wcs.wcs.pc = np.array(
         [

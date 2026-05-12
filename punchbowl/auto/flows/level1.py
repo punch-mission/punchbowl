@@ -618,6 +618,7 @@ def level1_early_construct_flow_info(level0_files: list[File], level1_files: lis
             "mask_path": mask_function.filename().replace(".fits", ".bin"),
             "psf_model_path": best_psf_model,
             "distortion_path": best_distortion.filename(),
+            "n_alignment_workers": pipeline_config["flows"][flow_type].get("n_alignment_workers", 3),
         },
     )
     return Flow(
@@ -659,6 +660,7 @@ def level1_early_construct_flow_info_phoenix(level0_files: list[File], level1_fi
             "mask_path": mask_function.filename().replace(".fits", ".bin"),
             "psf_model_path": best_psf_model,
             "distortion_path": best_distortion.filename(),
+            "n_alignment_workers": pipeline_config["flows"][flow_type].get("n_alignment_workers", 3),
         },
     )
     return Flow(
@@ -701,6 +703,7 @@ def level1_early_construct_flow_info_chimera(level0_files: list[File], level1_fi
             "mask_path": mask_function.filename().replace(".fits", ".bin"),
             "psf_model_path": best_psf_model,
             "distortion_path": best_distortion.filename(),
+            "n_alignment_workers": pipeline_config["flows"][flow_type].get("n_alignment_workers", 3),
         },
     )
     return Flow(

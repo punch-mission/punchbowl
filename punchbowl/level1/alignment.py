@@ -468,22 +468,28 @@ def solve_pointing(
 
     indices = np.arange(len(catalog_stars))
     rng = np.random.default_rng(seed=1)
-    candidate_wcs = []
+    results = []
     observed_tree = KDTree(observed)
     mp_context = multiprocessing.get_context("forkserver")
     with ProcessPoolExecutor(n_workers, mp_context) as p:
         for _ in range(n_rounds):
             sample = catalog_stars[rng.choice(indices, 15, replace=False)]
-            candidate_wcs.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))
-    candidate_wcs = [w.result() for w in candidate_wcs]
-    errors = [r[1] for r in candidate_wcs]
-    candidate_wcs = [r[0] for r in candidate_wcs]
-    best = np.argmin(np.abs(errors))
+            results.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))
+    results = [w.result() for w in results]
 
-    solved_wcs = candidate_wcs[best]
-    if distortion is not None:
-        solved_wcs.cpdis1 = distortion.cpdis1
-        solved_wcs.cpdis2 = distortion.cpdis2
+    platescales, crval1s, crval2s, crotas, pvs = zip(*results, strict=True)
+    solved_wcs = guess_wcs
+    cdelt = np.median(platescales)
+    solved_wcs.wcs.cdelt = -cdelt, cdelt
+    solved_wcs.wcs.crval = np.median(crval1s), np.median(crval2s)
+    crota = np.median(crotas)
+    solved_wcs.wcs.pc = np.array(
+        [
+            [np.cos(crota), -np.sin(crota)],
+            [np.sin(crota), np.cos(crota)],
+        ],
+    )
+    solved_wcs.wcs.set_pv([(2, 1, np.median(pvs))])
 
     return solved_wcs
 
@@ -701,5 +707,5 @@ def align_task(data_object: NDCube, distortion_path: str | None, max_workers: in
                     uncertainty=data_object.uncertainty,
                     unit=data_object.unit,
                     meta=data_object.meta)
-    output.meta.history.add_now("LEVEL1-Align", "alignment done")
+    output.meta.history.add_now("LEVEL1-Align", f"alignment done with {n_rounds} iterations")
     return output

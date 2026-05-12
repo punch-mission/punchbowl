@@ -64,20 +64,8 @@ def refine_pointing_single_step(
         out = minimize(_residual, params, method=method,
                        args=(catalog_stars, observed_tree, guess_wcs),
                        max_nfev=1000, calc_covar=False)
-    result_wcs = guess_wcs.deepcopy()
-    result_wcs.wcs.cdelt = (-out.params["platescale"].value, out.params["platescale"].value)
-    result_wcs.wcs.crval = (out.params["crval1"].value, out.params["crval2"].value)
-    result_wcs.wcs.pc = np.array(
-        [
-            [np.cos(out.params["crota"].value), -np.sin(out.params["crota"].value)],
-            [np.sin(out.params["crota"].value), np.cos(out.params["crota"].value)],
-        ],
-    )
-    result_wcs.cpdis1 = guess_wcs.cpdis1
-    result_wcs.cpdis2 = guess_wcs.cpdis2
-    result_wcs.wcs.set_pv([(2, 1, out.params["pv"].value)])
-
-    return result_wcs, out.residual[0]
+    return (out.params["platescale"].value, out.params["crval1"].value, out.params["crval2"].value,
+            out.params["crota"].value, out.params["pv"].value)
 
 
 def _residual(params: Parameters,

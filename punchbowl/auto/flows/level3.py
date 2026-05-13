@@ -28,6 +28,14 @@ def get_valid_starfields(session, f: File, timedelta_window: timedelta, file_typ
                                      f.date_obs <= valid_star_end)).all())
 
 
+def check_valid_starfields(reference_time: datetime, starfields):
+    starfield_before, starfield_after = False, False
+    for starfield in starfields:
+        if starfield.date_obs < reference_time : starfield_before = True
+        if starfield.date_obs > reference_time : starfield_after = True
+    return starfield_before and starfield_after
+
+
 def get_valid_fcorona_models(session, f: File, before_timedelta: timedelta, after_timedelta: timedelta, file_type="PF"):
     valid_fcorona_start, valid_fcorona_end = f.date_obs - before_timedelta, f.date_obs + after_timedelta
     return (session.query(File).filter(File.state == "created").filter(File.level == "3")
@@ -97,7 +105,7 @@ def level3_PTM_query_ready_files(session, pipeline_config: dict, reference_time=
     for f in all_ready_files:
         valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=starfield_window), file_type="PS")
 
-        if len(valid_starfields) >= 2:
+        if check_valid_starfields(reference_time=f.date_obs, starfields=valid_starfields):
             actually_ready_files.append(f)
             if len(actually_ready_files) >= max_n:
                 break
@@ -421,7 +429,7 @@ def level3_CTM_query_ready_files(session, pipeline_config: dict, reference_time=
     for f in all_ready_files:
         valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=starfield_window), file_type="CS")
 
-        if len(valid_starfields) >= 2:
+        if check_valid_starfields(reference_time=f.date_obs, starfields=valid_starfields):
             actually_ready_files.append(f)
             if len(actually_ready_files) >= max_n:
                 break

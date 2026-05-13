@@ -12,7 +12,7 @@ from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCollection, NDCube
 from prefect import get_run_logger
-from remove_starfield import ImageHolder, ImageProcessor, Starfield
+from remove_starfield import BlockMasker, ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 from reproject import reproject_interp
 from reproject.mosaicking import find_optimal_celestial_wcs
@@ -263,6 +263,7 @@ def generate_starfield_background(
             processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
             handle_wrap_point=False,
             dtype=np.float32,
+            mask_strategy=BlockMasker(128, 128),
             target_mem_usage=target_mem_usage)
         logger.info("Ending m starfield")
         out_data_m = starfield_m.starfield - percentile_filter(starfield_m.starfield, 5, 10)
@@ -279,6 +280,7 @@ def generate_starfield_background(
             processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
             handle_wrap_point=False,
             dtype=np.float32,
+            mask_strategy=BlockMasker(128, 128),
             target_mem_usage=target_mem_usage)
         logger.info("Ending z starfield")
         out_data_z = starfield_z.starfield - percentile_filter(starfield_z.starfield, 5, 10)
@@ -295,6 +297,7 @@ def generate_starfield_background(
             processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
             handle_wrap_point=False,
             dtype=np.float32,
+            mask_strategy=BlockMasker(128, 128),
             target_mem_usage=target_mem_usage)
         logger.info("Ending p starfield")
         out_data_p = starfield_p.starfield - percentile_filter(starfield_p.starfield, 5, 10)
@@ -314,6 +317,7 @@ def generate_starfield_background(
             processor=PUNCHImageProcessor(None, apply_mask=True, key="A"),
             handle_wrap_point=False,
             dtype=np.float32,
+            mask_strategy=BlockMasker(128, 128),
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
         out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, 5, 10)

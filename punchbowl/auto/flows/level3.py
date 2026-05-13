@@ -28,11 +28,17 @@ def get_valid_starfields(session, f: File, timedelta_window: timedelta, file_typ
                                      f.date_obs <= valid_star_end)).all())
 
 
-def check_valid_starfields(reference_time: datetime, starfields):
+def check_valid_starfields(reference_time: datetime, starfields, maximum_days_valid: float):
     starfield_before, starfield_after = False, False
+
+    start_limit = reference_time - timedelta(days=maximum_days_valid)
+    end_limit = reference_time + timedelta(days=maximum_days_valid)
+
     for starfield in starfields:
-        if starfield.date_obs < reference_time : starfield_before = True
-        if starfield.date_obs > reference_time : starfield_after = True
+        if starfield.date_obs < start_limit and starfield.date_obs < reference_time:
+            starfield_before = True
+        if starfield.date_obs < end_limit and starfield.date_obs > reference_time:
+            starfield_after = True
     return starfield_before and starfield_after
 
 

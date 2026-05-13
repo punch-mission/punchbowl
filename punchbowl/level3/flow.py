@@ -100,7 +100,8 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 
 @punch_flow
 def level3_core_flow(data_list: list[str] | list[NDCube],
-                     starfield_background_path: str | None,
+                     before_starfield_path: str | None,
+                     after_starfield_path: str | None,
                      output_filename: str | None = None) -> list[NDCube]:
     """Level 3 CTM flow."""
     logger = get_run_logger()
@@ -109,7 +110,8 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
     is_polarized = data_list[0].meta["TYPECODE"].value == "PI"
     data_list = [subtract_starfield_background_task(d,
-                                                    starfield_background_path,
+                                                    before_starfield_path,
+                                                    after_starfield_path,
                                                     is_polarized=is_polarized) for d in data_list]
     if is_polarized:
         data_list = [convert_polarization(d) for d in data_list]
@@ -120,7 +122,8 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
         out_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         out_meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
         out_meta.history = o.meta.history
-        out_meta["CALSTAR1"] = starfield_background_path
+        out_meta["CALSTAR1"] = before_starfield_path
+        out_meta["CALSTAR2"] = after_starfield_path
         for key in ["FILEVRSN", "ALL_INPT", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4", "DATE-AVG", "DATE-OBS",
                     "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
                     "CTRXNFI4", "CTRYNFI4"]:

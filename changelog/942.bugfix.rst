@@ -1,0 +1,1 @@
+Checks for valid starfields before and after target date for CTM and PTM flows, when querying ready files.

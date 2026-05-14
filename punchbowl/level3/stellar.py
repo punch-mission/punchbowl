@@ -129,9 +129,8 @@ def polarize_celestial_to_solar(input_data: NDCube, dtype: None | type = None) -
 class PUNCHImageProcessor(ImageProcessor):
     """Special loader for PUNCH data."""
 
-    def __init__(self, layer: int | None = None, apply_mask: bool = True, key: str = " ") -> None:
+    def __init__(self, apply_mask: bool = True, key: str = " ") -> None:
         """Create PUNCHImageProcessor."""
-        self.layer: int | None = layer
         self.apply_mask = apply_mask
         self.key = key
 
@@ -141,16 +140,17 @@ class PUNCHImageProcessor(ImageProcessor):
                                      dtype=np.float32)
 
         if self.apply_mask:
-            mask = (cube.data[self.layer] == 0) if self.layer is not None else (cube.data == 0)
+            mask = cube.data == 0
 
-        if self.layer is None:  # clear data
+        if len(cube.data.shape) == 2:
+            # It's clear data
             data = cube.data
         else:  # it's polarized
             cube = polarize_solar_to_celestial(cube, dtype=np.float32)
-            data = cube.data[self.layer]
+            data = cube.data
 
         if self.apply_mask:
-            data[mask] = np.nan
+            data[..., mask] = np.nan
         return ImageHolder(data, cube.wcs.celestial, cube.meta)
 
 
@@ -252,58 +252,29 @@ def generate_starfield_background(
     meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     if is_polarized:
-        logger.info("Starting m starfield")
-        starfield_m = remove_starfield.build_starfield_estimate(
+        logger.info("Building starfields")
+        starfield_m, starfield_z, starfield_p = remove_starfield.build_starfield_estimate(
             filenames,
             attribution=False,
             frame_count=False,
             reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
+            starfield_shape=(3, *starfield_wcs.array_shape),
             n_procs=n_procs,
-            processor=PUNCHImageProcessor(0, apply_mask=True, key="A"),
+            processor=PUNCHImageProcessor(apply_mask=True, key="A"),
             handle_wrap_point=False,
             dtype=np.float32,
             mask_strategy=BlockMasker(128, 128),
             target_mem_usage=target_mem_usage)
-        logger.info("Ending m starfield")
-        out_data_m = starfield_m.starfield - percentile_filter(starfield_m.starfield, 5, 10)
-        out_data_m[out_data_m < 0] = 0
+        logger.info("Done building starfields")
 
-        logger.info("Starting z starfield")
-        starfield_z = remove_starfield.build_starfield_estimate(
-            filenames,
-            attribution=False,
-            frame_count=False,
-            reducer=GaussianReducer(),
-            starfield_wcs=starfield_wcs,
-            n_procs=n_procs,
-            processor=PUNCHImageProcessor(1, apply_mask=True, key="A"),
-            handle_wrap_point=False,
-            dtype=np.float32,
-            mask_strategy=BlockMasker(128, 128),
-            target_mem_usage=target_mem_usage)
-        logger.info("Ending z starfield")
-        out_data_z = starfield_z.starfield - percentile_filter(starfield_z.starfield, 5, 10)
-        out_data_z[out_data_z < 0] = 0
+        starfield_m, starfield_z, starfield_p = starfield_m.starfield, starfield_z.starfield, starfield_p.starfield
 
-        logger.info("Starting p starfield")
-        starfield_p = remove_starfield.build_starfield_estimate(
-            filenames,
-            attribution=False,
-            frame_count=False,
-            reducer=GaussianReducer(),
-            starfield_wcs=starfield_wcs,
-            n_procs=n_procs,
-            processor=PUNCHImageProcessor(2, apply_mask=True, key="A"),
-            handle_wrap_point=False,
-            dtype=np.float32,
-            mask_strategy=BlockMasker(128, 128),
-            target_mem_usage=target_mem_usage)
-        logger.info("Ending p starfield")
-        out_data_p = starfield_p.starfield - percentile_filter(starfield_p.starfield, 5, 10)
-        out_data_p[out_data_p < 0] = 0
+        for starfield in (starfield_m, starfield_z, starfield_p):
+            starfield -= percentile_filter(starfield, 5, 10) # noqa: PLW2901
+            starfield[starfield < 0] = 0
 
-        out_data = np.stack([out_data_m, out_data_z, out_data_p], axis=0)
+        out_data = np.stack([starfield_m, starfield_z, starfield_p], axis=0)
         out_wcs = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
     else:
         logger.info("Starting clear starfield")
@@ -314,7 +285,7 @@ def generate_starfield_background(
             reducer=GaussianReducer(),
             starfield_wcs=starfield_wcs,
             n_procs=n_procs,
-            processor=PUNCHImageProcessor(None, apply_mask=True, key="A"),
+            processor=PUNCHImageProcessor(apply_mask=True, key="A"),
             handle_wrap_point=False,
             dtype=np.float32,
             mask_strategy=BlockMasker(128, 128),
@@ -434,38 +405,18 @@ def subtract_starfield_background_task(data_object: NDCube,
         # TODO - Think about where to do the interpolation at this stage...
         # Is this going to require a change in the subtraction code to avoid more reprojections back and forth?
         if is_polarized:
-            starfield_model_m = Starfield(np.stack((star_datacube.data[0], star_datacube.uncertainty.array[0])),
-                                          wcs_celestial[0])
-            subtracted_m = starfield_model_m.subtract_from_image(
-                NDCube(data=np.stack((data_object.data[0], data_object.uncertainty.array[0])),
-                       wcs=data_object.wcs[0],
+            starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array), axis=0),
+                                        wcs_celestial[0])
+            subtracted = starfield_model.subtract_from_image(
+                NDCube(data=np.stack((data_object.data, data_object.uncertainty.array), axis=0),
+                       wcs=data_object.wcs.celestial,
                        meta=data_object.meta),
                 handle_wrap_point=False,
-                processor=PUNCHImageProcessor(layer=0, key="A"))
-            starfield_model_z = Starfield(np.stack((star_datacube.data[1], star_datacube.uncertainty.array[1])),
-                                          wcs_celestial[1])
-            subtracted_z = starfield_model_z.subtract_from_image(
-                NDCube(data=np.stack((data_object.data[1], data_object.uncertainty.array[1])),
-                       wcs=data_object.wcs[1],
-                       meta=data_object.meta),
-                handle_wrap_point=False,
-                processor=PUNCHImageProcessor(layer=1, key="A"))
-            starfield_model_p = Starfield(np.stack((star_datacube.data[2], star_datacube.uncertainty.array[2])),
-                                          wcs_celestial[2])
-            subtracted_p = starfield_model_p.subtract_from_image(
-                NDCube(data=np.stack((data_object.data[2], data_object.uncertainty.array[2])),
-                       wcs=data_object.wcs[2],
-                       meta=data_object.meta),
-                handle_wrap_point=False,
-                processor=PUNCHImageProcessor(layer=2, key="A"))
+                processor=PUNCHImageProcessor(key="A"))
 
-            data_object.data[...] = np.stack([subtracted_m.subtracted[0],
-                                              subtracted_z.subtracted[0],
-                                              subtracted_p.subtracted[0]], axis=0)
-            data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 +
-                                                         np.stack([subtracted_m.subtracted[1],
-                                                                   subtracted_z.subtracted[1],
-                                                                   subtracted_p.subtracted[1]], axis=0)**2)
+            data_object.data[...] = subtracted.subtracted[:3]
+            data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array ** 2 +
+                                                         subtracted.subtracted[3:] ** 2)
         else:
             starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
             subtracted = starfield_model.subtract_from_image(

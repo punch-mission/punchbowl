@@ -27,12 +27,29 @@ SCIENCE_LEVEL1_QUICK_INPUT_TYPE_CODES = ["XM", "XZ", "ZP"]
 SCIENCE_LEVEL1_QUICK_OUTPUT_TYPE_CODES = ["QM", "QZ", "QP"]
 
 @task(cache_policy=NO_CACHE)
-def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99,
+                                   flow_name: str = "level1_early"):
     logger = get_run_logger()
-    ready = (session.query(File).filter(File.file_type.in_(SCIENCE_LEVEL0_TYPE_CODES))
+    file_types = [t for t in SCIENCE_LEVEL0_TYPE_CODES
+                  if t[1] in pipeline_config['flows'][flow_name].get('polarizations', 'MZPR')]
+
+    obs = pipeline_config['flows'][flow_name].get('observatories', '1,2,3,4')
+    obs = [o.strip() for o in obs.split(',')]
+
+    start_minute = pipeline_config['flows'][flow_name].get('start_minute', None)
+    stop_minute = pipeline_config['flows'][flow_name].get('stop_minute', None)
+
+    ready = (session.query(File).filter(File.file_type.in_(file_types))
                                 .filter(File.state == "created")
-                                .filter(File.observatory == '1')
                                 .filter(File.level == "0"))
+
+    if sorted(obs) != ['1', '2', '3', '4']:
+        ready = ready.filter(File.observatory.in_(obs))
+
+    if start_minute is not None:
+        ready = ready.filter(func.minute(File.date_obs) >= int(start_minute))
+    if stop_minute is not None:
+        ready = ready.filter(func.minute(File.date_obs) <= int(stop_minute))
 
     target_date = pipeline_config.get("target_date")
     target_date = parse_datetime_str(target_date) if target_date else None
@@ -106,159 +123,13 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
 
 @task(cache_policy=NO_CACHE)
 def level1_early_query_ready_files_phoenix(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
-    ready = (session.query(File).filter(File.file_type.in_(SCIENCE_LEVEL0_TYPE_CODES))
-                                .filter(File.state == "created")
-                                .filter(File.observatory == '2')
-                                .filter(File.level == "0"))
-
-    target_date = pipeline_config.get("target_date")
-    target_date = parse_datetime_str(target_date) if target_date else None
-    dt = func.abs(func.timestampdiff(text("second"), File.date_obs, target_date)) if target_date else None
-    if target_date:
-        ready = ready.order_by(dt.asc())
-    else:
-        ready = ready.order_by(File.date_obs.desc())
-    ready = ready.all()
-
-    quartic_models = get_quartic_model_paths(ready, pipeline_config, session)
-    vignetting_functions = get_vignetting_function_paths(ready, pipeline_config, session)
-    distortion_paths = get_distortion_paths(ready, pipeline_config, session)
-    psf_paths = get_psf_model_paths(ready, pipeline_config, session)
-    mask_files = get_mask_files(ready, pipeline_config, session)
-    L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
-    more_L0_impossible_cutoff = datetime.now() - timedelta(days=L0_impossible_after_days)
-    actually_ready = []
-    missing_quartic = []
-    missing_vignetting = []
-    missing_mask = []
-    missing_sequence = []
-    missing_distortion = []
-    missing_psf = []
-    for f, quartic_model, vignetting_function, mask_file, distortion_file, psf_file in zip(
-            ready, quartic_models, vignetting_functions, mask_files, distortion_paths, psf_paths):
-        despike_neighbors = get_polarization_sequence(f, session=session)
-
-        if quartic_model is None:
-            missing_quartic.append(f)
-            continue
-        if vignetting_function[0] is None:
-            missing_vignetting.append(f)
-            continue
-        if mask_file is None:
-            missing_mask.append(f)
-            continue
-        if len(despike_neighbors) <= 2 and f.date_obs > more_L0_impossible_cutoff:
-            missing_sequence.append(f)
-            continue
-        if distortion_file is None:
-            missing_distortion.append(f)
-            continue
-        if psf_file is None:
-            missing_psf.append(f)
-            continue
-        f.distortion_path = distortion_file
-        f.psf_path = psf_file
-        # Smuggle the identified models out of this function
-        f.quartic_model = quartic_model
-        f.vignetting_functions = vignetting_function
-        f.mask_file = mask_file
-        f.despike_neighbors = despike_neighbors
-        actually_ready.append([f])
-        if len(actually_ready) >= max_n:
-            break
-    if missing_quartic:
-        logger.info("Missing quartic files for " + summarize_files_missing_cal_files(missing_quartic))
-    if missing_vignetting:
-        logger.info("Missing vignetting for " + summarize_files_missing_cal_files(missing_vignetting))
-    if missing_mask:
-        logger.info("Missing mask for " + summarize_files_missing_cal_files(missing_mask))
-    if missing_sequence:
-        logger.info("Missing despiking polarization sequence neighbors for "
-                    + summarize_files_missing_cal_files(missing_sequence))
-    if missing_distortion:
-        logger.info("Missing distortion for " + summarize_files_missing_cal_files(missing_distortion))
-    if missing_psf:
-        logger.info("Missing PSF for " + summarize_files_missing_cal_files(missing_psf))
-    return actually_ready
+    return level1_early_query_ready_files(session, pipeline_config, reference_time, max_n,
+                                          flow_name='level1_early_phoenix')
 
 @task(cache_policy=NO_CACHE)
 def level1_early_query_ready_files_chimera(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
-    ready = (session.query(File).filter(File.file_type.in_(SCIENCE_LEVEL0_TYPE_CODES))
-                                .filter(File.state == "created")
-                                .filter(File.observatory == '3')
-                                .filter(File.level == "0"))
-
-    target_date = pipeline_config.get("target_date")
-    target_date = parse_datetime_str(target_date) if target_date else None
-    dt = func.abs(func.timestampdiff(text("second"), File.date_obs, target_date)) if target_date else None
-    if target_date:
-        ready = ready.order_by(dt.asc())
-    else:
-        ready = ready.order_by(File.date_obs.desc())
-    ready = ready.all()
-
-    quartic_models = get_quartic_model_paths(ready, pipeline_config, session)
-    vignetting_functions = get_vignetting_function_paths(ready, pipeline_config, session)
-    distortion_paths = get_distortion_paths(ready, pipeline_config, session)
-    psf_paths = get_psf_model_paths(ready, pipeline_config, session)
-    mask_files = get_mask_files(ready, pipeline_config, session)
-    L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
-    more_L0_impossible_cutoff = datetime.now() - timedelta(days=L0_impossible_after_days)
-    actually_ready = []
-    missing_quartic = []
-    missing_vignetting = []
-    missing_mask = []
-    missing_sequence = []
-    missing_distortion = []
-    missing_psf = []
-    for f, quartic_model, vignetting_function, mask_file, distortion_file, psf_file in zip(
-            ready, quartic_models, vignetting_functions, mask_files, distortion_paths, psf_paths):
-        despike_neighbors = get_polarization_sequence(f, session=session)
-
-        if quartic_model is None:
-            missing_quartic.append(f)
-            continue
-        if vignetting_function[0] is None:
-            missing_vignetting.append(f)
-            continue
-        if mask_file is None:
-            missing_mask.append(f)
-            continue
-        if len(despike_neighbors) <= 2 and f.date_obs > more_L0_impossible_cutoff:
-            missing_sequence.append(f)
-            continue
-        if distortion_file is None:
-            missing_distortion.append(f)
-            continue
-        if psf_file is None:
-            missing_psf.append(f)
-            continue
-        f.distortion_path = distortion_file
-        f.psf_path = psf_file
-        # Smuggle the identified models out of this function
-        f.quartic_model = quartic_model
-        f.vignetting_functions = vignetting_function
-        f.mask_file = mask_file
-        f.despike_neighbors = despike_neighbors
-        actually_ready.append([f])
-        if len(actually_ready) >= max_n:
-            break
-    if missing_quartic:
-        logger.info("Missing quartic files for " + summarize_files_missing_cal_files(missing_quartic))
-    if missing_vignetting:
-        logger.info("Missing vignetting for " + summarize_files_missing_cal_files(missing_vignetting))
-    if missing_mask:
-        logger.info("Missing mask for " + summarize_files_missing_cal_files(missing_mask))
-    if missing_sequence:
-        logger.info("Missing despiking polarization sequence neighbors for "
-                    + summarize_files_missing_cal_files(missing_sequence))
-    if missing_distortion:
-        logger.info("Missing distortion for " + summarize_files_missing_cal_files(missing_distortion))
-    if missing_psf:
-        logger.info("Missing PSF for " + summarize_files_missing_cal_files(missing_psf))
-    return actually_ready
+    return level1_early_query_ready_files(session, pipeline_config, reference_time, max_n,
+                                          flow_name='level1_early_chimera')
 
 def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=1, time_tolerance_minutes=15):
     neighbors = (session.query(File)
@@ -589,8 +460,8 @@ def get_ccd_parameters(level0_file, pipeline_config: dict, session=None):
 
 
 def level1_early_construct_flow_info(level0_files: list[File], level1_files: list[File],
-                               pipeline_config: dict, session=None, reference_time=None):
-    flow_type = "level1_early"
+                                     pipeline_config: dict, session=None, reference_time=None,
+                                     flow_type: str = "level1_early"):
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
@@ -631,92 +502,13 @@ def level1_early_construct_flow_info(level0_files: list[File], level1_files: lis
         call_data=call_data,
     )
 
-def level1_early_construct_flow_info_phoenix(level0_files: list[File], level1_files: list[File],
-                               pipeline_config: dict, session=None, reference_time=None):
-    flow_type = "level1_early_phoenix"
-    state = "planned"
-    creation_time = datetime.now()
-    priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
-
-    before_vignetting_function = level0_files[0].vignetting_functions[0]
-    after_vignetting_function = level0_files[0].vignetting_functions[1]
-    if after_vignetting_function is not None:
-        after_vignetting_function = after_vignetting_function.filename()
-    best_quartic_model = level0_files[0].quartic_model
-    despike_neighbors = level0_files[0].despike_neighbors
-    ccd_parameters = get_ccd_parameters(level0_files[0], pipeline_config, session=session)
-    mask_function = level0_files[0].mask_file
-    best_psf_model = level0_files[0].psf_path
-    best_distortion = level0_files[0].distortion_path
-
-    call_data = json.dumps(
-        {
-            "input_data": [level0_file.filename() for level0_file in level0_files],
-            "vignetting_function_path": before_vignetting_function.filename(),
-            "second_vignetting_function_path": after_vignetting_function,
-            "quartic_coefficient_path": best_quartic_model.filename(),
-            "gain_bottom": ccd_parameters["gain_bottom"],
-            "gain_top": ccd_parameters["gain_top"],
-            "despike_neighbors": [n.filename() for n in despike_neighbors],
-            "mask_path": mask_function.filename().replace(".fits", ".bin"),
-            "psf_model_path": best_psf_model,
-            "distortion_path": best_distortion.filename(),
-            "n_alignment_workers": pipeline_config["flows"][flow_type].get("n_alignment_workers", 3),
-            "n_alignment_iterations": pipeline_config["flows"][flow_type].get("n_alignment_iterations", 50),
-        },
-    )
-    return Flow(
-        flow_type=flow_type,
-        flow_level="1",
-        state=state,
-        creation_time=creation_time,
-        priority=priority,
-        call_data=call_data,
-    )
+def level1_early_construct_flow_info_phoenix(*args, **kwargs):
+    return level1_early_construct_flow_info(*args, **kwargs, flow_type="level1_early_phoenix")
 
 
-def level1_early_construct_flow_info_chimera(level0_files: list[File], level1_files: list[File],
-                               pipeline_config: dict, session=None, reference_time=None):
-    flow_type = "level1_early_chimera"
-    state = "planned"
-    creation_time = datetime.now()
-    priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+def level1_early_construct_flow_info_chimera(*args, **kwargs):
+    return level1_early_construct_flow_info(*args, **kwargs, flow_type="level1_early_chimera")
 
-    before_vignetting_function = level0_files[0].vignetting_functions[0]
-    after_vignetting_function = level0_files[0].vignetting_functions[1]
-    if after_vignetting_function is not None:
-        after_vignetting_function = after_vignetting_function.filename()
-    best_quartic_model = level0_files[0].quartic_model
-    despike_neighbors = level0_files[0].despike_neighbors
-    ccd_parameters = get_ccd_parameters(level0_files[0], pipeline_config, session=session)
-    mask_function = level0_files[0].mask_file
-    best_psf_model = level0_files[0].psf_path
-    best_distortion = level0_files[0].distortion_path
-
-    call_data = json.dumps(
-        {
-            "input_data": [level0_file.filename() for level0_file in level0_files],
-            "vignetting_function_path": before_vignetting_function.filename(),
-            "second_vignetting_function_path": after_vignetting_function,
-            "quartic_coefficient_path": best_quartic_model.filename(),
-            "gain_bottom": ccd_parameters["gain_bottom"],
-            "gain_top": ccd_parameters["gain_top"],
-            "despike_neighbors": [n.filename() for n in despike_neighbors],
-            "mask_path": mask_function.filename().replace(".fits", ".bin"),
-            "psf_model_path": best_psf_model,
-            "distortion_path": best_distortion.filename(),
-            "n_alignment_workers": pipeline_config["flows"][flow_type].get("n_alignment_workers", 3),
-            "n_alignment_iterations": pipeline_config["flows"][flow_type].get("n_alignment_iterations", 50),
-        },
-    )
-    return Flow(
-        flow_type=flow_type,
-        flow_level="1",
-        state=state,
-        creation_time=creation_time,
-        priority=priority,
-        call_data=call_data,
-    )
 
 
 def level1_early_construct_file_info(level0_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:

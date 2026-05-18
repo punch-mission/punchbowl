@@ -1,0 +1,1 @@
+L1_early can be configured to exclude observatories or polarizations, and per-server flows can have files assigned based on the minute in the timestamp.

@@ -1,0 +1,1 @@
+Spacecraft positions are written correctly in the FITS headers. (Previously, the rotation of the reference frame with Earth was not handled correctly.)

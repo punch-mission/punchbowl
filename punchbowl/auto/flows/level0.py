@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import pylibjpeg
 import quaternion
-from astropy.coordinates import GCRS, EarthLocation, HeliocentricMeanEcliptic, SkyCoord
+from astropy.coordinates import GCRS, CartesianDifferential, EarthLocation, HeliocentricMeanEcliptic, SkyCoord
 from astropy.time import Time, TimeDelta
 from astropy.wcs import WCS
 from ccsdspy import PacketArray, PacketField, converters
@@ -497,16 +497,24 @@ def organize_ceb_fits_keywords(ceb_packet_db, ceb_packet):
 
 
 def organize_spacecraft_position_keywords(observation_time, before_xact_db, before_xact):
-    position = EarthLocation.from_geocentric(before_xact["GPS_POSITION_ECEF1"]*2E-5*u.km,
-                                             before_xact["GPS_POSITION_ECEF2"]*2E-5*u.km,
-                                             before_xact["GPS_POSITION_ECEF3"]*2E-5*u.km)
-
-    location = EarthLocation.from_geodetic(position.geodetic.lon.deg,
-                                           position.geodetic.lat.deg,
-                                           position.geodetic.height.to(u.m).value)
     obstime = Time(observation_time)
+    # This packages up the coordinates, but does no frame conversions. The scale factor is given in the big
+    # PUNCH_TLM.xls spreadsheet.
+    position = EarthLocation.from_geocentric(before_xact["GPS_POSITION_ECEF1"] * 2E-5 * u.km,
+                                             before_xact["GPS_POSITION_ECEF2"] * 2E-5 * u.km,
+                                             before_xact["GPS_POSITION_ECEF3"] * 2E-5 * u.km)
 
-    gcrs = GCRS(location.get_itrs(obstime).cartesian, obstime=obstime)
+    velocity = CartesianDifferential(
+        before_xact["GPS_VELOCITY_ECEF1"] * 5E-9 * u.km / u.s,
+        before_xact["GPS_VELOCITY_ECEF2"] * 5E-9 * u.km / u.s,
+        before_xact["GPS_VELOCITY_ECEF3"] * 5E-9 * u.km / u.s)
+
+    # Re-create with velocity attached
+    itrs = position.get_itrs(obstime)
+    newdata = itrs.data.to_cartesian().with_differentials(velocity)
+    itrs = itrs.realize_frame(newdata)
+
+    gcrs = itrs.transform_to(GCRS(obstime=obstime))
     hci = gcrs.transform_to(HeliocentricInertial(obstime=obstime)) # HCI (Heliocentric Inertial)
     hee = gcrs.transform_to(HeliocentricEarthEcliptic(obstime=obstime)) # (Heliocentric Earth Ecliptic)
     hae = gcrs.transform_to(HeliocentricMeanEcliptic(obstime=obstime)) # HAE (Heliocentric Aries Ecliptic)
@@ -518,6 +526,9 @@ def organize_spacecraft_position_keywords(observation_time, before_xact_db, befo
         "HCIX_OBS": hci.cartesian.x.to(u.m).value,
         "HCIY_OBS": hci.cartesian.y.to(u.m).value,
         "HCIZ_OBS": hci.cartesian.z.to(u.m).value,
+        "HCIX_VOB": hci.cartesian.differentials['s'].d_x.to(u.m/u.s).value,
+        "HCIY_VOB": hci.cartesian.differentials['s'].d_y.to(u.m/u.s).value,
+        "HCIY_VOB": hci.cartesian.differentials['s'].d_z.to(u.m/u.s).value,
         "HEEX_OBS": hee.cartesian.x.to(u.m).value,
         "HEEY_OBS": hee.cartesian.y.to(u.m).value,
         "HEEZ_OBS": hee.cartesian.z.to(u.m).value,

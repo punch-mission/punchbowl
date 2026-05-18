@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import scipy
 import sep
-from astropy.coordinates import EarthLocation, SkyCoord
+from astropy.coordinates import GCRS, CartesianDifferential, CartesianRepresentation, SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
 from ndcube import NDCube
@@ -19,6 +19,7 @@ from prefect import get_run_logger
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
+from sunpy.coordinates import HeliocentricInertial
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
@@ -518,17 +519,26 @@ def prep_star_coords(stars_in_image: pd.DataFrame, image_header: NormalizedMetad
     assumed to be ICRS. But as long as it's a consistent set of RA-Dec values, it doesn't matter what frame the
     coordinates think they're in.
     """
+    position = CartesianRepresentation(image_header["HCIX_OBS"] * u.m,
+                                       image_header["HCIY_OBS"] * u.m,
+                                       image_header["HCIZ_OBS"] * u.m)
+    velocity = CartesianDifferential(image_header["HCIX_VOB"] * u.m / u.s,
+                                     image_header["HCIY_VOB"] * u.m / u.s,
+                                     image_header["HCIZ_VOB"] * u.m / u.s)
+    sc = HeliocentricInertial(position.with_differentials(velocity))
+    sc_gcrs = sc.transform_to(GCRS(obstime=image_header.astropy_time))
+
     # Convert stellar coordinates to GCRS centered on the spacecraft location
-    sc_location = EarthLocation.from_geodetic(lon=image_header["GEOD_LON"].value * u.deg,
-                                              lat=image_header["GEOD_LAT"].value * u.deg,
-                                              height=image_header["GEOD_ALT"].value * u.m)
-    geoloc, geovel = sc_location.get_gcrs_posvel(image_header.astropy_time)
     catalog_stars = SkyCoord(
         np.array(stars_in_image["RAdeg"]) * u.degree,
         np.array(stars_in_image["DEdeg"]) * u.degree,
         np.array(stars_in_image["Dist_ly"]) * u.lyr,
-        frame="icrs", obsgeoloc=geoloc, obsgeovel=geovel, obstime=image_header.astropy_time,
-    ).transform_to("gcrs")
+        frame="icrs",
+    ).transform_to(GCRS(obsgeoloc=sc_gcrs.cartesian,
+                        obsgeovel=sc_gcrs.cartesian.differentials["s"].d_xyz,
+                        obstime=image_header.astropy_time))
+
+    # Re-label them as ICRS so the image WCS can handle them
     return SkyCoord(catalog_stars.ra, catalog_stars.dec, frame="icrs")
 
 

@@ -1,0 +1,1 @@
+Spacecraft velocities are now written correctly in L0 and used in alignment.

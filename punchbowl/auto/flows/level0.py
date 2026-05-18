@@ -1018,12 +1018,22 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
             date_obs = parse_datetime_str(fits_info["DATE-OBS"])
 
             selected_limits = None
+            outlier_wrap_date = pipeline_config['flows']['level0'].get('outlier_wrap_date', '')
+            if outlier_wrap_date:
+                outlier_wrap_date = parse_datetime_str(outlier_wrap_date)
+                outlier_date_obs = date_obs
+                while outlier_date_obs > outlier_wrap_date:
+                    # Wrap into the first year after launch, where we have a full year of outlier limits set.
+                    # Wrap by a "true" solar year to handle leap years etc.
+                    outlier_date_obs -= timedelta(days=365.24)
+            else:
+                outlier_date_obs = date_obs
             for limit_observatory, limit_type, limit_date, limit_filename, limits in outlier_limits:
                 if limit_observatory != str(soc_spacecraft_id):
                     continue
                 if limit_type != file_type[1]:
                     continue
-                if limit_date > date_obs:
+                if limit_date > outlier_date_obs:
                     continue
                 selected_limits = limits
                 cube.meta.history.add_now("form_single_image", f"Outlier detection with {limit_filename}")

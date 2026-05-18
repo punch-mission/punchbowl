@@ -1,0 +1,1 @@
+Use a BlockMasker for remove_starfield.

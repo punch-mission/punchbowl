@@ -23,7 +23,7 @@ dependencies = [
     "reproject",
     "pylibjpeg",
     "python-dateutil",
-    "remove_starfield>=0.0.4",
+    "remove_starfield>=0.1",
     "quadprog",
     "pylibjpeg[openjpeg]",
     "requests",

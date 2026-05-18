@@ -24,15 +24,21 @@ def get_valid_starfields(session, f: File, timedelta_window: timedelta, file_typ
     valid_star_start, valid_star_end = f.date_obs - timedelta_window, f.date_obs + timedelta_window
     return (session.query(File).filter(File.state == "created").filter(File.level == "3")
                         .filter(File.file_type == file_type).filter(File.observatory == "M")
-                        .filter(and_(f.date_obs >= valid_star_start,
-                                     f.date_obs <= valid_star_end)).all())
+                        .filter(and_(File.date_obs >= valid_star_start,
+                                     File.date_obs <= valid_star_end)).all())
 
 
-def check_valid_starfields(reference_time: datetime, starfields):
+def check_valid_starfields(reference_time: datetime, starfields, maximum_days_valid: float):
     starfield_before, starfield_after = False, False
+
+    start_limit = reference_time - timedelta(days=maximum_days_valid)
+    end_limit = reference_time + timedelta(days=maximum_days_valid)
+
     for starfield in starfields:
-        if starfield.date_obs < reference_time : starfield_before = True
-        if starfield.date_obs > reference_time : starfield_after = True
+        if starfield.date_obs < start_limit and starfield.date_obs < reference_time:
+            starfield_before = True
+        if starfield.date_obs < end_limit and starfield.date_obs > reference_time:
+            starfield_after = True
     return starfield_before and starfield_after
 
 
@@ -105,7 +111,7 @@ def level3_PTM_query_ready_files(session, pipeline_config: dict, reference_time=
     for f in all_ready_files:
         valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=starfield_window), file_type="PS")
 
-        if check_valid_starfields(reference_time=f.date_obs, starfields=valid_starfields):
+        if check_valid_starfields(reference_time=f.date_obs, starfields=valid_starfields, maximum_days_valid=starfield_window):
             actually_ready_files.append(f)
             if len(actually_ready_files) >= max_n:
                 break
@@ -429,7 +435,7 @@ def level3_CTM_query_ready_files(session, pipeline_config: dict, reference_time=
     for f in all_ready_files:
         valid_starfields = get_valid_starfields(session, f, timedelta_window=timedelta(days=starfield_window), file_type="CS")
 
-        if check_valid_starfields(reference_time=f.date_obs, starfields=valid_starfields):
+        if check_valid_starfields(reference_time=f.date_obs, starfields=valid_starfields, maximum_days_valid=starfield_window):
             actually_ready_files.append(f)
             if len(actually_ready_files) >= max_n:
                 break

@@ -67,9 +67,11 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         repro_args = {}
 
     input_data = input_cube.data
-    celestial_source = input_cube.celestial_wcs
-    input_uncertainty = input_cube.uncertainty.array if do_uncertainty else None
     time = input_cube.meta.astropy_time
+    celestial_source = (input_cube.celestial_wcs
+                        or calculate_celestial_wcs_from_helio(input_cube.wcs, time, output_shape[-2:]))
+    celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape[-2:])
+    input_uncertainty = input_cube.uncertainty.array if do_uncertainty else None
 
     # Trim empty parts of the image, so we don't have to compute coordinates there or reproject those pixels
     while np.all(np.isnan(input_data[..., :, 0])):
@@ -89,8 +91,6 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
         input_data = input_data[..., :-1, :]
         input_uncertainty = input_uncertainty[..., :-1, :] if do_uncertainty else None
         celestial_source = celestial_source[:-1, :]
-
-    celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape[-2:])
 
     # When we build mosaics, each input image fills only a portion (less than half) of the output frame. When we
     # reproject, we don't want it spending time looping over all those empty pixels, calculating coordinates,

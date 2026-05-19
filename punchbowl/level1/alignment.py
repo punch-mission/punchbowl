@@ -733,5 +733,6 @@ def align_task(data_object: NDCube, distortion_path: str | None, max_workers: in
                     uncertainty=data_object.uncertainty,
                     unit=data_object.unit,
                     meta=data_object.meta)
+    output.celestial_wcs = celestial_output
     output.meta.history.add_now("LEVEL1-Align", f"alignment done with {n_rounds} iterations")
     return output

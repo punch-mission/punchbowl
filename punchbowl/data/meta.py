@@ -288,7 +288,8 @@ class NormalizedMetadata(Mapping):
             raise TypeError(msg)
         return self._contents == other._contents and self._history == other._history
 
-    def to_fits_header(self, wcs: WCS | None = None, write_celestial_wcs: bool = True) -> Header:  # noqa: C901
+    def to_fits_header(self, wcs: WCS | None = None, write_celestial_wcs: bool = True, # noqa: C901
+                       celestial_wcs: WCS | None = None) -> Header:
         """
         Convert a constructed NormalizedMetdata object to an Astropy FITS compliant header object.
 
@@ -326,12 +327,17 @@ class NormalizedMetadata(Mapping):
             # add the special WCS section
             if section == self._wcs_section_name and wcs is not None:
                 if write_celestial_wcs:
-                    wcses = {"": wcs, "A": calculate_celestial_wcs_from_helio(wcs, self.astropy_time, self.shape)}
+                    if celestial_wcs is None:
+                        celestial_wcs = calculate_celestial_wcs_from_helio(wcs, self.astropy_time, self.shape)
+                    wcses = {"": wcs, "A": celestial_wcs}
                 else:
                     wcses = {"": wcs}
                 if self.product_level == "0":
                     hdr.insert("CROTA", ("COMMENT","Level 0 WCS approximated from spacecraft-reported state"))
                 for key, this_wcs in wcses.items():
+                    if key == this_wcs.wcs.alt:
+                        # The key will be added by this_wcs.to_header(), so we don't need to duplicate it
+                        key = "" # noqa: PLW2901
                    # NOTE: sliced WCSes don't even have the "has_distortion" attribute
                     if hasattr(this_wcs, "has_distortion") and this_wcs.has_distortion:
                         wcs_header = this_wcs.to_fits()[0].header
@@ -341,7 +347,6 @@ class NormalizedMetadata(Mapping):
                         wcs_header = this_wcs.to_header()
                     for card in wcs_header.cards:
                         if card[0] not in WCS_OMITTED_KEYWORDS:
-
                             # The distortion keywords are special and contain periods. We split on the period if they
                             # exist so that we can inject the A in the correct position.
                             keyword_parts = card[0].split(".")

@@ -618,7 +618,7 @@ def determine_file_type(polarizer_packet, pfw_is_out_of_date, led_info, image_sh
                                     polarizer_packet["PRIMARY_RESOLVER_POSITION_3"],
                                     polarizer_packet["PRIMARY_RESOLVER_POSITION_4"],
                                     polarizer_packet["PRIMARY_RESOLVER_POSITION_5"]], dtype=int)
-    
+
     return PFW_POSITION_MAPPING[np.argmin(np.abs(reference_positions - position))]
 
 def get_metadata(first_image_packet,

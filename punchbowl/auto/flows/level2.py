@@ -137,8 +137,7 @@ def group_l2_inputs(files: list[File]) -> list[tuple[File]]:
     """
     Group up L1 inputs into MZP clusters that match in time (i.e. occur sequentially in one image cluster).
 
-    Handles the swapped MZP/PZM orders, handles any combination of missing files, and for each observatory returns only
-    complete MZP triplets
+    Handles any combination of missing files, and for each observatory returns only complete MZP triplets
     """
     if len(files) == 0:
         return []

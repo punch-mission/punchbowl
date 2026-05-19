@@ -70,7 +70,7 @@ FIXED_PACKETS = ["ENG_XACT", "ENG_LED", "ENG_PFW", "ENG_CEB", "ENG_LZ"]
 VARIABLE_PACKETS = ["SCI_XFI"]
 PACKET_CADENCE = {}
 SC_TIME_EPOCH = Time(2000.0, format="decimalyear", scale="tai")
-NFI_PFW_POSITION_MAPPING = ["PM", "DK", "PZ", "PP", "CR"]
+NFI_PFW_POSITION_MAPPING = ["PP", "DK", "PZ", "PM", "CR"]
 WFI_PFW_POSITION_MAPPING = ["PP", "DK", "PZ", "PM", "CR"]
 
 credentials = SqlAlchemyConnector.load("mariadb-creds", _sync=True)

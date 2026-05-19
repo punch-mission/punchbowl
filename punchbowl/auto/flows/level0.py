@@ -70,8 +70,7 @@ FIXED_PACKETS = ["ENG_XACT", "ENG_LED", "ENG_PFW", "ENG_CEB", "ENG_LZ"]
 VARIABLE_PACKETS = ["SCI_XFI"]
 PACKET_CADENCE = {}
 SC_TIME_EPOCH = Time(2000.0, format="decimalyear", scale="tai")
-NFI_PFW_POSITION_MAPPING = ["PP", "DK", "PZ", "PM", "CR"]
-WFI_PFW_POSITION_MAPPING = ["PP", "DK", "PZ", "PM", "CR"]
+PFW_POSITION_MAPPING = ["PP", "DK", "PZ", "PM", "CR"]
 
 credentials = SqlAlchemyConnector.load("mariadb-creds", _sync=True)
 engine = credentials.get_engine()
@@ -619,14 +618,8 @@ def determine_file_type(polarizer_packet, pfw_is_out_of_date, led_info, image_sh
                                     polarizer_packet["PRIMARY_RESOLVER_POSITION_3"],
                                     polarizer_packet["PRIMARY_RESOLVER_POSITION_4"],
                                     polarizer_packet["PRIMARY_RESOLVER_POSITION_5"]], dtype=int)
-
-    # NFI and WFI have polarizers installed in different orientations. Thus, we treat them separately.
-    # WFI has M and P flipped with respect to NFI.
-    if polarizer_packet["ENG_PFW_HDR_SCID"] == 47:  # nfi case
-        label = NFI_PFW_POSITION_MAPPING[np.argmin(np.abs(reference_positions - position))]
-    else:  # wfi case
-        label = WFI_PFW_POSITION_MAPPING[np.argmin(np.abs(reference_positions - position))]
-    return label
+    
+    return PFW_POSITION_MAPPING[np.argmin(np.abs(reference_positions - position))]
 
 def get_metadata(first_image_packet,
                  image_shape,

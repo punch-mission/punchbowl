@@ -25,7 +25,7 @@ from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import punch_flow
-from punchbowl.util import DataLoader, load_image_task, load_mask_file, output_image_task
+from punchbowl.util import DataLoader, load_image_task, load_mask_file, new_cube_from, output_image_task
 
 KEYS_TO_NOT_COPY = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "TITLE", "TYPECODE", "FILEVRSN"]
 
@@ -220,13 +220,7 @@ def level1_early_core_flow(  # noqa: C901
         if filename:
             new_meta.provenance = [filename]
 
-        data = NDCube(
-            data=data.data,
-            meta=new_meta,
-            wcs=data.wcs,
-            unit=data.unit,
-            mask=data.mask,
-            uncertainty=data.uncertainty)
+        data = new_cube_from(data, meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
@@ -279,7 +273,7 @@ def level1_middle_core_flow(
 
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
-        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+        data = new_cube_from(data, meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
@@ -339,7 +333,7 @@ def level1_late_core_flow(
 
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
-        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+        data = new_cube_from(data, meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
@@ -394,7 +388,7 @@ def levelh_core_flow(
             if (key in data.meta.keys()) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"): # noqa: SIM118
                 new_meta[key].value = data.meta[key].value
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
-        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+        data = new_cube_from(data, meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])

@@ -45,7 +45,7 @@ def _merge_ndcubes(cubes: list[NDCube | None], reference_cube_index: int | None 
 
     new_data[np.isnan(new_data)] = 0
 
-    return NDCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty), \
+    return NDCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty),
                     wcs=cubes[reference_cube_index].wcs)
 
 

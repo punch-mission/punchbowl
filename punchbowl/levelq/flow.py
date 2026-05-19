@@ -18,7 +18,14 @@ from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.levelq.pca import pca_filter
 from punchbowl.prefect import punch_flow
-from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
+from punchbowl.util import (
+    DataLoader,
+    average_datetime,
+    find_first_existing_file,
+    load_image_task,
+    new_cube_from,
+    output_image_task,
+)
 
 ORDER_QP = ["QM1", "QZ1", "QP1",
             "QM2", "QZ2", "QP2",
@@ -83,12 +90,10 @@ def levelq_QNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
         data[isnan] = 0
 
         output_meta_nfi = NormalizedMetadata.load_template("QNN", "Q")
-        output_cube = NDCube(
-            data=data,
-            uncertainty=StdDevUncertainty(uncertainty),
-            wcs=data_cube.wcs,
-            meta=output_meta_nfi,
-            )
+        output_cube = new_cube_from(data_cube,
+                                    data=data,
+                                    uncertainty=StdDevUncertainty(uncertainty),
+                                    meta=output_meta_nfi)
         output_cube.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_cube.meta["DATE-AVG"] = data_cube.meta["DATE-AVG"].value
         output_cube.meta["DATE-OBS"] = data_cube.meta["DATE-OBS"].value

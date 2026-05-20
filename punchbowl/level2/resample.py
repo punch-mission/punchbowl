@@ -3,7 +3,6 @@ import numpy as np
 import reproject
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect import get_run_logger
 from scipy.ndimage import distance_transform_edt
 
@@ -13,7 +12,7 @@ from punchbowl.prefect import punch_flow, punch_task
 
 
 @punch_task(tags=["reproject"])
-def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int, int], # noqa: C901
+def reproject_cube(input_cube: PUNCHCube, output_wcs: WCS, output_shape: tuple[int, int], # noqa: C901
                    rolloff_strength: float | list[float] = 1,
                    rolloff_width: float | list[float] = .25,
                    do_uncertainty: bool = True,
@@ -30,7 +29,7 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
 
     Parameters
     ----------
-    input_cube: NDCube
+    input_cube: PUNCHCube
         input cube to be reprojected
     output_wcs
         astropy WCS object describing the coordinate system to transform to
@@ -170,10 +169,10 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
 
 
 @punch_flow
-def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_shape: np.ndarray,
+def reproject_many_flow(data: list[PUNCHCube | None], trefoil_wcs: WCS, trefoil_shape: np.ndarray,
                         rolloff_strength: float | list[float] = 1,
                         rolloff_width: float | list[float] = .25,
-                        ) -> list[NDCube | None]:
+                        ) -> list[PUNCHCube | None]:
     """Reproject many flow."""
     # The WCS class from astropy is not thread-safe, see e.g.
     # https://github.com/astropy/astropy/issues/16244
@@ -183,13 +182,13 @@ def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_sha
                                         rolloff_width=rolloff_width) if d is not None else None
                   for d in data]
 
-    return [NDCube(data=out_layers[i].result()[0],
+    return [PUNCHCube(data=out_layers[i].result()[0],
                    uncertainty=StdDevUncertainty(out_layers[i].result()[1]),
                    wcs=trefoil_wcs,
                    meta=d.meta) if d is not None else None for i, d in enumerate(data)]
 
 
-def find_central_pixel(data_list: list[NDCube | None], trefoil_wcs: WCS) -> list[tuple[float, float]]:
+def find_central_pixel(data_list: list[PUNCHCube | None], trefoil_wcs: WCS) -> list[tuple[float, float]]:
     """
     Find the location of the central pixel of each cube in the mosaic frame.
 

@@ -1,8 +1,8 @@
 import pytest
-from ndcube import NDCube
 from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level2.polarization import resolve_polarization, resolve_polarization_task
 
@@ -31,7 +31,7 @@ def test_resolve_polarization(sample_data_triplet):
 
     output_punchdata_list = resolve_polarization(sample_data_triplet)
 
-    assert all(isinstance(output_punchdata, NDCube) for output_punchdata in output_punchdata_list)
+    assert all(isinstance(output_punchdata, PUNCHCube) for output_punchdata in output_punchdata_list)
 
 
 def test_resolve_polarization_task(sample_data_triplet):
@@ -42,4 +42,4 @@ def test_resolve_polarization_task(sample_data_triplet):
     with disable_run_logger():
         output_punchdata_list = resolve_polarization_task.fn(sample_data_triplet)
 
-    assert all(isinstance(output_punchdata, NDCube) for output_punchdata in output_punchdata_list)
+    assert all(isinstance(output_punchdata, PUNCHCube) for output_punchdata in output_punchdata_list)

@@ -3,11 +3,11 @@ from datetime import UTC, datetime
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime_str
-from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_many_cubes_iterable
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import load_quickpunch_mosaic_wcs
 from punchbowl.level3.f_corona_model import fill_nans_with_interpolation, model_fcorona_for_cube
 from punchbowl.prefect import punch_flow
@@ -19,7 +19,7 @@ def construct_qp_f_corona_model(filenames: list[str],
                                 reference_time: str | None = None,
                                 num_workers: int = 8,
                                 num_loaders: int = 8,
-                                fill_nans: bool = False) -> list[NDCube]:
+                                fill_nans: bool = False) -> list[PUNCHCube]:
     """Construct QuickPUNCH F corona model."""
     logger = get_run_logger()
 
@@ -89,7 +89,7 @@ def construct_qp_f_corona_model(filenames: list[str],
     meta["DATE-BEG"] = output_datebeg
     meta["DATE-END"] = output_dateend
 
-    output_cube = NDCube(data=model_fcorona.squeeze(),
+    output_cube = PUNCHCube(data=model_fcorona.squeeze(),
                          meta=meta,
                          wcs=trefoil_wcs,
                          uncertainty=StdDevUncertainty(uncertainty))

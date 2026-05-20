@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect.logging import disable_run_logger
 
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 
@@ -38,7 +38,7 @@ def test_merge_many_task(sample_data_list):
 
     with disable_run_logger():
         output_punchdata = merge_many_polarized_task.fn(sample_data_list, trefoil_wcs)
-    assert isinstance(output_punchdata, NDCube)
+    assert isinstance(output_punchdata, PUNCHCube)
     assert output_punchdata.data.shape == (3, 4096, 4096)
     assert np.allclose(output_punchdata.data[0, 100:300, 300:400], 1)
     assert np.allclose(output_punchdata.data[0, 500:700, 800:900], 1)
@@ -57,7 +57,7 @@ def test_merge_many_clear_task(sample_data_list):
 
     with disable_run_logger():
         output_punchdata = merge_many_clear_task.fn(sample_data_list, trefoil_wcs)
-    assert isinstance(output_punchdata, NDCube)
+    assert isinstance(output_punchdata, PUNCHCube)
     assert output_punchdata.data.shape == (4096, 4096)
     assert np.allclose(output_punchdata.data[100:300, 300:400], 1)
     assert np.allclose(output_punchdata.data[500:700, 800:900], 1)

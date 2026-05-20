@@ -7,7 +7,6 @@ from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, DistortionLookupTable
 from astropy.wcs.utils import add_stokes_axis_to_wcs
-from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import (
@@ -242,7 +241,7 @@ def test_load_punchdata_with_history(tmpdir):
     file_path = os.path.join(tmpdir, get_base_file_name(obj) + ".fits")
     write_ndcube_to_fits(obj, file_path, overwrite=True)
     reloaded = load_ndcube_from_fits(file_path)
-    assert isinstance(reloaded, NDCube)
+    assert isinstance(reloaded, PUNCHCube)
     assert len(reloaded.meta.history) == 2
     assert reloaded.data.shape == (10, 10)
     assert np.all(reloaded.data == 1)

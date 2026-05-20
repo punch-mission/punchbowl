@@ -2,11 +2,11 @@ import os
 import pathlib
 
 import pytest
-from ndcube import NDCube
 from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 
 from punchbowl.data.punch_io import write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.level2.flow import POLARIZED_FILE_ORDER, level2_core_flow
@@ -26,7 +26,7 @@ def test_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
     trefoil_wcs, _ = load_trefoil_wcs()
     with prefect_test_harness(), disable_run_logger():
         output = level2_core_flow(paths, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512))
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
     assert output[0].meta["TYPECODE"].value == "PT"
 
 
@@ -42,7 +42,7 @@ def test_ctm_flow_runs_with_filenames(sample_ndcube, tmpdir):
     trefoil_wcs, _ = load_trefoil_wcs()
     with prefect_test_harness(), disable_run_logger():
         output = level2_core_flow(paths, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512))
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
     assert output[0].meta["TYPECODE"].value == "CT"
     assert output[0].meta["HAS_WFI1"].value == 1
     assert output[0].meta["HAS_WFI2"].value == 1
@@ -76,5 +76,5 @@ PP3,1.09194
     with prefect_test_harness(), disable_run_logger():
         output = level2_core_flow(data_list, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512),
                                   polarized=True, trim_edges_px=1, alphas_file=alphas_file)
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
     assert output[0].meta["TYPECODE"].value == "PT"

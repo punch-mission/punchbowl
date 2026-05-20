@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 import scipy.ndimage
 from astropy.wcs import WCS
-from ndcube import NDCube
 
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.util import (
     compute_tb,
@@ -22,7 +22,7 @@ THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
 def test_find_first_existing_file():
-    my_list = [None, NDCube(np.zeros(10),WCS()), NDCube(np.ones(10), WCS())]
+    my_list = [None, PUNCHCube(np.zeros(10),WCS()), PUNCHCube(np.ones(10), WCS())]
     first_cube = find_first_existing_file(my_list)
     assert first_cube.data[0] == 0
 

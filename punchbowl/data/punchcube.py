@@ -1,15 +1,19 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.units import Unit
 from astropy.wcs import WCS
 from ndcube import NDCube
 
-from punchbowl.data import NormalizedMetadata
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
+
+if TYPE_CHECKING:
+    import punchbowl.data.meta
 
 
 class PUNCHCube(NDCube):
-    """NDCube with a secondary celestial WCS."""
+    """PUNCHCube with a secondary celestial WCS."""
 
     def __init__(self, *args: list, celestial_wcs: WCS | None = None,  **kwargs: dict) -> None:
         """Initialize a PUNCHCube."""
@@ -24,14 +28,14 @@ class PUNCHCube(NDCube):
         return self._celestial_wcs
 
     def replace(self, data: np.ndarray | None = None,
-                meta: NormalizedMetadata | None = None, wcs: WCS | None = None,
+                meta: "punchbowl.data.meta.NormalizedMetadata | None" = None, wcs: WCS | None = None,
                 celestial_wcs: WCS | None = None, unit: Unit | None = None,
                 mask: np.ndarray | None = None,
                 uncertainty: StdDevUncertainty | None = None) -> "PUNCHCube":
         """
         (Shallow) copy this PUNCHCube, but with certain attributes replaced.
 
-        Useful because NDCubes don't allow changing their data array, WCS, etc., so to change the WCS you have to
+        Useful because PUNCHCubes don't allow changing their data array, WCS, etc., so to change the WCS you have to
         make a new cube. Using this function ensures everything is copied over.
 
         Parameters

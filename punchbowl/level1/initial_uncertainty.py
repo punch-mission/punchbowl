@@ -1,8 +1,8 @@
 import numpy as np
 from astropy.nddata import StdDevUncertainty
-from ndcube import NDCube
 from scipy.ndimage import binary_dilation
 
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.units import split_ccd_array
 from punchbowl.prefect import punch_task
 from punchbowl.util import inpaint_nans
@@ -102,15 +102,15 @@ def compute_uncertainty(data_array: np.ndarray,
     return np.sqrt(noise_photon**2 + noise_dark**2 + noise_read**2)
 
 
-def fill_saturated_pixels(data_object: NDCube,
+def fill_saturated_pixels(data_object: PUNCHCube,
                           saturated_pixels: np.ndarray,
-                          row_threshold: int = 300) -> NDCube:
+                          row_threshold: int = 300) -> PUNCHCube:
     """
     Flag saturated pixels with neighborhood and flag in the uncertainty layer.
 
     Parameters
     ----------
-    data_object : NDCube
+    data_object : PUNCHCube
         input data cube
     saturated_pixels : np.ndarray
         mask where saturated pixels are True
@@ -119,8 +119,8 @@ def fill_saturated_pixels(data_object: NDCube,
 
     Returns
     -------
-    NDCube
-        a cleaned NDCube with saturated pixels filled
+    PUNCHCube
+        a cleaned PUNCHCube with saturated pixels filled
 
     """
     if saturated_pixels is not None:
@@ -140,13 +140,13 @@ def fill_saturated_pixels(data_object: NDCube,
 
 
 @punch_task
-def update_initial_uncertainty_task(data_object: NDCube,
+def update_initial_uncertainty_task(data_object: PUNCHCube,
                                     dark_level: float = 55.81,
                                     gain_bottom: float = 4.9,
                                     gain_top: float = 4.9,
                                     read_noise_level: float = 17,
                                     bitrate_signal: int = 16,
-                                    saturated_pixels: np.ndarray | None = None) -> NDCube:
+                                    saturated_pixels: np.ndarray | None = None) -> PUNCHCube:
     """Prefect task to compute initial uncertainty."""
     uncertainty_array = compute_uncertainty(data_object.data,
                                             dark_level=dark_level,

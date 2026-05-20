@@ -4,11 +4,11 @@ import pathlib
 import numpy as np
 import pytest
 from astropy.io import fits
-from ndcube import NDCube
 from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 
 from punchbowl.data.punch_io import write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level1.flow import level1_early_core_flow, level1_late_core_flow
 
@@ -34,7 +34,7 @@ def test_early_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
                                            quartic_coefficient_path=quartic_coefficient_path,
                                            vignetting_function_path=vignetting_path,
                                            do_align=False)
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
     assert os.path.exists(output_name[0])
     assert "MOONDIST" in output[0].meta
     assert "MOON_X" in output[0].meta
@@ -59,7 +59,7 @@ def test_early_core_flow_runs_with_objects_and_calibration_files(sample_ndcube):
                                         quartic_coefficient_path=quartic_coefficient_path,
                                         vignetting_function_path=vignetting_path,
                                         do_align=False)
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
 
 
 def test_late_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
@@ -81,7 +81,7 @@ def test_late_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
                                        output_filename=[output_name],
                                        stray_light_before_path=stray_light_before,
                                        stray_light_after_path=stray_light_after)
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
     assert os.path.exists(output_name[0])
     assert output[0].meta['TYPECODE'].value == 'PM'
 
@@ -107,6 +107,6 @@ def test_quick_core_flow_runs_with_filenames(sample_ndcube, tmpdir):
                                        stray_light_after_path=stray_light_after,
                                        output_as_Q_file=True,
                                        )
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
     assert os.path.exists(output_name[0])
     assert output[0].meta['TYPECODE'].value == 'QM'

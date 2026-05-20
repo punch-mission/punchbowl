@@ -5,9 +5,9 @@ import prefect.logging
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.levelq.pca import find_bodies_in_image_quarters, pca_filter
 
 
@@ -25,7 +25,7 @@ def test_find_bodies_in_image_quarters():
     meta['GEOD_LAT'] = 2.6530022837437506
     meta['GEOD_ALT'] = 642990.3420114828
 
-    cube = NDCube(data=np.empty((2048, 2048)), meta=meta, wcs=wcs)
+    cube = PUNCHCube(data=np.empty((2048, 2048)), meta=meta, wcs=wcs)
 
     result = find_bodies_in_image_quarters(cube)
 
@@ -57,7 +57,7 @@ def test_that_pca_filter_runs():
     # Generate input files that rotate so the same planet isn't in the same quarter for every image
     for i in np.linspace(0, 2*np.pi, 200):
         wcs.wcs.pc = np.array([[np.cos(i), -np.sin(i)], [np.sin(i), np.cos(i)]])
-        cube = NDCube(data=np.ones((128, 128)), meta=meta, wcs=wcs.deepcopy(),
+        cube = PUNCHCube(data=np.ones((128, 128)), meta=meta, wcs=wcs.deepcopy(),
                       uncertainty=StdDevUncertainty(uncertainty))
         cubes.append(cube)
 

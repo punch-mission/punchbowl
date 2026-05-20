@@ -1,33 +1,34 @@
 
 import astropy.units as u
 import solpolpy
-from ndcube import NDCollection, NDCube
+from ndcube import NDCollection
 from prefect import get_run_logger
 
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_task
 
 
-def resolve_polarization(data_list: list[NDCube], outsys: str = "mzpsolar") -> list[NDCube]:
+def resolve_polarization(data_list: list[PUNCHCube], outsys: str = "mzpsolar") -> list[PUNCHCube]:
     """
     Take a set of input data in the camera MZP frame and convert to the solar MZP frame.
 
     Parameters
     ----------
-    data_list : List[NDCube]
-        List of NDCube objects on which to resolve polarization
+    data_list : List[PUNCHCube]
+        List of PUNCHCube objects on which to resolve polarization
     outsys: str
         The polarization system to resolve into
 
     Returns
     -------
-    List[NDCube]
+    List[PUNCHCube]
         modified version of the input with polarization resolved
 
     """
     # Unpack data into a NDCollection object
     data_dictionary = list(zip(["M", "Z", "P"], data_list, strict=False))
     input_collection = NDCollection(data_dictionary)
-    data_collection = NDCollection([(k, NDCube(data=input_collection[k].data,
+    data_collection = NDCollection([(k, PUNCHCube(data=input_collection[k].data,
                                  wcs=input_collection[k].wcs,
                                  meta={"POLAR": input_collection[k].meta["POLAR"].value * u.degree,
                                        "POLAROFF": 90, #TODO: Update this before reprocessing all L0
@@ -47,18 +48,18 @@ def resolve_polarization(data_list: list[NDCube], outsys: str = "mzpsolar") -> l
 
 
 @punch_task
-def resolve_polarization_task(data_list: list[NDCube | None]) -> list[NDCube | None]:
+def resolve_polarization_task(data_list: list[PUNCHCube | None]) -> list[PUNCHCube | None]:
     """
     Prefect task for polarization resolving.
 
     Parameters
     ----------
-    data_list : List[NDCube]
-        List of NDCube objects on which to resolve polarization
+    data_list : List[PUNCHCube]
+        List of PUNCHCube objects on which to resolve polarization
 
     Returns
     -------
-    List[NDCube]
+    List[PUNCHCube]
         modified version of the input with polarization resolved
 
     """

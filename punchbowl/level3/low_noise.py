@@ -4,10 +4,10 @@ import numpy as np
 from dateutil.parser import ParserError
 from dateutil.parser import parse as parse_datetime
 from dateutil.parser import parse as parse_datetime_str
-from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import check_outlier
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2.merge import _merge_ndcubes
 from punchbowl.prefect import punch_task
 from punchbowl.util import average_datetime
@@ -15,7 +15,7 @@ from punchbowl.util import average_datetime
 KEYWORD_OMIT = ("COMMENT", "HISTORY", "", "NAXIS3", "OBSTYPE", "OBS-MODE", "OBSLAYR1", "OBSLAYR2", "OBSLAYR3")
 
 @punch_task
-def create_low_noise_task(cubes: list[NDCube], reference_time: str | datetime | None = None) -> NDCube:
+def create_low_noise_task(cubes: list[PUNCHCube], reference_time: str | datetime | None = None) -> PUNCHCube:
     """Create a low noise image from a set of inputs."""
     cube_count = len(cubes)
     cubes = [cube for cube in cubes if not check_outlier(cube)]

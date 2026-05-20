@@ -7,13 +7,13 @@ from datetime import UTC, datetime
 import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
-from ndcube import NDCube
 from reproject import reproject_adaptive
 from scipy.ndimage import binary_dilation, binary_erosion, grey_closing
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import get_base_file_name
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import (
     IncorrectPolarizationStateWarning,
     IncorrectTelescopeWarning,
@@ -26,7 +26,7 @@ from punchbowl.prefect import punch_task
 from punchbowl.util import DataLoader, interpolate_data, load_mask_file
 
 
-def _load_vignetting_function(vignetting_path: str | pathlib.Path | DataLoader | None) -> NDCube:
+def _load_vignetting_function(vignetting_path: str | pathlib.Path | DataLoader | None) -> PUNCHCube:
     if isinstance(vignetting_path, DataLoader):
         vignetting_function = vignetting_path.load()
         vignetting_path = vignetting_path.src_repr()
@@ -41,10 +41,10 @@ def _load_vignetting_function(vignetting_path: str | pathlib.Path | DataLoader |
 
 
 @punch_task
-def correct_vignetting_task(data_object: NDCube, # noqa: C901
+def correct_vignetting_task(data_object: PUNCHCube, # noqa: C901
                             vignetting_path: str | pathlib.Path | DataLoader | None,
                             second_vignetting_path: str | pathlib.Path | DataLoader | None = None,
-                            allow_extrapolation: bool = False) -> NDCube:
+                            allow_extrapolation: bool = False) -> PUNCHCube:
     """
     Prefect task to correct the vignetting of an image.
 
@@ -345,13 +345,13 @@ def generate_vignetting_calibration_nfi(input_files: list[str], # noqa: C901
     nfiflat[np.isinf(nfiflat)] = 1.
     nfiflat[mask_nfi == 0] = 1
 
-    # Generate an output metadata and NDCube
+    # Generate an output metadata and PUNCHCube
     m = NormalizedMetadata.load_template(f"G{polarizer}4", "1")
     m["DATE-OBS"] = dateobs
     m["FILEVRSN"] = version
     m["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    cube = NDCube(data=nfiflat.astype("float32"), wcs=cube.wcs, meta=m)
+    cube = PUNCHCube(data=nfiflat.astype("float32"), wcs=cube.wcs, meta=m)
 
     if output_path is not None:
         filename = Path(output_path) / f"{get_base_file_name(cube)}.fits"

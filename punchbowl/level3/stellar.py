@@ -10,7 +10,7 @@ from astropy.io.fits import getheader
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
-from ndcube import NDCollection, NDCube
+from ndcube import NDCollection
 from prefect import get_run_logger
 from remove_starfield import BlockMasker, ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
@@ -22,6 +22,7 @@ from solpolpy import resolve
 from solpolpy.util import solnorth_from_wcs
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import (
     calculate_celestial_wcs_from_helio,
     calculate_helio_wcs_from_celestial,
@@ -34,7 +35,7 @@ from punchbowl.util import average_datetime, interpolate_data
 warnings.filterwarnings("ignore")
 
 
-def polarize_solar_to_celestial(input_data: NDCube, dtype: None | type = None) -> NDCube:
+def polarize_solar_to_celestial(input_data: PUNCHCube, dtype: None | type = None) -> PUNCHCube:
     """
     Convert polarization from mzpsolar to Celestial frame.
 
@@ -58,7 +59,7 @@ def polarize_solar_to_celestial(input_data: NDCube, dtype: None | type = None) -
 
     collection_contents = [
         (label,
-         NDCube(data=input_data[i].data,
+         PUNCHCube(data=input_data[i].data,
                 wcs=wcs1,
                 meta={"POLAR": angle}))
         for label, i, angle in zip(["M", "Z", "P"], [0, 1, 2], mzp_angles, strict=False)
@@ -75,13 +76,13 @@ def polarize_solar_to_celestial(input_data: NDCube, dtype: None | type = None) -
     output_meta = NormalizedMetadata.load_template("PTM", "3")
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
 
-    output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
+    output = PUNCHCube(data=new_data, wcs=new_wcs, meta=output_meta)
     output.meta.history.add_now("LEVEL3-convert2celestial", "Convert mzpsolar to Celestial")
 
     return output
 
 
-def polarize_celestial_to_solar(input_data: NDCube, dtype: None | type = None) -> NDCube:
+def polarize_celestial_to_solar(input_data: PUNCHCube, dtype: None | type = None) -> PUNCHCube:
     """
     Convert polarization from Celestial frame to mzpsolar.
 
@@ -103,7 +104,7 @@ def polarize_celestial_to_solar(input_data: NDCube, dtype: None | type = None) -
 
     collection_contents = [
         (f"{np.round(new_angles[i, nrows//2, ncols//2].value)} deg",
-         NDCube(data=input_data[i].data,
+         PUNCHCube(data=input_data[i].data,
                 wcs=wcs1,
                 meta={"POLAR": angle}))
         for i, angle in enumerate(new_angles)
@@ -120,7 +121,7 @@ def polarize_celestial_to_solar(input_data: NDCube, dtype: None | type = None) -
     output_meta = NormalizedMetadata.load_template("PTM", "3")
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
 
-    output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta, uncertainty=input_data.uncertainty)
+    output = PUNCHCube(data=new_data, wcs=new_wcs, meta=output_meta, uncertainty=input_data.uncertainty)
     output.meta.history.add_now("LEVEL3-convert2mzpsolar", "Convert Celestial to mzpsolar")
 
     return output
@@ -222,7 +223,7 @@ def generate_starfield_background(
         n_procs: int | None = None,
         reference_time: datetime | None = None,
         is_polarized: bool = False,
-        out_file: str | None = None) -> NDCube | None :
+        out_file: str | None = None) -> PUNCHCube | None :
     """Create a background starfield map from a series of PUNCH images over a long period of time."""
     logger = get_run_logger()
 
@@ -298,7 +299,7 @@ def generate_starfield_background(
                                                         starfield_clear.starfield.shape)
 
     # TODO - Replace uncertainty below with values folded through starfield estimation logic
-    output = NDCube(data=out_data, uncertainty=StdDevUncertainty(np.sqrt(out_data)), wcs=out_wcs, meta=meta)
+    output = PUNCHCube(data=out_data, uncertainty=StdDevUncertainty(np.sqrt(out_data)), wcs=out_wcs, meta=meta)
     output.meta.history.add_now("LEVEL3-starfield_background", "constructed starfield_bg model")
 
     logger.info("construct_starfield_background finished")
@@ -311,10 +312,10 @@ def generate_starfield_background(
 
 
 @punch_task
-def subtract_starfield_background_task(data_object: NDCube,
+def subtract_starfield_background_task(data_object: PUNCHCube,
                                        before_starfield_path: str | None,
                                        after_starfield_path: str | None,
-                                       is_polarized: bool = False) -> NDCube:
+                                       is_polarized: bool = False) -> PUNCHCube:
     """
     Subtracts a background starfield from an input data frame.
 
@@ -323,18 +324,18 @@ def subtract_starfield_background_task(data_object: NDCube,
 
     Parameters
     ----------
-    data_object : NDCube
-        A NDCube data frame to be background subtracted
+    data_object : PUNCHCube
+        A PUNCHCube data frame to be background subtracted
     before_starfield_path : str
-        path to a NDCube background starfield map centered before the observation
+        path to a PUNCHCube background starfield map centered before the observation
     after_starfield_path : str
-        path to a NDCube background starfield map centered after the observation
+        path to a PUNCHCube background starfield map centered after the observation
     is_polarized : bool
         whether the data is polarized
 
     Returns
     -------
-    NDCube
+    PUNCHCube
         A background starfield subtracted data frame
 
     """
@@ -380,10 +381,10 @@ def subtract_starfield_background_task(data_object: NDCube,
             shape_out=union_shape,
             return_footprint=False)
 
-        starfield_before = NDCube(data=starfield_reprojected_before[0],
+        starfield_before = PUNCHCube(data=starfield_reprojected_before[0],
                                 uncertainty = StdDevUncertainty(starfield_reprojected_before[1]),
                                 wcs = union_wcs, meta=star_datacube_before.meta)
-        starfield_after = NDCube(data=starfield_reprojected_after[0],
+        starfield_after = PUNCHCube(data=starfield_reprojected_after[0],
                                 uncertainty = StdDevUncertainty(starfield_reprojected_after[1]),
                                 wcs = union_wcs, meta=star_datacube_after.meta)
 
@@ -394,7 +395,7 @@ def subtract_starfield_background_task(data_object: NDCube,
                                                         and_uncertainty=True,
                                                         infill_nans=True)
         # TODO - metadata...
-        star_datacube = NDCube(data=starfield_data_interpolated,
+        star_datacube = PUNCHCube(data=starfield_data_interpolated,
                             uncertainty=StdDevUncertainty(starfield_uncert_interpolated),
                             wcs = union_wcs,
                             meta=star_datacube_before.meta)
@@ -408,7 +409,7 @@ def subtract_starfield_background_task(data_object: NDCube,
             starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array), axis=0),
                                         wcs_celestial[0])
             subtracted = starfield_model.subtract_from_image(
-                NDCube(data=np.stack((data_object.data, data_object.uncertainty.array), axis=0),
+                PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array), axis=0),
                        wcs=data_object.wcs.celestial,
                        meta=data_object.meta),
                 handle_wrap_point=False,
@@ -420,7 +421,7 @@ def subtract_starfield_background_task(data_object: NDCube,
         else:
             starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
             subtracted = starfield_model.subtract_from_image(
-                NDCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
+                PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
                        wcs=data_object.wcs,
                        meta=data_object.meta),
                 handle_wrap_point=False,
@@ -441,6 +442,6 @@ def subtract_starfield_background_task(data_object: NDCube,
     return output
 
 
-def create_empty_starfield_background(data_object: NDCube) -> np.ndarray:
+def create_empty_starfield_background(data_object: PUNCHCube) -> np.ndarray:
     """Create an empty starfield background map."""
     return np.zeros_like(data_object.data)

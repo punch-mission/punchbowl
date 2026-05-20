@@ -8,7 +8,6 @@ import pytest
 import yaml
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect import flow
 from prefect.testing.utilities import prefect_test_harness
 from pytest_mock_resources import create_mysql_fixture
@@ -17,6 +16,7 @@ from punchbowl.auto.control.db import Base, File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.util import load_pipeline_configuration
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 
 TESTDATA_DIR = os.path.dirname(__file__)
 
@@ -196,7 +196,7 @@ def normal_core_flow():
     meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
     meta['DATE'] = datetime.now().strftime("%Y%m%dT%H%M%S")
     meta['FILEVRSN'] = "1"
-    output = NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    output = PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
     return [output]
 

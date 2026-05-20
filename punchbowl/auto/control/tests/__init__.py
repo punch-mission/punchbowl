@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 
 from punchbowl.auto.control.db import File
 from punchbowl.auto.control.util import match_data_with_file_db_entry
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 
 
 @pytest.fixture()
@@ -24,7 +24,7 @@ def sample_punchdata(shape=(50, 50), level=0):
     wcs.wcs.cname = "HPC lon", "HPC lat"
 
     meta = NormalizedMetadata({"LEVEL": level})
-    return  NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 def test_match_data_with_file_db_entry_fails_on_empty_list(sample_punchdata):

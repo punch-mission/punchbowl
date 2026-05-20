@@ -8,11 +8,11 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 
 # punchbowl imports
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.meta import MetaField
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.level3.f_corona_model import subtract_f_corona_background, subtract_f_corona_background_task
 
@@ -51,7 +51,7 @@ def one_data(shape: tuple = (2048, 2048)) -> np.ndarray:
         "LEVEL": MetaField("LEVEL", "", "1", str, True, True, ""),
         "OBSRVTRY": MetaField("OBSRVTRY", "", "0", str, True, True, ""),
         "DATE-OBS": MetaField("DATE-OBS", "", "2008-01-03T04:57:00", str, True, True, "")}})
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 @pytest.fixture()
 def observation_data(shape: tuple = (2048, 2048)) -> np.ndarray:
@@ -75,7 +75,7 @@ def observation_data(shape: tuple = (2048, 2048)) -> np.ndarray:
         "LEVEL": MetaField("LEVEL", "", "1", str, True, True, ""),
         "OBSRVTRY": MetaField("OBSRVTRY", "", "0", str, True, True, ""),
         "DATE-OBS": MetaField("DATE-OBS", "", "2008-01-03T08:57:00", str, True, True, "")}})
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
@@ -100,7 +100,7 @@ def zero_data(shape: tuple = (2048, 2048)) -> np.ndarray:
         "LEVEL": MetaField("LEVEL", "", "1", str, True, True, ""),
         "OBSRVTRY": MetaField("OBSRVTRY", "", "0", str, True, True, ""),
         "DATE-OBS": MetaField("DATE-OBS", "", "2008-01-03T12:57:00", str, True, True, "")}})
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
@@ -126,18 +126,18 @@ def incorrect_shape_data(shape: tuple = (512, 512)) -> np.ndarray:
         "OBSRVTRY": MetaField("OBSRVTRY", "", "0", str, True, True, ""),
         "DATE-OBS": MetaField("DATE-OBS", "", "2008-01-03T08:57:00", str, True, True, "")}})
 
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-def test_basic_subtraction(observation_data: NDCube, one_data: NDCube, zero_data: NDCube) -> None:
+def test_basic_subtraction(observation_data: PUNCHCube, one_data: PUNCHCube, zero_data: PUNCHCube) -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in
     """
     subtraction_punchdata = subtract_f_corona_background(observation_data, one_data, zero_data)
-    assert isinstance(subtraction_punchdata, NDCube)
+    assert isinstance(subtraction_punchdata, PUNCHCube)
     assert np.all(subtraction_punchdata.data == 0.5)
 
-def test_flipped_dates_subtraction_fails(observation_data: NDCube, one_data: NDCube, zero_data: NDCube) -> None:
+def test_flipped_dates_subtraction_fails(observation_data: PUNCHCube, one_data: PUNCHCube, zero_data: PUNCHCube) -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in
     """
@@ -145,7 +145,7 @@ def test_flipped_dates_subtraction_fails(observation_data: NDCube, one_data: NDC
         _ = subtract_f_corona_background(observation_data, zero_data, one_data)
 
 
-def test_after_is_before_subtraction_fails(observation_data: NDCube, one_data: NDCube, zero_data: NDCube) -> None:
+def test_after_is_before_subtraction_fails(observation_data: PUNCHCube, one_data: PUNCHCube, zero_data: PUNCHCube) -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in
     """
@@ -153,7 +153,7 @@ def test_after_is_before_subtraction_fails(observation_data: NDCube, one_data: N
         _ = subtract_f_corona_background(observation_data, one_data, one_data)
 
 
-def test_different_array_size_subtraction(incorrect_shape_data: NDCube, zero_data: NDCube) -> None:
+def test_different_array_size_subtraction(incorrect_shape_data: PUNCHCube, zero_data: PUNCHCube) -> None:
     """
     dataset of increasing values passed in, a bad pixel map is passed in
     """

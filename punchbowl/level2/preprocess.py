@@ -2,13 +2,13 @@ from functools import lru_cache
 
 import numpy as np
 import scipy
-from ndcube import NDCube
 from prefect import get_run_logger
 
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.util import load_mask_file
 
 
-def trim_edges(data_list: list[NDCube], trim_edge_px: int | list[int] = 0) -> None:
+def trim_edges(data_list: list[PUNCHCube], trim_edge_px: int | list[int] = 0) -> None:
     """Trim the edges of the image, expanding the mask the same amount. Sets masked pixels to nan."""
     for cube in data_list:
         if cube is None:
@@ -36,7 +36,7 @@ def _load_mask_wrapper(mask_path: str) -> np.ndarray:
     return np.where(mask, 1, np.nan)
 
 
-def apply_masks(data_list: list[NDCube], mask_list: list[str | None]) -> None:
+def apply_masks(data_list: list[PUNCHCube], mask_list: list[str | None]) -> None:
     """Apply image masks. Sets masked pixels to nan."""
     for cube, mask_path in zip(data_list, mask_list, strict=True):
         if cube is None or mask_path is None:
@@ -47,7 +47,7 @@ def apply_masks(data_list: list[NDCube], mask_list: list[str | None]) -> None:
         cube.uncertainty.array[np.isnan(mask)] = np.inf
 
 
-def apply_alpha(data_list: list[NDCube], alphas_file: str | None = None) -> None:
+def apply_alpha(data_list: list[PUNCHCube], alphas_file: str | None = None) -> None:
     """Apply alpha scalings."""
     logger = get_run_logger()
     if alphas_file is not None:
@@ -66,7 +66,7 @@ def apply_alpha(data_list: list[NDCube], alphas_file: str | None = None) -> None
                 logger.warning(f"Did not find alpha value for {cube.meta['FILENAME'].value}")
 
 
-def preprocess_trefoil_inputs(data_list: list[NDCube], mask_list: list[str | None],
+def preprocess_trefoil_inputs(data_list: list[PUNCHCube], mask_list: list[str | None],
                               trim_edge_px: int = 0, alphas_file: str | None = None) -> None:
     """Preprocess trefoil inputs."""
     trim_edges(data_list, trim_edge_px)

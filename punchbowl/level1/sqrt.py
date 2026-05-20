@@ -4,8 +4,8 @@ from math import ceil
 from datetime import datetime
 
 import numpy as np
-from ndcube import NDCube
 
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import DataValueWarning
 from punchbowl.prefect import punch_task
 
@@ -405,20 +405,20 @@ def decode_sqrt_by_table(data: np.ndarray | float, table: np.ndarray) -> np.ndar
 
 
 @punch_task
-def decode_sqrt_data(data_object: NDCube, overwrite_table: bool = False) -> NDCube:
+def decode_sqrt_data(data_object: PUNCHCube, overwrite_table: bool = False) -> PUNCHCube:
     """
     Prefect task in the pipeline to decode square root encoded data.
 
     Parameters
     ----------
-    data_object : NDCube
+    data_object : PUNCHCube
         the object you wish to decode
     overwrite_table
         Toggle to regenerate and overwrite existing decoding table
 
     Returns
     -------
-    NDCube
+    PUNCHCube
         a modified version of the input with the data square root decoded
 
     """

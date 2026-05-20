@@ -24,7 +24,6 @@ from astropy.wcs import WCS
 from ccsdspy import PacketArray, PacketField, converters
 from ccsdspy.utils import split_by_apid
 from dateutil.parser import parse as parse_datetime_str
-from ndcube import NDCube
 from prefect import flow, get_run_logger, task
 from prefect.blocks.core import Block
 from prefect.blocks.fields import SecretDict
@@ -61,6 +60,7 @@ from punchbowl.auto.control.db import (
 from punchbowl.auto.control.util import load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.data import NormalizedMetadata, get_base_file_name, punch_io, write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
 from punchbowl.exceptions import MissingMetadataError
 from punchbowl.limits import LimitSet
@@ -1009,11 +1009,11 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
                 position_info,
                 float(pipeline_config["plate_scale"][str(soc_spacecraft_id)]))
 
-            # we're ready to pack this into an NDCube to write as a FITS file using punchbowl
+            # we're ready to pack this into a PUNCHCube to write as a FITS file using punchbowl
             meta = NormalizedMetadata.load_template(file_type + str(soc_spacecraft_id), "0")
             for meta_key, meta_value in fits_info.items():
                 meta[meta_key] = meta_value
-            cube = NDCube(data=image, meta=meta, wcs=preliminary_wcs)
+            cube = PUNCHCube(data=image, meta=meta, wcs=preliminary_wcs)
             cube.meta.provenance = [os.path.basename(p) for p in needed_tlm_paths]
             cube.meta.history.add_now("form_single_image", f"ran with punchpipe v{__version__}")
 

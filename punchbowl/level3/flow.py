@@ -3,12 +3,12 @@ from copy import deepcopy
 from datetime import UTC, datetime
 
 import numpy as np
-from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.auto.control.cache_layer.loader_base_class import DataLoader
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.meta import MetaField, NormalizedMetadata, set_spacecraft_location_to_earth
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2.finalize import finalize_output
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
@@ -21,10 +21,10 @@ from punchbowl.util import load_image_task, output_image_task
 
 
 @punch_flow
-def level3_PIM_CIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
+def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                         before_f_corona_model_paths: list[str | DataLoader],
                         after_f_corona_model_paths: list[str | DataLoader],
-                        output_filename: str | None = None) -> list[NDCube]:
+                        output_filename: str | None = None) -> list[PUNCHCube]:
     """Level 3 PIM/CIM flow."""
     logger = get_run_logger()
 
@@ -67,7 +67,7 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
                 # The existing meta doesn't have a POLAR key. Hack: just grab a section and cram in the new value.
                 section = next(iter(m._contents.values())) # noqa: SLF001
                 section["POLAR"] = MetaField("POLAR", "", angle, int, True, True, 0)
-                merge_layers.append(NDCube(
+                merge_layers.append(PUNCHCube(
                     d.data[i],
                     meta=m,
                     wcs=d.wcs,
@@ -99,10 +99,10 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
 
 
 @punch_flow
-def level3_core_flow(data_list: list[str] | list[NDCube],
+def level3_core_flow(data_list: list[str] | list[PUNCHCube],
                      before_starfield_path: str | None,
                      after_starfield_path: str | None,
-                     output_filename: str | None = None) -> list[NDCube]:
+                     output_filename: str | None = None) -> list[PUNCHCube]:
     """Level 3 CTM flow."""
     logger = get_run_logger()
 
@@ -141,9 +141,9 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
 
 
 @punch_flow
-def generate_level3_low_noise_flow(data_list: list[str] | list[NDCube],
+def generate_level3_low_noise_flow(data_list: list[str] | list[PUNCHCube],
                                    output_filename: str | None = None,
-                                   reference_time: str | datetime | None = None) -> list[NDCube]:
+                                   reference_time: str | datetime | None = None) -> list[PUNCHCube]:
     """Generate low noise products."""
     logger = get_run_logger()
 
@@ -159,7 +159,7 @@ def generate_level3_low_noise_flow(data_list: list[str] | list[NDCube],
 
 @punch_flow
 def generate_level3_velocity_flow(data_list: list[str],
-                                  output_filename: str | None = None) -> list[NDCube]:
+                                  output_filename: str | None = None) -> list[PUNCHCube]:
     """Generate Level 3 velocity data product."""
     logger = get_run_logger()
 

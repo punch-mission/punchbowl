@@ -137,8 +137,7 @@ def group_l2_inputs(files: list[File]) -> list[tuple[File]]:
     """
     Group up L1 inputs into MZP clusters that match in time (i.e. occur sequentially in one image cluster).
 
-    Handles the swapped MZP/PZM orders, handles any combination of missing files, and for each observatory returns only
-    complete MZP triplets
+    Handles any combination of missing files, and for each observatory returns only complete MZP triplets
     """
     if len(files) == 0:
         return []
@@ -159,7 +158,7 @@ def group_l2_inputs(files: list[File]) -> list[tuple[File]]:
     wfi1 = group_l2_inputs_single_observatory(wfi1, ["P", "Z", "M"])
     wfi2 = group_l2_inputs_single_observatory(wfi2, ["P", "Z", "M"])
     wfi3 = group_l2_inputs_single_observatory(wfi3, ["P", "Z", "M"])
-    nfi = group_l2_inputs_single_observatory(nfi, ["M", "Z", "P"])
+    nfi = group_l2_inputs_single_observatory(nfi, ["P", "Z", "M"])
 
     # To group the groups, we'll take the first file of each group, group up the first files, and then fill in those
     # groups with the corresponding second and third files.

@@ -9,8 +9,6 @@ from multiprocessing.shared_memory import SharedMemory
 
 import numba
 import numpy as np
-from astropy.nddata import StdDevUncertainty
-from astropy.units import Unit
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from ndcube import NDCube
@@ -18,7 +16,8 @@ from numpy.typing import ArrayLike
 from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve2d
 
-from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning
 from punchbowl.prefect import punch_task
 
@@ -74,7 +73,7 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
 
 @punch_task(tags=["image_loader"])
 def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True,
-                    dtype: type = float) -> NDCube:
+                    dtype: type = float) -> PUNCHCube:
     """
     Prefect task to load data for processing.
 
@@ -91,7 +90,7 @@ def load_image_task(input_filename: str, include_provenance: bool = True, includ
 
     Returns
     -------
-    NDCube
+    PUNCHCube
         loaded version of the image
 
     """
@@ -638,47 +637,3 @@ class ShmPickleableNDArray(np.ndarray):
 
         return ShmPickleableNDArray.__new__, (ShmPickleableNDArray, self.shape, self.dtype, self.shm.name,
                                               self.strides, offset, True)
-
-def new_cube_from(cube: NDCube, data: np.ndarray | None = None,
-                  meta: NormalizedMetadata | None = None, wcs: WCS | None = None,
-                  celestial_wcs: WCS | None = None, unit: Unit | None = None,
-                  mask: np.ndarray | None = None,
-                  uncertainty: StdDevUncertainty | None = None) -> NDCube:
-    """
-    (Shallow) copy an NDCube, but with certain attributes replaced.
-
-    Useful because NDCubes don't allow changing their data array, WCS, etc., so to change the WCS you have to make a new
-    cube. Using this function ensures everything is copied over.
-
-    Parameters
-    ----------
-    cube : NDCube
-        The cube to use as the source for all attributes that aren't specified
-    data : ndarray | None
-        A replacement data array
-    meta : NormalizedMetadata | None
-        A replacement meta
-    wcs : WCS | None
-        A replacement WCS
-    celestial_wcs : WCS | None
-        A replacement celestial WCS
-    unit : Unit | None
-        A replacement unit
-    mask : np.ndarray | None
-        A replacement mask
-    uncertainty : StdDevUncertainty | None
-        A replacement uncertainty
-
-    Returns
-    -------
-    cube : NDCube
-
-    """
-    new_cube = NDCube(data=data or cube.data,
-                      meta=meta or cube.meta,
-                      wcs=wcs or cube.wcs,
-                      unit=unit or cube.unit,
-                      mask=mask or cube.mask,
-                      uncertainty=uncertainty or cube.uncertainty)
-    new_cube.celestial_wcs = celestial_wcs or cube.celestial_wcs
-    return new_cube

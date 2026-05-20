@@ -21,6 +21,7 @@ from punchbowl.data.punch_io import (
     write_ndcube_to_fits,
     write_ndcube_to_quicklook,
 )
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_pc_matrix
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -60,7 +61,7 @@ def sample_ndcube():
             meta['CRLT_OBS'] = 1.6391084786225854
             meta['CRLN_OBS'] = 131.07429379735413
             meta['DSUN_OBS'] = 152011862324.1987
-        return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 
 
@@ -158,7 +159,7 @@ def test_generate_data_statistics_from_zeros():
     m['DATASUM'] = ''
     m.delete_section("World Coordinate System")
 
-    sample_data = NDCube(data=np.zeros((2048, 2048),dtype=np.int16), wcs=w, meta=m)
+    sample_data = PUNCHCube(data=np.zeros((2048, 2048),dtype=np.int16), wcs=w, meta=m)
 
     new_meta = _update_statistics(sample_data)
     sample_data.meta = new_meta
@@ -235,7 +236,7 @@ def test_load_punchdata_with_history(tmpdir):
                      "CUNIT2": "deg",
                      "CTYPE1": "HPLN-ARC",
                      "CTYPE2": "HPLT-ARC"})
-    obj = NDCube(data=data, wcs=wcs, meta=meta)
+    obj = PUNCHCube(data=data, wcs=wcs, meta=meta)
 
     assert "OBSCODE" in obj.meta.fits_keys
     file_path = os.path.join(tmpdir, get_base_file_name(obj) + ".fits")
@@ -302,7 +303,7 @@ def test_write_punchdata_with_distortion(tmpdir):
     cpdis1, cpdis2 = make_empty_distortion_model(100, data)
     wcs.cpdis1 = cpdis1
     wcs.cpdis2 = cpdis2
-    obj = NDCube(data=data, wcs=wcs, meta=meta, uncertainty=StdDevUncertainty(uncertainty))
+    obj = PUNCHCube(data=data, wcs=wcs, meta=meta, uncertainty=StdDevUncertainty(uncertainty))
     file_path = os.path.join(tmpdir, get_base_file_name(obj) + ".fits")
     write_ndcube_to_fits(obj, file_path, overwrite=True)
 

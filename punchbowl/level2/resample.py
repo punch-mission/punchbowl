@@ -7,6 +7,7 @@ from ndcube import NDCube
 from prefect import get_run_logger
 from scipy.ndimage import distance_transform_edt
 
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from punchbowl.prefect import punch_flow, punch_task
 
@@ -68,8 +69,8 @@ def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int,
 
     input_data = input_cube.data
     time = input_cube.meta.astropy_time
-    celestial_source = (input_cube.celestial_wcs
-                        or calculate_celestial_wcs_from_helio(input_cube.wcs, time, output_shape[-2:]))
+    celestial_source = (input_cube.celestial_wcs if isinstance(input_cube, PUNCHCube)
+                        else calculate_celestial_wcs_from_helio(input_cube.wcs, time, output_shape[-2:]))
     celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape[-2:])
     input_uncertainty = input_cube.uncertainty.array if do_uncertainty else None
 

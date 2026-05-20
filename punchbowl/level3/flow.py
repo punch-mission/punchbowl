@@ -17,7 +17,7 @@ from punchbowl.level3.polarization import convert_polarization
 from punchbowl.level3.stellar import subtract_starfield_background_task
 from punchbowl.level3.velocity import plot_flow_map, track_velocity
 from punchbowl.prefect import punch_flow
-from punchbowl.util import load_image_task, new_cube_from, output_image_task
+from punchbowl.util import load_image_task, output_image_task
 
 
 @punch_flow
@@ -40,7 +40,7 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
         data[..., cropy[0]:cropy[1], cropx[0]:cropx[1]] = cube.data
         uncertainty = np.full(data.shape, np.inf)
         uncertainty[..., cropy[0]:cropy[1], cropx[0]:cropx[1]] = cube.uncertainty.array
-        new_cube = new_cube_from(cube, data=data, uncertainty=uncertainty)
+        new_cube = cube.replace(data=data, uncertainty=uncertainty)
         data_list[i] = new_cube
     polarized = data_list[0].meta["TYPECODE"].value[1] != "R"
     new_type = "PIM" if polarized else "CIM"
@@ -128,7 +128,7 @@ def level3_core_flow(data_list: list[str] | list[NDCube],
                     "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
                     "CTRXNFI4", "CTRYNFI4"]:
             out_meta[key] = o.meta[key].value
-        output_data = new_cube_from(o, meta=out_meta)
+        output_data = o.replace(meta=out_meta)
         output_data = set_spacecraft_location_to_earth(output_data)
         out_data_list.append(output_data)
 

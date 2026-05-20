@@ -28,6 +28,7 @@ from ndcube import NDCollection, NDCube
 from PIL import Image, ImageDraw, ImageFont
 
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.visualize import cmap_punch, radial_distance
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -300,7 +301,7 @@ def write_ndcube_to_fits(cube: NDCube,
     meta = cube.meta if skip_stats else _update_statistics(cube)
 
     full_header = meta.to_fits_header(wcs=cube.wcs, write_celestial_wcs=not skip_wcs_conversion,
-                                      celestial_wcs=getattr(cube, "celestial_wcs", None))
+                                      celestial_wcs=cube.celestial_wcs if isinstance(cube, PUNCHCube) else None)
 
     hdu_data = fits.CompImageHDU(data=cube.data.astype(np.float32) if cube.data.dtype == np.float64 else cube.data,
                                  header=full_header,
@@ -391,7 +392,7 @@ def _update_statistics(cube: NDCube, modify_inplace: bool = False) -> Normalized
 
 
 def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True,
-                          include_uncertainty: bool = True, dtype: type = float) -> NDCube:
+                          include_uncertainty: bool = True, dtype: type = float) -> PUNCHCube:
     """Load an NDCube from a FITS file."""
     with warnings.catch_warnings(), fits.open(path) as hdul:
         warnings.filterwarnings(action="ignore", message=".*CROTA.*Human-readable solar north pole angle.*",
@@ -416,15 +417,17 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
             del header["DP1A"]
             del header["DP2A"]
         wcs = WCS(header, hdul, key=key)
-        try:
-            celestial_wcs = WCS(header, hdul, key="A") if key == " " else None
-            # If we're loading *lots* of cubes at once, keeping two copies of the distortion tables can matter. Since
-            # they're identical, let's de-duplicate them.
-            celestial_wcs.cpdis1 = wcs.cpdis1
-            celestial_wcs.cpdis2 = wcs.cpdis2
-        except KeyError:
-            # Raised if there isn't a WCS under the "A" key
-            celestial_wcs = None
+        celestial_wcs = None
+        if key == " ":
+            try:
+                celestial_wcs = WCS(header, hdul, key="A")
+                # If we're loading *lots* of cubes at once, keeping two copies of the distortion tables can matter.
+                # Since they're identical, let's de-duplicate them.
+                celestial_wcs.cpdis1 = wcs.cpdis1
+                celestial_wcs.cpdis2 = wcs.cpdis2
+            except KeyError:
+                # Raised if there isn't a WCS under the "A" key
+                pass
         unit = u.ct
 
         if include_uncertainty and len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
@@ -436,16 +439,15 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
             uncertainty = None
             mask = None
 
-    cube = NDCube(
+    return PUNCHCube(
         data.view(dtype=data.dtype.newbyteorder()).byteswap().astype(dtype),
         wcs=wcs,
+        celestial_wcs=celestial_wcs,
         uncertainty=uncertainty,
         meta=meta,
         unit=unit,
         mask=mask,
     )
-    cube.celestial_wcs = celestial_wcs
-    return cube
 
 
 def _load_many_cubes_caller(path: str | Path, kwargs: dict, allow_errors: bool) -> NDCube | str:

@@ -14,7 +14,6 @@ import sep
 from astropy.coordinates import GCRS, CartesianDifferential, CartesianRepresentation, SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
-from ndcube import NDCube
 from prefect import get_run_logger
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
@@ -22,6 +21,7 @@ from skimage.transform import resize
 from sunpy.coordinates import HeliocentricInertial
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
 from punchbowl.level1.alignment_parallel import get_errors, refine_pointing_single_step
 from punchbowl.prefect import punch_task
@@ -338,9 +338,6 @@ def astrometry_net_initial_solve(observed_coords: np.ndarray,
         if solution.has_match():
             return solution.best_match().astropy_wcs()
         return None
-
-
-
 
 
 def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
@@ -670,14 +667,14 @@ def build_distortion_model(
 
 
 @punch_task
-def align_task(data_object: NDCube, distortion_path: str | None, max_workers: int = 4,
-               n_rounds: int = 50) -> NDCube:
+def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers: int = 4,
+               n_rounds: int = 50) -> PUNCHCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.
 
     Parameters
     ----------
-    data_object : NDCube
+    data_object : PUNCHCube
         data object to align
     distortion_path: str | None
         path to a distortion model
@@ -688,7 +685,7 @@ def align_task(data_object: NDCube, distortion_path: str | None, max_workers: in
 
     Returns
     -------
-    NDCube
+    PUNCHCube
         a modified version of the input with the WCS more accurately determined
 
     """
@@ -728,11 +725,6 @@ def align_task(data_object: NDCube, distortion_path: str | None, max_workers: in
         recovered_wcs.cpdis1 = distortion_wcs.cpdis1
         recovered_wcs.cpdis2 = distortion_wcs.cpdis2
 
-    output = NDCube(data=data_object.data,
-                    wcs=recovered_wcs,
-                    uncertainty=data_object.uncertainty,
-                    unit=data_object.unit,
-                    meta=data_object.meta)
-    output.celestial_wcs = celestial_output
+    output = data_object.replace(wcs=recovered_wcs, celestial_wcs=celestial_output)
     output.meta.history.add_now("LEVEL1-Align", f"alignment done with {n_rounds} iterations")
     return output

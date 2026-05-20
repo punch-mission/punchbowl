@@ -1006,11 +1006,11 @@ def check_moon_in_fov(time_obs_start: DateLike,
                 in_fov_times.append((t.iso, angle))
 
             if do_image and wcs is not None:
-                moon_icrs = get_body("moon", t).icrs
+                moon_icrs = get_body("moon", t)
                 x_moon, y_moon = wcs.world_to_pixel(moon_icrs)
 
                 # Angular separation from image center
-                ang_c = float(moon_icrs.separation(center_coord).to_value(u.deg))
+                ang_c = float(moon_icrs.transform_to(center_coord.frame).separation(center_coord).to_value(u.deg))
                 angles_image_center.append(ang_c)
 
                 if (np.isfinite(x_moon) and np.isfinite(y_moon)

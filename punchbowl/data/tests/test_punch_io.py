@@ -34,6 +34,7 @@ SAMPLE_SPACECRAFT_DEF_PATH = os.path.join(TESTDATA_DIR, "spacecraft.yaml")
 @pytest.fixture
 def sample_ndcube():
     def _sample_ndcube(shape, code="PM1", level="0", date_obs=None, crota=0):
+        date_obs = date_obs or str(datetime(2024, 2, 22, 16, 0, 1))
         data = np.random.random(shape).astype(np.float32)
         uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)))
         wcs = WCS(naxis=2)
@@ -45,12 +46,16 @@ def sample_ndcube():
         wcs.wcs.cname = "HPC lon", "HPC lat"
         # For polarized static stray light estimation, which currently excludes northern images
         wcs.wcs.pc = calculate_pc_matrix(crota * np.pi / 180, (0.1, 0.1))
+        wcs.wcs.aux.hgln_obs = 0
+        wcs.wcs.aux.hglt_obs = 7.19
+        wcs.wcs.aux.dsun_obs = 150000000000
+        wcs.wcs.dateobs = date_obs
 
         if level in ["2", "3"] and code[0] == "P":
             wcs = add_stokes_axis_to_wcs(wcs, 2)
 
         meta = NormalizedMetadata.load_template(code, level)
-        meta['DATE-OBS'] = date_obs or str(datetime(2024, 2, 22, 16, 0, 1))
+        meta['DATE-OBS'] = date_obs
         meta['FILEVRSN'] = "1"
 
         # Setting these avoids FITSFixedWarnings if these files are written and then read in

@@ -68,7 +68,8 @@ def reproject_cube(input_cube: PUNCHCube, output_wcs: WCS, output_shape: tuple[i
 
     input_data = input_cube.data
     time = input_cube.meta.astropy_time
-    celestial_source = (input_cube.celestial_wcs if isinstance(input_cube, PUNCHCube)
+    celestial_source = (input_cube.celestial_wcs if (isinstance(input_cube, PUNCHCube)
+                                                     and input_cube.celestial_wcs is not None)
                         else calculate_celestial_wcs_from_helio(input_cube.wcs, time, output_shape[-2:]))
     celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape[-2:])
     input_uncertainty = input_cube.uncertainty.array if do_uncertainty else None

@@ -9,6 +9,7 @@ from astropy.coordinates import get_body
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS, DistortionLookupTable
+from sunpy.coordinates import get_earth
 
 from punchbowl.data.history import HistoryEntry
 from punchbowl.data.meta import (
@@ -338,7 +339,12 @@ wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
 wcs.wcs.cunit = "deg", "deg"
 wcs.wcs.cdelt = 0.02, 0.02
 wcs.wcs.crpix = 1024, 1024
-wcs.wcs.crval = 0, 24.75
+wcs.wcs.crval = -140, -4
+earth = get_earth("2026-08-24T16:30:24.766")
+wcs.wcs.aux.hgln_obs = earth.lon.to_value(u.deg)
+wcs.wcs.aux.hglt_obs = earth.lat.to_value(u.deg)
+wcs.wcs.aux.dsun_obs = earth.radius.to_value(u.m)
+wcs.wcs.dateobs = "2026-08-24T16:30:24.766"
 
 def test_moon_angular_distance_from_center(): # change import
     shape = (2048, 2048)
@@ -347,11 +353,12 @@ def test_moon_angular_distance_from_center(): # change import
     times, ang_sun, fov_half, in_fov, ang_center, xpix, ypix = check_moon_in_fov(
         t_obs, wcs=wcs, image_shape=shape)
 
-    moon = get_body("moon", Time(t_obs)).icrs
+    moon = get_body("moon", Time(t_obs))
     xc = (shape[1] - 1) / 2
     yc = (shape[0] - 1) / 2
     center = wcs.pixel_to_world(xc, yc)
-    expected = moon.separation(center).to_value(u.deg)
+    expected = moon.transform_to(center.frame).separation(center).to_value(u.deg)
 
     assert len(ang_center) == 1
+    print(ang_center[0], expected)
     assert np.isclose(ang_center[0], expected, rtol=1e-6)

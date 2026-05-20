@@ -19,6 +19,9 @@ def test_find_bodies_in_image_quarters():
     wcs.wcs.crpix = 1024.5, 1024.5
     wcs.wcs.cdelt = 0.008333333333, 0.008333333333
     wcs.wcs.dateobs = '2025-07-05T12:56:21.706'
+    wcs.wcs.aux.hgln_obs = 0
+    wcs.wcs.aux.hglt_obs = 7.19
+    wcs.wcs.aux.dsun_obs = 150000000000
 
     meta = NormalizedMetadata.load_template('CR4', '1')
     meta['GEOD_LON'] = 75.80763246719741
@@ -47,6 +50,9 @@ def test_that_pca_filter_runs():
     wcs.wcs.cdelt = 0.1328, 0.1328
     wcs.wcs.dateobs = '2025-07-05T12:56:21.706'
     wcs.array_shape = (128, 128)
+    wcs.wcs.aux.hgln_obs = 0
+    wcs.wcs.aux.hglt_obs = 7.19
+    wcs.wcs.aux.dsun_obs = 150000000000
 
     meta = NormalizedMetadata.load_template('CR4', '1')
     meta['GEOD_LON'] = 75.80763246719741

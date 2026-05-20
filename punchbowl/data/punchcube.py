@@ -6,8 +6,6 @@ from astropy.units import Unit
 from astropy.wcs import WCS
 from ndcube import NDCube
 
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
-
 if TYPE_CHECKING:
     import punchbowl.data.meta
 
@@ -18,14 +16,7 @@ class PUNCHCube(NDCube):
     def __init__(self, *args: list, celestial_wcs: WCS | None = None,  **kwargs: dict) -> None:
         """Initialize a PUNCHCube."""
         super().__init__(*args, **kwargs)
-        self._celestial_wcs = celestial_wcs
-
-    @property
-    def celestial_wcs(self) -> WCS:
-        """Get the celestial WCS, computing it if not already set."""
-        if self._celestial_wcs is None:
-            self._celestial_wcs = calculate_celestial_wcs_from_helio(self.wcs, self.meta.astropy_time, self.data.shape)
-        return self._celestial_wcs
+        self.celestial_wcs = celestial_wcs
 
     def replace(self, data: np.ndarray | None = None,
                 meta: "punchbowl.data.meta.NormalizedMetadata | None" = None, wcs: WCS | None = None,

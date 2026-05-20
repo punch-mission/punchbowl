@@ -157,7 +157,6 @@ class SCI_XFI(Base):
     compression_settings = Column(Integer, nullable=False)
     acquisition_settings = Column(Integer, nullable=False)
     packet_group = Column(Integer, nullable=False)
-    priority = Column(Integer, nullable=False, default=0)
 
 Index("unused_packet_query", SCI_XFI.spacecraft_id, SCI_XFI.is_used)
 

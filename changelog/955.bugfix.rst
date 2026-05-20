@@ -1,0 +1,1 @@
+We no longer register with Astropy a GCRS <-> Helioprojective transformation that ignores differences in observer location.

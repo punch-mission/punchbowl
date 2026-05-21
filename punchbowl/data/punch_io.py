@@ -24,10 +24,11 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, FITSFixedWarning
 from glymur import Jp2k, jp2box
 from matplotlib.colors import PowerNorm
-from ndcube import NDCollection, NDCube
+from ndcube import NDCollection
 from PIL import Image, ImageDraw, ImageFont
 
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.visualize import cmap_punch, radial_distance
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -46,7 +47,7 @@ def write_file_hash(path: str) -> None:
         f.write(file_hash.hexdigest())
 
 
-def get_base_file_name(cube: NDCube) -> str:
+def get_base_file_name(cube: PUNCHCube) -> str:
     """Determine the base file name without file type extension."""
     obscode = cube.meta["OBSCODE"].value
     file_level = cube.meta["LEVEL"].value
@@ -100,7 +101,7 @@ def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
     return jp2box.XMLBox(xml=tree)
 
 
-def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
+def write_ndcube_to_quicklook(cube: PUNCHCube, # noqa: C901
                               filename: str,
                               layer: int | str | None = "tb",
                               vmin: float = 1e-14,
@@ -113,11 +114,11 @@ def write_ndcube_to_quicklook(cube: NDCube, # noqa: C901
                               write_hash: bool = False,
                               ) -> None:
     """
-    Write an NDCube to a Quicklook format as a jpeg.
+    Write a PUNCHCube to a Quicklook format as a jpeg.
 
     Parameters
     ----------
-    cube : NDCube
+    cube : PUNCHCube
         data cube to visualize
     filename : str
         path to save output, must end in .jp2, .j2k, .jpeg, .jpg
@@ -280,14 +281,14 @@ def write_quicklook_to_mp4(files: list[str],
     subprocess.run(ffmpeg_command, check=False)  # noqa: S603
 
 
-def write_ndcube_to_fits(cube: NDCube,
+def write_ndcube_to_fits(cube: PUNCHCube,
                          filename: str,
                          overwrite: bool = False,
                          write_hash: bool = True,
                          skip_stats: bool = False,
                          skip_wcs_conversion: bool = False,
                          uncertainty_quantize_level: float = 16) -> None:
-    """Write an NDCube as a FITS file."""
+    """Write a PUNCHCube as a FITS file."""
     if not filename.endswith(".fits"):
         msg = (
             "Filename must have a valid file extension `.fits`"
@@ -299,7 +300,8 @@ def write_ndcube_to_fits(cube: NDCube,
 
     meta = cube.meta if skip_stats else _update_statistics(cube)
 
-    full_header = meta.to_fits_header(wcs=cube.wcs, write_celestial_wcs=not skip_wcs_conversion)
+    full_header = meta.to_fits_header(wcs=cube.wcs, write_celestial_wcs=not skip_wcs_conversion,
+                                      celestial_wcs=cube.celestial_wcs if isinstance(cube, PUNCHCube) else None)
 
     hdu_data = fits.CompImageHDU(data=cube.data.astype(np.float32) if cube.data.dtype == np.float64 else cube.data,
                                  header=full_header,
@@ -330,7 +332,7 @@ def _make_provenance_hdu(filenames: list[str]) -> fits.BinTableHDU:
     return hdu_provenance
 
 
-def _pack_uncertainty(cube: NDCube) -> np.ndarray:
+def _pack_uncertainty(cube: PUNCHCube) -> np.ndarray:
     """Compress the uncertainty for writing to file."""
     output = np.zeros_like(cube.data) - 999 if cube.uncertainty is None else 1 / (cube.uncertainty.array / cube.data)
     if cube.mask is not None:
@@ -347,7 +349,7 @@ def _unpack_uncertainty(uncertainty_array: np.ndarray, data_array: np.ndarray) -
     return uncertainty_array
 
 
-def _update_statistics(cube: NDCube, modify_inplace: bool = False) -> NormalizedMetadata:
+def _update_statistics(cube: PUNCHCube, modify_inplace: bool = False) -> NormalizedMetadata:
     """Update image statistics in metadata before writing to file."""
     meta = cube.meta
     if not modify_inplace:
@@ -390,8 +392,8 @@ def _update_statistics(cube: NDCube, modify_inplace: bool = False) -> Normalized
 
 
 def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: bool = True,
-                          include_uncertainty: bool = True, dtype: type = float) -> NDCube:
-    """Load an NDCube from a FITS file."""
+                          include_uncertainty: bool = True, dtype: type = float) -> PUNCHCube:
+    """Load a PUNCHCube from a FITS file."""
     with warnings.catch_warnings(), fits.open(path) as hdul:
         warnings.filterwarnings(action="ignore", message=".*CROTA.*Human-readable solar north pole angle.*",
                                 category=FITSFixedWarning)
@@ -415,6 +417,17 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
             del header["DP1A"]
             del header["DP2A"]
         wcs = WCS(header, hdul, key=key)
+        celestial_wcs = None
+        if key == " ":
+            try:
+                celestial_wcs = WCS(header, hdul, key="A")
+                # If we're loading *lots* of cubes at once, keeping two copies of the distortion tables can matter.
+                # Since they're identical, let's de-duplicate them.
+                celestial_wcs.cpdis1 = wcs.cpdis1
+                celestial_wcs.cpdis2 = wcs.cpdis2
+            except KeyError:
+                # Raised if there isn't a WCS under the "A" key
+                warnings.warn("Celestial WCS not found")
         unit = u.ct
 
         if include_uncertainty and len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):
@@ -426,9 +439,10 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
             uncertainty = None
             mask = None
 
-    return NDCube(
+    return PUNCHCube(
         data.view(dtype=data.dtype.newbyteorder()).byteswap().astype(dtype),
         wcs=wcs,
+        celestial_wcs=celestial_wcs,
         uncertainty=uncertainty,
         meta=meta,
         unit=unit,
@@ -436,7 +450,7 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
     )
 
 
-def _load_many_cubes_caller(path: str | Path, kwargs: dict, allow_errors: bool) -> NDCube | str:
+def _load_many_cubes_caller(path: str | Path, kwargs: dict, allow_errors: bool) -> PUNCHCube | str:
     try:
         return load_ndcube_from_fits(path, **kwargs)
     except KeyboardInterrupt:
@@ -448,9 +462,9 @@ def _load_many_cubes_caller(path: str | Path, kwargs: dict, allow_errors: bool) 
 
 
 def load_many_cubes_iterable(paths: list[str | Path], n_workers: int | None = None, allow_errors: bool = False,
-                             **kwargs: dict) -> list[NDCube | str]:
+                             **kwargs: dict) -> list[PUNCHCube | str]:
     """
-    Load many NDCubes in parallel.
+    Load many PUNCHCubes in parallel.
 
     Does not fork so as to be Prefect-compatible.
 
@@ -464,10 +478,10 @@ def load_many_cubes_iterable(paths: list[str | Path], n_workers: int | None = No
         Number of parallel workers to use. A large number may overwhelm the main thread (which has to receive each
         loaded cube), limiting the speed benefits of using many workers.
     allow_errors
-        If True, if an exception is raised when loading a cube, the traceback is yielded rather than an NDCube. If
+        If True, if an exception is raised when loading a cube, the traceback is yielded rather than a PUNCHCube. If
         False, exceptions are raised in the normal way.
     kwargs
-        Extra args are passed to `load_NDCube_from_fits`
+        Extra args are passed to `load_ndcube_from_fits`
 
     """
     context = mp.get_context("forkserver")
@@ -476,9 +490,9 @@ def load_many_cubes_iterable(paths: list[str | Path], n_workers: int | None = No
 
 
 def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow_errors: bool = False,
-                    progress_bar: bool = False, **kwargs: dict) -> list[NDCube | str]:
+                    progress_bar: bool = False, **kwargs: dict) -> list[PUNCHCube | str]:
     """
-    Load many NDCubes in parallel.
+    Load many PUNCHCubes in parallel.
 
     Does not fork so as to be Prefect-compatible.
 
@@ -490,16 +504,16 @@ def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow
         Number of parallel workers to use. A large number may overwhelm the main thread (which has to receive each
         loaded cube), limiting the speed benefits of using many workers.
     allow_errors
-        If True, if an exception is raised when loading a cube, the traceback is yielded rather than an NDCube. If
+        If True, if an exception is raised when loading a cube, the traceback is yielded rather than a PUNCHCube. If
         False, exceptions are raised in the normal way.
     progress_bar
         If True, show a progress bar
     kwargs
-        Extra args are passed to `load_NDCube_from_fits`
+        Extra args are passed to `load_PUNCHCube_from_fits`
 
     Returns
     -------
-    A list of NDCubes (or traceback strings)
+    A list of PUNCHCubes (or traceback strings)
 
     """
     iterable = load_many_cubes_iterable(paths, n_workers, allow_errors, **kwargs)
@@ -509,7 +523,7 @@ def load_many_cubes(paths: list[str | Path], n_workers: int | None = None, allow
     return list(iterable)
 
 
-def check_outlier(cube: NDCube) -> bool:
+def check_outlier(cube: PUNCHCube) -> bool:
     """Check the input data cube for outlier flagging."""
     for flag in ["OUTLIER", "BADPKTS"]:
         if flag not in cube.meta:
@@ -519,7 +533,7 @@ def check_outlier(cube: NDCube) -> bool:
     return False
 
 
-def encode_outliers(cubes: list[NDCube]) -> int:
+def encode_outliers(cubes: list[PUNCHCube]) -> int:
     """Encode the input data cube to return the outlier status for spacecraft 4321."""
     outliers = {}
     for cube in cubes:
@@ -533,7 +547,7 @@ def encode_outliers(cubes: list[NDCube]) -> int:
     return result
 
 
-def decode_outliers(cube: NDCube) -> dict:
+def decode_outliers(cube: PUNCHCube) -> dict:
     """Decode the input data cube to return the outlier status for spacecraft 4321."""
     return {
         "4": bool(cube.meta["OUTLIER"].value & 0b10000),
@@ -556,7 +570,7 @@ def remix_collection(data: Sequence[Any] | np.ndarray,
     ----------
     data : Sequence or numpy.ndarray
         Input cubes containing-
-        - a sequence of NDCube-like objects with a ``.data`` attribute, or
+        - a sequence of PUNCHCube-like objects with a ``.data`` attribute, or
         - a 3D NumPy array / FITS cube with shape ``(nz, ny, nx)``
     wcs : astropy.wcs.WCS
         WCS to assign to the output cubes.
@@ -570,16 +584,16 @@ def remix_collection(data: Sequence[Any] | np.ndarray,
     Returns
     -------
     NDCollection
-        Collection of ``NDCube`` objects with aligned axes.
+        Collection of ``PUNCHCube`` objects with aligned axes.
 
     """
     if not (len(labels) == len(indices) == len(angles)):
         raise ValueError("labels, indices, and angles must have the same length.")
 
-    collection_contents: list[tuple[str, NDCube]] = []
+    collection_contents: list[tuple[str, PUNCHCube]] = []
 
     for label, idx, angle in zip(labels, indices, angles, strict=False):
-        cube = NDCube(data=data[idx].data, wcs=wcs,
+        cube = PUNCHCube(data=data[idx].data, wcs=wcs,
             meta={"POLAR": angle})
         collection_contents.append((label, cube))
 

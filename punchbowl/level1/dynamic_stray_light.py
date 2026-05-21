@@ -7,11 +7,11 @@ from itertools import pairwise
 import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_many_cubes, load_ndcube_from_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import IncorrectPolarizationStateError, IncorrectTelescopeError, InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
 from punchbowl.util import DataLoader, average_datetime, nan_gaussian, nan_percentile, nan_percentile_2d
@@ -33,7 +33,7 @@ def fname_to_utime(fname: str) -> int:
     raise ValueError
 
 
-def cube_to_utime(cube: NDCube) -> int:
+def cube_to_utime(cube: PUNCHCube) -> int:
     """Get a timestamp."""
     t = cube.meta.datetime.replace(tzinfo=UTC)
     return t.timestamp()
@@ -45,7 +45,7 @@ def phase_in_window(fname: str) -> int:
     return int(((utime - fiducial_utime))/60) % 8
 
 
-def phase_in_window_from_cube(cube: NDCube) -> int:
+def phase_in_window_from_cube(cube: PUNCHCube) -> int:
     """Get roll position phase."""
     utime = cube_to_utime(cube)
     return int(((utime - fiducial_utime))/60) % 8
@@ -81,7 +81,7 @@ def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) ->
 
 @punch_flow
 def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: datetime | str, #noqa: C901
-                                        pol_state: str, n_crota_bins: int = 24, n_loaders: int = 5) -> list[NDCube]:
+                                        pol_state: str, n_crota_bins: int = 24, n_loaders: int = 5) -> list[PUNCHCube]:
     """Estimate time- and orbital-anomaly-dependent stray light."""
     logger = get_run_logger()
 
@@ -172,13 +172,13 @@ def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: da
         del header["DP1"]
         del header["DP2"]
         wcs = WCS(header)
-    return [NDCube(data=diff_maps, meta=meta, wcs=wcs)]
+    return [PUNCHCube(data=diff_maps, meta=meta, wcs=wcs)]
 
 
 @punch_task
-def remove_dynamic_stray_light_task(cube: NDCube, # noqa: C901
-                                    before_cube: NDCube | str | DataLoader,
-                                    after_cube: NDCube | str | DataLoader,
+def remove_dynamic_stray_light_task(cube: PUNCHCube, # noqa: C901
+                                    before_cube: PUNCHCube | str | DataLoader,
+                                    after_cube: PUNCHCube | str | DataLoader,
                                     ) -> None:
     """Interpolate and remove time- and orbital-anomaly-dependent stray light."""
     if before_cube is None or after_cube is None:
@@ -186,7 +186,7 @@ def remove_dynamic_stray_light_task(cube: NDCube, # noqa: C901
 
     if isinstance(before_cube, DataLoader):
         before_cube = before_cube.load()
-    elif not isinstance(before_cube, NDCube):
+    elif not isinstance(before_cube, PUNCHCube):
         stray_light_before_path = pathlib.Path(before_cube)
         if not stray_light_before_path.exists():
             msg = f"File {stray_light_before_path} does not exist."
@@ -195,7 +195,7 @@ def remove_dynamic_stray_light_task(cube: NDCube, # noqa: C901
 
     if isinstance(after_cube, DataLoader):
         after_cube = after_cube.load()
-    elif not isinstance(after_cube, NDCube):
+    elif not isinstance(after_cube, PUNCHCube):
         stray_light_after_path = pathlib.Path(after_cube)
         if not stray_light_after_path.exists():
             msg = f"File {stray_light_after_path} does not exist."

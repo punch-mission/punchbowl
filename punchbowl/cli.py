@@ -3,10 +3,10 @@ from datetime import datetime
 
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
-from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import get_base_file_name, write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.vignette import generate_vignetting_calibration_nfi, generate_vignetting_calibration_wfi
 
 
@@ -89,12 +89,12 @@ def create_calibration(level: str,
                                                                        polarizer=code[1],
                                                                        dateobs=timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3],
                                                                        version=file_version)
-                calibration_cube = NDCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
+                calibration_cube = PUNCHCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
             else:
                 calibration_data = generate_vignetting_calibration_wfi(input_list[0],
                                                                        input_list[1],
                                                                        spacecraft=spacecraft)
-                calibration_cube = NDCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
+                calibration_cube = PUNCHCube(data=calibration_data, wcs=WCS(naxis=2), meta=calibration_meta)
         case _:
             raise RuntimeError(f"Calibration pipeline not written for this code: {code}.")
 

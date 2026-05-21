@@ -51,11 +51,11 @@ def calculate_helio_wcs_from_celestial(wcs_celestial: WCS,
     reference_coord = SkyCoord(
         wcs_celestial.wcs.crval[0] * u.Unit(wcs_celestial.wcs.cunit[0]),
         wcs_celestial.wcs.crval[1] * u.Unit(wcs_celestial.wcs.cunit[1]),
+        9e99 * u.lyr,
         frame="gcrs",
         obstime=date_obs,
         obsgeoloc=test_gcrs.cartesian,
         obsgeovel=test_gcrs.velocity.to_cartesian(),
-        distance=test_gcrs.hcrs.distance,
     )
 
     reference_coord_hp = reference_coord.transform_to(frames.Helioprojective(observer=test_gcrs))
@@ -155,15 +155,11 @@ def get_p_angle(time: str="now") -> u.deg:
     return sunpy.coordinates.sun._sun_north_angle_to_z(geocentric)  # noqa: SLF001
 
 
-@astropy.coordinates.frame_transform_graph.transform(
-    astropy.coordinates.FunctionTransform,
-    sunpy.coordinates.Helioprojective,
-    astropy.coordinates.GCRS)
-def hpc_to_gcrs(HPcoord, GCRSframe):  # noqa: ANN201, N803, ANN001
+def hpc_to_gcrs(hp_coord):  # noqa: ANN201, ANN001
     """Convert helioprojective to GCRS."""
-    if not _times_are_equal(HPcoord.obstime, GCRSframe.obstime):
-        raise ValueError("Obstimes are not equal")
-    obstime = HPcoord.obstime or GCRSframe.obstime
+    if isinstance(hp_coord, SkyCoord):
+        hp_coord = hp_coord.frame
+    obstime = hp_coord.obstime
 
     # Compute the three angles we need
     position = astropy.coordinates.get_sun(obstime)
@@ -194,12 +190,12 @@ def hpc_to_gcrs(HPcoord, GCRSframe):  # noqa: ANN201, N803, ANN001
 
     # Extract the input coordinates and negate the HP latitude,
     # since it increases in the opposite direction from RA.
-    if HPcoord._is_2d:  # noqa: SLF001
+    if hp_coord._is_2d:  # noqa: SLF001
         rep = astropy.coordinates.UnitSphericalRepresentation(
-            -HPcoord.Tx, HPcoord.Ty)
+            -hp_coord.Tx, hp_coord.Ty)
     else:
         rep = astropy.coordinates.SphericalRepresentation(
-            -HPcoord.Tx, HPcoord.Ty, HPcoord.distance)
+            -hp_coord.Tx, hp_coord.Ty, hp_coord.distance)
 
     # Apply the transformation
     rep = rep.to_cartesian()
@@ -207,76 +203,10 @@ def hpc_to_gcrs(HPcoord, GCRSframe):  # noqa: ANN201, N803, ANN001
 
     # Match the input representation. (If the input was UnitSpherical, meaning there's no
     # distance coordinate, this drops the distance coordinate.)
-    rep = rep.represent_as(type(HPcoord.data))
+    rep = rep.represent_as(type(hp_coord.data))
 
     # Put the computed coordinates into the output frame
-    return GCRSframe.realize_frame(rep)
-
-
-@astropy.coordinates.frame_transform_graph.transform(
-    astropy.coordinates.FunctionTransform,
-    astropy.coordinates.GCRS,
-    sunpy.coordinates.Helioprojective)
-def gcrs_to_hpc(GCRScoord, Helioprojective): # noqa: ANN201, N803, ANN001
-    """Convert GCRS to HPC."""
-    if not _times_are_equal(GCRScoord.obstime, Helioprojective.obstime):
-        raise ValueError("Obstimes are not equal")
-    obstime = GCRScoord.obstime or Helioprojective.obstime
-
-    # Compute the three angles we need
-    position = astropy.coordinates.get_sun(obstime)
-    ra, dec = position.ra.rad, position.dec.rad
-    p = -get_p_angle(obstime).rad
-
-    # Prepare rotation matrices for each
-    p_matrix = np.array([
-        [1, 0, 0],
-        [0, np.cos(p), -np.sin(p)],
-        [0, np.sin(p), np.cos(p)],
-    ])
-
-    ra_matrix = np.array([
-        [np.cos(ra), -np.sin(ra), 0],
-        [np.sin(ra), np.cos(ra), 0],
-        [0, 0, 1],
-    ])
-
-    dec_matrix = np.array([
-        [np.cos(-dec), 0, np.sin(-dec)],
-        [0, 1, 0],
-        [-np.sin(-dec), 0, np.cos(-dec)],
-    ])
-
-    # Compose the matrices
-    old_matrix = ra_matrix @ dec_matrix @ p_matrix
-    matrix = np.linalg.inv(old_matrix)
-
-    # Extract the input coordinates and negate the HP latitude,
-    # since it increases in the opposite direction from RA.
-    if isinstance(GCRScoord.data, astropy.coordinates.UnitSphericalRepresentation):
-        rep = astropy.coordinates.UnitSphericalRepresentation(
-            GCRScoord.ra, GCRScoord.dec)  # , earth_distance(obstime))
-    else:
-        rep = astropy.coordinates.SphericalRepresentation(
-            GCRScoord.ra, GCRScoord.dec, GCRScoord.distance)
-
-    # Apply the transformation
-    rep = rep.to_cartesian()
-    rep = rep.transform(matrix)
-
-    # Match the input representation. (If the input was UnitSpherical, meaning there's no
-    # distance coordinate, this drops the distance coordinate.)
-    rep = rep.represent_as(type(GCRScoord.data))
-
-    if isinstance(rep, astropy.coordinates.UnitSphericalRepresentation):
-        rep = astropy.coordinates.UnitSphericalRepresentation(
-            -rep.lon, rep.lat)  # , earth_distance(obstime))
-    else:
-        rep = astropy.coordinates.SphericalRepresentation(
-            -rep.lon, rep.lat, rep.distance)
-
-    # Put the computed coordinates into the output frame
-    return Helioprojective.realize_frame(rep)
+    return GCRS(obstime=obstime).realize_frame(rep)
 
 
 def calculate_celestial_wcs_from_helio(wcs_helio: WCS,
@@ -293,6 +223,7 @@ def calculate_celestial_wcs_from_helio(wcs_helio: WCS,
     is_3d = len(data_shape) == 3
 
     old_crval = SkyCoord(wcs_helio.wcs.crval[0] * u.deg, wcs_helio.wcs.crval[1] * u.deg,
+                         9e99*u.lyr,
                          frame="helioprojective", observer="earth", obstime=date_obs)
     new_crval = old_crval.transform_to(GCRS)
 
@@ -389,12 +320,12 @@ def compute_hp_to_eq_rotation_angle(wcs_helio: WCS, date_obs: str | Time | None=
     # Package up that vector and convert to our target coordinate system
     northward = SkyCoord(*northward, representation_type="cartesian", frame=axis_sc.frame)
     northward.representation_type = "spherical"
-    rotated = northward.transform_to("gcrs")
+    rotated = hpc_to_gcrs(northward)
     rotated = rotated.cartesian.xyz
     rotated /= np.linalg.norm(rotated)
 
     # And also transform the CRVAL axis
-    axis_rotated = axis_sc.transform_to("gcrs")
+    axis_rotated = hpc_to_gcrs(axis_sc)
     axis_rotated = axis_rotated.cartesian.xyz
     axis_rotated /= np.linalg.norm(axis_rotated)
 

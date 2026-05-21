@@ -3,11 +3,11 @@ import pathlib
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from ndcube import NDCube
 from prefect.testing.utilities import prefect_test_harness
 
 from punchbowl.conftest import prefect_test_fixture
 from punchbowl.data.punch_io import write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level3.flow import level3_PIM_CIM_flow
 
@@ -51,7 +51,7 @@ def test_PIM_flow_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixtur
                                  before_models,
                                  after_models,
                                  None)
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
     assert output[0].meta['TYPECODE'].value == 'PI'
     assert output[0].meta['OBSCODE'].value == 'M'
 
@@ -90,6 +90,6 @@ def test_PIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_
                                  before_models,
                                  after_models,
                                  None)
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
     assert output[0].meta['TYPECODE'].value == 'CI'
     assert output[0].meta['OBSCODE'].value == 'M'

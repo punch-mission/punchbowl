@@ -3,12 +3,12 @@ from datetime import UTC, datetime
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.auto.control.util import batched
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
 from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.finalize import finalize_output
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
@@ -30,7 +30,7 @@ SPACECRAFT_OBSCODE = {"1": "WFI1",
 
 
 @punch_flow
-def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
+def level2_core_flow(data_list: list[str] | list[PUNCHCube], # noqa: C901
                      voter_filenames: list[list[str]],
                      polarized: bool | None = None,
                      trefoil_wcs: WCS | None = None,
@@ -40,13 +40,13 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
                      trim_edges_px: int | list[int] = 0,
                      alphas_file: str | None = None,
                      image_masks: list[str | None] | None = None,
-                     output_filename: str | None = None) -> list[NDCube]:
+                     output_filename: str | None = None) -> list[PUNCHCube]:
     """
     Level 2 core flow.
 
     Parameters
     ----------
-    data_list : list[str] | list[NDCube]
+    data_list : list[str] | list[PUNCHCube]
         The files or data cubes to be merged into a mosaic
     voter_filenames : list[list[str]]
         The voter files for detecting bright structures
@@ -77,7 +77,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
 
     Returns
     -------
-    output_data: list[NDCube]
+    output_data: list[PUNCHCube]
         The resulting data cube. For compatibility, it will be a list of a single cube.
 
     """
@@ -99,7 +99,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
 
         if polarized:
             # order the data list so it can be processed properly
-            ordered_data_list: list[NDCube | None] = [None for _ in range(len(POLARIZED_FILE_ORDER))]
+            ordered_data_list: list[PUNCHCube | None] = [None for _ in range(len(POLARIZED_FILE_ORDER))]
             ordered_mask_list = [None for _ in range(len(POLARIZED_FILE_ORDER))]
             ordered_voters: list[list[str]] = [[] for _ in range(len(POLARIZED_FILE_ORDER))]
             for i, order_element in enumerate(POLARIZED_FILE_ORDER):
@@ -154,7 +154,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
             msg = "A polarization state must be provided"
             raise ValueError(msg)
 
-        output_data = NDCube(
+        output_data = PUNCHCube(
             data=np.zeros(trefoil_shape),
             uncertainty=StdDevUncertainty(np.zeros(trefoil_shape)),
             wcs=trefoil_wcs,
@@ -237,7 +237,7 @@ def level2_core_flow(data_list: list[str] | list[NDCube], # noqa: C901
         meta["CROPY2"] = cropy[1]
         meta["FULXSIZE"] = data.shape[-1]
         meta["FULYSIZE"] = data.shape[-2]
-        output_x_cube = NDCube(data[..., cropy[0]:cropy[-1], cropx[0]:cropx[-1]], meta=meta, wcs=wcs,
+        output_x_cube = PUNCHCube(data[..., cropy[0]:cropy[-1], cropx[0]:cropx[-1]], meta=meta, wcs=wcs,
                                uncertainty=StdDevUncertainty(uncert[..., cropy[0]:cropy[-1], cropx[0]:cropx[-1]]))
         set_spacecraft_location_to_earth(output_x_cube)
         output_cubes.append(output_x_cube)

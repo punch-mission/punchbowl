@@ -5,10 +5,10 @@ import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs
-from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata, get_base_file_name, write_ndcube_to_fits
 from punchbowl.data.meta import load_level_spec
+from punchbowl.data.punchcube import PUNCHCube
 
 LEVELS = ["0", "1", "2", "3", "L", "Q"]
 
@@ -35,7 +35,7 @@ def sample_ndcube(shape, code="PM1", level="0"):
     meta['FILEVRSN'] = "1"
     meta['POLARREF'] = "Instrument"
     meta['POLAROFF'] = 0.0
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 def construct_all_product_headers(directory, level, outpath):

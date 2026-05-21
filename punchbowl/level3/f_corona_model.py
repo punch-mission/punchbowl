@@ -10,7 +10,6 @@ import numpy as np
 import scipy.optimize
 from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime_str
-from ndcube import NDCube
 from numpy.polynomial import polynomial
 from prefect import get_run_logger
 from quadprog import solve_qp
@@ -19,6 +18,7 @@ from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_ndcube_from_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import punch_flow, punch_task
@@ -273,7 +273,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
                              num_workers: int = 8,
                              num_loaders: int | None = None,
                              fill_nans: bool = False,
-                             polarized: bool = False) -> list[NDCube]:
+                             polarized: bool = False) -> list[PUNCHCube]:
     """Construct a full F corona model."""
     numba.set_num_threads(num_workers)
     logger = get_run_logger()
@@ -350,17 +350,17 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    output_cube = NDCube(data=output_data,
+    output_cube = PUNCHCube(data=output_data,
                          meta=meta,
                          wcs=trefoil_wcs,
                          uncertainty=StdDevUncertainty(uncertainty))
 
     return [output_cube]
 
-def subtract_f_corona_background(data_object: NDCube,
-                                 before_f_background_model: NDCube,
-                                 after_f_background_model: NDCube,
-                                 allow_extrapolation: bool = False) -> NDCube:
+def subtract_f_corona_background(data_object: PUNCHCube,
+                                 before_f_background_model: PUNCHCube,
+                                 after_f_background_model: PUNCHCube,
+                                 allow_extrapolation: bool = False) -> PUNCHCube:
     """Subtract f corona background."""
     # check dimensions match
     if data_object.data.shape != before_f_background_model.data.shape:
@@ -401,10 +401,10 @@ def subtract_f_corona_background(data_object: NDCube,
     return data_object
 
 @punch_task
-def subtract_f_corona_background_task(observation: NDCube,
-                                      before_f_background_models: list[NDCube | str],
-                                      after_f_background_models: list[NDCube | str],
-                                      allow_extrapolation: bool = False) -> NDCube:
+def subtract_f_corona_background_task(observation: PUNCHCube,
+                                      before_f_background_models: list[PUNCHCube | str],
+                                      after_f_background_models: list[PUNCHCube | str],
+                                      allow_extrapolation: bool = False) -> PUNCHCube:
     """
     Subtracts a background f corona model from an observation.
 
@@ -412,21 +412,21 @@ def subtract_f_corona_background_task(observation: NDCube,
 
     Parameters
     ----------
-    observation : NDCube
+    observation : PUNCHCube
         an observation to subtract an f corona model from
 
-    before_f_background_models : list[NDCube | str]
-        NDCube f corona background maps before the observations
+    before_f_background_models : list[PUNCHCube | str]
+        PUNCHCube f corona background maps before the observations
 
-    after_f_background_models : list[NDCube | str]
-        NDCube f corona background maps after the observations
+    after_f_background_models : list[PUNCHCube | str]
+        PUNCHCube f corona background maps after the observations
 
     allow_extrapolation : bool
         If true, allow extrapolation beyond the time range spanned by the two F corona models
 
     Returns
     -------
-    NDCube
+    PUNCHCube
         A background subtracted data frame
 
     """
@@ -472,6 +472,6 @@ def subtract_f_corona_background_task(observation: NDCube,
     return output
 
 
-def create_empty_f_background_model(data_object: NDCube) -> np.ndarray:
+def create_empty_f_background_model(data_object: PUNCHCube) -> np.ndarray:
     """Create an empty background model."""
     return np.zeros_like(data_object.data)

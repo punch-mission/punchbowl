@@ -2,15 +2,15 @@ import astropy
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import encode_outliers
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_task
 from punchbowl.util import average_datetime
 
 
-def _merge_ndcubes(cubes: list[NDCube | None], reference_cube_index: int | None = None) -> NDCube:
+def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | None = None) -> PUNCHCube:
     """Create a merged data product from a set of input data, weighting by uncertainty."""
     if cubes is None:
         return None
@@ -45,13 +45,13 @@ def _merge_ndcubes(cubes: list[NDCube | None], reference_cube_index: int | None 
 
     new_data[np.isnan(new_data)] = 0
 
-    return NDCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty), \
+    return PUNCHCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty),
                     wcs=cubes[reference_cube_index].wcs)
 
 
 @punch_task
-def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2",
-                              product_code: str = "PTM", maintain_nans: bool = False) -> NDCube:
+def merge_many_polarized_task(data: list[PUNCHCube | None], trefoil_wcs: WCS, level: str = "2",
+                              product_code: str = "PTM", maintain_nans: bool = False) -> PUNCHCube:
     """Merge many task and carefully combine uncertainties."""
     data_layers, uncertainty_layers = [], []
     for polarization in [-60, 0, 60]:
@@ -74,13 +74,13 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
     trefoil_3d_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
 
     if level == "Q":
-        output_cube = NDCube(data=2/3 * np.sum(np.stack(data_layers, axis=0), axis=0),
+        output_cube = PUNCHCube(data=2/3 * np.sum(np.stack(data_layers, axis=0), axis=0),
                             uncertainty=StdDevUncertainty(np.stack(uncertainty_layers, axis=0)),
                             wcs=trefoil_wcs,
                             meta=NormalizedMetadata.load_template(product_code, level=level))
 
     else:
-        output_cube = NDCube(data=np.stack(data_layers, axis=0),
+        output_cube = PUNCHCube(data=np.stack(data_layers, axis=0),
                             uncertainty=StdDevUncertainty(np.stack(uncertainty_layers, axis=0)),
                             wcs=trefoil_3d_wcs,
                             meta=NormalizedMetadata.load_template(product_code, level=level))
@@ -100,8 +100,8 @@ def merge_many_polarized_task(data: list[NDCube | None], trefoil_wcs: WCS, level
 
 @punch_task
 def merge_many_clear_task(
-        data: list[NDCube | None], trefoil_wcs: WCS, level: str = "2", product_code: str = "CTM",
-        maintain_nans: bool = False) -> NDCube:
+        data: list[PUNCHCube | None], trefoil_wcs: WCS, level: str = "2", product_code: str = "CTM",
+        maintain_nans: bool = False) -> PUNCHCube:
     """Merge many task and carefully combine uncertainties."""
     if len(data) > 0:
         data = [d for d in data if d is not None]
@@ -113,7 +113,7 @@ def merge_many_clear_task(
             was_nan = np.all(np.isnan(data_stack), axis=-1)
             data_merged.data[was_nan] = np.nan
     else:
-        data_merged = NDCube(data = np.zeros((4096, 4096)),
+        data_merged = PUNCHCube(data = np.zeros((4096, 4096)),
                              uncertainty = StdDevUncertainty(np.full((4096, 4096), np.inf)),
                              wcs = trefoil_wcs,
                              meta = NormalizedMetadata.load_template(product_code, level=level))

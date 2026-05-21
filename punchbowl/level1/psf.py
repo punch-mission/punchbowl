@@ -4,13 +4,13 @@ from pathlib import Path
 import numpy as np
 import reproject
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect import get_run_logger
 from regularizepsf import ArrayPSF, ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf, varied_functional_psf
 from regularizepsf.util import calculate_covering
 from scipy.ndimage import binary_dilation
 
 from punchbowl.data.punch_io import load_ndcube_from_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_task
 from punchbowl.util import DataLoader
 
@@ -100,19 +100,19 @@ def generate_projected_psf(
 
 
 def correct_psf(
-    data: NDCube,
+    data: PUNCHCube,
     psf_transform: ArrayPSFTransform,
     max_workers: int | None = None,
     saturation_threshold: float | None = None,
     saturation_dilation: int = 3,
     neighborhood_width: int = 7,
-) -> NDCube:
+) -> PUNCHCube:
     """
     Correct the PSF.
 
     Parameters
     ----------
-    data : NDCube
+    data : PUNCHCube
         The input image
     psf_transform : ArrayPSFTransform
         The PSF transform that corresponds to the input images
@@ -129,7 +129,7 @@ def correct_psf(
 
     Returns
     -------
-    NDCube
+    PUNCHCube
         The corrected image
 
     """
@@ -155,16 +155,16 @@ def correct_psf(
 
 @punch_task
 def correct_psf_task(
-    data_object: NDCube,
+    data_object: PUNCHCube,
     model_path: str | DataLoader | None = None,
     max_workers: int | None = None,
-) -> NDCube:
+) -> PUNCHCube:
     """
     Prefect Task to correct the PSF of an image.
 
     Parameters
     ----------
-    data_object : NDCube
+    data_object : PUNCHCube
         data to operate on
     model_path : str
         path to the PSF model to use in the correction
@@ -173,7 +173,7 @@ def correct_psf_task(
 
     Returns
     -------
-    NDCube
+    PUNCHCube
         modified version of the input with the PSF corrected
 
     """

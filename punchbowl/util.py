@@ -11,12 +11,12 @@ import numba
 import numpy as np
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
-from ndcube import NDCube
 from numpy.typing import ArrayLike
 from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve2d
 
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning
 from punchbowl.prefect import punch_task
 
@@ -48,13 +48,13 @@ def load_mask_file(path: str) -> np.ndarray:
 
 
 @punch_task
-def output_image_task(data: NDCube, output_filename: str) -> None:
+def output_image_task(data: PUNCHCube, output_filename: str) -> None:
     """
     Prefect task to write an image to disk.
 
     Parameters
     ----------
-    data : NDCube
+    data : PUNCHCube
         data that is to be written
     output_filename : str
         where to write the file out
@@ -72,7 +72,7 @@ def output_image_task(data: NDCube, output_filename: str) -> None:
 
 @punch_task(tags=["image_loader"])
 def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True,
-                    dtype: type = float) -> NDCube:
+                    dtype: type = float) -> PUNCHCube:
     """
     Prefect task to load data for processing.
 
@@ -89,7 +89,7 @@ def load_image_task(input_filename: str, include_provenance: bool = True, includ
 
     Returns
     -------
-    NDCube
+    PUNCHCube
         loaded version of the image
 
     """
@@ -268,7 +268,7 @@ def nan_gaussian(image: np.ndarray, sigma: float) -> np.ndarray:
     return image
 
 
-def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime, time_key: str = "DATE-OBS",
+def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_time: datetime, time_key: str = "DATE-OBS",
                      allow_extrapolation: bool = False, and_uncertainty: bool = False,
                      infill_nans: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Interpolates between two data objects."""
@@ -313,8 +313,8 @@ def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: dat
         return data_interpolated, uncert_interpolated
     return data_interpolated
 
-def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
-    """Find the first cube that's not None in a list of NDCubes."""
+def find_first_existing_file(inputs: list[PUNCHCube]) -> PUNCHCube | None:
+    """Find the first cube that's not None in a list of PUNCHCubes."""
     for cube in inputs:
         if cube is not None:
             return cube
@@ -322,26 +322,26 @@ def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
     raise RuntimeError(msg)
 
 
-def get_dateobs(file: str | NDCube) -> datetime:
-    """Convert file path or NDCube to date_obs."""
-    if isinstance(file, NDCube):
+def get_dateobs(file: str | PUNCHCube) -> datetime:
+    """Convert file path or PUNCHCube to date_obs."""
+    if isinstance(file, PUNCHCube):
         return file.meta.datetime
     date = file.split("_")[-2]
     return datetime.strptime(date, "%Y%m%d%H%M%S") # noqa: DTZ007
 
 
-def get_polstate(file: str | NDCube) -> str:
-    """Convert file path or NDCube to date_obs."""
-    if isinstance(file, NDCube):
+def get_polstate(file: str | PUNCHCube) -> str:
+    """Convert file path or PUNCHCube to date_obs."""
+    if isinstance(file, PUNCHCube):
         return file.meta["TYPECODE"].value[1]
     typecode = file.split("_")[-3]
     return typecode[1]
 
 
-def bundle_matched_mzp(m_cubes: list[NDCube | str],
-                       z_cubes: list[NDCube | str] | None = None,
-                       p_cubes: list[NDCube | str] | None = None,
-                       threshold: float = 75.0) -> list[tuple[NDCube | str, NDCube | str, NDCube | str]]:
+def bundle_matched_mzp(m_cubes: list[PUNCHCube | str],
+                       z_cubes: list[PUNCHCube | str] | None = None,
+                       p_cubes: list[PUNCHCube | str] | None = None,
+                       threshold: float = 75.0) -> list[tuple[PUNCHCube | str, PUNCHCube | str, PUNCHCube | str]]:
     """Search and bundle MZP triplets closest in time."""
     if z_cubes is None:
         cubes = m_cubes
@@ -461,8 +461,8 @@ def inpaint_nans(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
     return image
 
 
-def compute_tb(data: NDCube | np.ndarray) -> np.ndarray:
-    """Compute total brightness from input NDCube or 3D data array of shape (MZP, ...)."""
+def compute_tb(data: PUNCHCube | np.ndarray) -> np.ndarray:
+    """Compute total brightness from input PUNCHCube or 3D data array of shape (MZP, ...)."""
     if isinstance(data, np.ndarray):
         return 2/3 * np.sum(data, axis=0)
 

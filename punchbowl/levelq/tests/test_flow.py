@@ -1,11 +1,11 @@
 import os
 from datetime import datetime
 
-from ndcube import NDCube
 from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 
 from punchbowl.data.punch_io import write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow
@@ -23,7 +23,7 @@ def test_cqm_flow_runs_with_filenames(sample_ndcube, tmpdir):
     trefoil_wcs, _ = load_trefoil_wcs()
     with prefect_test_harness(), disable_run_logger():
         output = levelq_CQM_core_flow.fn(paths, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512))
-    assert isinstance(output[0], NDCube)
+    assert isinstance(output[0], PUNCHCube)
     assert output[0].meta["TYPECODE"].value == "CQ"
 
     assert output[0].meta["HAS_WFI1"].value == 1

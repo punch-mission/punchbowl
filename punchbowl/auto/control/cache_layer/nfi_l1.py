@@ -1,11 +1,11 @@
 import os
 
 import numpy as np
-from ndcube import NDCube
 
 from punchbowl.auto.control.cache_layer import manager
 from punchbowl.auto.control.cache_layer.loader_base_class import LoaderABC
 from punchbowl.data import load_ndcube_from_fits
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.util import DataLoader
 
 
@@ -30,7 +30,7 @@ class NFIL1Loader(LoaderABC):
     def src_repr(self) -> str:
         return self.path
 
-    def load_from_disk(self) -> NDCube:
+    def load_from_disk(self) -> PUNCHCube:
         cube = load_ndcube_from_fits(self.path, include_uncertainty=True, include_provenance=False)
         return cube
 

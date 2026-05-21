@@ -6,9 +6,9 @@ import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs
-from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.despike import despike_polseq
 
 
@@ -37,7 +37,7 @@ def sample_ndcube_for_despike():
         meta["OFFSET"] = 100
         meta["EXPTIME"] = 49
         meta["DSATVAL"] = 100
-        return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 
 @pytest.mark.parametrize("num_neighbors", [2, 3, 4, 5, 6])

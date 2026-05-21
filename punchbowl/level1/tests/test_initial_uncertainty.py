@@ -5,16 +5,16 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.initial_uncertainty import fill_saturated_pixels
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 
 @pytest.fixture()
-def sample_punchdata(shape: tuple = (2048, 2048)) -> NDCube:
+def sample_punchdata(shape: tuple = (2048, 2048)) -> PUNCHCube:
     """
     Generate a sample PUNCH data object for testing
     """
@@ -33,10 +33,10 @@ def sample_punchdata(shape: tuple = (2048, 2048)) -> NDCube:
     meta = NormalizedMetadata.load_template("CR3", "0")
     meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1))
 
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-def test_flag_saturated_pixels(sample_punchdata: NDCube) -> None:
+def test_flag_saturated_pixels(sample_punchdata: PUNCHCube) -> None:
     cube = sample_punchdata
 
     cube.meta["COMPBITS"] = 10

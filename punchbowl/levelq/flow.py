@@ -4,12 +4,12 @@ from datetime import UTC, datetime
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, get_base_file_name
 from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.punch_io import load_many_cubes
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.level2.merge import merge_many_polarized_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
@@ -31,10 +31,10 @@ SPACECRAFT_OBSCODE = {"1": "WFI1",
                       "N": "NFI4"}
 
 @punch_flow
-def levelq_QNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
+def levelq_QNN_core_flow(data_list: list[str] | list[PUNCHCube], #noqa: N802
                          output_filename: list[str] | None = None,
-                         files_to_fit: list[str | NDCube | DataLoader] | None = None,
-                         data_root: str | None = None) -> list[NDCube]:
+                         files_to_fit: list[str | PUNCHCube | DataLoader] | None = None,
+                         data_root: str | None = None) -> list[PUNCHCube]:
     """
     Run the LQ QNN flow.
 
@@ -42,18 +42,18 @@ def levelq_QNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
     Parameters
     ----------
-    data_list : list[str | NDCube]
-        The input images, either as paths or NDCubes
+    data_list : list[str | PUNCHCube]
+        The input images, either as paths or PUNCHCubes
     output_filename : list[str]
         Optional output paths at which the QNN files should be written
-    files_to_fit : list[str | NDCube | DataLoader]
+    files_to_fit : list[str | PUNCHCube | DataLoader]
         Additional files to use for the PCA fitting, but not to actually be filtered or output
     data_root : str
         The root directory which the paths in ``data_list`` are relative to
 
     Returns
     -------
-    output_cubes : list[NDCube]
+    output_cubes : list[PUNCHCube]
         The QNN data cubes
 
     """
@@ -63,7 +63,7 @@ def levelq_QNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
     output_cubes = []
 
-    data_cubes = [input_file for input_file in data_list if isinstance(input_file, NDCube)]
+    data_cubes = [input_file for input_file in data_list if isinstance(input_file, PUNCHCube)]
     input_paths = [input_file for input_file in data_list if isinstance(input_file, str)]
     if data_root is not None:
         input_paths = [os.path.join(data_root, path) for path in input_paths]
@@ -83,12 +83,9 @@ def levelq_QNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
         data[isnan] = 0
 
         output_meta_nfi = NormalizedMetadata.load_template("QNN", "Q")
-        output_cube = NDCube(
-            data=data,
-            uncertainty=StdDevUncertainty(uncertainty),
-            wcs=data_cube.wcs,
-            meta=output_meta_nfi,
-            )
+        output_cube = data_cube.replace(data=data,
+                                        uncertainty=StdDevUncertainty(uncertainty),
+                                        meta=output_meta_nfi)
         output_cube.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         output_cube.meta["DATE-AVG"] = data_cube.meta["DATE-AVG"].value
         output_cube.meta["DATE-OBS"] = data_cube.meta["DATE-OBS"].value
@@ -107,13 +104,13 @@ def levelq_QNN_core_flow(data_list: list[str] | list[NDCube], #noqa: N802
 
 
 @punch_flow
-def levelq_CQM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
+def levelq_CQM_core_flow(data_list: list[str] | list[PUNCHCube], #noqa: N802, C901
                          output_filename: list[str] | None = None,
                          trim_edges_px: int = 0,
                          alphas_file: str | None = None,
                          trefoil_wcs: WCS | None = None,
                          trefoil_shape: tuple[int, int] | None = None,
-                         ) -> list[NDCube]:
+                         ) -> list[PUNCHCube]:
     """Level quickPUNCH core flow."""
     logger = get_run_logger()
     logger.info("beginning level quickPUNCH CQM core flow")
@@ -121,7 +118,7 @@ def levelq_CQM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
 
     if data_list:
-        ordered_data_list: list[NDCube | None] = [None for _ in range(len(ORDER_QP))]
+        ordered_data_list: list[PUNCHCube | None] = [None for _ in range(len(ORDER_QP))]
         for i, order_element in enumerate(ORDER_QP):
             for data_element in data_list:
                 typecode = data_element.meta["TYPECODE"].value
@@ -184,7 +181,7 @@ def levelq_CQM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
         output_dateend = output_datebeg
 
         quickpunch_mosaic_wcs, quickpunch_mosaic_shape = load_trefoil_wcs()
-        output_data_mosaic = NDCube(
+        output_data_mosaic = PUNCHCube(
             data=np.zeros(quickpunch_mosaic_shape),
             uncertainty=StdDevUncertainty(np.zeros(quickpunch_mosaic_shape)),
             wcs=quickpunch_mosaic_wcs,
@@ -205,11 +202,11 @@ def levelq_CQM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
 
 
 @punch_flow
-def levelq_CTM_core_flow(data_list: list[str] | list[NDCube],  # noqa: N802
+def levelq_CTM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                      before_f_corona_model_path: str,
                      after_f_corona_model_path: str,
                      output_filename: str | None = None,
-                     reference_time: datetime | None = None) -> list[NDCube]:  # noqa: ARG001
+                     reference_time: datetime | None = None) -> list[PUNCHCube]:  # noqa: ARG001
     """Level Q CTM flow."""
     logger = get_run_logger()
 
@@ -230,7 +227,7 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube],  # noqa: N802
     out_list = []
     for d in data_list:
         output_meta = NormalizedMetadata.load_template("CTM", "Q")
-        o = NDCube(data=d.data, wcs=d.wcs, meta=output_meta, uncertainty=d.uncertainty)
+        o = PUNCHCube(data=d.data, wcs=d.wcs, meta=output_meta, uncertainty=d.uncertainty)
         out_list.append(o)
         o.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         o.meta.history = d.meta.history
@@ -253,9 +250,9 @@ def levelq_CTM_core_flow(data_list: list[str] | list[NDCube],  # noqa: N802
     return out_list
 
 @punch_flow
-def levelq_QAM_core_flow(data_list: list[str] | list[NDCube],  # noqa: N802
+def levelq_QAM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                      output_filename: str | None = None,
-                     reference_time: datetime | None = None) -> list[NDCube]:
+                     reference_time: datetime | None = None) -> list[PUNCHCube]:
     """Level Q QAM flow."""
     logger = get_run_logger()
 
@@ -273,7 +270,7 @@ def levelq_QAM_core_flow(data_list: list[str] | list[NDCube],  # noqa: N802
     out_list = []
     for d in data_list:
         output_meta = NormalizedMetadata.load_template("QAM", "Q")
-        o = NDCube(data=d.data, wcs=d.wcs, meta=output_meta, uncertainty=d.uncertainty)
+        o = PUNCHCube(data=d.data, wcs=d.wcs, meta=output_meta, uncertainty=d.uncertainty)
         out_list.append(o)
         o.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         o.meta.history = d.meta.history

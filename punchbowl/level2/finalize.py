@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 
-from ndcube import NDCube
-
 from punchbowl.data.meta import check_moon_in_fov, set_spacecraft_location_to_earth
+from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
 from punchbowl.util import find_first_existing_file
 
 SPACECRAFT_OBSCODE = {"1": "WFI1",
@@ -11,13 +11,15 @@ SPACECRAFT_OBSCODE = {"1": "WFI1",
                       "4": "NFI4"}
 
 
-def finalize_output(output_cube: NDCube, input_cubes: list[NDCube]) -> None:
+def finalize_output(output_cube: PUNCHCube, input_cubes: list[PUNCHCube]) -> None:
     """Do metadata updates common to L2 *TM merged files and L3 *IM re-merged files."""
     output_cube.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     set_spacecraft_location_to_earth(output_cube)
 
+    wcs = calculate_celestial_wcs_from_helio(output_cube.wcs, output_cube.meta.astropy_time, output_cube.shape)
+
     _, angle_sun, _, _, _, xpix, ypix = check_moon_in_fov(
-        output_cube.meta["DATE-OBS"].value, wcs=output_cube.wcs,
+        output_cube.meta["DATE-OBS"].value, wcs=wcs,
         image_shape=output_cube.data.shape[-2:])
     output_cube.meta["MOONDIST"] = angle_sun[0]
     output_cube.meta["MOON_X"] = xpix[0]

@@ -4,11 +4,11 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect.logging import disable_run_logger
 from pytest import fixture
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.units import split_ccd_array
 from punchbowl.exceptions import DataValueWarning
 from punchbowl.level1.sqrt import (
@@ -41,7 +41,7 @@ def sample_punchdata():
     meta = NormalizedMetadata.load_template("PM1", "0")
     meta['DATE-OBS'] = str(datetime(2023, 1, 1, 0, 0, 1))
 
-    punchdata_obj = NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    punchdata_obj = PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
     punchdata_obj.meta['RAWBITS'] = 16
     punchdata_obj.meta['COMPBITS'] = 10
@@ -141,5 +141,5 @@ def test_decode_sqrt_data_task(sample_punchdata):
 
     with disable_run_logger():
         output_punchdata = decode_sqrt_data.fn(sample_punchdata, overwrite_table=True)
-        assert isinstance(output_punchdata, NDCube)
+        assert isinstance(output_punchdata, PUNCHCube)
         assert output_punchdata.data.shape == (2048, 2048)

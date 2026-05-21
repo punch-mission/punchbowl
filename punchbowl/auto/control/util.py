@@ -7,7 +7,6 @@ from itertools import islice
 
 import yaml
 from astropy.io import fits
-from ndcube import NDCube
 from prefect.utilities.asyncutils import run_coro_as_sync
 from prefect.variables import Variable
 from prefect_sqlalchemy import SqlAlchemyConnector
@@ -18,6 +17,7 @@ from yaml.loader import FullLoader
 from punchbowl.auto.control.db import File
 from punchbowl.data import get_base_file_name, write_ndcube_to_fits, write_ndcube_to_quicklook
 from punchbowl.data.punch_io import _make_provenance_hdu
+from punchbowl.data.punchcube import PUNCHCube
 
 DEFAULT_SCALING = (5e-13, 5e-11)
 
@@ -102,7 +102,7 @@ def load_quicklook_scaling(level: str = None, product: str = None, obscode: str 
     return DEFAULT_SCALING
 
 
-def write_file(data: NDCube, corresponding_file_db_entry, pipeline_config) -> None:
+def write_file(data: PUNCHCube, corresponding_file_db_entry, pipeline_config) -> None:
     output_filename = os.path.join(
         corresponding_file_db_entry.directory(pipeline_config["root"]), corresponding_file_db_entry.filename(),
     )
@@ -117,7 +117,7 @@ def write_file(data: NDCube, corresponding_file_db_entry, pipeline_config) -> No
     return output_filename
 
 
-def _write_quicklook(pipeline_config: dict, corresponding_file_db_entry: File, data: NDCube):
+def _write_quicklook(pipeline_config: dict, corresponding_file_db_entry: File, data: PUNCHCube):
         ql_directory = pipeline_config.get("ql_root", pipeline_config["root"])
         ql_filename = os.path.join(corresponding_file_db_entry.directory(ql_directory),
                                    corresponding_file_db_entry.filename())
@@ -127,7 +127,7 @@ def _write_quicklook(pipeline_config: dict, corresponding_file_db_entry: File, d
         write_ndcube_to_quicklook(data, ql_filename, layer=layer, write_hash=True)
 
 
-def match_data_with_file_db_entry(data: NDCube, file_db_entry_list):
+def match_data_with_file_db_entry(data: PUNCHCube, file_db_entry_list):
     # figure out which file_db_entry this corresponds to
     matching_entries = [
         file_db_entry

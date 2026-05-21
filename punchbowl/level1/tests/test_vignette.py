@@ -4,9 +4,9 @@ from datetime import datetime
 
 import numpy as np
 import pytest
-from ndcube import NDCube
 from prefect.logging import disable_run_logger
 
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.exceptions import (
     IncorrectPolarizationStateWarning,
@@ -35,7 +35,7 @@ def test_check_calibration_time_delta_warning(sample_ndcube) -> None:
     with disable_run_logger():
         with pytest.warns(LargeTimeDeltaWarning):
             corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
-            assert isinstance(corrected_punchdata, NDCube)
+            assert isinstance(corrected_punchdata, PUNCHCube)
 
 
 def test_no_vignetting_file(sample_ndcube) -> None:
@@ -48,7 +48,7 @@ def test_no_vignetting_file(sample_ndcube) -> None:
 
     with disable_run_logger():
         corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
-        assert isinstance(corrected_punchdata, NDCube)
+        assert isinstance(corrected_punchdata, PUNCHCube)
         assert corrected_punchdata.meta.history[0].comment == 'Vignetting skipped'
 
 
@@ -76,7 +76,7 @@ def test_invalid_polarization_state(sample_ndcube) -> None:
     with disable_run_logger():
         with pytest.warns(IncorrectPolarizationStateWarning):
             corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
-            assert isinstance(corrected_punchdata, NDCube)
+            assert isinstance(corrected_punchdata, PUNCHCube)
 
 
 def test_invalid_telescope(sample_ndcube) -> None:
@@ -91,7 +91,7 @@ def test_invalid_telescope(sample_ndcube) -> None:
     with disable_run_logger():
         with pytest.warns(IncorrectTelescopeWarning):
             corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
-            assert isinstance(corrected_punchdata, NDCube)
+            assert isinstance(corrected_punchdata, PUNCHCube)
 
 
 def test_invalid_data_file(sample_ndcube) -> None:
@@ -118,7 +118,7 @@ def test_vignetting_correction(sample_ndcube) -> None:
     with disable_run_logger():
         corrected_punchdata = correct_vignetting_task.fn(sample_data, vignetting_filename)
 
-    assert isinstance(corrected_punchdata, NDCube)
+    assert isinstance(corrected_punchdata, PUNCHCube)
 
 # TODO - test these more thoroughly
 

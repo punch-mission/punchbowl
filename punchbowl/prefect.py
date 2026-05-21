@@ -1,7 +1,6 @@
 from typing import Any
 
 from httpx import ConnectError
-from ndcube import NDCube
 from prefect import Flow, Task, flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
 from prefect.client.schemas.objects import TaskRun
@@ -9,13 +8,14 @@ from prefect.states import State
 from prefect.variables import Variable
 
 from punchbowl.data.punch_io import get_base_file_name, write_ndcube_to_fits
+from punchbowl.data.punchcube import PUNCHCube
 
 
 def completion_debugger(task: Task, task_run: TaskRun, state: State) -> None:
     """Run on task completion during debug mode."""
     if Variable.get("debug", False):
         cube = state.result()
-        if isinstance(cube, NDCube):
+        if isinstance(cube, PUNCHCube):
             new_filename = f"{get_base_file_name(cube)}_{task.name}.fits"
             write_ndcube_to_fits(cube, new_filename, overwrite=True, write_hash=False)
         elif isinstance(cube, list):

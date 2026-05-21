@@ -5,13 +5,13 @@ from collections.abc import Generator
 
 import astropy.units as u
 import numpy as np
-from ndcube import NDCube
 from prefect import get_run_logger
 from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
 from regularizepsf.util import calculate_covering
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.meta import check_moon_in_fov
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.units import calculate_image_pixel_area, dn_to_msb
 from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
@@ -54,14 +54,14 @@ def generate_psf_model_core_flow(input_filepaths: list[str],
 
 @punch_flow
 def level1_early_core_flow(  # noqa: C901
-    input_data: list[str] | list[NDCube],
+    input_data: list[str] | list[PUNCHCube],
     gain_bottom: float = 4.9,
     gain_top: float = 4.9,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
     quartic_coefficient_path: str | pathlib.Path | DataLoader | None = None,
-    despike_neighbors: list[str] | list[NDCube] | None = None,
+    despike_neighbors: list[str] | list[PUNCHCube] | None = None,
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
@@ -79,7 +79,7 @@ def level1_early_core_flow(  # noqa: C901
     n_alignment_iterations: int = 50,
     output_filename: list[str] | None = None,
     mask_path: str | None = None,
-) -> list[NDCube]:
+) -> list[PUNCHCube]:
     """Core flow for level 1, doing preliminary stray light subtraction."""
     logger = get_run_logger()
 
@@ -220,13 +220,7 @@ def level1_early_core_flow(  # noqa: C901
         if filename:
             new_meta.provenance = [filename]
 
-        data = NDCube(
-            data=data.data,
-            meta=new_meta,
-            wcs=data.wcs,
-            unit=data.unit,
-            mask=data.mask,
-            uncertainty=data.uncertainty)
+        data = data.replace(meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
@@ -239,11 +233,11 @@ def level1_early_core_flow(  # noqa: C901
 
 @punch_flow
 def level1_middle_core_flow(
-    input_data: list[str] | list[NDCube],
+    input_data: list[str] | list[PUNCHCube],
     dynamic_stray_light_before_path: str | DataLoader | None = None,
     dynamic_stray_light_after_path: str | DataLoader | None = None,
     output_filename: list[str] | None = None,
-) -> list[NDCube]:
+) -> list[PUNCHCube]:
     """Core flow for level 1, applying WFI dynamic stray light subtraction."""
     logger = get_run_logger()
 
@@ -279,7 +273,7 @@ def level1_middle_core_flow(
 
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
-        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+        data = data.replace(meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
@@ -291,13 +285,13 @@ def level1_middle_core_flow(
 
 @punch_flow
 def level1_late_core_flow(
-    input_data: list[str] | list[NDCube],
+    input_data: list[str] | list[PUNCHCube],
     stray_light_before_path: str | DataLoader | None = None,
     stray_light_after_path: str | DataLoader | None = None,
     mask_path: str | None = None,
     output_as_Q_file: bool = False, # noqa: N803
     output_filename: list[str] | None = None,
-) -> list[NDCube]:
+) -> list[PUNCHCube]:
     """Core flow for level 1, applying final stray light subtraction."""
     logger = get_run_logger()
 
@@ -339,7 +333,7 @@ def level1_late_core_flow(
 
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
-        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+        data = data.replace(meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
@@ -351,7 +345,7 @@ def level1_late_core_flow(
 
 @punch_flow
 def levelh_core_flow(
-    input_data: list[str] | list[NDCube],
+    input_data: list[str] | list[PUNCHCube],
     gain_bottom: float = 4.9,
     gain_top: float = 4.9,
     bias_level: float = 100,
@@ -361,7 +355,7 @@ def levelh_core_flow(
     psf_model_path: str | None = None,
     distortion_path: str | None = None,
     output_filename: str | None = None,
-) -> list[NDCube]:
+) -> list[PUNCHCube]:
     """Core flow for level 0.5 also known as level H."""
     logger = get_run_logger()
 
@@ -394,7 +388,7 @@ def levelh_core_flow(
             if (key in data.meta.keys()) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"): # noqa: SIM118
                 new_meta[key].value = data.meta[key].value
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
-        data = NDCube(data=data.data, meta=new_meta, wcs=data.wcs, unit=data.unit, uncertainty=data.uncertainty)
+        data = data.replace(meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])

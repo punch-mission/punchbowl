@@ -4,15 +4,15 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level3.low_noise import create_low_noise_task
 
 
 @pytest.fixture
-def sample_ndcube_polarized() -> NDCube:
-    def _sample_ndcube(shape: tuple, code: str = "PTM", level: str = "3") -> NDCube:
+def sample_ndcube_polarized() -> PUNCHCube:
+    def _sample_ndcube(shape: tuple, code: str = "PTM", level: str = "3") -> PUNCHCube:
         data = np.ones(shape).astype(np.float32)
         sqrt_abs_data = np.sqrt(np.abs(data))
         uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()),
@@ -29,14 +29,14 @@ def sample_ndcube_polarized() -> NDCube:
         meta["DATE-BEG"] = str(datetime(2024, 3, 21, 00, 59, 30))
         meta["DATE-END"] = str(datetime(2024, 3, 21, 1, 00, 30))
         meta["FILEVRSN"] = "1"
-        return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
     return _sample_ndcube
 
 
 @pytest.fixture
-def sample_ndcube_clear() -> NDCube:
-    def _sample_ndcube(shape: tuple, code: str = "CTM", level: str = "3") -> NDCube:
+def sample_ndcube_clear() -> PUNCHCube:
+    def _sample_ndcube(shape: tuple, code: str = "CTM", level: str = "3") -> PUNCHCube:
         data = np.ones(shape).astype(np.float32)
         sqrt_abs_data = np.sqrt(np.abs(data))
         uncertainty = StdDevUncertainty(np.interp(sqrt_abs_data, (sqrt_abs_data.min(), sqrt_abs_data.max()),
@@ -53,26 +53,26 @@ def sample_ndcube_clear() -> NDCube:
         meta["DATE-BEG"] = str(datetime(2024, 3, 21, 00, 59, 30))
         meta["DATE-END"] = str(datetime(2024, 3, 21, 1, 00, 30))
         meta["FILEVRSN"] = "1"
-        return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
     return _sample_ndcube
 
 
-def test_low_noise_polarized(sample_ndcube_polarized) -> NDCube:
+def test_low_noise_polarized(sample_ndcube_polarized) -> PUNCHCube:
     cube_low_noise = create_low_noise_task([sample_ndcube_polarized((3,10,10)),
                                             sample_ndcube_polarized((3,10,10)),
                                             sample_ndcube_polarized((3,10,10)),
                                             sample_ndcube_polarized((3,10,10))])
-    assert isinstance(cube_low_noise, NDCube)
+    assert isinstance(cube_low_noise, PUNCHCube)
     assert cube_low_noise.data.shape == (3,10,10)
     assert cube_low_noise.meta.product_code == "PAM"
 
 
-def test_low_noise_clear(sample_ndcube_clear) -> NDCube:
+def test_low_noise_clear(sample_ndcube_clear) -> PUNCHCube:
     cube_low_noise = create_low_noise_task([sample_ndcube_clear((10,10)),
                                             sample_ndcube_clear((10,10)),
                                             sample_ndcube_clear((10,10)),
                                             sample_ndcube_clear((10,10))])
-    assert isinstance(cube_low_noise, NDCube)
+    assert isinstance(cube_low_noise, PUNCHCube)
     assert cube_low_noise.data.shape == (10,10)
     assert cube_low_noise.meta.product_code == "CAM"

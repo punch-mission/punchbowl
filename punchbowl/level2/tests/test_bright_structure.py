@@ -2,15 +2,15 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from ndcube import NDCube
 
 # punchbowl imports
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2.bright_structure import run_zspike
 
 
 @pytest.fixture()
-def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> NDCube:
+def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) -> PUNCHCube:
     """
     Generate some random data for testing
     """
@@ -34,10 +34,10 @@ def sample_bad_pixel_map(shape: tuple = (2048, 2048), n_bad_pixels: int = 20) ->
     wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return NDCube(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=bad_pixel_map, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 @pytest.fixture()
-def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
+def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> PUNCHCube:
     """
     Generate a sample PUNCH data object for testing
     """
@@ -54,11 +54,11 @@ def sample_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
     wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
-def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> NDCube:
+def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> PUNCHCube:
     """
     Generate a sample PUNCH data object for testing
     """
@@ -75,11 +75,11 @@ def even_sample_punchdata(shape: tuple = (6, 2048, 2048)) -> NDCube:
     wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
-def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
+def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> PUNCHCube:
     """
     Generate a sample PUNCH data object for testing
     """
@@ -96,11 +96,11 @@ def sample_zero_punchdata(shape: tuple = (5, 2048, 2048)) -> NDCube:
     wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
 @pytest.fixture()
-def one_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
+def one_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> PUNCHCube:
     """
     Generate a sample PUNCH data object for testing
     """
@@ -122,10 +122,10 @@ def one_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
     wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 @pytest.fixture()
-def two_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
+def two_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> PUNCHCube:
     """
     Generate a sample PUNCH data object for testing
     """
@@ -148,10 +148,10 @@ def two_bright_point_sample_punchdata(shape: tuple = (7, 2048, 2048)) -> NDCube:
     wcs.array_shape = shape[-2:]
 
     meta = NormalizedMetadata({"TYPECODE": "CL", "LEVEL": "1", "OBSRVTRY": "0", "DATE-OBS": "2008-01-03 08:57:00"})
-    return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+    return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
 
 
-def test_valid_data_and_uncertainty(sample_punchdata: NDCube):
+def test_valid_data_and_uncertainty(sample_punchdata: PUNCHCube):
     with pytest.raises(Exception):
         # Call find_spikes with valid data and uncertainty
         result = run_zspike(sample_punchdata.data, sample_punchdata.uncertainty.array)
@@ -160,7 +160,7 @@ def test_valid_data_and_uncertainty(sample_punchdata: NDCube):
         assert isinstance(result, np.ndarray)
         assert result.shape == sample_punchdata.data.shape
 
-def test_zero_threshold(sample_punchdata: NDCube):
+def test_zero_threshold(sample_punchdata: PUNCHCube):
     # test the thresholds are zero
     threshold = 0
     result = run_zspike(sample_punchdata.data,
@@ -172,13 +172,13 @@ def test_zero_threshold(sample_punchdata: NDCube):
     assert np.sum(result) == 0
 
 
-def test_diff_methods(sample_zero_punchdata: NDCube):
+def test_diff_methods(sample_zero_punchdata: PUNCHCube):
     result_abs = run_zspike(sample_zero_punchdata.data, sample_zero_punchdata.uncertainty.array, diff_method='abs')
     result_sigma = run_zspike(sample_zero_punchdata.data, sample_zero_punchdata.uncertainty.array, diff_method='sigma')
     assert np.array_equal(result_abs, result_sigma)
 
 
-def test_different_parameters(sample_punchdata: NDCube):
+def test_different_parameters(sample_punchdata: PUNCHCube):
     required_yes = 1
     veto_limit = 1
     dilation = 0
@@ -186,7 +186,7 @@ def test_different_parameters(sample_punchdata: NDCube):
     assert result.shape == np.shape(sample_punchdata.data[0,:,:])
 
 #####
-def test_raise_error_insufficient_frames(sample_bad_pixel_map: NDCube):
+def test_raise_error_insufficient_frames(sample_bad_pixel_map: PUNCHCube):
     # creates a raise error as only a 2d array is passed in
 
     with pytest.raises(ValueError):
@@ -195,7 +195,7 @@ def test_raise_error_insufficient_frames(sample_bad_pixel_map: NDCube):
                    sample_bad_pixel_map.uncertainty.array)
 
 
-def test_raise_error(even_sample_punchdata: NDCube):
+def test_raise_error(even_sample_punchdata: PUNCHCube):
     # creates a raise error as an even array is passed in
 
     with pytest.raises(ValueError):
@@ -204,7 +204,7 @@ def test_raise_error(even_sample_punchdata: NDCube):
                    even_sample_punchdata.uncertainty.array)
 
 
-def test_raise_no_error(even_sample_punchdata: NDCube):
+def test_raise_no_error(even_sample_punchdata: PUNCHCube):
     # does not create a raise error as an even array is passed in and an index of interest
 
     result=run_zspike(even_sample_punchdata.data,
@@ -214,7 +214,7 @@ def test_raise_no_error(even_sample_punchdata: NDCube):
     assert isinstance(result, np.ndarray)
     assert result.shape == np.shape(even_sample_punchdata.data[0,:,:])
 
-def test_single_bright_point(sample_punchdata: NDCube):
+def test_single_bright_point(sample_punchdata: PUNCHCube):
     # test passes with single bright point
     test_data=sample_punchdata.data
     test_uncertainty=sample_punchdata.uncertainty.array
@@ -226,7 +226,7 @@ def test_single_bright_point(sample_punchdata: NDCube):
     assert result.shape == np.shape(sample_punchdata.data[0,:,:])
     assert isinstance(result, np.ndarray)
 
-def test_single_bright_point_2(one_bright_point_sample_punchdata: NDCube):
+def test_single_bright_point_2(one_bright_point_sample_punchdata: PUNCHCube):
 
     x_interest = 200
     y_interest = 200
@@ -245,7 +245,7 @@ def test_single_bright_point_2(one_bright_point_sample_punchdata: NDCube):
     assert bool(result_2[x_interest+1, y_interest]) is False
 
 
-def test_veto(two_bright_point_sample_punchdata: NDCube):
+def test_veto(two_bright_point_sample_punchdata: PUNCHCube):
     # test works with one vote
     x_interest = 200
     y_interest = 200
@@ -275,7 +275,7 @@ def test_veto(two_bright_point_sample_punchdata: NDCube):
     assert bool(result_3[x_interest, y_interest]) is False
 
 
-def test_uncertainty(sample_punchdata: NDCube):
+def test_uncertainty(sample_punchdata: PUNCHCube):
     # create an uncertainty array of 0's
     sample_punchdata.uncertainty.array[...] = 0
 
@@ -341,7 +341,7 @@ def test_uncertainty(sample_punchdata: NDCube):
 
 
 
-def test_threshold_abs(sample_punchdata: NDCube):
+def test_threshold_abs(sample_punchdata: PUNCHCube):
     # create an uncertainty array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
 
@@ -389,7 +389,7 @@ def test_threshold_abs(sample_punchdata: NDCube):
     assert bool(result_2[y_test_px, x_test_px]) is False
 
 
-def test_threshold_sigma(sample_punchdata: NDCube):
+def test_threshold_sigma(sample_punchdata: PUNCHCube):
     # create an uncertainty array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
     sample_punchdata.data[:, :, :] = 0
@@ -440,7 +440,7 @@ def test_threshold_sigma(sample_punchdata: NDCube):
 
 
 
-def test_required_yes_abs(sample_punchdata: NDCube):
+def test_required_yes_abs(sample_punchdata: PUNCHCube):
     # create an uncertainty array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
 
@@ -512,7 +512,7 @@ def test_required_yes_abs(sample_punchdata: NDCube):
     assert bool(result_3[y_test_px, x_test_px]) is False
 
 
-def test_required_yes_sigma(sample_punchdata: NDCube):
+def test_required_yes_sigma(sample_punchdata: PUNCHCube):
     # create an uncertainty and data array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
     sample_punchdata.data[:, :, :] = 0
@@ -581,7 +581,7 @@ def test_required_yes_sigma(sample_punchdata: NDCube):
 
     assert bool(result_3[y_test_px, x_test_px]) is False
 
-def test_dilation_abs(sample_punchdata: NDCube):
+def test_dilation_abs(sample_punchdata: PUNCHCube):
         # create an uncertainty and data array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
     #sample_punchdata.data[:, :, :] = 0
@@ -659,7 +659,7 @@ def test_dilation_abs(sample_punchdata: NDCube):
 
 
 
-def test_dilation_sigma(sample_punchdata: NDCube):
+def test_dilation_sigma(sample_punchdata: PUNCHCube):
         # create an uncertainty and data array of 0's
     sample_punchdata.uncertainty.array[:, :, :] = 0
     sample_punchdata.data[:, :, :] = 0

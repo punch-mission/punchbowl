@@ -11,18 +11,18 @@ from astropy.coordinates import EarthLocation, get_body
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
-from ndcube import NDCube
 from prefect import get_run_logger
 from sklearn.decomposition import PCA
 from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_task
 from punchbowl.util import DataLoader, load_image_task
 
 
 @punch_task
-def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader | str],
+def pca_filter(input_cubes: list[PUNCHCube], files_to_fit: list[PUNCHCube | DataLoader | str],
                n_components: int=50, med_filt: int=5,
                n_strides: int = 8, blend_size: int = 70) -> None:
     """Run PCA-based filtering."""
@@ -41,7 +41,7 @@ def pca_filter(input_cubes: list[NDCube], files_to_fit: list[NDCube | DataLoader
     logger.info("PCA filtering finished")
 
 
-def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | DataLoader],
+def load_files(input_cubes: list[PUNCHCube], files_to_fit: list[PUNCHCube | str | DataLoader],
                blend_size: int = 70) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Load files."""
     logger = get_run_logger()
@@ -51,10 +51,10 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     # staggered dropping of files is spread evenly over time.
     things_to_load = np.array(input_cubes + files_to_fit, dtype=object)
     input_list_indices = np.concatenate((range(len(input_cubes)), [-1] * len(files_to_fit))).astype(int)
-    def sort_key(thing: str | NDCube | DataLoader) -> str:
+    def sort_key(thing: str | PUNCHCube | DataLoader) -> str:
         if isinstance(thing, str):
             return os.path.basename(thing)
-        if isinstance(thing, NDCube):
+        if isinstance(thing, PUNCHCube):
             return thing.meta["FILENAME"].value
         return os.path.basename(thing.src_repr())
     keys = np.array([sort_key(t) for t in things_to_load])
@@ -79,7 +79,7 @@ def load_files(input_cubes: list[NDCube], files_to_fit: list[NDCube | str | Data
     # and we track which pixels satisfy that for every image.
     is_masked = np.ones(input_cubes[0].data.shape, dtype=bool)
     for input_file, input_list_index in zip(things_to_load, input_list_indices, strict=False):
-        if isinstance(input_file, NDCube):
+        if isinstance(input_file, PUNCHCube):
             data, meta = input_file.data, input_file.meta
             body_finding_input = (input_file.meta, input_file.wcs)
             uncertainty_is_inf = np.isinf(input_file.uncertainty.array)
@@ -142,7 +142,7 @@ def pca_filter_one_stride(all_files_to_fit: np.ndarray, stride: int, n_strides: 
         return [], []
 
     images_to_subtract = all_files_to_fit[to_subtract_filter]
-    # This tracks where each image-to-be-subtracted is in the main list of NDCubes
+    # This tracks where each image-to-be-subtracted is in the main list of PUNCHCubes
     subtracted_cube_indices = input_list_indices[to_subtract_filter]
 
     # The quartering approach that protects from planets/the Moon wrecking the PCA components can leave seams. To
@@ -195,14 +195,15 @@ def run_pca_filtering(images_to_subtract: np.ndarray, images_to_fit: np.ndarray,
     return images_to_subtract - reconstructed
 
 
-def find_bodies_in_image_quarters(frame: str | NDCube | tuple[NormalizedMetadata, WCS], extra_padding: int = 0) -> list:
+def find_bodies_in_image_quarters(frame: str | PUNCHCube | tuple[NormalizedMetadata, WCS],
+                                  extra_padding: int = 0) -> list:
     """Find celestial bodies in image."""
     if isinstance(frame, str):
         header = fits.getheader(frame, 1)
         wcs = WCS(header)
         location = header["GEOD_LON"], header["GEOD_LAT"], header["GEOD_ALT"]
         image_shape = header["NAXIS2"], header["NAXIS1"]
-    elif isinstance(frame, NDCube):
+    elif isinstance(frame, PUNCHCube):
         location = frame.meta["GEOD_LON"].value, frame.meta["GEOD_LAT"].value, frame.meta["GEOD_ALT"].value
         wcs = frame.wcs
         image_shape = frame.data.shape

@@ -73,8 +73,44 @@ def construct_all_product_codes(level: str) -> list[str]:
     return sorted({pc.replace("?", craft) for craft in crafts for pc in product_keys})
 
 
+def create_meta_field_subtype(datatype):
+    name = datatype.__name__[0].upper() + datatype.__name__[1:] + "MetaField"
+    return type(name, (MetaField, datatype), {})
+
+
+type_fieldclass_mapping = {}
+
+
 class MetaField:
     """The MetaField object describes a single field within the NormalizedMetadata object."""
+
+    def __new__(
+        cls,
+        keyword: str,
+        comment: str,
+        value: ValueType | None,
+        datatype: t.Any,
+        nullable: bool,
+        mutable: bool,
+        default: ValueType | None,
+    ) -> MetaField:
+        if cls is MetaField:
+            if datatype in type_fieldclass_mapping:
+                out_class = type_fieldclass_mapping[datatype]
+            else:
+                out_class = create_meta_field_subtype(datatype)
+                type_fieldclass_mapping[datatype] = out_class
+            return out_class(
+                keyword=keyword,
+                comment=comment,
+                value=value,
+                datatype=datatype,
+                nullable=nullable,
+                mutable=mutable,
+                default=default,
+            )
+        else:
+            return super().__new__(cls, value)
 
     def __init__(
         self,
@@ -180,7 +216,7 @@ class MetaField:
             return True
         return field_type is float and isinstance(value, int)
 
-    def __eq__(self, other: MetaField) -> bool:
+    def metafield_eq(self, other: MetaField) -> bool:
         """Check equality."""
         if not isinstance(other, MetaField):
             msg = f"MetaFields can only be compared to their own type, found {type(other)}."
@@ -195,26 +231,13 @@ class MetaField:
             and self._default == other._default
         )
 
-    def __int__(self) -> int:
-        """Get an int."""
-        if self.datatype is int:
-            return int(self._value)
-        raise TypeError(f"Cannot convert {self._datatype} to int.")
-
-    def __float__(self) -> float:
-        """Get a float."""
-        if self.datatype is float or self.datatype is int:
-            return float(self._value)
-        raise TypeError(f"Cannot convert {self._datatype} to float.")
-
-    def __str__(self) -> str:
-        """Get a string."""
-        return str(self._value)
-
-    def __hash__(self) -> int:
+    def metafield_hash(self) -> int:
         """Hash the field."""
         return (hash(self._keyword) + hash(self._comment) + hash(self._value)
                 + hash(self._datatype) + hash(self.nullable) + hash(self._mutable) + hash(self._default))
+    
+    def replace_with_value(self, value):
+        return MetaField(self.keyword, self.comment, value, self.datatype, self.nullable, self.mutable, self.default)
 
 
 class NormalizedMetadata(Mapping):
@@ -725,7 +748,8 @@ class NormalizedMetadata(Mapping):
         key = key.upper()
         for section_name, section in self._contents.items():
             if key in section:
-                self._contents[section_name][key].value = value
+                current = self._contents[section_name][key]
+                self._contents[section_name][key] = current.replace_with_value(value)
                 return
 
         # reaching here means we haven't returned

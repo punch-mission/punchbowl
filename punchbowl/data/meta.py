@@ -721,9 +721,11 @@ class NormalizedMetadata(Mapping):
         None
 
         """
+        self._validate_key_is_str(key)
+        key = key.upper()
         for section_name, section in self._contents.items():
             if key in section:
-                self._contents[section_name][key.upper()].value = value
+                self._contents[section_name][key].value = value
                 return
 
         # reaching here means we haven't returned
@@ -757,9 +759,10 @@ class NormalizedMetadata(Mapping):
             key, _ = key
         self._validate_key_is_str(key)
 
+        key = key.upper()
         for section_name, section in self._contents.items():
             if key in section:
-                return self._contents[section_name][key.upper()]
+                return self._contents[section_name][key]
 
         # reaching here means we haven't returned
         msg = f"MetaField with key={key} not found."
@@ -780,9 +783,10 @@ class NormalizedMetadata(Mapping):
 
         """
         self._validate_key_is_str(key)
+        key = key.upper()
         for section_name, section in self._contents.items():
             if key in section:
-                del self._contents[section_name][key.upper()]
+                del self._contents[section_name][key]
                 return
 
         # reaching here means we haven't returned
@@ -804,6 +808,8 @@ class NormalizedMetadata(Mapping):
             Value indicating if the specified keyword is contained within the NormalizedMetadata object
 
         """
+        self._validate_key_is_str(key)
+        key = key.upper()
         return any(key in section for section in self._contents.values())
 
     @property

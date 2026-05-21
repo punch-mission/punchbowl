@@ -35,9 +35,9 @@ def check_valid_starfields(reference_time: datetime, starfields, maximum_days_va
     end_limit = reference_time + timedelta(days=maximum_days_valid)
 
     for starfield in starfields:
-        if starfield.date_obs < start_limit and starfield.date_obs < reference_time:
+        if starfield.date_obs >= start_limit and starfield.date_obs <= reference_time:
             starfield_before = True
-        if starfield.date_obs < end_limit and starfield.date_obs > reference_time:
+        if starfield.date_obs <= end_limit and starfield.date_obs >= reference_time:
             starfield_after = True
     return starfield_before and starfield_after
 

@@ -1,1 +1,0 @@
-Remove unused "Priority" column from sci_xfi database table.

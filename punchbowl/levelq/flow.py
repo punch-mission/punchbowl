@@ -155,10 +155,9 @@ def levelq_CQM_core_flow(data_list: list[str] | list[NDCube], #noqa: N802, C901
             spacecraft = SPACECRAFT_OBSCODE[d.meta["OBSCODE"].value]
             output_data_mosaic.meta[f"HAS_{spacecraft}"] = 1
 
-        output_data_mosaic.meta["ALL_INPT"] = {output_data_mosaic.meta["HAS_WFI1"],
-                                               output_data_mosaic.meta["HAS_WFI2"],
-                                               output_data_mosaic.meta["HAS_WFI3"],
-                                               output_data_mosaic.meta["HAS_NFI4"]} == {1}
+        output_data_mosaic.meta["ALL_INPT"] = all(
+            output_data_mosaic.meta[k].value == 1
+            for k in ("HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4"))
 
         centers = find_central_pixel(ordered_data_list, quickpunch_mosaic_wcs)
         for center, cube in zip(centers, ordered_data_list, strict=False):

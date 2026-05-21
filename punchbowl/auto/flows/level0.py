@@ -1147,34 +1147,46 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
                            .filter(or_(~SCI_XFI.is_used, SCI_XFI.is_used.is_(None)))
                            .distinct()
                            .all())
+    distinct_spacecraft = [sc[0] for sc in distinct_spacecraft]
 
     skip_count, success_count = 0, 0
     replay_needs = []
 
+    distinct_times = (session.query(SCI_XFI.timestamp, SCI_XFI.num_attempts, SCI_XFI.last_attempt, SCI_XFI.spacecraft_id)
+                      .filter(or_(~SCI_XFI.is_used, SCI_XFI.is_used.is_(None)))
+                      .filter(SCI_XFI.spacecraft_id.in_(distinct_spacecraft))
+                      .filter(SCI_XFI.timestamp > retry_window_start)
+                      .distinct()
+                      .all())
     image_inputs = []
-    for spacecraft in distinct_spacecraft:
-        distinct_times = (session.query(SCI_XFI.timestamp, SCI_XFI.num_attempts, SCI_XFI.last_attempt)
-                          .filter(or_(~SCI_XFI.is_used, SCI_XFI.is_used.is_(None)))
-                          .filter(SCI_XFI.spacecraft_id == spacecraft[0])
-                          .filter(SCI_XFI.timestamp > retry_window_start)
-                          .distinct()
-                          .all())
-        for t in distinct_times:
-            # Sort by (num_attempts != 0) first, so new stuff gets tried (False sorts before True), and then sort by
-            # last attempt, with less-recent attempts coming first
-            sort_key = (t[1] not in (0, None), t[2])
-            image_inputs.append((sort_key, (spacecraft[0], t[0], defs, apid_name2num, pipeline_config, spacecraft_secrets,
-                                 outlier_limits, masks, processing_flow_id)))
+    fill_time = datetime.now()
+    for t in distinct_times:
+        # Sort by (num_attempts != 0) first, so new stuff gets tried (False sorts before True), and then sort by
+        # last attempt, with less-recent attempts coming first
+        sort_key = (t[1] not in (0, None), t[2] if t[2] is not None else fill_time)
+        image_inputs.append((sort_key, (t[3], t[0])))
+
     logger.info(f"Got {len(image_inputs)} images to try forming")
 
     image_inputs.sort()
+    # Remove the sort key
+    image_inputs = [e[1] for e in image_inputs]
     max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
-    image_inputs = image_inputs[:max_images_per_flow]
+    unique_image_inputs = []
+    seen_inputs = set()
+    for image_input in image_inputs:
+        if image_input not in seen_inputs:
+            seen_inputs.add(image_input)
+            unique_image_inputs.append(image_input)
+            if len(unique_image_inputs) >= max_images_per_flow:
+                break
+    # Attach everything we need as inputs
+    image_inputs = [(*image_input, defs, apid_name2num, pipeline_config, spacecraft_secrets,
+                             outlier_limits, masks, processing_flow_id) for image_input in unique_image_inputs]
 
     last_attempts = [e[0][1] for e in image_inputs if e[0][0]]
     retry_timestamps = [e[1][1] for e in image_inputs if e[0][0]]
     new_timestamps = [e[1][1] for e in image_inputs if not e[0][0]]
-    image_inputs = [e[1] for e in image_inputs]
     logger.info(f"Will run {len(image_inputs)} attempts, including {len(retry_timestamps)} retries")
     if retry_timestamps:
         logger.info(f"Retries were last attempted between {min(last_attempts)} and {max(last_attempts)}")

@@ -427,7 +427,7 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
                 celestial_wcs.cpdis2 = wcs.cpdis2
             except KeyError:
                 # Raised if there isn't a WCS under the "A" key
-                pass
+                warnings.warn("Celestial WCS not found")
         unit = u.ct
 
         if include_uncertainty and len(hdul) >= 3 and isinstance(hdul[2], fits.hdu.CompImageHDU):

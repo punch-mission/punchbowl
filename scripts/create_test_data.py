@@ -39,34 +39,6 @@ def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):
         write_ndcube_to_fits(obj, file_path, overwrite=True)
 
 
-# def create_punchdata_test_data(path="../punchbowl/tests/"):
-#     meta = NormalizedMetadata.load_template("CFM", "3")
-#     meta["DATE-OBS"] = str(datetime.now(UTC))
-#     wcs = WCS(naxis=2)
-#     data = np.ones((10, 10))
-#     obj = PUNCHCube(data=data, wcs=wcs, meta=meta)
-#     file_path = os.path.join(path, "test_data.fits")
-#     write_ndcube_to_fits(obj, file_path, overwrite=True)
-
-
-# def create_header_validation_test_data(path="../punchbowl/tests/"):
-#     wcs = WCS(naxis=2)
-#     m = NormalizedMetadata.load_template("PTM", "3")
-#     m['DATE-OBS'] = datetime.utcnow().isoformat()
-#     m['DATE-BEG'] = datetime.utcnow().isoformat()
-#     m['DATE-AVG'] = (datetime.utcnow() + timedelta(minutes=2)).isoformat()
-#     m['DATE-END'] = (datetime.utcnow() + timedelta(minutes=4)).isoformat()
-#     m['DATE'] = (datetime.utcnow() + timedelta(hours=1)).isoformat()
-#     h = m.to_fits_header(wcs=wcs)
-#
-#     data = np.ones((2, 4096, 4096), dtype=np.float32)
-#     uncertainty = StdDevUncertainty(np.sqrt(np.abs(data)).astype(np.float32))
-#
-#     d = PUNCHCube(data=data, uncertainty=uncertainty, wcs=WCS(h), meta=m)
-#     file_path = os.path.join(path, "test_header_validation.fits")
-#     write_ndcube_to_fits(d, file_path, overwrite=True)
-
-
 def create_quartic_coefficients_test_data(path="../punchbowl/level1/tests/data/"):
     meta = NormalizedMetadata.load_template("FQ1", "1")
     meta['DATE-OBS'] = str(datetime.now(UTC))

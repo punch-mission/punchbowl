@@ -519,12 +519,12 @@ def prep_star_coords(stars_in_image: pd.DataFrame, image_header: NormalizedMetad
     assumed to be ICRS. But as long as it's a consistent set of RA-Dec values, it doesn't matter what frame the
     coordinates think they're in.
     """
-    position = CartesianRepresentation(image_header["HCIX_OBS"] * u.m,
-                                       image_header["HCIY_OBS"] * u.m,
-                                       image_header["HCIZ_OBS"] * u.m)
-    velocity = CartesianDifferential(image_header["HCIX_VOB"] * u.m / u.s,
-                                     image_header["HCIY_VOB"] * u.m / u.s,
-                                     image_header["HCIZ_VOB"] * u.m / u.s)
+    position = CartesianRepresentation(image_header["HCIX_OBS"].value * u.m,
+                                       image_header["HCIY_OBS"].value * u.m,
+                                       image_header["HCIZ_OBS"].value * u.m)
+    velocity = CartesianDifferential(image_header["HCIX_VOB"].value * u.m / u.s,
+                                     image_header["HCIY_VOB"].value * u.m / u.s,
+                                     image_header["HCIZ_VOB"].value * u.m / u.s)
     sc = HeliocentricInertial(position.with_differentials(velocity))
     sc_gcrs = sc.transform_to(GCRS(obstime=image_header.astropy_time))
 

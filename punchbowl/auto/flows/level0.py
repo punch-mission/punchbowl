@@ -527,7 +527,7 @@ def organize_spacecraft_position_keywords(observation_time, before_xact_db, befo
         "HCIZ_OBS": hci.cartesian.z.to(u.m).value,
         "HCIX_VOB": hci.cartesian.differentials['s'].d_x.to(u.m/u.s).value,
         "HCIY_VOB": hci.cartesian.differentials['s'].d_y.to(u.m/u.s).value,
-        "HCIY_VOB": hci.cartesian.differentials['s'].d_z.to(u.m/u.s).value,
+        "HCIZ_VOB": hci.cartesian.differentials['s'].d_z.to(u.m/u.s).value,
         "HEEX_OBS": hee.cartesian.x.to(u.m).value,
         "HEEY_OBS": hee.cartesian.y.to(u.m).value,
         "HEEZ_OBS": hee.cartesian.z.to(u.m).value,

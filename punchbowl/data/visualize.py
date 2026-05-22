@@ -353,7 +353,7 @@ def plot_punch(  # noqa: C901
                 x, y = cube.meta[position_keywords[i]].value, cube.meta[position_keywords[i+1]].value
                 if x != -1 and y != -1:
                     ax.text(x, y, satellite, color="white",
-                            verticalalignment="bottom", horizontalalignment="left",
+                            verticalalignment="center", horizontalalignment="center",
                             fontsize=8, fontfamily="monospace")
 
     if colorbar and not axes_off:

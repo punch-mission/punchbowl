@@ -12,9 +12,9 @@ offering improved signal-to-noise relative to other products.
 PAM files (with the "P" standing for "polarized") have three data layers: total brightness (tB), which is effectively an unpolarized image, followed by
 polarized brightness (pB) and its radial component (pB'), making PAM the product of
 choice for studies of CMEs, shocks, the solar wind, etc.
-CAM files (with the "C" standing for "clear") provide only unpolarized data. The PAMs' unpolarized total brightness is reconstructed from sets of polarized 
-observations, while the CAMs are produced from unpolarized observations which are made at a reduced cadence. So while the total brightness layer of the PAMs 
-is conceptually equivalent to the CAMs, PAMs average together more data, which is expected to provide better signal-to-noise. But for memory- or 
+CAM files (with the "C" standing for "clear") provide only unpolarized data. The PAMs' unpolarized total brightness is reconstructed from sets of polarized
+observations, while the CAMs are produced from unpolarized observations which are made at a reduced cadence. So while the total brightness layer of the PAMs
+is conceptually equivalent to the CAMs, PAMs average together more data, which is expected to provide better signal-to-noise. But for memory- or
 bandwidth-constrained situations that don't require polarization, CAMs provide largely equivalent data at one-third the file size.
 
 If you are unsure which product to start with, download a CAM or PAM file first.
@@ -24,7 +24,7 @@ Downloading Data
 Data output from the PUNCH data processing pipeline are stored and accessible through the Solar Data Analysis Center (SDAC)
 - a portal for hosting through tools such as the Virtual Solar Observatory (VSO).
 From here PUNCH data products can be queried and requested for download using metadata within the data products.
-See `this example <https://punchbowl.readthedocs.io/en/latest/auto_examples/querying_data.html#sphx-glr-auto-examples-querying-data-py>`_ on how to query the VSO using 
+See `this example <https://punchbowl.readthedocs.io/en/latest/auto_examples/querying_data.html#sphx-glr-auto-examples-querying-data-py>`_ on how to query the VSO using
 SunPy's Fido API.
 
 If that example is not working properly, you can also pull data directly from the SDAC using ``wget``.

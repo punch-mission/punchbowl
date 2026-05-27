@@ -4,15 +4,16 @@ Accessing PUNCH Data
 Recommended Level 3 Products
 -----------------------------
 
-For most science use cases, the recommended starting point is the Level 3 **CAM**
-(Clear a.k.a total brightness low-noise science mosaic) and **PAM** (Polarized low-noise science mosaic) products.
+For most science use cases, the recommended starting point is the two Level 3 low-noise science mosaic products,
+**PAM** and **CAM**.
 Both products are fully background and starfield subtracted and mosaicked across the PUNCH field of view,
 giving you the cleanest possible signal for heliospheric science.
-CAM provides total brightness (B) with uncertainty, while PAM additionally resolves
+Each of these two product types are produced every 32 minutes, allowing multiple images to be averaged together at every point in the mosiac field of view,
+offering improved signal-to-noise relative to other products.
+PAM files (with the "P" standing for "polarized") have three data layers: total brightness (tB), which is effectively an unpolarized image, followed by
 polarized brightness (pB) and its radial component (pB'), making PAM the product of
-choice for studies of the CMEs, shocks, solar wind etc. These products
-represent one full spacecraft rotation cycle with a significant
-improvement in signal-to-noise relative to other products.
+choice for studies of CMEs, shocks, the solar wind, etc.
+CAM files (with the "C" standing for "clear") provide only unpolarized data. The PAMs' unpolarized total brightness is reconstructed from sets of polarized observations, while the CAMs are produced from unpolarized observations which are made at a reduced cadence. So while the total brightness layer of the PAMs is conceptually equivalent to the CAMs, PAMs average together more data, which is expected to provide better signal-to-noise. But for memory- or bandwidth-constrained situations that don't require polarization, CAMs provide largely equivalent data at one-third the file size.
 
 If you are unsure which product to start with, download a CAM or PAM file first.
 

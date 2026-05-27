@@ -6,7 +6,7 @@ Recommended Level 3 Products
 
 For most science use cases, the recommended starting point is the Level 3 **CAM**
 (Clear a.k.a total brightness low-noise science mosaic) and **PAM** (Polarized low-noise science mosaic) products.
-Both are fully background and starfield subtracted and mosaicked across the PUNCH field of view,
+Both products are fully background and starfield subtracted and mosaicked across the PUNCH field of view,
 giving you the cleanest possible signal for heliospheric science.
 CAM provides total brightness (B) with uncertainty, while PAM additionally resolves
 polarized brightness (pB) and its radial component (pB'), making PAM the product of

@@ -16,7 +16,6 @@ from astropy.coordinates import (
     GCRS,
     ICRS,
     CartesianDifferential,
-    CartesianRepresentation,
     EarthLocation,
     SkyCoord,
     StokesSymbol,
@@ -26,7 +25,7 @@ from astropy.coordinates import (
 from astropy.time import Time
 from astropy.wcs import WCS, FITSFixedWarning, WCSBase
 from astropy.wcs.utils import add_stokes_axis_to_wcs
-from sunpy.coordinates import HeliocentricInertial, frames
+from sunpy.coordinates import frames
 
 if TYPE_CHECKING:
     from punchbowl.data import NormalizedMetadata
@@ -476,18 +475,29 @@ class GCRSWCS(WCS):
 
         self._meta = meta
         for ax in "XYZ":
-            if meta.get(f"HCI{ax}_OBS", None) is None or meta.get(f"HCI{ax}_VOB", None) is None:
+            if meta.get(f"GEO{ax}_VOB", None) is None:
+                self._gcrs_frame = ICRS()
+                return
+        for part in ("LON", "LAT", "ALT"):
+            if meta.get(f"GEOD_{part}", None) is None:
                 self._gcrs_frame = ICRS()
                 return
 
-        position = CartesianRepresentation(meta["HCIX_OBS"].value * u.m,
-                                           meta["HCIY_OBS"].value * u.m,
-                                           meta["HCIZ_OBS"].value * u.m)
-        velocity = CartesianDifferential(meta["HCIX_VOB"].value * u.m / u.s,
-                                         meta["HCIY_VOB"].value * u.m / u.s,
-                                         meta["HCIZ_VOB"].value * u.m / u.s)
-        sc = HeliocentricInertial(position.with_differentials(velocity), obstime=meta.astropy_time)
-        sc_gcrs = sc.transform_to(GCRS(obstime=meta.astropy_time))
+        position = EarthLocation.from_geodetic(meta["GEOD_LON"].value * u.deg,
+                                               meta["GEOD_LAT"].value * u.deg,
+                                               meta["GEOD_ALT"].value * u.m)
+
+        velocity = CartesianDifferential(
+            meta["GEOX_VOB"].value * u.m / u.s,
+            meta["GEOY_VOB"].value * u.m / u.s,
+            meta["GEOZ_VOB"].value * u.m / u.s)
+
+        # Re-create with velocity attached
+        itrs = position.get_itrs(meta.astropy_time)
+        newdata = itrs.data.to_cartesian().with_differentials(velocity)
+        itrs = itrs.realize_frame(newdata)
+
+        sc_gcrs = itrs.transform_to(GCRS(obstime=meta.astropy_time))
 
         self._gcrs_frame = GCRS(obsgeoloc=sc_gcrs.cartesian.without_differentials(),
                                 obsgeovel=sc_gcrs.cartesian.differentials["s"].d_xyz,

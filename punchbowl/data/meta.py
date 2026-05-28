@@ -740,7 +740,7 @@ class NormalizedMetadata(Mapping):
     def get(self, key: str | tuple[str, int], default: t.Any | None = None) -> t.Any:
         """Get a value given a key or use a default value."""
         try:
-            out = self[key]
+            out = self[key].value
         except KeyError:
             out = default
         return out
@@ -770,7 +770,7 @@ class NormalizedMetadata(Mapping):
 
         # reaching here means we haven't returned
         msg = f"MetaField with key={key} not found."
-        raise RuntimeError(msg)
+        raise KeyError(msg)
 
     def __delitem__(self, key: str) -> None:
         """

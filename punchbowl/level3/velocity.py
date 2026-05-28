@@ -83,9 +83,9 @@ def preprocess_image(data: PUNCHCube,
     # Replace with appropriate preprocessing needed to clean-up. We need to have finite values for the polar remap
     header = data.meta.to_fits_header(wcs=data.wcs)
 
-    if header["OBS-MODE"] == "Polarized":
+    if "polar" in header["OBS-MODE"].lower():
         image = data.data[0, ...]
-    elif header["OBS-MODE"] == "Unpolarized":
+    else:
         image = data.data[...]
 
     image[~np.isfinite(image)] = 0

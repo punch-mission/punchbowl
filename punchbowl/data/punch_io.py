@@ -30,6 +30,7 @@ from PIL import Image, ImageDraw, ImageFont
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.visualize import cmap_punch, radial_distance
+from punchbowl.data.wcs import GCRSWCS
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -420,7 +421,7 @@ def load_ndcube_from_fits(path: str | Path, key: str = " ", include_provenance: 
         celestial_wcs = None
         if key == " ":
             try:
-                celestial_wcs = WCS(header, hdul, key="A")
+                celestial_wcs = GCRSWCS(header, hdul, key="A", meta=meta)
                 # If we're loading *lots* of cubes at once, keeping two copies of the distortion tables can matter.
                 # Since they're identical, let's de-duplicate them.
                 celestial_wcs.cpdis1 = wcs.cpdis1

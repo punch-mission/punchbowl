@@ -11,14 +11,13 @@ import numpy as np
 import pandas as pd
 import scipy
 import sep
-from astropy.coordinates import GCRS, CartesianDifferential, CartesianRepresentation, SkyCoord
+from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
 from prefect import get_run_logger
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
-from sunpy.coordinates import HeliocentricInertial
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
@@ -364,7 +363,6 @@ def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
 def solve_pointing( # noqa: C901
         image_data: np.ndarray,
         image_wcs: WCS,
-        image_header: NormalizedMetadata,
         distortion: WCS | None = None,
         saturation_limit: float = np.inf,
         observatory: str = "wfi",
@@ -379,8 +377,6 @@ def solve_pointing( # noqa: C901
         a 2D image, preferably with cosmic rays reduced
     image_wcs : WCS
         a guess world coordinate system
-    image_header : NormalizedMetadata
-        the image's metadata
     distortion : WCS | None
         a distortion WCS to use when fitting
     saturation_limit : float
@@ -462,7 +458,7 @@ def solve_pointing( # noqa: C901
     ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
     stars_in_image = stars_in_image[ok_stars]
 
-    catalog_stars = prep_star_coords(stars_in_image, image_header)
+    catalog_stars = prep_star_coords(stars_in_image, image_wcs)
 
     indices = np.arange(len(catalog_stars))
     rng = np.random.default_rng(seed=1)
@@ -508,47 +504,26 @@ def solve_pointing( # noqa: C901
     return solved_wcs
 
 
-def prep_star_coords(stars_in_image: pd.DataFrame, image_header: NormalizedMetadata) -> SkyCoord:
-    """
-    Convert ICRS coordinates to GCRS and put in a SkyCoord that says its ICRS.
-
-    That last bit is for compatibility with the fact that we can't have a "true" GCRS WCS, only RA-DEC that are
-    assumed to be ICRS. But as long as it's a consistent set of RA-Dec values, it doesn't matter what frame the
-    coordinates think they're in.
-    """
-    position = CartesianRepresentation(image_header["HCIX_OBS"].value * u.m,
-                                       image_header["HCIY_OBS"].value * u.m,
-                                       image_header["HCIZ_OBS"].value * u.m)
-    velocity = CartesianDifferential(image_header["HCIX_VOB"].value * u.m / u.s,
-                                     image_header["HCIY_VOB"].value * u.m / u.s,
-                                     image_header["HCIZ_VOB"].value * u.m / u.s)
-    sc = HeliocentricInertial(position.with_differentials(velocity))
-    sc_gcrs = sc.transform_to(GCRS(obstime=image_header.astropy_time))
-
+def prep_star_coords(stars_in_image: pd.DataFrame, image_wcs: WCS) -> SkyCoord:
+    """Convert ICRS coordinates to GCRS."""
     # Convert stellar coordinates to GCRS centered on the spacecraft location
-    catalog_stars = SkyCoord(
+    return SkyCoord(
         np.array(stars_in_image["RAdeg"]) * u.degree,
         np.array(stars_in_image["DEdeg"]) * u.degree,
         np.array(stars_in_image["Dist_ly"]) * u.lyr,
         frame="icrs",
-    ).transform_to(GCRS(obsgeoloc=sc_gcrs.cartesian,
-                        obsgeovel=sc_gcrs.cartesian.differentials["s"].d_xyz,
-                        obstime=image_header.astropy_time))
-
-    # Re-label them as ICRS so the image WCS can handle them
-    return SkyCoord(catalog_stars.ra, catalog_stars.dec, frame="icrs")
+    ).transform_to(image_wcs.pixel_to_world(0,0).frame)
 
 
 def measure_wcs_error(
         image_data: np.ndarray,
         wcs: WCS,
-        image_header: NormalizedMetadata,
         dimmest_magnitude: float = 6.0,
         max_error: float = 15.0, debug: bool = True) -> float:
     """Estimate the error in the WCS based on an image."""
     catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
     stars_in_image = find_catalog_in_image(catalog, wcs, image_data.shape)
-    catalog_stars = prep_star_coords(stars_in_image, image_header)
+    catalog_stars = prep_star_coords(stars_in_image, wcs)
 
     observed_coords = find_star_coordinates(
         image_data,
@@ -596,9 +571,9 @@ def build_distortion_model(
     catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
     all_distortions = []
 
-    for image_data, new_wcs, meta in zip(image_cube, refined_wcses, image_metas, strict=False):
+    for image_data, new_wcs in zip(image_cube, refined_wcses, strict=False):
         stars_in_image = find_catalog_in_image(catalog, new_wcs, image_data.shape)
-        catalog_stars = prep_star_coords(stars_in_image, meta)
+        catalog_stars = prep_star_coords(stars_in_image, new_wcs)
         expected_coords = catalog_stars.to_pixel(new_wcs)
 
         observed_coords = find_star_coordinates(image_data,

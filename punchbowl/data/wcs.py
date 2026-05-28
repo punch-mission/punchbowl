@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import warnings
+from typing import TYPE_CHECKING
 from datetime import datetime
 
 import astropy.coordinates
@@ -11,11 +12,24 @@ import astropy.wcs.wcsapi
 import numpy as np
 import sunpy.coordinates
 import sunpy.map
-from astropy.coordinates import GCRS, EarthLocation, SkyCoord, StokesSymbol, custom_stokes_symbol_mapping, get_sun
+from astropy.coordinates import (
+    GCRS,
+    ICRS,
+    CartesianDifferential,
+    CartesianRepresentation,
+    EarthLocation,
+    SkyCoord,
+    StokesSymbol,
+    custom_stokes_symbol_mapping,
+    get_sun,
+)
 from astropy.time import Time
-from astropy.wcs import WCS, FITSFixedWarning
+from astropy.wcs import WCS, FITSFixedWarning, WCSBase
 from astropy.wcs.utils import add_stokes_axis_to_wcs
-from sunpy.coordinates import frames
+from sunpy.coordinates import HeliocentricInertial, frames
+
+if TYPE_CHECKING:
+    from punchbowl.data import NormalizedMetadata
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
@@ -440,3 +454,91 @@ def celestial_north_from_wcs(input_wcs: WCS,
     angle_cel_north = -np.degrees(np.arctan2(north_dx, north_dy))
 
     return angle_cel_north*u.degree
+
+
+class GCRSWCS(WCS):
+    """
+    A WCS that accepts and returns GCRS SkyCoords.
+
+    This is necessary because there doesn't seem to be a native way to tell a WCS it is GCRS. I think we could register
+    a definition with Astropy that if the FITS RADESYS key is set to 'gcrs' it should use GCRS SkyCoords, but the
+    velocity information in the header doesn't appear to be read into the WCS object, and at the point where we're
+    registering this with Astropy, we only have access to the WCS object, not the original header.
+    """
+
+    def __init__(self, *args: tuple, meta: NormalizedMetadata, **kwargs: dict) -> None:
+        """
+        Initialize the GCRSWCS.
+
+        Reqquires the NormalizedMetadata to ready out the spacecraft position and velocity.
+        """
+        super().__init__(*args, **kwargs)
+
+        self._meta = meta
+        for ax in "XYZ":
+            if meta.get(f"HCI{ax}_OBS", None) is None or meta.get(f"HCI{ax}_VOB", None) is None:
+                self._gcrs_frame = ICRS()
+                return
+
+        position = CartesianRepresentation(meta["HCIX_OBS"].value * u.m,
+                                           meta["HCIY_OBS"].value * u.m,
+                                           meta["HCIZ_OBS"].value * u.m)
+        velocity = CartesianDifferential(meta["HCIX_VOB"].value * u.m / u.s,
+                                         meta["HCIY_VOB"].value * u.m / u.s,
+                                         meta["HCIZ_VOB"].value * u.m / u.s)
+        sc = HeliocentricInertial(position.with_differentials(velocity), obstime=meta.astropy_time)
+        sc_gcrs = sc.transform_to(GCRS(obstime=meta.astropy_time))
+
+        self._gcrs_frame = GCRS(obsgeoloc=sc_gcrs.cartesian.without_differentials(),
+                                obsgeovel=sc_gcrs.cartesian.differentials["s"].d_xyz,
+                                obstime=meta.astropy_time)
+
+    def _get_components_and_classes(self) -> tuple:
+        """
+        Determine the coordinate frame for a SkyCoord.
+
+        When creating a SkyCoord, this is the method WCS objects use to select a coordinate frame. Rather than
+        registering something within the default implementation, we override and replace the coordinate frame with
+        our GCRS frame.
+        """
+        rval = super()._get_components_and_classes()
+        rval[1]["celestial"][2]["frame"] = self._gcrs_frame
+        return rval
+
+    def __copy__(self) -> GCRSWCS:
+        """
+        Return a shallow copy of this WCS.
+
+        We need to override this to pass the NormalizedMeta to the new object's constructor.
+        """
+        new_copy = self.__class__(meta=self._meta)
+        WCSBase.__init__(
+            new_copy,
+            self.sip,
+            (self.cpdis1, self.cpdis2),
+            self.wcs,
+            (self.det2im1, self.det2im2),
+        )
+        new_copy.__dict__.update(self.__dict__)
+        return new_copy
+
+    def __deepcopy__(self, memo: dict) -> GCRSWCS:
+        """
+        Return a deep copy of this WCS.
+
+        We need to override this to pass the NormalizedMeta to the new object's constructor.
+        """
+        from copy import deepcopy  # noqa: PLC0415
+
+        new_copy = self.__class__(meta=self._meta)
+        new_copy.naxis = deepcopy(self.naxis, memo)
+        WCSBase.__init__(
+            new_copy,
+            deepcopy(self.sip, memo),
+            (deepcopy(self.cpdis1, memo), deepcopy(self.cpdis2, memo)),
+            deepcopy(self.wcs, memo),
+            (deepcopy(self.det2im1, memo), deepcopy(self.det2im2, memo)),
+        )
+        for key, val in self.__dict__.items():
+            new_copy.__dict__[key] = deepcopy(val, memo)
+        return new_copy

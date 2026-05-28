@@ -545,6 +545,9 @@ def organize_spacecraft_position_keywords(observation_time, before_xact_db, befo
         "GEOD_LAT": position.geodetic.lat.deg,
         "GEOD_LON": position.geodetic.lon.deg,
         "GEOD_ALT": position.geodetic.height.to(u.m).value,
+        "GEOX_VOB": velocity.dx.to_value(u.m/u.s),
+        "GEOY_VOB": velocity.dy.to_value(u.m/u.s),
+        "GEOZ_VOB": velocity.dz.to_value(u.m/u.s),
     }
 
 def organize_compression_and_acquisition_settings(compression_settings, acquisition_settings):

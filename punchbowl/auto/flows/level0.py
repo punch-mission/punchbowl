@@ -636,8 +636,10 @@ def get_metadata(first_image_packet,
 
     offset_for_clearing = timedelta(seconds=3.8)
     observation_time = first_image_packet.timestamp + offset_for_clearing
+    exposure_time = acquisition_settings["EXPOSURE"] / 10.0 * (1 + acquisition_settings["IMG_NUM"])
+    observation_end = observation_time + timedelta(seconds=exposure_time)
+    observation_midpoint = observation_time + timedelta(seconds=exposure_time / 2)
     spacecraft_id = first_image_packet.spacecraft_id
-    exposure_time = acquisition_settings["EXPOSURE"]/10.0 * (1+acquisition_settings["IMG_NUM"])
 
     packet_window_size = timedelta(hours=5)
     # get the XACT packet right before and right after the first image packet to determine position
@@ -682,27 +684,27 @@ def get_metadata(first_image_packet,
     best_led1 = (session.query(ENG_LED)
                 .filter(ENG_LED.spacecraft_id == spacecraft_id)
                 .filter(ENG_LED.led_start_time <= observation_time)
-                .filter(ENG_LED.led_end_time >= observation_time + timedelta(seconds=exposure_time))
+                .filter(ENG_LED.led_end_time >= observation_end)
                 .first())
 
     best_led2 = (session.query(ENG_LED)
                 .filter(ENG_LED.spacecraft_id == spacecraft_id)
                 .filter(ENG_LED.led_start_time <= observation_time)
                 .filter(ENG_LED.led_end_time >= observation_time)
-                .filter(ENG_LED.led_end_time <= observation_time + timedelta(seconds=exposure_time))
+                .filter(ENG_LED.led_end_time <= observation_end)
                 .first())
 
     best_led3 = (session.query(ENG_LED)
                 .filter(ENG_LED.spacecraft_id == spacecraft_id)
                 .filter(ENG_LED.led_start_time >= observation_time)
-                .filter(ENG_LED.led_start_time <= observation_time + timedelta(seconds=exposure_time))
-                .filter(ENG_LED.led_end_time >= observation_time + timedelta(seconds=exposure_time))
+                .filter(ENG_LED.led_start_time <= observation_end)
+                .filter(ENG_LED.led_end_time >= observation_end)
                 .first())
 
     best_led4 = (session.query(ENG_LED)
                 .filter(ENG_LED.spacecraft_id == spacecraft_id)
                 .filter(ENG_LED.led_start_time >= observation_time)
-                .filter(ENG_LED.led_end_time <= observation_time + timedelta(seconds=exposure_time))
+                .filter(ENG_LED.led_end_time <= observation_end)
                 .first())
 
     best_led_db = best_led1 or best_led2 or best_led3 or best_led4
@@ -750,7 +752,7 @@ def get_metadata(first_image_packet,
 
     fits_info |= organize_pfw_fits_keywords(best_pfw_db, best_pfw)
 
-    fits_info |= organize_spacecraft_position_keywords(observation_time, before_xact_db, before_xact)
+    fits_info |= organize_spacecraft_position_keywords(observation_midpoint, before_xact_db, before_xact)
 
     if best_led_db is not None:
         best_led = {key: loaded_tlm[best_led_db.tlm_id]["ENG_LED"][key][best_led_db.packet_index]
@@ -789,15 +791,12 @@ def get_metadata(first_image_packet,
 
     fits_info |= organize_gain_info(spacecraft_id)
 
-    exposure_time = float(fits_info["EXPTIME"])
     fits_info["COM_SET"] = first_image_packet.compression_settings
     fits_info["ACQ_SET"] = first_image_packet.acquisition_settings
     fits_info["DATE-BEG"] = observation_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    date_end = observation_time + timedelta(seconds=exposure_time)
-    fits_info["DATE-END"] = date_end.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    date_avg =  observation_time + timedelta(seconds=exposure_time/2)
-    fits_info["DATE-AVG"] = date_avg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    fits_info["DATE-OBS"] = date_avg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    fits_info["DATE-END"] = observation_end.strftime("%Y-%m-%dT%H:%eM:%S.%f")[:-3]
+    fits_info["DATE-AVG"] = observation_midpoint.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    fits_info["DATE-OBS"] = observation_midpoint.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     fits_info["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     return position_info, fits_info

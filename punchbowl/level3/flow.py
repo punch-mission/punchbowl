@@ -164,11 +164,12 @@ def generate_level3_velocity_flow(data_list: list[str],
     logger = get_run_logger()
 
     logger.info("Generating velocity data product")
-    velocity_data, plot_parameters = track_velocity(data_list)
+    # velocity_data, plot_parameters = track_velocity(data_list)
+    velocity_cube = track_velocity(data_list)
 
     if output_filename is not None:
-        output_image_task(velocity_data, output_filename)
+        output_image_task(velocity_cube, output_filename, skip_wcs_conversion=True)
         plot_filename = f"{os.path.splitext(output_filename)[0]}.png"
-        plot_flow_map(plot_filename, **plot_parameters)
+        plot_flow_map(plot_filename)
 
-    return [velocity_data]
+    return velocity_cube

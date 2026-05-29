@@ -39,6 +39,10 @@ dependencies = [
 requires-python = ">=3.11"
 authors = [
     { name = "J. Marcus Hughes", email = "marcus.hughes@swri.org" },
+    { name = "Sam Van Kooten", email = "samuel.vankooten@swri.org"},
+    { name = "Jasmine Kobayashi", email = "jasmine.kobayashi@swri.org"},
+    { name = "Courtney Peck", email = "courtney.peck@swri.org"},
+    { name = "Craig DeForest", email = "craig.deforest@swri.org"},
     { name = "Chris Lowder", email = "chris.lowder@swri.org" },
     { name = "Matthew West", email = "matthew.west@swri.org" },
     { name = "Sarak Kovac", email = "sarah.kovac@swri.org" },

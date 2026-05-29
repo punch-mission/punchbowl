@@ -542,8 +542,8 @@ def track_velocity(files: list[str],
     with fits.open(files[-1]) as hdul:
         output_meta["DATE-END"] = hdul[1].header["DATE-END"]
 
-    date_beg = datetime.strptime(output_meta["DATE-BEG"].value, "%Y-%m-%dT%H:%M:%S").astimezone()
-    date_end = datetime.strptime(output_meta["DATE-END"].value, "%Y-%m-%dT%H:%M:%S").astimezone()
+    date_beg = datetime.fromisoformat(str(output_meta["DATE-BEG"].value).strip()).astimezone()
+    date_end = datetime.fromisoformat(str(output_meta["DATE-END"].value).strip()).astimezone()
     date_avg = (date_beg + (date_end - date_beg) / 2).strftime("%Y-%m-%dT%H:%M:%S")
     output_meta["DATE-AVG"] = date_avg
     output_meta["DATE-OBS"] = date_avg

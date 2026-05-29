@@ -545,9 +545,9 @@ def organize_spacecraft_position_keywords(observation_time, before_xact_db, befo
         "GEOD_LAT": position.geodetic.lat.deg,
         "GEOD_LON": position.geodetic.lon.deg,
         "GEOD_ALT": position.geodetic.height.to(u.m).value,
-        "GEOX_VOB": velocity.dx.to_value(u.m/u.s),
-        "GEOY_VOB": velocity.dy.to_value(u.m/u.s),
-        "GEOZ_VOB": velocity.dz.to_value(u.m/u.s),
+        "GEOX_VOB": velocity.d_x.to_value(u.m/u.s),
+        "GEOY_VOB": velocity.d_y.to_value(u.m/u.s),
+        "GEOZ_VOB": velocity.d_z.to_value(u.m/u.s),
     }
 
 def organize_compression_and_acquisition_settings(compression_settings, acquisition_settings):
@@ -794,7 +794,7 @@ def get_metadata(first_image_packet,
     fits_info["COM_SET"] = first_image_packet.compression_settings
     fits_info["ACQ_SET"] = first_image_packet.acquisition_settings
     fits_info["DATE-BEG"] = observation_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    fits_info["DATE-END"] = observation_end.strftime("%Y-%m-%dT%H:%eM:%S.%f")[:-3]
+    fits_info["DATE-END"] = observation_end.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     fits_info["DATE-AVG"] = observation_midpoint.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     fits_info["DATE-OBS"] = observation_midpoint.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     fits_info["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

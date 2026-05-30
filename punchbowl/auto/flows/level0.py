@@ -33,6 +33,8 @@ from prefect_sqlalchemy import SqlAlchemyConnector
 from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import Session
 from sunpy.coordinates import (
+    GeocentricEarthEquatorial,
+    GeocentricSolarEcliptic,
     HeliocentricEarthEcliptic,
     HeliocentricInertial,
     HeliographicCarrington,
@@ -508,17 +510,19 @@ def organize_spacecraft_position_keywords(observation_time, xact_db, xact):
         xact["GPS_VELOCITY_ECEF2"] * 5E-9 * u.km / u.s,
         xact["GPS_VELOCITY_ECEF3"] * 5E-9 * u.km / u.s)
 
-    # Re-create with velocity attached
     itrs = position.get_itrs(obstime)
+    # Re-create with velocity attached
     newdata = itrs.data.to_cartesian().with_differentials(velocity)
     itrs = itrs.realize_frame(newdata)
 
     gcrs = itrs.transform_to(GCRS(obstime=obstime))
     hci = gcrs.transform_to(HeliocentricInertial(obstime=obstime)) # HCI (Heliocentric Inertial)
-    hee = gcrs.transform_to(HeliocentricEarthEcliptic(obstime=obstime)) # (Heliocentric Earth Ecliptic)
+    hee = gcrs.transform_to(HeliocentricEarthEcliptic(obstime=obstime)) # HEE (Heliocentric Earth Ecliptic)
     hae = gcrs.transform_to(HeliocentricMeanEcliptic(obstime=obstime)) # HAE (Heliocentric Aries Ecliptic)
     heq = gcrs.transform_to(HeliographicStonyhurst(obstime=obstime)) # HEQ (Heliocentric Earth Equatorial)
     carrington = gcrs.transform_to(HeliographicCarrington(obstime=obstime, observer="self"))
+    gse = gcrs.transform_to(GeocentricSolarEcliptic(obstime=obstime)) # GSE (Geocentric Solar Ecliptic)
+    gei = gcrs.transform_to(GeocentricEarthEquatorial(obstime=obstime)) # GEI (Geocentric Earth Equatorial)
 
     return {
         "XACTTIME": xact_db.timestamp.isoformat(),
@@ -528,26 +532,49 @@ def organize_spacecraft_position_keywords(observation_time, xact_db, xact):
         "HCIX_VOB": hci.cartesian.differentials['s'].d_x.to(u.m/u.s).value,
         "HCIY_VOB": hci.cartesian.differentials['s'].d_y.to(u.m/u.s).value,
         "HCIZ_VOB": hci.cartesian.differentials['s'].d_z.to(u.m/u.s).value,
+
         "HEEX_OBS": hee.cartesian.x.to(u.m).value,
         "HEEY_OBS": hee.cartesian.y.to(u.m).value,
         "HEEZ_OBS": hee.cartesian.z.to(u.m).value,
+
         "HAEX_OBS": hae.cartesian.x.to(u.m).value,
         "HAEY_OBS": hae.cartesian.y.to(u.m).value,
         "HAEZ_OBS": hae.cartesian.z.to(u.m).value,
+
         "HEQX_OBS": heq.cartesian.x.to(u.m).value,
         "HEQY_OBS": heq.cartesian.y.to(u.m).value,
         "HEQZ_OBS": heq.cartesian.z.to(u.m).value,
+
         "HGLT_OBS": heq.lat.deg,
         "HGLN_OBS": heq.lon.deg,
         "CRLT_OBS": carrington.lat.deg,
         "CRLN_OBS": carrington.lon.deg,
         "DSUN_OBS": sun.earth_distance(obstime).to(u.m).value,
+
         "GEOD_LAT": position.geodetic.lat.deg,
         "GEOD_LON": position.geodetic.lon.deg,
         "GEOD_ALT": position.geodetic.height.to(u.m).value,
+
+        "GEOX_OBS": position.x.to_value(u.m),
+        "GEOY_OBS": position.y.to_value(u.m),
+        "GEOZ_OBS": position.z.to_value(u.m),
         "GEOX_VOB": velocity.d_x.to_value(u.m/u.s),
         "GEOY_VOB": velocity.d_y.to_value(u.m/u.s),
         "GEOZ_VOB": velocity.d_z.to_value(u.m/u.s),
+
+        "GSEX_OBS": gse.cartesian.x.to_value(u.m),
+        "GSEY_OBS": gse.cartesian.y.to_value(u.m),
+        "GSEZ_OBS": gse.cartesian.z.to_value(u.m),
+        "GSEX_VOB": gse.cartesian.differentials['s'].d_x.to_value(u.m/u.s),
+        "GSEY_VOB": gse.cartesian.differentials['s'].d_y.to_value(u.m/u.s),
+        "GSEZ_VOB": gse.cartesian.differentials['s'].d_z.to_value(u.m/u.s),
+
+        "GEIX_OBS": gei.cartesian.x.to_value(u.m),
+        "GEIY_OBS": gei.cartesian.y.to_value(u.m),
+        "GEIZ_OBS": gei.cartesian.z.to_value(u.m),
+        "GEIX_VOB": gei.cartesian.differentials['s'].d_x.to_value(u.m/u.s),
+        "GEIY_VOB": gei.cartesian.differentials['s'].d_y.to_value(u.m/u.s),
+        "GEIZ_VOB": gei.cartesian.differentials['s'].d_z.to_value(u.m/u.s),
     }
 
 def organize_compression_and_acquisition_settings(compression_settings, acquisition_settings):

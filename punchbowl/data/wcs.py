@@ -15,7 +15,9 @@ import sunpy.map
 from astropy.coordinates import (
     GCRS,
     ICRS,
+    ITRS,
     CartesianDifferential,
+    CartesianRepresentation,
     EarthLocation,
     SkyCoord,
     StokesSymbol,
@@ -469,33 +471,27 @@ class GCRSWCS(WCS):
         """
         Initialize the GCRSWCS.
 
-        Reqquires the NormalizedMetadata to ready out the spacecraft position and velocity.
+        Requires the NormalizedMetadata to ready out the spacecraft position and velocity.
         """
         super().__init__(*args, **kwargs)
 
         self._meta = meta
         for ax in "XYZ":
-            if meta.get(f"GEO{ax}_VOB", None) is None:
-                self._gcrs_frame = ICRS()
-                return
-        for part in ("LON", "LAT", "ALT"):
-            if meta.get(f"GEOD_{part}", None) is None:
+            if meta.get(f"GEO{ax}_VOB", None) is None or meta.get(f"GEO{ax}_OBS", None) is None:
                 self._gcrs_frame = ICRS()
                 return
 
-        position = EarthLocation.from_geodetic(meta["GEOD_LON"].value * u.deg,
-                                               meta["GEOD_LAT"].value * u.deg,
-                                               meta["GEOD_ALT"].value * u.m)
+        position = CartesianRepresentation(meta["GEOX_OBS"].value * u.m,
+                                           meta["GEOY_OBS"].value * u.m,
+                                           meta["GEOZ_OBS"].value * u.m)
 
         velocity = CartesianDifferential(
             meta["GEOX_VOB"].value * u.m / u.s,
             meta["GEOY_VOB"].value * u.m / u.s,
             meta["GEOZ_VOB"].value * u.m / u.s)
 
-        # Re-create with velocity attached
-        itrs = position.get_itrs(meta.astropy_time)
-        newdata = itrs.data.to_cartesian().with_differentials(velocity)
-        itrs = itrs.realize_frame(newdata)
+        itrs = SkyCoord(position.with_differentials(velocity),
+                        frame=ITRS(obstime=meta.astropy_time))
 
         sc_gcrs = itrs.transform_to(GCRS(obstime=meta.astropy_time))
 

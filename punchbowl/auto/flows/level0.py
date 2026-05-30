@@ -30,7 +30,7 @@ from prefect.blocks.fields import SecretDict
 from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from prefect_sqlalchemy import SqlAlchemyConnector
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import Session
 from sunpy.coordinates import (
     HeliocentricEarthEcliptic,
@@ -495,18 +495,18 @@ def organize_ceb_fits_keywords(ceb_packet_db, ceb_packet):
         "CEBMEDAC": ceb_packet["IPF_MBE_CNT"]}
 
 
-def organize_spacecraft_position_keywords(observation_time, before_xact_db, before_xact):
+def organize_spacecraft_position_keywords(observation_time, xact_db, xact):
     obstime = Time(observation_time)
     # This packages up the coordinates, but does no frame conversions. The scale factor is given in the big
     # PUNCH_TLM.xls spreadsheet.
-    position = EarthLocation.from_geocentric(before_xact["GPS_POSITION_ECEF1"] * 2E-5 * u.km,
-                                             before_xact["GPS_POSITION_ECEF2"] * 2E-5 * u.km,
-                                             before_xact["GPS_POSITION_ECEF3"] * 2E-5 * u.km)
+    position = EarthLocation.from_geocentric(xact["GPS_POSITION_ECEF1"] * 2E-5 * u.km,
+                                             xact["GPS_POSITION_ECEF2"] * 2E-5 * u.km,
+                                             xact["GPS_POSITION_ECEF3"] * 2E-5 * u.km)
 
     velocity = CartesianDifferential(
-        before_xact["GPS_VELOCITY_ECEF1"] * 5E-9 * u.km / u.s,
-        before_xact["GPS_VELOCITY_ECEF2"] * 5E-9 * u.km / u.s,
-        before_xact["GPS_VELOCITY_ECEF3"] * 5E-9 * u.km / u.s)
+        xact["GPS_VELOCITY_ECEF1"] * 5E-9 * u.km / u.s,
+        xact["GPS_VELOCITY_ECEF2"] * 5E-9 * u.km / u.s,
+        xact["GPS_VELOCITY_ECEF3"] * 5E-9 * u.km / u.s)
 
     # Re-create with velocity attached
     itrs = position.get_itrs(obstime)
@@ -521,7 +521,7 @@ def organize_spacecraft_position_keywords(observation_time, before_xact_db, befo
     carrington = gcrs.transform_to(HeliographicCarrington(obstime=obstime, observer="self"))
 
     return {
-        "XACTTIME": before_xact_db.timestamp.isoformat(),
+        "XACTTIME": xact_db.timestamp.isoformat(),
         "HCIX_OBS": hci.cartesian.x.to(u.m).value,
         "HCIY_OBS": hci.cartesian.y.to(u.m).value,
         "HCIZ_OBS": hci.cartesian.z.to(u.m).value,
@@ -653,6 +653,13 @@ def get_metadata(first_image_packet,
                   .filter(ENG_XACT.timestamp >= observation_time)
                   .filter(ENG_XACT.timestamp < observation_time + packet_window_size)
                   .order_by(ENG_XACT.timestamp.asc()).first())
+    dt = func.abs(func.timestampdiff(text("second"), ENG_XACT.timestamp, observation_midpoint))
+    middle_xact_db = (session.query(ENG_XACT)
+                  .filter(ENG_XACT.spacecraft_id == spacecraft_id)
+                  .filter(ENG_XACT.timestamp >= observation_time)
+                  .filter(ENG_XACT.timestamp <= observation_end)
+                  .order_by(dt.asc()).first())
+
 
     # get the PFW packet right before the observation
     best_pfw_db = (session.query(ENG_PFW)
@@ -709,7 +716,8 @@ def get_metadata(first_image_packet,
 
     best_led_db = best_led1 or best_led2 or best_led3 or best_led4
 
-    packet_references = [before_xact_db, after_xact_db, best_ceb_db, best_pfw_db, best_led_db, best_lz_db]
+    packet_references = [before_xact_db, after_xact_db, middle_xact_db, best_ceb_db, best_pfw_db, best_led_db,
+                         best_lz_db]
     needed_tlm_ids = set([pkt.tlm_id for pkt in packet_references if pkt is not None])
     tlm_id_to_tlm_path = {tlm_id: session.query(TLMFiles.path).where(TLMFiles.tlm_id == tlm_id).one().path
                           for tlm_id in needed_tlm_ids}
@@ -722,6 +730,8 @@ def get_metadata(first_image_packet,
                    for key in loaded_tlm[before_xact_db.tlm_id]["ENG_XACT"]}
     after_xact = {key: loaded_tlm[after_xact_db.tlm_id]["ENG_XACT"][key][after_xact_db.packet_index]
                   for key in loaded_tlm[after_xact_db.tlm_id]["ENG_XACT"]}
+    middle_xact = {key: loaded_tlm[middle_xact_db.tlm_id]["ENG_XACT"][key][middle_xact_db.packet_index]
+                  for key in loaded_tlm[middle_xact_db.tlm_id]["ENG_XACT"]}
     best_pfw = {key: loaded_tlm[best_pfw_db.tlm_id]["ENG_PFW"][key][best_pfw_db.packet_index]
                 for key in loaded_tlm[best_pfw_db.tlm_id]["ENG_PFW"]}
 
@@ -752,7 +762,7 @@ def get_metadata(first_image_packet,
 
     fits_info |= organize_pfw_fits_keywords(best_pfw_db, best_pfw)
 
-    fits_info |= organize_spacecraft_position_keywords(observation_midpoint, before_xact_db, before_xact)
+    fits_info |= organize_spacecraft_position_keywords(observation_midpoint, middle_xact_db, middle_xact)
 
     if best_led_db is not None:
         best_led = {key: loaded_tlm[best_led_db.tlm_id]["ENG_LED"][key][best_led_db.packet_index]

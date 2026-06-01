@@ -291,9 +291,9 @@ def test_level2_construct_file_info():
                        software_version='none',
                        polarization='C',
                        date_created=datetime(2026, 4, 9, 0, 0, 0),
-                       date_beg=datetime(2026, 4, 8, 23, 52, 17.091),
-                       date_obs=datetime(2026, 4, 8, 23, 52, 29.091),
-                       date_end=datetime(2026, 4, 8, 23, 52, 41.091),
+                       date_beg=datetime(2026, 4, 8, 23, 52, 17, 91000),
+                       date_obs=datetime(2026, 4, 8, 23, 52, 29, 91000),
+                       date_end=datetime(2026, 4, 8, 23, 52, 41, 91000),
                        )
 
     L1_file_CR2 = File(level='1',
@@ -304,9 +304,9 @@ def test_level2_construct_file_info():
                        software_version='none',
                        polarization='C',
                        date_created=datetime(2026, 4, 9, 1, 0, 0),
-                       date_beg=datetime(2026, 4, 8, 23, 52, 17.143),
-                       date_obs=datetime(2026, 4, 8, 23, 52, 29.143),
-                       date_end=datetime(2026, 4, 8, 23, 52, 41.143),
+                       date_beg=datetime(2026, 4, 8, 23, 52, 17, 143000),
+                       date_obs=datetime(2026, 4, 8, 23, 52, 29, 143000),
+                       date_end=datetime(2026, 4, 8, 23, 52, 41, 143000),
                        )
 
     L1_file_CR3 = File(level='1',
@@ -317,9 +317,9 @@ def test_level2_construct_file_info():
                        software_version='none',
                        polarization='C',
                        date_created=datetime(2026, 4, 9, 2, 0, 0),
-                       date_beg=datetime(2026, 4, 8, 23, 52, 17.154),
-                       date_obs=datetime(2026, 4, 8, 23, 52, 29.154),
-                       date_end=datetime(2026, 4, 8, 23, 52, 41.154),
+                       date_beg=datetime(2026, 4, 8, 23, 52, 17, 154000),
+                       date_obs=datetime(2026, 4, 8, 23, 52, 29, 154000),
+                       date_end=datetime(2026, 4, 8, 23, 52, 41, 154000),
                        )
     constructed_files_info = level2_construct_file_info([L1_file_CR1, L1_file_CR2, L1_file_CR3], pipeline_config)
     L2_CTM_file, L2_XR1_file, L2_XR2_file, L2_XR3_file = constructed_files_info
@@ -331,7 +331,7 @@ def test_level2_construct_file_info():
     assert(L2_XR3_file.date_end == L1_file_CR3.date_end)
     assert(L2_CTM_file.date_beg == L1_file_CR1.date_beg)
     assert(L2_CTM_file.date_end == L1_file_CR3.date_end)
-    assert(L2_CTM_file.date_obs == datetime(2026, 4, 8, 23, 52, 29+0.388/3))
+    assert(L2_CTM_file.date_obs == datetime(2026, 4, 8, 23, 52, 29, int((91000 + 143000 + 154000)/3)))
 
 def test_level2_construct_flow_info():
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")

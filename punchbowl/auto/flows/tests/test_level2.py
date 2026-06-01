@@ -282,6 +282,56 @@ def test_level2_construct_file_info():
     assert constructed_file_info.polarization == 'Y'
     assert constructed_file_info.state == "planned"
 
+    #test that the correct date_beg, date_end, and date_obs propagate to the XR and CTM files
+    L1_file_CR1 = File(level='1',
+                       file_type='CR',
+                       observatory='1',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='C',
+                       date_created=datetime(2026, 4, 9, 0, 0, 0),
+                       date_beg=datetime(2026, 4, 8, 23, 52, 17.091),
+                       date_obs=datetime(2026, 4, 8, 23, 52, 29.091),
+                       date_end=datetime(2026, 4, 8, 23, 52, 41.091),
+                       )
+
+    L1_file_CR2 = File(level='1',
+                       file_type='CR',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='C',
+                       date_created=datetime(2026, 4, 9, 1, 0, 0),
+                       date_beg=datetime(2026, 4, 8, 23, 52, 17.143),
+                       date_obs=datetime(2026, 4, 8, 23, 52, 29.143),
+                       date_end=datetime(2026, 4, 8, 23, 52, 41.143),
+                       )
+
+    L1_file_CR3 = File(level='1',
+                       file_type='CR',
+                       observatory='3',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='C',
+                       date_created=datetime(2026, 4, 9, 2, 0, 0),
+                       date_beg=datetime(2026, 4, 8, 23, 52, 17.154),
+                       date_obs=datetime(2026, 4, 8, 23, 52, 29.154),
+                       date_end=datetime(2026, 4, 8, 23, 52, 41.154),
+                       )
+    constructed_files_info = level2_construct_file_info([L1_file_CR1, L1_file_CR2, L1_file_CR3], pipeline_config)
+    L2_CTM_file, L2_XR1_file, L2_XR2_file, L2_XR3_file = constructed_files_info
+    assert(L2_XR1_file.date_beg == L1_file_CR1.date_beg)
+    assert(L2_XR2_file.date_beg == L1_file_CR2.date_beg)
+    assert(L2_XR3_file.date_beg == L1_file_CR3.date_beg)
+    assert(L2_XR1_file.date_end == L1_file_CR1.date_end)
+    assert(L2_XR2_file.date_end == L1_file_CR2.date_end)
+    assert(L2_XR3_file.date_end == L1_file_CR3.date_end)
+    assert(L2_CTM_file.date_beg == L1_file_CR1.date_beg)
+    assert(L2_CTM_file.date_end == L1_file_CR3.date_end)
+    assert(L2_CTM_file.date_obs == datetime(2026, 4, 8, 23, 52, 29+0.388/3))
 
 def test_level2_construct_flow_info():
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")

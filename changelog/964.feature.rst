@@ -1,0 +1,1 @@
+Spacecraft positions and velocities are included in FITS headers in several new Earth-centric frames.

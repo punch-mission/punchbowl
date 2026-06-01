@@ -34,7 +34,7 @@ def finalize_output(output_cube: PUNCHCube, input_cubes: list[PUNCHCube]) -> Non
     sample_cube = find_first_existing_file(input_cubes)
 
     output_cube.meta.provenance = sorted([fname for d in input_cubes
-        if d is not None and (fname := d.meta.get("FILENAME").value)])
+        if d is not None and (fname := d.meta.get("FILENAME"))])
 
     output_cube.meta["FILEVRSN"] = sample_cube.meta["FILEVRSN"].value
 

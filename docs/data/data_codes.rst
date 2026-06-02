@@ -113,7 +113,7 @@ Calibration Product Codes
      - DS1, DS2, DS3, DS4
      - Optical distortion models
    * - 1
-     - FQ1, FQ2, FQ3, FQ4
+     - FR1, FR2, FR3, FR4, FM1, FM2, FM3, FM4, FZ1, FZ2, FZ3, FZ4, FP1, FP2, FP3, FP4
      - Flat-field parameters (quartic polynomial coefficients), by pixel
    * - 1
      - GM1, GM2, GM3, GM4, GZ1, GZ2, GZ3, GZ4, GP1, GP2, GP3, GP4, GR1, GR2, GR3, GR4

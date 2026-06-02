@@ -13,7 +13,7 @@ root_dir = sys.argv[2]
 session = get_database_session()
 
 model_paths = sorted(glob(os.path.join(model_directory, "PUNCH_L1_R*.fits")))
-model_paths += sorted(glob(os.path.join(model_directory, "PUNCH_L1_FQ*.fits")))
+model_paths += sorted(glob(os.path.join(model_directory, "PUNCH_L1_F*.fits")))
 model_paths += sorted(glob(os.path.join(model_directory, "PUNCH_L1_G*.fits")))
 model_paths += sorted(glob(os.path.join(model_directory, "PUNCH_L1_S*.fits")))
 model_paths += sorted(glob(os.path.join(model_directory, "PUNCH_L1_D*.fits")))

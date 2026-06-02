@@ -10,7 +10,7 @@ from .attrs import DataVersion, FileType
 
 POLS = ["R", "M", "Z", "P"]
 PREFIXES = ["X", "Y", "S", "T", "G"]
-L0_1_CODES = ["CR", "PP", "PM", "PZ", "DK", "DS", "DY", "FQ", "QR", "RC", "RM", "RZ", "RP"]
+L0_1_CODES = ["CR", "PP", "PM", "PZ", "DK", "DS", "DY", "FR", "FM", "FZ", "FP", "QR", "RC", "RM", "RZ", "RP"]
 L2_3_CODES = ["PT", "CT", "PI", "CI", "PF", "CF", "PA", "CA", "CN", "CQ"]
 CODES = L0_1_CODES + [pre + c for c in POLS for pre in PREFIXES] + L2_3_CODES
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"

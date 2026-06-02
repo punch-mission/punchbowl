@@ -1,7 +1,9 @@
 from typing import Any
+from functools import cache
+from collections.abc import Callable
 
 from httpx import ConnectError
-from prefect import Flow, Task, flow, get_run_logger, task
+from prefect import Flow, Task, flow, get_run_logger, runtime, task
 from prefect.cache_policies import NO_CACHE
 from prefect.client.schemas.objects import TaskRun
 from prefect.states import State
@@ -34,11 +36,24 @@ try:
 except (ConnectError, RuntimeError):
     _debug_mode = False
 
-def punch_task(*args: Any, **kwargs: Any) -> Task:
+def punch_task(*args: Any, **kwargs: Any) -> Task | Callable:
     """Prefect task that does PUNCH special things."""
-    return task(*args, **kwargs, on_completion=[completion_debugger] if _debug_mode else [], on_failure=[failure_hook],
-                cache_policy=NO_CACHE)
+    if detect_if_running_in_prefect():
+        return task(*args, **kwargs,
+                    on_completion=[completion_debugger] if _debug_mode else [],
+                    on_failure=[failure_hook],
+                    cache_policy=NO_CACHE)
+    else:
+        return lambda function: function
 
-def punch_flow(*args: Any, **kwargs: Any) -> Flow:
+def punch_flow(*args: Any, **kwargs: Any) -> Flow | Callable:
     """Prefect flow that does PUNCH special things."""
-    return flow(*args, **kwargs, validate_parameters=False)
+    if detect_if_running_in_prefect():
+        return flow(*args, **kwargs, validate_parameters=False)
+    else:
+        return lambda function: function
+
+@cache
+def detect_if_running_in_prefect() -> bool:
+    """Determine if we're running under Prefect."""
+    return runtime.flow_run.name is not None

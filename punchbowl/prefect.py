@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 from functools import cache
 from collections.abc import Callable
@@ -43,17 +44,21 @@ def punch_task(*args: Any, **kwargs: Any) -> Task | Callable:
                     on_completion=[completion_debugger] if _debug_mode else [],
                     on_failure=[failure_hook],
                     cache_policy=NO_CACHE)
-    else:
-        return lambda function: function
+    return lambda function: function
 
 def punch_flow(*args: Any, **kwargs: Any) -> Flow | Callable:
     """Prefect flow that does PUNCH special things."""
     if detect_if_running_in_prefect():
         return flow(*args, **kwargs, validate_parameters=False)
-    else:
-        return lambda function: function
+    return lambda function: function
 
 @cache
 def detect_if_running_in_prefect() -> bool:
     """Determine if we're running under Prefect."""
     return runtime.flow_run.name is not None
+
+def get_logger() -> logging.Logger:
+    """Get a logger, which will be the Prefect logger if we're running under Prefect."""
+    if detect_if_running_in_prefect():
+        return get_run_logger()
+    return logging.getLogger("punchbowl")

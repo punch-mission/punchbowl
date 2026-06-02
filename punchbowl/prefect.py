@@ -29,6 +29,7 @@ def completion_debugger(task: Task, task_run: TaskRun, state: State) -> None:
             logger = get_run_logger()
             logger.error(f"Cannot write debug output for {task} {task_run} in {state}.")
 
+
 def failure_hook(task: Task, task_run: TaskRun, state: State) -> None:
     """Run if a punch_task fails."""
 
@@ -37,6 +38,7 @@ try:
 except (ConnectError, RuntimeError):
     _debug_mode = False
 
+
 def punch_task(*args: Any, **kwargs: Any) -> Task | Callable:
     """Prefect task that does PUNCH special things."""
     if detect_if_running_in_prefect():
@@ -44,18 +46,27 @@ def punch_task(*args: Any, **kwargs: Any) -> Task | Callable:
                     on_completion=[completion_debugger] if _debug_mode else [],
                     on_failure=[failure_hook],
                     cache_policy=NO_CACHE)
-    return lambda function: function
+    return _compatability_decorator
+
 
 def punch_flow(*args: Any, **kwargs: Any) -> Flow | Callable:
     """Prefect flow that does PUNCH special things."""
     if detect_if_running_in_prefect():
         return flow(*args, **kwargs, validate_parameters=False)
-    return lambda function: function
+    return _compatability_decorator
+
+
+def _compatability_decorator(func: Callable) -> Callable:
+    """Make wrapped functions have a .fn attribute like Prefect Flows and Tasks."""
+    func.fn = func
+    return func
+
 
 @cache
 def detect_if_running_in_prefect() -> bool:
     """Determine if we're running under Prefect."""
     return runtime.flow_run.name is not None
+
 
 def get_logger() -> logging.Logger:
     """Get a logger, which will be the Prefect logger if we're running under Prefect."""

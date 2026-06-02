@@ -74,7 +74,10 @@ def polarize_solar_to_celestial(input_data: PUNCHCube, dtype: None | type = None
     new_wcs = input_data.wcs.copy()
 
     output_meta = NormalizedMetadata.load_template("PTM", "3")
+    output_meta["DATE-BEG"] = input_data.meta["DATE-BEG"].value
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
+    output_meta["DATE-AVG"] = input_data.meta["DATE-AVG"].value
+    output_meta["DATE-END"] = input_data.meta["DATE-END"].value
 
     output = PUNCHCube(data=new_data, wcs=new_wcs, meta=output_meta)
     output.meta.history.add_now("LEVEL3-convert2celestial", "Convert mzpsolar to Celestial")
@@ -119,7 +122,10 @@ def polarize_celestial_to_solar(input_data: PUNCHCube, dtype: None | type = None
     new_wcs = input_data.wcs.copy()
 
     output_meta = NormalizedMetadata.load_template("PTM", "3")
+    output_meta["DATE-BEG"] = input_data.meta["DATE-BEG"].value
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
+    output_meta["DATE-AVG"] = input_data.meta["DATE-AVG"].value
+    output_meta["DATE-END"] = input_data.meta["DATE-END"].value
 
     output = PUNCHCube(data=new_data, wcs=new_wcs, meta=output_meta, uncertainty=input_data.uncertainty)
     output.meta.history.add_now("LEVEL3-convert2mzpsolar", "Convert Celestial to mzpsolar")

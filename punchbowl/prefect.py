@@ -33,11 +33,6 @@ def completion_debugger(task: Task, task_run: TaskRun, state: State) -> None:
 def failure_hook(task: Task, task_run: TaskRun, state: State) -> None:
     """Run if a punch_task fails."""
 
-try:
-    _debug_mode = Variable.get("debug", False)
-except (ConnectError, RuntimeError):
-    _debug_mode = False
-
 
 def punch_task(func: Callable | None = None, **kwargs: Any) -> Task | Callable:
     """Prefect task that does PUNCH special things."""
@@ -85,3 +80,9 @@ def get_logger() -> logging.Logger:
     if detect_if_running_in_prefect():
         return get_run_logger()
     return logging.getLogger("punchbowl")
+
+
+try:
+    _debug_mode = Variable.get("debug", False) if detect_if_running_in_prefect() else False
+except (ConnectError, RuntimeError):
+    _debug_mode = False

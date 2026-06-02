@@ -1,23 +1,42 @@
 Accessing PUNCH Data
 ====================
 
+Recommended Level 3 Products
+-----------------------------
+For most science use cases, the recommended starting point is the two Level 3 low-noise science mosaic products,
+**PAM** and **CAM**.
+Both products are fully background and starfield subtracted and mosaicked across the PUNCH field of view,
+giving you the cleanest possible signal for heliospheric science.
+Each of these two product types are produced every 32 minutes, allowing multiple images to be averaged together at every point in the mosiac field of view,
+offering improved signal-to-noise relative to other products.
+PAM files (with the "P" standing for "polarized") have three data layers: total brightness (tB), which is effectively an unpolarized image, followed by
+polarized brightness (pB) and its radial component (pB'), making PAM the product of
+choice for studies of CMEs, shocks, the solar wind, etc.
+CAM files (with the "C" standing for "clear") provide only unpolarized data. The PAMs' unpolarized total brightness is reconstructed from sets of polarized
+observations, while the CAMs are produced from unpolarized observations which are made at a reduced cadence. So while the total brightness layer of the PAMs
+is conceptually equivalent to the CAMs, PAMs average together more data, which is expected to provide better signal-to-noise. But for memory- or
+bandwidth-constrained situations that don't require polarization, CAMs provide largely equivalent data at one-third the file size.
+
+If you are unsure which product to start with, download a CAM or PAM file first.
+
 Downloading Data
 ----------------
 Data output from the PUNCH data processing pipeline are stored and accessible through the Solar Data Analysis Center (SDAC)
 - a portal for hosting through tools such as the Virtual Solar Observatory (VSO).
 From here PUNCH data products can be queried and requested for download using metadata within the data products.
-See `this example <https://punchbowl.readthedocs.io/en/latest/auto_examples/querying_data.html#sphx-glr-auto-examples-querying-data-py>`_ on how to query the VSO using SunPy's Fido API.
+See `this example <https://punchbowl.readthedocs.io/en/latest/auto_examples/querying_data.html#sphx-glr-auto-examples-querying-data-py>`_ on how to query the VSO using
+SunPy's Fido API.
 
 If that example is not working properly, you can also pull data directly from the SDAC using ``wget``.
 
 .. code-block:: bash
 
-    wget -r -l1 --no-parent --no-directories -A "PUNCH_L2_CTM_20250921*_v0h.fits" -R "*.html*,index*,*tmp*" https://umbra.nascom.nasa.gov/punch/2/CTM/2025/09/21/
+    wget -r -l1 --no-parent --no-directories -A "PUNCH_L3_CAM_20250921*_v0k.fits" -R "*.html*,index*,*tmp*" https://umbra.nascom.nasa.gov/punch/3/CAM/2025/09/21/
 
-The above example would pull data for the L2_CTM products on 2025-09-21.
+The above example would pull data for the L3_CAM products on 2025-09-21.
 Change the path and date according to what product you wish to download.
 
-PUNCH data will also be accessible soon using the Helioviewer tool,
+PUNCH data are also accessible using the Helioviewer tool,
 where it can be quickly visualized and stitched together with other observations for context.
 
 Reading Data

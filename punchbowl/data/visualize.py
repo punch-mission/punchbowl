@@ -206,6 +206,7 @@ def plot_punch(  # noqa: C901
     grid_spacing: int = 15,
     grid_alpha: float = 0.25,
     title_prefix: str | None = None,
+    label_satellites: bool = False,
     colorbar: bool = True,
     colorbar_label: str = "Mean Solar Brightness (MSB)",
     persistence_array: np.ndarray | PUNCHCube | None = None,
@@ -246,6 +247,8 @@ def plot_punch(  # noqa: C901
         Coordinate grid transparency (1: opaque, 0: transparent)
     title_prefix : str, optional
         Prefix to prepend to plot title
+    label_satellites : bool, optional
+        Adds text labels for each satellite in a mosaic if True.
     colorbar : bool, optional
         Toggle for plotting colorbar
     colorbar_label : str, optional
@@ -338,6 +341,20 @@ def plot_punch(  # noqa: C901
         horizontalalignment="left",
         fontsize=8,
         fontfamily="monospace")
+
+    if label_satellites:
+        position_keywords = ["CTRXWFI1", "CTRYWFI1",
+                             "CTRXWFI2", "CTRYWFI2",
+                             "CTRXWFI3"," CTRYWFI3",
+                             "CTRXNFI4","CTRYNFI4"]
+        for i in range(0, 8, 2):
+            satellite = position_keywords[i][-4:]
+            if position_keywords[i] in cube.meta and position_keywords[i+1] in cube.meta:
+                x, y = cube.meta[position_keywords[i]].value, cube.meta[position_keywords[i+1]].value
+                if x != -1 and y != -1:
+                    ax.text(x, y, satellite, color="white",
+                            verticalalignment="center", horizontalalignment="center",
+                            fontsize=8, fontfamily="monospace")
 
     if colorbar and not axes_off:
         fig.colorbar(im, ax=ax, label=colorbar_label)

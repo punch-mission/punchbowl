@@ -401,6 +401,8 @@ def get_quartic_model_paths(level0_files, pipeline_config: dict, session=None):
         for model in models:
             if l0_file.observatory != model.observatory:
                 continue
+            if l0_file.polarization != model.polarization:
+                continue
             if model.date_obs > l0_file.date_obs:
                 continue
             results.append(model)

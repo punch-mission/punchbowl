@@ -17,7 +17,7 @@ from punchbowl.level3.velocity import track_velocity
 @task
 def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time: datetime=None, max_n: float=100):
     flow_type = "L3_VAM"
-    logger = get_run_logger()
+    logger = get_logger()
     min_file_count = pipeline_config["flows"]["L3_VAM"]["min_file_count"]
 
     all_ready_files = (session.query(File)

@@ -25,7 +25,7 @@ from punchbowl.util import average_datetime
 
 @task(cache_policy=NO_CACHE)
 def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
+    logger = get_logger()
     pending_flows = session.query(Flow).filter(Flow.flow_type == "levelq_QNN").filter(Flow.state == "planned").all()
     if pending_flows:
         logger.info("A pending flow already exists. Skipping scheduling to let the batch grow.")
@@ -156,7 +156,7 @@ def levelq_QNN_process_flow(flow_id: int | list[int], pipeline_config_path=None,
 
 @task(cache_policy=NO_CACHE)
 def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
+    logger = get_logger()
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(or_(
                             and_(File.level == "1", File.file_type.in_(["QM", "QZ", "QP"]), File.observatory.in_(["1", "2", "3"])),
@@ -308,7 +308,7 @@ def get_fcorona_models(session, f: File):
 
 @task(cache_policy=NO_CACHE)
 def levelq_CTM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
+    logger = get_logger()
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(File.level == "Q", File.file_type == "CQ", File.observatory == "M")
                        .order_by(File.date_obs.desc()).all())
@@ -399,7 +399,7 @@ def levelq_CTM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
 
 @task(cache_policy=NO_CACHE)
 def levelq_QAM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=100):
-    logger = get_run_logger()
+    logger = get_logger()
     all_ready_files = (session.query(File)
                        .filter(File.state == "created")
                        .filter(File.level == "Q")
@@ -543,7 +543,7 @@ def levelq_QAM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
 
 @task
 def levelq_upload_query_ready_files(session, pipeline_config: dict, reference_time=None):
-    logger = get_run_logger()
+    logger = get_logger()
     lookback_days = pipeline_config["flows"]["levelq_upload"].get("lookback_days", np.inf)
     query = (session.query(File).filter(File.state == "created")
                            .filter(File.level == "Q")
@@ -618,7 +618,7 @@ def write_manifest(file_names):
 
 @flow
 def levelq_upload_process_flow(flow_id, pipeline_config_path=None, session=None):
-    logger = get_run_logger()
+    logger = get_logger()
     if session is None:
         session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
@@ -656,7 +656,7 @@ def levelq_upload_process_flow(flow_id, pipeline_config_path=None, session=None)
 
 
 def levelq_CFM_query_ready_files(session, pipeline_config: dict, reference_time: datetime):
-    logger = get_run_logger()
+    logger = get_logger()
 
     min_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["min_files_per_half"]
     max_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_files_per_half"]
@@ -721,7 +721,7 @@ def construct_levelq_CFM_file_info(levelq_files: list[File], pipeline_config: di
 def levelq_CFM_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
     session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if not pipeline_config["flows"]["levelq_CFM"].get("enabled", True):
         logger.info("Flow 'levelq_CFM' is not enabled---halting scheduler")
@@ -822,7 +822,7 @@ def levelq_CFN_query_ready_files(session, pipeline_config: dict, reference_time:
     before = reference_time - timedelta(weeks=4)
     after = reference_time + timedelta(weeks=0)
 
-    logger = get_run_logger()
+    logger = get_logger()
     all_ready_files = (session.query(File)
                        .filter(File.state.in_(["created", "progressed"]))
                        .filter(File.date_obs >= before)

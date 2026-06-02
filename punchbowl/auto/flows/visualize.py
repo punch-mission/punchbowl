@@ -16,7 +16,7 @@ from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_quick
 
 @task
 def visualize_query_ready_files(session, pipeline_config: dict, reference_time: datetime, lookback_hours: float = 24):
-    logger = get_run_logger()
+    logger = get_logger()
 
     all_ready_files = []
     all_product_codes = []
@@ -150,7 +150,7 @@ def movie_process_flow(flow_id: int, pipeline_config_path=None, session=None):
     if session is None:
         session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    logger = get_run_logger()
+    logger = get_logger()
 
     # fetch the appropriate flow db entry
     flow_db_entry = session.query(Flow).where(Flow.flow_id == flow_id).one()

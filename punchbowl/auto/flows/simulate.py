@@ -68,7 +68,7 @@ def simpunch_core_flow(
         transient_probability: float = 0.03,
         shift_pointing: bool = False) -> list[str]:
 
-    logger = get_run_logger()
+    logger = get_logger()
 
     if isinstance(date_obs, str):
         date_obs = parse_datetime_str(date_obs).replace(tzinfo=UTC)
@@ -98,7 +98,7 @@ def simpunch_core_flow(
 
 @flow
 def simpunch_process_flow(flow_id: int, pipeline_config_path=None, session=None):
-    logger = get_run_logger()
+    logger = get_logger()
 
     if session is None:
         session = get_database_session()

@@ -20,11 +20,12 @@ from sqlalchemy.orm import aliased
 
 from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
+from punchbowl.prefect import get_logger
 
 
 @flow
 async def cleaner(pipeline_config_path: str, session=None):
-    logger = get_run_logger()
+    logger = get_logger()
 
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
     if session is None:
@@ -193,7 +194,7 @@ async def cancel_running_prefect_flows_before_cutoff(
         batch_size: int = 100,
 ):
     """Cancels flows that started running before a cutoff time."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     async with get_client() as client:
         flow_run_filter = FlowRunFilter(

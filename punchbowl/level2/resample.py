@@ -3,12 +3,11 @@ import numpy as np
 import reproject
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from prefect import get_run_logger
 from scipy.ndimage import distance_transform_edt
 
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
-from punchbowl.prefect import punch_flow, punch_task
+from punchbowl.prefect import get_logger, punch_flow, punch_task
 
 
 @punch_task(tags=["reproject"])
@@ -115,7 +114,7 @@ def reproject_cube(input_cube: PUNCHCube, output_wcs: WCS, output_shape: tuple[i
         # If the input data is far enough outside the output frame that its coordinates aren't defined in the output
         # projection, we'll get nans. In that case, fall back to reprojecting into the entire output frame. We'll get a
         # lot of nothing, but at least we won't crash.
-        logger = get_run_logger()
+        logger = get_logger()
         logger.warning(f"For {input_cube.meta['FILENAME']}, got NaNs when finding input image's extent in output frame")
         xmin, ymin = 0, 0
         ymax, xmax = output_shape

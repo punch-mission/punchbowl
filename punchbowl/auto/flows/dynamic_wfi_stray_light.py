@@ -61,7 +61,7 @@ def construct_dynamic_stray_light_check_for_inputs(session,
                                                    pipeline_config: dict,
                                                    reference_time: datetime,
                                                    reference_file: File):
-    logger = get_run_logger()
+    logger = get_logger()
 
     min_files_per_half = pipeline_config["flows"]["construct_dynamic_stray_light"]["min_files_per_half"]
     max_files_per_half = pipeline_config["flows"]["construct_dynamic_stray_light"]["max_files_per_half"]
@@ -229,7 +229,7 @@ def construct_dynamic_stray_light_file_info(level1_files: list[File],
 def construct_dynamic_stray_light_scheduler_flow(pipeline_config_path=None, session=None, reference_time: datetime | None = None):
     session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if not pipeline_config["flows"]["construct_dynamic_stray_light"].get("enabled", True):
         logger.info("Flow 'construct_dynamic_stray_light' is not enabled---halting scheduler")

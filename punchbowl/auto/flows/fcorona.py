@@ -18,7 +18,7 @@ from punchbowl.level3.f_corona_model import construct_f_corona_model
 
 def f_corona_background_query_ready_files(session, pipeline_config: dict, reference_time: datetime,
                                           reference_file: File):
-    logger = get_run_logger()
+    logger = get_logger()
 
     polarized = reference_file.file_type != "CF"
     pol_type = 'pol' if polarized else 'clear'
@@ -130,7 +130,7 @@ def construct_f_corona_background_file_info(level2_files: list[File], pipeline_c
 def construct_f_corona_background_scheduler_flow(pipeline_config_path=None, session=None, reference_time: datetime | None = None):
     session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if not pipeline_config["flows"]["construct_f_corona_background"].get("enabled", True):
         logger.info("Flow 'construct_f_corona_background' is not enabled---halting scheduler")

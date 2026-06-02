@@ -39,21 +39,33 @@ except (ConnectError, RuntimeError):
     _debug_mode = False
 
 
-def punch_task(*args: Any, **kwargs: Any) -> Task | Callable:
+def punch_task(func: Callable | None = None, **kwargs: Any) -> Task | Callable:
     """Prefect task that does PUNCH special things."""
     if detect_if_running_in_prefect():
-        return task(*args, **kwargs,
+        # Delegate everything to Prefect
+        return task(func, **kwargs,
                     on_completion=[completion_debugger] if _debug_mode else [],
                     on_failure=[failure_hook],
                     cache_policy=NO_CACHE)
-    return _compatability_decorator
+    if func is None:
+        # We've been used as @punch_task() or @punch_task(arg=val), so we are to return a function that does the
+        # decoration
+        return _compatability_decorator
+    # We've been used as @punch_task, so we are to do the decoration directly
+    return _compatability_decorator(func)
 
 
-def punch_flow(*args: Any, **kwargs: Any) -> Flow | Callable:
+def punch_flow(func: Callable | None = None, **kwargs: Any) -> Flow | Callable:
     """Prefect flow that does PUNCH special things."""
     if detect_if_running_in_prefect():
-        return flow(*args, **kwargs, validate_parameters=False)
-    return _compatability_decorator
+        # Delegate everything to Prefect
+        return flow(func, **kwargs, validate_parameters=False)
+    if func is None:
+        # We've been used as @punch_task() or @punch_task(arg=val), so we are to return a function that does the
+        # decoration
+        return _compatability_decorator
+    # We've been used as @punch_task, so we are to do the decoration directly
+    return _compatability_decorator(func)
 
 
 def _compatability_decorator(func: Callable) -> Callable:

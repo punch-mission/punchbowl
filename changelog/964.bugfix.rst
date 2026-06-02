@@ -1,0 +1,1 @@
+`NormalizedMetadata.get` now correctly returns the default value when appropriate, and it returns values directly, rather than returning  a MetaField, so match behavior when using the default.

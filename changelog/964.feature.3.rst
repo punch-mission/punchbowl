@@ -1,0 +1,1 @@
+`PUNCHCube.celestial_wcs` is now a GCRS-aware WCS, handling spacecraft position and velocity correctly.

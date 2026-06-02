@@ -30,9 +30,11 @@ from prefect.blocks.fields import SecretDict
 from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from prefect_sqlalchemy import SqlAlchemyConnector
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import Session
 from sunpy.coordinates import (
+    GeocentricEarthEquatorial,
+    GeocentricSolarEcliptic,
     HeliocentricEarthEcliptic,
     HeliocentricInertial,
     HeliographicCarrington,
@@ -495,56 +497,84 @@ def organize_ceb_fits_keywords(ceb_packet_db, ceb_packet):
         "CEBMEDAC": ceb_packet["IPF_MBE_CNT"]}
 
 
-def organize_spacecraft_position_keywords(observation_time, before_xact_db, before_xact):
+def organize_spacecraft_position_keywords(observation_time, xact_db, xact):
     obstime = Time(observation_time)
     # This packages up the coordinates, but does no frame conversions. The scale factor is given in the big
     # PUNCH_TLM.xls spreadsheet.
-    position = EarthLocation.from_geocentric(before_xact["GPS_POSITION_ECEF1"] * 2E-5 * u.km,
-                                             before_xact["GPS_POSITION_ECEF2"] * 2E-5 * u.km,
-                                             before_xact["GPS_POSITION_ECEF3"] * 2E-5 * u.km)
+    position = EarthLocation.from_geocentric(xact["GPS_POSITION_ECEF1"] * 2E-5 * u.km,
+                                             xact["GPS_POSITION_ECEF2"] * 2E-5 * u.km,
+                                             xact["GPS_POSITION_ECEF3"] * 2E-5 * u.km)
 
     velocity = CartesianDifferential(
-        before_xact["GPS_VELOCITY_ECEF1"] * 5E-9 * u.km / u.s,
-        before_xact["GPS_VELOCITY_ECEF2"] * 5E-9 * u.km / u.s,
-        before_xact["GPS_VELOCITY_ECEF3"] * 5E-9 * u.km / u.s)
+        xact["GPS_VELOCITY_ECEF1"] * 5E-9 * u.km / u.s,
+        xact["GPS_VELOCITY_ECEF2"] * 5E-9 * u.km / u.s,
+        xact["GPS_VELOCITY_ECEF3"] * 5E-9 * u.km / u.s)
 
-    # Re-create with velocity attached
     itrs = position.get_itrs(obstime)
+    # Re-create with velocity attached
     newdata = itrs.data.to_cartesian().with_differentials(velocity)
     itrs = itrs.realize_frame(newdata)
 
     gcrs = itrs.transform_to(GCRS(obstime=obstime))
     hci = gcrs.transform_to(HeliocentricInertial(obstime=obstime)) # HCI (Heliocentric Inertial)
-    hee = gcrs.transform_to(HeliocentricEarthEcliptic(obstime=obstime)) # (Heliocentric Earth Ecliptic)
+    hee = gcrs.transform_to(HeliocentricEarthEcliptic(obstime=obstime)) # HEE (Heliocentric Earth Ecliptic)
     hae = gcrs.transform_to(HeliocentricMeanEcliptic(obstime=obstime)) # HAE (Heliocentric Aries Ecliptic)
     heq = gcrs.transform_to(HeliographicStonyhurst(obstime=obstime)) # HEQ (Heliocentric Earth Equatorial)
     carrington = gcrs.transform_to(HeliographicCarrington(obstime=obstime, observer="self"))
+    gse = gcrs.transform_to(GeocentricSolarEcliptic(obstime=obstime)) # GSE (Geocentric Solar Ecliptic)
+    gei = gcrs.transform_to(GeocentricEarthEquatorial(obstime=obstime)) # GEI (Geocentric Earth Equatorial)
 
     return {
-        "XACTTIME": before_xact_db.timestamp.isoformat(),
+        "XACTTIME": xact_db.timestamp.isoformat(),
         "HCIX_OBS": hci.cartesian.x.to(u.m).value,
         "HCIY_OBS": hci.cartesian.y.to(u.m).value,
         "HCIZ_OBS": hci.cartesian.z.to(u.m).value,
         "HCIX_VOB": hci.cartesian.differentials['s'].d_x.to(u.m/u.s).value,
         "HCIY_VOB": hci.cartesian.differentials['s'].d_y.to(u.m/u.s).value,
         "HCIZ_VOB": hci.cartesian.differentials['s'].d_z.to(u.m/u.s).value,
+
         "HEEX_OBS": hee.cartesian.x.to(u.m).value,
         "HEEY_OBS": hee.cartesian.y.to(u.m).value,
         "HEEZ_OBS": hee.cartesian.z.to(u.m).value,
+
         "HAEX_OBS": hae.cartesian.x.to(u.m).value,
         "HAEY_OBS": hae.cartesian.y.to(u.m).value,
         "HAEZ_OBS": hae.cartesian.z.to(u.m).value,
+
         "HEQX_OBS": heq.cartesian.x.to(u.m).value,
         "HEQY_OBS": heq.cartesian.y.to(u.m).value,
         "HEQZ_OBS": heq.cartesian.z.to(u.m).value,
+
         "HGLT_OBS": heq.lat.deg,
         "HGLN_OBS": heq.lon.deg,
         "CRLT_OBS": carrington.lat.deg,
         "CRLN_OBS": carrington.lon.deg,
         "DSUN_OBS": sun.earth_distance(obstime).to(u.m).value,
+
         "GEOD_LAT": position.geodetic.lat.deg,
         "GEOD_LON": position.geodetic.lon.deg,
         "GEOD_ALT": position.geodetic.height.to(u.m).value,
+
+        "GEOX_OBS": position.x.to_value(u.m),
+        "GEOY_OBS": position.y.to_value(u.m),
+        "GEOZ_OBS": position.z.to_value(u.m),
+        "GEOX_VOB": velocity.d_x.to_value(u.m/u.s),
+        "GEOY_VOB": velocity.d_y.to_value(u.m/u.s),
+        "GEOZ_VOB": velocity.d_z.to_value(u.m/u.s),
+
+        "GSEX_OBS": gse.cartesian.x.to_value(u.m),
+        "GSEY_OBS": gse.cartesian.y.to_value(u.m),
+        "GSEZ_OBS": gse.cartesian.z.to_value(u.m),
+        "GSEX_VOB": gse.cartesian.differentials['s'].d_x.to_value(u.m/u.s),
+        "GSEY_VOB": gse.cartesian.differentials['s'].d_y.to_value(u.m/u.s),
+        "GSEZ_VOB": gse.cartesian.differentials['s'].d_z.to_value(u.m/u.s),
+
+        "GEIX_OBS": gei.cartesian.x.to_value(u.m),
+        "GEIY_OBS": gei.cartesian.y.to_value(u.m),
+        "GEIZ_OBS": gei.cartesian.z.to_value(u.m),
+        "GEIX_VOB": gei.cartesian.differentials['s'].d_x.to_value(u.m/u.s),
+        "GEIY_VOB": gei.cartesian.differentials['s'].d_y.to_value(u.m/u.s),
+        "GEIZ_VOB": gei.cartesian.differentials['s'].d_z.to_value(u.m/u.s),
     }
 
 def organize_compression_and_acquisition_settings(compression_settings, acquisition_settings):
@@ -633,8 +663,10 @@ def get_metadata(first_image_packet,
 
     offset_for_clearing = timedelta(seconds=3.8)
     observation_time = first_image_packet.timestamp + offset_for_clearing
+    exposure_time = acquisition_settings["EXPOSURE"] / 10.0 * (1 + acquisition_settings["IMG_NUM"])
+    observation_end = observation_time + timedelta(seconds=exposure_time)
+    observation_midpoint = observation_time + timedelta(seconds=exposure_time / 2)
     spacecraft_id = first_image_packet.spacecraft_id
-    exposure_time = acquisition_settings["EXPOSURE"]/10.0 * (1+acquisition_settings["IMG_NUM"])
 
     packet_window_size = timedelta(hours=5)
     # get the XACT packet right before and right after the first image packet to determine position
@@ -648,6 +680,13 @@ def get_metadata(first_image_packet,
                   .filter(ENG_XACT.timestamp >= observation_time)
                   .filter(ENG_XACT.timestamp < observation_time + packet_window_size)
                   .order_by(ENG_XACT.timestamp.asc()).first())
+    dt = func.abs(func.timestampdiff(text("second"), ENG_XACT.timestamp, observation_midpoint))
+    middle_xact_db = (session.query(ENG_XACT)
+                  .filter(ENG_XACT.spacecraft_id == spacecraft_id)
+                  .filter(ENG_XACT.timestamp >= observation_time)
+                  .filter(ENG_XACT.timestamp <= observation_end)
+                  .order_by(dt.asc()).first())
+
 
     # get the PFW packet right before the observation
     best_pfw_db = (session.query(ENG_PFW)
@@ -679,32 +718,33 @@ def get_metadata(first_image_packet,
     best_led1 = (session.query(ENG_LED)
                 .filter(ENG_LED.spacecraft_id == spacecraft_id)
                 .filter(ENG_LED.led_start_time <= observation_time)
-                .filter(ENG_LED.led_end_time >= observation_time + timedelta(seconds=exposure_time))
+                .filter(ENG_LED.led_end_time >= observation_end)
                 .first())
 
     best_led2 = (session.query(ENG_LED)
                 .filter(ENG_LED.spacecraft_id == spacecraft_id)
                 .filter(ENG_LED.led_start_time <= observation_time)
                 .filter(ENG_LED.led_end_time >= observation_time)
-                .filter(ENG_LED.led_end_time <= observation_time + timedelta(seconds=exposure_time))
+                .filter(ENG_LED.led_end_time <= observation_end)
                 .first())
 
     best_led3 = (session.query(ENG_LED)
                 .filter(ENG_LED.spacecraft_id == spacecraft_id)
                 .filter(ENG_LED.led_start_time >= observation_time)
-                .filter(ENG_LED.led_start_time <= observation_time + timedelta(seconds=exposure_time))
-                .filter(ENG_LED.led_end_time >= observation_time + timedelta(seconds=exposure_time))
+                .filter(ENG_LED.led_start_time <= observation_end)
+                .filter(ENG_LED.led_end_time >= observation_end)
                 .first())
 
     best_led4 = (session.query(ENG_LED)
                 .filter(ENG_LED.spacecraft_id == spacecraft_id)
                 .filter(ENG_LED.led_start_time >= observation_time)
-                .filter(ENG_LED.led_end_time <= observation_time + timedelta(seconds=exposure_time))
+                .filter(ENG_LED.led_end_time <= observation_end)
                 .first())
 
     best_led_db = best_led1 or best_led2 or best_led3 or best_led4
 
-    packet_references = [before_xact_db, after_xact_db, best_ceb_db, best_pfw_db, best_led_db, best_lz_db]
+    packet_references = [before_xact_db, after_xact_db, middle_xact_db, best_ceb_db, best_pfw_db, best_led_db,
+                         best_lz_db]
     needed_tlm_ids = set([pkt.tlm_id for pkt in packet_references if pkt is not None])
     tlm_id_to_tlm_path = {tlm_id: session.query(TLMFiles.path).where(TLMFiles.tlm_id == tlm_id).one().path
                           for tlm_id in needed_tlm_ids}
@@ -717,6 +757,8 @@ def get_metadata(first_image_packet,
                    for key in loaded_tlm[before_xact_db.tlm_id]["ENG_XACT"]}
     after_xact = {key: loaded_tlm[after_xact_db.tlm_id]["ENG_XACT"][key][after_xact_db.packet_index]
                   for key in loaded_tlm[after_xact_db.tlm_id]["ENG_XACT"]}
+    middle_xact = {key: loaded_tlm[middle_xact_db.tlm_id]["ENG_XACT"][key][middle_xact_db.packet_index]
+                  for key in loaded_tlm[middle_xact_db.tlm_id]["ENG_XACT"]}
     best_pfw = {key: loaded_tlm[best_pfw_db.tlm_id]["ENG_PFW"][key][best_pfw_db.packet_index]
                 for key in loaded_tlm[best_pfw_db.tlm_id]["ENG_PFW"]}
 
@@ -747,7 +789,7 @@ def get_metadata(first_image_packet,
 
     fits_info |= organize_pfw_fits_keywords(best_pfw_db, best_pfw)
 
-    fits_info |= organize_spacecraft_position_keywords(observation_time, before_xact_db, before_xact)
+    fits_info |= organize_spacecraft_position_keywords(observation_midpoint, middle_xact_db, middle_xact)
 
     if best_led_db is not None:
         best_led = {key: loaded_tlm[best_led_db.tlm_id]["ENG_LED"][key][best_led_db.packet_index]
@@ -786,15 +828,12 @@ def get_metadata(first_image_packet,
 
     fits_info |= organize_gain_info(spacecraft_id)
 
-    exposure_time = float(fits_info["EXPTIME"])
     fits_info["COM_SET"] = first_image_packet.compression_settings
     fits_info["ACQ_SET"] = first_image_packet.acquisition_settings
     fits_info["DATE-BEG"] = observation_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    date_end = observation_time + timedelta(seconds=exposure_time)
-    fits_info["DATE-END"] = date_end.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    date_avg =  observation_time + timedelta(seconds=exposure_time/2)
-    fits_info["DATE-AVG"] = date_avg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    fits_info["DATE-OBS"] = date_avg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    fits_info["DATE-END"] = observation_end.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    fits_info["DATE-AVG"] = observation_midpoint.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    fits_info["DATE-OBS"] = observation_midpoint.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     fits_info["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     return position_info, fits_info

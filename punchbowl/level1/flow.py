@@ -216,7 +216,7 @@ def level1_early_core_flow(  # noqa: C901
         new_meta["MOON_X"] = xpix[0]
         new_meta["MOON_Y"] = ypix[0]
 
-        filename = data.meta.get("FILENAME").value
+        filename = data.meta.get("FILENAME")
         if filename:
             new_meta.provenance = [filename]
 

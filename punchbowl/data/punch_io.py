@@ -485,7 +485,9 @@ def load_many_cubes_iterable(paths: list[str | Path], n_workers: int | None = No
 
     """
     context = mp.get_context("forkserver")
-    with ProcessPoolExecutor(n_workers, mp_context=context) as p:
+    if n_workers is None or n_workers < 0:
+        n_workers = os.cpu_count()
+    with ProcessPoolExecutor(min(n_workers, len(paths)), mp_context=context) as p:
         yield from p.map(_load_many_cubes_caller, paths, repeat(kwargs), repeat(allow_errors))
 
 

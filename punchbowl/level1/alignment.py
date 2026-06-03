@@ -664,9 +664,7 @@ def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers:
         a modified version of the input with the WCS more accurately determined
 
     """
-    celestial_input = calculate_celestial_wcs_from_helio(copy.deepcopy(data_object.wcs),
-                                                         data_object.meta.astropy_time,
-                                                         data_object.data.shape)
+    celestial_input = data_object.celestial_wcs
     refining_data = data_object.data.copy()
     refining_data[np.isinf(refining_data)] = 0
     refining_data[np.isnan(refining_data)] = 0
@@ -682,7 +680,7 @@ def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers:
         distortion = None
 
     observatory = "nfi" if data_object.meta["OBSCODE"].value == "4" else "wfi"
-    celestial_output = solve_pointing(refining_data, celestial_input, data_object.meta, distortion,
+    celestial_output = solve_pointing(refining_data, celestial_input, distortion,
                                       saturation_limit=60_000, observatory=observatory, n_workers=max_workers,
                                       n_rounds=n_rounds)
 

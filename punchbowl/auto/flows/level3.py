@@ -372,7 +372,7 @@ def level3_CIM_construct_flow_info(level2_files: list[File], level3_file: File, 
 
 
 def level3_CIM_construct_file_info(level2_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
-    input_file = input_files[0]
+    input_file = level2_files[0]
     #use a representative file because the set of level2 X files have all the relevant quantities homogenized.
 
     return [File(

@@ -688,16 +688,6 @@ def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers:
                                                        data_object.meta.astropy_time,
                                                        data_object.data.shape)
 
-    if distortion_path:
-        try:
-            with fits.open(distortion_path) as distortion_hdul:
-                distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
-        except KeyError:
-            with fits.open(distortion_path) as distortion_hdul:
-                distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
-        recovered_wcs.cpdis1 = distortion_wcs.cpdis1
-        recovered_wcs.cpdis2 = distortion_wcs.cpdis2
-
     output = data_object.replace(wcs=recovered_wcs, celestial_wcs=celestial_output)
     output.meta.history.add_now("LEVEL1-Align", f"alignment done with {n_rounds} iterations")
     return output

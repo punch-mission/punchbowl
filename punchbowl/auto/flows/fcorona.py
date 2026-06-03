@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from collections import Counter
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 
 from punchbowl import __version__
@@ -14,6 +14,7 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level3.f_corona_model import construct_f_corona_model
+from punchbowl.prefect import get_logger
 
 
 def f_corona_background_query_ready_files(session, pipeline_config: dict, reference_time: datetime,

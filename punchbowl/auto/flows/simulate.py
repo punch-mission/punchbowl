@@ -6,13 +6,14 @@ from datetime import UTC, datetime
 from collections.abc import Callable
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.context import get_run_context
 from simpunch.flow import generate_flow
 
 from punchbowl.auto.control import cache_layer
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
+from punchbowl.prefect import get_logger
 
 
 @flow

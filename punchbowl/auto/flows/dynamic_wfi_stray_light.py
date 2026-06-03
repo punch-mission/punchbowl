@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from collections import defaultdict
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger
+from prefect import flow
 from sqlalchemy import func
 
 from punchbowl import __version__
@@ -13,6 +13,7 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level1.dynamic_stray_light import construct_dynamic_stray_light_model
+from punchbowl.prefect import get_logger
 
 fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
 

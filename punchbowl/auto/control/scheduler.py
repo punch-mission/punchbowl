@@ -2,8 +2,6 @@ import inspect
 import itertools
 from datetime import UTC, datetime, timedelta
 
-from prefect import get_run_logger
-
 from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
 from punchbowl.prefect import get_logger

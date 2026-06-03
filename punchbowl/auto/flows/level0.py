@@ -24,7 +24,7 @@ from astropy.wcs import WCS
 from ccsdspy import PacketArray, PacketField, converters
 from ccsdspy.utils import split_by_apid
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.blocks.core import Block
 from prefect.blocks.fields import SecretDict
 from prefect.cache_policies import NO_CACHE
@@ -66,6 +66,7 @@ from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
 from punchbowl.exceptions import MissingMetadataError
 from punchbowl.limits import LimitSet
+from punchbowl.prefect import get_logger
 from punchbowl.util import load_mask_file
 
 FIXED_PACKETS = ["ENG_XACT", "ENG_LED", "ENG_PFW", "ENG_CEB", "ENG_LZ"]

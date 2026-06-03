@@ -5,7 +5,7 @@ from itertools import pairwise
 from collections import defaultdict
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from sqlalchemy import and_
 
@@ -17,6 +17,7 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level3.flow import generate_level3_low_noise_flow, level3_core_flow, level3_PIM_CIM_flow
+from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime
 
 

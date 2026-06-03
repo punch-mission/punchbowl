@@ -4,7 +4,7 @@ from itertools import pairwise
 from collections import defaultdict
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import aliased

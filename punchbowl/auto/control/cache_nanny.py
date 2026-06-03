@@ -2,7 +2,7 @@ import os
 import sys
 import time
 
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.variables import Variable
 
 from punchbowl.auto.control.cache_layer import manager

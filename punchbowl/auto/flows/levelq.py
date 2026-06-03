@@ -6,7 +6,7 @@ from functools import partial
 
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from sqlalchemy import and_, func, or_, select, text
@@ -20,6 +20,7 @@ from punchbowl.auto.control.util import get_database_session, group_files_by_tim
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
 from punchbowl.levelq.f_corona_model import construct_qp_f_corona_model
 from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow, levelq_QAM_core_flow, levelq_QNN_core_flow
+from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime
 
 

@@ -3,7 +3,7 @@ import json
 import tempfile
 from datetime import UTC, datetime, timedelta
 
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.context import get_run_context
 from prefect.runtime import flow_run
 
@@ -12,6 +12,7 @@ from punchbowl.auto.control.util import get_database_session, load_pipeline_conf
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.data.meta import construct_all_product_codes
 from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_quicklook, write_quicklook_to_mp4
+from punchbowl.prefect import get_logger
 
 
 @task

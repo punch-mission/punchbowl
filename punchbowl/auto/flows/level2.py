@@ -2,7 +2,7 @@ import json
 from datetime import UTC, datetime, timedelta
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 
 from punchbowl import __version__
@@ -13,6 +13,7 @@ from punchbowl.auto.control.util import group_files_by_time
 from punchbowl.auto.flows.level1 import get_mask_files
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level2.flow import level2_core_flow
+from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime
 
 SCIENCE_POLARIZED_LEVEL1_TYPES = ["PM", "PZ", "PP"]

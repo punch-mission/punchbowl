@@ -1,7 +1,7 @@
 import itertools
 from datetime import datetime, timedelta
 
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.schedules import Cron
 
 from punchbowl.auto.control.db import File

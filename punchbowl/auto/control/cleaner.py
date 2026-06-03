@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.client.orchestration import get_client
 from prefect.client.schemas.filters import (

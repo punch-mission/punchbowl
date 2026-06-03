@@ -5,7 +5,7 @@ from random import shuffle
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.client.orchestration import get_client
 from prefect.variables import Variable

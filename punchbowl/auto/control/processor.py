@@ -4,7 +4,7 @@ import socket
 from datetime import UTC, datetime
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import get_run_logger, tags
+from prefect import tags
 from prefect.context import MissingContextError, get_run_context
 
 from punchbowl import __version__

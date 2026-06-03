@@ -2,7 +2,6 @@ import contextlib
 from glob import glob
 from multiprocessing.shared_memory import SharedMemory
 
-from prefect import get_run_logger
 from prefect.exceptions import MissingContextError
 from prefect.variables import Variable
 

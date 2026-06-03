@@ -1,5 +1,4 @@
 import os
-import copy
 import warnings
 import multiprocessing
 from collections.abc import Callable
@@ -21,7 +20,7 @@ from skimage.transform import resize
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
+from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from punchbowl.level1.alignment_parallel import get_errors, refine_pointing_single_step
 from punchbowl.prefect import punch_task
 
@@ -190,9 +189,9 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
 
 
 def find_catalog_in_image(
-        catalog: pd.DataFrame, wcs: WCS, image_shape: tuple[int, int], mask: Callable | None = None,
+        catalog: SkyCoord, wcs: WCS, image_shape: tuple[int, int], mask: Callable | None = None,
         mode: str = "all",
-) -> pd.DataFrame:
+) -> tuple[SkyCoord, np.ndarray]:
     """
      Convert the RA/DEC catalog into pixel coordinates using the provided WCS.
 
@@ -218,11 +217,7 @@ def find_catalog_in_image(
 
     """
     try:
-        xs, ys = SkyCoord(
-            ra=np.array(catalog["RAdeg"]) * u.degree,
-            dec=np.array(catalog["DEdeg"]) * u.degree,
-            distance=np.array(catalog["Dist_ly"]) * u.lyr,
-        ).to_pixel(wcs, mode=mode)
+        xs, ys = catalog.to_pixel(wcs, mode=mode)
     except NoConvergence as e:
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
     bounds_mask = (xs >= 0) * (xs < image_shape[1]) * (ys >= 0) * (ys < image_shape[0])
@@ -230,10 +225,9 @@ def find_catalog_in_image(
     if mask is not None:
         bounds_mask *= mask(xs, ys)
 
-    reduced_catalog = catalog[bounds_mask].copy()
-    reduced_catalog["x_pix"] = xs[bounds_mask]
-    reduced_catalog["y_pix"] = ys[bounds_mask]
-    return reduced_catalog
+    reduced_catalog = catalog[bounds_mask]
+    coords = np.stack((xs[bounds_mask], ys[bounds_mask]), axis=1)
+    return reduced_catalog, coords
 
 
 def find_star_coordinates(image_data: np.ndarray,
@@ -452,13 +446,12 @@ def solve_pointing( # noqa: C901
             pv = distortion.wcs.get_pv()[0][-1]
             guess_wcs.wcs.set_pv([(2, 1, pv)])
 
-    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=7)
-    stars_in_image = find_catalog_in_image(catalog, guess_wcs, (2048, 2048))
+    catalog_stars = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=7)
+    catalog_stars = prep_star_coords(catalog_stars, image_wcs)
+    catalog_stars, pix_coords = find_catalog_in_image(catalog_stars, guess_wcs, (2048, 2048))
 
-    ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
-    stars_in_image = stars_in_image[ok_stars]
-
-    catalog_stars = prep_star_coords(stars_in_image, image_wcs)
+    ok_stars = mask(np.stack((pix_coords[:, 0], pix_coords[:, 1])).T)
+    catalog_stars = catalog_stars[ok_stars]
 
     indices = np.arange(len(catalog_stars))
     rng = np.random.default_rng(seed=1)
@@ -521,9 +514,9 @@ def measure_wcs_error(
         dimmest_magnitude: float = 6.0,
         max_error: float = 15.0, debug: bool = True) -> float:
     """Estimate the error in the WCS based on an image."""
-    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
-    stars_in_image = find_catalog_in_image(catalog, wcs, image_data.shape)
-    catalog_stars = prep_star_coords(stars_in_image, wcs)
+    catalog_stars = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
+    catalog_stars = prep_star_coords(catalog_stars, wcs)
+    catalog_stars, _ = find_catalog_in_image(catalog_stars, wcs, image_data.shape)
 
     observed_coords = find_star_coordinates(
         image_data,
@@ -572,9 +565,8 @@ def build_distortion_model(
     all_distortions = []
 
     for image_data, new_wcs in zip(image_cube, refined_wcses, strict=False):
-        stars_in_image = find_catalog_in_image(catalog, new_wcs, image_data.shape)
-        catalog_stars = prep_star_coords(stars_in_image, new_wcs)
-        expected_coords = catalog_stars.to_pixel(new_wcs)
+        catalog_stars = prep_star_coords(catalog, new_wcs)
+        _, expected_coords = find_catalog_in_image(catalog_stars, new_wcs, image_data.shape)
 
         observed_coords = find_star_coordinates(image_data,
                                                 max_distance_from_center=1200,

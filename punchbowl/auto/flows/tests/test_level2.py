@@ -321,17 +321,95 @@ def test_level2_construct_file_info():
                        date_obs=datetime(2026, 4, 8, 23, 52, 29, 154000, tzinfo=UTC),
                        date_end=datetime(2026, 4, 8, 23, 52, 41, 154000, tzinfo=UTC),
                        )
-    constructed_files_info = level2_construct_file_info([L1_file_CR1, L1_file_CR2, L1_file_CR3], pipeline_config)
+    constructed_CTM_files_info = level2_construct_file_info([L1_file_CR1, L1_file_CR2, L1_file_CR3], pipeline_config)
 
-    L2_CTM_file = [f for f in constructed_files_info if f.observatory=='M'][0]
-    L2_XR1_file = [f for f in constructed_files_info if f.observatory=='1'][0]
-    L2_XR2_file = [f for f in constructed_files_info if f.observatory=='2'][0]
-    L2_XR3_file = [f for f in constructed_files_info if f.observatory=='3'][0]
+    L2_CTM_file = [f for f in constructed_CTM_files_info if f.observatory=='M'][0]
+    L2_XR1_file = [f for f in constructed_CTM_files_info if f.observatory=='1'][0]
+    L2_XR2_file = [f for f in constructed_CTM_files_info if f.observatory=='2'][0]
+    L2_XR3_file = [f for f in constructed_CTM_files_info if f.observatory=='3'][0]
     assert((L2_XR1_file.date_beg == L2_XR2_file.date_beg) and (L2_XR1_file.date_beg==L2_XR3_file.date_beg))
     assert((L2_XR1_file.date_end == L2_XR2_file.date_end) and (L2_XR1_file.date_end==L2_XR3_file.date_end))
     assert(L2_XR1_file.date_beg == L2_CTM_file.date_beg)
     assert(L2_XR1_file.date_end == L2_CTM_file.date_end)
     assert(L2_CTM_file.date_obs == datetime(2026, 4, 8, 23, 52, 29, int((91000 + 143000 + 154000)/3), tzinfo=UTC))
+
+    #make sure the above also works for polarized L1 files. 2 observatories should be enough.
+    L1_file_PP1 = File(level='1',
+                       file_type='PP',
+                       observatory='1',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='P',
+                       date_created=datetime(2026, 4, 9, 0, 0, 0, tzinfo=UTC),
+                       date_beg=datetime(2026, 4, 8, 23, 49, 1, 91000, tzinfo=UTC),
+                       date_obs=datetime(2026, 4, 8, 23, 49, 26, 591000, tzinfo=UTC),
+                       date_end=datetime(2026, 4, 8, 23, 49, 52, 91000, tzinfo=UTC),
+                       )
+    L1_file_PZ1 = File(level='1',
+                       file_type='PZ',
+                       observatory='1',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='Z',
+                       date_created=datetime(2026, 4, 9, 0, 0, 0, tzinfo=UTC),
+                       date_beg=datetime(2026, 4, 8, 23, 50, 5, 92000, tzinfo=UTC),
+                       date_obs=datetime(2026, 4, 8, 23, 50, 30, 592000, tzinfo=UTC),
+                       date_end=datetime(2026, 4, 8, 23, 50, 56, 92000, tzinfo=UTC),
+                       )
+    L1_file_PM1 = File(level='1',
+                       file_type='PM',
+                       observatory='1',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='M',
+                       date_created=datetime(2026, 4, 9, 0, 0, 0, tzinfo=UTC),
+                       date_beg=datetime(2026, 4, 8, 23, 51, 7, 91000, tzinfo=UTC),
+                       date_obs=datetime(2026, 4, 8, 23, 51, 32, 591000, tzinfo=UTC),
+                       date_end=datetime(2026, 4, 8, 23, 51, 58, 91000, tzinfo=UTC),
+                       )
+    L1_file_PP2 = File(level='1',
+                       file_type='PP',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='P',
+                       date_created=datetime(2026, 4, 9, 0, 0, 0, tzinfo=UTC),
+                       date_beg=datetime(2026, 4, 8, 23, 49, 0, 934000, tzinfo=UTC),
+                       date_obs=datetime(2026, 4, 8, 23, 49, 26, 434000, tzinfo=UTC),
+                       date_end=datetime(2026, 4, 8, 23, 49, 51, 934000, tzinfo=UTC),
+                       )
+    L1_file_PZ2 = File(level='1',
+                       file_type='PZ',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='Z',
+                       date_created=datetime(2026, 4, 9, 0, 0, 0, tzinfo=UTC),
+                       date_beg=datetime(2026, 4, 8, 23, 50, 5, 10000, tzinfo=UTC),
+                       date_obs=datetime(2026, 4, 8, 23, 50, 30, 510000, tzinfo=UTC),
+                       date_end=datetime(2026, 4, 8, 23, 50, 56, 10000, tzinfo=UTC),
+                       )
+    L1_file_PM2 = File(level='1',
+                       file_type='PM',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='M',
+                       date_created=datetime(2026, 4, 9, 0, 0, 0, tzinfo=UTC),
+                       date_beg=datetime(2026, 4, 8, 23, 51, 7, 10000, tzinfo=UTC),
+                       date_obs=datetime(2026, 4, 8, 23, 51, 32, 510000, tzinfo=UTC),
+                       date_end=datetime(2026, 4, 8, 23, 51, 58, 10000, tzinfo=UTC),
+                       )
+    constructed_PTM_files_info = level2_construct_file_info([L1_file_PP1, L1_file_PZ1, L1_file_PM1, L1_file_PP2, L1_file_PZ2, L1_file_PM2], pipeline_config)
+    assert(len(constructed_PTM_files_info)==3) #2 observatory's XP files and 1 PTM file
+    assert(len(set([f.date_beg for f in constructed_PTM_files_info]))==1) #all date_beg values are the same
+    assert(len(set([f.date_end for f in constructed_PTM_files_info]))==1) #all date_end values are the same
 
 def test_level2_construct_flow_info():
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")

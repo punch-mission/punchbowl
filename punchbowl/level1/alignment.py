@@ -1,4 +1,5 @@
 import os
+import logging
 import warnings
 import multiprocessing
 from pathlib import Path
@@ -13,7 +14,7 @@ import scipy
 import sep
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
-from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
+from astropy.wcs import WCS, DistortionLookupTable, FITSFixedWarning, NoConvergence, utils
 from prefect import get_run_logger
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
@@ -305,33 +306,40 @@ def astrometry_net_initial_solve(observed_coords: np.ndarray,
         the best WCS if search successful, otherwise None
 
     """
-    with astrometry.Solver(
-            astrometry.series_4100.index_files(
-                cache_directory="astrometry_cache",
-                scales=search_scales,
-            ),
-    ) as solver:
-        solution = solver.solve(
-            stars=observed_coords[-num_stars:],
-            size_hint=astrometry.SizeHint(
-                lower_arcsec_per_pixel=lower_arcsec_per_pixel,
-                upper_arcsec_per_pixel=upper_arcsec_per_pixel,
-            ),
-            position_hint=astrometry.PositionHint(
-                ra_deg=image_wcs.wcs.crval[0],
-                dec_deg=image_wcs.wcs.crval[1],
-                radius_deg=15,
-            ),
-            solution_parameters=astrometry.SolutionParameters(
-                sip_order=0,
-                tune_up_logodds_threshold=None,
-                parity=astrometry.Parity.NORMAL,
-            ),
-        )
-
+    # Astrometry sends INFO messages to this logger, which we don't really want. There doesn't seem to be a context
+    # manager for log levels, so we grab the current log level and restore it at the end.
+    logger = logging.getLogger("root")
+    original_log_level = logger.level
+    try:
+        logger.setLevel(logging.WARNING)
+        with astrometry.Solver(
+                astrometry.series_4100.index_files(
+                    cache_directory="astrometry_cache",
+                    scales=search_scales,
+                ),
+        ) as solver:
+            solution = solver.solve(
+                stars=observed_coords[-num_stars:],
+                size_hint=astrometry.SizeHint(
+                    lower_arcsec_per_pixel=lower_arcsec_per_pixel,
+                    upper_arcsec_per_pixel=upper_arcsec_per_pixel,
+                ),
+                position_hint=astrometry.PositionHint(
+                    ra_deg=image_wcs.wcs.crval[0],
+                    dec_deg=image_wcs.wcs.crval[1],
+                    radius_deg=15,
+                ),
+                solution_parameters=astrometry.SolutionParameters(
+                    sip_order=0,
+                    tune_up_logodds_threshold=None,
+                    parity=astrometry.Parity.NORMAL,
+                ),
+            )
         if solution.has_match():
             return solution.best_match().astropy_wcs()
         return None
+    finally:
+        logger.setLevel(original_log_level)
 
 
 def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
@@ -663,12 +671,15 @@ def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None, max_wo
     refining_data[np.isnan(refining_data)] = 0
 
     if isinstance(distortion_path, (str, Path)):
-        try:
-            with fits.open(distortion_path) as distortion_hdul:
-                distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
-        except KeyError:
-            with fits.open(distortion_path) as distortion_hdul:
-                distortion = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(action="ignore", message=".*The WCS transformation has more axes.*",
+                                    category=FITSFixedWarning)
+            try:
+                with fits.open(distortion_path) as distortion_hdul:
+                    distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+            except KeyError:
+                with fits.open(distortion_path) as distortion_hdul:
+                    distortion = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
     else:
         distortion = distortion_path
 

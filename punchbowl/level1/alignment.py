@@ -445,9 +445,13 @@ def solve_pointing( # noqa: C901
     guess_wcs.wcs.crpix = image_center
     guess_wcs.wcs.cdelt = image_wcs.wcs.cdelt
     guess_wcs.sip = None
+
     if distortion is not None:
-        guess_wcs.cpdis1 = distortion.cpdis1
-        guess_wcs.cpdis2 = distortion.cpdis2
+        for i in range(len(observed)):
+            dx = distortion.cpdis1.get_offset(*observed[i])
+            dy = distortion.cpdis2.get_offset(*observed[i])
+            observed[i, 0] += dx
+            observed[i, 1] += dy
         if distortion.wcs.get_pv():
             pv = distortion.wcs.get_pv()[0][-1]
             guess_wcs.wcs.set_pv([(2, 1, pv)])
@@ -504,6 +508,10 @@ def solve_pointing( # noqa: C901
         ],
     )
     solved_wcs.wcs.set_pv([(2, 1, np.median(pvs))])
+
+    if distortion is not None:
+        solved_wcs.cpdis1 = distortion.cpdis1
+        solved_wcs.cpdis2 = distortion.cpdis2
 
     return solved_wcs
 

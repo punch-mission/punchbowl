@@ -5,10 +5,12 @@ import threading
 from typing import Any, Self, Generic, TypeVar
 from datetime import UTC, datetime
 from functools import cached_property
+from contextlib import contextmanager
 from multiprocessing.shared_memory import SharedMemory
 
 import numba
 import numpy as np
+import threadpoolctl
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from numpy.typing import ArrayLike
@@ -636,3 +638,25 @@ class ShmPickleableNDArray(np.ndarray):
 
         return ShmPickleableNDArray.__new__, (ShmPickleableNDArray, self.shape, self.dtype, self.shm.name,
                                               self.strides, offset, True)
+
+
+@contextmanager
+def limit_threads(n_threads: int | None) -> None:
+    """
+    Limit thread counts only if called for.
+
+    Applies thread count limits only if they're provided (not None) and if they're more restrictive than the
+    currently-set limits.
+
+    I've found that calling threadpool_limits after forking can cause segfaults. The thing to do is to call it before
+    forking and not after, and the limits applied pre-fork apply to each worker individually. By running all our
+    threadpool_limits calls through this helper, it's possible to run unmodified punchbowl code post-fork and prevent
+    threadpool_limits calls, by passing `None` for max_workers or similar arguments.
+    """
+    if n_threads is None:
+        # Do nothing, as a context manager.
+        yield
+        return
+
+    with threadpoolctl.threadpool_limits(n_threads):
+        yield

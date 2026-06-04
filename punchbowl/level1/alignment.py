@@ -1,6 +1,7 @@
 import os
 import warnings
 import multiprocessing
+from pathlib import Path
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
 
@@ -634,7 +635,7 @@ def build_distortion_model(
 
 
 @punch_task
-def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers: int = 4,
+def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None, max_workers: int = 4,
                n_rounds: int = 50) -> PUNCHCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.
@@ -661,7 +662,7 @@ def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers:
     refining_data[np.isinf(refining_data)] = 0
     refining_data[np.isnan(refining_data)] = 0
 
-    if distortion_path:
+    if isinstance(distortion_path, (str, Path)):
         try:
             with fits.open(distortion_path) as distortion_hdul:
                 distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
@@ -669,7 +670,7 @@ def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers:
             with fits.open(distortion_path) as distortion_hdul:
                 distortion = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
     else:
-        distortion = None
+        distortion = distortion_path
 
     observatory = "nfi" if data_object.meta["OBSCODE"].value == "4" else "wfi"
     celestial_output = solve_pointing(refining_data, celestial_input, distortion,

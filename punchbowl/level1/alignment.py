@@ -367,7 +367,7 @@ def solve_pointing( # noqa: C901
         saturation_limit: float = np.inf,
         observatory: str = "wfi",
         n_rounds: int = 50,
-        n_workers: int = 4) -> WCS:
+        n_workers: int = 1) -> WCS:
     """
     Carefully determine the pointing of an image using the starfield.
 
@@ -464,12 +464,16 @@ def solve_pointing( # noqa: C901
     rng = np.random.default_rng(seed=1)
     results = []
     observed_tree = KDTree(observed)
-    mp_context = multiprocessing.get_context("forkserver")
-    with ProcessPoolExecutor(n_workers, mp_context) as p:
-        for _ in range(n_rounds):
-            sample = catalog_stars[rng.choice(indices, 15, replace=False)]
-            results.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))
-    results = [w.result() for w in results]
+    star_samples = [catalog_stars[rng.choice(indices, 15, replace=False)] for _ in range(n_rounds)]
+    if n_workers == 1:
+        results = [refine_pointing_single_step(guess_wcs, observed_tree, sample, fix_pv=True)
+                   for sample in star_samples]
+    else:
+        mp_context = multiprocessing.get_context("forkserver")
+        with ProcessPoolExecutor(n_workers, mp_context) as p:
+            for sample in star_samples:
+                results.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))
+            results = [w.result() for w in results]
 
     platescales, crval1s, crval2s, crotas, pvs = zip(*results, strict=True)
     solved_wcs = guess_wcs
@@ -642,7 +646,7 @@ def build_distortion_model(
 
 
 @punch_task
-def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers: int = 4,
+def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers: int = 1,
                n_rounds: int = 50) -> PUNCHCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.

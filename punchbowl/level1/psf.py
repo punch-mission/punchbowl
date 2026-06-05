@@ -139,7 +139,8 @@ def correct_psf(
     new_data = psf_transform.apply(data.data, workers=max_workers,
                                    saturation_threshold=saturation_threshold,
                                    saturation_dilation=saturation_dilation,
-                                   neighborhood_width=neighborhood_width)
+                                   neighborhood_width=neighborhood_width,
+                                   normalization_coefficient=(8/9)**2)
 
     data.data[...] = new_data[...]
 

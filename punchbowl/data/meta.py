@@ -830,20 +830,26 @@ class NormalizedMetadata(Mapping):
         return parse_datetime(self["DATE-OBS"].value).replace(tzinfo=UTC)
 
     @property
-    def datebeg(self) -> datetime:
-        """Returns a datetime representation of the 'DATE-BEG' header keyword if indicated in metadata."""
-        if "DATE-BEG" not in self:
-            msg = "DATE-BEG is missing from the metadata."
-            raise MissingMetadataError(msg)
-        return parse_datetime(self["DATE-BEG"].value).replace(tzinfo=UTC)
+    def datebeg(self) -> datetime | None:
+        """Return a datetime representation of the 'DATE-BEG' header keyword."""
+        try:
+            value = self["DATE-BEG"].value
+        except KeyError as err:
+            raise MissingMetadataError("DATE-BEG is missing from the metadata.") from err
+        if not value:
+            return None
+        return parse_datetime(value).replace(tzinfo=UTC)
 
     @property
-    def dateend(self) -> datetime:
-        """Returns a datetime representation of the 'DATE-END' header keyword if indicated in metadata."""
-        if "DATE-END" not in self:
-            msg = "DATE-END is missing from the metadata."
-            raise MissingMetadataError(msg)
-        return parse_datetime(self["DATE-END"].value).replace(tzinfo=UTC)
+    def dateend(self) -> datetime | None:
+        """Return a datetime representation of the 'DATE-END' header keyword."""
+        try:
+            value = self["DATE-END"].value
+        except KeyError as err:
+            raise MissingMetadataError("DATE-END is missing from the metadata.") from err
+        if not value:
+            return None
+        return parse_datetime(value).replace(tzinfo=UTC)
 
     @property
     def shape(self) -> tuple:

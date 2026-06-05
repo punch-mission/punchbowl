@@ -87,13 +87,15 @@ def merge_many_polarized_task(data: list[PUNCHCube | None], trefoil_wcs: WCS, le
 
     output_cube.meta["OUTLIER"] = encode_outliers([d for d in data if d is not None])
 
-    output_cube.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],
-                                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    datetime_list = [d.meta.datetime for d in data if d is not None]
+    datebeg_list = [d.meta.datebeg for d in data if d is not None]
+    dateend_list = [d.meta.dateend for d in data if d is not None]
+
+    fmt = "%Y-%m-%dT%H:%M:%S.%f"
+    output_cube.meta["DATE-OBS"] = average_datetime(datetime_list).strftime(fmt)[:-3]
     output_cube.meta["DATE-AVG"] = output_cube.meta["DATE-OBS"].value
-    output_cube.meta["DATE-BEG"] = min([d.meta.datetime for d in data if d is not None],
-                                       ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    output_cube.meta["DATE-END"] = max([d.meta.datetime for d in data if d is not None],
-                                       ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_cube.meta["DATE-BEG"] = min(datebeg_list).strftime(fmt)[:-3]
+    output_cube.meta["DATE-END"] = max(dateend_list).strftime(fmt)[:-3]
 
     return output_cube
 
@@ -120,12 +122,14 @@ def merge_many_clear_task(
 
     data_merged.meta["OUTLIER"] = encode_outliers([d for d in data if d is not None])
 
-    data_merged.meta["DATE-OBS"] = average_datetime([d.meta.datetime for d in data if d is not None],
-                                                    ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    datetime_list = [d.meta.datetime for d in data if d is not None]
+    datebeg_list = [d.meta.datebeg for d in data if d is not None]
+    dateend_list = [d.meta.dateend for d in data if d is not None]
+
+    fmt = "%Y-%m-%dT%H:%M:%S.%f"
+    data_merged.meta["DATE-OBS"] = average_datetime(datetime_list).strftime(fmt)[:-3]
     data_merged.meta["DATE-AVG"] = data_merged.meta["DATE-OBS"].value
-    data_merged.meta["DATE-BEG"] = min([d.meta.datetime for d in data if d is not None],
-                                       ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    data_merged.meta["DATE-END"] = max([d.meta.datetime for d in data if d is not None],
-                                       ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    data_merged.meta["DATE-BEG"] = min(datebeg_list).strftime(fmt)[:-3]
+    data_merged.meta["DATE-END"] = max(dateend_list).strftime(fmt)[:-3]
 
     return data_merged

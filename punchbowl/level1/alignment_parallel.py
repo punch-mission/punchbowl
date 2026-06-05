@@ -45,6 +45,7 @@ def refine_pointing_single_step(
         the new world coordinate system
 
     """
+    guess_wcs = guess_wcs.deepcopy()
     # set up the optimization
     params = Parameters()
     initial_crota = extract_crota_from_wcs(guess_wcs)

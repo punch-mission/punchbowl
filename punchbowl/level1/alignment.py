@@ -192,7 +192,7 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
 
 def find_catalog_in_image(
         catalog: SkyCoord, wcs: WCS, image_shape: tuple[int, int], mask: Callable | None = None,
-        mode: str = "all",
+        mode: str = "all", dataframe: pd.DataFrame | None = None,
 ) -> tuple[SkyCoord, np.ndarray]:
     """
      Convert the RA/DEC catalog into pixel coordinates using the provided WCS.
@@ -211,6 +211,8 @@ def find_catalog_in_image(
         either "all" or "wcs",
         see
         <https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html#astropy.coordinates.SkyCoord.to_pixel>
+    dataframe : pd.DataFrame
+        optional data frame to filter and return as well
 
     Returns
     -------
@@ -229,7 +231,11 @@ def find_catalog_in_image(
 
     reduced_catalog = catalog[bounds_mask]
     coords = np.stack((xs[bounds_mask], ys[bounds_mask]), axis=1)
-    return reduced_catalog, coords
+    ret = reduced_catalog, coords
+    if dataframe is not None:
+        dataframe = dataframe[bounds_mask]
+        ret = (*ret, dataframe)
+    return ret
 
 
 def find_star_coordinates(image_data: np.ndarray,

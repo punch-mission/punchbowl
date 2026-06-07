@@ -466,7 +466,7 @@ def construct_base_query(columns, filter, file_state_filters, file_level_filters
         query = query.where(File.file_type.not_in(['DK', 'DY', 'OV', 'PX']))
 
     if 'Non-pipeline cal files' not in weird_file_filters:
-        query = query.where(File.file_type.not_in(['DS', 'FR', 'FM', 'FZ', 'FP', 'GM', 'GP', 'GR', 'GZ',
+        query = query.where(File.file_type.not_in(['DS', 'FQ', 'FR', 'FM', 'FZ', 'FP', 'GM', 'GP', 'GR', 'GZ',
                                                    'MS', 'RC', 'RM', 'RP', 'RZ', 'LM', 'LP', 'LR', 'LZ']))
 
     if date_obs_start:

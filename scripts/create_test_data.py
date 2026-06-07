@@ -40,13 +40,13 @@ def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):
 
 
 def create_quartic_coefficients_test_data(path="../punchbowl/level1/tests/data/"):
-    meta = NormalizedMetadata.load_template("FQ1", "1")
+    meta = NormalizedMetadata.load_template("FM1", "1")
     meta['DATE-OBS'] = str(datetime.now(UTC))
     wcs = WCS(naxis=3)
     data = create_constant_quartic_coefficients((10, 10))
     obj = PUNCHCube(data=data, wcs=wcs, meta=meta)
     file_path = os.path.join(path, "test_quartic_coeffs.fits")
-    write_ndcube_to_fits(obj, file_path, overwrite=True)
+    write_ndcube_to_fits(obj, file_path, overwrite=True, skip_wcs_conversion=True, write_hash=False)
 
 
 def create_vignetting_test_data(path="../punchbowl/level1/tests/data/"):

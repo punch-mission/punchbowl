@@ -146,7 +146,7 @@ Products:
             OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
-    FQ?:
+    FR?:
         kinds: [QuarticCalibration]
         overrides:
             NAXIS: 3
@@ -155,7 +155,52 @@ Products:
             NAXIS3: 5
             TITLE: PUNCH Level-1 {craftname} Flat-field Parameter Map (quartic polynomial coefficients)
             OBSTYPE: "{crafttype} flat-field parameter map (quartic polynomial coefficients)"
-            TYPECODE: FQ
+            TYPECODE: FR
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    FM?:
+        kinds: [QuarticCalibration]
+        overrides:
+            NAXIS: 3
+            NAXIS1: 2048
+            NAXIS2: 2048
+            NAXIS3: 5
+            TITLE: PUNCH Level-1 {craftname} Flat-field Parameter Map (quartic polynomial coefficients)
+            OBSTYPE: "{crafttype} flat-field parameter map (quartic polynomial coefficients)"
+            TYPECODE: FM
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    FZ?:
+        kinds: [QuarticCalibration]
+        overrides:
+            NAXIS: 3
+            NAXIS1: 2048
+            NAXIS2: 2048
+            NAXIS3: 5
+            TITLE: PUNCH Level-1 {craftname} Flat-field Parameter Map (quartic polynomial coefficients)
+            OBSTYPE: "{crafttype} flat-field parameter map (quartic polynomial coefficients)"
+            TYPECODE: FZ
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
+    FP?:
+        kinds: [QuarticCalibration]
+        overrides:
+            NAXIS: 3
+            NAXIS1: 2048
+            NAXIS2: 2048
+            NAXIS3: 5
+            TITLE: PUNCH Level-1 {craftname} Flat-field Parameter Map (quartic polynomial coefficients)
+            OBSTYPE: "{crafttype} flat-field parameter map (quartic polynomial coefficients)"
+            TYPECODE: FP
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"

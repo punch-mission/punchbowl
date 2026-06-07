@@ -1,0 +1,1 @@
+Allows per-polarizer state quartic coefficient calibration files.

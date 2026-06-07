@@ -401,7 +401,7 @@ def get_quartic_model_paths(level0_files, pipeline_config: dict, session=None):
         for model in models:
             if l0_file.observatory != model.observatory:
                 continue
-            if l0_file.polarization != model.polarization:
+            if l0_file.file_type[1] != model.file_type[1]:
                 continue
             if model.date_obs > l0_file.date_obs:
                 continue
@@ -414,7 +414,7 @@ def get_quartic_model_paths(level0_files, pipeline_config: dict, session=None):
 
 def get_quartic_model_path(level0_file, pipeline_config: dict, session=None, reference_time=None):
     best_model = (session.query(File)
-                  .filter(File.file_type == level0_file.file_type[1])
+                  .filter(File.file_type == f"F{level0_file.file_type[1]}")
                   .filter(File.observatory == level0_file.observatory)
                   .where(File.date_obs <= level0_file.date_obs)
                   .where(File.file_version.not_like("v%")) #filters out "v0a".

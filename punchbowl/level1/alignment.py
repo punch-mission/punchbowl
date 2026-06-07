@@ -331,7 +331,7 @@ def astrometry_net_initial_solve(observed_coords: np.ndarray,
                     upper_arcsec_per_pixel=upper_arcsec_per_pixel,
                 ),
                 position_hint=astrometry.PositionHint(
-                    ra_deg=image_wcs.wcs.crval[0],
+                    ra_deg=image_wcs.wcs.crval[0] % 360,
                     dec_deg=image_wcs.wcs.crval[1],
                     radius_deg=15,
                 ),
@@ -492,7 +492,7 @@ def solve_pointing( # noqa: C901
         crval1 = np.median(crval1s)
         crval1 %= 360
     else:
-        crval1 = np.median(crval1s)
+        crval1 = np.median(crval1s) % 360
 
     solved_wcs.wcs.crval = crval1, np.median(crval2s)
     crotas = np.array(crotas)

@@ -150,7 +150,8 @@ def reproject_cube(input_cube: PUNCHCube, output_wcs: WCS, output_shape: tuple[i
             input_data = np.stack([input_data, input_uncertainty])
 
     if output_array is None:
-        output_array = np.full((2,  *output_shape), np.nan) if do_uncertainty else np.full(output_shape, np.nan)
+        output_array = (np.full((2,  *output_shape), np.nan, dtype=np.float32)
+                        if do_uncertainty else np.full(output_shape, np.nan, dtype=np.float32))
 
     # Reproject will complain if the input and output arrays have different dtypes
     input_data = np.asarray(input_data, dtype=output_array.dtype)

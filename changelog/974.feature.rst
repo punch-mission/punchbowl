@@ -1,0 +1,3 @@
+Alignment is significantly sped up, by avoiding handling frames and units in the inner-most loop, and by
+forward-applying the distortion map once to the identified star locations, instead of repeatedly backwards-applying
+the map to expected star locations.

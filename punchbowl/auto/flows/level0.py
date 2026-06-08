@@ -683,10 +683,9 @@ def get_metadata(first_image_packet,
     dt = func.abs(func.timestampdiff(text("second"), ENG_XACT.timestamp, observation_midpoint))
     middle_xact_db = (session.query(ENG_XACT)
                   .filter(ENG_XACT.spacecraft_id == spacecraft_id)
-                  .filter(ENG_XACT.timestamp >= observation_time)
-                  .filter(ENG_XACT.timestamp <= observation_end)
+                  .filter(ENG_XACT.timestamp >= observation_time - packet_window_size)
+                  .filter(ENG_XACT.timestamp <= observation_end + packet_window_size)
                   .order_by(dt.asc()).first())
-
 
     # get the PFW packet right before the observation
     best_pfw_db = (session.query(ENG_PFW)

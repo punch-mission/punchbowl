@@ -66,7 +66,19 @@ def punch_flow(func: Callable | None = None, **kwargs: Any) -> Flow | Callable:
 def _compatability_decorator(func: Callable) -> Callable:
     """Make wrapped functions have a .fn attribute like Prefect Flows and Tasks."""
     func.fn = func
+    func.submit = lambda *args, **kwargs: _CompatabilitySubmitResult(func(*args, **kwargs))
     return func
+
+
+class _CompatabilitySubmitResult:
+    def __init__(self, ret_val: Any) -> None:
+        self.ret_val = ret_val
+
+    def result(self) -> Any:
+        return self.ret_val
+
+    def wait(self) -> None:
+        return
 
 
 @cache

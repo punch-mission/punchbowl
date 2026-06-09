@@ -26,8 +26,8 @@ def visualize_query_ready_files(session, pipeline_config: dict, reference_time: 
         for product_code in product_codes:
             product_ready_files = (session.query(File)
                                     .filter(File.state.in_(["created", "progressed", "quickpunched"]))
-                                    .filter(File.date_obs >= (reference_time - timedelta(hours=lookback_hours)))
-                                    .filter(File.date_obs <= reference_time)
+                                    .filter(File.date_created >= (reference_time - timedelta(hours=lookback_hours)))
+                                    .filter(File.date_created <= reference_time)
                                     .filter(File.level == level)
                                     .filter(File.file_type == product_code[0:2])
                                     .filter(File.observatory == product_code[2])

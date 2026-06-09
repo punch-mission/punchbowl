@@ -4,6 +4,7 @@ import tempfile
 from datetime import UTC, datetime, timedelta
 
 from prefect import flow, get_run_logger, task
+from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from prefect.runtime import flow_run
 
@@ -14,7 +15,7 @@ from punchbowl.data.meta import construct_all_product_codes
 from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_quicklook, write_quicklook_to_mp4
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def visualize_query_ready_files(session, pipeline_config: dict, reference_time: datetime, lookback_hours: float = 24):
     logger = get_run_logger()
 
@@ -40,7 +41,7 @@ def visualize_query_ready_files(session, pipeline_config: dict, reference_time: 
     return all_ready_files, all_product_codes
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def visualize_flow_info(input_files: list[File],
                         product_code: str,
                         pipeline_config: dict,

@@ -323,15 +323,14 @@ def test_level2_construct_file_info():
                        )
     constructed_CTM_files_info = level2_construct_file_info([L1_file_CR1, L1_file_CR2, L1_file_CR3], pipeline_config)
 
-    L2_CTM_file = [f for f in constructed_CTM_files_info if f.observatory=='M'][0]
-    L2_XR1_file = [f for f in constructed_CTM_files_info if f.observatory=='1'][0]
-    L2_XR2_file = [f for f in constructed_CTM_files_info if f.observatory=='2'][0]
-    L2_XR3_file = [f for f in constructed_CTM_files_info if f.observatory=='3'][0]
-    assert(L2_XR1_file.date_beg == L2_XR2_file.date_beg == L2_XR3_file.date_beg)
-    assert(L2_XR1_file.date_end == L2_XR2_file.date_end == L2_XR3_file.date_end)
-    assert(L2_XR1_file.date_beg == L2_CTM_file.date_beg)
-    assert(L2_XR1_file.date_end == L2_CTM_file.date_end)
-    assert(L2_CTM_file.date_obs == datetime(2026, 4, 8, 23, 52, 29, int((91000 + 143000 + 154000)/3), tzinfo=UTC))
+    assert(len(constructed_CTM_files_info)==4) #3 observatory's XR files and 1 CTM file
+    assert(len(set([f.date_beg for f in constructed_CTM_files_info]))==1) #all date_beg values are the same
+    assert(len(set([f.date_end for f in constructed_CTM_files_info]))==1) #all date_end values are the same
+    assert(len(set([f.date_obs for f in constructed_CTM_files_info]))==1) #all date_obs values are the same
+    assert(constructed_CTM_files_info[0].date_obs == datetime(2026, 4, 8, 23, 52, 29, int((91000 + 143000 + 154000)/3), tzinfo=UTC)) #correct date_obs
+    assert(constructed_CTM_files_info[0].date_beg == datetime(2026, 4, 8, 23, 52, 17, 91000, tzinfo=UTC)) #correct date_beg
+    assert(constructed_CTM_files_info[0].date_end == datetime(2026, 4, 8, 23, 52, 41, 154000, tzinfo=UTC)) #correct date_end
+
 
     #make sure the above also works for polarized L1 files. 2 observatories should be enough.
     L1_file_PP1 = File(level='1',
@@ -407,9 +406,14 @@ def test_level2_construct_file_info():
                        date_end=datetime(2026, 4, 8, 23, 51, 58, 10000, tzinfo=UTC),
                        )
     constructed_PTM_files_info = level2_construct_file_info([L1_file_PP1, L1_file_PZ1, L1_file_PM1, L1_file_PP2, L1_file_PZ2, L1_file_PM2], pipeline_config)
+
     assert(len(constructed_PTM_files_info)==3) #2 observatory's XP files and 1 PTM file
     assert(len(set([f.date_beg for f in constructed_PTM_files_info]))==1) #all date_beg values are the same
     assert(len(set([f.date_end for f in constructed_PTM_files_info]))==1) #all date_end values are the same
+    assert(len(set([f.date_obs for f in constructed_PTM_files_info]))==1) #all date_obs values are the same
+    assert(constructed_PTM_files_info[0].date_obs == datetime(2026, 4, 8, 23, 50, 29, 871333, tzinfo=UTC)) #correct date_obs
+    assert(constructed_PTM_files_info[0].date_beg == datetime(2026, 4, 8, 23, 49, 0, 934000, tzinfo=UTC)) #correct date_beg
+    assert(constructed_PTM_files_info[0].date_end == datetime(2026, 4, 8, 23, 51, 58, 91000, tzinfo=UTC)) #correct date_end
 
 def test_level2_construct_flow_info():
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")

@@ -1,3 +1,4 @@
+#%%
 import os, copy, importlib, numpy as np, matplotlib.pyplot as plt
 from sys import path
 from astropy.time import Time
@@ -7,8 +8,7 @@ from astropy.wcs import WCS, FITSFixedWarning
 from scipy.ndimage import gaussian_filter
 plt.rcParams.update({'image.origin':'lower'})
 
-file_dir = os.path.dirname(os.path.abspath(__file__))
-src_dir = os.path.dirname(file_dir)
+src_dir = os.path.dirname(os.path.abspath(__file__))
 module_path = os.path.join(src_dir,'nfi_modules')
 path.append(module_path)
 
@@ -22,11 +22,10 @@ from nfi_modules.fwdmats import generate_nfi_fwdmats
 from nfi_modules.util import bindown
 
 #punchbowl specific modules
-import punchbowl.level1 as pbl1
 from punchbowl.util import load_image_task
 
 
-
+#%%
 def nfi_core_flow(input_data: list[str],
                   ):
     """Flow pipeline for NFI (stray light processing)

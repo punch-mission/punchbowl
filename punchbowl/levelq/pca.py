@@ -12,12 +12,11 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
 from sklearn.decomposition import PCA
-from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.prefect import get_logger, punch_task
-from punchbowl.util import DataLoader, load_image_task
+from punchbowl.prefect import punch_task
+from punchbowl.util import DataLoader, limit_threads, load_image_task
 
 
 @punch_task
@@ -29,7 +28,7 @@ def pca_filter(input_cubes: list[PUNCHCube], files_to_fit: list[PUNCHCube | Data
     all_files_to_fit, bodies_in_quarter, to_subtract, good_data_mask, is_outlier = load_files(
         input_cubes, files_to_fit, blend_size)
     # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
-    with threadpool_limits(min(25, os.cpu_count())), ThreadPoolExecutor(min(n_strides, os.cpu_count())) as p:
+    with limit_threads(min(25, os.cpu_count())), ThreadPoolExecutor(min(n_strides, os.cpu_count())) as p:
         for subtracted_cube_indices, subtracted_images in p.map(
                 pca_filter_one_stride, repeat(all_files_to_fit), range(n_strides), repeat(n_strides),
                 repeat(bodies_in_quarter), repeat(to_subtract), repeat(n_components), repeat(med_filt),

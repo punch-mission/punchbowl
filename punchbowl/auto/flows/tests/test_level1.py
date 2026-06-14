@@ -127,24 +127,27 @@ def session_fn(session):
                        date_obs=datetime.now(UTC)-timedelta(days=1))
 
     quartic_fit_coeffs2 = File(level="1",
-                       file_type="FQ",
+                       file_type="FM",
                        observatory='1',
+                       polarization='M',
                        state='created',
                        file_version='0b',
                        software_version='none',
                        date_obs=datetime.now(UTC)-timedelta(hours=3))
 
     quartic_fit_coeffs1 = File(level="1",
-                       file_type="FQ",
+                       file_type="FM",
                        observatory='1',
+                       polarization='M',
                        state='created',
                        file_version='1',
                        software_version='none',
                        date_obs=datetime.now(UTC)-timedelta(days=1))
 
     quartic_fit_coeffs0 = File(level="1",
-                       file_type="FQ",
+                       file_type="FM",
                        observatory='1',
+                       polarization='M',
                        state='created',
                        file_version='0b',
                        software_version='none',

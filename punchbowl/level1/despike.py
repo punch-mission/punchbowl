@@ -2,13 +2,13 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 from scipy.ndimage import binary_dilation, gaussian_filter
-from threadpoolctl import threadpool_limits
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.deficient_pixel import mean_correct
 from punchbowl.level1.sqrt import decode_sqrt_data
-from punchbowl.prefect import get_logger, punch_task
+from punchbowl.prefect import punch_task
+from punchbowl.util import limit_threads
 
 
 def despike_polseq(
@@ -142,7 +142,7 @@ def despike_polseq_task(data_object: PUNCHCube,
         neighbors = [load_ndcube_from_fits(n) if isinstance(n, str) else n for n in neighbors]
         neighbors = [decode_sqrt_data(n) for n in neighbors]
 
-        with threadpool_limits(max_workers):
+        with limit_threads(max_workers):
             data_object, spikes = despike_polseq(
                                             data_object,
                                             neighbors,

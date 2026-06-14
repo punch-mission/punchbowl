@@ -266,6 +266,8 @@ def level2_construct_flow_info(level1_files: list[File], level2_file: File, pipe
 
 
 def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+    M_date_beg = min([f.date_beg for f in level1_files if f.date_beg is not None], default=None)
+    M_date_end = max([f.date_end for f in level1_files if f.date_end is not None], default=None)
     files = [File(
                 level="2",
                 file_type="CT" if level1_files[0].file_type == "CR" else "PT",
@@ -273,7 +275,9 @@ def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, 
                 polarization="C" if level1_files[0].file_type == "CR" else "Y",
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
+                date_beg=M_date_beg,
                 date_obs=average_datetime([f.date_obs for f in level1_files]),
+                date_end=M_date_end,
                 outlier=any(file.outlier for file in level1_files),
                 bad_packets=any(file.bad_packets for file in level1_files),
                 state="planned",
@@ -289,7 +293,10 @@ def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, 
                 polarization='C' if input_files[0].file_type == "CR" else 'Y',
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
+#intentionally set the date_beg, _obs, and _end of the L2_XR or L2_XP files to that of the mosaic file, not the instrument-specific L1 file
+                date_beg=M_date_beg,
                 date_obs=files[0].date_obs,
+                date_end=M_date_end,
                 outlier=any(f.outlier for f in files),
                 bad_packets=any(f.bad_packets for f in files),
                 crota=input_files[0].crota,

@@ -1,16 +1,13 @@
 import os
 import multiprocessing
-import multiprocessing as mp
 from datetime import UTC, datetime
 from concurrent.futures import ProcessPoolExecutor
 
 import astropy
 import numba
 import numpy as np
-import scipy.optimize
 from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime_str
-from numpy.polynomial import polynomial
 from scipy.interpolate import griddata
 
 from punchbowl.data import NormalizedMetadata
@@ -19,7 +16,7 @@ from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import get_logger, punch_flow, punch_task
-from punchbowl.util import ShmPickleableNDArray, average_datetime, interpolate_data, limit_threads, nan_percentile
+from punchbowl.util import ShmPickleableNDArray, average_datetime, interpolate_data, nan_percentile
 
 
 def model_fcorona_for_cube(cube: np.ndarray) -> np.ndarray:

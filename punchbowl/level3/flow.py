@@ -103,7 +103,7 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
                      before_starfield_path: str | None,
                      after_starfield_path: str | None,
                      output_filename: str | None = None) -> list[PUNCHCube]:
-    """Level 3 CTM flow."""
+    """Level 3 PTM/CTM flow."""
     logger = get_run_logger()
 
     logger.info("beginning level 3 flow")

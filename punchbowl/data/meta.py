@@ -830,6 +830,28 @@ class NormalizedMetadata(Mapping):
         return parse_datetime(self["DATE-OBS"].value).replace(tzinfo=UTC)
 
     @property
+    def datebeg(self) -> datetime | None:
+        """Return a datetime representation of the 'DATE-BEG' header keyword."""
+        try:
+            value = self["DATE-BEG"].value
+        except KeyError as err:
+            raise MissingMetadataError("DATE-BEG is missing from the metadata.") from err
+        if not value:
+            return None
+        return parse_datetime(value).replace(tzinfo=UTC)
+
+    @property
+    def dateend(self) -> datetime | None:
+        """Return a datetime representation of the 'DATE-END' header keyword."""
+        try:
+            value = self["DATE-END"].value
+        except KeyError as err:
+            raise MissingMetadataError("DATE-END is missing from the metadata.") from err
+        if not value:
+            return None
+        return parse_datetime(value).replace(tzinfo=UTC)
+
+    @property
     def shape(self) -> tuple:
         """Get the data shape in array order."""
         return tuple([self[f"NAXIS{i}"].value for i in range(self["NAXIS"].value, 0, -1)])

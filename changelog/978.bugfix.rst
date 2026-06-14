@@ -1,0 +1,1 @@
+Updates daily movie quicklook scheduling to include files created in the past 24 hours, not by the date of observation.

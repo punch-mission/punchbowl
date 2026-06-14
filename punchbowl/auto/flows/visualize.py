@@ -4,6 +4,7 @@ import tempfile
 from datetime import UTC, datetime, timedelta
 
 from prefect import flow, task
+from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from prefect.runtime import flow_run
 
@@ -15,7 +16,7 @@ from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_quick
 from punchbowl.prefect import get_logger
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def visualize_query_ready_files(session, pipeline_config: dict, reference_time: datetime, lookback_hours: float = 24):
     logger = get_logger()
 
@@ -27,8 +28,8 @@ def visualize_query_ready_files(session, pipeline_config: dict, reference_time: 
         for product_code in product_codes:
             product_ready_files = (session.query(File)
                                     .filter(File.state.in_(["created", "progressed", "quickpunched"]))
-                                    .filter(File.date_obs >= (reference_time - timedelta(hours=lookback_hours)))
-                                    .filter(File.date_obs <= reference_time)
+                                    .filter(File.date_created >= (reference_time - timedelta(hours=lookback_hours)))
+                                    .filter(File.date_created <= reference_time)
                                     .filter(File.level == level)
                                     .filter(File.file_type == product_code[0:2])
                                     .filter(File.observatory == product_code[2])
@@ -41,7 +42,7 @@ def visualize_query_ready_files(session, pipeline_config: dict, reference_time: 
     return all_ready_files, all_product_codes
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def visualize_flow_info(input_files: list[File],
                         product_code: str,
                         pipeline_config: dict,

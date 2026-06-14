@@ -1,11 +1,10 @@
 import numpy as np
-from prefect import get_run_logger
 from scipy.ndimage import gaussian_filter
 from skimage.morphology import binary_dilation
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import get_logger, punch_task
 
 
 def run_zspike(
@@ -182,7 +181,7 @@ def identify_bright_structures_task(
     dilation: int = 0,
 ) -> PUNCHCube | None:
     """Prefect task to perform bright structure identification."""
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("identify_bright_structures_task started")
 
     if data is None:

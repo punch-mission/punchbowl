@@ -345,8 +345,8 @@ def plot_punch(  # noqa: C901
     if label_satellites:
         position_keywords = ["CTRXWFI1", "CTRYWFI1",
                              "CTRXWFI2", "CTRYWFI2",
-                             "CTRXWFI3"," CTRYWFI3",
-                             "CTRXNFI4","CTRYNFI4"]
+                             "CTRXWFI3", "CTRYWFI3",
+                             "CTRXNFI4", "CTRYNFI4"]
         for i in range(0, 8, 2):
             satellite = position_keywords[i][-4:]
             if position_keywords[i] in cube.meta and position_keywords[i+1] in cube.meta:

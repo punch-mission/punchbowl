@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from collections import Counter
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 
 from punchbowl import __version__
@@ -14,11 +14,12 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level3.f_corona_model import construct_f_corona_model
+from punchbowl.prefect import get_logger
 
 
 def f_corona_background_query_ready_files(session, pipeline_config: dict, reference_time: datetime,
                                           reference_file: File):
-    logger = get_run_logger()
+    logger = get_logger()
 
     polarized = reference_file.file_type != "CF"
     pol_type = 'pol' if polarized else 'clear'
@@ -130,7 +131,7 @@ def construct_f_corona_background_file_info(level2_files: list[File], pipeline_c
 def construct_f_corona_background_scheduler_flow(pipeline_config_path=None, session=None, reference_time: datetime | None = None):
     session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if not pipeline_config["flows"]["construct_f_corona_background"].get("enabled", True):
         logger.info("Flow 'construct_f_corona_background' is not enabled---halting scheduler")

@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from collections import defaultdict
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger
+from prefect import flow
 from sqlalchemy import func
 
 from punchbowl import __version__
@@ -13,6 +13,7 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level1.dynamic_stray_light import construct_dynamic_stray_light_model
+from punchbowl.prefect import get_logger
 
 fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
 
@@ -61,7 +62,7 @@ def construct_dynamic_stray_light_check_for_inputs(session,
                                                    pipeline_config: dict,
                                                    reference_time: datetime,
                                                    reference_file: File):
-    logger = get_run_logger()
+    logger = get_logger()
 
     min_files_per_half = pipeline_config["flows"]["construct_dynamic_stray_light"]["min_files_per_half"]
     max_files_per_half = pipeline_config["flows"]["construct_dynamic_stray_light"]["max_files_per_half"]
@@ -229,7 +230,7 @@ def construct_dynamic_stray_light_file_info(level1_files: list[File],
 def construct_dynamic_stray_light_scheduler_flow(pipeline_config_path=None, session=None, reference_time: datetime | None = None):
     session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if not pipeline_config["flows"]["construct_dynamic_stray_light"].get("enabled", True):
         logger.info("Flow 'construct_dynamic_stray_light' is not enabled---halting scheduler")

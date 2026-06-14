@@ -3,7 +3,6 @@ from datetime import UTC, datetime
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from prefect import get_run_logger
 
 from punchbowl.auto.control.util import batched
 from punchbowl.data import get_base_file_name, load_trefoil_wcs
@@ -15,7 +14,7 @@ from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_t
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
-from punchbowl.prefect import punch_flow
+from punchbowl.prefect import get_logger, punch_flow
 from punchbowl.util import load_image_task, output_image_task
 
 POLARIZED_FILE_ORDER = ["PM1", "PZ1", "PP1",
@@ -81,7 +80,7 @@ def level2_core_flow(data_list: list[str] | list[PUNCHCube], # noqa: C901
         The resulting data cube. For compatibility, it will be a list of a single cube.
 
     """
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("beginning level 2 core flow")
 
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]

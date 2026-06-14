@@ -11,18 +11,16 @@ import scipy.optimize
 from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime_str
 from numpy.polynomial import polynomial
-from prefect import get_run_logger
 from quadprog import solve_qp
 from scipy.interpolate import griddata
-from threadpoolctl import threadpool_limits
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
-from punchbowl.prefect import punch_flow, punch_task
-from punchbowl.util import ShmPickleableNDArray, average_datetime, interpolate_data, nan_percentile
+from punchbowl.prefect import get_logger, punch_flow, punch_task
+from punchbowl.util import ShmPickleableNDArray, average_datetime, interpolate_data, limit_threads, nan_percentile
 
 
 def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
@@ -134,7 +132,7 @@ def model_fcorona_for_cube_real(xt: np.ndarray,
 
 
     # Since we're parallelizing with processes, we shouldn't run a lot of threads
-    with threadpool_limits(2), mp.Pool(processes=num_workers) as pool:
+    with limit_threads(2), mp.Pool(processes=num_workers) as pool:
         chunks = pool.starmap(_model_fcorona_for_cube_inner, args(), chunksize=4)
 
     # Combine the outputs of each task into final output arrays
@@ -276,7 +274,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
                              polarized: bool = False) -> list[PUNCHCube]:
     """Construct a full F corona model."""
     numba.set_num_threads(num_workers)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if reference_time is None:
         reference_time = datetime.now(UTC)
@@ -430,7 +428,7 @@ def subtract_f_corona_background_task(observation: PUNCHCube,
         A background subtracted data frame
 
     """
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("subtract_f_corona_background started")
 
     before_f_background_models = [load_ndcube_from_fits(f) if isinstance(f, str) else f

@@ -6,13 +6,14 @@ from datetime import UTC, datetime
 from collections.abc import Callable
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.context import get_run_context
 from simpunch.flow import generate_flow
 
 from punchbowl.auto.control import cache_layer
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
+from punchbowl.prefect import get_logger
 
 
 @flow
@@ -68,7 +69,7 @@ def simpunch_core_flow(
         transient_probability: float = 0.03,
         shift_pointing: bool = False) -> list[str]:
 
-    logger = get_run_logger()
+    logger = get_logger()
 
     if isinstance(date_obs, str):
         date_obs = parse_datetime_str(date_obs).replace(tzinfo=UTC)
@@ -98,7 +99,7 @@ def simpunch_core_flow(
 
 @flow
 def simpunch_process_flow(flow_id: int, pipeline_config_path=None, session=None):
-    logger = get_run_logger()
+    logger = get_logger()
 
     if session is None:
         session = get_database_session()

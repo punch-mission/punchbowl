@@ -19,7 +19,7 @@ from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
-from punchbowl.prefect import punch_flow, punch_task
+from punchbowl.prefect import get_logger, punch_flow, punch_task
 from punchbowl.util import ShmPickleableNDArray, average_datetime, interpolate_data, limit_threads, nan_percentile
 
 

@@ -7,7 +7,7 @@ from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.deficient_pixel import mean_correct
 from punchbowl.level1.sqrt import decode_sqrt_data
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import get_logger, punch_task
 from punchbowl.util import limit_threads
 
 

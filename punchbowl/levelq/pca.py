@@ -15,7 +15,7 @@ from sklearn.decomposition import PCA
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import get_logger, punch_task
 from punchbowl.util import DataLoader, limit_threads, load_image_task
 
 

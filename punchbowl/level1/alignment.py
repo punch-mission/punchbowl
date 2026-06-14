@@ -14,7 +14,7 @@ import scipy
 import sep
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
-from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
+from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils, FITSFixedWarning
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
@@ -678,7 +678,7 @@ def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None, max_wo
     if isinstance(distortion_path, (str, Path)):
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", message=".*The WCS transformation has more axes.*",
-                                    category=WFixedWarning)
+                                    category=FITSFixedWarning)
             try:
                 with fits.open(distortion_path) as distortion_hdul:
                     distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")

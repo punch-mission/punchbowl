@@ -15,7 +15,6 @@ import sep
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, FITSFixedWarning, NoConvergence, utils
-from prefect import get_run_logger
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
@@ -24,7 +23,7 @@ from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from punchbowl.level1.alignment_parallel import get_errors, refine_pointing_single_step
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import get_logger, punch_task
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -403,7 +402,7 @@ def solve_pointing( # noqa: C901
         the new world coordinate system
 
     """
-    logger = get_run_logger()
+    logger = get_logger()
 
     wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
     if observatory == "wfi":
@@ -679,7 +678,7 @@ def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None, max_wo
     if isinstance(distortion_path, (str, Path)):
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", message=".*The WCS transformation has more axes.*",
-                                    category=FITSFixedWarning)
+                                    category=WFixedWarning)
             try:
                 with fits.open(distortion_path) as distortion_hdul:
                     distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")

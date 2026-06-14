@@ -1,11 +1,12 @@
 import itertools
 from datetime import datetime, timedelta
 
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.schedules import Cron
 
 from punchbowl.auto.control.db import File
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
+from punchbowl.prefect import get_logger
 
 LEVEL_0_SPACECRAFT = ["1", "2", "3", "4"]
 LEVEL_0_PREFIXES = ["CR", "PM", "PP", "PZ"]
@@ -63,7 +64,7 @@ def check_product_counts_watchdog(start_time=None, end_time=None):
     if end_time is None:
         end_time = datetime.now()
 
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info(f"Checking product counts for {start_time} -> {end_time}")
 

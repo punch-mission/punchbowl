@@ -17,7 +17,6 @@ from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from lmfit import Parameters, minimize
 from lmfit.minimizer import MinimizerResult
-from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits, load_trefoil_wcs
 from punchbowl.data.punchcube import PUNCHCube
@@ -29,7 +28,7 @@ from punchbowl.exceptions import (
 )
 from punchbowl.level2.polarization import resolve_polarization
 from punchbowl.level2.resample import reproject_cube
-from punchbowl.prefect import punch_flow, punch_task
+from punchbowl.prefect import get_logger, punch_flow, punch_task
 from punchbowl.util import (
     DataLoader,
     ShmPickleableNDArray,
@@ -579,7 +578,7 @@ def _subtract_coronal_model(data_slice: np.ndarray, wcses: list[WCS], metas: lis
 def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.ndarray,
                                metas: list[list[NormalizedMetadata]], wcses: list[list[WCS]], mosaic_wcs: WCS,
                                mask: np.ndarray, pool: ProcessPoolExecutor, polarized: bool) -> None:
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("Making coronal models")
     corona_models = []
     corona_model_dates = []
@@ -724,7 +723,7 @@ def estimate_stray_light(filepaths: list[str],
                          polarized: bool = False,
                          num_workers: int | None = None) -> list[PUNCHCube]:
     """Estimate the fixed stray light pattern using a percentile."""
-    logger = get_run_logger()
+    logger = get_logger()
     numba.set_num_threads(num_workers)
     if window_size % 2 == 0:
         raise ValueError("Window size must be odd")

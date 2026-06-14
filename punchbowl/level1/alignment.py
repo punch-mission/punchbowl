@@ -14,7 +14,7 @@ import scipy
 import sep
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
-from astropy.wcs import WCS, DistortionLookupTable, FITSFixedWarning, NoConvergence, utils
+from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize

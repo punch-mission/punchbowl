@@ -11,7 +11,6 @@ import scipy.optimize
 from astropy.nddata import StdDevUncertainty
 from dateutil.parser import parse as parse_datetime_str
 from numpy.polynomial import polynomial
-from quadprog import solve_qp
 from scipy.interpolate import griddata
 
 from punchbowl.data import NormalizedMetadata
@@ -21,132 +20,6 @@ from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.exceptions import InvalidDataError
 from punchbowl.prefect import get_logger, punch_flow, punch_task
 from punchbowl.util import ShmPickleableNDArray, average_datetime, interpolate_data, limit_threads, nan_percentile
-
-
-def solve_qp_cube(input_vals: np.ndarray, cube: np.ndarray,
-                  n_nonnan_required: int=7) -> (np.ndarray, np.ndarray):
-    """
-    Fast solver for the quadratic programming problem.
-
-    Parameters
-    ----------
-    input_vals : np.ndarray
-        array of times
-    cube : np.ndarray
-        array of data
-    n_nonnan_required : int
-        The number of non-nan values that must be present in each pixel's time series.
-        Any pixels with fewer will not be fit, with zeros returned instead.
-
-    Returns
-    -------
-    np.ndarray
-        Array of coefficients for solving polynomial
-
-    """
-    c = np.transpose(input_vals)
-    cube_is_good = np.isfinite(cube)
-    num_inputs = np.sum(cube_is_good, axis=0)
-
-    solution = np.zeros((input_vals.shape[1], cube.shape[1], cube.shape[2]))
-    for i in range(cube.shape[1]):
-        for j in range(cube.shape[2]):
-            is_good = cube_is_good[:, i, j]
-            time_series = cube[:, i, j][is_good]
-            if time_series.size < n_nonnan_required:
-                solution[:, i, j] = 0
-            else:
-                c_iter = c[:, is_good]
-                g_iter = np.matmul(c_iter, c_iter.T)
-                a = np.matmul(c_iter, time_series)
-                try:
-                    solution[:, i, j] = solve_qp(g_iter, a, c_iter, time_series)[0]
-                except ValueError:
-                    solution[:, i, j] = 0
-    return np.asarray(solution), num_inputs
-
-
-def model_fcorona_for_cube_real(xt: np.ndarray,
-                           reference_xt: float,
-                           cube: np.ndarray,
-                           min_brightness: float = 1E-18,
-                           clip_factor: float | None = 1,
-                           return_full_curves: bool = False,
-                           num_workers: int | None = 8,
-                           detrend: bool = True,
-                           ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Model the F corona given a list of times and a corresponding data cube.
-
-    Parameters
-    ----------
-    xt : np.ndarray
-        time array
-    reference_xt: float
-        timestamp to evaluate the model for
-    cube : np.ndarray
-        observation array
-    min_brightness: float
-        pixels dimmer than this value are set to nan and considered empty
-    clip_factor : float | None
-        If None, no smoothing is applied.
-        Otherwise, the difference between the 25th and 75th percentile is computed and values that vary from the median
-        by more than `clip_factor` times the difference data are rejected.
-    return_full_curves: bool
-        If True, this function returns the full curve fitted to the time series at each pixel
-        and the smoothed data cube. If False (default), only the curve's value at the central
-        frame is returned, producing a model at one instant in time.
-    num_workers: int | None
-        Work is parallelized over this many worker processes. If None, this matches the number of cores.
-    detrend : bool
-        Whether to detrend each time series before outlier rejection
-
-    Returns
-    -------
-    np.ndarray
-        The F-corona model at the central point in time. If return_full_curves is True, this is
-        instead the F-corona model at all points in time covered by the data cube
-    np.ndarray
-        The number of data points used in solving the F-corona model for each pixel of the output
-    np.ndarray
-        The smoothed data cube. Returned only if return_full_curves is True.
-
-    """
-    # TODO : re-enable F corona modeling
-    stride = 32
-    def args() -> tuple:
-        # Generate a set of args for one task
-        for i in range(0, cube.shape[0], stride):
-            for j in range(0, cube.shape[1], stride):
-                yield (xt, reference_xt, cube[i:i+stride, j:j+stride, :], min_brightness, clip_factor,
-                       return_full_curves, detrend)
-
-    def reassemble(inputs: tuple) -> np.ndarray:
-        output = np.empty((cube.shape[0], cube.shape[1], *inputs[0].shape[2:]), dtype=inputs[0].dtype)
-        k = 0
-        for i in range(0, cube.shape[0], stride):
-            for j in range(0, cube.shape[1], stride):
-                output[i:i+stride, j:j+stride] = inputs[k]
-                k += 1
-        return output
-
-
-    # Since we're parallelizing with processes, we shouldn't run a lot of threads
-    with limit_threads(2), mp.Pool(processes=num_workers) as pool:
-        chunks = pool.starmap(_model_fcorona_for_cube_inner, args(), chunksize=4)
-
-    # Combine the outputs of each task into final output arrays
-    if return_full_curves:
-        curves, counts, cubes = zip(*chunks, strict=False)
-        curves = reassemble(curves)
-        counts = reassemble(counts)
-        cubes = reassemble(cubes)
-        return curves, counts, cubes
-    model, counts = zip(*chunks, strict=False)
-    model = reassemble(model)
-    counts = reassemble(counts)
-
-    return model, counts
 
 
 def model_fcorona_for_cube(cube: np.ndarray) -> np.ndarray:
@@ -176,63 +49,6 @@ def model_fcorona_for_cube(cube: np.ndarray) -> np.ndarray:
 
     """
     return nan_percentile(cube, 3)
-
-def _model_fcorona_for_cube_inner(xt: np.ndarray,
-                                  reference_xt: float,
-                                  cube: np.ndarray,
-                                  min_brightness: float = 1E-18,
-                                  clip_factor: float | None = 1,
-                                  return_full_curves: bool=False,
-                                  detrend: bool = True,
-                                  ) -> tuple[np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray]:
-    cube = cube.transpose((2, 0, 1))
-    cube[cube < min_brightness] = np.nan
-    xt = np.array(xt)
-    reference_xt -= xt[0]
-    xt -= xt[0]
-
-    def trend_fcn(x: np.ndarray, xvals: np.ndarray) -> np.ndarray:
-        c0, c1, c2 = x
-        return c0 + c1 * xvals + c2 * xvals ** 2
-
-    def trend_resid(x: np.ndarray, xvals: np.ndarray, yvals: np.ndarray) -> np.ndarray:
-        return trend_fcn(x, xvals.ravel()) - yvals.ravel()
-
-    good_px = np.isfinite(cube)
-    if detrend:
-        if np.sum(good_px) < 20:
-            detrended_cube = cube
-        else:
-            x = np.broadcast_to(xt[:, None, None], cube.shape)
-            jacobian = np.stack((
-                    0*x[good_px].ravel() + 1,
-                    x[good_px],
-                    x[good_px] ** 2,
-                ), axis=1)
-            res = scipy.optimize.least_squares(trend_resid, (np.median(cube[good_px]), 0, 0), loss="cauchy",
-                                               f_scale=.5e-13, kwargs={"xvals": x[good_px], "yvals": cube[good_px]},
-                                               jac=lambda *a, **kw: jacobian) #noqa: ARG005
-            trend = trend_fcn(res.x, xt)
-            detrended_cube = cube - trend[:, None, None]
-    else:
-        detrended_cube = cube
-
-    if clip_factor is not None and np.any(good_px):
-        low, center, high = nan_percentile(detrended_cube, [25, 50, 75])
-        width = high - low
-        a, b, c = np.where(detrended_cube[:, ...] > (center + (clip_factor * width)))
-        cube[a, b, c] = np.nan
-
-        a, b, c = np.where(detrended_cube[:, ...] < (center - (clip_factor * width)))
-        cube[a, b, c] = np.nan
-
-    input_array = np.c_[np.power(xt, 3), np.square(xt), xt, np.ones(len(xt))]
-    coefficients, counts = solve_qp_cube(input_array, -cube)
-    coefficients *= -1
-    if return_full_curves:
-        return polynomial.polyval(xt, coefficients[::-1, :, :]), counts, cube.transpose((1, 2, 0))
-
-    return polynomial.polyval(reference_xt, coefficients[::-1, :, :]), counts
 
 
 def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:

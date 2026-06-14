@@ -24,7 +24,7 @@ from astropy.wcs import WCS
 from ccsdspy import PacketArray, PacketField, converters
 from ccsdspy.utils import split_by_apid
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.blocks.core import Block
 from prefect.blocks.fields import SecretDict
 from prefect.cache_policies import NO_CACHE
@@ -66,6 +66,7 @@ from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
 from punchbowl.exceptions import MissingMetadataError
 from punchbowl.limits import LimitSet
+from punchbowl.prefect import get_logger
 from punchbowl.util import load_mask_file
 
 FIXED_PACKETS = ["ENG_XACT", "ENG_LED", "ENG_PFW", "ENG_CEB", "ENG_LZ"]
@@ -364,7 +365,7 @@ def ingest_tlm_file(path: str,
 
 @task
 def unpack_n_bit_values(packed: bytes, byteorder: str, n_bits=19) -> np.ndarray:
-    logger = get_run_logger()
+    logger = get_logger()
     if n_bits in (8, 16, 32, 64):
         trailing = len(packed)%(n_bits//8)
         if trailing:
@@ -1295,7 +1296,7 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
 @flow(log_prints=True)
 def level0_core_flow(pipeline_config: dict, skip_if_no_new_tlm: bool = True, limit_files: list[str] = None,
                      mask_files: list[str] = None, processing_flow_id=None):
-    logger = get_run_logger()
+    logger = get_logger()
     session = Session(engine)
 
     outlier_limits = []
@@ -1394,7 +1395,7 @@ def level0_construct_flow_info(pipeline_config: dict, session, skip_if_no_new_tl
 def level0_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
     skip_if_no_new_tlm = pipeline_config['flows']['level0']['options'].get('skip_if_no_new_tlm', True)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if session is None:
         session = Session(engine)
@@ -1419,7 +1420,7 @@ def level0_scheduler_flow(pipeline_config_path=None, session=None, reference_tim
 
 @flow
 def level0_process_flow(flow_id: int, pipeline_config_path=None , session=None):
-    logger = get_run_logger()
+    logger = get_logger()
 
     if session is None:
         session = Session(engine)

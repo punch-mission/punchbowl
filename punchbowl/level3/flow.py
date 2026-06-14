@@ -3,7 +3,6 @@ from copy import deepcopy
 from datetime import UTC, datetime
 
 import numpy as np
-from prefect import get_run_logger
 
 from punchbowl.auto.control.cache_layer.loader_base_class import DataLoader
 from punchbowl.data import load_ndcube_from_fits
@@ -16,7 +15,7 @@ from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization
 from punchbowl.level3.stellar import subtract_starfield_background_task
 from punchbowl.level3.velocity import plot_flow_map, track_velocity
-from punchbowl.prefect import punch_flow
+from punchbowl.prefect import get_logger, punch_flow
 from punchbowl.util import load_image_task, output_image_task
 
 
@@ -26,7 +25,7 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                         after_f_corona_model_paths: list[str | DataLoader],
                         output_filename: str | None = None) -> list[PUNCHCube]:
     """Level 3 PIM/CIM flow."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info("beginning level 3 PIM/CIM flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
@@ -103,8 +102,8 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
                      before_starfield_path: str | None,
                      after_starfield_path: str | None,
                      output_filename: str | None = None) -> list[PUNCHCube]:
-    """Level 3 PTM/CTM flow."""
-    logger = get_run_logger()
+    """Level 3 CTM flow."""
+    logger = get_logger()
 
     logger.info("beginning level 3 flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
@@ -145,7 +144,7 @@ def generate_level3_low_noise_flow(data_list: list[str] | list[PUNCHCube],
                                    output_filename: str | None = None,
                                    reference_time: str | datetime | None = None) -> list[PUNCHCube]:
     """Generate low noise products."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info("Generating low noise products")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
@@ -161,7 +160,7 @@ def generate_level3_low_noise_flow(data_list: list[str] | list[PUNCHCube],
 def generate_level3_velocity_flow(data_list: list[str],
                                   output_filename: str | None = None) -> list[PUNCHCube]:
     """Generate Level 3 velocity data product."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info("Generating velocity data product")
     velocity_data, plot_parameters = track_velocity(data_list)

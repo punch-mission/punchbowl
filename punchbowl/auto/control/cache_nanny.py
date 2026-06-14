@@ -2,16 +2,17 @@ import os
 import sys
 import time
 
-from prefect import flow, get_run_logger
+from prefect import flow
 from prefect.variables import Variable
 
 from punchbowl.auto.control.cache_layer import manager
 from punchbowl.auto.control.util import load_pipeline_configuration
+from punchbowl.prefect import get_logger
 
 
 @flow
 def cache_nanny(pipeline_config_path: str):
-    logger = get_run_logger()
+    logger = get_logger()
 
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
     new_state = pipeline_config["cache_layer"]["cache_enabled"] and (sys.version_info.minor >= 13)

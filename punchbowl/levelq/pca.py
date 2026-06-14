@@ -11,12 +11,11 @@ from astropy.coordinates import EarthLocation, get_body
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS
-from prefect import get_run_logger
 from sklearn.decomposition import PCA
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import get_logger, punch_task
 from punchbowl.util import DataLoader, limit_threads, load_image_task
 
 
@@ -25,7 +24,7 @@ def pca_filter(input_cubes: list[PUNCHCube], files_to_fit: list[PUNCHCube | Data
                n_components: int=50, med_filt: int=5,
                n_strides: int = 8, blend_size: int = 70) -> None:
     """Run PCA-based filtering."""
-    logger = get_run_logger()
+    logger = get_logger()
     all_files_to_fit, bodies_in_quarter, to_subtract, good_data_mask, is_outlier = load_files(
         input_cubes, files_to_fit, blend_size)
     # 25 threads per worker would saturate all our cores if they all run at once, but experience shows they don't.
@@ -43,7 +42,7 @@ def pca_filter(input_cubes: list[PUNCHCube], files_to_fit: list[PUNCHCube | Data
 def load_files(input_cubes: list[PUNCHCube], files_to_fit: list[PUNCHCube | str | DataLoader],
                blend_size: int = 70) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Load files."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     # Join these two sets of things into one list, sorted by observation time, and keep track of which ones need to
     # be subtracted and where they are in the original list of input cubes. We sort by observation time to ensure the

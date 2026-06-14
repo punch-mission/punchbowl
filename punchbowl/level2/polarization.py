@@ -2,10 +2,9 @@
 import astropy.units as u
 import solpolpy
 from ndcube import NDCollection
-from prefect import get_run_logger
 
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import get_logger, punch_task
 
 
 def resolve_polarization(data_list: list[PUNCHCube], outsys: str = "mzpsolar") -> list[PUNCHCube]:
@@ -63,7 +62,7 @@ def resolve_polarization_task(data_list: list[PUNCHCube | None]) -> list[PUNCHCu
         modified version of the input with polarization resolved
 
     """
-    logger = get_run_logger()
+    logger = get_logger()
 
     if None in data_list:
         logger.info("Skipping polarization resolution because one of the images was None.")

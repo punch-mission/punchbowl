@@ -5,7 +5,7 @@ from itertools import pairwise
 from collections import defaultdict
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from sqlalchemy import and_
 
@@ -17,6 +17,7 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level3.flow import generate_level3_low_noise_flow, level3_core_flow, level3_PIM_CIM_flow
+from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime
 
 
@@ -99,7 +100,7 @@ def get_fcorona_pairs(session, files: list[File], model_type="PF"):
 
 @task(cache_policy=NO_CACHE)
 def level3_PTM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
+    logger = get_logger()
     all_ready_files = session.query(File).where(and_(and_(File.state.in_(["created"]),
                                                           File.level == "3"),
                                                      File.file_type == "PI")).order_by(File.date_obs.asc()).all()
@@ -286,7 +287,7 @@ def level3_PIM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
 
 @task(cache_policy=NO_CACHE)
 def level3_CIM_PIM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99, polarized: bool=False):
-    logger = get_run_logger()
+    logger = get_logger()
     target_type = 'XP' if polarized else 'XR'
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(File.level == "2")
@@ -425,7 +426,7 @@ def level3_CIM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
 
 @task(cache_policy=NO_CACHE)
 def level3_CTM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
+    logger = get_logger()
     all_ready_files = session.query(File).where(and_(and_(File.state.in_(["created"]),
                                                           File.level == "3"),
                                                      File.file_type == "CI")).order_by(File.date_obs.asc()).all()
@@ -533,7 +534,7 @@ def level3_PAM_query_ready_files(session, pipeline_config: dict, reference_time=
     return _level3_CAMPAM_query_ready_files(session, polarized=True, pipeline_config=pipeline_config, max_n=max_n)
 
 def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: dict, reference_time=None, max_n=100):
-    logger = get_run_logger()
+    logger = get_logger()
     target_type = "P" if polarized else "C"
     flow_type = f'level3_{target_type}AM'
     skip_starfield = pipeline_config['flows'][flow_type].get('skip_starfield', False)

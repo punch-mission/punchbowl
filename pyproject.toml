@@ -23,7 +23,6 @@ dependencies = [
     "pylibjpeg",
     "python-dateutil",
     "remove_starfield>=0.1",
-    "quadprog",
     "pylibjpeg[openjpeg]",
     "requests",
     "threadpoolctl",

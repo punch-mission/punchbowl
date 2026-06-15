@@ -17,7 +17,7 @@ Using the punchbowl code, an end user could use this as a starting point for bes
                         starfield_background_path: str | None,
                         output_filename: str | None = None) -> list[NDCube]:
         """Level 3 core flow."""
-        logger = get_run_logger()
+        logger = get_logger()
 
         logger.info("beginning level 3 core flow")
         data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
@@ -65,7 +65,7 @@ This task handles the overall data flow and logging, with the primary processing
             A background subtracted data frame
 
         """
-        logger = get_run_logger()
+        logger = get_logger()
         logger.info("subtract_f_corona_background started")
 
 

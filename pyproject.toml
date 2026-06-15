@@ -18,23 +18,19 @@ dependencies = [
     "solpolpy",
     "scipy",
     "lmfit",
-    "sunkit-image",
     "setuptools",
     "reproject",
     "pylibjpeg",
     "python-dateutil",
     "remove_starfield>=0.1",
-    "quadprog",
     "pylibjpeg[openjpeg]",
     "requests",
     "threadpoolctl",
     "numexpr",
     "glymur",
-    "astroscrappy",
     "scikit-learn",
     "astrometry",
     "numba",
-    "pre-commit==4.6.0",
 ]
 requires-python = ">=3.11"
 authors = [

@@ -3,7 +3,8 @@ import json
 import tempfile
 from datetime import UTC, datetime, timedelta
 
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
+from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from prefect.runtime import flow_run
 
@@ -12,11 +13,12 @@ from punchbowl.auto.control.util import get_database_session, load_pipeline_conf
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.data.meta import construct_all_product_codes
 from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_quicklook, write_quicklook_to_mp4
+from punchbowl.prefect import get_logger
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def visualize_query_ready_files(session, pipeline_config: dict, reference_time: datetime, lookback_hours: float = 24):
-    logger = get_run_logger()
+    logger = get_logger()
 
     all_ready_files = []
     all_product_codes = []
@@ -26,8 +28,8 @@ def visualize_query_ready_files(session, pipeline_config: dict, reference_time: 
         for product_code in product_codes:
             product_ready_files = (session.query(File)
                                     .filter(File.state.in_(["created", "progressed", "quickpunched"]))
-                                    .filter(File.date_obs >= (reference_time - timedelta(hours=lookback_hours)))
-                                    .filter(File.date_obs <= reference_time)
+                                    .filter(File.date_created >= (reference_time - timedelta(hours=lookback_hours)))
+                                    .filter(File.date_created <= reference_time)
                                     .filter(File.level == level)
                                     .filter(File.file_type == product_code[0:2])
                                     .filter(File.observatory == product_code[2])
@@ -40,7 +42,7 @@ def visualize_query_ready_files(session, pipeline_config: dict, reference_time: 
     return all_ready_files, all_product_codes
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def visualize_flow_info(input_files: list[File],
                         product_code: str,
                         pipeline_config: dict,
@@ -150,7 +152,7 @@ def movie_process_flow(flow_id: int, pipeline_config_path=None, session=None):
     if session is None:
         session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    logger = get_run_logger()
+    logger = get_logger()
 
     # fetch the appropriate flow db entry
     flow_db_entry = session.query(Flow).where(Flow.flow_id == flow_id).one()

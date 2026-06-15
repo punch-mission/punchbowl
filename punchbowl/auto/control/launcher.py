@@ -5,7 +5,7 @@ from random import shuffle
 from datetime import datetime, timedelta
 from collections import defaultdict
 
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.client.orchestration import get_client
 from prefect.variables import Variable
@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from punchbowl.auto.cli import shorten_host
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
+from punchbowl.prefect import get_logger
 
 
 @task(cache_policy=NO_CACHE)
@@ -122,7 +123,7 @@ def escalate_long_waiting_flows(session, pipeline_config):
 
 def determine_launchable_flow_count(weight_planned, weight_running, max_weight_running, max_weight_to_launch,
                                     max_flows_to_launch, max_flows_running, num_running_flows):
-    logger = get_run_logger()
+    logger = get_logger()
     amount_to_launch = max_weight_running - weight_running
     logger.info(f"Total weight {amount_to_launch:.2f} can be launched at this time.")
 
@@ -159,7 +160,7 @@ async def launch_ready_flows(session: Session, flow_info: list[list[Flow]], tags
     """
     if not len(flow_info):
         return
-    logger = get_run_logger()
+    logger = get_logger()
     # gather the flow information for launching
 
     # If we don't shuffle, flows will be sorted by priority which may implicitly be a sort by flow type. This could
@@ -279,7 +280,7 @@ async def launcher(pipeline_config_path=None):
 
     """
     current_host = shorten_host(socket.gethostname())
-    logger = get_run_logger()
+    logger = get_logger()
 
     if pipeline_config_path is None:
         pipeline_config_path = await Variable.get("punchpipe_config", "punchpipe_config.yaml")

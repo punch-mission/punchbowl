@@ -3,19 +3,18 @@ from datetime import UTC, datetime
 import astropy.units as u
 import numpy as np
 from ndcube import NDCollection
-from prefect import get_run_logger
 from solpolpy import resolve
 
 from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import get_logger, punch_task
 
 
 @punch_task
 def convert_polarization(
         input_data: PUNCHCube) -> PUNCHCube:
     """Convert polarization from MZP to BpB."""
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("convert2bpb started")
 
     collection_contents = [(label,

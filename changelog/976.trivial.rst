@@ -1,0 +1,1 @@
+Bump codecov/codecov-action from 6 to 7 in /.github/workflows.

@@ -9,6 +9,7 @@ Welcome to punchbowl's documentation!
 - We recommend beginning with the `introduction <intro.html>`_ and working through the related concepts.
 - When you're ready to begin, read through documentation on how to `get data <data/index.html>`_.
 - Check out the `examples <auto_examples/index.html>`_ tab for performing specific tasks.
+- `Need help? <help.html>`_ We're happy to help you get going or diagnose problems, and we want to hear about any problems or bugs you encounter.
 - To understand a specific part of the pipeline, look in the `segment descriptions <pipeline/index.html>`_.
 - Explore the `full API <autoapi/index.html>`_ for full details on functions.
 

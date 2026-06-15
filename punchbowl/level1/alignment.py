@@ -366,6 +366,7 @@ def solve_pointing( # noqa: C901
         distortion: WCS | None = None,
         saturation_limit: float = np.inf,
         observatory: str = "wfi",
+        n_stars: int = 15,
         n_rounds: int = 50,
         n_workers: int = 1) -> WCS:
     """
@@ -383,6 +384,8 @@ def solve_pointing( # noqa: C901
         the maximum star brightness to utilize
     observatory : str
         "wfi" or "nfi"
+    n_stars: int
+        the number of stars to use for each asterism when solving
     n_rounds : int
         the number of iterations to run for pointing refinement
     n_workers : int
@@ -468,7 +471,7 @@ def solve_pointing( # noqa: C901
     rng = np.random.default_rng(seed=1)
     results = []
     observed_tree = KDTree(observed)
-    star_samples = [catalog_stars[rng.choice(indices, 15, replace=False)] for _ in range(n_rounds)]
+    star_samples = [catalog_stars[rng.choice(indices, n_stars, replace=False)] for _ in range(n_rounds)]
     if n_workers == 1:
         results = [refine_pointing_single_step(guess_wcs, observed_tree, sample, fix_pv=True)
                    for sample in star_samples]

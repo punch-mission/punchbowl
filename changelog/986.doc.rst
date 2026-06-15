@@ -1,0 +1,1 @@
+Add contact email to Help page, and link the Help page prominently from the Docs landing page.

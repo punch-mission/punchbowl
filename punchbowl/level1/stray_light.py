@@ -527,6 +527,8 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
         bottom_crop = bottom_crops[int(cubes[0].meta["OBSCODE"].value) - 1]
         repro_input = repro_input[:, bottom_crop:, 350:-350]
         wcs_cropped = cubes[0].wcs[bottom_crop:, 350:-350]
+    else:
+        wcs_cropped = cubes[0].wcs
 
     with warnings.catch_warnings(), np.errstate(all="ignore"):
         warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")

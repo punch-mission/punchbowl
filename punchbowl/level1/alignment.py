@@ -663,12 +663,8 @@ def build_distortion_model(
 
 
 @punch_task
-<<<<<<< alignment-speed
-def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers: int = 1,
-=======
-def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None, max_workers: int = 4,
->>>>>>> main
-               n_rounds: int = 50) -> PUNCHCube:
+def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None,
+               max_workers: int = 4, n_rounds: int = 50) -> PUNCHCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.
 

@@ -107,9 +107,6 @@ def _residual(params: Parameters,
             [np.sin(params["crota"]), np.cos(params["crota"])],
         ],
     )
-    guess_wcs.cpdis1 = guess_wcs.cpdis1
-    guess_wcs.cpdis2 = guess_wcs.cpdis2
-
     errors, _ = get_errors(guess_wcs, (ra, dec), observed_tree, catalog_stars_in_pixels=False)
     errors = errors[errors < max_error]
     return np.nansum(np.abs(errors)) / len(errors)

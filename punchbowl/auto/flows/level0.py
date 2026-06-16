@@ -684,10 +684,9 @@ def get_metadata(first_image_packet,
     dt = func.abs(func.timestampdiff(text("second"), ENG_XACT.timestamp, observation_midpoint))
     middle_xact_db = (session.query(ENG_XACT)
                   .filter(ENG_XACT.spacecraft_id == spacecraft_id)
-                  .filter(ENG_XACT.timestamp >= observation_time)
-                  .filter(ENG_XACT.timestamp <= observation_end)
+                  .filter(ENG_XACT.timestamp >= observation_time - packet_window_size)
+                  .filter(ENG_XACT.timestamp <= observation_end + packet_window_size)
                   .order_by(dt.asc()).first())
-
 
     # get the PFW packet right before the observation
     best_pfw_db = (session.query(ENG_PFW)
@@ -1209,8 +1208,7 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
     logger.info(f"Got {len(image_inputs)} images to try forming")
 
     image_inputs.sort()
-    # Remove the sort key
-    image_inputs = [e[1] for e in image_inputs]
+
     max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
     unique_image_inputs = []
     seen_inputs = set()
@@ -1220,13 +1218,18 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
             unique_image_inputs.append(image_input)
             if len(unique_image_inputs) >= max_images_per_flow:
                 break
+
+    last_attempts = [e[0][1] for e in unique_image_inputs if e[0][0]]
+    retry_timestamps = [e[1][1] for e in unique_image_inputs if e[0][0]]
+    new_timestamps = [e[1][1] for e in unique_image_inputs if not e[0][0]]
+
+    # Remove the sort key
+    unique_image_inputs = [e[1] for e in unique_image_inputs]
+
     # Attach everything we need as inputs
     image_inputs = [(*image_input, defs, apid_name2num, pipeline_config, spacecraft_secrets,
                              outlier_limits, masks, processing_flow_id) for image_input in unique_image_inputs]
 
-    last_attempts = [e[0][1] for e in image_inputs if e[0][0]]
-    retry_timestamps = [e[1][1] for e in image_inputs if e[0][0]]
-    new_timestamps = [e[1][1] for e in image_inputs if not e[0][0]]
     logger.info(f"Will run {len(image_inputs)} attempts, including {len(retry_timestamps)} retries")
     if retry_timestamps:
         logger.info(f"Retries were last attempted between {min(last_attempts)} and {max(last_attempts)}")

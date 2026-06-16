@@ -119,7 +119,7 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
     for o in data_list:
         out_meta: NormalizedMetadata = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3")
         out_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        out_meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+        out_meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME"))]
         out_meta.history = o.meta.history
         out_meta["CALSTAR1"] = before_starfield_path
         out_meta["CALSTAR2"] = after_starfield_path

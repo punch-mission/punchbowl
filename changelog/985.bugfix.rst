@@ -1,0 +1,1 @@
+Fix input image cropping for NFI static stray light model generation.

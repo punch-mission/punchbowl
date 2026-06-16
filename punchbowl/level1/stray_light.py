@@ -473,6 +473,7 @@ def _load_files(filepaths: list[str], mosaic_wcs: WCS, logger: Logger, do_uncert
     return data_array, reprojected_array, wcses, metas, uncertainties
 
 
+# Amount to ignore at the bottom of each of the 3 WFI cameras
 bottom_crops = [230, 240, 243]
 
 
@@ -495,7 +496,6 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
             data_destination[:] = np.nan
             return f"All-bad image {cube.meta['FILENAME'].value}"
 
-    bottom_crop = bottom_crops[int(cubes[0].meta["OBSCODE"].value) - 1]
     for i in range(len(cubes)):
         data_destination[i, :] = cubes[i].data
 
@@ -509,21 +509,26 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
     # aggressively to remove areas that are usually low-quality
     y, x = np.mgrid[:2048, :2048]
 
-    # Clip the upper corners
-    repro_input[:, y > 1300 + x] = np.nan
-    repro_input[:, y > 1300 + (2048 - x)] = np.nan
+    obs = cubes[0].meta["OBSCODE"].value
+    if obs != "4":
+        # Clip the upper corners
+        repro_input[:, y > 1300 + x] = np.nan
+        repro_input[:, y > 1300 + (2048 - x)] = np.nan
 
-    # Clip the lower-left corner, including a good portion of the bottom edge
-    repro_input[:, y < 1200 - 1.3 * x] = np.nan
-    repro_input[:, y < 850 - 0.75 * x] = np.nan
+        # Clip the lower-left corner, including a good portion of the bottom edge
+        repro_input[:, y < 1200 - 1.3 * x] = np.nan
+        repro_input[:, y < 850 - 0.75 * x] = np.nan
 
-    # Clip the lower-right corner, including a good portion of the bottom edge
-    repro_input[:, y < 1200 - 1.3 * (2048 - x)] = np.nan
-    repro_input[:, y < 850 - 0.75 * (2048 - x)] = np.nan
+        # Clip the lower-right corner, including a good portion of the bottom edge
+        repro_input[:, y < 1200 - 1.3 * (2048 - x)] = np.nan
+        repro_input[:, y < 850 - 0.75 * (2048 - x)] = np.nan
 
-    # Don't even reproject the sides and bottom
-    repro_input = repro_input[:, bottom_crop:, 350:-350]
-    wcs_cropped = cubes[0].wcs[bottom_crop:, 350:-350]
+        # Don't even reproject the sides and bottom
+        bottom_crop = bottom_crops[int(cubes[0].meta["OBSCODE"].value) - 1]
+        repro_input = repro_input[:, bottom_crop:, 350:-350]
+        wcs_cropped = cubes[0].wcs[bottom_crop:, 350:-350]
+    else:
+        wcs_cropped = cubes[0].wcs
 
     with warnings.catch_warnings(), np.errstate(all="ignore"):
         warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")

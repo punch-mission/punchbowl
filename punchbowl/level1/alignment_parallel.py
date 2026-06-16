@@ -45,6 +45,7 @@ def refine_pointing_single_step(
         the new world coordinate system
 
     """
+    guess_wcs = guess_wcs.deepcopy()
     # set up the optimization
     params = Parameters()
     initial_crota = extract_crota_from_wcs(guess_wcs)
@@ -60,16 +61,19 @@ def refine_pointing_single_step(
     pv = guess_wcs.wcs.get_pv()[0][-1] if guess_wcs.wcs.get_pv() else 0.0
     params.add("pv", value=pv, min=0.0, max=1.0, vary=not fix_pv)
 
+    ra = catalog_stars.ra.to_value(u.deg)
+    dec = catalog_stars.dec.to_value(u.deg)
     with np.errstate(all="ignore"):
         out = minimize(_residual, params, method=method,
-                       args=(catalog_stars, observed_tree, guess_wcs),
+                       args=(ra, dec, observed_tree, guess_wcs),
                        max_nfev=1000, calc_covar=False)
     return (out.params["platescale"].value, out.params["crval1"].value, out.params["crval2"].value,
             out.params["crota"].value, out.params["pv"].value)
 
 
 def _residual(params: Parameters,
-              catalog_stars: SkyCoord,
+              ra: np.ndarray,
+              dec: np.ndarray,
               observed_tree: KDTree,
               guess_wcs: WCS,
               max_error: float = 30) -> float:
@@ -80,8 +84,8 @@ def _residual(params: Parameters,
     ----------
     params : Parameters
         optimization parameters from lmfit
-    catalog_stars : SkyCoord
-        image catalog of stars to match against
+    ra, dec : np.ndarray
+        expected coordinates of the stars, in degrees
     observed_tree : KDTree
         a KDTree of the pixel coordinates of the observed stars
     guess_wcs : WCS
@@ -103,16 +107,14 @@ def _residual(params: Parameters,
             [np.sin(params["crota"]), np.cos(params["crota"])],
         ],
     )
-    guess_wcs.cpdis1 = guess_wcs.cpdis1
-    guess_wcs.cpdis2 = guess_wcs.cpdis2
-
-    errors, _ = get_errors(guess_wcs, catalog_stars, observed_tree)
+    errors, _ = get_errors(guess_wcs, (ra, dec), observed_tree, catalog_stars_in_pixels=False)
     errors = errors[errors < max_error]
     return np.nansum(np.abs(errors)) / len(errors)
 
 
 def get_errors(wcs: WCS, catalog_stars: SkyCoord | tuple[np.ndarray, np.ndarray],
-               observed_stars: np.ndarray | KDTree) -> tuple[np.ndarray, np.ndarray]:
+               observed_stars: np.ndarray | KDTree,
+               catalog_stars_in_pixels: bool = True) -> tuple[np.ndarray, np.ndarray]:
     """Compute errors between expected and observed star locations."""
     if isinstance(observed_stars, np.ndarray):
         observed_stars = KDTree(observed_stars)
@@ -121,6 +123,8 @@ def get_errors(wcs: WCS, catalog_stars: SkyCoord | tuple[np.ndarray, np.ndarray]
             xs, ys = catalog_stars.to_pixel(wcs, mode="all")
         except NoConvergence as e:
             xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
+    elif not catalog_stars_in_pixels:
+        xs, ys = wcs.world_to_pixel_values(*catalog_stars)
     else:
         xs, ys = catalog_stars
     refined_coords = np.stack([xs, ys], axis=-1)

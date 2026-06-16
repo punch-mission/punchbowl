@@ -2,7 +2,7 @@ import json
 import random
 from datetime import datetime, timedelta
 
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 
 from punchbowl import __version__
@@ -12,12 +12,13 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level3.stellar import generate_starfield_background
+from punchbowl.prefect import get_logger
 
 
 @task(cache_policy=NO_CACHE)
 def starfield_background_query_ready_files(session, pipeline_config: dict,
                                            reference_time: datetime, reference_file: File):
-    logger = get_run_logger()
+    logger = get_logger()
 
     data_type = {"PS": "pol", "CS": "clear"}[reference_file.file_type]
 
@@ -136,7 +137,7 @@ def construct_starfield_background_file_info(level3_files: list[File], pipeline_
 def construct_starfield_background_scheduler_flow(pipeline_config_path=None, session=None, reference_time: datetime | None = None):
     session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if not pipeline_config["flows"]["construct_starfield_background"].get("enabled", True):
         logger.info("Flow 'construct_starfield_background' is not enabled---halting scheduler")

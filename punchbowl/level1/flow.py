@@ -5,7 +5,6 @@ from collections.abc import Generator
 
 import astropy.units as u
 import numpy as np
-from prefect import get_run_logger
 from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
 from regularizepsf.util import calculate_covering
 
@@ -24,7 +23,7 @@ from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
-from punchbowl.prefect import punch_flow
+from punchbowl.prefect import get_logger, punch_flow
 from punchbowl.util import DataLoader, load_image_task, load_mask_file, output_image_task
 
 KEYS_TO_NOT_COPY = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "TITLE", "TYPECODE", "FILEVRSN"]
@@ -81,7 +80,7 @@ def level1_early_core_flow(  # noqa: C901
     mask_path: str | None = None,
 ) -> list[PUNCHCube]:
     """Core flow for level 1, doing preliminary stray light subtraction."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info("beginning level 1 early core flow")
 
@@ -239,7 +238,7 @@ def level1_middle_core_flow(
     output_filename: list[str] | None = None,
 ) -> list[PUNCHCube]:
     """Core flow for level 1, applying WFI dynamic stray light subtraction."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info("beginning level 1 middle core flow")
 
@@ -293,7 +292,7 @@ def level1_late_core_flow(
     output_filename: list[str] | None = None,
 ) -> list[PUNCHCube]:
     """Core flow for level 1, applying final stray light subtraction."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info("beginning level 1 late core flow")
 
@@ -357,7 +356,7 @@ def levelh_core_flow(
     output_filename: str | None = None,
 ) -> list[PUNCHCube]:
     """Core flow for level 0.5 also known as level H."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info("beginning level H core flow")
 

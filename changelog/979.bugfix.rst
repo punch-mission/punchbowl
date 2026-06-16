@@ -1,0 +1,1 @@
+Removes unintended space that prevented labeling WFI-3 in `plot_punch`.

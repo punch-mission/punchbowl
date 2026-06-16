@@ -1,9 +1,8 @@
 import numpy as np
-from threadpoolctl import threadpool_limits
 
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_task
-from punchbowl.util import validate_image_is_square
+from punchbowl.util import limit_threads, validate_image_is_square
 
 
 def streak_correction_matrix(
@@ -105,7 +104,7 @@ def correct_streaks(
 
     """
     validate_image_is_square(image)
-    with threadpool_limits(max_workers):
+    with limit_threads(max_workers):
         correction_matrix = streak_correction_matrix(image.shape[0], exposure_time, readout_line_time, reset_line_time)
         return correction_matrix.T @ image
 

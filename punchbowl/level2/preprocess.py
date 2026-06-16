@@ -2,9 +2,9 @@ from functools import lru_cache
 
 import numpy as np
 import scipy
-from prefect import get_run_logger
 
 from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.prefect import get_logger
 from punchbowl.util import load_mask_file
 
 
@@ -49,7 +49,7 @@ def apply_masks(data_list: list[PUNCHCube], mask_list: list[str | None]) -> None
 
 def apply_alpha(data_list: list[PUNCHCube], alphas_file: str | None = None) -> None:
     """Apply alpha scalings."""
-    logger = get_run_logger()
+    logger = get_logger()
     if alphas_file is not None:
         alpha_data = np.loadtxt(alphas_file, delimiter=",", skiprows=1, dtype=str)
         alphas = {code[1:]: float(alpha) for code, alpha in alpha_data}

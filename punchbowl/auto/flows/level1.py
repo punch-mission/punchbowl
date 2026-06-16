@@ -4,7 +4,7 @@ from itertools import pairwise
 from collections import defaultdict
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import aliased
@@ -16,6 +16,7 @@ from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
 from punchbowl.level1.flow import level1_early_core_flow, level1_late_core_flow, level1_middle_core_flow
+from punchbowl.prefect import get_logger
 
 SCIENCE_LEVEL0_TYPE_CODES = ["PM", "PZ", "PP", "CR"]
 SCIENCE_LEVEL1_MIDDLE_INPUT_TYPE_CODES = ["XM", "XZ", "XP"]
@@ -29,7 +30,7 @@ SCIENCE_LEVEL1_QUICK_OUTPUT_TYPE_CODES = ["QM", "QZ", "QP"]
 @task(cache_policy=NO_CACHE)
 def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99,
                                    flow_name: str = "level1_early"):
-    logger = get_run_logger()
+    logger = get_logger()
     file_types = [t for t in SCIENCE_LEVEL0_TYPE_CODES
                   if t[1] in pipeline_config['flows'][flow_name].get('polarizations', 'MZPR')]
 
@@ -610,7 +611,7 @@ def level1_early_chimera_process_flow(flow_id: int | list[int], pipeline_config_
 
 @task(cache_policy=NO_CACHE)
 def level1_middle_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
+    logger = get_logger()
     start_date, end_date = get_first_last_stray_light(session, dynamic=True)
     child = aliased(File)
     child_exists_subquery = (session.query(FileRelationship)
@@ -731,7 +732,7 @@ def level1_middle_process_flow(flow_id: int | list[int], pipeline_config_path=No
 
 @task(cache_policy=NO_CACHE)
 def level1_late_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
+    logger = get_logger()
     start_date, end_date = get_first_last_stray_light(session)
     child = aliased(File)
     child_exists_subquery = (session.query(FileRelationship)
@@ -864,7 +865,7 @@ def level1_late_process_flow(flow_id: int | list[int], pipeline_config_path=None
 
 @task(cache_policy=NO_CACHE)
 def level1_quick_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_run_logger()
+    logger = get_logger()
     child = aliased(File)
     no_earlier_than = pipeline_config["flows"]["level1_quick"].get("no-earlier-than", "1970-01-01")
     child_exists_subquery = (session.query(FileRelationship)

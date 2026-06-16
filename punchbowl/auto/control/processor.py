@@ -4,7 +4,7 @@ import socket
 from datetime import UTC, datetime
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import get_run_logger, tags
+from prefect import tags
 from prefect.context import MissingContextError, get_run_context
 
 from punchbowl import __version__
@@ -16,6 +16,7 @@ from punchbowl.auto.control.util import (
     replace_file_version_in_metadata,
     write_file,
 )
+from punchbowl.prefect import get_logger
 
 
 def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pipeline_config_path: str, session=None,
@@ -28,7 +29,7 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
         flow_ids = flow_id
 
     try:
-        logger = get_run_logger()
+        logger = get_logger()
         logger.info(f"Running under PID {os.getpid()}")
 
         # load pipeline configuration

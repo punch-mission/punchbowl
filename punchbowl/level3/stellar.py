@@ -11,7 +11,6 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCollection
-from prefect import get_run_logger
 from remove_starfield import BlockMasker, ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 from reproject import reproject_interp
@@ -25,7 +24,7 @@ from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits, write_ndcu
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, celestial_north_from_wcs
 from punchbowl.exceptions import InvalidDataError
-from punchbowl.prefect import punch_flow, punch_task
+from punchbowl.prefect import get_logger, punch_flow, punch_task
 from punchbowl.util import average_datetime, interpolate_data
 
 warnings.filterwarnings("ignore")
@@ -227,7 +226,7 @@ def generate_starfield_background(
         is_polarized: bool = False,
         out_file: str | None = None) -> PUNCHCube | None :
     """Create a background starfield map from a series of PUNCH images over a long period of time."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     if reference_time is None:
         reference_time = datetime.now(UTC)
@@ -341,7 +340,7 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         A background starfield subtracted data frame
 
     """
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("subtract_starfield_background started")
 
     if before_starfield_path is None and after_starfield_path is None:

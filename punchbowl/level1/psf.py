@@ -4,14 +4,13 @@ from pathlib import Path
 import numpy as np
 import reproject
 from astropy.wcs import WCS
-from prefect import get_run_logger
 from regularizepsf import ArrayPSF, ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf, varied_functional_psf
 from regularizepsf.util import calculate_covering
 from scipy.ndimage import binary_dilation
 
 from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import get_logger, punch_task
 from punchbowl.util import DataLoader
 
 
@@ -189,6 +188,6 @@ def correct_psf_task(
                                          f"PSF corrected with {os.path.basename(model_path)} model")
     else:
         data_object.meta.history.add_now("LEVEL1-correct_psf", "Empty model path so no correction applied")
-        logger = get_run_logger()
+        logger = get_logger()
         logger.info("No model path so PSF correction is skipped")
     return data_object

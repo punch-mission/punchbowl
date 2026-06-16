@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "punchbowl"
 dynamic = ["version"]
 dependencies = [
+    "fastapi==0.136.0",
     "numpy",
     "astropy",
     "sunpy[all]",
@@ -18,23 +19,19 @@ dependencies = [
     "solpolpy",
     "scipy",
     "lmfit",
-    "sunkit-image",
     "setuptools",
     "reproject",
     "pylibjpeg",
     "python-dateutil",
     "remove_starfield>=0.1",
-    "quadprog",
     "pylibjpeg[openjpeg]",
     "requests",
     "threadpoolctl",
     "numexpr",
     "glymur",
-    "astroscrappy",
     "scikit-learn",
     "astrometry",
     "numba",
-    "pre-commit==4.6.0",
 ]
 requires-python = ">=3.11"
 authors = [

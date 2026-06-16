@@ -3,7 +3,7 @@ import json
 from datetime import UTC, datetime, timedelta
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 
 from punchbowl import __version__
 from punchbowl.auto.control.db import File, Flow
@@ -12,12 +12,13 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level3.velocity import track_velocity
+from punchbowl.prefect import get_logger
 
 
 @task
 def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time: datetime=None, max_n: float=100):
     flow_type = "L3_VAM"
-    logger = get_run_logger()
+    logger = get_logger()
     min_file_count = pipeline_config["flows"]["L3_VAM"]["min_file_count"]
 
     all_ready_files = (session.query(File)

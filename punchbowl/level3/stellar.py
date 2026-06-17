@@ -11,7 +11,6 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime_str
 from ndcube import NDCollection
-from prefect import get_run_logger
 from remove_starfield import BlockMasker, ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 from reproject import reproject_interp
@@ -23,13 +22,9 @@ from solpolpy.util import solnorth_from_wcs
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.data.wcs import (
-    calculate_celestial_wcs_from_helio,
-    calculate_helio_wcs_from_celestial,
-    celestial_north_from_wcs,
-)
+from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, celestial_north_from_wcs
 from punchbowl.exceptions import InvalidDataError
-from punchbowl.prefect import punch_flow, punch_task
+from punchbowl.prefect import get_logger, punch_flow, punch_task
 from punchbowl.util import average_datetime, interpolate_data
 
 warnings.filterwarnings("ignore")
@@ -231,7 +226,7 @@ def generate_starfield_background(
         is_polarized: bool = False,
         out_file: str | None = None) -> PUNCHCube | None :
     """Create a background starfield map from a series of PUNCH images over a long period of time."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     if reference_time is None:
         reference_time = datetime.now(UTC)
@@ -345,7 +340,7 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         A background starfield subtracted data frame
 
     """
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("subtract_starfield_background started")
 
     if before_starfield_path is None and after_starfield_path is None:
@@ -361,10 +356,10 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         shape_before = star_datacube_before.data.shape[-2:]
         shape_after = star_datacube_after.data.shape[-2:]
 
-        wcs_celestial_before = calculate_celestial_wcs_from_helio(star_datacube_before.wcs)
+        wcs_celestial_before = star_datacube_before.celestial_wcs
         wcs_celestial_before.wcs.cdelt[0] = wcs_celestial_before.wcs.cdelt[0] * -1
 
-        wcs_celestial_after = calculate_celestial_wcs_from_helio(star_datacube_after.wcs)
+        wcs_celestial_after = star_datacube_after.celestial_wcs
         wcs_celestial_after.wcs.cdelt[0] = wcs_celestial_after.wcs.cdelt[0] * -1
 
         # TODO - Test with polarized data...
@@ -416,7 +411,7 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
                                         wcs_celestial[0])
             subtracted = starfield_model.subtract_from_image(
                 PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array), axis=0),
-                       wcs=data_object.wcs.celestial,
+                       wcs=data_object.wcs.celestial_wcs,
                        meta=data_object.meta),
                 handle_wrap_point=False,
                 processor=PUNCHImageProcessor(key="A"))
@@ -428,7 +423,7 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
             starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
             subtracted = starfield_model.subtract_from_image(
                 PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
-                       wcs=data_object.wcs,
+                       wcs=data_object.celestial_wcs,
                        meta=data_object.meta),
                 handle_wrap_point=False,
                 processor=PUNCHImageProcessor(key="A"))

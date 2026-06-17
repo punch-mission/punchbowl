@@ -24,7 +24,7 @@ from astropy.wcs import WCS
 from ccsdspy import PacketArray, PacketField, converters
 from ccsdspy.utils import split_by_apid
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger, task
+from prefect import flow, task
 from prefect.blocks.core import Block
 from prefect.blocks.fields import SecretDict
 from prefect.cache_policies import NO_CACHE
@@ -66,6 +66,7 @@ from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
 from punchbowl.exceptions import MissingMetadataError
 from punchbowl.limits import LimitSet
+from punchbowl.prefect import get_logger
 from punchbowl.util import load_mask_file
 
 FIXED_PACKETS = ["ENG_XACT", "ENG_LED", "ENG_PFW", "ENG_CEB", "ENG_LZ"]
@@ -364,7 +365,7 @@ def ingest_tlm_file(path: str,
 
 @task
 def unpack_n_bit_values(packed: bytes, byteorder: str, n_bits=19) -> np.ndarray:
-    logger = get_run_logger()
+    logger = get_logger()
     if n_bits in (8, 16, 32, 64):
         trailing = len(packed)%(n_bits//8)
         if trailing:
@@ -683,10 +684,9 @@ def get_metadata(first_image_packet,
     dt = func.abs(func.timestampdiff(text("second"), ENG_XACT.timestamp, observation_midpoint))
     middle_xact_db = (session.query(ENG_XACT)
                   .filter(ENG_XACT.spacecraft_id == spacecraft_id)
-                  .filter(ENG_XACT.timestamp >= observation_time)
-                  .filter(ENG_XACT.timestamp <= observation_end)
+                  .filter(ENG_XACT.timestamp >= observation_time - packet_window_size)
+                  .filter(ENG_XACT.timestamp <= observation_end + packet_window_size)
                   .order_by(dt.asc()).first())
-
 
     # get the PFW packet right before the observation
     best_pfw_db = (session.query(ENG_PFW)
@@ -1208,8 +1208,7 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
     logger.info(f"Got {len(image_inputs)} images to try forming")
 
     image_inputs.sort()
-    # Remove the sort key
-    image_inputs = [e[1] for e in image_inputs]
+
     max_images_per_flow = pipeline_config["flows"]["level0"]["options"].get("max_images_per_flow", 2_000)
     unique_image_inputs = []
     seen_inputs = set()
@@ -1219,13 +1218,18 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
             unique_image_inputs.append(image_input)
             if len(unique_image_inputs) >= max_images_per_flow:
                 break
+
+    last_attempts = [e[0][1] for e in unique_image_inputs if e[0][0]]
+    retry_timestamps = [e[1][1] for e in unique_image_inputs if e[0][0]]
+    new_timestamps = [e[1][1] for e in unique_image_inputs if not e[0][0]]
+
+    # Remove the sort key
+    unique_image_inputs = [e[1] for e in unique_image_inputs]
+
     # Attach everything we need as inputs
     image_inputs = [(*image_input, defs, apid_name2num, pipeline_config, spacecraft_secrets,
                              outlier_limits, masks, processing_flow_id) for image_input in unique_image_inputs]
 
-    last_attempts = [e[0][1] for e in image_inputs if e[0][0]]
-    retry_timestamps = [e[1][1] for e in image_inputs if e[0][0]]
-    new_timestamps = [e[1][1] for e in image_inputs if not e[0][0]]
     logger.info(f"Will run {len(image_inputs)} attempts, including {len(retry_timestamps)} retries")
     if retry_timestamps:
         logger.info(f"Retries were last attempted between {min(last_attempts)} and {max(last_attempts)}")
@@ -1295,7 +1299,7 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
 @flow(log_prints=True)
 def level0_core_flow(pipeline_config: dict, skip_if_no_new_tlm: bool = True, limit_files: list[str] = None,
                      mask_files: list[str] = None, processing_flow_id=None):
-    logger = get_run_logger()
+    logger = get_logger()
     session = Session(engine)
 
     outlier_limits = []
@@ -1394,7 +1398,7 @@ def level0_construct_flow_info(pipeline_config: dict, session, skip_if_no_new_tl
 def level0_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
     skip_if_no_new_tlm = pipeline_config['flows']['level0']['options'].get('skip_if_no_new_tlm', True)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if session is None:
         session = Session(engine)
@@ -1419,7 +1423,7 @@ def level0_scheduler_flow(pipeline_config_path=None, session=None, reference_tim
 
 @flow
 def level0_process_flow(flow_id: int, pipeline_config_path=None , session=None):
-    logger = get_run_logger()
+    logger = get_logger()
 
     if session is None:
         session = Session(engine)

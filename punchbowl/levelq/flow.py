@@ -4,7 +4,6 @@ from datetime import UTC, datetime
 import numpy as np
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
-from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, get_base_file_name
 from punchbowl.data.meta import set_spacecraft_location_to_earth
@@ -17,7 +16,7 @@ from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.levelq.pca import pca_filter
-from punchbowl.prefect import punch_flow
+from punchbowl.prefect import get_logger, punch_flow
 from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
 
 ORDER_QP = ["QM1", "QZ1", "QP1",
@@ -57,7 +56,7 @@ def levelq_QNN_core_flow(data_list: list[str] | list[PUNCHCube], #noqa: N802
         The QNN data cubes
 
     """
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("beginning level quickPUNCH QNN core flow")
     logger.info(f"Got {len(data_list)} input files and {len(files_to_fit)} extra files for fitting")
 
@@ -112,7 +111,7 @@ def levelq_CQM_core_flow(data_list: list[str] | list[PUNCHCube], #noqa: N802, C9
                          trefoil_shape: tuple[int, int] | None = None,
                          ) -> list[PUNCHCube]:
     """Level quickPUNCH core flow."""
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("beginning level quickPUNCH CQM core flow")
 
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
@@ -208,7 +207,7 @@ def levelq_CTM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                      output_filename: str | None = None,
                      reference_time: datetime | None = None) -> list[PUNCHCube]:  # noqa: ARG001
     """Level Q CTM flow."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info("beginning level Q CTM flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
@@ -254,7 +253,7 @@ def levelq_QAM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                      output_filename: str | None = None,
                      reference_time: datetime | None = None) -> list[PUNCHCube]:
     """Level Q QAM flow."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     logger.info("beginning level Q QAM flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]

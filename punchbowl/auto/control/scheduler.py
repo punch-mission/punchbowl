@@ -2,10 +2,9 @@ import inspect
 import itertools
 from datetime import UTC, datetime, timedelta
 
-from prefect import get_run_logger
-
 from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
+from punchbowl.prefect import get_logger
 
 
 def generic_scheduler_flow_logic(
@@ -49,7 +48,7 @@ def generic_scheduler_flow_logic(
         file connects to only one output file (at the corresponding position in the list of child File objects).
 
     """
-    logger = get_run_logger()
+    logger = get_logger()
     if not isinstance(pipeline_config, dict):
         pipeline_config = load_pipeline_configuration(pipeline_config)
 

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 
 from dateutil.parser import parse as parse_datetime_str
-from prefect import flow, get_run_logger
+from prefect import flow
 from sqlalchemy import between, func, not_
 
 from punchbowl import __version__
@@ -16,13 +16,14 @@ from punchbowl.auto.flows.level1 import get_mask_file
 from punchbowl.auto.flows.level2 import group_l2_inputs
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level1.stray_light import estimate_stray_light
+from punchbowl.prefect import get_logger
 
 
 def construct_stray_light_check_for_inputs(session,
                                            pipeline_config: dict,
                                            reference_time: datetime,
                                            reference_files: list[File]):
-    logger = get_run_logger()
+    logger = get_logger()
 
     polarized = reference_files[0].file_type != "SR"
     pol_type = 'pol' if polarized else 'clear'
@@ -219,7 +220,7 @@ def construct_stray_light_file_info(level1_files: list[File],
 def construct_stray_light_scheduler_flow(pipeline_config_path=None, session=None, reference_time: datetime | None = None):
     session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
-    logger = get_run_logger()
+    logger = get_logger()
 
     if not pipeline_config["flows"]["construct_stray_light"].get("enabled", True):
         logger.info("Flow 'construct_stray_light' is not enabled---halting scheduler")

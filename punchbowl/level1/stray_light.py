@@ -17,7 +17,6 @@ from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from lmfit import Parameters, minimize
 from lmfit.minimizer import MinimizerResult
-from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits, load_trefoil_wcs
 from punchbowl.data.punchcube import PUNCHCube
@@ -29,7 +28,7 @@ from punchbowl.exceptions import (
 )
 from punchbowl.level2.polarization import resolve_polarization
 from punchbowl.level2.resample import reproject_cube
-from punchbowl.prefect import punch_flow, punch_task
+from punchbowl.prefect import get_logger, punch_flow, punch_task
 from punchbowl.util import (
     DataLoader,
     ShmPickleableNDArray,
@@ -474,6 +473,7 @@ def _load_files(filepaths: list[str], mosaic_wcs: WCS, logger: Logger, do_uncert
     return data_array, reprojected_array, wcses, metas, uncertainties
 
 
+# Amount to ignore at the bottom of each of the 3 WFI cameras
 bottom_crops = [230, 240, 243]
 
 
@@ -496,7 +496,6 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
             data_destination[:] = np.nan
             return f"All-bad image {cube.meta['FILENAME'].value}"
 
-    bottom_crop = bottom_crops[int(cubes[0].meta["OBSCODE"].value) - 1]
     for i in range(len(cubes)):
         data_destination[i, :] = cubes[i].data
 
@@ -510,21 +509,26 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
     # aggressively to remove areas that are usually low-quality
     y, x = np.mgrid[:2048, :2048]
 
-    # Clip the upper corners
-    repro_input[:, y > 1300 + x] = np.nan
-    repro_input[:, y > 1300 + (2048 - x)] = np.nan
+    obs = cubes[0].meta["OBSCODE"].value
+    if obs != "4":
+        # Clip the upper corners
+        repro_input[:, y > 1300 + x] = np.nan
+        repro_input[:, y > 1300 + (2048 - x)] = np.nan
 
-    # Clip the lower-left corner, including a good portion of the bottom edge
-    repro_input[:, y < 1200 - 1.3 * x] = np.nan
-    repro_input[:, y < 850 - 0.75 * x] = np.nan
+        # Clip the lower-left corner, including a good portion of the bottom edge
+        repro_input[:, y < 1200 - 1.3 * x] = np.nan
+        repro_input[:, y < 850 - 0.75 * x] = np.nan
 
-    # Clip the lower-right corner, including a good portion of the bottom edge
-    repro_input[:, y < 1200 - 1.3 * (2048 - x)] = np.nan
-    repro_input[:, y < 850 - 0.75 * (2048 - x)] = np.nan
+        # Clip the lower-right corner, including a good portion of the bottom edge
+        repro_input[:, y < 1200 - 1.3 * (2048 - x)] = np.nan
+        repro_input[:, y < 850 - 0.75 * (2048 - x)] = np.nan
 
-    # Don't even reproject the sides and bottom
-    repro_input = repro_input[:, bottom_crop:, 350:-350]
-    wcs_cropped = cubes[0].wcs[bottom_crop:, 350:-350]
+        # Don't even reproject the sides and bottom
+        bottom_crop = bottom_crops[int(cubes[0].meta["OBSCODE"].value) - 1]
+        repro_input = repro_input[:, bottom_crop:, 350:-350]
+        wcs_cropped = cubes[0].wcs[bottom_crop:, 350:-350]
+    else:
+        wcs_cropped = cubes[0].wcs
 
     with warnings.catch_warnings(), np.errstate(all="ignore"):
         warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")
@@ -579,7 +583,7 @@ def _subtract_coronal_model(data_slice: np.ndarray, wcses: list[WCS], metas: lis
 def _build_and_subtract_corona(reprojected_array: np.ndarray, data_array: np.ndarray,
                                metas: list[list[NormalizedMetadata]], wcses: list[list[WCS]], mosaic_wcs: WCS,
                                mask: np.ndarray, pool: ProcessPoolExecutor, polarized: bool) -> None:
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("Making coronal models")
     corona_models = []
     corona_model_dates = []
@@ -724,7 +728,7 @@ def estimate_stray_light(filepaths: list[str],
                          polarized: bool = False,
                          num_workers: int | None = None) -> list[PUNCHCube]:
     """Estimate the fixed stray light pattern using a percentile."""
-    logger = get_run_logger()
+    logger = get_logger()
     numba.set_num_threads(num_workers)
     if window_size % 2 == 0:
         raise ValueError("Window size must be odd")

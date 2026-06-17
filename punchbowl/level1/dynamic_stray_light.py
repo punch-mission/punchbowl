@@ -7,13 +7,12 @@ from itertools import pairwise
 import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
-from prefect import get_run_logger
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_many_cubes, load_ndcube_from_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import IncorrectPolarizationStateError, IncorrectTelescopeError, InvalidDataError
-from punchbowl.prefect import punch_flow, punch_task
+from punchbowl.prefect import get_logger, punch_flow, punch_task
 from punchbowl.util import DataLoader, average_datetime, nan_gaussian, nan_percentile, nan_percentile_2d
 
 fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
@@ -83,7 +82,7 @@ def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) ->
 def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: datetime | str, #noqa: C901
                                         pol_state: str, n_crota_bins: int = 24, n_loaders: int = 5) -> list[PUNCHCube]:
     """Estimate time- and orbital-anomaly-dependent stray light."""
-    logger = get_run_logger()
+    logger = get_logger()
 
     if isinstance(reference_time, str):
         reference_time = datetime.strptime(reference_time, "%Y-%m-%d %H:%M:%S") # noqa: DTZ007

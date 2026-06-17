@@ -1,0 +1,1 @@
+DATE-BEG and DATE-END in Level 2 & 3 files now represent the earliest DATE-BEG and latest DATE-END of the input Level 1 files. Previously the DATE-BEG, DATE-OBS, and DATE-END of the Level 3 files were identical.

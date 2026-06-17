@@ -1,0 +1,1 @@
+Core pipeline functionality (the flows and the code they call) has reduced Prefect dependencies---only when running under Prefect do we use the Prefect logger or convert task and flow functions to Prefect Tasks and Flows.

@@ -1,7 +1,8 @@
 import os
-import copy
+import logging
 import warnings
 import multiprocessing
+from pathlib import Path
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
 
@@ -13,17 +14,16 @@ import scipy
 import sep
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
-from astropy.wcs import WCS, DistortionLookupTable, NoConvergence, utils
-from prefect import get_run_logger
+from astropy.wcs import WCS, DistortionLookupTable, FITSFixedWarning, NoConvergence, utils
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
+from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from punchbowl.level1.alignment_parallel import get_errors, refine_pointing_single_step
-from punchbowl.prefect import punch_task
+from punchbowl.prefect import get_logger, punch_task
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -190,9 +190,9 @@ def filter_for_visible_stars(catalog: pd.DataFrame, dimmest_magnitude: float = 6
 
 
 def find_catalog_in_image(
-        catalog: pd.DataFrame, wcs: WCS, image_shape: tuple[int, int], mask: Callable | None = None,
-        mode: str = "all",
-) -> pd.DataFrame:
+        catalog: SkyCoord, wcs: WCS, image_shape: tuple[int, int], mask: Callable | None = None,
+        mode: str = "all", dataframe: pd.DataFrame | None = None,
+) -> tuple[SkyCoord, np.ndarray]:
     """
      Convert the RA/DEC catalog into pixel coordinates using the provided WCS.
 
@@ -210,6 +210,8 @@ def find_catalog_in_image(
         either "all" or "wcs",
         see
         <https://docs.astropy.org/en/stable/api/astropy.coordinates.SkyCoord.html#astropy.coordinates.SkyCoord.to_pixel>
+    dataframe : pd.DataFrame
+        optional data frame to filter and return as well
 
     Returns
     -------
@@ -218,11 +220,7 @@ def find_catalog_in_image(
 
     """
     try:
-        xs, ys = SkyCoord(
-            ra=np.array(catalog["RAdeg"]) * u.degree,
-            dec=np.array(catalog["DEdeg"]) * u.degree,
-            distance=np.array(catalog["Dist_ly"]) * u.lyr,
-        ).to_pixel(wcs, mode=mode)
+        xs, ys = catalog.to_pixel(wcs, mode=mode)
     except NoConvergence as e:
         xs, ys = e.best_solution[:, 0], e.best_solution[:, 1]
     bounds_mask = (xs >= 0) * (xs < image_shape[1]) * (ys >= 0) * (ys < image_shape[0])
@@ -230,10 +228,13 @@ def find_catalog_in_image(
     if mask is not None:
         bounds_mask *= mask(xs, ys)
 
-    reduced_catalog = catalog[bounds_mask].copy()
-    reduced_catalog["x_pix"] = xs[bounds_mask]
-    reduced_catalog["y_pix"] = ys[bounds_mask]
-    return reduced_catalog
+    reduced_catalog = catalog[bounds_mask]
+    coords = np.stack((xs[bounds_mask], ys[bounds_mask]), axis=1)
+    ret = reduced_catalog, coords
+    if dataframe is not None:
+        dataframe = dataframe[bounds_mask]
+        ret = (*ret, dataframe)
+    return ret
 
 
 def find_star_coordinates(image_data: np.ndarray,
@@ -310,33 +311,40 @@ def astrometry_net_initial_solve(observed_coords: np.ndarray,
         the best WCS if search successful, otherwise None
 
     """
-    with astrometry.Solver(
-            astrometry.series_4100.index_files(
-                cache_directory="astrometry_cache",
-                scales=search_scales,
-            ),
-    ) as solver:
-        solution = solver.solve(
-            stars=observed_coords[-num_stars:],
-            size_hint=astrometry.SizeHint(
-                lower_arcsec_per_pixel=lower_arcsec_per_pixel,
-                upper_arcsec_per_pixel=upper_arcsec_per_pixel,
-            ),
-            position_hint=astrometry.PositionHint(
-                ra_deg=image_wcs.wcs.crval[0],
-                dec_deg=image_wcs.wcs.crval[1],
-                radius_deg=15,
-            ),
-            solution_parameters=astrometry.SolutionParameters(
-                sip_order=0,
-                tune_up_logodds_threshold=None,
-                parity=astrometry.Parity.NORMAL,
-            ),
-        )
-
+    # Astrometry sends INFO messages to this logger, which we don't really want. There doesn't seem to be a context
+    # manager for log levels, so we grab the current log level and restore it at the end.
+    logger = logging.getLogger("root")
+    original_log_level = logger.level
+    try:
+        logger.setLevel(logging.WARNING)
+        with astrometry.Solver(
+                astrometry.series_4100.index_files(
+                    cache_directory="astrometry_cache",
+                    scales=search_scales,
+                ),
+        ) as solver:
+            solution = solver.solve(
+                stars=observed_coords[-num_stars:],
+                size_hint=astrometry.SizeHint(
+                    lower_arcsec_per_pixel=lower_arcsec_per_pixel,
+                    upper_arcsec_per_pixel=upper_arcsec_per_pixel,
+                ),
+                position_hint=astrometry.PositionHint(
+                    ra_deg=image_wcs.wcs.crval[0] % 360,
+                    dec_deg=image_wcs.wcs.crval[1],
+                    radius_deg=15,
+                ),
+                solution_parameters=astrometry.SolutionParameters(
+                    sip_order=0,
+                    tune_up_logodds_threshold=None,
+                    parity=astrometry.Parity.NORMAL,
+                ),
+            )
         if solution.has_match():
             return solution.best_match().astropy_wcs()
         return None
+    finally:
+        logger.setLevel(original_log_level)
 
 
 def convert_cd_matrix_to_pc_matrix(wcs: WCS) -> WCS:
@@ -366,8 +374,9 @@ def solve_pointing( # noqa: C901
         distortion: WCS | None = None,
         saturation_limit: float = np.inf,
         observatory: str = "wfi",
+        n_stars: int = 15,
         n_rounds: int = 50,
-        n_workers: int = 4) -> WCS:
+        n_workers: int = 1) -> WCS:
     """
     Carefully determine the pointing of an image using the starfield.
 
@@ -383,6 +392,8 @@ def solve_pointing( # noqa: C901
         the maximum star brightness to utilize
     observatory : str
         "wfi" or "nfi"
+    n_stars: int
+        the number of stars to use for each asterism when solving
     n_rounds : int
         the number of iterations to run for pointing refinement
     n_workers : int
@@ -394,7 +405,7 @@ def solve_pointing( # noqa: C901
         the new world coordinate system
 
     """
-    logger = get_run_logger()
+    logger = get_logger()
 
     wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
     if observatory == "wfi":
@@ -445,31 +456,38 @@ def solve_pointing( # noqa: C901
     guess_wcs.wcs.crpix = image_center
     guess_wcs.wcs.cdelt = image_wcs.wcs.cdelt
     guess_wcs.sip = None
+
     if distortion is not None:
-        guess_wcs.cpdis1 = distortion.cpdis1
-        guess_wcs.cpdis2 = distortion.cpdis2
+        for i in range(len(observed)):
+            dx = distortion.cpdis1.get_offset(*observed[i])
+            dy = distortion.cpdis2.get_offset(*observed[i])
+            observed[i, 0] += dx
+            observed[i, 1] += dy
         if distortion.wcs.get_pv():
             pv = distortion.wcs.get_pv()[0][-1]
             guess_wcs.wcs.set_pv([(2, 1, pv)])
 
-    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=7)
-    stars_in_image = find_catalog_in_image(catalog, guess_wcs, (2048, 2048))
+    catalog_stars = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=7)
+    catalog_stars = prep_star_coords(catalog_stars, image_wcs)
+    catalog_stars, pix_coords = find_catalog_in_image(catalog_stars, guess_wcs, (2048, 2048))
 
-    ok_stars = mask(np.stack((stars_in_image["x_pix"], stars_in_image["y_pix"])).T)
-    stars_in_image = stars_in_image[ok_stars]
-
-    catalog_stars = prep_star_coords(stars_in_image, image_wcs)
+    ok_stars = mask(np.stack((pix_coords[:, 0], pix_coords[:, 1])).T)
+    catalog_stars = catalog_stars[ok_stars]
 
     indices = np.arange(len(catalog_stars))
     rng = np.random.default_rng(seed=1)
     results = []
     observed_tree = KDTree(observed)
-    mp_context = multiprocessing.get_context("forkserver")
-    with ProcessPoolExecutor(n_workers, mp_context) as p:
-        for _ in range(n_rounds):
-            sample = catalog_stars[rng.choice(indices, 15, replace=False)]
-            results.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))
-    results = [w.result() for w in results]
+    star_samples = [catalog_stars[rng.choice(indices, n_stars, replace=False)] for _ in range(n_rounds)]
+    if n_workers == 1:
+        results = [refine_pointing_single_step(guess_wcs, observed_tree, sample, fix_pv=True)
+                   for sample in star_samples]
+    else:
+        mp_context = multiprocessing.get_context("forkserver")
+        with ProcessPoolExecutor(n_workers, mp_context) as p:
+            for sample in star_samples:
+                results.append(p.submit(refine_pointing_single_step, guess_wcs, observed_tree, sample, fix_pv=True))
+            results = [w.result() for w in results]
 
     platescales, crval1s, crval2s, crotas, pvs = zip(*results, strict=True)
     solved_wcs = guess_wcs
@@ -484,7 +502,7 @@ def solve_pointing( # noqa: C901
         crval1 = np.median(crval1s)
         crval1 %= 360
     else:
-        crval1 = np.median(crval1s)
+        crval1 = np.median(crval1s) % 360
 
     solved_wcs.wcs.crval = crval1, np.median(crval2s)
     crotas = np.array(crotas)
@@ -500,6 +518,10 @@ def solve_pointing( # noqa: C901
         ],
     )
     solved_wcs.wcs.set_pv([(2, 1, np.median(pvs))])
+
+    if distortion is not None:
+        solved_wcs.cpdis1 = distortion.cpdis1
+        solved_wcs.cpdis2 = distortion.cpdis2
 
     return solved_wcs
 
@@ -521,9 +543,9 @@ def measure_wcs_error(
         dimmest_magnitude: float = 6.0,
         max_error: float = 15.0, debug: bool = True) -> float:
     """Estimate the error in the WCS based on an image."""
-    catalog = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
-    stars_in_image = find_catalog_in_image(catalog, wcs, image_data.shape)
-    catalog_stars = prep_star_coords(stars_in_image, wcs)
+    catalog_stars = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=dimmest_magnitude)
+    catalog_stars = prep_star_coords(catalog_stars, wcs)
+    catalog_stars, _ = find_catalog_in_image(catalog_stars, wcs, image_data.shape)
 
     observed_coords = find_star_coordinates(
         image_data,
@@ -572,9 +594,8 @@ def build_distortion_model(
     all_distortions = []
 
     for image_data, new_wcs in zip(image_cube, refined_wcses, strict=False):
-        stars_in_image = find_catalog_in_image(catalog, new_wcs, image_data.shape)
-        catalog_stars = prep_star_coords(stars_in_image, new_wcs)
-        expected_coords = catalog_stars.to_pixel(new_wcs)
+        catalog_stars = prep_star_coords(catalog, new_wcs)
+        _, expected_coords = find_catalog_in_image(catalog_stars, new_wcs, image_data.shape)
 
         observed_coords = find_star_coordinates(image_data,
                                                 max_distance_from_center=1200,
@@ -642,8 +663,8 @@ def build_distortion_model(
 
 
 @punch_task
-def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers: int = 4,
-               n_rounds: int = 50) -> PUNCHCube:
+def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None,
+               max_workers: int = 4, n_rounds: int = 50) -> PUNCHCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.
 
@@ -664,41 +685,32 @@ def align_task(data_object: PUNCHCube, distortion_path: str | None, max_workers:
         a modified version of the input with the WCS more accurately determined
 
     """
-    celestial_input = calculate_celestial_wcs_from_helio(copy.deepcopy(data_object.wcs),
-                                                         data_object.meta.astropy_time,
-                                                         data_object.data.shape)
+    celestial_input = data_object.celestial_wcs
     refining_data = data_object.data.copy()
     refining_data[np.isinf(refining_data)] = 0
     refining_data[np.isnan(refining_data)] = 0
 
-    if distortion_path:
-        try:
-            with fits.open(distortion_path) as distortion_hdul:
-                distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
-        except KeyError:
-            with fits.open(distortion_path) as distortion_hdul:
-                distortion = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
+    if isinstance(distortion_path, (str, Path)):
+        with warnings.catch_warnings():
+            warnings.filterwarnings(action="ignore", message=".*The WCS transformation has more axes.*",
+                                    category=FITSFixedWarning)
+            try:
+                with fits.open(distortion_path) as distortion_hdul:
+                    distortion = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
+            except KeyError:
+                with fits.open(distortion_path) as distortion_hdul:
+                    distortion = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
     else:
-        distortion = None
+        distortion = distortion_path
 
     observatory = "nfi" if data_object.meta["OBSCODE"].value == "4" else "wfi"
-    celestial_output = solve_pointing(refining_data, celestial_input, data_object.meta, distortion,
+    celestial_output = solve_pointing(refining_data, celestial_input, distortion,
                                       saturation_limit=60_000, observatory=observatory, n_workers=max_workers,
                                       n_rounds=n_rounds)
 
     recovered_wcs = calculate_helio_wcs_from_celestial(celestial_output,
                                                        data_object.meta.astropy_time,
                                                        data_object.data.shape)
-
-    if distortion_path:
-        try:
-            with fits.open(distortion_path) as distortion_hdul:
-                distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key="A")
-        except KeyError:
-            with fits.open(distortion_path) as distortion_hdul:
-                distortion_wcs = WCS(distortion_hdul[0].header, distortion_hdul, key=" ")
-        recovered_wcs.cpdis1 = distortion_wcs.cpdis1
-        recovered_wcs.cpdis2 = distortion_wcs.cpdis2
 
     output = data_object.replace(wcs=recovered_wcs, celestial_wcs=celestial_output)
     output.meta.history.add_now("LEVEL1-Align", f"alignment done with {n_rounds} iterations")

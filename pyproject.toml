@@ -6,32 +6,20 @@ build-backend = "setuptools.build_meta"
 name = "punchbowl"
 dynamic = ["version"]
 dependencies = [
-    "fastapi==0.136.0",
-    "numpy",
     "astropy",
-    "sunpy[all]",
-    "pandas",
-    "ndcube",
-    "matplotlib<=3.10.9",
-    "ccsdspy",
-    "prefect[dask]",
-    "regularizepsf",
-    "solpolpy",
-    "scipy",
+    "astroscrappy",
     "lmfit",
-    "setuptools",
-    "reproject",
-    "pylibjpeg",
+    "matplotlib<=3.10.9",
+    "ndcube",
+    "numpy",
     "python-dateutil",
-    "remove_starfield>=0.1",
-    "pylibjpeg[openjpeg]",
+    "quadprog",
+    "regularizepsf",
     "requests",
-    "threadpoolctl",
-    "numexpr",
-    "glymur",
-    "scikit-learn",
-    "astrometry",
-    "numba",
+    "scipy",
+    "solpolpy",
+    "sunpy[all]",
+    "sunkit-image",
 ]
 requires-python = ">=3.11"
 authors = [
@@ -54,6 +42,48 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+super_user = [
+    "astrometry",
+    "glymur",
+    "numba",
+    "numexpr",
+    "pre-commit==4.6.0",
+    "prefect[dask]",
+    "pylibjpeg[openjpeg]",
+    "remove_starfield>=0.1",
+    "reproject",
+    "scikit-learn",
+    "setuptools",
+    "threadpoolctl",
+]
+
+pipe = [
+    "ccsdspy",
+    "punchbowl",
+    "simpunch",
+    "prefect[sqlalchemy]",
+    "pymysql",
+    "pandas",
+    "xlrd",
+    "pydantic",
+    "sqlalchemy",
+    "dash >= 4",
+    "dash-bootstrap-components",
+    "dash_bootstrap_templates",
+    "coolname",
+    "numpy",
+    "plotly",
+    "pyyaml",
+    "click",
+    "pylibjpeg[libjpeg]",
+    "psutil",
+    "gunicorn",
+    "numpy-quaternion"
+]
+
+all = ["punch-mission[super_user,pipe]"]
+
+[dependency-groups]
 test = [
     "pytest",
     "pytest-order",
@@ -110,30 +140,15 @@ docs_pipe = [
     "sphinx-automodapi"
 ]
 
-pipe = ["ccsdspy",
-    "punchbowl",
-    "simpunch",
-    "prefect[sqlalchemy]",
-    "pymysql",
-    "pandas",
-    "xlrd",
-    "pydantic",
-    "sqlalchemy",
-    "dash >= 4",
-    "dash-bootstrap-components",
-    "dash_bootstrap_templates",
-    "coolname",
-    "numpy",
-    "plotly",
-    "pyyaml",
-    "click",
-    "pylibjpeg[libjpeg]",
-    "psutil",
-    "gunicorn",
-    "numpy-quaternion"
+dev = [
+    {include-group = "test"},
+    {include-group = "test_pipe"},
+    {include-group = "docs"},
+    {include-group = "docs_pipe"}
 ]
 
-dev = ["punchbowl[docs,test,pipe,docs_pipe,test_pipe]"]
+
+
 
 [project.scripts]
 punchbowl = "punchbowl.cli:main"

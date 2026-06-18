@@ -20,7 +20,7 @@ dependencies = [
     "scipy",
     "lmfit",
     "setuptools",
-    "reproject",
+    "reproject>=0.20.0",
     "pylibjpeg",
     "python-dateutil",
     "remove_starfield>=0.1",

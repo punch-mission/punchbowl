@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "punchbowl"
 dynamic = ["version"]
 dependencies = [
-    "fastapi==0.136.0",
+    "fastapi==0.137.2",
     "numpy",
     "astropy",
     "sunpy[all]",

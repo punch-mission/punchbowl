@@ -90,16 +90,22 @@ amats['stray']
 
 # %% MASK OUT GLINT (fixed in position)--------------------------------------------------------------
 # For now the plan is just to mask out the sphere pattern until we have a better way to prefilter it:
-xa, ya = np.indices(datarr[5].shape)
 sc1 = 540,790
 sc2 = 540,1210
 srad = 375
+bottom_cut = 250
 
-smask = ((((xa-sc1[0])**2+(ya-sc1[1])**2)**0.5 > srad)*
+def glint_mask(data_shape,sc1,sc2,srad,bottom_cut):
+	xa, ya = np.indices(data_shape)
+	mask =  ((((xa-sc1[0])**2+(ya-sc1[1])**2)**0.5 > srad)*
 		((((xa-sc2[0])**2+(ya-sc2[1])**2)**0.5 > srad))*
-		(xa>250))
+		(xa>bottom_cut))
+	
+	return mask
 
-plt.imshow(datarr[5]*smask)
+smask = glint_mask(data_cube.data.shape,sc1,sc2,srad,bottom_cut)
+
+# plt.imshow(data_cube.data*smask)
 
 # %% CREATE SOLVERS-----------------------------------------------------------------------------------
 from scipy.sparse import diags

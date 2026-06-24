@@ -59,65 +59,6 @@ bin_fac = 4 # For processing we bin down the data by this factor
 test_file = filenames[0]
 data_cube = punch_io.load_ndcube_from_fits(punchdir+'/'+test_file)
 
-
-
-# %% COMPUTE "MINIMUM" (dmin)-----------------------------------------------------------------
-# Compute a 'minimum' (actually bottom 5th percentile at each pixel) image
-# which can be used to estimate the sphere and post pattern.
-minlvl = round(0.05*len(datarr))
-dmin = np.zeros(datarr.shape[1:])
-for i in range(0,datarr.shape[1]):
-    for j in range(0,datarr.shape[2]):
-        if(np.sum(mskarr[:,i,j]) > 50):
-            srtvals = np.sort(datarr[:,i,j][mskarr[:,i,j]])
-            dmin[i,j] = srtvals[minlvl]
-
-
-# %% RADIAL MINIMUM IMAGE---------------------------------------------------------------------
-# This computes a radial minimum image which is an estimate of more diffuse stray light
-# distinct from the sphere and post pattern. It can be subtracted from dmin in order to
-# keep it from subtracting quite as much diffuse stray light. It's mostly an improvement
-# but I think a more careful approach to the sphere and post pattern removal than this
-# is needed.
-xa, ya = np.indices(dmin.shape,dtype=float)
-xa -= 0.5*dmin.shape[0]; ya -= 0.5*dmin.shape[1]
-ra = np.sqrt(xa*xa+ya*ya)
-
-nr_interp = 81
-rad_interp = np.arange(nr_interp,dtype=float)*1024/(nr_interp-1)
-radial_mins = np.zeros(len(rad_interp)-1)
-for i in range(0,len(rad_interp)-1):
-	radial_mins[i] = np.quantile(dmin[(ra <= rad_interp[i+1])*(ra > rad_interp[i])],0.0025)
-
-radial_min_img = np.interp(ra, 0.5*(rad_interp[0:-1]+rad_interp[1:]), radial_mins)
-
-# %% (JK added) Preview "radial_min_img"------------------------------------------------------
-plt.imshow(radial_min_img)
-
-# %% EXAMPLE DATA PLOT------------------------------------------------------------------------
-fig=plt.figure(figsize=[16,10])
-plt.imshow(datarr[5])
-
-# %% PLOT: DMIN, RADIAL MIN IMG, DMIN - (minus) RADIAL MIN IMG--------------------------------
-# Plotting the patterns
-fig,axes=plt.subplots(nrows=1,ncols=3,figsize=[18,6])
-axes[0].imshow(dmin**0.5,vmin=0,vmax=1.0e-9**0.5)
-axes[0].set(title='Data minimum/quantile')
-axes[1].imshow(radial_min_img**0.5,vmin=0,vmax=1.0e-9**0.5)
-axes[1].set(title='Radial minimum image')
-axes[2].imshow(np.clip(dmin-radial_min_img,0,None)**0.5,vmin=0,vmax=1.0e-9**0.5)
-axes[2].set(title='Data minimum minus radial minimum')
-
-# %% PLOT: EXAMPLE DATA , DATA - DMIN, DATA - DMIN + RADIAL MIN IMG----------------------------
-# Plotting the patterns
-fig,axes=plt.subplots(nrows=1,ncols=3,figsize=[18,6])
-axes[0].imshow(np.clip(datarr[5],0,None)**0.5,vmin=0,vmax=1.0e-9**0.5)
-axes[0].set(title='Example data')
-axes[1].imshow(np.clip(datarr[5]-dmin,0,None)**0.5,vmin=0,vmax=1.0e-9**0.5)
-axes[1].set(title='Example data minus data minimum image')
-axes[2].imshow(np.clip(datarr[5]-dmin+radial_min_img,0,None)**0.5,vmin=0,vmax=1.0e-9**0.5)
-axes[2].set(title='Data minimum minus data min plus radial min')
-
 # %% CREATE INPUTS FOR FORWARD MATRIX GENERATOR------------------------------------------------
 # Set up inputs to forward matrix generator. This uses just one index from the data array
 # but multiple can also be used. That has been tested in the past but not very recently.

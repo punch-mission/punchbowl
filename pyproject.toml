@@ -220,6 +220,7 @@ no_lines_before = "LOCALFOLDER"
 sections = "FUTURE, COMPATIBILITY, STDLIB, THIRDPARTY, FIRSTPARTY, LOCALFOLDER"
 
 [tool.pytest.ini_options]
+addopts = "--mpl"
 markers = [
     "prefect_test: a test that integrates with Prefect",
     "regression: a regression test, likely slow",

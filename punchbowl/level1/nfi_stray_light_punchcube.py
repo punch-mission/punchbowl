@@ -129,27 +129,24 @@ smask = glint_mask(data_cube.data.shape,sc1,sc2,srad,bottom_cut)
 #		for single frame.
 # stray_reg: Regularization for stray light. This can be very small since the stray light generally
 #		should be limited by the small number of corfficients.
-solns_sky, solns_stray, solns_dat = [],[],[]
-for i in range(0,1):#10): # can apply to as many of the data as needed. Just using one here for testing.
-	# We're binning down by a factor of 4 here. This makes the forward problem faster and more tractable
+
+# We're binning down by a factor of 4 here. This makes the forward problem faster and more tractable
 	# for the solver. If an element of the data contains no good pixels it is masked out, otherwise
 	# the downbinning uses whatever pixels are available. To do the full 2k images, we can probably
 	# use the binned down estimate for the stray light coefficients, just regenerating the stray light kernels
 	# to 2k. May need to increase the number of stray light terms (nstray in generate_nfi_fwdmats). This
 	# is not completely tested and had been locked to the number of pixels...
-	data_index = data_indices[i]
-	mask = smask*mskarr[data_index]
-	nmask = np.clip(bindown(mask,[512,512]),1,None)
-	dsol = np.array([(bindown(mask*(datarr[data_index]-0.0*(dmin-radial_min_img)),[512,512])/nmask).T])
-	esol = np.array([((bindown(mask*errarr[data_index]**2,[512,512]))**0.5/nmask).T])
-	gsol = np.array([(bindown(mask,[512,512]) > 0).T])
-	esol += 0.01*np.abs(dsol)+np.nanmin(dsol[gsol])*0.25 # supplement the errors with 1% of the data values
-	esol[gsol==0] = np.max(dsol[gsol])
-	esol[np.isfinite(esol)==0] = np.max(dsol[gsol]) # Some nans are still getting into the errors somehow. Grrr.
+	
+mask = smask*mskarr[data_index]
+nmask = np.clip(bindown(mask,[512,512]),1,None)
+dsol = np.array([(bindown(mask*(datarr[data_index]-0.0*(dmin-radial_min_img)),[512,512])/nmask).T])
+esol = np.array([((bindown(mask*errarr[data_index]**2,[512,512]))**0.5/nmask).T])
+gsol = np.array([(bindown(mask,[512,512]) > 0).T])
+esol += 0.01*np.abs(dsol)+np.nanmin(dsol[gsol])*0.25 # supplement the errors with 1% of the data values
+esol[gsol==0] = np.max(dsol[gsol])
+esol[np.isfinite(esol)==0] = np.max(dsol[gsol]) # Some nans are still getting into the errors somehow. Grrr.
 
-	soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(dsol, esol, amats, gsol,
-																		  solver_tol=1.0e-5, sky_reg=0.1, inst_reg=0.1,
-																		  stray_reg=1.0e-10)
-	solns_sky.append(soln_sky)
-	solns_stray.append(soln_stray)
-	solns_dat.append(soln_dat)
+soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(dsol, esol, amats, gsol,
+																		solver_tol=1.0e-5, sky_reg=0.1, inst_reg=0.1,
+																		stray_reg=1.0e-10)
+

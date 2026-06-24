@@ -59,35 +59,7 @@ bin_fac = 4 # For processing we bin down the data by this factor
 test_file = filenames[0]
 data_cube = punch_io.load_ndcube_from_fits(punchdir+'/'+test_file)
 
-# %% LOAD AND SORT DATA BY TIME---------------------------------------------------------------
-# Load data files and sort them by time:
-datarr, errarr, namarr, hdrarr, timarr = [], [], [], [], []
-for i in range(0,len(filenames[:10])):
-	hdul = fits.open(os.path.join(punchdir,filenames[i]))
-	#hdul.info()
-	dat, relerr, hdr = hdul[1].data, 1.0/hdul[2].data, hdul[1].header
-	bad_dat = np.nansum(dat)*1.0e6 >= 1000 + hdr['OUTLIER'] + hdr['BADPKTS'] #if (total num of nan)*1e6 >= 1000 + "Probable bad-image status" + ???
-	if(bad_dat==0): # if false
-		timarr.append(Time(hdr['DATE-OBS']).unix)
-		datarr.append(dat)
-		hdrarr.append(hdr)
-		errarr.append(dat*relerr)
-		namarr.append(filenames[i])
-	hdul.close()
-tsort = np.argsort(timarr)
 
-datarr = np.array(datarr)[tsort]
-errarr = np.array(errarr)[tsort]
-timarr = np.array(timarr)[tsort]
-namarr = np.array(namarr)[tsort]
-mskarr = (np.isfinite(datarr)*np.isfinite(errarr))[tsort]
-
-# %% MASK DATA WITH NANs----------------------------------------------------------------------
-# Sanitize the data and errors so we don't get nan leakage:
-mskarr = (np.isfinite(datarr)*np.isfinite(errarr))[tsort]
-
-datarr[mskarr==False] = np.median(datarr[mskarr])
-errarr[mskarr==False] = np.max(datarr[mskarr])
 
 # %% COMPUTE "MINIMUM" (dmin)-----------------------------------------------------------------
 # Compute a 'minimum' (actually bottom 5th percentile at each pixel) image

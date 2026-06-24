@@ -137,10 +137,16 @@ smask = glint_mask(data_cube.data.shape,sc1,sc2,srad,bottom_cut)
 	# to 2k. May need to increase the number of stray light terms (nstray in generate_nfi_fwdmats). This
 	# is not completely tested and had been locked to the number of pixels...
 	
-mask = smask*mskarr[data_index]
+data_uncertainty = data_cube.uncertainty.array
+data_only = data_cube.data
+data_err = data_only*data_uncertainty
+msk = np.isfinite(data_only)*np.isfinite(data_err)
+
+mask = smask*msk
 nmask = np.clip(bindown(mask,[512,512]),1,None)
-dsol = np.array([(bindown(mask*(datarr[data_index]-0.0*(dmin-radial_min_img)),[512,512])/nmask).T])
-esol = np.array([((bindown(mask*errarr[data_index]**2,[512,512]))**0.5/nmask).T])
+
+dsol = np.array([(bindown(mask*data_only,[512,512])/nmask).T])
+esol = np.array([((bindown(mask*data_err**2,[512,512]))**0.5/nmask).T])
 gsol = np.array([(bindown(mask,[512,512]) > 0).T])
 esol += 0.01*np.abs(dsol)+np.nanmin(dsol[gsol])*0.25 # supplement the errors with 1% of the data values
 esol[gsol==0] = np.max(dsol[gsol])
@@ -150,3 +156,25 @@ soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(dsol, esol
 																		solver_tol=1.0e-5, sky_reg=0.1, inst_reg=0.1,
 																		stray_reg=1.0e-10)
 
+# %% Labelled, not scaled, and masked solved
+fig,axes = plt.subplots(nrows=1,ncols=3,figsize=[20,5])
+t = Time(data_cube.meta['DATE-OBS'].value,format='isot')
+t.format='iso'
+fig.suptitle(t.value,fontsize=20)
+sub_fntsz = 15
+cmap_color = 'gray'
+
+val_max= 4e-10 #np.percentile(datarr,95)
+val_min=0
+
+ax0 = axes[0].imshow(dsol.T,vmin=val_min,vmax=val_max,cmap=cmap_color)
+axes[0].set_title('Data',fontsize=sub_fntsz)
+ax1 = axes[1].imshow((soln_stray[0]).T,vmin=val_min,vmax=val_max,cmap=cmap_color)
+axes[1].set_title('Stray Light Solution',fontsize=sub_fntsz)
+ax2 = axes[2].imshow((((dsol-soln_stray[0])).T),vmin=val_min,vmax=val_max,cmap=cmap_color)
+axes[2].set_title('Subtracted (data - stray)',fontsize=sub_fntsz)
+
+fig.colorbar(ax0)
+fig.colorbar(ax1)
+fig.colorbar(ax2)
+# %%

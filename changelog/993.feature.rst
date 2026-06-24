@@ -1,0 +1,1 @@
+Merges contents of pytest.ini into pyproject.toml for clarity. Adds a minimum version number for the reproject package.

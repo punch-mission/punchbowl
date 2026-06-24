@@ -161,8 +161,9 @@ def run(configuration_path, launch_prefect=False, launch_dask_cluster=False):
             # all subprocesses, including shared memory, is capped at a certain amount. If we approach an
             # out-of-memory condition, this hopefully contains it to the pipeline while keeping the rest of the
             # server (including, critically, SSH access) healthy.
-            mem_limit_prefix = ["systemd-run", "--scope", "-p", "MemoryMax=1800G", "-p", "MemoryHigh=1700G", "--user",
-                                "--description", "Limit pipeline memory"]
+            mem_limit_prefix = []
+            #mem_limit_prefix = ["systemd-run", "--scope", "-p", "MemoryMax=1800G", "-p", "MemoryHigh=1700G", "--user",
+            #                    "--description", "Limit pipeline memory"]
             if launch_prefect:
                 print("Launching prefect")
                 prefect_process = subprocess.Popen(

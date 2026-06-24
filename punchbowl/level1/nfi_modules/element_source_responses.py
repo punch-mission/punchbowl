@@ -1,4 +1,7 @@
-import time, numpy as np
+import time
+
+import numpy as np
+
 #from processify import processify
 
 
@@ -16,10 +19,10 @@ import time, numpy as np
 #                as well as nelm and coords attributes with usage consistent with their
 #                definitions in element_grid.
 #     transform: A function which returns an object that maps points in the source
-#                coordinate system to the detector coordinate system. This coordinate 
-#                transform does not need to be reversible (e.g., the source system 
-#                can be 3D and the detector system can be 2D) -- only the forward 
-#                direction must be well defined. Naturally, this may result in a 
+#                coordinate system to the detector coordinate system. This coordinate
+#                transform does not need to be reversible (e.g., the source system
+#                can be 3D and the detector system can be 2D) -- only the forward
+#                direction must be well defined. Naturally, this may result in a
 #                singular response matrix. Transform must be callable with the
 #                following syntax:
 #                    transformer = transform(source.coords,detector.coords)
@@ -37,14 +40,14 @@ def element_source_responses(source, detector, transform, nbuf = 10**7, dtype='f
     # Create the coordinate transformation object:
     transformer = transform(source.coords,detector.coords)
     shape = (detector.nelm,source.nelm) # Number of input/outputs
-    from scipy.sparse import csc_matrix, lil_matrix, csr_matrix
+    from scipy.sparse import csc_matrix, csr_matrix, lil_matrix
 
-    # Updating the sparse matrix comes with some overhead. We use buffers so we 
+    # Updating the sparse matrix comes with some overhead. We use buffers so we
     # don't have to do it so often:
     #[ibuf_in,ibuf_out] = [np.zeros(nbuf,dtype=np.uint32),np.zeros(nbuf,dtype=np.uint32)]
     [ibuf_in,ibuf_out] = [np.zeros(nbuf,dtype=np.uint32),np.zeros(nbuf,dtype=np.uint32)]
     valbuf = np.zeros(nbuf,dtype=dtype)
-    
+
     amat = csc_matrix(shape,dtype=dtype) # The initial empty sparse matrix
     #amat = lil_matrix(shape,dtype=dtype) # The initial empty sparse matrix
     [icur, t0] = [0, time.time()] # Buffer position and starting time (for printing status)

@@ -1,27 +1,34 @@
 # %%
 # Should only need a standard stack of numpy, scipy, astropy. Sunpy may be beneficial?
-import os, copy, importlib, numpy as np, matplotlib.pyplot as plt
+import os
+import copy
+import importlib
 from sys import path
-from astropy.time import Time
-from astropy.io import fits
 
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy.io import fits
+from astropy.time import Time
 from astropy.wcs import WCS, FITSFixedWarning
 from scipy.ndimage import gaussian_filter
+
 plt.rcParams.update({'image.origin':'lower'})
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 src_dir = os.path.dirname(file_dir)
 module_path = os.path.join(file_dir,'nfi_modules')
 path.append(src_dir)
-path.append(module_path) 
+path.append(module_path)
 
 # %% native libraries
-import nfi_modules.fwdmats, nfi_modules.reconstruct
+import nfi_modules.fwdmats
+import nfi_modules.reconstruct
+
 importlib.reload(nfi_modules.fwdmats)
 importlib.reload(nfi_modules.reconstruct)
 
-from nfi_modules.reconstruct import reconstruct_nfi_straylight
 from nfi_modules.fwdmats import generate_nfi_fwdmats
+from nfi_modules.reconstruct import reconstruct_nfi_straylight
 from nfi_modules.util import bindown
 
 #punch modules
@@ -100,7 +107,7 @@ def glint_mask(data_shape,sc1,sc2,srad,bottom_cut):
 	mask =  ((((xa-sc1[0])**2+(ya-sc1[1])**2)**0.5 > srad)*
 		((((xa-sc2[0])**2+(ya-sc2[1])**2)**0.5 > srad))*
 		(xa>bottom_cut))
-	
+
 	return mask
 
 smask = glint_mask(data_cube.data.shape,sc1,sc2,srad,bottom_cut)
@@ -139,11 +146,10 @@ for i in range(0,1):#10): # can apply to as many of the data as needed. Just usi
 	esol += 0.01*np.abs(dsol)+np.nanmin(dsol[gsol])*0.25 # supplement the errors with 1% of the data values
 	esol[gsol==0] = np.max(dsol[gsol])
 	esol[np.isfinite(esol)==0] = np.max(dsol[gsol]) # Some nans are still getting into the errors somehow. Grrr.
-	
+
 	soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(dsol, esol, amats, gsol,
 																		  solver_tol=1.0e-5, sky_reg=0.1, inst_reg=0.1,
 																		  stray_reg=1.0e-10)
 	solns_sky.append(soln_sky)
 	solns_stray.append(soln_stray)
 	solns_dat.append(soln_dat)
-

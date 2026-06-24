@@ -15,13 +15,14 @@
 # mask_source: Attempts to mask off source coefficients with no connection to valid data. Not working.
 import numpy as np
 from fwdmats import assemble_nfi_fwdmats
+from nfi_modules.util import bindown
 from scipy.sparse import csc_matrix, csr_matrix, diags
 from solver import sparse_nlmap_solver
-from nfi_modules.util import bindown
+
 
 def reconstruct_nfi_straylight(data, errs, amats, good_dat, bin_fac=4, errfac_systematic=0.01, mask_source=False,
 					solver_tol=2.5e-5, sky_reg=1, inst_reg=1, stray_reg=0.001, datanorm=1.0e-10):
-	
+
 	from nfi_modules.util import bindown
 	from scipy.ndimage import gaussian_filter
 	from solver import sparse_nlmap_solver
@@ -48,7 +49,7 @@ def reconstruct_nfi_straylight(data, errs, amats, good_dat, bin_fac=4, errfac_sy
 	if(nins > 0): regvec[nsky:nsky+nins] *= inst_reg
 	regvec[nsky+nins:] *= stray_reg
 	regmat = diags(regvec)
-	
+
 	fwdmat_masked = dat_maskmat*fwdmat*src_maskmat.T
 	regmat_masked = src_maskmat*regmat*src_maskmat.T
 
@@ -64,7 +65,7 @@ def reconstruct_nfi_straylight(data, errs, amats, good_dat, bin_fac=4, errfac_sy
 		soln_sky = datanorm*(amats['sky'][0]*(soln[0:npix])).reshape(dims)
 		soln_ins = datanorm*(amats['inst']*(soln[npix:2*npix])).reshape(dims)
 	else:
-		soln_sky = datanorm*(amats['inst']*(soln[0:npix])).reshape(dims)		
+		soln_sky = datanorm*(amats['inst']*(soln[0:npix])).reshape(dims)
 		soln_ins = np.zeros(dims)
 	soln_stray = []
 	for i in range(0,nframe):

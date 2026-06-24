@@ -1,12 +1,13 @@
 import time
 import resource
-import numpy as np
 
+import numpy as np
 from scipy.sparse.linalg import LinearOperator
+
 
 # This operator implements the general linear operator for chi squared
 # plus regularization with nonlinear mapping as outlined in Plowman &
-# Caspi 2020. 
+# Caspi 2020.
 class nlmap_operator(LinearOperator):
 	def setup(self,amat,regmat,map_drvvec,wgtvec,reg_map_drvvec,dtype='float32',reg_fac=1):
 		self.amat = amat
@@ -27,16 +28,18 @@ class nlmap_operator(LinearOperator):
 
 import time
 import resource
+
 import numpy as np
+
 
 # Subroutine to do the inversion. Uses the log mapping and iteration from Plowman & Caspi 2020 to ensure positivity of solutions.
 def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None, dfunc=None, ifunc=None, regmat=None, silent=False,
 						solver=None, sqrmap=False, regfunc=None, dregfunc=None, iregfunc=None, map_reg=False, adapt_lam=True,
 						solver_tol = 1.0e-3, niter=40, dtype='float32', steps=None, precompute_ata=False, flatguess=True, chi2_th=1.0,
 						store_outer_Av=False, conv_chi2 = 1.0e-15):
+	from scipy.linalg import cho_factor, cho_solve
 	from scipy.sparse import diags
 	from scipy.sparse.linalg import lgmres
-	from scipy.linalg import cho_factor, cho_solve
 
 	[ndat, nsrc] = amat0.shape
 
@@ -59,7 +62,7 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	def sqrfunc(s): return s*s # quadratic forward
 	def isqrfunc(c): return c**pt5 # quadratic inverse
 	def dsqrfunc(s): return two*s # quadratic derivative
-	if(func is None or dfunc is None or ifunc is None): 
+	if(func is None or dfunc is None or ifunc is None):
 		if(sqrmap): [func,dfunc,ifunc] = [sqrfunc,dsqrfunc,isqrfunc]
 		else: [func,dfunc,ifunc] = [expfunc,dexpfunc,iexpfunc]
 	if(regfunc is None or dregfunc is None or iregfunc is None):
@@ -70,7 +73,7 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	flatdat = data0.flatten().astype(dtype)
 	flaterrs = errors0.flatten().astype(dtype)
 	flaterrs[flaterrs == 0] = (0.05*np.nanmean(flaterrs[flaterrs > 0])).astype(dtype)
-	
+
 	guess0 = amat0.T*(np.clip(flatdat,np.min(flaterrs),None))
 	guess0dat = amat0*(guess0)
 	guess0norm = np.sum(flatdat*guess0dat/flaterrs**2)/np.sum((guess0dat/flaterrs)**2)
@@ -86,7 +89,7 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	# it so that the smallest step size is maxdelta.
 	maxdelta = iregfunc(np.max(guess0))-iregfunc(0.25*np.max(guess0))
 
-	# Try these step sizes at each step of the iteration. Trial Steps are fast compared to computing 
+	# Try these step sizes at each step of the iteration. Trial Steps are fast compared to computing
 	# the matrix inverse, so having a significant number of them is not a problem.
 	# Step sizes are specified as a fraction of the full distance to the solution found by the sparse
 	# matrix solver (lgmres or bicgstab).
@@ -94,7 +97,7 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	minstep = np.min(steps[1:])
 	nsteps = len(steps)
 	step_loss = np.zeros(nsteps,dtype=dtype)
-	
+
 	reglam = one
 	if(regmat is None and map_reg): regmat = diags(one/iregfunc(guess0)**two)
 	if(adapt_lam and map_reg): reglam = (np.dot((regmat*svec),
@@ -115,7 +118,7 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	if(not(precompute_ata)):
 		nlmo = nlmap_operator(dtype=dtype,shape=(nsrc,nsrc))
 		nlmo.setup(amat0,regmat,dfunc(svec),weights,dregfunc(svec),reg_fac=reg_fac)
-	
+
 	# --------------------- Now do the iteration:
 	tstart = time.time()
 	setup_timer = 0
@@ -154,15 +157,15 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 		best_step = np.nanargmin((step_loss)[1:nsteps])+1 # First step is zero for comparison purposes...
 		chi20 = np.sum(weights*(flatdat-amat0*(func(svec)))**two)/ndat
 		reg0 = np.sum(regfunc(svec.T)*(reg_fac*regmat*(regfunc(svec))))/ndat
-			
+
 		# Update the solution with the step size that has the best Chi squared:
 		svec = svec+steps[best_step]*(deltas)
 		reg1 = np.sum(regfunc(svec.T)*(reg_fac*regmat*(regfunc(svec))))/ndat
 		resids = weights*(flatdat-amat0*(func(svec)))**two
 		chi21 = np.sum(weights*(flatdat-amat0*(func(svec)))**two)/ndat
 		stepper_timer += time.time()-tstepper
-	
-		if(silent==False):		
+
+		if(silent==False):
 			print(round(time.time()-tstart,2),'s i =',i,'chi2 =',round(chi21,2),'step size =',round(steps[best_step],3), 'reg. param. =', round(reg1,2), 'chi2 change =',round(chi20-chi21,5), 'reg. change =',round(reg0-reg1,5))
 			print('Setup: ', setup_timer, 'Solver: ', solver_timer, 'Stepper: ', stepper_timer)
 			print('New combined FOM:',chi21+reg1,'Old combined FOM:',chi20+reg0,'Change:',chi20+reg0-(chi21+reg1))

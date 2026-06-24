@@ -5,7 +5,7 @@
 # datsiz: the size of the data cube (number of frames, nx, and ny). The code uses the convention that
 # 			the initial spatial axis is x and the subsequent spatial axis is y, so that, for example,
 #			NAXIS1 of a fits file corresponds to nx and NAXIS2 corresponds to ny. The data arrays returned
-#			by the astropy fits routines use the opposite convention (e.g., the inital axis of the data array 
+#			by the astropy fits routines use the opposite convention (e.g., the inital axis of the data array
 #			corresponds to NAXIS2, which is usally y, for a 2 axis image) so the data arrays need to be
 #			transposed prior to being input to the reconstruct routine.
 # xoffs: The x offsets of each frame in pixels. For a correctly aligned fits file, these should be
@@ -17,14 +17,14 @@
 #			reconstruct_nfi_straylight.
 # smooth_rad: If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
 import numpy as np
-from scipy.sparse import diags, csc_matrix, csr_matrix
-from transforms import coord_transform, trivialframe
+from element_functions import bin_function, get_2d_cov, nd_gaussian_psf
 from element_grid import detector_grid, source_grid
+from element_source_responses import element_source_responses as esr
 from indexgrid import coord_grid
 from scipy.sparse import csc_matrix, csr_matrix, diags, eye
-from element_source_responses import element_source_responses as esr
-from element_functions import bin_function, get_2d_cov, nd_gaussian_psf
 from straylight_kernels import gen_kernels, kernel_smoothing_matrix
+from transforms import coord_transform, trivialframe
+
 
 def generate_nfi_fwdmats(datsiz, xoffs, yoffs, crots, bin_fac=4, smooth_rad=0.05, radial_size=175.4, elon_abs=130, cx=1009, cy=1029, nstray=None):
 	nframe, nx0, ny0 = datsiz
@@ -52,14 +52,14 @@ def generate_nfi_fwdmats(datsiz, xoffs, yoffs, crots, bin_fac=4, smooth_rad=0.05
 	k2 = k2.reshape([nstray,im_size*im_size])
 	smat = csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi))
 	amat_stray = csr_matrix(k2.T)
-	if(smooth_rad > 0): 
+	if(smooth_rad > 0):
 		amat_stray = amat_stray*csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi, smooth_rad=smooth_rad))
-	
+
 	print('Renormalizing forward matrices')
 	norms_inst = np.sum(amat_inst,axis=0).A1
 	norms_inst = np.clip(norms_inst,0.05*np.mean(norms_inst),None)
 	amat_inst = amat_inst*diags(1.0/norms_inst)
-	
+
 	norms_stray = np.sum(amat_stray,axis=0).A1
 	norms_stray = np.clip(norms_stray,0.05*np.mean(norms_stray),None)
 	amat_stray = amat_stray*diags(1.0/norms_stray)
@@ -69,7 +69,7 @@ def generate_nfi_fwdmats(datsiz, xoffs, yoffs, crots, bin_fac=4, smooth_rad=0.05
 		norms_sky.append(np.sum(amats_sky[i],axis=0).A1)
 		norms_sky[i] = np.clip(norms_sky[i],0.05*np.mean(norms_sky[i]),None)
 		amats_sky[i] = amats_sky[i]*diags(1.0/norms_sky[i])
-	
+
 	return {'inst':amat_inst, 'sky':amats_sky, 'stray':amat_stray, 'im_size':im_size,
 			'norms_inst':norms_inst, 'norms_stray':norms_stray, 'norms_sky':norms_sky}
 
@@ -94,7 +94,7 @@ def generate_stray_fwdmats(datsiz, xoffs, yoffs, crots, bin_fac=4, smooth_rad=0.
 
 	im_size = dims[0]
 	# Note we do not include the endpoint of the interval
-	# since that would put duplicate kernels at 0 and 2*pi...	
+	# since that would put duplicate kernels at 0 and 2*pi...
 	kernel_angles = 2*np.pi*np.arange(im_size)/im_size
 	kernels = gen_kernels(kernel_angles, radial_size=175.4, elon_abs=130, image_size=im_size)
 	k2 = np.array(kernels)
@@ -102,7 +102,7 @@ def generate_stray_fwdmats(datsiz, xoffs, yoffs, crots, bin_fac=4, smooth_rad=0.
 	k2 = k2.reshape([im_size,im_size*im_size])
 	smat = csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi))
 	amat_stray = csr_matrix(k2.T)
-	if(smooth_rad > 0): 
+	if(smooth_rad > 0):
 		amat_stray = amat_stray*csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi, smooth_rad=smooth_rad))
 
 	return {'stray':amat_stray}
@@ -118,7 +118,7 @@ def assemble_nfi_fwdmats(amats):
 	npix = amats['inst'].shape[0]
 	ndat = nframe*npix
 	nsky = npix; im_size=amats['im_size'];
-	nins=npix*(nframe > 1) 
+	nins=npix*(nframe > 1)
 	nstr = nframe*amats['stray'].shape[1]
 	nsrc = nsky+nins+nstr
 
@@ -127,15 +127,15 @@ def assemble_nfi_fwdmats(amats):
 	for i in range(0,nframe):
 		if(nframe == 1): amat_out += csc_resize(amats['inst'], ndat, nsrc, i*npix, 0)
 		else: amat_out += csc_resize(amats['sky'][i], ndat, nsrc, i*npix, 0)
-	
+
 	for i in range(0,nframe):
 		if(nframe > 1): amat_out += csc_resize(amats['inst'], ndat, nsrc, i*npix, nsky)
 		#amat_out += csc_resize(csc_matrix(diags(np.ones(nins))), ndat, nsrc, i*npix, nsky)
-	for i in range(0,nframe): 
+	for i in range(0,nframe):
 		amat_out += csc_resize(amats['stray'].T, nsrc, ndat, nsky+nins+i*im_size, i*npix).T
 
 	return amat_out
-	
+
 
 def get_rotmat_2d(theta):
 	vec0 = np.array([[np.cos(theta),-np.sin(theta)],
@@ -158,12 +158,12 @@ def get_detector(dims, crota=0.0, center=np.array([0,0]), scale=[1.0, 1.0], det_
 	psfcov = get_2d_cov([0.5,0.5],0.0)
 	ipsfcov = np.linalg.inv(psfcov)
 	return detector_grid(det_coords, [ipsfcov], nd_gaussian_psf, nsubgrid=det_subgrid_fac, thold=1.0e-3, footprint=[25,25])
-	
+
 #csc_matrix((data, indices, indptr), [shape=(M, N)])
 #
 #    is the standard CSC representation where the row indices for column i
-#    are stored in indices[indptr[i]:indptr[i+1]] and their corresponding 
-#    values are stored in data[indptr[i]:indptr[i+1]]. If the shape parameter 
+#    are stored in indices[indptr[i]:indptr[i+1]] and their corresponding
+#    values are stored in data[indptr[i]:indptr[i+1]]. If the shape parameter
 #    is not supplied, the matrix dimensions are inferred from the index arrays.
 def csc_resize(csc, rsiz, csiz, r0, c0):
 	rinds = csc.indices+r0

@@ -1,11 +1,16 @@
-import os, copy, importlib, numpy as np, matplotlib.pyplot as plt
+import os
+import copy
+import importlib
 from sys import path
-from astropy.time import Time
-from astropy.io import fits
-import astropy.wcs
 
+import astropy.wcs
+import matplotlib.pyplot as plt
+import numpy as np
+from astropy.io import fits
+from astropy.time import Time
 from astropy.wcs import WCS, FITSFixedWarning
 from scipy.ndimage import gaussian_filter
+
 plt.rcParams.update({'image.origin':'lower'})
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -14,12 +19,14 @@ module_path = os.path.join(src_dir,'nfi_modules')
 path.append(module_path)
 
 # native libraries
-import nfi_modules.fwdmats, nfi_modules.reconstruct
+import nfi_modules.fwdmats
+import nfi_modules.reconstruct
+
 importlib.reload(nfi_modules.fwdmats)
 importlib.reload(nfi_modules.reconstruct)
 
-from nfi_modules.reconstruct import reconstruct_nfi_straylight
 from nfi_modules.fwdmats import generate_nfi_fwdmats
+from nfi_modules.reconstruct import reconstruct_nfi_straylight
 from nfi_modules.util import bindown
 
 # punchbowl libraries
@@ -47,5 +54,3 @@ def remove_nfi_stray_light(data: PUNCHCube,
     xcens, ycens, crots = get_fwd_mat_inputs(data=data,bin_factor=bin_factor)
 
     return
-
-

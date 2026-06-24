@@ -2,13 +2,14 @@
 # All it does is compare the 'names' attributes of the input coords to that of the output coords.
 # This works for identical coordinates, rearrangements, and downprojections, but anything
 # more complex will get zeroed out. In terms of the necessary pieces for instantiating
-# and applying it, though, everything should work the same from the outside and it can be 
+# and applying it, though, everything should work the same from the outside and it can be
 # subclassed to add the features for any desired transformation. Note that
 # these coordinate transforms might NOT be invertible in general (e.g., projection)
 # unlike the transforms in the coord_grid class.
 
 import numpy as np
 from nfi_modules.util import multivec_matmul
+
 
 class coord_transform:
     # Setup: takes two objects defining the two coordinate system. The minimal implementation
@@ -28,5 +29,5 @@ class coord_transform:
 
 # A trivial coordinate frame object for use by the minimal implementation of the coord_transform
 # class. Only contents are a set of names for the coordinates.
-class trivialframe: 
+class trivialframe:
     def __init__(self,names): self.names=names

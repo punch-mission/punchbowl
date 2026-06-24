@@ -10,7 +10,7 @@ def kernel_smoothing_matrix(angles_rev, smooth_rad = 0.1):
 	sk_angles = da*(np.arange(na)-nrad)/smooth_rad
 	skernel = np.zeros(nangles)
 	skernel[0:na] = np.cos(0.5*np.pi*sk_angles)
-	
+
 	for i in range(0,nangles):
 		omat[i] = np.roll(skernel,i-nrad)
 
@@ -21,7 +21,7 @@ def kernel_smoothing_matrix(angles_rev, smooth_rad = 0.1):
 def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1, bottom_intensity=1, elon_abs=None, elon_offset=0,
                blur=0, image_size=2048, oversamp=3, cx=None, cy=None, r_profile=None, dtype='float32'):
     # Generate an image of a kernel at a specific position (an angle theta around a defined center of the stray-light donut)
-    
+
     # Radial position of the inner edge of the donut
     r_to_inner_edge = 181.27180103 + 5
     # Radial position of the center of the kernel
@@ -35,7 +35,7 @@ def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1, bottom
 
     r_to_inner_edge *= image_size / 2048
     r_to_center *= image_size / 2048
-    
+
     if elon_abs is None:
         r_to_center = r_to_inner_edge + r_to_center + elon_offset
     else:
@@ -53,9 +53,9 @@ def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1, bottom
     xs = coords - (cx + r_to_center * np.cos(theta))
     ys = coords - (cy + r_to_center * np.sin(theta))
     xs, ys = np.meshgrid(xs, ys, sparse=True, copy=False)
-    
+
     azimuthal_diameter = radial_size * aspect_ratio
-    
+
     b = azimuthal_diameter / 2
     a = radial_size / 2
 
@@ -63,8 +63,8 @@ def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1, bottom
     # rotated (since we're rotating the kernel around the image center, not translating it in a circular path)
     angled_x = xs * np.cos(theta) + ys * np.sin(theta)
     angled_y = xs * np.sin(-theta) + ys * np.cos(-theta)
- 
-    # Equation for an ellipse   
+
+    # Equation for an ellipse
     kernel = angled_x**2 / a**2 + angled_y**2 / b**2 < 1
     # Identify a bounding box around the non-zero values, to cut down on the work we do later
     rows = np.any(kernel, axis=1)
@@ -73,16 +73,16 @@ def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1, bottom
     cmin, cmax = np.where(cols)[0][[0, -1]]
     s = np.s_[rmin:rmax+1, cmin:cmax+1]
     kernel = kernel.astype(float)
-    
+
     # Impose linear gradients
     if right_intensity != 1:
         slope_x = (1 - right_intensity) / azimuthal_diameter
         kernel[s] *= (1 - slope_x * (angled_x[s] + azimuthal_diameter))
-    
+
     if bottom_intensity != 1:
         slope_y = (1 - bottom_intensity) / radial_size
         kernel[s] *= (1 - slope_y * (angled_y[s] + radial_size))
-    
+
     # Impose an arbitrary gradient
     if r_profile is not None:
         kernel[s] *= r_profile(angled_x[s] / (radial_size / 2))
@@ -90,17 +90,19 @@ def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1, bottom
     # Block sum to target resolution
     if oversamp > 1:
         kernel = kernel.reshape((image_size, oversamp, image_size, oversamp)).sum(axis=(1, 3))
-    
+
     if blur > 0:
         kernel = scipy.ndimage.gaussian_filter(kernel, blur)
-    
+
     # kernel /= np.max(kernel)
-    
+
     return kernel.astype(dtype)
 
-import numba
-from concurrent.futures import ThreadPoolExecutor
 from itertools import repeat
+from concurrent.futures import ThreadPoolExecutor
+
+import numba
+
 
 def gen_kernels(kernel_angles, aspect_ratio=1, right_intensity=1, radial_size=660, # n_kernels=400,
 				bottom_intensity=1, elon_abs=None, elon_offset=0, blur=0, image_size=2048,
@@ -133,4 +135,3 @@ def make_model(kernels, intensity, rmin=0, rmax=-1, cmin=0, cmax=-1):
         for j in range(cmin, cmax):
             output[i, j] = np.sum(kernels[:, i, j] * intensity)
     return output
-

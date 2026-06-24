@@ -42,7 +42,7 @@ def spice_spectrograph_psf(pt, coords, inputs):
 	for i in range(1,n_slit_subpts): psf += nd_powgaussian_psf(pt+subpts[i], coords, inputs)
 	return psf/n_slit_subpts
 
-# Evaluate an nd Gaussian PSF centered at the point pt, for each of the
+# Evaluate an n-dimensional ("nd") Gaussian PSF centered at the point pt, for each of the
 # coordinates coords, based on the q (inverse of covariance) matrix q.
 # Coords must have dimensions npts by nd where nd is the dimensionality
 # of the Gaussian. q can be larger than nd by nd; higher dimensions will be ignored.

@@ -24,6 +24,10 @@ from nfi_modules.reconstruct import reconstruct_nfi_straylight
 from nfi_modules.fwdmats import generate_nfi_fwdmats
 from nfi_modules.util import bindown
 
+#punch modules
+import punchbowl
+from punchbowl.data import punch_io, visualize
+
 # %% [markdown]
 # Data obtaining instructions from Sam:
 # If you want to start exploring now, I think our X files are the right ones to use. These are partway between L0 and L1. They're in MSB units, with the NFI speckle pattern corrected, cosmic rays and CCD spikes are removed. The FITS files are compressed, so HDU 0 is empty, the image is in HDU 1, and the uncertainty layer is in HDU 2. Values of inf in the uncertainty layer mark pixels whose values were filled in during the de-streaking or de-spiking
@@ -52,7 +56,8 @@ for file in os.listdir(punchdir):
 bin_fac = 4 # For processing we bin down the data by this factor
 
 # %%
-filenames
+test_file = filenames[0]
+data_cube = punch_io.load_ndcube_from_fits(punchdir+'/'+test_file)
 
 # %% LOAD AND SORT DATA BY TIME---------------------------------------------------------------
 # Load data files and sort them by time:

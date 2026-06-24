@@ -108,8 +108,6 @@ smask = glint_mask(data_cube.data.shape,sc1,sc2,srad,bottom_cut)
 # plt.imshow(data_cube.data*smask)
 
 # %% CREATE SOLVERS-----------------------------------------------------------------------------------
-from scipy.sparse import diags
-
 # This does the single-frame PSF correction. Multi-frame capability should still be present
 # but will require massaging the inputs.
 # Inputs to the reconstructor/solver:
@@ -149,72 +147,3 @@ for i in range(0,1):#10): # can apply to as many of the data as needed. Just usi
 	solns_stray.append(soln_stray)
 	solns_dat.append(soln_dat)
 
-# %% SKY SOLUTION-----------------------------------------------------------------------------
-# The sky solution:
-fig,axes = plt.subplots(nrows=1,ncols=2,figsize=[20,10])
-#fig = plt.figure(figsize=[15,15])
-axes[0].imshow(dsol[0].T**0.5,vmin=0,vmax=0.5e-9**0.5)
-axes[1].imshow((solns_sky[0]).T**0.5,vmin=0,vmax=0.5e-9**0.5)
-
-# %% DATA vs STRAY LIGHT SOLUTION (stray light model)-----------------------------------------
-# The stray solution:
-fig,axes = plt.subplots(nrows=1,ncols=2,figsize=[20,10])
-fig = plt.figure(figsize=[15,5])
-axes[0].imshow(dsol[0].T**0.5,vmin=0,vmax=0.5e-9**0.5)
-axes[1].imshow((solns_stray[0][0]).T)
-
-# %% STRAY LIGHT SOLUTION ONLY----------------------------------------------------------------
-# The stray light solution:
-fig = plt.figure(figsize=[15,15])
-plt.imshow(np.clip(solns_stray[0][0],0,None).T**0.5,vmin=0,vmax=0.5e-9**0.5)
-
-# %% SOLVED IMAGE (data - (minus) stray light model)------------------------------------------
-fig = plt.figure(figsize=[15,15])
-plt.imshow((dsol[0]-solns_stray[0][0]).T)
-
-# %% VISUALIZING ALL THE PRODUCTS (dsol, esol, gsol; solns_sky, solns_stray, soln_dat)--------
-fig,axes = plt.subplots(nrows=2,ncols=3,figsize=[20,10])
-#fig = plt.figure(figsize=[15,15])
-ax00 = axes[0][0].imshow(dsol[0].T**0.5,cmap='gray',vmin=0,vmax=0.5e-9**0.5)
-axes[0][0].set_title('dsol: "data"')
-ax01 = axes[0][1].imshow(esol[0].T**0.5,cmap='gray',vmin=0,vmax=0.5e-9**0.5)
-axes[0][1].set_title('esol: error')
-ax02 = axes[0][2].imshow(gsol[0].T**0.5,cmap='gray',vmin=0,vmax=0.5e-9**0.5)
-axes[0][2].set_title('gsol: good_data')
-fig.colorbar(ax00)
-fig.colorbar(ax01)
-fig.colorbar(ax02)
-ax10 = axes[1][0].imshow((solns_sky[0]).T**0.5,cmap='gray',vmin=0,vmax=0.5e-9**0.5)
-axes[1][0].set_title('solns_sky')
-ax11 = axes[1][1].imshow((solns_stray[0][0]).T**0.5,cmap='gray',vmin=0,vmax=0.5e-9**0.5)
-axes[1][1].set_title('solns_stray')
-ax12 = axes[1][2].imshow((solns_dat[0]).T**0.5,cmap='gray',vmin=0,vmax=0.5e-9**0.5)
-axes[1][2].set_title('solns_dat')
-fig.colorbar(ax10)
-fig.colorbar(ax11)
-fig.colorbar(ax12)
-
-# %% THREE PANEL FIGURE: DATA , STRAY LIGHT MODEL (SOLUTION) , SUBTRACTED IMAGE----------------
-fig,axes = plt.subplots(nrows=1,ncols=3,figsize=[20,5])
-axes[0].imshow(dsol[0].T**0.5,vmin=0,vmax=0.5e-9**0.5,cmap='gray')
-axes[1].imshow((solns_stray[0][0]).T**0.5,vmin=0,vmax=0.5e-9**0.5,cmap='gray')
-axes[2].imshow(((dsol[0]-solns_stray[0][0]).T)**0.5,vmin=0,vmax=0.5e-9**0.5,cmap='gray')
-# %% Labelled, not scaled, and masked solved
-fig,axes = plt.subplots(nrows=1,ncols=3,figsize=[20,5])
-t = Time(timarr[data_indices[0]],format='unix')
-t.format='iso'
-fig.suptitle(t.value,fontsize=20)
-sub_fntsz = 15
-cmap_color = 'gray'
-
-ax0 = axes[0].imshow(dsol[0].T,cmap=cmap_color)
-axes[0].set_title('Data',fontsize=sub_fntsz)
-ax1 = axes[1].imshow((solns_stray[0][0]).T,cmap=cmap_color)
-axes[1].set_title('Stray Light Solution',fontsize=sub_fntsz)
-ax2 =axes[2].imshow((((dsol[i]-solns_stray[i][0])*(nmask.T)).T),cmap=cmap_color)
-axes[2].set_title('Subtracted (data - stray)',fontsize=sub_fntsz)
-
-fig.colorbar(ax0)
-fig.colorbar(ax1)
-fig.colorbar(ax2)
-# %%

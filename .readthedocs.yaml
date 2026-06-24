@@ -15,7 +15,9 @@ build:
     - wget
   jobs:
     install:
-      - pip install --groups=docs,docs_pipe
+      - pip install .
+      - pip install dependency-groups
+      - pip install-dependency-groups doc
 
 
 # Build documentation in the "docs/" directory with Sphinx

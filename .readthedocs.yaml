@@ -30,6 +30,7 @@ formats:
 python:
   install:
     - method: pip
-      extra_requirements:
+      groups:
         - docs
+        - docs_pipe
       path: .

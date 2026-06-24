@@ -80,7 +80,6 @@ pipe = [
 ]
 
 all = ["punchbowl[super_user,pipe]"]
-docs = ["punchbowl[docs,docs_pipe]"]
 
 [dependency-groups]
 test = [

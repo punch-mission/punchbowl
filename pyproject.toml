@@ -12,7 +12,6 @@ dependencies = [
     "ndcube",
     "numpy",
     "python-dateutil",
-    "quadprog",
     "regularizepsf",
     "requests",
     "scipy",

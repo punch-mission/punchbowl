@@ -15,7 +15,7 @@ build:
     - wget
   jobs:
     install:
-      - pip install .
+      - pip install ".[all]"
       - pip install dependency-groups
       - pip-install-dependency-groups docs
 

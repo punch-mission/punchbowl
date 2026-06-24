@@ -72,8 +72,8 @@ class element_grid:
     #               at this multiple of the grid scale. Default: 3
     #     thold: Final threshold for keeping points when evaluating the response/basis functions.
     #            Default: 0.005.
-    def __init__(self, grid, parms, func, footprint=None, stencil_thold=5.0e-4, nsubgrid=3, thold=0.005):
-        [self.thold, self.coords, self.parms, self.func] = [thold, grid, parms, func]
+    def __init__(self, grid, params, func, footprint=None, stencil_thold=5.0e-4, nsubgrid=3, thold=0.005):
+        [self.thold, self.coords, self.params, self.func] = [thold, grid, params, func]
         [self.nelm, self.nsubgrid] = [np.prod(grid.dims), np.broadcast_to(nsubgrid,grid.dims.shape)]
         [self.subgrid, self.eval_grid] = [grid.subgrid(fac=self.nsubgrid), self.get_eval_grid()]
         # Generate the stencil:
@@ -100,7 +100,7 @@ class element_grid:
         [eval_coords, output_coords] = [self.eval_grid.coords(subinds), self.subgrid.coords(subinds)]
         # Compute the response of these evaluation points to the input point, and their
         # coordinates:
-        return self.func(self.eval_grid.coords(subpt), eval_coords, self.parms), output_coords
+        return self.func(self.eval_grid.coords(subpt), eval_coords, self.params), output_coords
     # Return the elements addressed by a given index:
     def elements(self,index):
         # Map the address to a coordinate and run the element_grid's evaluator:

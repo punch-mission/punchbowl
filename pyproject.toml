@@ -7,7 +7,6 @@ name = "punchbowl"
 dynamic = ["version"]
 dependencies = [
     "astropy",
-    "astroscrappy",
     "lmfit",
     "matplotlib<=3.10.9",
     "ndcube",

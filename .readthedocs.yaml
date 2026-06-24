@@ -17,7 +17,7 @@ build:
     install:
       - pip install .
       - pip install dependency-groups
-      - pip install-dependency-groups doc
+      - pip-install-dependency-groups docs
 
 
 # Build documentation in the "docs/" directory with Sphinx

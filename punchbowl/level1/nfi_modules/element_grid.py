@@ -57,7 +57,7 @@ from nfi_modules.util import btp, ftp, multivec_matmul, rindices
 class element_grid:
     # Set up the elements. Required inputs:
     #     grid: A coord_grid.
-    #     parms: Parameters or anything else used to evaluate the response function.
+    #     params: Parameters or anything else used to evaluate the response function.
     #     func: The response function evaluator.
     # Optional inputs:
     #     footprint: How far away from the input point to evaluate the response functions,

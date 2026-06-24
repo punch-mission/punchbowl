@@ -86,14 +86,7 @@ amats['stray']
 
 # %% PLOT OF THE KERNEL (STRAY LIGHT FOWARD MATRIX)-------------------------------------------
 # plot of the kernel
-plt.imshow(amats['stray'][:,0].todense().A1.reshape([512,512]))
-
-# %%
-1.0/np.sum(amats['stray'][:,0] > 0)
-
-# %%
-fig=plt.figure(figsize=[20,20])
-plt.imshow(amats['sky'][0][:,8192+128].todense().A1.reshape([512,512]))
+# plt.imshow(amats['stray'][:,0].todense().A1.reshape([512,512]))
 
 # %% MASK OUT GLINT (fixed in position)--------------------------------------------------------------
 # For now the plan is just to mask out the sphere pattern until we have a better way to prefilter it:

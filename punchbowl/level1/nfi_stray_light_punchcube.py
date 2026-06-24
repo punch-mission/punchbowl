@@ -60,28 +60,17 @@ test_file = filenames[0]
 data_cube = punch_io.load_ndcube_from_fits(punchdir+'/'+test_file)
 
 # %% CREATE INPUTS FOR FORWARD MATRIX GENERATOR------------------------------------------------
-# Set up inputs to forward matrix generator. This uses just one index from the data array
-# but multiple can also be used. That has been tested in the past but not very recently.
-# if multiple are input (typically 3) it will create forward matrices for a detector-fixed
-# per pixel pattern and a sky-fixed pattern as well as the diffuse stray light pattern
-data_indices = [5]
-datsz = [len(data_indices), hdrarr[0]['NAXIS1'], hdrarr[0]['NAXIS2']]
-xcens = np.zeros(len(data_indices))
-ycens = np.zeros(len(data_indices))
-crots = np.zeros(len(data_indices))
+def get_center(crval,cdelt,bin_factor):
+    return (-crval/cdelt)/bin_factor
 
-# I had some difficulty getting the crvals in the headers to produce images that appeared
-# to be aligned but that may be because I was recentering the crvals on the middle frame
-# which can have odd effects when combined rotation. This doesn't appear to be happening here.
-for i in range(0,len(data_indices)):
-	xcens[i] = (-hdrarr[data_indices[i]]['CRVAL1']/hdrarr[data_indices[i]]['CDELT1'])/bin_fac
-	ycens[i] = (-hdrarr[data_indices[i]]['CRVAL2']/hdrarr[data_indices[i]]['CDELT2'])/bin_fac
-	crots[i] = hdrarr[data_indices[i]]['CROTA']*np.pi/180
+data_wcs = data_cube.wcs
+data_meta = data_cube.meta
 
-# %%
-import fwdmats
-importlib.reload(fwdmats)
-from fwdmats import generate_nfi_fwdmats, assemble_nfi_fwdmats
+xcens = np.array([get_center(data_wcs.wcs.crval[0],data_wcs.wcs.cdelt[0],bin_fac)])
+ycens = np.array([get_center(data_wcs.wcs.crval[1],data_wcs.wcs.cdelt[1],bin_fac)])
+
+datsz = [1, data_meta['NAXIS1'].value, data_meta['NAXIS2'].value]
+crots = np.array([data_meta['CROTA'].value*np.pi/180])
 
 # %% FORWARD MATRICES DICTIONARY (amats)--------------------------------------------------------
 # This generates a new sky-oriented and instrument oriented forward matrix each time

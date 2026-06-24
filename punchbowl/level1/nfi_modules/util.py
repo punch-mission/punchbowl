@@ -105,7 +105,7 @@ def _masked_medfilt_inner(flatinds,data,footprint_inds,footprint_ind_offset,tpar
 # https://numpy.org/doc/stable/user/basics.broadcasting.html
 # This is somewhat backward to how dot products otherwise work in numpy
 # So the order of operations has to be reversed compared to normal and the
-# matrix must be transposed. i.e., instead of v2 = np.dot(fwd,v1), it's neccesary
+# matrix must be transposed. i.e., instead of v2 = np.dot(fwd,v1), it's necessary
 # to instead do v2 = np.dot(v1,fwd.T). There's may be a built in numpy way to
 # do this, but I haven't found it so far. linalg.multi_dot doesn't appear to
 # function any differently from dot in this case. I've implemented it

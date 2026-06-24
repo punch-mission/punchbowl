@@ -91,7 +91,7 @@ amats.keys()
 # %% STRAY LIGHT FORWARD MATRIX (KERNEL)------------------------------------------------------
 amats['stray']
 
-# %% PLOT OF THE KERNEL (STRAY LIGHT FOWARD MATRIX)-------------------------------------------
+# %% PLOT OF THE KERNEL (STRAY LIGHT FORWARD MATRIX)-------------------------------------------
 # plot of the kernel
 # plt.imshow(amats['stray'][:,0].todense().A1.reshape([512,512]))
 

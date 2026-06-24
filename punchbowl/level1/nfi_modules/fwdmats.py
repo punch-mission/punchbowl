@@ -5,8 +5,8 @@
 # datsiz: the size of the data cube (number of frames, nx, and ny). The code uses the convention that
 # 			the initial spatial axis is x and the subsequent spatial axis is y, so that, for example,
 #			NAXIS1 of a fits file corresponds to nx and NAXIS2 corresponds to ny. The data arrays returned
-#			by the astropy fits routines use the opposite convention (e.g., the inital axis of the data array
-#			corresponds to NAXIS2, which is usally y, for a 2 axis image) so the data arrays need to be
+#			by the astropy fits routines use the opposite convention (e.g., the initial axis of the data array
+#			corresponds to NAXIS2, which is usually y, for a 2 axis image) so the data arrays need to be
 #			transposed prior to being input to the reconstruct routine.
 # xoffs: The x offsets of each frame in pixels. For a correctly aligned fits file, these should be
 #			CRVAL1/CDELT1

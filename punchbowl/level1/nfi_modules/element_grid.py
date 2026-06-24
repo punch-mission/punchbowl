@@ -68,7 +68,7 @@ class element_grid:
     #                    at the origin) is made, and points falling below this threshold are
     #                    omitted. Would probably be better to check the stencil for every
     #                    element's location, although that would be slower... Default: .0005
-    #     nsubgrid: To take into accound subgrid-scale effects, evaluate the response/basis functions.
+    #     nsubgrid: To take into account subgrid-scale effects, evaluate the response/basis functions.
     #               at this multiple of the grid scale. Default: 3
     #     thold: Final threshold for keeping points when evaluating the response/basis functions.
     #            Default: 0.005.

@@ -10,7 +10,7 @@ import numpy as np
 # Has the following arguments:
 #
 #     source:    An object which defines a set of indexed source, or basis,
-#                elements. The element_grid class is the examplar for these objects.
+#                elements. The element_grid class is the exemplar for these objects.
 #                They must implement an elements method as well as
 #                nelm, nadr, and coords attributes with usage consistent with their
 #                definitions in element_grid.

@@ -81,7 +81,7 @@ pipe = [
     "numpy-quaternion"
 ]
 
-all = ["punch-mission[super_user,pipe]"]
+all = ["punchbowl[super_user,pipe]"]
 
 [dependency-groups]
 test = [

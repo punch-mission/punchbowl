@@ -31,6 +31,5 @@ python:
   install:
     - method: pip
       extra_requirements:
-        - all
         - docs
       path: .

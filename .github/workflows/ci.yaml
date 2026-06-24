@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ".[all]" --group dev
+        pip install ".[all]"
     - name: Lint with ruff
       run: |
         ruff check .

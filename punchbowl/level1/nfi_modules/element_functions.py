@@ -4,18 +4,18 @@ from nfi_modules.util import multivec_matmul
 tiny = 1.0e-4
 
 # This is a basis function that's a set of rectilinear 'in' or 'out' boxes -- e.g., pixels in 2D:
-def bin_function(ptcoords,coordarr,parms): return np.prod(np.round((ptcoords-coordarr).T+tiny) == 0,axis=0)
+def bin_function(ptcoords,coordarr,params): return np.prod(np.round((ptcoords-coordarr).T+tiny) == 0,axis=0)
 
 # Rectilinear spike function. Can be 1-D or multidimensional. Should work well for a
 # linear (or bilinear for 2D, etc) interpolating basis function. Note: Test this...
-def spike_function(ptcoords,coordarr,parms): return np.prod(np.clip(1.0-np.abs(ptcoords-coordarr).T,0,1),axis=0)
+def spike_function(ptcoords,coordarr,params): return np.prod(np.clip(1.0-np.abs(ptcoords-coordarr).T,0,1),axis=0)
 
 # This is a setup function for a 3D or 2D Gaussian type PSF/response function.
 # It's defined in terms of the 3 axes of the ellipse and a set of three angles
 # about which the ellipse is rotated. The initial axes are x, y, z, while
 # the rotation matrices use the Tait Bryan convention z, x, y -- i.e., if
 # the angles are all zero, sigmas[0] will be the ellipse length along x,
-# sigmas[1] wil be the ellipse length along y, etc; and, if the angles are not zero
+# sigmas[1] will be the ellipse length along y, etc; and, if the angles are not zero
 # the ellipse is first rotated about the z axis (in the x-y plane), then x (z-y plane)
 # then y (z-x plane). If the PSF is evaluated in 2D, only the first two
 # axis lengths and the first angle will be used.

@@ -51,7 +51,7 @@ super_user = [
     "prefect[dask]",
     "pylibjpeg[openjpeg]",
     "remove_starfield>=0.1",
-    "reproject",
+    "reproject>=0.20.0",
     "scikit-learn",
     "setuptools",
     "threadpoolctl",

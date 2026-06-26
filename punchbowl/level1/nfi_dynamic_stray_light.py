@@ -33,11 +33,11 @@ from nfi_modules.util import bindown
 from punchbowl.data.punchcube import PUNCHCube
 
 
-def get_center(crval,cdelt,bin_factor):
+def get_center(crval,cdelt,bin_factor:int):
     return (-crval/cdelt)/bin_factor
 
 def get_fwd_mat_inputs(data: PUNCHCube,
-                       bin_factor):
+                       bin_factor:int):
     data_wcs = data.wcs
     data_meta = data.meta
 
@@ -48,12 +48,32 @@ def get_fwd_mat_inputs(data: PUNCHCube,
 
     return xcens, ycens, crots
 
+def glint_mask(data_shape,
+               sc1:tuple,
+               sc2:tuple,
+               srad:int,
+               bottom_cut:int):
+	xa, ya = np.indices(data_shape)
+	mask =  ((((xa-sc1[0])**2+(ya-sc1[1])**2)**0.5 > srad)*
+		((((xa-sc2[0])**2+(ya-sc2[1])**2)**0.5 > srad))*
+		(xa>bottom_cut))
+
+	return mask
 
 def remove_nfi_stray_light(data: PUNCHCube,
                            bin_factor: int = 4,
-                           fwd_mat_smooth_rad = 0.0):
+                           fwd_mat_smooth_rad = 0.0,
+                           sc1:tuple = (540,790),
+                           sc2:tuple = (540,1210),
+                           srad:int = 375,
+                           bottom_cut = 250):
     xcens, ycens, crots = get_fwd_mat_inputs(data=data,bin_factor=bin_factor)
     data_size = [1, data.meta['NAXIS1'].value, data.meta['NAXIS2'].value]
     amats = generate_nfi_fwdmats(data_size,xcens,ycens,crots,bin_fac=bin_factor,smooth_rad=fwd_mat_smooth_rad)
+    
+
+    smask = glint_mask(data.data.shape,sc1,sc2,srad,bottom_cut)
+
+    
 
     return

@@ -26,10 +26,10 @@ Version 0l
   - Point Spread Function #TODO
   - Polarization #TODO
   - Starfield modeling and subtraction are much improved:
-    - We now interpolate between the starfield models that are valid at distinct times in order to avoid sudden jumps in the subtacted values (https://github.com/punch-mission/punchbowl/pull/932).
-    - We made changes to avoid holes in starfield maps resulting from insufficient per-pixel data (https://github.com/punch-mission/punchbowl/pull/949).
+    - Implemented interpolation between the starfield models that are valid at distinct times in order to avoid sudden jumps in the subtacted values (https://github.com/punch-mission/punchbowl/pull/932).
+    - Added functionality to avoid holes in starfield maps resulting from insufficient per-pixel data (https://github.com/punch-mission/punchbowl/pull/949).
   - For polarized mosaic quicklook images, the default layer is now pB instead of tB (https://github.com/punch-mission/punchbowl/pull/894).
-  - Linear or non-linear calibration can now be done per-polarizer state (https://github.com/punch-mission/punchbowl/pull/966).
+  - Implemented per-polarizer-state linear or non-linear calibration (https://github.com/punch-mission/punchbowl/pull/966).
 
 - Metadata improvements
   - The spacecraft velocities are now written correctly in Level 0 files and used in alignment (https://github.com/punch-mission/punchbowl/pull/951).

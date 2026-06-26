@@ -94,13 +94,16 @@ def remove_nfi_stray_light(data: PUNCHCube,
                            inst_reg=0.1,
                            stray_reg=1.0e-10):
     
+    # Generate forward matrices (kernels)
     xcens, ycens, crots = get_fwd_mat_inputs(data=data,bin_factor=bin_factor)
     data_size = [1, data.meta['NAXIS1'].value, data.meta['NAXIS2'].value]
     amats = generate_nfi_fwdmats(data_size,xcens,ycens,crots,bin_fac=bin_factor,smooth_rad=fwd_mat_smooth_rad)
 
+    # Mask out glint spheres
     #TODO: Make mask optional (and/or mask generating lives outside this function)
     smask = glint_mask(data.data.shape,sc1,sc2,srad,bottom_cut)
 
+    # Stray light model
     dsol, esol, gsol = get_solver_inputs(data, smask, bindown_shape=bindown_shape)
     soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(dsol, esol, amats, gsol,
                                                                           solver_tol=solver_tol, 

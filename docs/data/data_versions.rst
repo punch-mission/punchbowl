@@ -21,7 +21,7 @@ Version 0l
 ----------
 - Released ???? June ???, 2026 ????
 - Data improvements
-  - Fix labeling of NFI +60 & -60 degree polarization states (https://github.com/punch-mission/punchbowl/pull/953).
+  - Switched labeling of NFI +60 & -60 degree polarization states to be consistent with WFI (https://github.com/punch-mission/punchbowl/pull/953).
   - Alignment #TODO
   - Point Spread Function #TODO
   - Polarization #TODO

@@ -30,7 +30,7 @@ from nfi_modules.util import bindown
 
 #punchbowl specific modules
 from punchbowl.util import load_image_task
-
+from punchbowl.level1.nfi_dynamic_stray_light import remove_nfi_stray_light
 
 #%%
 def nfi_core_flow(input_data: list[str],
@@ -44,3 +44,4 @@ def nfi_core_flow(input_data: list[str],
 
     for i, this_data in enumerate(input_data):
         data = load_image_task(this_data) if isinstance(this_data,str) else this_data
+        data = remove_nfi_stray_light(data) #TODO: save data as punchcube; incorporate flexibility with other parameters?

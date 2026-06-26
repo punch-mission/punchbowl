@@ -19,20 +19,39 @@ A history of data version releases is given below.
 
 Version 0l
 ----------
+
 - Released ???? June ???, 2026 ????
 - Data improvements
+
   - Switched labeling of NFI +60 & -60 degree polarization states to be consistent with WFI (https://github.com/punch-mission/punchbowl/pull/953).
-  - Alignment #TODO
-  - Point Spread Function #TODO
-  - Polarization #TODO
+  - Alignment (https://github.com/punch-mission/punchbowl/pull/951, https://github.com/punch-mission/punchbowl/pull/964), https://github.com/punch-mission/punchbowl/pull/973)
+
+    - Changed method for determining refined celestial WCS. New method is faster and in most cases produces a more accurate WCS (https://github.com/punch-mission/punchbowl/pull/940).
+    - Added corrections for spacecraft velocity (including a special-relativistic aberration correction)
+    - Verified and corrected conversion between spacecraft positional coordinate systems
+
+  - Point Spread Function correction
+
+    - Fixed apodization so that it doesn't introduce a grid (https://github.com/punch-mission/regularizepsf/pull/256).
+    - Regenerated PSF models to reduce artifacts.
+    - Reduced residual coma.
+
+  - Polarization
+
+    - Fixed functions for roundtrip conversion of MZP from solar and instrument frames (https://github.com/punch-mission/solpolpy/pull/218).
+    - Improve polarization position angle maps generated from Level 0 and Level 1 data products, where solar north is not always at the image top (https://github.com/punch-mission/solpolpy/pull/217).
+
   - Starfield modeling and subtraction are much improved:
+
     - Implemented interpolation between the starfield models that are valid at distinct times in order to avoid sudden jumps in the subtacted values (https://github.com/punch-mission/punchbowl/pull/932).
     - Added functionality to avoid holes in starfield maps resulting from insufficient per-pixel data (https://github.com/punch-mission/punchbowl/pull/949).
+
   - For polarized mosaic quicklook images, the default layer is now pB instead of tB (https://github.com/punch-mission/punchbowl/pull/894).
   - Implemented per-polarizer-state linear or non-linear calibration (https://github.com/punch-mission/punchbowl/pull/966).
 
 - Metadata improvements
-  - The spacecraft velocities are now written correctly in Level 0 files and used in alignment (https://github.com/punch-mission/punchbowl/pull/951).
+
+  - The spacecraft velocities are now written correctly in Level 0 files (https://github.com/punch-mission/punchbowl/pull/951).
   - Spacecraft positions and velocities are included in FITS headers in several new Earth-centric frames, and are tied to the center of the exposure window (https://github.com/punch-mission/punchbowl/pull/964).
   - DATE-BEG and DATE-END in Level 2 & 3 files now represent the earliest DATE-BEG and latest DATE-END of the input Level 1 files. Previously the DATE-BEG, DATE-OBS, and DATE-END of the Level 3 files were identical (https://github.com/punch-mission/punchbowl/pull/948).
   - Additional date keywords are passed through the polarization transformations (https://github.com/punch-mission/punchbowl/pull/961).
@@ -42,6 +61,7 @@ Version 0l
   - Improved handling for metadata to avoid comment card overflow and shifts a few keys for JHelioviewer compatibility (https://github.com/punch-mission/punchbowl/pull/903).
 
 - Interface improvements
+
   - The Fido search client now correctly filters when given a specific data version, or "newest", to search (https://github.com/punch-mission/punchbowl/pull/914).
   - plot_punch can overlay the names of the PUNCH satellites on their respective fields-of-view when plotting mosaic images (https://github.com/punch-mission/punchbowl/pull/960).
 

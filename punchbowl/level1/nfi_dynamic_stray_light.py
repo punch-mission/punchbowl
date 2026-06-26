@@ -9,7 +9,7 @@ import numpy as np
 from astropy.io import fits
 from astropy.time import Time
 from astropy.wcs import WCS, FITSFixedWarning
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter,zoom
 
 plt.rcParams.update({'image.origin':'lower'})
 
@@ -36,10 +36,10 @@ from punchbowl.data.punchcube import PUNCHCube
 def get_center(crval,cdelt,bin_factor:int):
     return (-crval/cdelt)/bin_factor
 
-def get_fwd_mat_inputs(data: PUNCHCube,
+def get_fwd_mat_inputs(datacube: PUNCHCube,
                        bin_factor:int):
-    data_wcs = data.wcs
-    data_meta = data.meta
+    data_wcs = datacube.wcs
+    data_meta = datacube.meta
 
     xcens = np.array([get_center(data_wcs.wcs.crval[0],data_wcs.wcs.cdelt[0],bin_factor)])
     ycens = np.array([get_center(data_wcs.wcs.crval[1],data_wcs.wcs.cdelt[1],bin_factor)])
@@ -60,11 +60,11 @@ def glint_mask(data_shape,
 
 	return mask
 
-def get_solver_inputs(data_cube,
+def get_solver_inputs(datacube,
                       smask:np.array,
                       bindown_shape:list=[512,512]):
-	data_uncertainty = data_cube.uncertainty.array
-	data_only = data_cube.data
+	data_uncertainty = datacube.uncertainty.array
+	data_only = datacube.data
 	data_err = data_only*data_uncertainty
 	msk = np.isfinite(data_only)*np.isfinite(data_err)
 
@@ -81,7 +81,7 @@ def get_solver_inputs(data_cube,
 
 	return dsol, esol, gsol
 
-def remove_nfi_stray_light(data: PUNCHCube,
+def remove_nfi_stray_light(datacube: PUNCHCube,
                            bin_factor: int = 4,
                            fwd_mat_smooth_rad = 0.0,
                            sc1:tuple = (540,790),
@@ -95,20 +95,32 @@ def remove_nfi_stray_light(data: PUNCHCube,
                            stray_reg=1.0e-10):
     
     # Generate forward matrices (kernels)
-    xcens, ycens, crots = get_fwd_mat_inputs(data=data,bin_factor=bin_factor)
-    data_size = [1, data.meta['NAXIS1'].value, data.meta['NAXIS2'].value]
+    xcens, ycens, crots = get_fwd_mat_inputs(datacube=datacube,bin_factor=bin_factor)
+    data_size = [1, datacube.meta['NAXIS1'].value, datacube.meta['NAXIS2'].value]
     amats = generate_nfi_fwdmats(data_size,xcens,ycens,crots,bin_fac=bin_factor,smooth_rad=fwd_mat_smooth_rad)
 
     # Mask out glint spheres
     #TODO: Make mask optional (and/or mask generating lives outside this function)
-    smask = glint_mask(data.data.shape,sc1,sc2,srad,bottom_cut)
+    smask = glint_mask(datacube.data.shape,sc1,sc2,srad,bottom_cut)
 
     # Stray light model
-    dsol, esol, gsol = get_solver_inputs(data, smask, bindown_shape=bindown_shape)
+    dsol, esol, gsol = get_solver_inputs(datacube, smask, bindown_shape=bindown_shape)
     soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(dsol, esol, amats, gsol,
                                                                           solver_tol=solver_tol, 
                                                                           sky_reg=sky_reg, 
                                                                           inst_reg=inst_reg,
                                                                           stray_reg=stray_reg)
     
-    return
+    
+    subtracted_data = (dsol[0] - soln_stray[0]).T
+
+    # Upsample final data back up to 2k
+    orig_shape = datacube.data.shape
+    scale_x = orig_shape[0]/bindown_shape[0]
+    scale_y = orig_shape[1]/bindown_shape[1]
+
+    final_subtracted = zoom(subtracted_data,(scale_x,scale_y),order=0)
+
+    #TODO: Save to final to punch ndcube?
+
+    return final_subtracted

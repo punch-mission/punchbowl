@@ -64,14 +64,14 @@ bin_fac = 4 # For processing we bin down the data by this factor
 
 # %%
 test_file = filenames[0]
-data_cube = punch_io.load_ndcube_from_fits(punchdir+'/'+test_file)
+datacube = punch_io.load_ndcube_from_fits(punchdir+'/'+test_file)
 
 # %% CREATE INPUTS FOR FORWARD MATRIX GENERATOR------------------------------------------------
 def get_center(crval,cdelt,bin_factor):
     return (-crval/cdelt)/bin_factor
 
-data_wcs = data_cube.wcs
-data_meta = data_cube.meta
+data_wcs = datacube.wcs
+data_meta = datacube.meta
 
 xcens = np.array([get_center(data_wcs.wcs.crval[0],data_wcs.wcs.cdelt[0],bin_fac)])
 ycens = np.array([get_center(data_wcs.wcs.crval[1],data_wcs.wcs.cdelt[1],bin_fac)])
@@ -110,7 +110,7 @@ def glint_mask(data_shape,sc1,sc2,srad,bottom_cut):
 
 	return mask
 
-smask = glint_mask(data_cube.data.shape,sc1,sc2,srad,bottom_cut)
+smask = glint_mask(datacube.data.shape,sc1,sc2,srad,bottom_cut)
 
 # plt.imshow(data_cube.data*smask)
 
@@ -137,20 +137,27 @@ smask = glint_mask(data_cube.data.shape,sc1,sc2,srad,bottom_cut)
 	# to 2k. May need to increase the number of stray light terms (nstray in generate_nfi_fwdmats). This
 	# is not completely tested and had been locked to the number of pixels...
 	
-data_uncertainty = data_cube.uncertainty.array
-data_only = data_cube.data
-data_err = data_only*data_uncertainty
-msk = np.isfinite(data_only)*np.isfinite(data_err)
 
-mask = smask*msk
-nmask = np.clip(bindown(mask,[512,512]),1,None)
+def get_solver_inputs(data_cube,smask,shape:list=[512,512]):
+	data_uncertainty = data_cube.uncertainty.array
+	data_only = data_cube.data
+	data_err = data_only*data_uncertainty
+	msk = np.isfinite(data_only)*np.isfinite(data_err)
 
-dsol = np.array([(bindown(mask*data_only,[512,512])/nmask).T])
-esol = np.array([((bindown(mask*data_err**2,[512,512]))**0.5/nmask).T])
-gsol = np.array([(bindown(mask,[512,512]) > 0).T])
-esol += 0.01*np.abs(dsol)+np.nanmin(dsol[gsol])*0.25 # supplement the errors with 1% of the data values
-esol[gsol==0] = np.max(dsol[gsol])
-esol[np.isfinite(esol)==0] = np.max(dsol[gsol]) # Some nans are still getting into the errors somehow. Grrr.
+	mask = smask*msk
+	nmask = np.clip(bindown(mask,shape),1,None)
+
+	dsol = np.array([(bindown(mask*data_only,shape)/nmask).T])
+	esol = np.array([((bindown(mask*data_err**2,shape))**0.5/nmask).T])
+	gsol = np.array([(bindown(mask,shape) > 0).T])
+
+	esol += 0.01*np.abs(dsol)+np.nanmin(dsol[gsol])*0.25 # supplement the errors with 1% of the data values
+	esol[gsol==0] = np.max(dsol[gsol])
+	esol[np.isfinite(esol)==0] = np.max(dsol[gsol]) # Some nans are still getting into the errors somehow. Grrr.
+
+	return dsol, esol, gsol
+
+dsol, esol, gsol = get_solver_inputs(datacube, smask)
 
 soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(dsol, esol, amats, gsol,
 																		solver_tol=1.0e-5, sky_reg=0.1, inst_reg=0.1,
@@ -158,7 +165,7 @@ soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(dsol, esol
 
 # %% Labelled, not scaled, and masked solved
 fig,axes = plt.subplots(nrows=1,ncols=3,figsize=[20,5])
-t = Time(data_cube.meta['DATE-OBS'].value,format='isot')
+t = Time(datacube.meta['DATE-OBS'].value,format='isot')
 t.format='iso'
 fig.suptitle(t.value,fontsize=20)
 sub_fntsz = 15

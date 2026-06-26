@@ -50,7 +50,10 @@ def get_fwd_mat_inputs(data: PUNCHCube,
 
 
 def remove_nfi_stray_light(data: PUNCHCube,
-                           bin_factor: int = 4):
+                           bin_factor: int = 4,
+                           fwd_mat_smooth_rad = 0.0):
     xcens, ycens, crots = get_fwd_mat_inputs(data=data,bin_factor=bin_factor)
-    
+    data_size = [1, data.meta['NAXIS1'].value, data.meta['NAXIS2'].value]
+    amats = generate_nfi_fwdmats(data_size,xcens,ycens,crots,bin_fac=bin_factor,smooth_rad=fwd_mat_smooth_rad)
+
     return

@@ -41,10 +41,10 @@ def get_fwd_mat_inputs(data: PUNCHCube,
     data_wcs = data.wcs
     data_meta = data.meta
 
-    xcens = get_center(data_wcs.wcs.crval[0],data_wcs.wcs.cdelt[0],bin_factor)
-    ycens = get_center(data_wcs.wcs.crval[1],data_wcs.wcs.cdelt[1],bin_factor)
+    xcens = np.array([get_center(data_wcs.wcs.crval[0],data_wcs.wcs.cdelt[0],bin_factor)])
+    ycens = np.array([get_center(data_wcs.wcs.crval[1],data_wcs.wcs.cdelt[1],bin_factor)])
 
-    crots = data_meta['CROTA'].value*np.pi/180
+    crots = np.array([data_meta['CROTA'].value*np.pi/180])
 
     return xcens, ycens, crots
 
@@ -52,5 +52,5 @@ def get_fwd_mat_inputs(data: PUNCHCube,
 def remove_nfi_stray_light(data: PUNCHCube,
                            bin_factor: int = 4):
     xcens, ycens, crots = get_fwd_mat_inputs(data=data,bin_factor=bin_factor)
-
+    
     return

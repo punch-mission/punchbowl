@@ -16,10 +16,10 @@ from punchbowl.level3 import flow
 loop: asyncio.AbstractEventLoop
 
 
-# @pytest.fixture(autouse=True, scope="session")
-# def prefect_test_fixture():
-#     with prefect_test_harness():
-#         yield
+@pytest.fixture(autouse=True, scope="session")
+def prefect_test_fixture():
+    with prefect_test_harness():
+        yield
 
 
 def session_fn(session):
@@ -328,18 +328,3 @@ async def test_reset_L2(db, tmpdir, populated_tmpdir_config):
 
     relationships = db.query(FileRelationship).filter(FileRelationship.child == reset_file.file_id).all()
     assert len(relationships) == 0
-
-
-from prefect import flow
-@flow
-def example_flow():
-    print("HI!")
-
-@pytest.mark.asyncio(loop_scope="module")
-async def test_empty(db, tmpdir, populated_tmpdir_config):
-    example_flow()
-    assert True
-
-def test_sync(db, tmpdir, populated_tmpdir_config):
-    example_flow()
-    assert True

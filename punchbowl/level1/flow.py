@@ -25,6 +25,7 @@ from punchbowl.level1.stray_light import remove_stray_light_task
 from punchbowl.level1.vignette import correct_vignetting_task
 from punchbowl.prefect import get_logger, punch_flow
 from punchbowl.util import DataLoader, load_image_task, load_mask_file, output_image_task
+from punchbowl.level1.nfi_dynamic_stray_light import remove_nfi_stray_light
 
 KEYS_TO_NOT_COPY = ["BUNIT", "DESCRPTN", "FILENAME", "ISSQRT", "LEVEL", "TITLE", "TYPECODE", "FILEVRSN"]
 
@@ -342,55 +343,15 @@ def level1_late_core_flow(
     return output_data
 
 
-@punch_flow
-def levelh_core_flow(
-    input_data: list[str] | list[PUNCHCube],
-    gain_bottom: float = 4.9,
-    gain_top: float = 4.9,
-    bias_level: float = 100,
-    dark_level: float = 55.81,
-    read_noise_level: float = 17,
-    bitrate_signal: int = 16,
-    psf_model_path: str | None = None,
-    distortion_path: str | None = None,
-    output_filename: str | None = None,
-) -> list[PUNCHCube]:
-    """Core flow for level 0.5 also known as level H."""
-    logger = get_logger()
-
-    logger.info("beginning level H core flow")
+def level1_nfi_core_flow(input_data: list[str],
+                  ):
+    """Flow pipeline for NFI (stray light processing)
+        (Input FITS file; output PUNCH ndcube)"""
 
     output_data = []
+
     for i, this_data in enumerate(input_data):
-        data = load_image_task(this_data) if isinstance(this_data, str) else this_data
-        data = decode_sqrt_data(data)
-        data = update_initial_uncertainty_task(data,
-                                               bias_level=bias_level,
-                                               dark_level=dark_level,
-                                               gain_bottom=gain_bottom,
-                                               gain_top=gain_top,
-                                               read_noise_level=read_noise_level,
-                                               bitrate_signal=bitrate_signal,
-                                               )
-
-        data = correct_psf_task(data, psf_model_path)
-        data = align_task(data, distortion_path)
-
-        # Repackage data with proper metadata
-        product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
-        new_meta = NormalizedMetadata.load_template(product_code, "H")
-        new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
-        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-
-        output_header = new_meta.to_fits_header(data.wcs)
-        for key in output_header:
-            if (key in data.meta.keys()) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"): # noqa: SIM118
-                new_meta[key].value = data.meta[key].value
-        new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
-        data = data.replace(meta=new_meta)
-
-        if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
-            output_image_task(data, output_filename[i])
-        output_data.append(data)
-        logger.info("ending level H core flow")
+        this_data = load_image_task(this_data) if isinstance(this_data,str) else this_data
+        this_data = remove_nfi_stray_light(this_data)
+        output_data.append(this_data)
     return output_data

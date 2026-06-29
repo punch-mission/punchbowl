@@ -292,7 +292,7 @@ if __name__ == "__main__":
                 with open(path, 'wb') as f:
                     f.write(data)
                     n_written += 1
-            if args.db:
+            if args.db: 
                 added_file, added_flow, added_relationships = file.add_to_db(session)
                 n_added_files += added_file
                 n_added_flows += added_flow

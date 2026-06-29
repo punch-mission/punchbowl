@@ -1,26 +1,31 @@
 import numpy as np
+import scipy.ndimage
+from itertools import repeat
+from concurrent.futures import ThreadPoolExecutor
 
+import numba
 
 def kernel_smoothing_matrix(angles_rev, smooth_rad = 0.1):
-	nangles = len(angles_rev)
-	da = angles_rev[1]-angles_rev[0]
-	omat = np.zeros([nangles, nangles])
-	nrad = np.floor(smooth_rad/da).astype(np.int32)
-	na = 2*nrad+1
-	sk_angles = da*(np.arange(na)-nrad)/smooth_rad
-	skernel = np.zeros(nangles)
-	skernel[0:na] = np.cos(0.5*np.pi*sk_angles)
+    nangles = len(angles_rev)
+    da = angles_rev[1]-angles_rev[0]
+    omat = np.zeros([nangles, nangles])
+    nrad = np.floor(smooth_rad/da).astype(np.int32)
+    na = 2*nrad+1
+    sk_angles = da*(np.arange(na)-nrad)/smooth_rad
+    skernel = np.zeros(nangles)
+    skernel[0:na] = np.cos(0.5*np.pi*sk_angles)
 
-	for i in range(0,nangles):
-		omat[i] = np.roll(skernel,i-nrad)
+    for i in range(nangles):
+        omat[i] = np.roll(skernel,i-nrad)
 
-	return omat
+    return omat
 
-# Sam's code below:
-
-def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1, bottom_intensity=1, elon_abs=None, elon_offset=0,
-               blur=0, image_size=2048, oversamp=3, cx=None, cy=None, r_profile=None, dtype='float32'):
-    # Generate an image of a kernel at a specific position (an angle theta around a defined center of the stray-light donut)
+def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1,
+               bottom_intensity=1, elon_abs=None, elon_offset=0,
+               blur=0, image_size=2048, oversamp=3, cx=None, cy=None,
+               r_profile=None, dtype="float32"):
+    # Generate an image of a kernel at a specific position
+    # (an angle theta around a defined center of the stray-light donut)
 
     # Radial position of the inner edge of the donut
     r_to_inner_edge = 181.27180103 + 5
@@ -94,24 +99,18 @@ def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1, bottom
     if blur > 0:
         kernel = scipy.ndimage.gaussian_filter(kernel, blur)
 
-    # kernel /= np.max(kernel)
-
     return kernel.astype(dtype)
 
-from itertools import repeat
-from concurrent.futures import ThreadPoolExecutor
-
-import numba
-
-
 def gen_kernels(kernel_angles, aspect_ratio=1, right_intensity=1, radial_size=660, # n_kernels=400,
-				bottom_intensity=1, elon_abs=None, elon_offset=0, blur=0, image_size=2048,
+                bottom_intensity=1, elon_abs=None, elon_offset=0, blur=0, image_size=2048,
                 oversamp=3, cx=None, cy=None, r_profile=None, n_threads=5):
     # Generate a full set of kernels in parallel, with a set number of kernels spaced evenly around the donut
     with ThreadPoolExecutor(n_threads) as p:
         kernels = p.map(gen_kernel, kernel_angles,
-                        repeat(radial_size), repeat(aspect_ratio), repeat(right_intensity), repeat(bottom_intensity), repeat(elon_abs),
-                        repeat(elon_offset), repeat(blur), repeat(image_size), repeat(oversamp), repeat(cx), repeat(cy), repeat(r_profile))
+                        repeat(radial_size), repeat(aspect_ratio),
+                        repeat(right_intensity), repeat(bottom_intensity), repeat(elon_abs),
+                        repeat(elon_offset), repeat(blur), repeat(image_size),
+                        repeat(oversamp), repeat(cx), repeat(cy), repeat(r_profile))
     return np.stack(list(kernels))
 
 @numba.njit(parallel=True)
@@ -123,9 +122,9 @@ def make_model(kernels, intensity, rmin=0, rmax=-1, cmin=0, cmax=-1):
     if cmax < 0:
         cmax = kernels.shape[2]
     output = np.empty(kernels.shape[1:])
-    for i in range(0, rmin):
+    for i in range(rmin):
         output[i] = 0
-    for i in range(0, cmin):
+    for i in range(cmin):
         output[:, i] = 0
     for i in range(rmax, kernels.shape[1]):
         output[i] = 0

@@ -1,35 +1,18 @@
 import os
-import copy
-import importlib
 from sys import path
 
-import astropy.wcs
-import matplotlib.pyplot as plt
 import numpy as np
-from astropy.io import fits
-from astropy.time import Time
-from astropy.wcs import WCS, FITSFixedWarning
-from scipy.ndimage import gaussian_filter,zoom
-
-plt.rcParams.update({'image.origin':'lower'})
+from scipy.ndimage import zoom
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
 src_dir = os.path.dirname(file_dir)
 module_path = os.path.join(src_dir,'nfi_modules')
 path.append(module_path)
 
-# native libraries
-import nfi_modules.fwdmats
-import nfi_modules.reconstruct
-
-importlib.reload(nfi_modules.fwdmats)
-importlib.reload(nfi_modules.reconstruct)
-
 from nfi_modules.fwdmats import generate_nfi_fwdmats
 from nfi_modules.reconstruct import reconstruct_nfi_straylight
 from nfi_modules.util import bindown
 
-# punchbowl libraries
 from punchbowl.data.punchcube import PUNCHCube
 
 
@@ -53,33 +36,33 @@ def glint_mask(data_shape,
                sc2:tuple,
                srad:int,
                bottom_cut:int):
-	xa, ya = np.indices(data_shape)
-	mask =  ((((xa-sc1[0])**2+(ya-sc1[1])**2)**0.5 > srad)*
-		((((xa-sc2[0])**2+(ya-sc2[1])**2)**0.5 > srad))*
-		(xa>bottom_cut))
+    xa, ya = np.indices(data_shape)
+    mask =  ((((xa-sc1[0])**2+(ya-sc1[1])**2)**0.5 > srad)*
+        ((((xa-sc2[0])**2+(ya-sc2[1])**2)**0.5 > srad))*
+        (xa>bottom_cut))
 
-	return mask
+    return mask
 
 def get_solver_inputs(datacube,
-                      smask:np.array,
-                      bindown_shape:list=[512,512]):
-	data_uncertainty = datacube.uncertainty.array
-	data_only = datacube.data
-	data_err = data_only*data_uncertainty
-	msk = np.isfinite(data_only)*np.isfinite(data_err)
+                      smask: np.ndarray,
+                      bindown_shape=(512, 52)):
+    data_uncertainty = datacube.uncertainty.array
+    data_only = datacube.data
+    data_err = data_only*data_uncertainty
+    msk = np.isfinite(data_only)*np.isfinite(data_err)
 
-	mask = smask*msk
-	nmask = np.clip(bindown(mask,bindown_shape),1,None)
+    mask = smask*msk
+    nmask = np.clip(bindown(mask,bindown_shape),1,None)
 
-	dsol = np.array([(bindown(mask*data_only,bindown_shape)/nmask).T])
-	esol = np.array([((bindown(mask*data_err**2,bindown_shape))**0.5/nmask).T])
-	gsol = np.array([(bindown(mask,bindown_shape) > 0).T])
+    dsol = np.array([(bindown(mask*data_only,bindown_shape)/nmask).T])
+    esol = np.array([((bindown(mask*data_err**2,bindown_shape))**0.5/nmask).T])
+    gsol = np.array([(bindown(mask,bindown_shape) > 0).T])
 
-	esol += 0.01*np.abs(dsol)+np.nanmin(dsol[gsol])*0.25 # supplement the errors with 1% of the data values
-	esol[gsol==0] = np.max(dsol[gsol])
-	esol[np.isfinite(esol)==0] = np.max(dsol[gsol]) # Some nans are still getting into the errors somehow. Grrr.
+    esol += 0.01*np.abs(dsol)+np.nanmin(dsol[gsol])*0.25 # supplement the errors with 1% of the data values
+    esol[gsol==0] = np.max(dsol[gsol])
+    esol[np.isfinite(esol)==0] = np.max(dsol[gsol]) # Some nans are still getting into the errors somehow. Grrr.
 
-	return dsol, esol, gsol
+    return dsol, esol, gsol
 
 def remove_nfi_stray_light(datacube: PUNCHCube,
                            bin_factor: int = 4,

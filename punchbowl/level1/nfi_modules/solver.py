@@ -1,15 +1,15 @@
-import time
-import resource
-
-import numpy as np
 from scipy.sparse.linalg import LinearOperator
+import time
+import numpy as np
 
+class NlmapOperator(LinearOperator):
+	"""
+	This operator implements the general linear operator for chi squared
+	plus regularization with nonlinear mapping as outlined in Plowman &
+	Caspi 2020.
+	"""
 
-# This operator implements the general linear operator for chi squared
-# plus regularization with nonlinear mapping as outlined in Plowman &
-# Caspi 2020.
-class nlmap_operator(LinearOperator):
-	def setup(self,amat,regmat,map_drvvec,wgtvec,reg_map_drvvec,dtype='float32',reg_fac=1):
+	def setup(self,amat,regmat,map_drvvec,wgtvec,reg_map_drvvec,dtype="float32",reg_fac=1):
 		self.amat = amat
 		self.regmat = regmat
 		self.map_drvvec = map_drvvec
@@ -26,18 +26,11 @@ class nlmap_operator(LinearOperator):
 	def _adjoint(self):
 		return self
 
-import time
-import resource
-
-import numpy as np
-
-
-# Subroutine to do the inversion. Uses the log mapping and iteration from Plowman & Caspi 2020 to ensure positivity of solutions.
 def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None, dfunc=None, ifunc=None, regmat=None, silent=False,
 						solver=None, sqrmap=False, regfunc=None, dregfunc=None, iregfunc=None, map_reg=False, adapt_lam=True,
-						solver_tol = 1.0e-3, niter=40, dtype='float32', steps=None, precompute_ata=False, flatguess=True, chi2_th=1.0,
+						solver_tol = 1.0e-3, niter=40, dtype="float32", steps=None, precompute_ata=False, flatguess=True, chi2_th=1.0,
 						store_outer_Av=False, conv_chi2 = 1.0e-15):
-	from scipy.linalg import cho_factor, cho_solve
+	"""Subroutine to do the inversion. Uses the log mapping and iteration from Plowman & Caspi 2020 to ensure positivity of solutions."""
 	from scipy.sparse import diags
 	from scipy.sparse.linalg import lgmres
 
@@ -62,13 +55,21 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	def sqrfunc(s): return s*s # quadratic forward
 	def isqrfunc(c): return c**pt5 # quadratic inverse
 	def dsqrfunc(s): return two*s # quadratic derivative
-	if(func is None or dfunc is None or ifunc is None):
-		if(sqrmap): [func,dfunc,ifunc] = [sqrfunc,dsqrfunc,isqrfunc]
-		else: [func,dfunc,ifunc] = [expfunc,dexpfunc,iexpfunc]
-	if(regfunc is None or dregfunc is None or iregfunc is None):
-		if(map_reg): [regfunc,dregfunc,iregfunc] = [idnfunc,didnfunc,iidnfunc]
-		else: [regfunc,dregfunc,iregfunc] = [func,dfunc,ifunc]
-	if(solver is None): solver = lgmres
+
+	if func is None or dfunc is None or ifunc is None:
+		if sqrmap:
+			[func,dfunc,ifunc] = [sqrfunc,dsqrfunc,isqrfunc]
+		else:
+			[func,dfunc,ifunc] = [expfunc,dexpfunc,iexpfunc]
+
+	if regfunc is None or dregfunc is None or iregfunc is None:
+		if map_reg:
+			[regfunc,dregfunc,iregfunc] = [idnfunc,didnfunc,iidnfunc]
+		else:
+			[regfunc,dregfunc,iregfunc] = [func,dfunc,ifunc]
+
+	if solver is None:
+		solver = lgmres
 
 	flatdat = data0.flatten().astype(dtype)
 	flaterrs = errors0.flatten().astype(dtype)
@@ -79,8 +80,10 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	guess0norm = np.sum(flatdat*guess0dat/flaterrs**2)/np.sum((guess0dat/flaterrs)**2)
 	guess0 *= guess0norm
 	guess0 = np.clip(guess0,0.05*np.mean(np.abs(guess0)),None).astype(dtype)
-	if(guess is None): guess = guess0
-	if(flatguess): guess = ((1+np.zeros(nsrc))*np.mean(flatdat)/np.mean(amat0*(1+np.zeros(nsrc)))).astype(dtype)
+	if guess is None:
+		guess = guess0
+	if flatguess:
+		guess = ((1+np.zeros(nsrc))*np.mean(flatdat)/np.mean(amat0*(1+np.zeros(nsrc)))).astype(dtype)
 	svec = ifunc(guess).astype(dtype)
 
 	# This is an internal step length limiter to prevent overstepping
@@ -93,18 +96,23 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	# the matrix inverse, so having a significant number of them is not a problem.
 	# Step sizes are specified as a fraction of the full distance to the solution found by the sparse
 	# matrix solver (lgmres or bicgstab).
-	if(steps is None): steps = np.array([0.00, 0.05, 0.15, 0.3, 0.5, 0.67, 0.85],dtype=dtype)
+	if steps is None:
+		steps = np.array([0.00, 0.05, 0.15, 0.3, 0.5, 0.67, 0.85],dtype=dtype)
 	minstep = np.min(steps[1:])
 	nsteps = len(steps)
 	step_loss = np.zeros(nsteps,dtype=dtype)
 
 	reglam = one
-	if(regmat is None and map_reg): regmat = diags(one/iregfunc(guess0)**two)
-	if(adapt_lam and map_reg): reglam = (np.dot((regmat*svec),
+	if regmat is None and map_reg:
+		regmat = diags(one/iregfunc(guess0)**two)
+	if adapt_lam and map_reg:
+		reglam = (np.dot((regmat*svec),
 							dfunc(svec)*(amat0.T*(1.0/flaterrs)))/
 							np.dot((regmat*svec),(regmat*svec)))
-	if(regmat is None and not map_reg):  regmat = diags(1.0/(guess0)**2)
-	if(adapt_lam and not map_reg): reglam = (np.dot(dfunc(svec)*(regmat*guess),
+	if regmat is None and not map_reg:
+		regmat = diags(1.0/(guess0)**2)
+	if adapt_lam and not map_reg:
+		reglam = (np.dot(dfunc(svec)*(regmat*guess),
 							dfunc(svec)*(amat0.T*(1.0/flaterrs)))/
 							np.dot(dfunc(svec)*(regmat*guess),dfunc(svec)*(regmat*guess)))
 
@@ -112,11 +120,8 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	regmat = reg_fac*regmat*reglam
 	weights = (1.0/flaterrs**2).astype(dtype) # The weights are the errors...
 
-	if(silent == False):
-		print('Overall regularization factor:',reg_fac*reglam)
-
 	if(not(precompute_ata)):
-		nlmo = nlmap_operator(dtype=dtype,shape=(nsrc,nsrc))
+		nlmo = NlmapOperator(dtype=dtype, shape=(nsrc, nsrc))
 		nlmo.setup(amat0,regmat,dfunc(svec),weights,dregfunc(svec),reg_fac=reg_fac)
 
 	# --------------------- Now do the iteration:
@@ -124,7 +129,7 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 	setup_timer = 0
 	solver_timer = 0
 	stepper_timer = 0
-	for i in range(0,niter):
+	for i in range(niter):
 		tsetup = time.time()
 		# Setup intermediate matrices for solution:
 		dguess = dfunc(svec)
@@ -142,13 +147,14 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 
 		tstepper = time.time()
 		deltas = svec2-svec
-		if(np.max(np.abs(deltas)) == 0): break # This also means we've converged.
+		if np.max(np.abs(deltas)) == 0:
+			break # This also means we've converged.
+
 		# Rescale the deltas so they don't exceed maxdelta at the smallest step size:
-		#deltas *= np.clip(np.max(np.abs(deltas)),None,maxdelta/minstep)/np.max(np.abs(deltas))
 		deltas *= np.clip(np.clip(np.max(np.abs(deltas)),None,maxdelta/minstep)/np.max(np.abs(deltas)),0,1)
 
 		# Try the step sizes:
-		for j in range(0,nsteps):
+		for j in range(nsteps):
 			stepguess = func(svec+steps[j]*(deltas))
 			stepguess_reg = regfunc(svec+steps[j]*(deltas))
 			stepresid = (flatdat-amat0*(stepguess))*weights**pt5
@@ -165,10 +171,7 @@ def sparse_nlmap_solver(data0, errors0, amat0, guess=None, reg_fac=1, func=None,
 		chi21 = np.sum(weights*(flatdat-amat0*(func(svec)))**two)/ndat
 		stepper_timer += time.time()-tstepper
 
-		if(silent==False):
-			print(round(time.time()-tstart,2),'s i =',i,'chi2 =',round(chi21,2),'step size =',round(steps[best_step],3), 'reg. param. =', round(reg1,2), 'chi2 change =',round(chi20-chi21,5), 'reg. change =',round(reg0-reg1,5))
-			print('Setup: ', setup_timer, 'Solver: ', solver_timer, 'Stepper: ', stepper_timer)
-			print('New combined FOM:',chi21+reg1,'Old combined FOM:',chi20+reg0,'Change:',chi20+reg0-(chi21+reg1))
-		if(np.abs(step_loss[0]-step_loss[best_step]) < conv_chi2 or chi21 < chi2_th): break # Finish the iteration if chi squared isn't changing
+		if(np.abs(step_loss[0]-step_loss[best_step]) < conv_chi2 or chi21 < chi2_th):
+			break # Finish the iteration if chi squared isn't changing
 
 	return func(svec), chi21, resids

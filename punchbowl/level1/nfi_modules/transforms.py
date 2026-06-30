@@ -1,5 +1,5 @@
 import numpy as np
-from nfi_modules.util import multivec_matmul
+from nfi_modules.util import multivector_matrix_multiply
 
 
 class CoordTransform:
@@ -36,7 +36,7 @@ class CoordTransform:
 
     def transform(self, coords):
         """As currently written will only work on one coordinate point at at time..."""
-        return multivec_matmul(self.fwd,coords)+self.origin
+        return multivector_matrix_multiply(self.fwd,coords)+self.origin
 
 
 class Trivialframe:

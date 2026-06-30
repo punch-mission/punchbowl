@@ -19,12 +19,12 @@ bin_fac: How much to bin down the data for speed (default 4). Needs to be set th
 smooth_rad: If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
 """
 import numpy as np
-from element_functions import bin_function, get_2d_cov, nd_gaussian_psf
+from element_functions import bin_function, get_2d_covariance, n_dimensional_gaussian_psf
 from element_grid import DetectorGrid, SourceGrid
 from element_source_responses import element_source_responses as esr
 from indexgrid import CoordGrid
 from scipy.sparse import csc_matrix, csr_matrix, diags
-from straylight_kernels import gen_kernels, kernel_smoothing_matrix
+from straylight_kernels import generate_kernels, kernel_smoothing_matrix
 from transforms import CoordTransform, Trivialframe
 
 
@@ -48,7 +48,7 @@ def generate_nfi_fwdmats(datsiz, xoffs, yoffs, crots, bin_fac=4, smooth_rad=0.05
 		nstray = im_size
 
 	kernel_angles = 2*np.pi*np.arange(nstray)/nstray
-	kernels = gen_kernels(kernel_angles,
+	kernels = generate_kernels(kernel_angles,
 						  radial_size=radial_size,
 						  elon_abs=elon_abs,
 						  image_size=im_size,
@@ -95,7 +95,7 @@ def generate_stray_fwdmats(datsiz, xoffs, yoffs, crots, bin_fac=4, smooth_rad=0.
 	# Note we do not include the endpoint of the interval
 	# since that would put duplicate kernels at 0 and 2*pi...
 	kernel_angles = 2*np.pi*np.arange(im_size)/im_size
-	kernels = gen_kernels(kernel_angles, radial_size=175.4, elon_abs=130, image_size=im_size)
+	kernels = generate_kernels(kernel_angles, radial_size=175.4, elon_abs=130, image_size=im_size)
 	k2 = np.array(kernels)
 	for i in range(len(k2)):
 		k2[i] = k2[i].T
@@ -151,9 +151,9 @@ def get_detector(dims, crota=0.0, center=np.array([0,0]), scale=[1.0, 1.0], det_
 	fwdtransform = get_rotmat_2d(crota)
 	origin = fwdtransform.dot(-0.5*dims+center)
 	det_coords = CoordGrid(dims, origin, fwdtransform, det_frame)
-	psfcov = get_2d_cov([0.5,0.5],0.0)
+	psfcov = get_2d_covariance([0.5,0.5],0.0)
 	ipsfcov = np.linalg.inv(psfcov)
-	return DetectorGrid(det_coords, [ipsfcov], nd_gaussian_psf, nsubgrid=det_subgrid_fac, thold=1.0e-3, footprint=[25, 25])
+	return DetectorGrid(det_coords, [ipsfcov], n_dimensional_gaussian_psf, nsubgrid=det_subgrid_fac, thold=1.0e-3, footprint=[25, 25])
 
 def csc_resize(csc, rsiz, csiz, r0, c0):
 	"""

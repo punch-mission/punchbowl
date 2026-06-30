@@ -59,7 +59,7 @@ def _masked_medfilt_inner(flatinds,
             data_filt[ind] = np.median(dat[good])
     return data_filt
 
-def multivec_matmul(a,b):
+def multivector_matrix_multiply(a,b):
     """
     Multiply a matrix with each element of a set of vectors.
 
@@ -82,7 +82,7 @@ def multivec_matmul(a,b):
     return np.dot(b,a.T)
 
 
-def ftp(a):
+def forward_rolling_transpose(a):
     """
     Forward rolling transpose.
 
@@ -90,7 +90,7 @@ def ftp(a):
     """
     return a.transpose(np.roll(np.arange(a.ndim),1))
 
-def btp(a):
+def backward_rolling_transpose(a):
     """
     Backward rolling transpose.
 
@@ -98,7 +98,7 @@ def btp(a):
     """
     return a.transpose(np.roll(np.arange(a.ndim),-1))
 
-def rindices(dims, **kwargs):
+def roll_transpose_from_numpy_indices(dims, **kwargs):
     """
     Roll transpose.
 
@@ -110,7 +110,7 @@ def rindices(dims, **kwargs):
     it could get unggkljhly real quick
     """
     ia = np.indices(dims,**kwargs)
-    return btp(ia)
+    return backward_rolling_transpose(ia)
 
 def bindown(d,n):
     inds = np.ravel_multi_index(np.floor(np.indices(d.shape).T*n/np.array(d.shape)).T.astype(np.uint32),n)
@@ -126,7 +126,7 @@ def binup(d,f):
     inds = np.ravel_multi_index(np.floor(np.indices(n).T/np.array(f)).T.astype(np.uint32),d.shape)
     return np.reshape(d.flatten()[inds],n)
 
-def as_dict(rec):
+def record_array_to_dictionary(rec):
     """
     Turn a numpy recarray record into a dict.
 
@@ -136,7 +136,7 @@ def as_dict(rec):
     """
     return {name:rec[name] for name in rec.dtype.names}
 
-def get_mask_errs(dat_cube, iris_err_fac, error_cube=None, filt_thold: float=2.5):
+def get_mask_errors(dat_cube, iris_err_fac, error_cube=None, filt_thold: float=2.5):
     dat_arr = copy.deepcopy(dat_cube)
     dat_filt = masked_median_filter(dat_arr,(np.isnan(dat_arr)==0),np.array([1,2,1]))
     if(error_cube is None):

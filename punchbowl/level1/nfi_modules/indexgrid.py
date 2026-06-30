@@ -6,7 +6,7 @@ grid indices to avoid this, which is a bit of a hack...
 tiny = 1.0e-4
 
 import numpy as np
-from nfi_modules.util import multivec_matmul
+from nfi_modules.util import multivector_matrix_multiply
 
 class CoordGrid:
     """
@@ -32,10 +32,10 @@ class CoordGrid:
         """
         [self.dims,self.origin,self.fwd,self.inv,self.frame] = [dims,origin,fwd,inv,frame]
         if self.inv is None:
-            self.inv = self.get_inv()
+            self.inv = self.get_grid_inverse()
 
 
-    def get_inv(self):
+    def get_grid_inverse(self):
         """
         Routine to set up the parameters of the grid inverse (from coordinates to indices)
         operation. This default assumes an affine transformation and uses the matrix inverse.
@@ -44,7 +44,7 @@ class CoordGrid:
 
     def subgrid(self,fac=2):
         """Get a grid that's clocked to this grid, but is higher resolution by an integer factor."""
-        return CoordGrid(self.dims * fac, self.coords(0.5 / fac - 0.5 + 0.0 * self.dims), self.fwd / fac, self.frame)
+        return CoordGrid(self.dims * fac, self.get_coordinates_from_indices(0.5 / fac - 0.5 + 0.0 * self.dims), self.fwd / fac, self.frame)
 
 
     def identity(self):
@@ -55,7 +55,7 @@ class CoordGrid:
         return CoordGrid(self.dims, 0.0 * self.dims, np.diag(1 + 0.0 * self.dims), np.arange(len(self.dims)))
 
 
-    def inds(self,coords):
+    def get_indices_from_coordinates(self,coords):
         """
         Returns indices given a set of coordinates. Does no discretize for various reasons.
         Order is reversed, and the inv operator transposed, due to how numpy array broadcasting
@@ -64,24 +64,24 @@ class CoordGrid:
         rounding, not flooring (see flatinds). The domain of each grid element extends
         0.5 grid spacings to each side.
         """
-        return multivec_matmul(self.inv,coords-self.origin)
+        return multivector_matrix_multiply(self.inv,coords-self.origin)
 
 
-    def coords(self,inds):
+    def get_coordinates_from_indices(self,inds):
         """
         Returns coordinates given a set of indices. Coordinates returned for an integer index
         are for the center of the grid element, not its corner.
         """
-        return multivec_matmul(self.fwd, inds)+self.origin
+        return multivector_matrix_multiply(self.fwd, inds)+self.origin
 
 
-    def flatinds(self,vals,coords,thold=0):
+    def get_flattened_indices(self,vals,coords,thold=0):
         """
         Returns the 'flattened' indices given a set of coordinates. Does discretize (because it has to).
         Also discards out-of-bounds points. Because of this, there's an accompanying vals array that can
         be used to account for the discarding.
         """
-        [inds, keeps] = [list(np.round(self.inds(coords)+tiny).T.astype(np.int32)), vals>thold]
+        [inds, keeps] = [list(np.round(self.get_indices_from_coordinates(coords)+tiny).T.astype(np.int32)), vals>thold]
         for j in range(len(self.dims)): 
             keeps *= (inds[j] >= 0)*(inds[j] < self.dims[j])
         return vals[keeps], np.ravel_multi_index(inds,self.dims,mode="clip")[keeps]

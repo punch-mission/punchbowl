@@ -20,7 +20,7 @@ def kernel_smoothing_matrix(angles_rev, smooth_rad = 0.1):
 
     return omat
 
-def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1,
+def generate_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1,
                bottom_intensity=1, elon_abs=None, elon_offset=0,
                blur=0, image_size=2048, oversamp=3, cx=None, cy=None,
                r_profile=None, dtype="float32"):
@@ -101,12 +101,12 @@ def gen_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1,
 
     return kernel.astype(dtype)
 
-def gen_kernels(kernel_angles, aspect_ratio=1, right_intensity=1, radial_size=660, # n_kernels=400,
+def generate_kernels(kernel_angles, aspect_ratio=1, right_intensity=1, radial_size=660, # n_kernels=400,
                 bottom_intensity=1, elon_abs=None, elon_offset=0, blur=0, image_size=2048,
                 oversamp=3, cx=None, cy=None, r_profile=None, n_threads=5):
     # Generate a full set of kernels in parallel, with a set number of kernels spaced evenly around the donut
     with ThreadPoolExecutor(n_threads) as p:
-        kernels = p.map(gen_kernel, kernel_angles,
+        kernels = p.map(generate_kernel, kernel_angles,
                         repeat(radial_size), repeat(aspect_ratio),
                         repeat(right_intensity), repeat(bottom_intensity), repeat(elon_abs),
                         repeat(elon_offset), repeat(blur), repeat(image_size),

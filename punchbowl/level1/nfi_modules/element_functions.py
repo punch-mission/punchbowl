@@ -1,5 +1,6 @@
 import numpy as np
-from nfi_modules.util import multivec_matmul
+from nfi_modules.util import multivector_matrix_multiply
+from scipy.special import voigt_profile
 
 tiny = 1.0e-4
 
@@ -16,7 +17,7 @@ def spike_function(ptcoords,coordarr,params):
     return np.prod(np.clip(1.0-np.abs(ptcoords-coordarr).T,0,1),axis=0)
 
 
-def get_3d_cov(sigmas,angles): # Get covariance for 3D Mahalanobis distance:
+def get_3d_covariance(sigmas,angles): # Get covariance for 3D Mahalanobis distance:
     """
     This is a setup function for a 3D or 2D Gaussian type PSF/response function.
     It's defined in terms of the 3 axes of the ellipse and a set of three angles
@@ -35,7 +36,7 @@ def get_3d_cov(sigmas,angles): # Get covariance for 3D Mahalanobis distance:
     vec2 = sigmas[2]*np.array([c1*s3+c3*s1*s2, s1*s3-c1*c3*s2, c2*c3])
     return np.outer(vec0,vec0)+np.outer(vec1,vec1)+np.outer(vec2,vec2)
 
-def get_2d_cov(sigmas,theta):
+def get_2d_covariance(sigmas,theta):
     vec0 = sigmas[0]*np.array([np.cos(theta),np.sin(theta)])
     vec1 = sigmas[1]*np.array([-np.sin(theta),np.cos(theta)])
     return np.outer(vec0,vec0)+np.outer(vec1,vec1)
@@ -53,24 +54,23 @@ def spice_spectrograph_psf(pt, coords, inputs):
         psf += nd_powgaussian_psf(pt+subpts[i], coords, inputs)
     return psf/n_slit_subpts
 
-def nd_gaussian_psf(pt, coords, inputs):
+def n_dimensional_gaussian_psf(pt, coords, inputs):
     """
-    Evaluate an n-dimensional ("nd") Gaussian PSF centered at the point pt, for each of the
+    Evaluate an n-dimensional Gaussian PSF centered at the point pt, for each of the
     coordinates coords, based on the q (inverse of covariance) matrix q.
     Coords must have dimensions npts by nd where nd is the dimensionality
     of the Gaussian. q can be larger than nd by nd; higher dimensions will be ignored.
     """
     dxa = coords-pt
     q = inputs[0]
-    return np.exp(-0.5*np.sum(dxa*multivec_matmul(q[0:pt.size,0:pt.size],dxa), axis=-1))
+    return np.exp(-0.5*np.sum(dxa*multivector_matrix_multiply(q[0:pt.size,0:pt.size],dxa), axis=-1))
 
 def nd_voigt_psf(pt, coords, inputs):
-    from scipy.special import voigt_profile
     dxa = coords-pt
     q = inputs[0]
     g = inputs[1]*(np.log(2))**0.5
     e = inputs[2]
-    mdist = np.sum(dxa*multivec_matmul(q[0:pt.size,0:pt.size],dxa), axis=-1)
+    mdist = np.sum(dxa*multivector_matrix_multiply(q[0:pt.size,0:pt.size],dxa), axis=-1)
     return voigt_profile(mdist**0.5,e,g)*(1.0/voigt_profile(0,e,g))
 
 
@@ -78,12 +78,12 @@ def nd_powgaussian_psf(pt, coords, inputs):
     dxa = coords-pt
     q = inputs[0]
     exp = inputs[1]
-    return np.exp(-0.5*np.sum(dxa*multivec_matmul(q[0:pt.size,0:pt.size],dxa), axis=-1)**exp)
+    return np.exp(-0.5*np.sum(dxa*multivector_matrix_multiply(q[0:pt.size,0:pt.size],dxa), axis=-1)**exp)
 
 def flattop_guassian_psf(pt, coords, inputs):
     dxa = coords-pt
     q = inputs[0]
     flatness = inputs[1]
     flatsds = inputs[2]
-    mdist = np.sum((dxa*multivec_matmul(q[0:pt.size,0:pt.size],dxa)), axis=-1)
+    mdist = np.sum((dxa*multivector_matrix_multiply(q[0:pt.size,0:pt.size],dxa)), axis=-1)
     return (np.exp(-0.5*mdist)/(1.0-0.5*flatness*mdist*(np.exp(-0.5*mdist/(flatsds**2)))**2))

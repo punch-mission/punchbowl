@@ -55,7 +55,7 @@ number over 1.
 """
 
 import numpy as np
-from nfi_modules.util import ftp, rindices
+from nfi_modules.util import forward_rolling_transpose, roll_transpose_from_numpy_indices
 
 
 class ElementGrid:
@@ -95,12 +95,12 @@ class ElementGrid:
             fpoffset = np.ceil(10*self.nsubgrid/2).astype(np.int32)
         else:
             fpoffset = np.ceil((footprint/self.nsubgrid-self.nsubgrid)/2).astype(np.int32)
-        self.stencil = (rindices(self.nsubgrid+2*fpoffset) - fpoffset - 0.5*(nsubgrid-1.0))
+        self.stencil = (roll_transpose_from_numpy_indices(self.nsubgrid+2*fpoffset) - fpoffset - 0.5*(nsubgrid-1.0))
         vals = self.evaluate(self.coords.origin)[0].flatten()
-        self.stencil = np.vstack([x.flatten()[vals >= stencil_thold] for x in list(ftp(self.stencil))]).T
+        self.stencil = np.vstack([x.flatten()[vals >= stencil_thold] for x in list(forward_rolling_transpose(self.stencil))]).T
 
         # Set the number of addresses:
-        self.nadr = self.get_nadr()
+        self.nadr = self.get_n_addresses()
 
 
     def get_eval_grid(self):
@@ -110,32 +110,32 @@ class ElementGrid:
         """
         return self.coords.subgrid(fac=self.nsubgrid)
 
-    def get_nadr(self):
+    def get_n_addresses(self):
         """Standard assumption is number of addresses is same as number of elements:"""
         return self.nelm
 
     def evaluate(self, point):
         """Evaluate the source/basis function at a given point"""
-        subpt = self.subgrid.inds(point) # Find where the point is relative to the subgrid
+        subpt = self.subgrid.get_indices_from_coordinates(point) # Find where the point is relative to the subgrid
         # Find the stencil evaluation indices (which are registered to the subgrid)
         # in the vicinity of this point.
         subinds = np.round(self.stencil+subpt+tiny)
         # Get the coordinates of these evaluation indices in the evaluation coordinate frame
         # and the subgrid coordinates:
-        [eval_coords, output_coords] = [self.eval_grid.coords(subinds), self.subgrid.coords(subinds)]
+        [eval_coords, output_coords] = [self.eval_grid.get_coordinates_from_indices(subinds), self.subgrid.get_coordinates_from_indices(subinds)]
         # Compute the response of these evaluation points to the input point, and their
         # coordinates:
-        return self.func(self.eval_grid.coords(subpt), eval_coords, self.params), output_coords
+        return self.func(self.eval_grid.get_coordinates_from_indices(subpt), eval_coords, self.params), output_coords
 
     def elements(self,index):
         """Return the elements addressed by a given index"""
         # Map the address to a coordinate and run the element_grid's evaluator:
-        [vals,coords] = self.evaluate(self.coords.coords(np.array(np.unravel_index(index,self.coords.dims))))
+        [vals,coords] = self.evaluate(self.coords.get_coordinates_from_indices(np.array(np.unravel_index(index,self.coords.dims))))
         # Return the result, element index is same as input address:
         return index+0*vals.astype(np.int32), vals, coords
 
     # Run the evaluator for the given point and compute the output value and indices to flatinds:
-    def response(self,point): return self.coords.flatinds(*self.evaluate(point), thold=self.thold)
+    def response(self,point): return self.coords.get_flattened_indices(*self.evaluate(point), thold=self.thold)
 
 class DetectorGrid(ElementGrid):
     """The detector grid is a straight implementation of the base class:"""

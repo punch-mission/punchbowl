@@ -21,16 +21,16 @@ jobs:
           fi
 
           # Read total item count
-          count=$(yq '.issues | length' .github/bulk-data-release-issues.yml)
+          count=$(yq '.issues | length' .github/bulk-data-release-issues.yaml)
 
           # Loop through each issue entry
           for ((i=0; i<$count; i++)); do
-            title=$(yq ".issues[$i].title" .github/bulk-data-release-issues.yml)
-            body=$(yq ".issues[$i].body" .github/bulk-data-release-issues.yml)
+            title=$(yq ".issues[$i].title" .github/bulk-data-release-issues.yaml)
+            body=$(yq ".issues[$i].body" .github/bulk-data-release-issues.yaml)
             
             # Format optional metadata fields into comma-separated strings
-            labels=$(yq ".issues[$i].labels | join(\",\")" .github/bulk-data-release-issues.yml)
-            assignees=$(yq ".issues[$i].assignees | join(\",\")" .github/bulk-data-release-issues.yml)
+            labels=$(yq ".issues[$i].labels | join(\",\")" .github/bulk-data-release-issues.yaml)
+            assignees=$(yq ".issues[$i].assignees | join(\",\")" .github/bulk-data-release-issues.yaml)
 
             echo "Creating issue: $title"
 

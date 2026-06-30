@@ -515,7 +515,7 @@ def track_velocity(files: list[str],
     """
     # Set defaults for missing input parameters
     if ycens is None:
-        ycens = np.arange(7, 14.5, 0.5)
+        ycens = np.arange(7, 14.5, 0.5) # reqd heights for PUNCH 5-80 Rsun; start at 30 for WFI only; pick your favs; 30, 40, 50, 60, 70, 80 CED suggestn.
     if rbands is None:
         rbands = [0, 4, 8, 14]
 

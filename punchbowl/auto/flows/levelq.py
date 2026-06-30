@@ -160,7 +160,9 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
     logger = get_logger()
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(or_(
-                            and_(File.level == "1", File.file_type.in_(["QM", "QZ", "QP"]), File.observatory.in_(["1", "2", "3"])),
+                            and_(File.level == "1",
+                                 File.file_type == 'QR',
+                                 File.observatory.in_(["1", "2", "3"])),
                             # We're excluding NFI
                             # and_(File.level == "Q", File.file_type == "CN"),
                        )).order_by(File.date_obs.desc()).all())
@@ -184,8 +186,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
         if len(grouped_ready_files) >= max_n:
             break
         # We're excluding NFI
-        # group_is_complete = len(group) == 10
-        group_is_complete = len(group) == 9
+        group_is_complete = len(group) == 3
         if group_is_complete:
             grouped_ready_files.append(group)
             continue
@@ -207,7 +208,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
         # range within which to grab L0s.
         center = group[0].date_obs
         search_width = timedelta(minutes=1)
-        search_types = ["PM", "PZ", "PP"]
+        search_types = ["CR"]
 
         # Grab all the L0s that produce inputs for this trefoil
         expected_inputs = (session.query(File)
@@ -413,7 +414,7 @@ def levelq_QAM_query_ready_files(session, pipeline_config: dict, reference_time=
     if len(all_ready_files) == 0:
         return []
 
-    t0 = parse_datetime(pipeline_config["flows"]["levelq_QAM"]["t0"])
+    t0 = parse_datetime_str(pipeline_config["flows"]["levelq_QAM"]["t0"])
     increment = timedelta(minutes=32)
 
     end_time = t0

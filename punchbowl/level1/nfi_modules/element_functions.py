@@ -42,12 +42,15 @@ def get_2d_cov(sigmas,theta):
 
 def spice_spectrograph_psf(pt, coords, inputs):
     slitwid = inputs[-1]
-    if(len(inputs)<4): n_slit_subpts = 5
-    else: n_slit_subpts = inputs[-2]
+    if(len(inputs)<4): 
+        n_slit_subpts = 5
+    else: 
+        n_slit_subpts = inputs[-2]
     subpts = np.zeros([n_slit_subpts,2])
     subpts[:,1] = slitwid*np.arange(n_slit_subpts)/n_slit_subpts - 0.5*slitwid + 0.5*slitwid/n_slit_subpts
     psf = nd_powgaussian_psf(pt+subpts[0], coords, inputs)
-    for i in range(1,n_slit_subpts): psf += nd_powgaussian_psf(pt+subpts[i], coords, inputs)
+    for i in range(1,n_slit_subpts): 
+        psf += nd_powgaussian_psf(pt+subpts[i], coords, inputs)
     return psf/n_slit_subpts
 
 def nd_gaussian_psf(pt, coords, inputs):

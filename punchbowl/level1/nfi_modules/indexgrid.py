@@ -82,5 +82,6 @@ class CoordGrid:
         be used to account for the discarding.
         """
         [inds, keeps] = [list(np.round(self.inds(coords)+tiny).T.astype(np.int32)), vals>thold]
-        for j in range(len(self.dims)): keeps *= (inds[j] >= 0)*(inds[j] < self.dims[j])
+        for j in range(len(self.dims)): 
+            keeps *= (inds[j] >= 0)*(inds[j] < self.dims[j])
         return vals[keeps], np.ravel_multi_index(inds,self.dims,mode="clip")[keeps]

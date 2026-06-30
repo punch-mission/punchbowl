@@ -119,11 +119,14 @@ def assemble_nfi_fwdmats(amats):
 	amat_out = csc_matrix(([],[],np.zeros(nsrc+1)), shape=(ndat,nsrc))
 
 	for i in range(nframe):
-		if(nframe == 1): amat_out += csc_resize(amats["inst"], ndat, nsrc, i*npix, 0)
-		else: amat_out += csc_resize(amats["sky"][i], ndat, nsrc, i*npix, 0)
+		if(nframe == 1): 
+			amat_out += csc_resize(amats["inst"], ndat, nsrc, i*npix, 0)
+		else: 
+			amat_out += csc_resize(amats["sky"][i], ndat, nsrc, i*npix, 0)
 
 	for i in range(nframe):
-		if(nframe > 1): amat_out += csc_resize(amats["inst"], ndat, nsrc, i*npix, nsky)
+		if(nframe > 1): 
+			amat_out += csc_resize(amats["inst"], ndat, nsrc, i*npix, nsky)
 		#amat_out += csc_resize(csc_matrix(diags(np.ones(nins))), ndat, nsrc, i*npix, nsky)
 	for i in range(nframe):
 		amat_out += csc_resize(amats["stray"].T, nsrc, ndat, nsky+nins+i*im_size, i*npix).T
@@ -146,7 +149,6 @@ def get_sky_source(dims, crota=0.0, center=np.array([0,0]), scale=[1.0,1.0], src
 def get_detector(dims, crota=0.0, center=np.array([0,0]), scale=[1.0, 1.0], det_subgrid_fac=3):
 	det_frame = Trivialframe(["x", "y"])
 	fwdtransform = get_rotmat_2d(crota)
-	#origin = fwdtransform.dot(-0.5*dims)+center
 	origin = fwdtransform.dot(-0.5*dims+center)
 	det_coords = CoordGrid(dims, origin, fwdtransform, det_frame)
 	psfcov = get_2d_cov([0.5,0.5],0.0)

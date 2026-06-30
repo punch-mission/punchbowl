@@ -1,7 +1,7 @@
 import time
 
 import numpy as np
-
+from scipy.sparse import csc_matrix
 
 def element_source_responses(source,
                              detector,
@@ -43,7 +43,7 @@ def element_source_responses(source,
     # Create the coordinate transformation object:
     transformer = transform(source.coords,detector.coords)
     shape = (detector.nelm,source.nelm) # Number of input/outputs
-    from scipy.sparse import csc_matrix
+    
 
     # Updating the sparse matrix comes with some overhead. We use buffers so we
     # don't have to do it so often:

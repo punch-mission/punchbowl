@@ -1,3 +1,5 @@
+from typing import Callable
+
 import numpy as np
 import scipy.ndimage
 from itertools import repeat
@@ -20,16 +22,67 @@ def kernel_smoothing_matrix(angles_rev, smooth_rad = 0.1):
 
     return omat
 
-def generate_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1,
-               bottom_intensity=1, elon_abs=None, elon_offset=0,
-               blur=0, image_size=2048, oversamp=3, cx=None, cy=None,
-               r_profile=None, dtype="float32"):
-    # Generate an image of a kernel at a specific position
-    # (an angle theta around a defined center of the stray-light donut)
+def generate_kernel(theta: float, radial_size: float = 660, aspect_ratio: float = 1, right_intensity: float = 1,
+                    bottom_intensity: float = 1, elon_abs: float | None = None, elon_offset: float = 0,
+                    blur: float = 0, image_size: int = 2048, oversamp: int = 3, cx: float | None = None,
+                    cy: float | None = None, r_profile: Callable = None, dtype: str = "float32"):
+    """
+    Generate an image of a kernel at a specific position.
 
-    # Radial position of the inner edge of the donut
+    This single kernel is meant to be the out-of-focus image of a single point on the occulter ring. A bunch of
+    options are provided for adjusting how that kernel looks.
+    
+    Parameters
+    ----------
+    theta : float
+        The angular position of the center of the kernel, CCW from the +x axis
+    radial_size : float
+        The size of the kernel in pixels. ("Radial" here means "radial out from image-center".)
+    aspect_ratio : float
+        The aspect ratio of the kernel. The size of the kernel perpendicular to the radial direction is
+        aspect_ratio * radial_size. ("Radial" here means "radial out from image-center".)
+    right_intensity : float
+        Used to create an intensity gradient. For a kernel at theta=0, the intensity will vary linearly from 1 at the
+        left edge to this value at the right edge. For theta != 0, the gradient direction rotates with the kernel.
+    bottom_intensity : float
+        Used to create an intensity gradient. For a kernel at theta=0, the intensity will vary linearly from 1 at the
+        top edge to this value at the bottom edge. For theta != 0, the gradient direction rotates with the kernel.
+    elon_abs : float | None
+        Set the distance from the center of the image to the center of the kernel. This is measured in pixels, but it is
+        otherwise the elongation angle of the kernel relative to the image center.
+    elon_offset : float
+        Offset the distance from the center of the image to the center of the kernel. This is measured in pixels, but it
+        is otherwise the elongation angle of the kernel relative to the image center. Not used if elon_abs is set.
+    blur : float
+        If non-zero, a Gaussian blur is applied to the final kernel image. This parameter sets the standard deviation of
+        the Gaussian in pixels.
+    image_size : int
+        The size of the (square) output image, in pixels.
+    oversamp : int
+        If set, the kernel profile is computed on an over-sampled grid and downsampled to the final output size. This
+        allows pixels at the edge of the kernel to have values between 0 and 1, rather
+        than having a sharp drop from 1 to 0 at the kernel edge (assuming a gradient-free kernel). This parameter sets
+        the amount of oversampling in each dimension.
+    cx, cy : int
+        The x and y coordinate around which the kernel is rotated (by the theta parameter). This coordinate then becomes
+        the center of the disk of kernels once kernels are computed for all theta values.
+    r_profile : Callable
+        Allows an arbitrary radial intensity profile to be provided. The callable should receive a 2D numpy array
+        indicating the radial component (i.e. radial-out from image-center) of the pixel's location relative to the
+        kernel center, expressed as a fraction of the kernel radius, and should return an array of the same shape
+        providing a scale factor for each pixel.
+    dtype : str
+        The dtype to use for the output array
+
+    Returns
+    -------
+    kernel : np.ndarray
+        The computed kernel
+
+    """
+    # Radial position of the inner edge of the donut (i.e. the dynamic stray light pattern)
     r_to_inner_edge = 181.27180103 + 5
-    # Radial position of the center of the kernel
+    # Radial position of the center of this kernel
     r_to_center = 660 / 2
     # Center of the kernel---the default values are the center of the occulted region, which isn't necessarily the
     # center of the donut of stray light
@@ -65,7 +118,9 @@ def generate_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1,
     a = radial_size / 2
 
     # Theta defines where in the donut we're generating a kernel for, and it also defines how the kernel itself is
-    # rotated (since we're rotating the kernel around the image center, not translating it in a circular path)
+    # rotated (since we're rotating the kernel around the image center, not translating it in a circular path). These
+    # arrays will hold coordinates in a rotated frame, where x increases along the line from image center to kernel
+    # center, and y is perpendicular to that.
     angled_x = xs * np.cos(theta) + ys * np.sin(theta)
     angled_y = xs * np.sin(-theta) + ys * np.cos(-theta)
 
@@ -101,22 +156,69 @@ def generate_kernel(theta, radial_size=660, aspect_ratio=1, right_intensity=1,
 
     return kernel.astype(dtype)
 
-def generate_kernels(kernel_angles, aspect_ratio=1, right_intensity=1, radial_size=660, # n_kernels=400,
-                bottom_intensity=1, elon_abs=None, elon_offset=0, blur=0, image_size=2048,
-                oversamp=3, cx=None, cy=None, r_profile=None, n_threads=5):
-    # Generate a full set of kernels in parallel, with a set number of kernels spaced evenly around the donut
+
+def _generate_kernel_caller(theta, args, kwargs):
+    return generate_kernel(theta, *args, **kwargs)
+
+
+def generate_kernels(kernel_angles, *args, n_threads=5, **kwargs):
+    """
+    Generate a full set of kernels in parallel.
+    
+    All arguments are passed through to `generate_kernel`.
+    
+    Parameters
+    ----------
+    kernel_angles : list | np.ndarray
+        The theta values at which to compute kernels
+    args : tuple
+        Arguments to pass to generate_kernel
+    n_threads : int | None
+        The number of threads to use for parallel processing
+    kwargs : dict
+        Keyword arguments to pass to generate_kernel
+
+    Returns
+    -------
+    kernels : np.ndarray
+        The generated kernels
+    """
     with ThreadPoolExecutor(n_threads) as p:
-        kernels = p.map(generate_kernel, kernel_angles,
-                        repeat(radial_size), repeat(aspect_ratio),
-                        repeat(right_intensity), repeat(bottom_intensity), repeat(elon_abs),
-                        repeat(elon_offset), repeat(blur), repeat(image_size),
-                        repeat(oversamp), repeat(cx), repeat(cy), repeat(r_profile))
+        kernels = p.map(_generate_kernel_caller, kernel_angles, repeat(args), repeat(kwargs))
     return np.stack(list(kernels))
 
+
 @numba.njit(parallel=True)
-def make_model(kernels, intensity, rmin=0, rmax=-1, cmin=0, cmax=-1):
-    # Given a set of kernels and an intensity for each one, sum up the kernels to make a forward model. It's done in
-    # numba and in parallel for speed
+def make_model(kernels: np.ndarray, intensity: np.ndarray, rmin: int = 0, rmax: int = -1, cmin: int = 0,
+               cmax: int = -1):
+    """
+    Make a forward model, given a set of kernels and an intensity for each one.
+    
+    This is multiplying each kernel by its intensity and summing, but it's done in numba and in parallel for speed.
+    Also for speed, if the kernels don't reach to the edge of the image, a bounding box can be set to sum within,
+    and areas outside the box are not summed.
+    
+    Parameters
+    ----------
+    kernels : np.ndarray
+        The kernels
+    intensity : np.ndarray
+        The intensity for each kernel. Should match the size of the first dimension of `kernels`.
+    rmin : int
+        The first row to sum. Rows before this will be zero in the output image.
+    rmax : int
+        The last row to sum. Rows after this will be zero in the output image.
+    cmin : int
+        The first column to sum. Columns before this will be zero in the output image.
+    cmax : int
+        The last column to sum. Columns after this will be zero in the output image.
+
+    Returns
+    -------
+    image : np.ndarray
+        The forwared-modeled image.
+    """
+    #
     if rmax < 0:
         rmax = kernels.shape[1]
     if cmax < 0:

@@ -94,16 +94,15 @@ def remove_nfi_stray_light(datacube: PUNCHCube,
                                                                           inst_reg=inst_reg,
                                                                           stray_reg=stray_reg)
     
-    
-    subtracted_data = (dsol[0] - soln_stray[0]).T
 
-    # Upsample final data back up to 2k
+    # Upsample back up to 2k
     orig_shape = datacube.data.shape
     scale_x = orig_shape[0]/bindown_shape[0]
     scale_y = orig_shape[1]/bindown_shape[1]
 
-    final_subtracted = zoom(subtracted_data,(scale_x,scale_y),order=0)
+    upscaled_stray_light_model = zoom(soln_stray[0].T,(scale_x,scale_y),order=0)
+    subtracted_data = (datacube.data*smask) - upscaled_stray_light_model # subtract straylight model from data with glint masked out
 
-    #TODO: Save to final to punch ndcube?
+    datacube.data[:] = subtracted_data
 
-    return final_subtracted
+    return datacube

@@ -255,7 +255,7 @@ def generate_starfield_background(
 
     if is_polarized:
         logger.info("Building starfields")
-        starfield_m, starfield_z, starfield_p = remove_starfield.build_starfield_estimate(
+        starfield_mzp = remove_starfield.build_starfield_estimate(
             filenames,
             attribution=False,
             frame_count=False,
@@ -270,14 +270,10 @@ def generate_starfield_background(
             target_mem_usage=target_mem_usage)
         logger.info("Done building starfields")
 
-        starfield_m, starfield_z, starfield_p = starfield_m.starfield, starfield_z.starfield, starfield_p.starfield
-
-        for starfield in (starfield_m, starfield_z, starfield_p):
-            starfield -= percentile_filter(starfield, 5, 10) # noqa: PLW2901
-            starfield[starfield < 0] = 0
-
-        out_data = np.stack([starfield_m, starfield_z, starfield_p], axis=0)
-        out_wcs = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
+        out_data = starfield_mzp.starfield - percentile_filter(starfield_mzp.starfield, 5, (1, 10, 10))
+        out_data[out_data < 0] = 0
+        out_wcs = calculate_helio_wcs_from_celestial(starfield_mzp.wcs, meta.astropy_time,
+                                                     starfield_mzp.starfield.shape)
     else:
         logger.info("Starting clear starfield")
         starfield_clear = remove_starfield.build_starfield_estimate(

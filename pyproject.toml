@@ -6,20 +6,25 @@ build-backend = "setuptools.build_meta"
 name = "punchbowl"
 dynamic = ["version"]
 dependencies = [
-    "astropy",
-    "lmfit",
-    "matplotlib<=3.10.9",
-    "ndcube",
-    "numpy",
-    "python-dateutil",
+    "astropy==7.0.1",
+    "jupyter>=1.1.1",
+    "lmfit==1.3.3",
+    "matplotlib==3.9.2",
+    "ndcube==2.3.1",
+    "numpy==2.2.6",
+    "pandas==2.2.3",
+    "photutils==2.2.0",
+    "plotly==6.0.1",
+    "python-dateutil==2.9.0",
     "regularizepsf",
     "requests",
-    "scipy",
+    "scipy==1.15.2",
     "solpolpy",
-    "sunpy[all]",
+    "sunpy[all]==6.1.1",
     "sunkit-image",
 ]
-requires-python = ">=3.11"
+
+requires-python = ">=3.13,<3.14"
 authors = [
     { name = "J. Marcus Hughes", email = "marcus.hughes@swri.org" },
     { name = "Chris Lowder", email = "chris.lowder@swri.org" },
@@ -42,22 +47,32 @@ classifiers = [
 [project.optional-dependencies]
 super_user = [
     "astrometry",
-    "glymur",
-    "numba",
-    "numexpr",
+    "click==8.1.8",
+    "glymur==0.14.4",
+    "h5py==3.13.0",
+    "lxml==6.1.0",
+    "networkx==3.4.2",
+    "numba==0.61.2",
+    "numexpr==2.10.2",
     "pre-commit==4.6.0",
     "prefect[dask]",
-    "pylibjpeg[openjpeg]",
+    "pylibjpeg[libjpeg,openjpeg]",
     "remove_starfield>=0.1",
     "reproject>=0.20.0",
-    "scikit-learn",
+    "scikit-image==0.25.2",
+    "scikit-learn==1.6.1",
+    "sep==1.4.1",
     "setuptools",
     "threadpoolctl",
+    "toml==0.10.2",
+    "tqdm==4.67.1",
 ]
 
+all = ["punchbowl[super_user]"]
+
+[dependency-groups]
 pipe = [
     "ccsdspy",
-    "punchbowl",
     "simpunch",
     "prefect[sqlalchemy]",
     "pymysql",
@@ -73,15 +88,11 @@ pipe = [
     "plotly",
     "pyyaml",
     "click",
-    "pylibjpeg[libjpeg]",
     "psutil",
     "gunicorn",
     "numpy-quaternion"
 ]
 
-all = ["punchbowl[super_user,pipe]"]
-
-[dependency-groups]
 test = [
     "pytest",
     "pytest-order",
@@ -139,13 +150,17 @@ docs_pipe = [
 ]
 
 dev = [
+    {include-group = "pipe"},
     {include-group = "test"},
     {include-group = "test_pipe"},
     {include-group = "docs"},
     {include-group = "docs_pipe"}
 ]
 
-
+[tool.uv.sources]
+regularizepsf = { path = "../regularizepsf", editable = true }
+solpolpy = { path = "../solpolpy", editable = true }
+simpunch = { path = "../simpunch", editable = true }
 
 
 [project.scripts]

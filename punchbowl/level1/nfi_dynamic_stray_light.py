@@ -17,19 +17,61 @@ from punchbowl.data.punchcube import PUNCHCube
 
 
 def get_center(crval,cdelt,bin_factor:int):
+    """
+    Calculates new sky coordinate value of reference pixel based on bin factor.
+
+    Parameters
+    ----------
+    crval: float
+        "crval" or reference pixel (in sky coordinates) of interest 
+    cdelt: float
+        "cdelt"  (or the size of a pixel in sky coordinates) associated with "crval"
+    bin_factor: int
+        Binning down factor
+
+    Returns
+    -------
+    coordinate : float
+        The new binned down reference pixel coordinate
+    """
     return (-crval/cdelt)/bin_factor
 
 def get_fwd_mat_inputs(datacube: PUNCHCube,
                        bin_factor:int):
-    data_wcs = datacube.wcs
-    data_meta = datacube.meta
+    """
+    Calculate and return all of the inputs needed for generating the forward matrices for NFI.
 
-    xcens = np.array([get_center(data_wcs.wcs.crval[0],data_wcs.wcs.cdelt[0],bin_factor)])
-    ycens = np.array([get_center(data_wcs.wcs.crval[1],data_wcs.wcs.cdelt[1],bin_factor)])
+    Specifically this returns all the parameters needed as input for the `generate_nfi_fwdmats`  
+    function.
 
-    crots = np.array([data_meta['CROTA'].value*np.pi/180])
+    This calculates the appropriately binned down reference pixel coordinates ("crval" in PUNCHCube wcs), and saves the 
+    rotation angle ("crota" in PUNCHCube meta data) in radians.
 
-    return xcens, ycens, crots
+    Parameters
+    ----------
+    datacube : PUNCHcube
+        PUNCH ndcube of interest
+    bin_factor : int
+        Binning down factor
+
+    Returns
+    -------
+    xcens : float
+        The new binned down x-coordinate of the reference pixel ("crval1")
+    ycens : float
+        The new binned down y-coordinate of the reference pixel ("crval2")
+    crots_radians : float
+        The rotation angle ("CROTA") in units of radians 
+    """
+    data_crval1, data_crval2 = datacube.wcs.wcs.crval
+    data_cdelt1, data_cdelt2 = datacube.wcs.wcs.cdelt
+
+    xcens = get_center(data_crval1,data_cdelt1,bin_factor)
+    ycens = get_center(data_crval2,data_cdelt2,bin_factor)
+
+    crots_radians = datacube.meta['CROTA'].value*np.pi/180  # save the rotation angle in radians
+
+    return xcens, ycens, crots_radians
 
 def glint_mask(data_shape,
                sc1:tuple,
@@ -80,10 +122,19 @@ def remove_nfi_stray_light(datacube: PUNCHCube,
     # Generate forward matrices (kernels)
     xcens, ycens, crots = get_fwd_mat_inputs(datacube=datacube,bin_factor=bin_factor)
     data_size = [1, datacube.meta['NAXIS1'].value, datacube.meta['NAXIS2'].value]
-    amats = generate_nfi_fwdmats(data_size,xcens,ycens,crots,bin_fac=bin_factor,smooth_rad=fwd_mat_smooth_rad)
+
+    # Note: The inputs for "generate_nfi_fwdmats" are expected to be np.arrays to accomodate for 
+    # processing multiple files at a time and generating foward matrices in one function
+    # TODO: Modify to optimize processing one file at a time w/o use of np.arrays
+    # TODO: OR fix above to append to arrays in the case of processing multiple frames at a time
+    amats = generate_nfi_fwdmats(data_size,
+                                 np.array([xcens]),
+                                 np.array([ycens]),
+                                 np.array([crots]),
+                                 bin_fac=bin_factor,smooth_rad=fwd_mat_smooth_rad)
 
     # Mask out glint spheres
-    #TODO: Make mask optional (and/or mask generating lives outside this function)
+    #TODO: Make mask optional
     smask = glint_mask(datacube.data.shape,sc1,sc2,srad,bottom_cut)
 
     # Stray light model

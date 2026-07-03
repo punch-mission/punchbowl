@@ -76,14 +76,15 @@ data_meta = datacube.meta
 xcens = np.array([get_center(data_wcs.wcs.crval[0],data_wcs.wcs.cdelt[0],bin_fac)])
 ycens = np.array([get_center(data_wcs.wcs.crval[1],data_wcs.wcs.cdelt[1],bin_fac)])
 
-datsz = [1, data_meta['NAXIS1'].value, data_meta['NAXIS2'].value]
+nframes = 1
+datsz = [data_meta['NAXIS1'].value, data_meta['NAXIS2'].value]
 crots = np.array([data_meta['CROTA'].value*np.pi/180])
 
 # %% FORWARD MATRICES DICTIONARY (amats)--------------------------------------------------------
 # This generates a new sky-oriented and instrument oriented forward matrix each time
 # which is inefficient. The instrment-oriented forward matrix only needs to be computed
 # once and the sky oriented one only needs to be computed once for each data file.
-amats = generate_nfi_fwdmats(datsz, xcens, ycens, crots, bin_fac=bin_fac, smooth_rad=0.0)
+amats = generate_nfi_fwdmats(nframes,datsz, xcens, ycens, crots, bin_factor=bin_fac, smooth_rad=0.0)
 
 # %% AMATS KEYS-------------------------------------------------------------------------------
 amats.keys()

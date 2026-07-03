@@ -16,21 +16,33 @@ class CoordGrid:
     points here should be reversible or the inds and flatinds methods will not work.
     """
 
-    def __init__(self, dims, origin, fwd, frame, inv=None):
+    def __init__(self, dims, origin, forward, frame, inverse=None):
         """
-        Set up the grid. Inputs:
-           dims: The dimensions of the source grid, a 1-D array containing [nx0,nx1,...]
-           origin: The location of the center of the [0,0,...] pixel in the grid
-           fwd: The information needed to define the forward transformation (i.e., from
-                indices to coordinates), in addition to the origin. For the affine
-                transformation, this is an nd by nd matrix, where nd is the number of dimensions.
-           inv: The information needed to define the inverse transformation (i.e., from
-                coordinates to indices). Optional -- For the base (affine) implementation, this is
-                computed from fwd using np.linalg.inv.
-           frame: Information about the coordinate frame. Not used by the coord_grid itself, but
-                  may be used by other routines that want to transform between grids.
+        Set up the grid. 
+
+        Parameters
+        ----------
+        dims: 
+            The dimensions of the source grid, a 1-D array containing [nx0,nx1,...]
+        origin: 
+            The location of the center of the [0,0,...] pixel in the grid
+        fwd: 
+            The information needed to define the forward transformation (i.e., from 
+            indices to coordinates), in addition to the origin. For the affine 
+            transformation, this is an nd by nd matrix, where nd is the number of dimensions.
+        inv: 
+            The information needed to define the inverse transformation (i.e., from 
+            coordinates to indices). 
+            Optional -- For the base (affine) implementation, this is computed from fwd using np.linalg.inv.
+        frame: 
+            Information about the coordinate frame. Not used by the coord_grid itself, but 
+            may be used by other routines that want to transform between grids.
         """
-        [self.dims,self.origin,self.fwd,self.inv,self.frame] = [dims,origin,fwd,inv,frame]
+        self.dims = dims
+        self.origin = origin
+        self.fwd = forward
+        self.inv = inverse
+        self.frame = frame
         if self.inv is None:
             self.inv = self.get_grid_inverse()
 

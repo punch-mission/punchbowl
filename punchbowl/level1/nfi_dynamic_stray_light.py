@@ -73,7 +73,7 @@ def get_fwd_mat_inputs(datacube: PUNCHCube,
 
     return x_offsets_binned, y_offsets_binned, crota_radians
 
-def glint_mask(data_shape,
+def generate_glint_mask(data_shape,
                sphere1_center:tuple = (540, 790),
                sphere2_center:tuple = (540, 1210),
                sphere_radius:int = 375,
@@ -145,37 +145,43 @@ def get_solver_inputs(datacube: PUNCHCube,
 def remove_nfi_stray_light(datacube: PUNCHCube,
                            bin_factor: int = 4,
                            fwd_mat_smooth_rad = 0.0,
-                           sc1:tuple = (540,790),
-                           sc2:tuple = (540,1210),
-                           srad:int = 375,
-                           bottom_cut = 250,
+                           sphere1_center:tuple = (540,790),
+                           sphere2_center:tuple = (540,1210),
+                           glint_sphere_radius:int = 375,
+                           glint_bottom_cut:int = 250,
                            bindown_shape = [512,512],
                            solver_tol=1.0e-5,
                            sky_reg=0.1,
                            inst_reg=0.1,
                            stray_reg=1.0e-10):
-    
+    """
+    Remove the dynamic NFI stray light from a given PUNCHCube image.
+    """
     # Generate forward matrices (kernels)
-    xcens, ycens, crots = get_fwd_mat_inputs(datacube=datacube,bin_factor=bin_factor)
-    id_data_size = (1, datacube.meta['NAXIS1'].value, datacube.meta['NAXIS2'].value)
+    x_offsets, y_offsets, crota_radians = get_fwd_mat_inputs(datacube=datacube,bin_factor=bin_factor)
+    data_size = (datacube.meta['NAXIS1'].value, datacube.meta['NAXIS2'].value)
 
     # Note: The inputs for "generate_nfi_fwdmats" are expected to be np.arrays to accomodate for 
     # processing multiple files at a time and generating foward matrices in one function
     # TODO: Modify to optimize processing one file at a time w/o use of np.arrays
     # TODO: OR fix above to append to arrays in the case of processing multiple frames at a time
-    amats = generate_nfi_fwdmats(id_data_size,
-                                 np.array([xcens]),
-                                 np.array([ycens]),
-                                 np.array([crots]),
+    nframes = 1
+    amats = generate_nfi_fwdmats(nframes,
+                                 data_size,
+                                 np.array([x_offsets]),
+                                 np.array([y_offsets]),
+                                 np.array([crota_radians]),
                                  bin_factor=bin_factor,smooth_rad=fwd_mat_smooth_rad)
 
     # Mask out glint spheres
     #TODO: Make mask optional
-    smask = glint_mask(datacube.data.shape,sc1,sc2,srad,bottom_cut)
+    glint_mask = generate_glint_mask(datacube.data.shape,sphere1_center,sphere2_center,glint_sphere_radius,glint_bottom_cut)
 
     # Stray light model
-    dsol, esol, gsol = get_solver_inputs(datacube, smask, bindown_shape=bindown_shape)
-    soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(dsol, esol, amats, gsol,
+    solver_data, solver_err, good_data_flags = get_solver_inputs(datacube, glint_mask, 
+                                                                 bindown_shape=bindown_shape)
+    soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(solver_data, solver_err, amats, 
+                                                                          good_data_flags,
                                                                           solver_tol=solver_tol, 
                                                                           sky_reg=sky_reg, 
                                                                           inst_reg=inst_reg,
@@ -188,7 +194,7 @@ def remove_nfi_stray_light(datacube: PUNCHCube,
     scale_y = orig_shape[1]/bindown_shape[1]
 
     upscaled_stray_light_model = zoom(soln_stray[0].T,(scale_x,scale_y),order=0)
-    subtracted_data = (datacube.data*smask) - upscaled_stray_light_model # subtract straylight model from data with glint masked out
+    subtracted_data = (datacube.data*glint_mask) - upscaled_stray_light_model # subtract straylight model from data with glint masked out
 
     datacube.data[:] = subtracted_data
 

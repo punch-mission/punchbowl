@@ -24,7 +24,7 @@ dependencies = [
     "sunkit-image",
 ]
 
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.11,<3.14"
 authors = [
     { name = "J. Marcus Hughes", email = "marcus.hughes@swri.org" },
     { name = "Samuel J. Van Kooten", email = "samuel.vankooten@swri.org" },

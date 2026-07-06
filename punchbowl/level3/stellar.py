@@ -3,6 +3,7 @@ from math import floor
 from datetime import UTC, datetime
 
 import astropy.units as u
+import astropy.wcs
 import numpy as np
 import remove_starfield
 from astropy.io import fits
@@ -353,16 +354,30 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         shape_after = star_datacube_after.data.shape[-2:]
 
         wcs_celestial_before = star_datacube_before.celestial_wcs
+        if wcs_celestial_before.naxis == 3:
+            wcs_celestial_before_short = wcs_celestial_before.dropaxis(2)
+        else:
+            wcs_celestial_before_short = wcs_celestial_before
+        wcs_celestial_before_short.wcs.cdelt[0] *= -1
         wcs_celestial_before.wcs.cdelt[0] = wcs_celestial_before.wcs.cdelt[0] * -1
 
         wcs_celestial_after = star_datacube_after.celestial_wcs
+        if  wcs_celestial_after.naxis == 3:
+            wcs_celestial_after_short = wcs_celestial_after.dropaxis(2)
+        else:
+            wcs_celestial_after_short = wcs_celestial_after
+        wcs_celestial_after_short.wcs.cdelt[0] *= -1
         wcs_celestial_after.wcs.cdelt[0] = wcs_celestial_after.wcs.cdelt[0] * -1
 
         # TODO - Test with polarized data...
         union_wcs, union_shape = find_optimal_celestial_wcs(
-            [(shape_before, wcs_celestial_before),
-            (shape_after,  wcs_celestial_after)],
+            [(shape_before, wcs_celestial_before_short),
+            (shape_after,  wcs_celestial_after_short)],
             auto_rotate=False, projection="CAR")
+
+        if wcs_celestial_before.naxis == 3:
+            union_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(union_wcs, 2)
+            union_shape = (3, union_shape[0], union_shape[1])
 
         starfield_reprojected_before = reproject_interp(
             (np.stack([star_datacube_before.data, star_datacube_before.uncertainty.array], axis=0),
@@ -404,17 +419,17 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         # Is this going to require a change in the subtraction code to avoid more reprojections back and forth?
         if is_polarized:
             starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array), axis=0),
-                                        wcs_celestial[0])
+                                        wcs_celestial.celestial)
             subtracted = starfield_model.subtract_from_image(
                 PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array), axis=0),
-                       wcs=data_object.wcs.celestial_wcs,
+                       wcs=data_object.celestial_wcs.celestial,
                        meta=data_object.meta),
                 handle_wrap_point=False,
                 processor=PUNCHImageProcessor(key="A"))
 
-            data_object.data[...] = subtracted.subtracted[:3]
+            data_object.data[...] = subtracted.subtracted[0]
             data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array ** 2 +
-                                                         subtracted.subtracted[3:] ** 2)
+                                                         subtracted.subtracted[1] ** 2)
         else:
             starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
             subtracted = starfield_model.subtract_from_image(

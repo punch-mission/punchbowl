@@ -168,7 +168,6 @@ docs/auto_examples/
 scratch/
 punchbowl/level1/astrometry_cache/
 astrometry_cache/
-uv.lock
 empty.txt
 scripts/auto/create_credentials.py
 examples/punch_data/

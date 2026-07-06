@@ -25,15 +25,15 @@ To get the latest unreleased version: clone the repo and install it locally.
 
 ### Using uv
 1. Clone this repository on your local machine.
-2. Navigate to the repository and create a virtual environment in Python using `uv` with `uv sync --no-sources --no-dev` 
+2. Navigate to the repository and create a virtual environment in Python using `uv` with `uv sync --no-sources --no-dev`
    (super users who want to install optional-dependencies, use `uv sync --no-sources --no-dev --all-extras`)
-3. Activate the virtual environment by running `source .venv/bin/activate` on Mac/Linux or `.venv\Scripts\activate` on Windows.
+3. Activate the virtual environment by running `source .venv/bin/activate` on Mac/Linux or `.venv\Scripts\activate` on Windows
 4. Explore some data!
 
 ### Using venv
 1. Clone this repository on your local machine
 2. Navigate to the repository and create a virtual environment in Python using `python -m venv my_venv_name`
-3. Activate the virtual environment by running `source my_venv_name/bin/activate` on Mac/Linux or `my_venv_name\Scripts\activate` on Windows.
+3. Activate the virtual environment by running `source my_venv_name/bin/activate` on Mac/Linux or `my_venv_name\Scripts\activate` on Windows
 4. Install the project environment dependencies by running `pip install .`
    (super users who want to install optional-dependencies, use `pip install -e ".[super-user]"`)
 5. Explore some data!

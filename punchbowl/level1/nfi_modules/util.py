@@ -66,19 +66,22 @@ def multivector_matrix_multiply(a,b):
     The vectors must be numpy arrays dimensioned nvec by ndim, where ndim is the
     dimensionality of the space, while the matrix is ndim by ndim. This applies in
     general for other operations of a set of vectors with a single vector --
-    i.e., the vector space index must be the last one. For
-    instance, to add a vector shift to a set of vectors, the array of
+    i.e., the vector space index must be the last one. 
+
+    For instance, to add a vector shift to a set of vectors, the array of
     vectors must also be nvec by ndim. Then they can be added as c = a+b. See
     https://numpy.org/doc/stable/user/basics.broadcasting.html
+    
     This is somewhat backward to how dot products otherwise work in numpy
     So the order of operations has to be reversed compared to normal and the
     matrix must be transposed. i.e., instead of v2 = np.dot(fwd,v1), it's necessary
-    to instead do v2 = np.dot(v1,fwd.T). There's may be a built in numpy way to
-    do this, but I haven't found it so far. linalg.multi_dot doesn't appear to
-    function any differently from dot in this case. I've implemented it
+    to instead do v2 = np.dot(v1,fwd.T). 
+    There may be a built in numpy way to do this, but I haven't found it so far. `linalg.multi_dot` 
+    doesn't appear to function any differently from dot in this case. I've implemented it
     here as a very small subroutine rather than spreading it all over the code
     for ease of maintenance and explanation. It works for single vectors, too.
     """
+    #TODO: (JK note) np.matvec (or even np.vecmat) may be the function of interest here...(?)
     return np.dot(b,a.T)
 
 
@@ -108,6 +111,10 @@ def roll_transpose_from_numpy_indices(dims, **kwargs):
     the other dimensions, which gets super confusing. This does a `roll' transpose
     which just shifts the dimensions forward by 1. Very simple, but you can see how
     it could get unggkljhly real quick
+
+    Parameters
+    ----------
+    dims : 
     """
     ia = np.indices(dims,**kwargs)
     return backward_rolling_transpose(ia)

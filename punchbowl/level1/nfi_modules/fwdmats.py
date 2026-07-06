@@ -201,11 +201,11 @@ def get_sky_source(dimensions:np.array, crota:float=0.0, center:np.array=np.arra
 	----------
 	dimensions : np.array
 		The dimensions of the source grid, a 1-D array containing [nx0,nx1,...]
-	crota : float
+	crota : float, default = 0.0
 		Image rotation angle
-	center : np.array
+	center : np.array, default = np.array([0,0])
 
-	src_subgrid_fac : int
+	src_subgrid_fac : int, default = 2
 
 	Returns
 	-------
@@ -222,15 +222,33 @@ def get_sky_source(dimensions:np.array, crota:float=0.0, center:np.array=np.arra
 
 def get_detector(dimensions:np.array, crota:float = 0.0, center:np.array = np.array([0,0]), det_subgrid_fac:int = 3):
 	"""
+	Get detector grid.
+
+	The detector grid is a straight implementation of the base class: "Element Grid"
+
+	Parameters
+	----------
+	dimensions : np.array
+		The dimensions of the detector grid, a 1-D array containing [nx0,nx1,...]
+	crota : float, default = 0.0
+		Image rotation angle
+	center : np.array, default = np.array([0,0])
+
+	det_subgrid_fac : int, default = 3
+
+	Returns
+	--------
+	DetectorGrid
+		A coordinate grid for the detector
 	"""
 	forward_transform = get_rotmat_2d(crota)
 	det_frame = Trivialframe(["x", "y"])
 	origin = forward_transform.dot(-0.5*dimensions+center)
 
 	det_coords = CoordGrid(dimensions, origin, forward_transform, det_frame)
-	psfcov = get_2d_covariance([0.5,0.5],0.0)
-	ipsfcov = np.linalg.inv(psfcov)
-	return DetectorGrid(det_coords, [ipsfcov], n_dimensional_gaussian_psf, nsubgrid=det_subgrid_fac, thold=1.0e-3, footprint=[25, 25])
+	psf_covariance = get_2d_covariance([0.5,0.5],0.0)
+	inverse_psf_covariance = np.linalg.inv(psf_covariance)
+	return DetectorGrid(det_coords, [inverse_psf_covariance], n_dimensional_gaussian_psf, nsubgrid=det_subgrid_fac, thold=1.0e-3, footprint=[25, 25])
 
 def csc_resize(csc, rsiz, csiz, r0, c0):
 	"""

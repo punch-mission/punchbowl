@@ -217,6 +217,42 @@ def determine_wcs(filenames: list, map_scale: float) -> WCS:
     return starfield_wcs[ymin:ymax, xmin:xmax]
 
 
+class LoggingProgressIndicator:
+    """Class implementing remove_starfield's interface for progress indications, which sends progress to the logger."""
+
+    def __init__(self, n_units: int, description: str) -> None:
+        """
+        Initialize the indicator.
+
+        Parameters
+        ----------
+        n_units : int
+            How high the "progress bar" should count to.
+        description : str
+            The descriptive name for the progress bar.
+
+        """
+        self.logger = get_logger()
+        self.description = description
+        self.n_units = n_units
+        self.count = 0
+
+    def update(self) -> None:
+        """Increment the progress bar."""
+        self.count += 1
+        self.refresh()
+
+    def refresh(self) -> None:
+        """Display the progress bar."""
+        frequency = 25 if self.description == "Reprojecting" else 250
+        if self.count % frequency == 0:
+            self.logger.info(f"{self.description} progress: {self.count} / {self.n_units}")
+
+    def close(self) -> None:
+        """Finish the progress bar."""
+        self.logger.info(f"{self.description} complete")
+
+
 @punch_flow(log_prints=True, timeout_seconds=21_600)
 def generate_starfield_background(
         filenames: list[str],
@@ -268,6 +304,7 @@ def generate_starfield_background(
             handle_wrap_point=False,
             dtype=np.float32,
             mask_strategy=BlockMasker(128, 128),
+            pbar_class=LoggingProgressIndicator,
             target_mem_usage=target_mem_usage)
         logger.info("Done building starfields")
 
@@ -288,6 +325,7 @@ def generate_starfield_background(
             handle_wrap_point=False,
             dtype=np.float32,
             mask_strategy=BlockMasker(128, 128),
+            pbar_class=LoggingProgressIndicator,
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
         out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, 5, 10)

@@ -31,7 +31,19 @@ class CoordGrid:
 
     Methods
     -------
-    
+    get_grid_inverse()
+        Routine to set up the parameters of the grid inverse (from coordinates to indices)
+        operation.
+    subgrid(fac=2)
+        Get a grid that's clocked to this grid, but is higher resolution by an integer factor.
+    identity()
+        Get the identity grid for this grid.
+    get_indices_from_coordinates(coords)
+        Returns indices given a set of coordinates.
+    get_coordinates_from_indices(inds)
+        Returns coordinates given a set of indices.
+    get_flattened_indices(vals,coords,thold=0)
+        Returns the 'flattened' indices given a set of coordinates.
     """
 
     def __init__(self, dims, origin, forward, frame, inverse=None):

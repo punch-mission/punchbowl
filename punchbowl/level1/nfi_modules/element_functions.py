@@ -37,6 +37,32 @@ def get_3d_covariance(sigmas,angles): # Get covariance for 3D Mahalanobis distan
     return np.outer(vec0,vec0)+np.outer(vec1,vec1)+np.outer(vec2,vec2)
 
 def get_2d_covariance(sigmas,theta):
+    """
+    Builds covariance matrix for 2D case using Mahalanobis distance.
+
+    Parameters
+    ----------
+    sigmas : array-like, shape(2,)
+        Standard deviations
+    theta : float
+        Angle (in radians), of the first principal axis relative to the x-axis.
+
+    Returns
+    -------
+    np.ndarray
+        Covariance matrix
+    Notes
+    -----
+    This is a setup function for a 3D or 2D Gaussian type PSF/response function.
+    It's defined in terms of the 3 axes of the ellipse and a set of three angles
+    about which the ellipse is rotated. The initial axes are x, y, z, while
+    the rotation matrices use the Tait Bryan convention z, x, y -- i.e., if
+    the angles are all zero, sigmas[0] will be the ellipse length along x,
+    sigmas[1] will be the ellipse length along y, etc; and, if the angles are not zero
+    the ellipse is first rotated about the z axis (in the x-y plane), then x (z-y plane)
+    then y (z-x plane). If the PSF is evaluated in 2D, only the first two
+    axis lengths and the first angle will be used.
+    """
     vec0 = sigmas[0]*np.array([np.cos(theta),np.sin(theta)])
     vec1 = sigmas[1]*np.array([-np.sin(theta),np.cos(theta)])
     return np.outer(vec0,vec0)+np.outer(vec1,vec1)

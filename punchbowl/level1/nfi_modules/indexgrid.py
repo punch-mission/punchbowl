@@ -84,8 +84,8 @@ class CoordGrid:
 
         Returns:
         --------
-        np.array
-            Inverse of self.fwd
+        inverse_fwd : np.array
+            Inverse of forward transform (`self.fwd`)
         """
         return np.linalg.inv(self.fwd)
 
@@ -164,6 +164,21 @@ class CoordGrid:
         Also discards out-of-bounds points. Because of this, there's an accompanying vals array that can
         be used to account for the discarding.
 
+        Parameters
+        ----------
+        vals : 
+
+        coords : 
+
+        thold : int, default = 0
+
+        Returns
+        -------
+        elms : np.ndarray
+            The indices of every element in the grid which has a non-zero
+            response to a delta function source at the given point.
+        vals : np.ndarray
+            The values of each of those responses. Same dimensions as `elms`.
         """
         inds = list(np.round(self.get_indices_from_coordinates(coords)+tiny).T.astype(np.int32))
         keeps = vals>thold

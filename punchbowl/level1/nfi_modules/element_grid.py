@@ -35,6 +35,12 @@ class ElementGrid:
 
     Methods
     -------
+    get_eval_grid():
+
+    get_n_addresses():
+
+    evaluate_basis_at_point(point):
+
     elements(point): 
         Returns the elements addressed by a given index
     response(point): 
@@ -70,9 +76,10 @@ class ElementGrid:
             A CoordGrid
         params: 
             Parameters or anything else used to evaluate the response function.
-        function_evaluator : function
+        function_evaluator : Callable
             The response function evaluator.
-
+            The callable should take indices, coordinates, and `params` as input, and return the response 
+            for the point(s) of interest
         
         footprint: int, optional 
             How far away from the input point to evaluate the response functions,
@@ -154,7 +161,7 @@ class ElementGrid:
         
         Returns
         -------
-        np.array
+        vals : np.array
             Response of evaluation point(s)
         output_coords : np.array
             Coordinates of the evaluation point(s)
@@ -175,20 +182,29 @@ class ElementGrid:
         # coordinates:
         return self.function_evaluator(self.eval_grid.get_coordinates_from_indices(subpt), eval_coords, self.params), output_coords
 
-    def elements(self,index):
+    def get_element_properties_at_point(self,index):
         """
-        Returns the properties of the element(s) at address i.
-             When called as [elms,vals,pnts] = some_element_grid.elements(i),
-             must return the following:
-                 pnts: The coordinate points at which the these elements are non-zero,
-                       in the element_grid's coordinate frame. Dimensions should be
-                       npts by ndim, where ndim is the dimensionality of the
-                       source coordinate system.
-                 vals: The values of the elements' 'basis' function(s) at
-                       those coordinates. Dimensions are npts.
-                 elms: Indices of the element(s) corresponding to each of those
-                       point/value pairs. Most often these will all be the same as i,
-                       but they don't have to be. Dimensions are npts.
+        Returns the properties of the element(s) at `index`.
+        
+        Parameters
+        ----------
+        index : np.ndarray
+            Index of interest.
+        
+        Returns:
+        --------
+        pnts : np.ndarray
+            The coordinate points at which the these elements are non-zero,
+            in the element_grid's coordinate frame. Dimensions should be
+            npts by ndim, where ndim is the dimensionality of the
+            source coordinate system.
+        vals : np.ndarray 
+            The values of the elements' 'basis' function(s) at
+            those coordinates. Dimensions are npts.
+        coords: np.ndarray 
+            Indices of the element(s) corresponding to each of those
+            point/value pairs. Most often these will all be the same as i,
+            but they don't have to be. Dimensions are npts.
         """
         # Map the address to a coordinate and run the element_grid's evaluator:
         [vals,coords] = self.evaluate_basis_at_point(self.coords.get_coordinates_from_indices(np.array(np.unravel_index(index,self.coords.dims))))
@@ -200,13 +216,18 @@ class ElementGrid:
         """
         Returns the response of the elements to a delta function source at a given
         point in the ElementGrid's coordinate frame. 
+
+        Parameters
+        ----------
+        point : np.ndarray
+            point of interest
         
         Returns
         -------
-        elms: 
+        elms : np.ndarray
             The indices of every element in the grid which has a non-zero
             response to a delta function source at the given point.
-        vals: 
+        vals : np.ndarray
             The values of each of those responses. Same dimensions as `elms`.
         """
         return self.coords.get_flattened_indices(*self.evaluate_basis_at_point(point), thold=self.thold)

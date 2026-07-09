@@ -3,7 +3,7 @@ There is an issue with rounding and floating point jitter for aligned grids that
 share some ratios in their spacing. We add this small offset when discretizing
 grid indices to avoid this, which is a bit of a hack...
 """
-tiny = 1.0e-4
+TINY = 1.0e-4
 
 import numpy as np
 from nfi_modules.util import multivector_matrix_multiply

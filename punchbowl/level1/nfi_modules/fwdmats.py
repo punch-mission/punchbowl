@@ -248,7 +248,7 @@ def get_detector(dimensions:np.array, crota:float = 0.0, center:np.array = np.ar
 	det_coords = CoordGrid(dimensions, origin, forward_transform, det_frame)
 	psf_covariance = get_2d_covariance([0.5,0.5],0.0)
 	inverse_psf_covariance = np.linalg.inv(psf_covariance)
-	return DetectorGrid(det_coords, [inverse_psf_covariance], n_dimensional_gaussian_psf, nsubgrid=det_subgrid_fac, thold=1.0e-3, footprint=[25, 25])
+	return DetectorGrid(det_coords, [inverse_psf_covariance], n_dimensional_gaussian_psf, nsubgrid=det_subgrid_fac, threshold=1.0e-3, footprint=[25, 25])
 
 def csc_resize(csc, rsiz, csiz, r0, c0):
 	"""

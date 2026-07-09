@@ -64,7 +64,7 @@ def element_source_responses(source,
     """
     # Create the coordinate transformation object:
     transformer = transform(source.coords,detector.coords)
-    shape = (detector.nelm,source.nelm) # Number of input/outputs
+    shape = (detector.n_elements,source.n_elements) # Number of input/outputs
     
 
     # Updating the sparse matrix comes with some overhead. We use buffers so we
@@ -74,7 +74,7 @@ def element_source_responses(source,
 
     amat = csc_matrix(shape,dtype=dtype) # The initial empty sparse matrix
     [icur, t0] = [0, time.time()] # Buffer position and starting time (for printing status)
-    for i in range(source.nadr): # Loop over each source address
+    for i in range(source.n_addresses): # Loop over each source address
         # Get the source elements for the current address:
         [src_elms,src_vals,src_pnts] = source.get_element_properties_at_point(i)
 
@@ -91,7 +91,7 @@ def element_source_responses(source,
             # Put the current values in the buffer and update the buffer position:
             ibuf_in[icur:icur+len(det_elms)] = src_elms[j]
             ibuf_out[icur:icur+len(det_elms)] = det_elms
-            valbuf[icur:icur+len(det_elms)] = det_vals*src_vals[j]/np.prod(detector.nsubgrid)/np.prod(source.nsubgrid)
+            valbuf[icur:icur+len(det_elms)] = det_vals*src_vals[j]/np.prod(detector.n_subgrid)/np.prod(source.n_subgrid)
             icur+=len(det_elms)
 
     # Update the sparse matrix with the last value in the buffer

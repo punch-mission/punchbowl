@@ -20,13 +20,27 @@ class ElementGrid:
     
     Attributes
     ----------
-    coords : 
+    threshold:
+
+    coords: 
         Information about the coordinate system of the output of elements and
         the input to response. Implemented as an instance of coordgrid.
-    nelm : int
+    params:
+
+    function_evaluator:
+
+    n_elements: int
         The number of elements in the element_grid, as well as the number
         of unique element id/indices.
-    nadr : int
+    n_subgrid: 
+
+    subgrid:
+
+    eval_subgrid:
+
+    stencil: 
+
+    n_addresses: int
         The number of element addresses in the element grid. These are
         how the elements are accessed via the elements method. In
         basic use these will be the same as the element indices,
@@ -64,9 +78,9 @@ class ElementGrid:
                  grid,
                  params, function_evaluator,
                  footprint=None,
-                 stencil_thold=5.0e-4,
+                 stencil_threshold=5.0e-4,
                  nsubgrid=3,
-                 thold=0.005):
+                 threshold=0.005):
         """
         Set up the elements. 
 
@@ -85,7 +99,7 @@ class ElementGrid:
             How far away from the input point to evaluate the response functions,
             in grid points. 
             (Recommended: at least 21 points, if not None)
-        stencil_thold: float, default: .0005
+        stencil_threshold: float, default: .0005
             In addition to the footprint, a stencil is computed to
             determine which grid points to use evaluate around the input point.
             
@@ -96,33 +110,33 @@ class ElementGrid:
         nsubgrid: int,  default: 3
             To take into account subgrid-scale effects, evaluate the response/basis functions. 
             at this multiple of the grid scale.
-        thold: float, default: 0.005
+        threshold: float, default: 0.005
             Final threshold for keeping points when evaluating the response/basis functions.
            
         """
-        self.thold = thold
+        self.threshold = threshold
         self.coords = grid
         self.params = params
         self.function_evaluator = function_evaluator
 
-        self.nelm = np.prod(grid.dims)
-        self.nsubgrid =  np.broadcast_to(nsubgrid,grid.dims.shape)
+        self.n_elements = np.prod(grid.dims)
+        self.n_subgrid =  np.broadcast_to(nsubgrid,grid.dims.shape)
         
-        self.subgrid = grid.subgrid(fac=self.nsubgrid)
+        self.subgrid = grid.subgrid(factor=self.n_subgrid)
         self.eval_grid = self.get_eval_grid()
 
         # Generate the stencil:
         if(footprint is None):
-            footprint_offset = np.ceil(10*self.nsubgrid/2).astype(np.int32)
+            footprint_offset = np.ceil(10*self.n_subgrid/2).astype(np.int32)
         else:
-            footprint_offset = np.ceil((footprint/self.nsubgrid-self.nsubgrid)/2).astype(np.int32)
+            footprint_offset = np.ceil((footprint/self.n_subgrid-self.n_subgrid)/2).astype(np.int32)
         
-        self.stencil = (roll_transpose_from_numpy_indices(self.nsubgrid+2*footprint_offset) - footprint_offset - 0.5*(nsubgrid-1.0))
+        self.stencil = (roll_transpose_from_numpy_indices(self.n_subgrid+2*footprint_offset) - footprint_offset - 0.5*(nsubgrid-1.0))
         vals = self.evaluate_basis_at_point(self.coords.origin)[0].flatten()
-        self.stencil = np.vstack([x.flatten()[vals >= stencil_thold] for x in list(forward_rolling_transpose(self.stencil))]).T
+        self.stencil = np.vstack([x.flatten()[vals >= stencil_threshold] for x in list(forward_rolling_transpose(self.stencil))]).T
 
         # Set the number of addresses:
-        self.nadr = self.get_n_addresses()
+        self.n_addresses = self.get_n_addresses()
 
 
     def get_eval_grid(self):
@@ -136,7 +150,7 @@ class ElementGrid:
         CoordGrid object
             Evaulation grid (which is assumed to be the same as the subgrid)
         """
-        return self.coords.subgrid(fac=self.nsubgrid)
+        return self.coords.subgrid(factor=self.n_subgrid)
 
     def get_n_addresses(self):
         """
@@ -148,7 +162,7 @@ class ElementGrid:
         int
             The number of addresses (which is assumed to be the same as the number of elements)
         """
-        return self.nelm
+        return self.n_elements
 
     def evaluate_basis_at_point(self, point):
         """
@@ -172,7 +186,7 @@ class ElementGrid:
 
         # Find the stencil evaluation indices (which are registered to the subgrid)
         # in the vicinity of this point.
-        subinds = np.round(self.stencil+subpt+tiny)
+        subinds = np.round(self.stencil+subpt+TINY)
         
         # Get the coordinates of these evaluation indices in the evaluation coordinate frame
         # and the subgrid coordinates:
@@ -230,7 +244,7 @@ class ElementGrid:
         vals : np.ndarray
             The values of each of those responses. Same dimensions as `elms`.
         """
-        return self.coords.get_flattened_indices(*self.evaluate_basis_at_point(point), thold=self.thold)
+        return self.coords.get_flattened_indices(*self.evaluate_basis_at_point(point), threshold=self.threshold)
 
 class DetectorGrid(ElementGrid):
     """The detector grid is a straight implementation of the base class: ElementGrid"""
@@ -252,4 +266,4 @@ class SourceGrid(ElementGrid):
     """
 
     def get_eval_grid(self):
-        return self.coords.identity().subgrid(fac=self.nsubgrid)
+        return self.coords.identity().subgrid(factor=self.n_subgrid)

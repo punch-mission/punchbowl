@@ -89,13 +89,13 @@ class CoordGrid:
         """
         return np.linalg.inv(self.fwd)
 
-    def subgrid(self,fac=2):
+    def subgrid(self,factor=2):
         """
         Get a grid that's clocked to this grid, but is higher resolution by an integer factor.
         
         Parameters
         ----------
-        fac : int, default = 2
+        factor: int, default = 2
             Factor to scale CoordGrid to higher resolution.
 
         Returns
@@ -103,7 +103,7 @@ class CoordGrid:
         CoordGrid
             Grid with new resolution, scaled by passed factor value
         """
-        return CoordGrid(self.dims * fac, self.get_coordinates_from_indices(0.5 / fac - 0.5 + 0.0 * self.dims), self.fwd / fac, self.frame)
+        return CoordGrid(self.dims * factor, self.get_coordinates_from_indices(0.5 / factor - 0.5 + 0.0 * self.dims), self.fwd / factor, self.frame)
 
 
     def identity(self):
@@ -158,7 +158,7 @@ class CoordGrid:
         return multivector_matrix_multiply(self.fwd, inds)+self.origin
 
 
-    def get_flattened_indices(self,vals,coords,thold=0):
+    def get_flattened_indices(self,vals,coords,threshold=0):
         """
         Returns the 'flattened' indices given a set of coordinates. Does discretize (because it has to).
         Also discards out-of-bounds points. Because of this, there's an accompanying vals array that can
@@ -170,7 +170,7 @@ class CoordGrid:
 
         coords : 
 
-        thold : int, default = 0
+        threshold : int, default = 0
 
         Returns
         -------
@@ -180,8 +180,8 @@ class CoordGrid:
         vals : np.ndarray
             The values of each of those responses. Same dimensions as `elms`.
         """
-        inds = list(np.round(self.get_indices_from_coordinates(coords)+tiny).T.astype(np.int32))
-        keeps = vals>thold
+        inds = list(np.round(self.get_indices_from_coordinates(coords)+TINY).T.astype(np.int32))
+        keeps = vals>threshold
         for j in range(len(self.dims)): 
             keeps *= (inds[j] >= 0)*(inds[j] < self.dims[j])
         return vals[keeps], np.ravel_multi_index(inds,self.dims,mode="clip")[keeps]

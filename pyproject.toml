@@ -192,6 +192,12 @@ packages = ["punchbowl"]
 [tool.codespell]
 skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
 
+[tool.coverage.run]
+omit = [
+    "tests/*",
+    "**/test_*.py"
+]
+
 [tool.ruff]
 target-version = 'py311'
 exclude = ['tests', 'scripts', 'docs', 'examples', "punchbowl/auto/*"]

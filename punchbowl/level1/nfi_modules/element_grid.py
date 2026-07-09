@@ -1,7 +1,7 @@
 import numpy as np
 from nfi_modules.util import forward_rolling_transpose, roll_transpose_from_numpy_indices
 
-tiny = 1.0e-4
+TINY = 1.0e-4
 
 class ElementGrid:
     """

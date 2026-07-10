@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v6.0.3
+    - uses: actions/checkout@v7.0.0
     - uses: FedericoCarboni/setup-ffmpeg@v3
       id: setup-ffmpeg
       with:
@@ -25,10 +25,6 @@ jobs:
         # Target architecture of the ffmpeg executable to install. Defaults to the
         # system architecture. Only x64 and arm64 are supported (arm64 only on Linux).
         architecture: ''
-        # Linking type of the binaries. Use "shared" to download shared binaries and
-        # "static" for statically linked ones. Shared builds are currently only available
-        # for windows releases. Defaults to "static"
-        linking-type: static
         # As of version 3 of this action, builds are no longer downloaded from GitHub
         # except on Windows: https://github.com/GyanD/codexffmpeg/releases.
         github-token: ${{ github.server_url == 'https://github.com' && github.token || '' }}
@@ -41,7 +37,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ".[docs]"
+        pip install ".[all]" --group dev
 
     # Build the book
     - name: Sphinx build
@@ -57,7 +53,7 @@ jobs:
         cp docs/binder/runtime.txt .
         cp docs/auto_examples/*.ipynb notebooks/auto_examples/
     # Push the rendered notebooks to branch
-    - uses: stefanzweifel/git-auto-commit-action@v7
+    - uses: stefanzweifel/git-auto-commit-action@v7.2.0
       with:
         branch: binder
         create_branch: true

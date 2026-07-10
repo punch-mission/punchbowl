@@ -6,39 +6,39 @@ build-backend = "setuptools.build_meta"
 name = "punchbowl"
 dynamic = ["version"]
 dependencies = [
-    "fastapi==0.136.0",
-    "numpy",
     "astropy",
-    "sunpy[all]",
-    "pandas",
-    "ndcube",
-    "matplotlib<=3.10.9",
-    "ccsdspy",
-    "prefect[dask]",
-    "regularizepsf",
-    "solpolpy",
-    "scipy",
+    "fastapi==0.136.0",
+    "jupyter>=1.1.1",
     "lmfit",
-    "setuptools",
-    "reproject",
-    "pylibjpeg",
+    "matplotlib<=3.11.0",
+    "ndcube",
+    "numpy",
+    "pandas",
+    "photutils",
+    "plotly",
     "python-dateutil",
-    "remove_starfield>=0.1",
-    "pylibjpeg[openjpeg]",
+    "regularizepsf",
     "requests",
-    "threadpoolctl",
-    "numexpr",
-    "glymur",
-    "scikit-learn",
-    "astrometry",
-    "numba",
+    "scipy",
+    "solpolpy",
+    "sunpy[all]",
+    "sunkit-image",
 ]
-requires-python = ">=3.11"
+
+requires-python = ">=3.11,<3.15"
 authors = [
     { name = "J. Marcus Hughes", email = "marcus.hughes@swri.org" },
+    { name = "Samuel J. Van Kooten", email = "samuel.vankooten@swri.org" },
+    { name = "Jasmine Kobayashi", email = "jasmine.kobayashi@swri.org" },
+    { name = "Courtney Peck", email = "courtney.peck@swri.org" },
+    { name = "Craig DeForest", email = "craig.deforest@swri.org" },
     { name = "Chris Lowder", email = "chris.lowder@swri.org" },
-    { name = "Matthew West", email = "matthew.west@swri.org" },
-    { name = "Sarak Kovac", email = "sarah.kovac@swri.org" },
+    { name = "Matthew J. West" },
+    { name = "Nick Murphy" },
+    { name = "Raphael Attié" },
+    { name = "Samuel Badman" },
+    { name = "Sarah Kovac" },
+    { name = "Joseph Plowman", email = "joseph.plowman@swri.org" },
     { name = "Ritesh Patel", email = "ritesh.patel@swri.org" },
     { name = "Derek Lamb", email = "derek.lamb@swri.org" },
     { name = "Dan Seaton", email = "daniel.seaton@swri.org" },
@@ -54,6 +54,54 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+super_user = [
+    "astrometry",
+    "click",
+    "glymur",
+    "h5py",
+    "lxml",
+    "networkx",
+    "numba",
+    "numexpr",
+    "pre-commit",
+    "prefect[dask]",
+    "pylibjpeg[libjpeg,openjpeg]",
+    "remove_starfield>=0.1",
+    "reproject>=0.20.0",
+    "scikit-image",
+    "scikit-learn",
+    "sep",
+    "setuptools",
+    "threadpoolctl",
+    "toml",
+    "tqdm",
+]
+
+all = ["punchbowl[super_user]"]
+
+[dependency-groups]
+pipe = [
+    "ccsdspy",
+    "simpunch",
+    "prefect[sqlalchemy]",
+    "pymysql",
+    "pandas",
+    "xlrd",
+    "pydantic",
+    "sqlalchemy",
+    "dash >= 4",
+    "dash-bootstrap-components",
+    "dash_bootstrap_templates",
+    "coolname",
+    "numpy",
+    "plotly",
+    "pyyaml",
+    "click",
+    "psutil",
+    "gunicorn",
+    "numpy-quaternion"
+]
+
 test = [
     "pytest",
     "pytest-order",
@@ -110,30 +158,19 @@ docs_pipe = [
     "sphinx-automodapi"
 ]
 
-pipe = ["ccsdspy",
-    "punchbowl",
-    "simpunch",
-    "prefect[sqlalchemy]",
-    "pymysql",
-    "pandas",
-    "xlrd",
-    "pydantic",
-    "sqlalchemy",
-    "dash >= 4",
-    "dash-bootstrap-components",
-    "dash_bootstrap_templates",
-    "coolname",
-    "numpy",
-    "plotly",
-    "pyyaml",
-    "click",
-    "pylibjpeg[libjpeg]",
-    "psutil",
-    "gunicorn",
-    "numpy-quaternion"
+dev = [
+    {include-group = "pipe"},
+    {include-group = "test"},
+    {include-group = "test_pipe"},
+    {include-group = "docs"},
+    {include-group = "docs_pipe"}
 ]
 
-dev = ["punchbowl[docs,test,pipe,docs_pipe,test_pipe]"]
+[tool.uv.sources]
+regularizepsf = { path = "../regularizepsf", editable = true }
+solpolpy = { path = "../solpolpy", editable = true }
+simpunch = { path = "../simpunch", editable = true }
+
 
 [project.scripts]
 punchbowl = "punchbowl.cli:main"
@@ -207,6 +244,7 @@ no_lines_before = "LOCALFOLDER"
 sections = "FUTURE, COMPATIBILITY, STDLIB, THIRDPARTY, FIRSTPARTY, LOCALFOLDER"
 
 [tool.pytest.ini_options]
+addopts = "--mpl"
 markers = [
     "prefect_test: a test that integrates with Prefect",
     "regression: a regression test, likely slow",

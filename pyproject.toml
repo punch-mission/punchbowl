@@ -195,7 +195,9 @@ skip = "*.fts,*.fits,venv,*.pro,*.asdf,*.ipynb"
 [tool.coverage.run]
 omit = [
     "tests/*",
-    "**/test_*.py"
+    "**/tests/*",
+    "**/test_*.py",
+    "**/*test.py",
 ]
 
 [tool.ruff]

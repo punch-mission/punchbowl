@@ -250,12 +250,14 @@ def coalign_L1_mzp(mzp_cubes: list[PUNCHCube], scale_factor: float=1) -> list[PU
                                                             target_shape)
     coaligned_cubes = []
     for j in range(3):
-        res = reproject.reproject_adaptive(
+        out_array = np.empty((2, *target_shape), dtype=mzp_cubes[j].data.dtype)
+        reproject.reproject_adaptive(
             (np.stack((mzp_cubes[j].data, mzp_cubes[j].uncertainty.array), axis=0),
              mzp_cubes[j].celestial_wcs),
-            target_l1_frame, target_shape, roundtrip_coords=False, return_footprint=False)
+            target_l1_frame, target_shape,
+            output_array=out_array, roundtrip_coords=False, return_footprint=False)
 
-        res = mzp_cubes[j].replace(data=res[0], uncertainty=StdDevUncertainty(res[1]),
+        res = mzp_cubes[j].replace(data=out_array[0], uncertainty=StdDevUncertainty(out_array[1]),
                                    celestial_wcs=target_l1_frame, wcs=target_helio_frame)
         coaligned_cubes.append(res)
     return coaligned_cubes

@@ -83,7 +83,7 @@ def level2_core_flow(data_list: list[str] | list[PUNCHCube], # noqa: C901
     logger = get_logger()
     logger.info("beginning level 2 core flow")
 
-    data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+    data_list = [load_image_task(d, dtype=np.float32) if isinstance(d, str) else d for d in data_list]
     if image_masks is None:
         image_masks = [None] * len(data_list)
 

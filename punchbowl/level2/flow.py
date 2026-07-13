@@ -13,7 +13,7 @@ from punchbowl.level2.finalize import finalize_output
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
-from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
+from punchbowl.level2.resample import coalign_L1_mzp, find_central_pixel, reproject_many_flow
 from punchbowl.prefect import get_logger, punch_flow
 from punchbowl.util import load_image_task, output_image_task
 
@@ -111,25 +111,80 @@ def level2_core_flow(data_list: list[str] | list[PUNCHCube], # noqa: C901
                         ordered_voters[i] = voter_filenames[j]
             logger.info("Ordered files are "
                         f"{[get_base_file_name(cube) if cube is not None else None for cube in ordered_data_list]}")
-            data_list = [resolve_polarization_task.submit(ordered_data_list[i:i+3])
+
+            # This needs to happen before we shift into a different (upscaled) L1 frame
+            preprocess_trefoil_inputs(ordered_data_list, ordered_mask_list, trim_edges_px, alphas_file)
+
+            # Now we co-align each MZP triplet. The image pointing may drift slowly across the sequence. Each
+            # individual L1 has its pointing determined by the stars, so we can zero out any drift. This ensures than
+            # when we convert the polarization from instrument MZP to solar MZP, the instrument MZP samples are of
+            # the same exact thing on the sky. (This is especially important for stars!)
+            coaligned_ordered_cubes = [None] * len(ordered_data_list)
+            for i in range(0, len(POLARIZED_FILE_ORDER), 3):
+                cubes = ordered_data_list[i:i + 3]
+                if any(c is None for c in cubes):
+                    continue
+                # We reproject the images into the Z frame. The Z image must be reprojected as well, so everyone gets
+                # the same amount of anti-aliasing blur. We reproject into a larger (scaled up) pixel grid,
+                # to minimize the impact this extra round of reprojection has on the blur of the final images. The
+                # co-aligned frame also strips out the distortion table, since that's just extra coordinates work we
+                # don't need.
+                coaligned_ordered_cubes[i:i + 3] = coalign_L1_mzp(cubes, scale_factor=1.4)
+            logger.info("L1s co-aligned")
+
+            data_list = [resolve_polarization_task.submit(coaligned_ordered_cubes[i:i+3])
                          for i in range(0, len(POLARIZED_FILE_ORDER), 3)]
             data_list = [entry.result() for entry in data_list]
             data_list = [j for i in data_list for j in i]
+            logger.info("Polarization resolved")
+
             voter_filenames = ordered_voters
-            image_masks = ordered_mask_list
             # Use the Z state for each file
-            center_inputs = [cube for cube  in ordered_data_list if cube is not None and cube.meta["POLAR"].value == 0]
+            center_inputs = [cube for cube in ordered_data_list if cube is not None and cube.meta["POLAR"].value == 0]
         else:
+            preprocess_trefoil_inputs(data_list, image_masks, trim_edges_px, alphas_file)
             center_inputs = data_list
 
         default_trefoil_wcs, default_trefoil_shape = load_trefoil_wcs()
         trefoil_wcs = trefoil_wcs or default_trefoil_wcs
         trefoil_shape = trefoil_shape or default_trefoil_shape
 
-        preprocess_trefoil_inputs(data_list, image_masks, trim_edges_px, alphas_file)
+        if polarized:
+            # Since we co-aligned the L1 images, they have identical WCSes. That means when we do the reprojection, we
+            # can stack each MZP triplet together so the coordinates work only has to happen once.
+            combined_cubes = []
+            for i in range(0, len(POLARIZED_FILE_ORDER), 3):
+                cubes = data_list[i:i + 3]
+                if any(c is None for c in cubes):
+                    combined_cubes.append(None)
+                    continue
+                data_stack = np.stack([c.data for c in cubes], axis=0)
+                uncert_stack = np.stack([c.uncertainty.array for c in cubes], axis=0)
+                combined_cubes.append(cubes[1].replace(data=data_stack, uncertainty=StdDevUncertainty(uncert_stack)))
 
-        data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape, rolloff_width=rolloff_width,
-                                        rolloff_strength=rolloff_strength)
+            reprojected_stacks = reproject_many_flow(combined_cubes, trefoil_wcs, (3, *trefoil_shape),
+                                                     rolloff_width=rolloff_width,
+                                                     rolloff_strength=rolloff_strength)
+
+            # Now we un-stack each MZP triplet
+            reprojected_cubes = []
+            for i, repro_result in zip(range(0, len(POLARIZED_FILE_ORDER), 3), reprojected_stacks, strict=True):
+                cubes = data_list[i:i + 3]
+                if repro_result is None:
+                    reprojected_cubes.extend([None] * 3)
+                    continue
+                for j in range(len(cubes)):
+                    # reproject_many_flow returns cubes that have the new data and WCS, and the old, unadjusted meta.
+                    # We match that here.
+                    cube = cubes[j].replace(data=repro_result.data[j], uncertainty=repro_result.uncertainty[j],
+                                            wcs=trefoil_wcs)
+                    reprojected_cubes.append(cube)
+            data_list = reprojected_cubes
+        else:
+            data_list = reproject_many_flow(data_list, trefoil_wcs, trefoil_shape, rolloff_width=rolloff_width,
+                                            rolloff_strength=rolloff_strength)
+        logger.info("Cubes reprojected")
+
         data_list = [identify_bright_structures_task(cube, this_voter_filenames)
                      for cube, this_voter_filenames in zip(data_list, voter_filenames, strict=True)]
         merger = merge_many_polarized_task if polarized else merge_many_clear_task

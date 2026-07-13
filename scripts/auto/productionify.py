@@ -22,24 +22,29 @@ from punchbowl.data.punch_io import load_ndcube_from_fits, write_file_hash
 def productionify_file(file: File, config: dict, data_root: str, old_pattern, new_version):
     try:
         old_path = os.path.join(file.directory(data_root), file.filename())
-        file.file_version = new_version
-        new_path = os.path.join(file.directory(data_root), file.filename())
-
-        if os.path.exists(old_path):
-            replace_file_version_in_metadata(old_path, old_pattern, new_version)
-            os.rename(old_path, new_path)
+        if new_version is not None:
+            file.file_version = new_version
+            new_path = os.path.join(file.directory(data_root), file.filename())
+        else:
+            new_path = old_path
 
         old_sha_path = old_path + '.sha'
         new_sha_path = new_path + '.sha'
-        if os.path.exists(old_sha_path):
-            os.rename(old_sha_path, new_sha_path)
-        elif os.path.exists(new_path):
-            # We should overwrite existing sha files because we might have changed the metadata
-            write_file_hash(new_path)
+
+        if new_version is not None:
+            if os.path.exists(old_path):
+                replace_file_version_in_metadata(old_path, old_pattern, new_version)
+                os.rename(old_path, new_path)
+
+            if os.path.exists(old_sha_path):
+                os.rename(old_sha_path, new_sha_path)
+            elif os.path.exists(new_path):
+                # We should overwrite existing sha files because we might have changed the metadata
+                write_file_hash(new_path)
 
         old_ql_path = old_path.replace('.fits', '.jp2')
         new_ql_path = new_path.replace('.fits', '.jp2')
-        if os.path.exists(old_ql_path):
+        if os.path.exists(old_ql_path) and new_version is not None:
             os.rename(old_ql_path, new_ql_path)
         elif os.path.exists(new_path) and not os.path.exists(new_ql_path) and file.file_type[0] not in ('S', 'T'):
             cube = load_ndcube_from_fits(new_path)
@@ -67,27 +72,27 @@ if __name__ == "__main__":
     parser.add_argument ('-w', '--workers', type=int, help="Number of worker processes", default=12)
     parser.add_argument('data_root')
     parser.add_argument('pipeline_config')
-    parser.add_argument('old_version_pattern')
-    parser.add_argument('new_version')
+    parser.add_argument('old_version_pattern', default=None, nargs='?')
+    parser.add_argument('new_version', default=None, nargs='?')
 
     args = parser.parse_args()
 
-    if not args.force:
+    old_version_pattern = args.old_version_pattern
+    if old_version_pattern is not None and old_version_pattern.startswith('v'):
+        print("Stripping leading 'v' from old version")
+        old_version_pattern = old_version_pattern[1:]
+
+    new_version = args.new_version
+    if new_version is not None and new_version.startswith('v'):
+        print("Stripping leading 'v' from new version")
+        new_version = new_version[1:]
+
+    if not args.force and old_version_pattern is not None:
         print("This script should not run when files of the selected type are being produced, are planned (even if not "
               "running), or if the selected files have descendants that are planned.")
         print("This is because planned flows will have file names written in the call_data in the database, "
               "but we'll be renaming files.")
         input("Press enter to acknowledge this.")
-
-    old_version_pattern = args.old_version_pattern
-    if old_version_pattern.startswith('v'):
-        print("Stripping leading 'v' from old version")
-        old_version_pattern = old_version_pattern[1:]
-
-    new_version = args.new_version
-    if new_version.startswith('v'):
-        print("Stripping leading 'v' from new version")
-        new_version = new_version[1:]
 
     config = load_pipeline_configuration(args.pipeline_config)
     session = get_database_session(session_kwargs=dict(expire_on_commit=False))
@@ -124,7 +129,8 @@ if __name__ == "__main__":
     if not args.force:
         input("Press enter if that seems right.")
 
-    if any(f.state in ['planning', 'planned', 'creating', 'revivable'] for f in files):
+    if (old_version_pattern is not None
+            and any(f.state in ['planning', 'planned', 'creating', 'revivable'] for f in files)):
         print("Selected files haves states indicating the pipeline is still running for this flow type.")
         print("Please clear out any planned or running flows and try again.")
         sys.exit()
@@ -136,12 +142,12 @@ if __name__ == "__main__":
                                                            repeat(args.data_root), repeat(old_version_pattern),
                                                            repeat(new_version), chunksize=2))):
                 pbar.update()
-                if success_or_msg is True:
-                    file.file_version = new_version
-                else:
+                if success_or_msg is not True:
                     errors.append(success_or_msg)
-                if i % 200 == 0:
-                    session.commit()
+                elif old_version_pattern is not None:
+                    file.file_version = new_version
+                    if i % 200 == 0:
+                        session.commit()
         except KeyboardInterrupt:
             pass
         session.commit()

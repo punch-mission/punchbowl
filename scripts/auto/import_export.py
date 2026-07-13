@@ -69,11 +69,14 @@ class ExportedFile:
         for col in ['level', 'file_type', 'observatory', 'file_version', 'date_obs', 'polarization']:
             if getattr(self, col) is not None:
                 query = query.where(getattr(File, col) == getattr(self, col))
-        try:
-            return query.one_or_none()
-        except:
-            print(self.level, self.file_type, self.observatory, self.date_obs, self.state)
-            raise
+
+        result = query.all()
+        if len(result) > 1:
+            print("Querying for", self.level, self.file_type, self.observatory, self.date_obs, self.state)
+            for r in result:
+                print('Found:', r.filename())
+            raise RuntimeError("Got more than one file from query")
+        return result[0] if result else None
 
     @staticmethod
     def export_File(file: File, session):

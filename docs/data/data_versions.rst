@@ -20,7 +20,7 @@ A history of data version releases is given below.
 Version 0l
 ----------
 
-- Released ???? June ???, 2026 ????
+- Released July 13, 2026
 - Data improvements
 
   - Switched labeling of NFI +60 & -60 degree polarization states to be consistent with WFI (https://github.com/punch-mission/punchbowl/pull/953).
@@ -39,7 +39,8 @@ Version 0l
   - Polarization
 
     - Fixed functions for roundtrip conversion of MZP from solar and instrument frames (https://github.com/punch-mission/solpolpy/pull/218).
-    - Improve polarization position angle maps generated from Level 0 and Level 1 data products, where solar north is not always at the image top (https://github.com/punch-mission/solpolpy/pull/217).
+    - Improved polarization position angle maps generated from Level 0 and Level 1 data products, where solar north is not always at the image top (https://github.com/punch-mission/solpolpy/pull/217).
+    - Implemented coalignment in L1 frame before polarization resolution and mosaic assembly (https://github.com/punch-mission/punchbowl/pull/1060).
 
   - Starfield modeling and subtraction are much improved:
 
@@ -64,6 +65,12 @@ Version 0l
 
   - The Fido search client now correctly filters when given a specific data version, or "newest", to search (https://github.com/punch-mission/punchbowl/pull/914).
   - plot_punch can overlay the names of the PUNCH satellites on their respective fields-of-view when plotting mosaic images (https://github.com/punch-mission/punchbowl/pull/960).
+
+- Known problems
+
+  - Due to an error when migrating data between servers, the wrong f-corona model was subtracted from some data in the Level-3 calibration for Clear products only. This is visible as enhanced f-corona emission around 2025 August 29 -- September 1, and 2025 September 6 & 7.
+  - Background subtraction is overzealous in some cases and results in negative polarized brightness values. Users should not clip polarized brightness images at 0 when analyzing v0l data (https://github.com/punch-mission/punchbowl/issues/1061).
+  - Level 3 CAM files have not been produced for dates after 2026-05-25 due to an implementation mistake related to "Time-varying outlier identification limits are reused year after year" above. This mistake is causing too many Level-1 files to be marked as Outliers and impeding the creation of Level 3 CAM files for those dates.
 
 Version 0k
 ----------

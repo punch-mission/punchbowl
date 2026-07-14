@@ -27,7 +27,7 @@ import nfi_modules.reconstruct
 importlib.reload(nfi_modules.fwdmats)
 importlib.reload(nfi_modules.reconstruct)
 
-from nfi_modules.fwdmats import generate_nfi_fwdmats
+from nfi_modules.fwdmats import generate_nfi_forward_matrices
 from nfi_modules.reconstruct import reconstruct_nfi_straylight
 from nfi_modules.util import bindown
 
@@ -84,7 +84,7 @@ crots = np.array([data_meta['CROTA'].value*np.pi/180])
 # This generates a new sky-oriented and instrument oriented forward matrix each time
 # which is inefficient. The instrment-oriented forward matrix only needs to be computed
 # once and the sky oriented one only needs to be computed once for each data file.
-amats = generate_nfi_fwdmats(nframes,datsz, xcens, ycens, crots, bin_factor=bin_fac, smooth_rad=0.0)
+amats = generate_nfi_forward_matrices(nframes,datsz, xcens, ycens, crots, bin_factor=bin_fac, smooth_rad=0.0)
 
 # %% AMATS KEYS-------------------------------------------------------------------------------
 amats.keys()

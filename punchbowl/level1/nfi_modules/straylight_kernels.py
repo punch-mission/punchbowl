@@ -8,19 +8,41 @@ from concurrent.futures import ThreadPoolExecutor
 import numba
 
 def kernel_smoothing_matrix(angles_rev, smooth_rad = 0.1):
-    nangles = len(angles_rev)
-    da = angles_rev[1]-angles_rev[0]
-    omat = np.zeros([nangles, nangles])
-    nrad = np.floor(smooth_rad/da).astype(np.int32)
-    na = 2*nrad+1
-    sk_angles = da*(np.arange(na)-nrad)/smooth_rad
-    skernel = np.zeros(nangles)
-    skernel[0:na] = np.cos(0.5*np.pi*sk_angles)
+    """
+    Build smoothing matrix for kernel.
 
-    for i in range(nangles):
-        omat[i] = np.roll(skernel,i-nrad)
+    Parameters:
+    -----------
+    angles_rev: array_like
+        1D array of angle values (in radians) at which the data is sampled.
+        Must be uniformly spaced; only the spacing between the first two elements (`angles_rev[1]-angles_rev[0]`) 
+        is used to determine the grid resolution.
 
-    return omat
+    smooth_rad: float, optional, default = 0.1
+        Half-width of the smoothing kernel, in radians. 
+        Determines how many neighboring grid points contribute to the smoothed value.
+
+    Returns:
+    --------
+    output: np.ndarray
+        Circulant smoothing matrix
+    """
+    n_angles = len(angles_rev) #[int]
+    angle_diff = angles_rev[1]-angles_rev[0] #[num]
+    output_matrix = np.zeros([n_angles, n_angles]) #[array]
+    n_radius_steps = np.floor(smooth_rad/angle_diff).astype(np.int32) #[int]
+    na = 2*n_radius_steps+1 # kernel width? #[int]
+    smoothing_kernel_angles = angle_diff*(np.arange(na)-n_radius_steps)/smooth_rad # [array]
+
+    #Create array pf smoothing kernel
+    smoothing_kernel = np.zeros(n_angles) #[1D array]
+    smoothing_kernel[0:na] = np.cos(0.5*np.pi*smoothing_kernel_angles)
+
+    #Build circulant smoothing matrix
+    for i in range(n_angles):
+        output_matrix[i] = np.roll(smoothing_kernel,i-n_radius_steps)
+
+    return output_matrix
 
 def generate_kernel(theta: float, radial_size: float = 660, aspect_ratio: float = 1, right_intensity: float = 1,
                     bottom_intensity: float = 1, elon_abs: float | None = None, elon_offset: float = 0,

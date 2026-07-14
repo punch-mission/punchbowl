@@ -9,7 +9,7 @@ src_dir = os.path.dirname(file_dir)
 module_path = os.path.join(src_dir,'nfi_modules')
 path.append(module_path)
 
-from nfi_modules.fwdmats import generate_nfi_fwdmats
+from nfi_modules.fwdmats import generate_nfi_forward_matrices
 from nfi_modules.reconstruct import reconstruct_nfi_straylight
 from nfi_modules.util import bindown
 
@@ -166,7 +166,7 @@ def remove_nfi_stray_light(datacube: PUNCHCube,
     # TODO: Modify to optimize processing one file at a time w/o use of np.arrays
     # TODO: OR fix above to append to arrays in the case of processing multiple frames at a time
     nframes = 1
-    amats = generate_nfi_fwdmats(nframes,
+    forward_matrices = generate_nfi_forward_matrices(nframes,
                                  data_size,
                                  np.array([x_offsets]),
                                  np.array([y_offsets]),
@@ -180,7 +180,7 @@ def remove_nfi_stray_light(datacube: PUNCHCube,
     # Stray light model
     solver_data, solver_err, good_data_flags = get_solver_inputs(datacube, glint_mask, 
                                                                  bindown_shape=bindown_shape)
-    soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(solver_data, solver_err, amats, 
+    soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(solver_data, solver_err, forward_matrices, 
                                                                           good_data_flags,
                                                                           solver_tol=solver_tol, 
                                                                           sky_reg=sky_reg, 

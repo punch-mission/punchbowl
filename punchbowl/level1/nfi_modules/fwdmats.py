@@ -31,7 +31,7 @@ from straylight_kernels import generate_kernels, kernel_smoothing_matrix
 from transforms import CoordTransform, Trivialframe
 
 
-def generate_nfi_fwdmats(nframes:int ,data_size: tuple, x_offsets: np.array, y_offsets: np.array, crots: np.array, 
+def generate_nfi_forward_matrices(nframes:int ,data_size: tuple, x_offsets: np.array, y_offsets: np.array, crots: np.array, 
 						 bin_factor: int = 4, smooth_rad: float = 0.05, radial_size: float = 175.4, 
 						 elon_abs=130, cx=1009, cy=1029, nstray=None):
 	"""
@@ -66,18 +66,29 @@ def generate_nfi_fwdmats(nframes:int ,data_size: tuple, x_offsets: np.array, y_o
 	smooth_rad : float
 		If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
 	radial_size : float
+
+	Returns:
+	--------
+	foward_matrices: dictionary of ndarray objects
+		Dictionary object containing all forward matrices and normalizers(?) of each of the following: the instrument (`inst`), 
+		the sky model (`sky`), and the dynamic stray light model (`stray`); as well as image size.
+
+		Where `inst`, `sky`, and `stray` as keywords return the forward matrix for each relevant context, and `norms_inst`,
+		`norms_sky`, and `norms_stray` gives the normalizers used to make each of the respective forward matrices.
+		Keyword, `im_size` give the image size
 	"""
 	nx, ny = data_size
 	dimensions = np.round(np.array([nx,ny])/bin_factor).astype(np.int32)
 	source_sky = get_sky_source(dimensions)
 	detector0 = get_detector(dimensions)
 	source_inst = get_sky_source(dimensions)
-	amat_inst = esr(source_inst, detector0, CoordTransform)
+	inst_forward_mat = esr(source_inst, detector0, CoordTransform)
 
-	detectors, amats_sky = [], []
+	detectors = []
+	sky_forward_mat = []
 	for i in range(nframes):
 		detectors.append(get_detector(dimensions, center=[x_offsets[i], y_offsets[i]], crota=crots[i]))
-		amats_sky.append(esr(source_sky, detectors[i], CoordTransform))
+		sky_forward_mat.append(esr(source_sky, detectors[i], CoordTransform))
 
 	im_size = dimensions[0]
 	# Note we do not include the endpoint of the interval
@@ -92,81 +103,81 @@ def generate_nfi_fwdmats(nframes:int ,data_size: tuple, x_offsets: np.array, y_o
 						  image_size=im_size,
 						  cx=cx/bin_factor,
 						  cy=cy/bin_factor)
-	k2 = np.array(kernels)
-	for i in range(len(k2)):
-		k2[i] = k2[i].T
+	for i in range(len(kernels)):
+		kernels[i] = kernels[i].T
 
-	k2 = k2.reshape([nstray,im_size*im_size])
-	smat = csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi))
-	amat_stray = csr_matrix(k2.T)
-	if(smooth_rad > 0):
-		amat_stray = amat_stray*csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi, smooth_rad=smooth_rad))
+	kernels = kernels.reshape([nstray,im_size*im_size])
+	#Note: csr-matrix = "compressed sparse row matrix"
+	stray_forward_mat = csr_matrix(kernels.T) 
+	if(smooth_rad > 0):      
+		#Note: csc-matrix = "compressed sparse column matrix"
+		stray_forward_mat = stray_forward_mat*csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi, smooth_rad=smooth_rad))
 
-	norms_inst = np.sum(amat_inst,axis=0).A1
+	# Create Forward Matrix for Instrument
+	norms_inst = np.sum(inst_forward_mat,axis=0).A1
 	norms_inst = np.clip(norms_inst,0.05*np.mean(norms_inst),None)
-	amat_inst = amat_inst*diags(1.0/norms_inst)
+	inst_forward_mat = inst_forward_mat*diags(1.0/norms_inst)
 
-	norms_stray = np.sum(amat_stray,axis=0).A1
+	# Create Forward Matrix for Stray Light model
+	norms_stray = np.sum(stray_forward_mat,axis=0).A1
 	norms_stray = np.clip(norms_stray,0.05*np.mean(norms_stray),None)
-	amat_stray = amat_stray*diags(1.0/norms_stray)
+	stray_forward_mat = stray_forward_mat*diags(1.0/norms_stray)
 
+	# Create Forward Matrix Sky model (includes background stars and f-corona)
 	norms_sky = []
 	for i in range(nframes):
-		norms_sky.append(np.sum(amats_sky[i],axis=0).A1)
+		norms_sky.append(np.sum(sky_forward_mat[i],axis=0).A1)
 		norms_sky[i] = np.clip(norms_sky[i],0.05*np.mean(norms_sky[i]),None)
-		amats_sky[i] = amats_sky[i]*diags(1.0/norms_sky[i])
+		sky_forward_mat[i] = sky_forward_mat[i]*diags(1.0/norms_sky[i])
 
-	return {"inst":amat_inst, "sky":amats_sky, "stray":amat_stray, "im_size":im_size,
+	return {"inst":inst_forward_mat, "sky":sky_forward_mat, "stray":stray_forward_mat, "im_size":im_size,
 			"norms_inst":norms_inst, "norms_stray":norms_stray, "norms_sky":norms_sky}
 
-def generate_stray_fwdmats(datsiz, xoffs, yoffs, crots, bin_fac=4, smooth_rad=0.05):
-	nframe, nx0, ny0 = datsiz
-	dims = np.round(np.array([nx0,ny0])/bin_fac).astype(np.int32)
-
-	source_sky = get_sky_source(dims)#, origin, 0.0)
-	source_inst = get_sky_source(dims)#, origin, 0.0)
-	detector0 = get_detector(dims)#, origin, 0.0)
-
-	xoffs -= np.median(xoffs); yoffs -= np.median(yoffs)
-
-	im_size = dims[0]
-	# Note we do not include the endpoint of the interval
-	# since that would put duplicate kernels at 0 and 2*pi...
-	kernel_angles = 2*np.pi*np.arange(im_size)/im_size
-	kernels = generate_kernels(kernel_angles, radial_size=175.4, elon_abs=130, image_size=im_size)
-	k2 = np.array(kernels)
-	for i in range(len(k2)):
-		k2[i] = k2[i].T
-	k2 = k2.reshape([im_size,im_size*im_size])
-	smat = csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi))
-	amat_stray = csr_matrix(k2.T)
-	if(smooth_rad > 0):
-		amat_stray = amat_stray*csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi, smooth_rad=smooth_rad))
-
-	return {"stray":amat_stray}
-
 def assemble_nfi_fwdmats(amats):
-	nframe = len(amats["sky"])
-	npix = amats["inst"].shape[0]
-	ndat = nframe*npix
-	nsky = npix; im_size=amats["im_size"]
-	nins=npix*(nframe > 1)
-	nstr = nframe*amats["stray"].shape[1]
-	nsrc = nsky+nins+nstr
+	"""
+	Assemble a single sparse design matrix from per-component system matrices.
+	Used by `reconstruct.reconstruct_nfi_straylight`
 
-	amat_out = csc_matrix(([],[],np.zeros(nsrc+1)), shape=(ndat,nsrc))
+	Parameters:
+	-----------
+	amats: dict
+		dictionary containing the forward matrices for the sky, (per-pixel) instrument, and stray light 
+		sources. 
+		Created by `fwdmats.generate_nfi_forward_matrices`
+	Returns:
+	--------
+	amat_out: scipy.sparse.csc_matrix
+		The single sparse design matrix made with totaled values from the per-component system matrices as appropriate.
 
-	for i in range(nframe):
-		if(nframe == 1): 
-			amat_out += csc_resize(amats["inst"], ndat, nsrc, i*npix, 0)
+		The final object is a compressed sparse column matrix object with shape `(n_data_points, n_source)`, where `n_data_points` the number of 
+		forward matrices of the `sky` component of `amats` (i.e. number of frames) multiplied by the number of detector pixels 
+		per frame; and `n_source` is the total number of parameters from the sky model, instrument, and stray light model.
+	"""
+	#TODO: (JK) not totally confident about this docstring explanation.
+	n_frames = len(amats["sky"])
+	n_pixels = amats["inst"].shape[0]
+	n_data_points = n_frames*n_pixels
+
+	im_size = amats["im_size"]
+	n_sky = n_pixels  								# number of sky parameters (one per pixel)
+	n_inst=n_pixels*(n_frames > 1)					# number of instrument parameters
+	n_stray = n_frames*amats["stray"].shape[1]		# number of stray light parameters
+	n_source = n_sky+n_inst+n_stray
+
+	amat_out = csc_matrix(([],[],np.zeros(n_source+1)), shape=(n_data_points,n_source))
+
+	for i in range(n_frames):
+		if(n_frames == 1): 
+			amat_out += csc_resize(amats["inst"], n_data_points, n_source, i*n_pixels, 0)
 		else: 
-			amat_out += csc_resize(amats["sky"][i], ndat, nsrc, i*npix, 0)
+			amat_out += csc_resize(amats["sky"][i], n_data_points, n_source, i*n_pixels, 0)
 
-	for i in range(nframe):
-		if(nframe > 1): 
-			amat_out += csc_resize(amats["inst"], ndat, nsrc, i*npix, nsky)
-	for i in range(nframe):
-		amat_out += csc_resize(amats["stray"].T, nsrc, ndat, nsky+nins+i*im_size, i*npix).T
+	for i in range(n_frames):
+		if(n_frames > 1): 
+			amat_out += csc_resize(amats["inst"], n_data_points, n_source, i*n_pixels, n_sky)
+			
+	for i in range(n_frames):
+		amat_out += csc_resize(amats["stray"].T, n_source, n_data_points, n_sky+n_inst+i*im_size, i*n_pixels).T
 
 	return amat_out
 
@@ -250,20 +261,44 @@ def get_detector(dimensions:np.array, crota:float = 0.0, center:np.array = np.ar
 	inverse_psf_covariance = np.linalg.inv(psf_covariance)
 	return DetectorGrid(det_coords, [inverse_psf_covariance], n_dimensional_gaussian_psf, nsubgrid=det_subgrid_fac, threshold=1.0e-3, footprint=[25, 25])
 
-def csc_resize(csc, rsiz, csiz, r0, c0):
+def csc_resize(csc, row_size, column_size, row_offset, column_offset):
 	"""
-	csc_matrix((data, indices, indptr), [shape=(M, N)])
+	Resize the compressed sparse column (csc) matrix into a larger, all-zero csc matrix at a given offset.
+
+	Parameters:
+	-----------
+	csc: scipy.sparse.csc_matrix
+		compressed sparse column matrix of interest to resize
+	row_size: int
+		Number of rows in the resized output matrix.
+		Must satisfy `row_size >= row_offset + csc.shape[0]`.
+	column_size: int
+		Number of columns in the resized output matrix.
+		Must satisfy `column_size >= column_offset + csc.shape[1]`.
+
+	Returns:
+	--------
+	scipy.sparse.csc_matrix
+		A new sparse matrix of shape `(row_size, column_size)` containing `csc` as a submatrix at position 
+		`(row_offset,column_offset)`, with all other entries equal to zero.
+
+	Notes:
+	------
+	`scipy.sparse.csc_matrix((data, indices, indptr), [shape=(M, N)])`
 		is the standard CSC representation where the row indices for column i
-		are stored in indices[indptr[i]:indptr[i+1]] and their corresponding
-		values are stored in data[indptr[i]:indptr[i+1]]. If the shape parameter
+		are stored in `indices[indptr[i]:indptr[i+1]]` and their corresponding
+		values are stored in `data[indptr[i]:indptr[i+1]]`. If the shape parameter
 		is not supplied, the matrix dimensions are inferred from the index arrays.
 	"""
-	rinds = csc.indices+r0
-	cinds = csc.indptr
-	if c0 > 0:
-		cinds = np.hstack([np.zeros(c0,dtype=np.int64),cinds])
-	n_extra = (csiz-c0-csc.shape[1])
+	row_indices = csc.indices+row_offset
+	column_indices = csc.indptr
+
+	if column_offset > 0:
+		column_indices = np.hstack([np.zeros(column_offset,dtype=np.int64),column_indices])
+	n_extra = (column_size-column_offset-csc.shape[1])
+
 	if n_extra > 0:
-		cinds = np.hstack([cinds,csc.indptr[-1]*np.ones(n_extra,dtype=np.int64)])
-	print(rsiz, csiz, r0, c0, n_extra, csc.shape, cinds.shape)
-	return csc_matrix((csc.data, rinds, cinds), shape=(rsiz,csiz))
+		column_indices = np.hstack([column_indices,csc.indptr[-1]*np.ones(n_extra,dtype=np.int64)])
+	print(row_size, column_size, row_offset, column_offset, n_extra, csc.shape, column_indices.shape)
+	
+	return csc_matrix((csc.data, row_indices, column_indices), shape=(row_size,column_size))

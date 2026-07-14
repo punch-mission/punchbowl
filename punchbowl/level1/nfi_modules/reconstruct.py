@@ -7,21 +7,47 @@ from solver import sparse_nlmap_solver
 def reconstruct_nfi_straylight(data, errs, amats, good_dat, bin_fac=4, errfac_systematic=0.01, mask_source=False,
 					solver_tol=2.5e-5, sky_reg=1, inst_reg=1, stray_reg=0.001, datanorm=1.0e-10):
 	"""
-	reconstruct_nfi_straylight is the routine that does the actual inversion of the sky and stray light components
-	It has the following inputs:
-	data: The images to invert, dimensions n_img, nx, ny
-	errs: Uncertainties corresponding to the images
-	amats: dictionary containing the forward matrices for the sky, (per-pixel) instrument, and stray light
-			sources. Created by fwdmats.generate_nfi_fwdmats
-	good_dat: Array flagging which data are good to use in the inversion, same shape as data
-	bin_fac: how much to bin down the data for speed (default: 4). fwdmats.generate_nfi_fwdmats
+	This is the routine that does the actual inversion of the sky and stray light components
+	
+	Parameters:
+	-----------
+	data: np.array
+		The images to invert, dimensions n_img, nx, ny
+	errs: 
+		Uncertainties corresponding to the images
+	amats: 
+		dictionary containing the forward matrices for the sky, (per-pixel) instrument, and stray light 
+		sources. 
+		Created by `fwdmats.generate_nfi_forward_matrices`
+	good_dat: 
+		Array flagging which data are good to use in the inversion, same shape as data
+	bin_fac: 
+		how much to bin down the data for speed (default: 4). fwdmats.generate_nfi_fwdmats
 				must be called with the same bin_fac.
-	errfac_systematic: An additional uncertainty of this factor multiplied by the data is added to the errors.
-	solver_tol: Tolerance for the solver, default 2.5e-5
-	sky_reg: Regularization factor for the sky source, larger values are a heavier penalty; default 1
-	inst_reg: Regularization factor for per-pixel instrument source, default 1
-	stray_reg: Regularization factor for the disk stray light functions, default 0.001
-	mask_source: Attempts to mask off source coefficients with no connection to valid data. Not working.
+	errfac_systematic: 
+		An additional uncertainty of this factor multiplied by the data is added to the errors.
+	solver_tol: 
+		Tolerance for the solver, default 2.5e-5
+	sky_reg: 
+		Regularization factor for the sky source, larger values are a heavier penalty; default 1
+	inst_reg: 
+		Regularization factor for per-pixel instrument source, default 1
+	stray_reg: 
+		Regularization factor for the disk stray light functions, default 0.001
+	mask_source: 
+		Attempts to mask off source coefficients with no connection to valid data. Not working.
+
+	Returns:
+	--------
+	soln_sky: np.ndarray
+		Sky model (background stars and f-corona) solution.
+	soln_ins: np.ndarray
+		Instrument based stray light solution.
+	soln_stray: list of np.ndarray
+		Reconstructed stray light model for each frame.
+	data_binned: np.ndarray
+		The input data, after being normalized. -- i.e. numerically equivalent to the original passed `data`, 
+		but returned for post-processing/sanity-check comparison.
 	"""
 	fwdmat = assemble_nfi_fwdmats(amats)
 

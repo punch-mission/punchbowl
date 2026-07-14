@@ -440,6 +440,46 @@ Products:
             OBSCODE: "{craftid}"
             TYPECODE: YR
 
+    ZM?:
+        kinds: [Polarized, PM]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Polarized Image, NFI dyn. stray light removed
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: ZM
+
+    ZZ?:
+        kinds: [Polarized, PZ]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Polarized Image, NFI dyn. stray light removed
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: ZZ
+
+    ZP?:
+        kinds: [Polarized, PP]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Polarized Image, NFI dyn. stray light removed
+            OBSTYPE: Polarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: ZP
+
+    ZR?:
+        kinds: [Unpolarized, CR]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} Clear Image, NFI dyn. stray light removed
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: ZR
+
     QR?:
         kinds: [Unpolarized, CR]
         overrides:

@@ -6,7 +6,9 @@ grid indices to avoid this, which is a bit of a hack...
 TINY = 1.0e-4
 
 import numpy as np
-from nfi_modules.util import multivector_matrix_multiply
+
+from punchbowl.level1.nfi_modules.util import multivector_matrix_multiply
+
 
 class CoordGrid:
     """
@@ -26,7 +28,7 @@ class CoordGrid:
     inv : np.array
         The inverse of the forward transformation matrix
     frame : TrivialFrame
-        Information about the coordinate frame. Not used by the CoordGrid itself, but 
+        Information about the coordinate frame. Not used by the CoordGrid itself, but
             may be used by other routines that want to transform between grids.
 
     Methods
@@ -48,24 +50,24 @@ class CoordGrid:
 
     def __init__(self, dims, origin, forward, frame, inverse=None):
         """
-        Set up the grid. 
+        Set up the grid.
 
         Parameters
         ----------
         dims : np.array
             The dimensions of the source grid, a 1-D array containing [nx0,nx1,...]
-        origin : np.array 
+        origin : np.array
             The location of the center of the [0,0,...] pixel in the grid
         forward :  np.array
-            The information needed to define the forward transformation (i.e., from 
-            indices to coordinates), in addition to the origin. For the affine 
+            The information needed to define the forward transformation (i.e., from
+            indices to coordinates), in addition to the origin. For the affine
             transformation, this is an nd by nd matrix, where nd is the number of dimensions.
-        frame : 
-            Information about the coordinate frame. Not used by the CoordGrid itself, but 
+        frame :
+            Information about the coordinate frame. Not used by the CoordGrid itself, but
             may be used by other routines that want to transform between grids.
-        inverse : optional 
-            The information needed to define the inverse transformation (i.e., from 
-            coordinates to indices). 
+        inverse : optional
+            The information needed to define the inverse transformation (i.e., from
+            coordinates to indices).
             Optional -- For the base (affine) implementation, this is computed from fwd using np.linalg.inv.
         """
         self.dims = dims
@@ -92,7 +94,7 @@ class CoordGrid:
     def subgrid(self,factor=2):
         """
         Get a grid that's clocked to this grid, but is higher resolution by an integer factor.
-        
+
         Parameters
         ----------
         factor: int, default = 2
@@ -114,7 +116,7 @@ class CoordGrid:
         Returns
         -------
         CoordGrid
-            Identity grid (mapped indices to themselves) of grid object 
+            Identity grid (mapped indices to themselves) of grid object
         """
         return CoordGrid(self.dims, 0.0 * self.dims, np.diag(1 + 0.0 * self.dims), np.arange(len(self.dims)))
 
@@ -130,7 +132,7 @@ class CoordGrid:
 
         Parameter
         ---------
-        coords : 
+        coords :
             Coordinates of interest
         Returns
         -------
@@ -166,9 +168,9 @@ class CoordGrid:
 
         Parameters
         ----------
-        vals : 
+        vals :
 
-        coords : 
+        coords :
 
         threshold : int, default = 0
 
@@ -182,6 +184,6 @@ class CoordGrid:
         """
         inds = list(np.round(self.get_indices_from_coordinates(coords)+TINY).T.astype(np.int32))
         keeps = vals>threshold
-        for j in range(len(self.dims)): 
+        for j in range(len(self.dims)):
             keeps *= (inds[j] >= 0)*(inds[j] < self.dims[j])
         return vals[keeps], np.ravel_multi_index(inds,self.dims,mode="clip")[keeps]

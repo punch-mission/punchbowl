@@ -4,13 +4,13 @@ These modules compute and assemble the forward matrices for the stray light prob
 generate_nfi_fwdmats is called in the main correction script before the reconstruction
 (by `reconstruct_nfi_straylight`, which uses the output of `generate_nfi_fwdmats` as input)
 `generate_nfi_fwdmats` has the following inputs:
-datsiz: 
-	the size of the data cube (number of frames, nx, and ny). 
-	
-	The code uses the convention that the initial spatial axis is `x` and the subsequent spatial axis is `y`, 
-	so that, for example, `NAXIS1` of a fits file corresponds to `nx` and `NAXIS2` corresponds to `ny`. 
-	The data arrays returned by the astropy fits routines use the opposite convention (e.g., the initial 
-	axis of the data array corresponds to `NAXIS2`, which is usually `y`, for a 2 axis image) so the data 
+datsiz:
+	the size of the data cube (number of frames, nx, and ny).
+
+	The code uses the convention that the initial spatial axis is `x` and the subsequent spatial axis is `y`,
+	so that, for example, `NAXIS1` of a fits file corresponds to `nx` and `NAXIS2` corresponds to `ny`.
+	The data arrays returned by the astropy fits routines use the opposite convention (e.g., the initial
+	axis of the data array corresponds to `NAXIS2`, which is usually `y`, for a 2 axis image) so the data
 	arrays need to be transposed prior to being input to the reconstruct routine.
 xoffs: The x offsets of each frame in pixels. For a correctly aligned fits file, these should be
 			CRVAL1/CDELT1
@@ -22,17 +22,18 @@ bin_fac: How much to bin down the data for speed (default 4). Needs to be set th
 smooth_rad: If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
 """
 import numpy as np
-from element_functions import bin_function, get_2d_covariance, n_dimensional_gaussian_psf
-from element_grid import DetectorGrid, SourceGrid
-from element_source_responses import element_source_responses as esr
-from indexgrid import CoordGrid
 from scipy.sparse import csc_matrix, csr_matrix, diags
-from straylight_kernels import generate_kernels, kernel_smoothing_matrix
-from transforms import CoordTransform, Trivialframe
+
+from punchbowl.level1.nfi_modules.element_functions import bin_function, get_2d_covariance, n_dimensional_gaussian_psf
+from punchbowl.level1.nfi_modules.element_grid import DetectorGrid, SourceGrid
+from punchbowl.level1.nfi_modules.element_source_responses import element_source_responses as esr
+from punchbowl.level1.nfi_modules.indexgrid import CoordGrid
+from punchbowl.level1.nfi_modules.straylight_kernels import generate_kernels, kernel_smoothing_matrix
+from punchbowl.level1.nfi_modules.transforms import CoordTransform, Trivialframe
 
 
-def generate_nfi_forward_matrices(nframes:int ,data_size: tuple, x_offsets: np.array, y_offsets: np.array, crots: np.array, 
-						 bin_factor: int = 4, smooth_rad: float = 0.05, radial_size: float = 175.4, 
+def generate_nfi_forward_matrices(nframes:int ,data_size: tuple, x_offsets: np.array, y_offsets: np.array, crots: np.array,
+						 bin_factor: int = 4, smooth_rad: float = 0.05, radial_size: float = 175.4,
 						 elon_abs=130, cx=1009, cy=1029, nstray=None):
 	"""
 	Creates the forward matrices used to create the dynamic straylight models in NFI.
@@ -45,23 +46,23 @@ def generate_nfi_forward_matrices(nframes:int ,data_size: tuple, x_offsets: np.a
 	nframes : int
 		number of frames
 	data_size : tuple
-		The size of the data cube (nx, and ny). 
-		
-		The code uses the convention that the initial spatial axis is `x` and the subsequent spatial axis is `y`, 
-		so that, for example, `NAXIS1` of a fits file corresponds to `nx` and `NAXIS2` corresponds to `ny`. 
-		The data arrays returned by the astropy fits routines use the opposite convention (e.g., the initial 
-		axis of the data array corresponds to `NAXIS2`, which is usually `y`, for a 2 axis image) so the data 
+		The size of the data cube (nx, and ny).
+
+		The code uses the convention that the initial spatial axis is `x` and the subsequent spatial axis is `y`,
+		so that, for example, `NAXIS1` of a fits file corresponds to `nx` and `NAXIS2` corresponds to `ny`.
+		The data arrays returned by the astropy fits routines use the opposite convention (e.g., the initial
+		axis of the data array corresponds to `NAXIS2`, which is usually `y`, for a 2 axis image) so the data
 		arrays need to be transposed prior to being input to the reconstruct routine.
 	x_offsets : np.array
-		The x offsets of each frame in pixels. 
+		The x offsets of each frame in pixels.
 		For a correctly aligned fits file, these should be CRVAL1/CDELT1
 	y_offsets : np.array
-		The y offsets of each frame in pixels. 
+		The y offsets of each frame in pixels.
 		For a correctly aligned fits file, these should be CRVAL2/CDELT2
 	crots : np.array
-		The rotation of each frame relative to the fixed sky, about its center. 
+		The rotation of each frame relative to the fixed sky, about its center.
 	bin_factor : int
-		How much to bin down the data for speed (default 4). 
+		How much to bin down the data for speed (default 4).
 		Needs to be set the same in `reconstruct_nfi_straylight`.
 	smooth_rad : float
 		If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
@@ -70,7 +71,7 @@ def generate_nfi_forward_matrices(nframes:int ,data_size: tuple, x_offsets: np.a
 	Returns:
 	--------
 	foward_matrices: dictionary of ndarray objects
-		Dictionary object containing all forward matrices and normalizers(?) of each of the following: the instrument (`inst`), 
+		Dictionary object containing all forward matrices and normalizers(?) of each of the following: the instrument (`inst`),
 		the sky model (`sky`), and the dynamic stray light model (`stray`); as well as image size.
 
 		Where `inst`, `sky`, and `stray` as keywords return the forward matrix for each relevant context, and `norms_inst`,
@@ -108,8 +109,8 @@ def generate_nfi_forward_matrices(nframes:int ,data_size: tuple, x_offsets: np.a
 
 	kernels = kernels.reshape([nstray,im_size*im_size])
 	#Note: csr-matrix = "compressed sparse row matrix"
-	stray_forward_mat = csr_matrix(kernels.T) 
-	if(smooth_rad > 0):      
+	stray_forward_mat = csr_matrix(kernels.T)
+	if(smooth_rad > 0):
 		#Note: csc-matrix = "compressed sparse column matrix"
 		stray_forward_mat = stray_forward_mat*csc_matrix(kernel_smoothing_matrix(kernel_angles/2/np.pi, smooth_rad=smooth_rad))
 
@@ -141,16 +142,16 @@ def assemble_nfi_fwdmats(amats):
 	Parameters:
 	-----------
 	amats: dict
-		dictionary containing the forward matrices for the sky, (per-pixel) instrument, and stray light 
-		sources. 
+		dictionary containing the forward matrices for the sky, (per-pixel) instrument, and stray light
+		sources.
 		Created by `fwdmats.generate_nfi_forward_matrices`
 	Returns:
 	--------
 	amat_out: scipy.sparse.csc_matrix
 		The single sparse design matrix made with totaled values from the per-component system matrices as appropriate.
 
-		The final object is a compressed sparse column matrix object with shape `(n_data_points, n_source)`, where `n_data_points` the number of 
-		forward matrices of the `sky` component of `amats` (i.e. number of frames) multiplied by the number of detector pixels 
+		The final object is a compressed sparse column matrix object with shape `(n_data_points, n_source)`, where `n_data_points` the number of
+		forward matrices of the `sky` component of `amats` (i.e. number of frames) multiplied by the number of detector pixels
 		per frame; and `n_source` is the total number of parameters from the sky model, instrument, and stray light model.
 	"""
 	#TODO: (JK) not totally confident about this docstring explanation.
@@ -167,15 +168,15 @@ def assemble_nfi_fwdmats(amats):
 	amat_out = csc_matrix(([],[],np.zeros(n_source+1)), shape=(n_data_points,n_source))
 
 	for i in range(n_frames):
-		if(n_frames == 1): 
+		if(n_frames == 1):
 			amat_out += csc_resize(amats["inst"], n_data_points, n_source, i*n_pixels, 0)
-		else: 
+		else:
 			amat_out += csc_resize(amats["sky"][i], n_data_points, n_source, i*n_pixels, 0)
 
 	for i in range(n_frames):
-		if(n_frames > 1): 
+		if(n_frames > 1):
 			amat_out += csc_resize(amats["inst"], n_data_points, n_source, i*n_pixels, n_sky)
-			
+
 	for i in range(n_frames):
 		amat_out += csc_resize(amats["stray"].T, n_source, n_data_points, n_sky+n_inst+i*im_size, i*n_pixels).T
 
@@ -198,7 +199,7 @@ def get_rotmat_2d(theta):
 	"""
 	rotmat = np.array([[np.cos(theta),-np.sin(theta)],
 					 [np.sin(theta),np.cos(theta)]])
-	return rotmat 
+	return rotmat
 
 def get_sky_source(dimensions:np.array, crota:float=0.0, center:np.array=np.array([0,0]), src_subgrid_fac=2):
 	"""
@@ -222,7 +223,7 @@ def get_sky_source(dimensions:np.array, crota:float=0.0, center:np.array=np.arra
 	-------
 	SourceGrid
 		Source grid for sky model
-		
+
 	"""
 	forward_transform = get_rotmat_2d(crota)
 	src_frame = Trivialframe(["x", "y"]) # saves the coordinate names?
@@ -279,7 +280,7 @@ def csc_resize(csc, row_size, column_size, row_offset, column_offset):
 	Returns:
 	--------
 	scipy.sparse.csc_matrix
-		A new sparse matrix of shape `(row_size, column_size)` containing `csc` as a submatrix at position 
+		A new sparse matrix of shape `(row_size, column_size)` containing `csc` as a submatrix at position
 		`(row_offset,column_offset)`, with all other entries equal to zero.
 
 	Notes:
@@ -300,5 +301,5 @@ def csc_resize(csc, row_size, column_size, row_offset, column_offset):
 	if n_extra > 0:
 		column_indices = np.hstack([column_indices,csc.indptr[-1]*np.ones(n_extra,dtype=np.int64)])
 	print(row_size, column_size, row_offset, column_offset, n_extra, csc.shape, column_indices.shape)
-	
+
 	return csc_matrix((csc.data, row_indices, column_indices), shape=(row_size,column_size))

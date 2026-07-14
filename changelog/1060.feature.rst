@@ -1,0 +1,2 @@
+In L2 mosaic assembly, polarized inputs are now co-aligned before the polarization is converted to solar MZP, to
+account for small pointing drift through the imaging sequence.

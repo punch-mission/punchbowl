@@ -15,12 +15,19 @@ from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
-from punchbowl.level1.flow import level1_early_core_flow, level1_late_core_flow, level1_middle_core_flow
+from punchbowl.level1.flow import (
+    level1_early_core_flow,
+    level1_late_core_flow,
+    level1_middle_core_flow,
+    level1_nfi_core_flow,
+)
 from punchbowl.prefect import get_logger
 
 SCIENCE_LEVEL0_TYPE_CODES = ["PM", "PZ", "PP", "CR"]
 SCIENCE_LEVEL1_MIDDLE_INPUT_TYPE_CODES = ["XM", "XZ", "XP"]
 SCIENCE_LEVEL1_MIDDLE_OUTPUT_TYPE_CODES = ["YM", "YZ", "YP"]
+SCIENCE_LEVEL1_NFI_DSL_INPUT_TYPE_CODES = ["XR"]
+SCIENCE_LEVEL1_NFI_DSL_OUTPUT_TYPE_CODES = ["ZR"]
 SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES = ["YM", "YZ", "YP", "XR"]
 SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES_NFI = ["XM", "XZ", "XP", "XR"]
 SCIENCE_LEVEL1_LATE_OUTPUT_TYPE_CODES = ["PM", "PZ", "PP", "CR"]
@@ -861,6 +868,97 @@ def level1_late_call_data_processor(call_data: dict, pipeline_config, session=No
 def level1_late_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id, level1_late_core_flow, pipeline_config_path, session=session,
                                call_data_processor=level1_late_call_data_processor)
+
+@task(cache_policy=NO_CACHE)
+def level1_nfi_dsl_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+    logger = get_logger()
+    child = aliased(File)
+    child_exists_subquery = (session.query(FileRelationship)
+                             .join(child, FileRelationship.child == child.file_id)
+                             .filter(FileRelationship.parent == File.file_id)
+                             .filter(child.file_type.in_(SCIENCE_LEVEL1_NFI_DSL_OUTPUT_TYPE_CODES))
+                             .exists())
+    ready = (session.query(File)
+             .filter(File.file_type.in_(SCIENCE_LEVEL1_NFI_DSL_INPUT_TYPE_CODES))
+             .filter(File.level == "1")
+             .filter(File.state.in_(["created", "progressed"]))
+             .filter(File.observatory == '4')
+             .filter(~child_exists_subquery))
+
+    target_date = pipeline_config.get("target_date")
+    target_date = parse_datetime_str(target_date) if target_date else None
+    dt = func.abs(func.timestampdiff(text("second"), File.date_obs, target_date)) if target_date else None
+    if target_date:
+        ready = ready.order_by(dt.asc())
+    else:
+        ready = ready.order_by(File.date_obs.desc())
+    ready = ready.limit(max_n).all()
+
+    return [[f] for f in ready]
+
+
+def level1_nfi_dsl_construct_flow_info(input_files: list[File], output_files: list[File],
+                                    pipeline_config: dict, session=None, reference_time=None):
+    flow_type = "level1_nfi_dsl"
+    state = "planned"
+    creation_time = datetime.now()
+    priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+
+    call_data = json.dumps(
+        {
+            "input_data": [input_file.filename() for input_file in input_files],
+        },
+    )
+    return Flow(
+        flow_type=flow_type,
+        flow_level="1",
+        state=state,
+        creation_time=creation_time,
+        priority=priority,
+        call_data=call_data,
+    )
+
+
+def level1_nfi_dsl_construct_file_info(input_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+    return [
+        File(
+            level="1",
+            file_type="Z" + input_files[0].file_type[1:],
+            observatory=input_files[0].observatory,
+            file_version=pipeline_config["file_version"],
+            software_version=__version__,
+            date_obs=input_files[0].date_obs,
+            polarization=input_files[0].polarization,
+            outlier=input_files[0].outlier,
+            bad_packets=input_files[0].bad_packets,
+            state="planned",
+            crota=input_files[0].crota,
+        ),
+    ]
+
+
+@flow
+def level1_nfi_dsl_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+    generic_scheduler_flow_logic(
+        level1_nfi_dsl_query_ready_files,
+        level1_nfi_dsl_construct_file_info,
+        level1_nfi_dsl_construct_flow_info,
+        pipeline_config_path,
+        reference_time=reference_time,
+        session=session,
+    )
+
+
+def level1_nfi_dsl_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
+    for key in ["input_data"]:
+        call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
+    return call_data
+
+
+@flow
+def level1_nfi_dsl_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
+    generic_process_flow_logic(flow_id, level1_nfi_core_flow, pipeline_config_path, session=session,
+                               call_data_processor=level1_nfi_dsl_call_data_processor)
 
 
 @task(cache_policy=NO_CACHE)

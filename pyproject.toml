@@ -6,34 +6,26 @@ build-backend = "setuptools.build_meta"
 name = "punchbowl"
 dynamic = ["version"]
 dependencies = [
-    "fastapi==0.136.0",
-    "numpy",
     "astropy",
-    "sunpy[all]",
-    "pandas",
-    "ndcube",
-    "matplotlib<=3.10.9",
-    "ccsdspy",
-    "prefect[dask]",
-    "regularizepsf",
-    "solpolpy",
-    "scipy",
+    "fastapi==0.136.0",
+    "jupyter>=1.1.1",
     "lmfit",
-    "setuptools",
-    "reproject>=0.20.0",
-    "pylibjpeg",
+    "matplotlib<=3.11.0",
+    "ndcube",
+    "numpy",
+    "pandas",
+    "photutils",
+    "plotly",
     "python-dateutil",
-    "remove_starfield>=0.1",
-    "pylibjpeg[openjpeg]",
+    "regularizepsf",
     "requests",
-    "threadpoolctl",
-    "numexpr",
-    "glymur",
-    "scikit-learn",
-    "astrometry",
-    "numba",
+    "scipy",
+    "solpolpy",
+    "sunpy[all]",
+    "sunkit-image",
 ]
-requires-python = ">=3.11"
+
+requires-python = ">=3.11,<3.15"
 authors = [
     { name = "J. Marcus Hughes", email = "marcus.hughes@swri.org" },
     { name = "Samuel J. Van Kooten", email = "samuel.vankooten@swri.org" },
@@ -62,6 +54,54 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+super_user = [
+    "astrometry",
+    "click",
+    "glymur",
+    "h5py",
+    "lxml",
+    "networkx",
+    "numba",
+    "numexpr",
+    "pre-commit",
+    "prefect[dask]",
+    "pylibjpeg[libjpeg,openjpeg]",
+    "remove_starfield>=0.1",
+    "reproject>=0.20.0",
+    "scikit-image",
+    "scikit-learn",
+    "sep",
+    "setuptools",
+    "threadpoolctl",
+    "toml",
+    "tqdm",
+]
+
+all = ["punchbowl[super_user]"]
+
+[dependency-groups]
+pipe = [
+    "ccsdspy",
+    "simpunch",
+    "prefect[sqlalchemy]",
+    "pymysql",
+    "pandas",
+    "xlrd",
+    "pydantic",
+    "sqlalchemy",
+    "dash >= 4",
+    "dash-bootstrap-components",
+    "dash_bootstrap_templates",
+    "coolname",
+    "numpy",
+    "plotly",
+    "pyyaml",
+    "click",
+    "psutil",
+    "gunicorn",
+    "numpy-quaternion"
+]
+
 test = [
     "pytest",
     "pytest-order",
@@ -118,30 +158,19 @@ docs_pipe = [
     "sphinx-automodapi"
 ]
 
-pipe = ["ccsdspy",
-    "punchbowl",
-    "simpunch",
-    "prefect[sqlalchemy]",
-    "pymysql",
-    "pandas",
-    "xlrd",
-    "pydantic",
-    "sqlalchemy",
-    "dash >= 4",
-    "dash-bootstrap-components",
-    "dash_bootstrap_templates",
-    "coolname",
-    "numpy",
-    "plotly",
-    "pyyaml",
-    "click",
-    "pylibjpeg[libjpeg]",
-    "psutil",
-    "gunicorn",
-    "numpy-quaternion"
+dev = [
+    {include-group = "pipe"},
+    {include-group = "test"},
+    {include-group = "test_pipe"},
+    {include-group = "docs"},
+    {include-group = "docs_pipe"}
 ]
 
-dev = ["punchbowl[docs,test,pipe,docs_pipe,test_pipe]"]
+[tool.uv.sources]
+regularizepsf = { path = "../regularizepsf", editable = true }
+solpolpy = { path = "../solpolpy", editable = true }
+simpunch = { path = "../simpunch", editable = true }
+
 
 [project.scripts]
 punchbowl = "punchbowl.cli:main"

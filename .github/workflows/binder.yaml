@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v6.0.3
+    - uses: actions/checkout@v7.0.0
     - uses: FedericoCarboni/setup-ffmpeg@v3
       id: setup-ffmpeg
       with:
@@ -37,7 +37,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ".[docs]"
+        pip install ".[all]" --group dev
 
     # Build the book
     - name: Sphinx build
@@ -53,7 +53,7 @@ jobs:
         cp docs/binder/runtime.txt .
         cp docs/auto_examples/*.ipynb notebooks/auto_examples/
     # Push the rendered notebooks to branch
-    - uses: stefanzweifel/git-auto-commit-action@v7.1.0
+    - uses: stefanzweifel/git-auto-commit-action@v7.2.0
       with:
         branch: binder
         create_branch: true

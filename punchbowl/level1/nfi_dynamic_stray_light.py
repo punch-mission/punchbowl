@@ -5,6 +5,7 @@ from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.nfi_modules.fwdmats import generate_nfi_forward_matrices
 from punchbowl.level1.nfi_modules.reconstruct import reconstruct_nfi_straylight
 from punchbowl.level1.nfi_modules.util import bindown
+from punchbowl.util import limit_threads
 
 
 def get_bin_down_crval(crval,cdelt,bin_factor:int):
@@ -144,7 +145,8 @@ def remove_nfi_stray_light(datacube: PUNCHCube,
                            solver_tol=1.0e-5,
                            sky_reg=0.1,
                            inst_reg=0.1,
-                           stray_reg=1.0e-10):
+                           stray_reg=1.0e-10,
+                           thread_count: int = 5):
     """
     Remove the dynamic NFI stray light from a given PUNCHCube image.
     """
@@ -162,7 +164,8 @@ def remove_nfi_stray_light(datacube: PUNCHCube,
                                  np.array([x_offsets]),
                                  np.array([y_offsets]),
                                  np.array([crota_radians]),
-                                 bin_factor=bin_factor,smooth_rad=fwd_mat_smooth_rad)
+                                 bin_factor=bin_factor,smooth_rad=fwd_mat_smooth_rad,
+                                 thread_count=thread_count)
 
     # Mask out glint spheres
     #TODO: Make mask optional
@@ -171,12 +174,13 @@ def remove_nfi_stray_light(datacube: PUNCHCube,
     # Stray light model
     solver_data, solver_err, good_data_flags = get_solver_inputs(datacube, glint_mask,
                                                                  bindown_shape=bindown_shape)
-    soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(solver_data, solver_err, forward_matrices,
-                                                                          good_data_flags,
-                                                                          solver_tol=solver_tol,
-                                                                          sky_reg=sky_reg,
-                                                                          inst_reg=inst_reg,
-                                                                          stray_reg=stray_reg)
+    with limit_threads(thread_count):
+        soln_sky, soln_ins, soln_stray, soln_dat = reconstruct_nfi_straylight(solver_data, solver_err, forward_matrices,
+                                                                              good_data_flags,
+                                                                              solver_tol=solver_tol,
+                                                                              sky_reg=sky_reg,
+                                                                              inst_reg=inst_reg,
+                                                                              stray_reg=stray_reg)
 
 
     # Upsample back up to 2k

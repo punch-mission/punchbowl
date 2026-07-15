@@ -34,7 +34,7 @@ from punchbowl.level1.nfi_modules.transforms import CoordTransform, Trivialframe
 
 def generate_nfi_forward_matrices(nframes:int ,data_size: tuple, x_offsets: np.array, y_offsets: np.array, crots: np.array,
 						 bin_factor: int = 4, smooth_rad: float = 0.05, radial_size: float = 175.4,
-						 elon_abs=130, cx=1009, cy=1029, nstray=None):
+						 elon_abs=130, cx=1009, cy=1029, nstray=None, thread_count: int = 5):
 	"""
 	Creates the forward matrices used to create the dynamic straylight models in NFI.
 
@@ -103,7 +103,8 @@ def generate_nfi_forward_matrices(nframes:int ,data_size: tuple, x_offsets: np.a
 						  elon_abs=elon_abs,
 						  image_size=im_size,
 						  cx=cx/bin_factor,
-						  cy=cy/bin_factor)
+						  cy=cy/bin_factor,
+						  n_threads=thread_count)
 	for i in range(len(kernels)):
 		kernels[i] = kernels[i].T
 

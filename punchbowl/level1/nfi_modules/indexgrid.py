@@ -3,6 +3,7 @@ There is an issue with rounding and floating point jitter for aligned grids that
 share some ratios in their spacing. We add this small offset when discretizing
 grid indices to avoid this, which is a bit of a hack...
 """
+
 TINY = 1.0e-4
 
 import numpy as np
@@ -78,7 +79,6 @@ class CoordGrid:
         if self.inv is None:
             self.inv = self.get_grid_inverse()
 
-
     def get_grid_inverse(self):
         """
         Routine to set up the parameters of the grid inverse (from coordinates to indices)
@@ -91,7 +91,7 @@ class CoordGrid:
         """
         return np.linalg.inv(self.fwd)
 
-    def subgrid(self,factor=2):
+    def subgrid(self, factor=2):
         """
         Get a grid that's clocked to this grid, but is higher resolution by an integer factor.
 
@@ -105,8 +105,12 @@ class CoordGrid:
         CoordGrid
             Grid with new resolution, scaled by passed factor value
         """
-        return CoordGrid(self.dims * factor, self.get_coordinates_from_indices(0.5 / factor - 0.5 + 0.0 * self.dims), self.fwd / factor, self.frame)
-
+        return CoordGrid(
+            self.dims * factor,
+            self.get_coordinates_from_indices(0.5 / factor - 0.5 + 0.0 * self.dims),
+            self.fwd / factor,
+            self.frame,
+        )
 
     def identity(self):
         """
@@ -120,8 +124,7 @@ class CoordGrid:
         """
         return CoordGrid(self.dims, 0.0 * self.dims, np.diag(1 + 0.0 * self.dims), np.arange(len(self.dims)))
 
-
-    def get_indices_from_coordinates(self,coords):
+    def get_indices_from_coordinates(self, coords):
         """
         Returns indices given a set of coordinates. Does no discretize for various reasons.
         Order is reversed, and the inv operator transposed, due to how numpy array broadcasting
@@ -139,10 +142,9 @@ class CoordGrid:
         np.array
             Indices of given coordinates.
         """
-        return multivector_matrix_multiply(self.inv,coords-self.origin)
+        return multivector_matrix_multiply(self.inv, coords - self.origin)
 
-
-    def get_coordinates_from_indices(self,inds):
+    def get_coordinates_from_indices(self, inds):
         """
         Returns coordinates given a set of indices. Coordinates returned for an integer index
         are for the center of the grid element, not its corner.
@@ -157,10 +159,9 @@ class CoordGrid:
         np.array
             The coordinates of the associated indices (with respect to the origin).
         """
-        return multivector_matrix_multiply(self.fwd, inds)+self.origin
+        return multivector_matrix_multiply(self.fwd, inds) + self.origin
 
-
-    def get_flattened_indices(self,vals,coords,threshold=0):
+    def get_flattened_indices(self, vals, coords, threshold=0):
         """
         Returns the 'flattened' indices given a set of coordinates. Does discretize (because it has to).
         Also discards out-of-bounds points. Because of this, there's an accompanying vals array that can
@@ -182,8 +183,8 @@ class CoordGrid:
         vals : np.ndarray
             The values of each of those responses. Same dimensions as `elms`.
         """
-        inds = list(np.round(self.get_indices_from_coordinates(coords)+TINY).T.astype(np.int32))
-        keeps = vals>threshold
+        inds = list(np.round(self.get_indices_from_coordinates(coords) + TINY).T.astype(np.int32))
+        keeps = vals > threshold
         for j in range(len(self.dims)):
-            keeps *= (inds[j] >= 0)*(inds[j] < self.dims[j])
-        return vals[keeps], np.ravel_multi_index(inds,self.dims,mode="clip")[keeps]
+            keeps *= (inds[j] >= 0) * (inds[j] < self.dims[j])
+        return vals[keeps], np.ravel_multi_index(inds, self.dims, mode="clip")[keeps]

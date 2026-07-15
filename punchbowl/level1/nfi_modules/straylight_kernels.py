@@ -1,13 +1,13 @@
 from typing import Callable
-
-import numpy as np
-import scipy.ndimage
 from itertools import repeat
 from concurrent.futures import ThreadPoolExecutor
 
 import numba
+import numpy as np
+import scipy.ndimage
 
-def kernel_smoothing_matrix(angles_rev, smooth_rad = 0.1):
+
+def kernel_smoothing_matrix(angles_rev, smooth_rad=0.1):
     """
     Build smoothing matrix for kernel.
 
@@ -15,11 +15,11 @@ def kernel_smoothing_matrix(angles_rev, smooth_rad = 0.1):
     -----------
     angles_rev: array_like
         1D array of angle values (in radians) at which the data is sampled.
-        Must be uniformly spaced; only the spacing between the first two elements (`angles_rev[1]-angles_rev[0]`) 
+        Must be uniformly spaced; only the spacing between the first two elements (`angles_rev[1]-angles_rev[0]`)
         is used to determine the grid resolution.
 
     smooth_rad: float, optional, default = 0.1
-        Half-width of the smoothing kernel, in radians. 
+        Half-width of the smoothing kernel, in radians.
         Determines how many neighboring grid points contribute to the smoothed value.
 
     Returns:
@@ -27,33 +27,46 @@ def kernel_smoothing_matrix(angles_rev, smooth_rad = 0.1):
     output: np.ndarray
         Circulant smoothing matrix
     """
-    n_angles = len(angles_rev) #[int]
-    angle_diff = angles_rev[1]-angles_rev[0] #[num]
-    output_matrix = np.zeros([n_angles, n_angles]) #[array]
-    n_radius_steps = np.floor(smooth_rad/angle_diff).astype(np.int32) #[int]
-    na = 2*n_radius_steps+1 # kernel width? #[int]
-    smoothing_kernel_angles = angle_diff*(np.arange(na)-n_radius_steps)/smooth_rad # [array]
+    n_angles = len(angles_rev)  # [int]
+    angle_diff = angles_rev[1] - angles_rev[0]  # [num]
+    output_matrix = np.zeros([n_angles, n_angles])  # [array]
+    n_radius_steps = np.floor(smooth_rad / angle_diff).astype(np.int32)  # [int]
+    na = 2 * n_radius_steps + 1  # kernel width? #[int]
+    smoothing_kernel_angles = angle_diff * (np.arange(na) - n_radius_steps) / smooth_rad  # [array]
 
-    #Create array pf smoothing kernel
-    smoothing_kernel = np.zeros(n_angles) #[1D array]
-    smoothing_kernel[0:na] = np.cos(0.5*np.pi*smoothing_kernel_angles)
+    # Create array pf smoothing kernel
+    smoothing_kernel = np.zeros(n_angles)  # [1D array]
+    smoothing_kernel[0:na] = np.cos(0.5 * np.pi * smoothing_kernel_angles)
 
-    #Build circulant smoothing matrix
+    # Build circulant smoothing matrix
     for i in range(n_angles):
-        output_matrix[i] = np.roll(smoothing_kernel,i-n_radius_steps)
+        output_matrix[i] = np.roll(smoothing_kernel, i - n_radius_steps)
 
     return output_matrix
 
-def generate_kernel(theta: float, radial_size: float = 660, aspect_ratio: float = 1, right_intensity: float = 1,
-                    bottom_intensity: float = 1, elon_abs: float | None = None, elon_offset: float = 0,
-                    blur: float = 0, image_size: int = 2048, oversamp: int = 3, cx: float | None = None,
-                    cy: float | None = None, r_profile: Callable = None, dtype: str = "float32"):
+
+def generate_kernel(
+    theta: float,
+    radial_size: float = 660,
+    aspect_ratio: float = 1,
+    right_intensity: float = 1,
+    bottom_intensity: float = 1,
+    elon_abs: float | None = None,
+    elon_offset: float = 0,
+    blur: float = 0,
+    image_size: int = 2048,
+    oversamp: int = 3,
+    cx: float | None = None,
+    cy: float | None = None,
+    r_profile: Callable = None,
+    dtype: str = "float32",
+):
     """
     Generate an image of a kernel at a specific position.
 
     This single kernel is meant to be the out-of-focus image of a single point on the occulter ring. A bunch of
     options are provided for adjusting how that kernel looks.
-    
+
     Parameters
     ----------
     theta : float
@@ -125,7 +138,7 @@ def generate_kernel(theta: float, radial_size: float = 660, aspect_ratio: float 
     if oversamp == 1:
         coords = np.arange(0, image_size, dtype=float)
     elif oversamp % 2 == 1:
-        coords = np.linspace(-1/oversamp, image_size - 1/oversamp, image_size * oversamp, endpoint=False)
+        coords = np.linspace(-1 / oversamp, image_size - 1 / oversamp, image_size * oversamp, endpoint=False)
     else:
         raise ValueError("Oversamp must be odd")
 
@@ -153,17 +166,17 @@ def generate_kernel(theta: float, radial_size: float = 660, aspect_ratio: float 
     cols = np.any(kernel, axis=0)
     rmin, rmax = np.where(rows)[0][[0, -1]]
     cmin, cmax = np.where(cols)[0][[0, -1]]
-    s = np.s_[rmin:rmax+1, cmin:cmax+1]
+    s = np.s_[rmin : rmax + 1, cmin : cmax + 1]
     kernel = kernel.astype(float)
 
     # Impose linear gradients
     if right_intensity != 1:
         slope_x = (1 - right_intensity) / azimuthal_diameter
-        kernel[s] *= (1 - slope_x * (angled_x[s] + azimuthal_diameter))
+        kernel[s] *= 1 - slope_x * (angled_x[s] + azimuthal_diameter)
 
     if bottom_intensity != 1:
         slope_y = (1 - bottom_intensity) / radial_size
-        kernel[s] *= (1 - slope_y * (angled_y[s] + radial_size))
+        kernel[s] *= 1 - slope_y * (angled_y[s] + radial_size)
 
     # Impose an arbitrary gradient
     if r_profile is not None:
@@ -186,9 +199,9 @@ def _generate_kernel_caller(theta, args, kwargs):
 def generate_kernels(kernel_angles, *args, n_threads=5, **kwargs):
     """
     Generate a full set of kernels in parallel.
-    
+
     All arguments are passed through to `generate_kernel`.
-    
+
     Parameters
     ----------
     kernel_angles : list | np.ndarray
@@ -211,15 +224,16 @@ def generate_kernels(kernel_angles, *args, n_threads=5, **kwargs):
 
 
 @numba.njit(parallel=True)
-def make_model(kernels: np.ndarray, intensity: np.ndarray, rmin: int = 0, rmax: int = -1, cmin: int = 0,
-               cmax: int = -1):
+def make_model(
+    kernels: np.ndarray, intensity: np.ndarray, rmin: int = 0, rmax: int = -1, cmin: int = 0, cmax: int = -1
+):
     """
     Make a forward model, given a set of kernels and an intensity for each one.
-    
+
     This is multiplying each kernel by its intensity and summing, but it's done in numba and in parallel for speed.
     Also for speed, if the kernels don't reach to the edge of the image, a bounding box can be set to sum within,
     and areas outside the box are not summed.
-    
+
     Parameters
     ----------
     kernels : np.ndarray

@@ -31,7 +31,7 @@ class CoordTransform:
 
     """
 
-    def __init__(self,coords_in,coords_out):
+    def __init__(self, coords_in, coords_out):
         """
         Create object.
 
@@ -40,7 +40,7 @@ class CoordTransform:
         `init_transform()` method. Similarly, the transform itself is taken to be
         an affine transform, but this can be changed by overriding the transform method.
         """
-        [self.coords_in,self.coords_out] = [coords_in, coords_out]
+        [self.coords_in, self.coords_out] = [coords_in, coords_out]
         self.init_transform()
 
     def init_transform(self):
@@ -49,11 +49,11 @@ class CoordTransform:
 
         Constructs `self.fwd` as matrix (shape defined by the number of frame names i.e. `len(self.coords_XX.frame.names)`).
         """
-        [ndin,ndout] = [len(self.coords_in.frame.names), len(self.coords_out.frame.names)]
-        [self.origin,self.fwd] = [np.zeros(ndin), np.zeros([ndout,ndin])]
+        [ndin, ndout] = [len(self.coords_in.frame.names), len(self.coords_out.frame.names)]
+        [self.origin, self.fwd] = [np.zeros(ndin), np.zeros([ndout, ndin])]
         for i in range(ndout):
             for j in range(ndin):
-                self.fwd[i,j] = self.coords_out.frame.names[i] == self.coords_in.frame.names[j]
+                self.fwd[i, j] = self.coords_out.frame.names[i] == self.coords_in.frame.names[j]
 
     def transform(self, coords):
         """
@@ -67,7 +67,7 @@ class CoordTransform:
         ------
         As currently written will only work on one coordinate point at at time...
         """
-        return multivector_matrix_multiply(self.fwd,coords)+self.origin
+        return multivector_matrix_multiply(self.fwd, coords) + self.origin
 
 
 class Trivialframe:
@@ -77,5 +77,5 @@ class Trivialframe:
     Only contents are a set of names for the coordinates.
     """
 
-    def __init__(self, names): # noqa: D107
-        self.names=names
+    def __init__(self, names):  # noqa: D107
+        self.names = names

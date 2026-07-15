@@ -4,6 +4,7 @@ from punchbowl.level1.nfi_modules.util import forward_rolling_transpose, roll_tr
 
 TINY = 1.0e-4
 
+
 class ElementGrid:
     """
     This ElementGrid class builds on CoordGrid to specify a grid of basis or detector
@@ -75,13 +76,9 @@ class ElementGrid:
     number over 1.
     """
 
-    def __init__(self,
-                 grid,
-                 params, function_evaluator,
-                 footprint=None,
-                 stencil_threshold=5.0e-4,
-                 nsubgrid=3,
-                 threshold=0.005):
+    def __init__(
+        self, grid, params, function_evaluator, footprint=None, stencil_threshold=5.0e-4, nsubgrid=3, threshold=0.005
+    ):
         """
         Set up the elements.
 
@@ -121,24 +118,29 @@ class ElementGrid:
         self.function_evaluator = function_evaluator
 
         self.n_elements = np.prod(grid.dims)
-        self.n_subgrid =  np.broadcast_to(nsubgrid,grid.dims.shape)
+        self.n_subgrid = np.broadcast_to(nsubgrid, grid.dims.shape)
 
         self.subgrid = grid.subgrid(factor=self.n_subgrid)
         self.eval_grid = self.get_eval_grid()
 
         # Generate the stencil:
-        if(footprint is None):
-            footprint_offset = np.ceil(10*self.n_subgrid/2).astype(np.int32)
+        if footprint is None:
+            footprint_offset = np.ceil(10 * self.n_subgrid / 2).astype(np.int32)
         else:
-            footprint_offset = np.ceil((footprint/self.n_subgrid-self.n_subgrid)/2).astype(np.int32)
+            footprint_offset = np.ceil((footprint / self.n_subgrid - self.n_subgrid) / 2).astype(np.int32)
 
-        self.stencil = (roll_transpose_from_numpy_indices(self.n_subgrid+2*footprint_offset) - footprint_offset - 0.5*(nsubgrid-1.0))
+        self.stencil = (
+            roll_transpose_from_numpy_indices(self.n_subgrid + 2 * footprint_offset)
+            - footprint_offset
+            - 0.5 * (nsubgrid - 1.0)
+        )
         vals = self.evaluate_basis_at_point(self.coords.origin)[0].flatten()
-        self.stencil = np.vstack([x.flatten()[vals >= stencil_threshold] for x in list(forward_rolling_transpose(self.stencil))]).T
+        self.stencil = np.vstack(
+            [x.flatten()[vals >= stencil_threshold] for x in list(forward_rolling_transpose(self.stencil))]
+        ).T
 
         # Set the number of addresses:
         self.n_addresses = self.get_n_addresses()
-
 
     def get_eval_grid(self):
         """
@@ -187,17 +189,22 @@ class ElementGrid:
 
         # Find the stencil evaluation indices (which are registered to the subgrid)
         # in the vicinity of this point.
-        subinds = np.round(self.stencil+subpt+TINY)
+        subinds = np.round(self.stencil + subpt + TINY)
 
         # Get the coordinates of these evaluation indices in the evaluation coordinate frame
         # and the subgrid coordinates:
-        [eval_coords, output_coords] = [self.eval_grid.get_coordinates_from_indices(subinds), self.subgrid.get_coordinates_from_indices(subinds)]
+        [eval_coords, output_coords] = [
+            self.eval_grid.get_coordinates_from_indices(subinds),
+            self.subgrid.get_coordinates_from_indices(subinds),
+        ]
 
         # Compute the response of these evaluation points to the input point, and their
         # coordinates:
-        return self.function_evaluator(self.eval_grid.get_coordinates_from_indices(subpt), eval_coords, self.params), output_coords
+        return self.function_evaluator(
+            self.eval_grid.get_coordinates_from_indices(subpt), eval_coords, self.params
+        ), output_coords
 
-    def get_element_properties_at_point(self,index):
+    def get_element_properties_at_point(self, index):
         """
         Returns the properties of the element(s) at `index`.
 
@@ -222,12 +229,14 @@ class ElementGrid:
             but they don't have to be. Dimensions are npts.
         """
         # Map the address to a coordinate and run the element_grid's evaluator:
-        [vals,coords] = self.evaluate_basis_at_point(self.coords.get_coordinates_from_indices(np.array(np.unravel_index(index,self.coords.dims))))
+        [vals, coords] = self.evaluate_basis_at_point(
+            self.coords.get_coordinates_from_indices(np.array(np.unravel_index(index, self.coords.dims)))
+        )
         # Return the result, element index is same as input address:
-        return index+0*vals.astype(np.int32), vals, coords
+        return index + 0 * vals.astype(np.int32), vals, coords
 
     # Run the evaluator for the given point and compute the output value and indices to flatinds:
-    def response(self,point):
+    def response(self, point):
         """
         Returns the response of the elements to a delta function source at a given
         point in the ElementGrid's coordinate frame.
@@ -247,9 +256,9 @@ class ElementGrid:
         """
         return self.coords.get_flattened_indices(*self.evaluate_basis_at_point(point), threshold=self.threshold)
 
+
 class DetectorGrid(ElementGrid):
     """The detector grid is a straight implementation of the base class: ElementGrid"""
-
 
 
 class SourceGrid(ElementGrid):

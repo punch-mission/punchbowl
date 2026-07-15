@@ -17,7 +17,7 @@ def reconstruct_nfi_straylight(
     sky_reg=1,
     inst_reg=1,
     stray_reg=0.001,
-    datanorm=1.0e-10,
+    datanorm=1e-10,
 ):
     """
     This is the routine that does the actual inversion of the sky and stray light components

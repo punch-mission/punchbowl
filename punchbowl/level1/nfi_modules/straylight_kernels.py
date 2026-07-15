@@ -58,7 +58,7 @@ def generate_kernel(
     oversamp: int = 3,
     cx: float | None = None,
     cy: float | None = None,
-    r_profile: Callable = None,
+    r_profile: Callable | None = None,
     dtype: str = "float32",
 ):
     """
@@ -252,7 +252,7 @@ def make_model(
     Returns
     -------
     image : np.ndarray
-        The forwared-modeled image.
+        The forward-modeled image.
     """
     #
     if rmax < 0:

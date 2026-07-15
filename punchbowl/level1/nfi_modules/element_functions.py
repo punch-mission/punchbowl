@@ -16,7 +16,7 @@ def spike_function(ptcoords, coordarr, params):
     Rectilinear spike function. Can be 1-D or multidimensional. Should work well for a
     linear (or bilinear for 2D, etc) interpolating basis function. Note: Test this...
     """
-    return np.prod(np.clip(1.0 - np.abs(ptcoords - coordarr).T, 0, 1), axis=0)
+    return np.prod(np.clip(1 - np.abs(ptcoords - coordarr).T, 0, 1), axis=0)
 
 
 def get_3d_covariance(sigmas, angles):  # Get covariance for 3D Mahalanobis distance:
@@ -103,7 +103,7 @@ def nd_voigt_psf(pt, coords, inputs):
     g = inputs[1] * (np.log(2)) ** 0.5
     e = inputs[2]
     mdist = np.sum(dxa * multivector_matrix_multiply(q[0 : pt.size, 0 : pt.size], dxa), axis=-1)
-    return voigt_profile(mdist**0.5, e, g) * (1.0 / voigt_profile(0, e, g))
+    return voigt_profile(mdist**0.5, e, g) * (1 / voigt_profile(0, e, g))
 
 
 def nd_powgaussian_psf(pt, coords, inputs):
@@ -119,4 +119,4 @@ def flattop_guassian_psf(pt, coords, inputs):
     flatness = inputs[1]
     flatsds = inputs[2]
     mdist = np.sum((dxa * multivector_matrix_multiply(q[0 : pt.size, 0 : pt.size], dxa)), axis=-1)
-    return np.exp(-0.5 * mdist) / (1.0 - 0.5 * flatness * mdist * (np.exp(-0.5 * mdist / (flatsds**2))) ** 2)
+    return np.exp(-0.5 * mdist) / (1 - 0.5 * flatness * mdist * (np.exp(-0.5 * mdist / flatsds ** 2)) ** 2)

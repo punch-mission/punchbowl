@@ -77,12 +77,12 @@ class ElementGrid:
     """
 
     def __init__(
-        self, grid, params, function_evaluator, footprint=None, stencil_threshold=5.0e-4, nsubgrid=3, threshold=0.005
+        self, grid, params, function_evaluator, footprint=None, stencil_threshold=5e-4, nsubgrid=3, threshold=0.005
     ):
         """
         Set up the elements.
 
-        Parameters:
+        Parameters
         -----------
         grid:
             A CoordGrid
@@ -132,7 +132,7 @@ class ElementGrid:
         self.stencil = (
             roll_transpose_from_numpy_indices(self.n_subgrid + 2 * footprint_offset)
             - footprint_offset
-            - 0.5 * (nsubgrid - 1.0)
+            - 0.5 * (nsubgrid - 1)
         )
         vals = self.evaluate_basis_at_point(self.coords.origin)[0].flatten()
         self.stencil = np.vstack(
@@ -213,7 +213,7 @@ class ElementGrid:
         index : np.ndarray
             Index of interest.
 
-        Returns:
+        Returns
         --------
         pnts : np.ndarray
             The coordinate points at which the these elements are non-zero,

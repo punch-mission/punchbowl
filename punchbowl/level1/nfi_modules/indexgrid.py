@@ -107,7 +107,7 @@ class CoordGrid:
         """
         return CoordGrid(
             self.dims * factor,
-            self.get_coordinates_from_indices(0.5 / factor - 0.5 + 0.0 * self.dims),
+            self.get_coordinates_from_indices(0.5 / factor - 0.5 + 0 * self.dims),
             self.fwd / factor,
             self.frame,
         )
@@ -122,7 +122,7 @@ class CoordGrid:
         CoordGrid
             Identity grid (mapped indices to themselves) of grid object
         """
-        return CoordGrid(self.dims, 0.0 * self.dims, np.diag(1 + 0.0 * self.dims), np.arange(len(self.dims)))
+        return CoordGrid(self.dims, 0 * self.dims, np.diag(1 + 0 * self.dims), np.arange(len(self.dims)))
 
     def get_indices_from_coordinates(self, coords):
         """

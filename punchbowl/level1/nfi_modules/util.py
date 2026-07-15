@@ -4,7 +4,7 @@ import numba
 import numpy as np
 
 
-def masked_median_filter(data, mask, radius, footprint=None, missing=0.0, footprint_ind_offset=0):
+def masked_median_filter(data, mask, radius, footprint=None, missing=0, footprint_ind_offset=0):
 
     if footprint is None:
         if np.isscalar(radius):
@@ -150,7 +150,7 @@ def get_mask_errors(dat_cube, iris_err_fac, error_cube=None, filt_thold: float =
     dat_median = np.nanmedian(np.abs(dat_filt))
     dat_mask = (
         np.isnan(dat_arr)
-        + (dat_arr < 0.00 * error_cube)
+        + (dat_arr < 0 * error_cube)
         + np.isnan(error_cube)
         + (np.abs(dat_arr - dat_filt) > filt_thold * (dat_median + np.abs(dat_filt)))
     ) > 0

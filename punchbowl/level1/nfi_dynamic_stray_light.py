@@ -108,7 +108,7 @@ def generate_glint_mask(
     return mask
 
 
-def get_solver_inputs(datacube: PUNCHCube, glint_mask: np.array, bindown_shape: tuple = (512, 512)):
+def get_solver_inputs(datacube: PUNCHCube, glint_mask: np.ndarray, bindown_shape: tuple = (512, 512)):
     """
     Calculate the inputs needed to create the light solutions for NFI, and appropriately bin down to desired
     size.
@@ -132,13 +132,11 @@ def get_solver_inputs(datacube: PUNCHCube, glint_mask: np.array, bindown_shape: 
     solver_err = np.array([((bindown(mask * data_err**2, bindown_shape)) ** 0.5 / binned_mask).T])
     good_data_flags = np.array([(bindown(mask, bindown_shape) > 0).T])
 
-    solver_err += (
-        0.01 * np.abs(solver_data) + np.nanmin(solver_data[good_data_flags]) * 0.25
-    )  # supplement the errors with 1% of the data values
+    # supplement the errors with 1% of the data values
+    solver_err += (0.01 * np.abs(solver_data) + np.nanmin(solver_data[good_data_flags]) * 0.25)
     solver_err[good_data_flags == 0] = np.max(solver_data[good_data_flags])
-    solver_err[np.isfinite(solver_err) == 0] = np.max(
-        solver_data[good_data_flags]
-    )  # Some nans are still getting into the errors somehow. Grrr.
+    # Some nans are still getting into the errors somehow. Grrr.
+    solver_err[~np.isfinite(solver_err)] = np.max(solver_data[good_data_flags])
 
     return solver_data, solver_err, good_data_flags
 
@@ -146,16 +144,16 @@ def get_solver_inputs(datacube: PUNCHCube, glint_mask: np.array, bindown_shape: 
 def remove_nfi_stray_light(
     datacube: PUNCHCube,
     bin_factor: int = 4,
-    fwd_mat_smooth_rad=0.0,
+    fwd_mat_smooth_rad=0,
     sphere1_center: tuple = (540, 790),
     sphere2_center: tuple = (540, 1210),
     glint_sphere_radius: int = 375,
     glint_bottom_cut: int = 250,
-    bindown_shape=[512, 512],
-    solver_tol=1.0e-5,
+    bindown_shape: tuple[int, int] = (512, 512),
+    solver_tol=1e-5,
     sky_reg=0.1,
     inst_reg=0.1,
-    stray_reg=1.0e-10,
+    stray_reg=1e-10,
     thread_count: int = 5,
 ):
     """
@@ -207,9 +205,8 @@ def remove_nfi_stray_light(
     scale_y = orig_shape[1] / bindown_shape[1]
 
     upscaled_stray_light_model = zoom(soln_stray[0].T, (scale_x, scale_y), order=0)
-    subtracted_data = (
-        datacube.data * glint_mask
-    ) - upscaled_stray_light_model  # subtract straylight model from data with glint masked out
+    # subtract straylight model from data with glint masked out
+    subtracted_data = (datacube.data * glint_mask) - upscaled_stray_light_model
 
     datacube.data[:] = subtracted_data
 

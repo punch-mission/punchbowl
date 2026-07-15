@@ -48,15 +48,15 @@ def sparse_nlmap_solver(
     inverse_reg_func=None,
     map_reg=False,
     adapt_lam=True,
-    solver_tol=1.0e-3,
+    solver_tol=1e-3,
     niter=40,
     dtype="float32",
     steps=None,
     precompute_ata=False,
     flatguess=True,
-    chi2_th=1.0,
+    chi2_th=1,
     store_outer_Av=False,
-    conv_chi2=1.0e-15,
+    conv_chi2=1e-15,
 ):
     """
     Subroutine to do the inversion.
@@ -125,7 +125,7 @@ def sparse_nlmap_solver(
     resids: np.ndarray
 
     """
-    [n_data, n_source] = amat0.shape
+    n_data, n_source = amat0.shape
 
     # Being really careful that everything is the right dtype
     # so (for example) nothing gets promoted to double if dtype is single:
@@ -167,23 +167,23 @@ def sparse_nlmap_solver(
 
     if forward_func is None or derivative_func is None or inverse_func is None:
         if sqrmap:
-            [forward_func, derivative_func, inverse_func] = [quadratic_forward, quadratic_derivative, quadratic_inverse]
+            forward_func, derivative_func, inverse_func = quadratic_forward, quadratic_derivative, quadratic_inverse
         else:
-            [forward_func, derivative_func, inverse_func] = [
+            forward_func, derivative_func, inverse_func = (
                 exponential_forward,
                 exponential_derivative,
                 exponential_inverse,
-            ]
+            )
 
     if reg_func is None or deriv_reg_func is None or inverse_reg_func is None:
         if map_reg:
-            [reg_func, deriv_reg_func, inverse_reg_func] = [
+            reg_func, deriv_reg_func, inverse_reg_func = (
                 identity_function,
                 linear_derivative_function,
                 inverse_identity_function,
-            ]
+            )
         else:
-            [reg_func, deriv_reg_func, inverse_reg_func] = [forward_func, derivative_func, inverse_func]
+            reg_func, deriv_reg_func, inverse_reg_func = forward_func, derivative_func, inverse_func
 
     if solver is None:
         solver = lgmres
@@ -193,16 +193,15 @@ def sparse_nlmap_solver(
     flat_errs[flat_errs == 0] = (0.05 * np.nanmean(flat_errs[flat_errs > 0])).astype(dtype)
 
     guess0 = amat0.T * (np.clip(flat_data, np.min(flat_errs), None))
-    guess0_data = amat0 * (guess0)
+    guess0_data = amat0 * guess0
     guess0_norm = np.sum(flat_data * guess0_data / flat_errs**2) / np.sum((guess0_data / flat_errs) ** 2)
     guess0 *= guess0_norm
     guess0 = np.clip(guess0, 0.05 * np.mean(np.abs(guess0)), None).astype(dtype)
     if guess is None:
         guess = guess0
     if flatguess:
-        guess = ((1 + np.zeros(n_source)) * np.mean(flat_data) / np.mean(amat0 * (1 + np.zeros(n_source)))).astype(
-            dtype
-        )
+        guess = ((1 + np.zeros(n_source)) * np.mean(flat_data) / np.mean(amat0 * (1 + np.zeros(n_source))))
+        guess = guess.astype(dtype)
     s_vector = inverse_func(guess).astype(dtype)
 
     # This is an internal step length limiter to prevent overstepping
@@ -225,26 +224,24 @@ def sparse_nlmap_solver(
     if regmat is None and map_reg:
         regmat = diags(one / inverse_reg_func(guess0) ** two)
     if adapt_lam and map_reg:
-        reglam = np.dot((regmat * s_vector), derivative_func(s_vector) * (amat0.T * (1.0 / flat_errs))) / np.dot(
-            (regmat * s_vector), (regmat * s_vector)
-        )
+        reglam = (np.dot((regmat * s_vector), derivative_func(s_vector) * (amat0.T * (1 / flat_errs)))
+                  / np.dot((regmat * s_vector), (regmat * s_vector)))
     if regmat is None and not map_reg:
-        regmat = diags(1.0 / (guess0) ** 2)
+        regmat = diags(1 / guess0 ** 2)
     if adapt_lam and not map_reg:
         reglam = np.dot(
-            derivative_func(s_vector) * (regmat * guess), derivative_func(s_vector) * (amat0.T * (1.0 / flat_errs))
+            derivative_func(s_vector) * (regmat * guess), derivative_func(s_vector) * (amat0.T * (1 / flat_errs))
         ) / np.dot(derivative_func(s_vector) * (regmat * guess), derivative_func(s_vector) * (regmat * guess))
 
     # Still appears to be some issue with this regularization factor?
     regmat = reg_fac * regmat * reglam
-    weights = (1.0 / flat_errs**2).astype(dtype)  # The weights are the errors...
+    weights = (1 / flat_errs**2).astype(dtype)  # The weights are the errors...
 
-    if not (precompute_ata):
+    if not precompute_ata:
         nlmo = NlmapOperator(dtype=dtype, shape=(n_source, n_source))
         nlmo.setup(amat0, regmat, derivative_func(s_vector), weights, deriv_reg_func(s_vector), reg_fac=reg_fac)
 
     # --------------------- Now do the iteration:
-    tstart = time.time()
     setup_timer = 0
     solver_timer = 0
     stepper_timer = 0
@@ -256,13 +253,13 @@ def sparse_nlmap_solver(
         bvec = dguess * amat0.T.dot(
             weights * (flat_data - amat0 * (forward_func(s_vector) - s_vector * derivative_func(s_vector)))
         )
-        if map_reg == False:
+        if not map_reg:
             bvec -= dregguess * (reg_fac * regmat * (reg_func(s_vector) - s_vector * deriv_reg_func(s_vector)))
         setup_timer += time.time() - tsetup
 
         tsolver = time.time()
         # Run sparse matrix solver:
-        [nlmo.map_drvvec, nlmo.reg_map_drvvec] = [dguess, dregguess]
+        nlmo.map_drvvec, nlmo.reg_map_drvvec = dguess, dregguess
         svec2 = solver(
             nlmo, bvec.astype(dtype), s_vector.astype(dtype), store_outer_Av=False, atol=solver_tol.astype(dtype)
         )
@@ -279,20 +276,20 @@ def sparse_nlmap_solver(
 
         # Try the step sizes:
         for j in range(n_steps):
-            stepguess = forward_func(s_vector + steps[j] * (deltas))
-            stepguess_reg = reg_func(s_vector + steps[j] * (deltas))
-            stepresid = (flat_data - amat0 * (stepguess)) * weights**pt5
+            stepguess = forward_func(s_vector + steps[j] * deltas)
+            stepguess_reg = reg_func(s_vector + steps[j] * deltas)
+            stepresid = (flat_data - amat0 * stepguess) * weights ** pt5
             step_loss[j] = (
                 np.dot(stepresid, stepresid) / n_data
-                + np.sum(stepguess_reg.T * (reg_fac * regmat * (stepguess_reg))) / n_data
+                + np.sum(stepguess_reg.T * (reg_fac * regmat * stepguess_reg)) / n_data
             )
 
-        best_step = np.nanargmin((step_loss)[1:n_steps]) + 1  # First step is zero for comparison purposes...
+        best_step = np.nanargmin(step_loss[1:n_steps]) + 1  # First step is zero for comparison purposes...
         chi20 = np.sum(weights * (flat_data - amat0 * (forward_func(s_vector))) ** two) / n_data
         reg0 = np.sum(reg_func(s_vector.T) * (reg_fac * regmat * (reg_func(s_vector)))) / n_data
 
         # Update the solution with the step size that has the best Chi squared:
-        s_vector = s_vector + steps[best_step] * (deltas)
+        s_vector = s_vector + steps[best_step] * deltas
         reg1 = np.sum(reg_func(s_vector.T) * (reg_fac * regmat * (reg_func(s_vector)))) / n_data
         resids = weights * (flat_data - amat0 * (forward_func(s_vector))) ** two
         chi21 = np.sum(weights * (flat_data - amat0 * (forward_func(s_vector))) ** two) / n_data

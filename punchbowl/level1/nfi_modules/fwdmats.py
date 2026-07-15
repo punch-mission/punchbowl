@@ -36,9 +36,9 @@ from punchbowl.level1.nfi_modules.transforms import CoordTransform, Trivialframe
 def generate_nfi_forward_matrices(
     nframes: int,
     data_size: tuple,
-    x_offsets: np.array,
-    y_offsets: np.array,
-    crots: np.array,
+    x_offsets: np.ndarray,
+    y_offsets: np.ndarray,
+    crots: np.ndarray,
     bin_factor: int = 4,
     smooth_rad: float = 0.05,
     radial_size: float = 175.4,
@@ -81,9 +81,9 @@ def generate_nfi_forward_matrices(
             If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
     radial_size : float
 
-    Returns:
-    --------
-    foward_matrices: dictionary of ndarray objects
+    Returns
+    -------
+    forward_matrices: dictionary of ndarray objects
             Dictionary object containing all forward matrices and normalizers(?) of each of the following: the instrument (`inst`),
             the sky model (`sky`), and the dynamic stray light model (`stray`); as well as image size.
 
@@ -135,19 +135,19 @@ def generate_nfi_forward_matrices(
     # Create Forward Matrix for Instrument
     norms_inst = np.sum(inst_forward_mat, axis=0).A1
     norms_inst = np.clip(norms_inst, 0.05 * np.mean(norms_inst), None)
-    inst_forward_mat = inst_forward_mat * diags(1.0 / norms_inst)
+    inst_forward_mat = inst_forward_mat * diags(1 / norms_inst)
 
     # Create Forward Matrix for Stray Light model
     norms_stray = np.sum(stray_forward_mat, axis=0).A1
     norms_stray = np.clip(norms_stray, 0.05 * np.mean(norms_stray), None)
-    stray_forward_mat = stray_forward_mat * diags(1.0 / norms_stray)
+    stray_forward_mat = stray_forward_mat * diags(1 / norms_stray)
 
     # Create Forward Matrix Sky model (includes background stars and f-corona)
     norms_sky = []
     for i in range(nframes):
         norms_sky.append(np.sum(sky_forward_mat[i], axis=0).A1)
         norms_sky[i] = np.clip(norms_sky[i], 0.05 * np.mean(norms_sky[i]), None)
-        sky_forward_mat[i] = sky_forward_mat[i] * diags(1.0 / norms_sky[i])
+        sky_forward_mat[i] = sky_forward_mat[i] * diags(1 / norms_sky[i])
 
     return {
         "inst": inst_forward_mat,
@@ -227,7 +227,7 @@ def get_rotmat_2d(theta):
     return rotmat
 
 
-def get_sky_source(dimensions: np.array, crota: float = 0.0, center: np.array = np.array([0, 0]), src_subgrid_fac=2):
+def get_sky_source(dimensions: np.ndarray, crota: float = 0, center: np.ndarray = np.array([0, 0]), src_subgrid_fac=2):
     """
         Get source grid for sky model.
 
@@ -260,7 +260,7 @@ def get_sky_source(dimensions: np.array, crota: float = 0.0, center: np.array = 
 
 
 def get_detector(
-    dimensions: np.array, crota: float = 0.0, center: np.array = np.array([0, 0]), det_subgrid_fac: int = 3
+    dimensions: np.ndarray, crota: float = 0, center: np.ndarray = np.array([0, 0]), det_subgrid_fac: int = 3
 ):
     """
     Get detector grid.
@@ -287,14 +287,14 @@ def get_detector(
     origin = forward_transform.dot(-0.5 * dimensions + center)
 
     det_coords = CoordGrid(dimensions, origin, forward_transform, det_frame)
-    psf_covariance = get_2d_covariance([0.5, 0.5], 0.0)
+    psf_covariance = get_2d_covariance([0.5, 0.5], 0)
     inverse_psf_covariance = np.linalg.inv(psf_covariance)
     return DetectorGrid(
         det_coords,
         [inverse_psf_covariance],
         n_dimensional_gaussian_psf,
         nsubgrid=det_subgrid_fac,
-        threshold=1.0e-3,
+        threshold=1e-3,
         footprint=[25, 25],
     )
 

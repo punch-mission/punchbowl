@@ -69,7 +69,7 @@ def element_source_responses(source, detector, transform, n_buffers=10**7, dtype
     valbuf = np.zeros(n_buffers, dtype=dtype)
 
     amat = csc_matrix(shape, dtype=dtype)  # The initial empty sparse matrix
-    [icur, t0] = [0, time.time()]  # Buffer position and starting time (for printing status)
+    icur = 0  # Buffer position
     for i in range(source.n_addresses):  # Loop over each source address
         # Get the source elements for the current address:
         [src_elms, src_vals, src_pnts] = source.get_element_properties_at_point(i)

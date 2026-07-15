@@ -51,76 +51,127 @@ def reconstruct_nfi_straylight(data, errs, amats, good_dat, bin_fac=4, errfac_sy
 	"""
 	fwdmat = assemble_nfi_fwdmats(amats)
 
-	nframe, nx, ny = data.shape[0], round(data.shape[1]), round(data.shape[2])
-	im_size = nx; npix = nx*ny
+	n_frames, nx, ny = data.shape[0], round(data.shape[1]), round(data.shape[2])
+	im_size = nx; n_pixels = nx*ny
 	dims = np.array([nx,ny],dtype=np.int32)
-	nstr_coeffs = amats["stray"].shape[1]
-	nsky=npix
-	nins=npix*(nframe>1)
-	nstr=nframe*nstr_coeffs
-	nsrc = nsky+nins+nstr
+	n_stray_coeffs = amats["stray"].shape[1]
+	n_sky = n_pixels
+	n_instr = n_pixels*(n_frames>1)
+	n_stray = n_frames*n_stray_coeffs
+	n_source = n_sky+n_instr+n_stray
 
-	dat_bin = [d/datanorm for d in data]
+	data_bin = [d/datanorm for d in data]
 	err_bin = [e/datanorm for e in errs]
-	msk_bin = [g for g in good_dat]
-	good_data = np.hstack([m.flatten() for m in msk_bin])
+	mask_bin = [g for g in good_dat]
+	good_data_mask = np.hstack([m.flatten() for m in mask_bin])
+	
+	# Mask matrices
+	source_mask_matrix = mask_sources(fwdmat)
+	data_mask_matrix = mask_data(fwdmat, good_data_mask)
 
-	src_maskmat = mask_sources(fwdmat)
-	dat_maskmat = mask_data(fwdmat, good_data)
+	# Regularization vectors/matrix
+	reg_vector = np.ones(fwdmat.shape[1])
+	reg_vector[0:n_sky] = sky_reg
+	if(n_instr > 0):
+		reg_vector[n_sky:n_sky+n_instr] *= inst_reg
+	reg_vector[n_sky+n_instr:] *= stray_reg
+	reg_matrix = diags(reg_vector)
 
-	regvec = np.ones(fwdmat.shape[1])
-	regvec[0:nsky] = sky_reg
-	if(nins > 0):
-		regvec[nsky:nsky+nins] *= inst_reg
-	regvec[nsky+nins:] *= stray_reg
-	regmat = diags(regvec)
+	# Apply masks to relevant data
+	fwdmat_masked = data_mask_matrix*fwdmat*source_mask_matrix.T
+	regmat_masked = source_mask_matrix*reg_matrix*source_mask_matrix.T
 
-	fwdmat_masked = dat_maskmat*fwdmat*src_maskmat.T
-	regmat_masked = src_maskmat*regmat*src_maskmat.T
-
-	flatdat = np.hstack([d.flatten() for d in dat_bin])
-	flaterr = np.hstack([e.flatten() for e in err_bin]) + errfac_systematic*np.abs(flatdat)
-	solution = sparse_nlmap_solver(dat_maskmat*flatdat, dat_maskmat*flaterr, fwdmat_masked, adapt_lam=False,
+	
+	flat_data = np.hstack([d.flatten() for d in data_bin])
+	flat_err = np.hstack([e.flatten() for e in err_bin]) + errfac_systematic*np.abs(flat_data)
+	solution = sparse_nlmap_solver(data_mask_matrix*flat_data, data_mask_matrix*flat_err, fwdmat_masked, adapt_lam=False,
 								   reg_fac=1, dtype="float32", niter=40, solver_tol=solver_tol, sqrmap=False,
 								   flatguess=True, silent=False, regmat=regmat_masked)#, guess = np.ones(reg_guess.size))
 
-	soln = src_maskmat.T*solution[0]
-	if(nins > 0):
-		soln_sky = datanorm*(amats["sky"][0]*(soln[0:npix])).reshape(dims)
-		soln_ins = datanorm*(amats["inst"]*(soln[npix:2*npix])).reshape(dims)
+	soln = source_mask_matrix.T*solution[0]
+	if(n_instr > 0):
+		soln_sky = datanorm*(amats["sky"][0]*(soln[0:n_pixels])).reshape(dims)
+		soln_ins = datanorm*(amats["inst"]*(soln[n_pixels:2*n_pixels])).reshape(dims)
 	else:
-		soln_sky = datanorm*(amats["inst"]*(soln[0:npix])).reshape(dims)
+		soln_sky = datanorm*(amats["inst"]*(soln[0:n_pixels])).reshape(dims)
 		soln_ins = np.zeros(dims)
 	soln_stray = []
-	for i in range(nframe):
-		soln_stray.append(datanorm*(amats["stray"]*(soln[nsky+nins+i*nstr_coeffs:nsky+nins+(i+1)*nstr_coeffs])).reshape(dims))
+	for i in range(n_frames):
+		soln_stray.append(datanorm*(amats["stray"]*(soln[n_sky+n_instr+i*n_stray_coeffs:n_sky+n_instr+(i+1)*n_stray_coeffs])).reshape(dims))
 
-	return soln_sky, soln_ins, soln_stray, np.array(dat_bin)*datanorm
+	return soln_sky, soln_ins, soln_stray, np.array(data_bin)*datanorm
 
 def mask_sources(amat_in, mask_lvl=None):
-	"""Mask sources that aren't present in the data."""
-	dsums = np.sum(amat_in,axis=0).A1
-	if mask_lvl is None:
-		mask_lvl = 0.05*np.mean(dsums)
-	smask = dsums >= mask_lvl
-	nsrc_in = len(smask); nsrc_out = np.sum(smask)
-	maskinds = np.arange(nsrc_in, dtype=np.uint64)
-	input_maskinds = maskinds[smask]
-	output_maskinds = np.arange(nsrc_out,dtype=np.uint64)
-	maskmat_vals = np.ones(nsrc_out,dtype=np.float32)
-	maskmat = csc_matrix((maskmat_vals,(output_maskinds, input_maskinds)),shape=[nsrc_out, nsrc_in])
-	return maskmat
+	"""
+	Mask sources that aren't present in the data.
+	
+	Parameters:
+	-----------
+	amat_in: scipy.sparse.csc_matrix
+		Forward matrix of interest with sources to filtered.
+		Created by `fwdmats.assemble_nfi_fwdmats`
 
-def mask_data(amat_in, dmask_in, mask_lvl=None):
-	"""Mask data that aren't connected to the sources (or to anything)."""
-	dsums = np.sum(amat_in,axis=1).A1
+	mask_lvl: float, optional, default = None
+		Minimum column-sum threshold for a source to be kept.
+		Sources with column sum >= `mask_lvl` are retained.
+		If `None` (default), the threshold is set adaptively to 5% of the mean column
+		sum of `amat_in`.
+	
+	Returns:
+	--------
+	mask_matrix_sparse: scipy.sparse.cscmatrix
+		(Sparse) matrix for source mask.
+		Matrix multiply with compatible matrix (e.g. `amat_in`) to filter out the masked-out
+		sources.
+	"""
+	column_sums = np.sum(amat_in,axis=0).A1
 	if mask_lvl is None:
-		mask_lvl = 0.05*np.mean(dsums)
-	dmask = dmask_in*(dsums >= mask_lvl)
-	ndat_in = len(dmask); ndat_out = np.sum(dmask)
-	maskinds = np.arange(ndat_in, dtype=np.uint64)
-	input_maskinds = maskinds[dmask]
-	output_maskinds = np.arange(ndat_out,dtype=np.uint64)
-	maskmat_vals = np.ones(ndat_out,dtype=np.float32)
-	maskmat = csc_matrix((maskmat_vals,(output_maskinds, input_maskinds)),shape=[ndat_out,ndat_in])
-	return maskmat
+		mask_lvl = 0.05*np.mean(column_sums)
+	
+	source_mask = column_sums >= mask_lvl
+	n_source_in = len(source_mask); n_source_out = np.sum(source_mask)
+	mask_indices = np.arange(n_source_in, dtype=np.uint64)
+
+	input_mask_indices = mask_indices[source_mask]
+	output_mask_indices = np.arange(n_source_out,dtype=np.uint64)
+
+	mask_matrix_vals = np.ones(n_source_out,dtype=np.float32)
+	mask_matrix_sparse = csc_matrix((mask_matrix_vals,(output_mask_indices, input_mask_indices)),shape=[n_source_out, n_source_in])
+	return mask_matrix_sparse
+
+def mask_data(amat_in, good_data_mask, mask_lvl=None):
+	"""
+	Mask data that aren't connected to the sources (or to anything).
+
+	Parameters:
+	-----------
+	amat_in: scipy.sparse.csc_matrix
+		Forward matrix of interest with sources to filtered.
+		Created by `fwdmats.assemble_nfi_fwdmats`
+	good_data_mask: np.array
+
+	mask_lvl: float, optional, default=None
+		Minimum row-sum threshold for a source to be kept.
+		Data with row sum >= `mask_lvl` are retained.
+		If `None` (default), the threshold is set adaptively to 5% of the mean row
+		sum of `amat_in`.
+
+	Returns:
+	--------
+	mask_matrix_sparse: scipy.sparse.csc_matrix
+		(Sparse) matrix for masking the invalid data.
+	"""
+	row_sums = np.sum(amat_in,axis=1).A1
+	if mask_lvl is None:
+		mask_lvl = 0.05*np.mean(row_sums)
+
+	data_mask = good_data_mask*(row_sums >= mask_lvl)
+	n_data_in = len(data_mask); n_data_out = np.sum(data_mask)
+
+	mask_indices = np.arange(n_data_in, dtype=np.uint64)
+	input_mask_indices = mask_indices[data_mask]
+	output_mask_indices = np.arange(n_data_out,dtype=np.uint64)
+
+	mask_matrix_vals = np.ones(n_data_out,dtype=np.float32)
+	mask_matrix_sparse = csc_matrix((mask_matrix_vals,(output_mask_indices, input_mask_indices)),shape=[n_data_out,n_data_in])
+	return mask_matrix_sparse

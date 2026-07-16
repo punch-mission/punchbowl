@@ -18,7 +18,7 @@
 
 *Document any breaking changes from this PR.*
 
-## Related Issues
+## Related issues
 
 *Link the issues related to this PR.*
 

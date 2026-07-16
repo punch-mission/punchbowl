@@ -22,6 +22,6 @@
 
 *Link the issues related to this PR.*
 
-## AI Usage
+## AI usage
 
 *State how AI was used in this PR.*

@@ -151,7 +151,7 @@ class ElementGrid:
         Returns
         -------
         CoordGrid object
-            Evaulation grid (which is assumed to be the same as the subgrid)
+            Evaluation grid (which is assumed to be the same as the subgrid)
         """
         return self.coords.subgrid(factor=self.n_subgrid)
 

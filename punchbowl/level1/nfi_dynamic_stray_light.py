@@ -163,8 +163,8 @@ def remove_nfi_stray_light(
     x_offsets, y_offsets, crota_radians = get_fwd_mat_inputs(datacube=datacube, bin_factor=bin_factor)
     data_size = (datacube.meta["NAXIS1"].value, datacube.meta["NAXIS2"].value)
 
-    # Note: The inputs for "generate_nfi_fwdmats" are expected to be np.arrays to accomodate for
-    # processing multiple files at a time and generating foward matrices in one function
+    # Note: The inputs for "generate_nfi_fwdmats" are expected to be np.arrays to accommodate for
+    # processing multiple files at a time and generating forward matrices in one function
     # TODO: Modify to optimize processing one file at a time w/o use of np.arrays
     # TODO: OR fix above to append to arrays in the case of processing multiple frames at a time
     nframes = 1

@@ -23,7 +23,7 @@ def element_source_responses(source, detector, transform, n_buffers=10**7, dtype
         They must implement a response method as well as nelm and coords attributes
         with usage consistent with their definitions in ElementGrid.
     transform: Callable
-        A function which returns an object that maps ponts in the source
+        A function which returns an object that maps points in the source
         coordinate system to the detector coordinate system.
         The callable must only take the `coords` attributes of a `SourceGrid` and `DetectorGrid` object.
         This callable should also return a callable object that takes points of the source coordinate

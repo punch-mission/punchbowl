@@ -8,7 +8,7 @@
 
 - [ ] implement new feature or fix bug
 - [ ] include tests
-- [ ] update associated documentation website entry
+- [ ] update associated documentation entry
 
 ## Test plan
 
@@ -21,3 +21,7 @@
 ## Related Issues
 
 *Link the issues related to this PR.*
+
+## AI Usage
+
+*State how AI was used in this PR.*

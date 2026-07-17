@@ -5,7 +5,7 @@ from scipy.sparse import diags
 from scipy.sparse.linalg import LinearOperator, lgmres
 
 
-class NlmapOperator(LinearOperator):
+class NonLinearMapOperator(LinearOperator):
     """
     This operator implements the general linear operator for chi squared
     plus regularization with nonlinear mapping as outlined in Plowman &
@@ -15,48 +15,46 @@ class NlmapOperator(LinearOperator):
     def setup(self, amat, regmat, map_drvvec, wgtvec, reg_map_drvvec, dtype="float32", reg_fac=1):
         self.amat = amat
         self.regmat = regmat
-        self.map_drvvec = map_drvvec
-        self.wgtvec = wgtvec
-        self.reg_map_drvvec = reg_map_drvvec
+        self.map_derivative_vec = map_drvvec
+        self.weight_vector = wgtvec
+        self.reg_map_derivative_vector = reg_map_drvvec
         self.dtype_internal = dtype
         self.reg_fac = reg_fac
 
     def _matvec(self, vec):
-        chi2term = self.map_drvvec * (self.amat.T * (self.wgtvec * (self.amat * (self.map_drvvec * vec))))
-        regterm = self.reg_map_drvvec * (self.reg_fac * self.regmat * (self.reg_map_drvvec * vec))
+        # Potential GPU acceleration possibility
+        chi2term = self.map_derivative_vec * (self.amat.T * (self.weight_vector * (self.amat * (self.map_derivative_vec * vec))))  # A-transpose times A (with non-lin map corrections)
+        regterm = self.reg_map_derivative_vector * (self.reg_fac * self.regmat * (self.reg_map_derivative_vector * vec))
         return (chi2term + regterm).astype(self.dtype_internal)
 
     def _adjoint(self):
         return self
 
 
-def sparse_nlmap_solver(
+def sparse_nonlinear_map_solver(
     data0,
     errors0,
     amat0,
     guess=None,
-    reg_fac=1,
+    regularization_factor=1,
     forward_func=None,
     derivative_func=None,
     inverse_func=None,
-    regmat=None,
-    silent=False,
-    solver=None,
+    regularization_matrix=None,
+    sparse_matrix_solver = lgmres,
     sqrmap=False,
     reg_func=None,
     deriv_reg_func=None,
     inverse_reg_func=None,
-    map_reg=False,
-    adapt_lam=True,
+    map_regularization=False,
+    adapt_lamda=True,
     solver_tol=1e-3,
-    niter=40,
+    n_iterations=40,
     dtype="float32",
     steps=None,
-    precompute_ata=False,
     flatguess=True,
-    chi2_th=1,
-    store_outer_Av=False,
-    conv_chi2=1e-15,
+    chi2_threshold=1,
+    chi2_convergence=1e-15,
 ):
     """
     Subroutine to do the inversion.
@@ -65,65 +63,61 @@ def sparse_nlmap_solver(
     Parameters:
     -----------
     data0: np.ndarray
-
+        Data values of image(s) for the solver to fit.
     errors0: np.ndarray
-
+        Uncertainties in the data values (`data0`)
     amat0: scipy.sparse.csc_matrix
-
-    guess: np.ndarray
-
-    reg_fac: Callable
-
+        Sparse forward matrix that maps coefficients of the solution to the data values.
+    guess: np.ndarray, optional
+        Initial guess for coefficients.
+    reg_fac: float
+        Scales the strength of the regularization.
     foward_func: Callable
-
+        The non-linear mapping function. Default is exponential_forward.
     derivative_func: Callable
-
+        The derivative of the forward_func with respect to its argument.
     inverse_func: Callable
-
+        Inverse of the forward_func with respect to its argument.
     regmat: sparse matrix
-
-    silent: bool, optional, default=False
-
+        Matrix to use for regularization. If passed as None, defaults to diagonal matrix (with variable 
+        or constant values depending on other flags). 
     solver: Callable
-
+        Which sparse matrix solver to use. Defaults to `lgmres`
     sqrmap: bool, default=False
-
+        Flag to indicate use of c=s^2 instead of c=e^s.
     reg_func: Callable
-
+        Wrapper function for regularization. Defaults to forward_func (forward operator)
     deriv_reg_func: Callable
-
+        Derivative of regularization function.
     inverse_reg_func: Callable
-
+        Inverse of regularization. 
     map_reg: bool, default=False
-
+        If false, regularizes in the linear non-mapped space.
     adapt_lam: bool, default=True
-
+        Flag to automatically adapt lambda to adjust strength of regularization.
     solver_tol: float, default=1e-3
-
+        Solver tolerance passed to the sparse matrix solver (`solver`). (Equivalent to `atol` of `lgmres`)
     niter: int, default=40
-
+        Number of iterations to to get to non-linear solver.
     dtype: str or numpy.dtype, default="float32"
-
+        Type contraint for computation speed, memory use, and/or calculation precision.
     steps: np.ndarray, optional
-
-    precompute_ata: bool, default=False
-
+        Step sizes to try. Step sizes are fractions of the way to the solution returned by sparse matrix solver. First entry should be zero.
+        Default np.array([0.00, 0.05, 0.15, 0.3, 0.5, 0.67, 0.85], dtype=dtype)
     flatguess: bool, default=True
-
+        Indicator of using a "flat guess" i.e. image with constant values, as opposed to using the adjoint (transpose of the forward matrix). 
     chi2_th: float, default=1.0
-
-    store_outer_Av: bool, default=False
-
+        Threshold on (reduced) chi-squared, where its considered done.
     conv_chi2: float, default=1e-15
-
+        Convergent chi-squared. The value of the difference between chi-squared iterations to be considered converged.
     Returns:
     --------
     solution: np.ndarray
 
     chi2: float
-
+        The final chi-sqaured.
     resids: np.ndarray
-
+        Residuals. (Data-Solution)^2/uncertainty^2
     """
     n_data, n_source = amat0.shape
 
@@ -135,7 +129,7 @@ def sparse_nlmap_solver(
     pt5 = np.dtype(dtype).type(0.5)
     two = np.dtype(dtype).type(2.0)
     one = np.dtype(dtype).type(1.0)
-    conv_chi2 = np.dtype(dtype).type(conv_chi2)
+    chi2_convergence = np.dtype(dtype).type(chi2_convergence)
 
     # A collection of example mapping functions.
     def identity_function(s):
@@ -177,7 +171,7 @@ def sparse_nlmap_solver(
             inverse_func = exponential_inverse
 
     if reg_func is None or deriv_reg_func is None or inverse_reg_func is None:
-        if map_reg:
+        if map_regularization:
             reg_func = identity_function
             deriv_reg_func = linear_derivative_function
             inverse_reg_func = inverse_identity_function
@@ -185,9 +179,6 @@ def sparse_nlmap_solver(
             reg_func = forward_func
             deriv_reg_func = derivative_func
             inverse_reg_func = inverse_func
-
-    if solver is None:
-        solver = lgmres
 
     flat_data = data0.flatten().astype(dtype)
     flat_errs = errors0.flatten().astype(dtype)
@@ -222,46 +213,45 @@ def sparse_nlmap_solver(
     step_loss = np.zeros(n_steps, dtype=dtype)
 
     reglam = one
-    if regmat is None and map_reg:
-        regmat = diags(one / inverse_reg_func(guess0) ** two)
-    if adapt_lam and map_reg:
-        reglam = (np.dot((regmat * s_vector), derivative_func(s_vector) * (amat0.T * (1 / flat_errs)))
-                  / np.dot((regmat * s_vector), (regmat * s_vector)))
-    if regmat is None and not map_reg:
-        regmat = diags(1 / guess0 ** 2)
-    if adapt_lam and not map_reg:
+    if regularization_matrix is None and map_regularization:
+        regularization_matrix = diags(one / inverse_reg_func(guess0) ** two)
+    if adapt_lamda and map_regularization:
+        reglam = (np.dot((regularization_matrix * s_vector), derivative_func(s_vector) * (amat0.T * (1 / flat_errs)))
+                  / np.dot((regularization_matrix * s_vector), (regularization_matrix * s_vector)))
+    if regularization_matrix is None and not map_regularization:
+        regularization_matrix = diags(1 / guess0 ** 2)
+    if adapt_lamda and not map_regularization:
         reglam = np.dot(
-            derivative_func(s_vector) * (regmat * guess), derivative_func(s_vector) * (amat0.T * (1 / flat_errs))
-        ) / np.dot(derivative_func(s_vector) * (regmat * guess), derivative_func(s_vector) * (regmat * guess))
+            derivative_func(s_vector) * (regularization_matrix * guess), derivative_func(s_vector) * (amat0.T * (1 / flat_errs))
+        ) / np.dot(derivative_func(s_vector) * (regularization_matrix * guess), derivative_func(s_vector) * (regularization_matrix * guess))
 
-    # Still appears to be some issue with this regularization factor?
-    regmat = reg_fac * regmat * reglam
+    
+    regularization_matrix = regularization_factor * regularization_matrix * reglam
     weights = (1 / flat_errs**2).astype(dtype)  # The weights are the errors...
 
-    if not precompute_ata:
-        nlmo = NlmapOperator(dtype=dtype, shape=(n_source, n_source))
-        nlmo.setup(amat0, regmat, derivative_func(s_vector), weights, deriv_reg_func(s_vector), reg_fac=reg_fac)
+    nlmo = NonLinearMapOperator(dtype=dtype, shape=(n_source, n_source))
+    nlmo.setup(amat0, regularization_matrix, derivative_func(s_vector), weights, deriv_reg_func(s_vector), reg_fac=regularization_factor)
 
     # --------------------- Now do the iteration:
     setup_timer = 0
     solver_timer = 0
     stepper_timer = 0
-    for i in range(niter):
+    for i in range(n_iterations):
         tsetup = time.time()
         # Setup intermediate matrices for solution:
-        dguess = derivative_func(s_vector)
-        dregguess = deriv_reg_func(s_vector)
-        bvec = dguess * amat0.T.dot(
+        d_guess = derivative_func(s_vector)     # derivative guess
+        d_reg_guess = deriv_reg_func(s_vector)  # derivative of regularization guess
+        bvec = d_guess * amat0.T.dot(
             weights * (flat_data - amat0 * (forward_func(s_vector) - s_vector * derivative_func(s_vector)))
         )
-        if not map_reg:
-            bvec -= dregguess * (reg_fac * regmat * (reg_func(s_vector) - s_vector * deriv_reg_func(s_vector)))
+        if not map_regularization:
+            bvec -= d_reg_guess * (regularization_factor * regularization_matrix * (reg_func(s_vector) - s_vector * deriv_reg_func(s_vector)))
         setup_timer += time.time() - tsetup
 
         tsolver = time.time()
         # Run sparse matrix solver:
-        nlmo.map_drvvec, nlmo.reg_map_drvvec = dguess, dregguess
-        svec2 = solver(
+        nlmo.map_derivative_vec, nlmo.reg_map_derivative_vector = d_guess, d_reg_guess
+        svec2 = sparse_matrix_solver(
             nlmo, bvec.astype(dtype), s_vector.astype(dtype), store_outer_Av=False, atol=solver_tol.astype(dtype)
         )
         svec2 = svec2[0]
@@ -282,21 +272,21 @@ def sparse_nlmap_solver(
             stepresid = (flat_data - amat0 * stepguess) * weights ** pt5
             step_loss[j] = (
                 np.dot(stepresid, stepresid) / n_data
-                + np.sum(stepguess_reg.T * (reg_fac * regmat * stepguess_reg)) / n_data
+                + np.sum(stepguess_reg.T * (regularization_factor * regularization_matrix * stepguess_reg)) / n_data
             )
 
         best_step = np.nanargmin(step_loss[1:n_steps]) + 1  # First step is zero for comparison purposes...
         chi20 = np.sum(weights * (flat_data - amat0 * (forward_func(s_vector))) ** two) / n_data
-        reg0 = np.sum(reg_func(s_vector.T) * (reg_fac * regmat * (reg_func(s_vector)))) / n_data
+        reg0 = np.sum(reg_func(s_vector.T) * (regularization_factor * regularization_matrix * (reg_func(s_vector)))) / n_data
 
         # Update the solution with the step size that has the best Chi squared:
         s_vector = s_vector + steps[best_step] * deltas
-        reg1 = np.sum(reg_func(s_vector.T) * (reg_fac * regmat * (reg_func(s_vector)))) / n_data
+        reg1 = np.sum(reg_func(s_vector.T) * (regularization_factor * regularization_matrix * (reg_func(s_vector)))) / n_data
         resids = weights * (flat_data - amat0 * (forward_func(s_vector))) ** two
         chi21 = np.sum(weights * (flat_data - amat0 * (forward_func(s_vector))) ** two) / n_data
         stepper_timer += time.time() - tstepper
 
-        if np.abs(step_loss[0] - step_loss[best_step]) < conv_chi2 or chi21 < chi2_th:
+        if np.abs(step_loss[0] - step_loss[best_step]) < chi2_convergence or chi21 < chi2_threshold:
             break  # Finish the iteration if chi squared isn't changing
 
     return forward_func(s_vector), chi21, resids

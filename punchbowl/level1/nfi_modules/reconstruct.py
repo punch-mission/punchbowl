@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse import csc_matrix, diags
 
 from punchbowl.level1.nfi_modules.fwdmats import assemble_nfi_fwdmats
-from punchbowl.level1.nfi_modules.solver import sparse_nlmap_solver
+from punchbowl.level1.nfi_modules.solver import sparse_nonlinear_map_solver
 
 
 def reconstruct_nfi_straylight(
@@ -26,28 +26,28 @@ def reconstruct_nfi_straylight(
     -----------
     data: np.array
             The images to invert, dimensions n_img, nx, ny
-    errs:
+    errs: np.ndarray
             Uncertainties corresponding to the images
-    amats:
+    amats: dict
             dictionary containing the forward matrices for the sky, (per-pixel) instrument, and stray light
             sources.
             Created by `fwdmats.generate_nfi_forward_matrices`
-    good_dat:
+    good_dat: np.ndarray
             Array flagging which data are good to use in the inversion, same shape as data
-    bin_fac:
+    bin_fac: int, optional
             how much to bin down the data for speed (default: 4). fwdmats.generate_nfi_fwdmats
                             must be called with the same bin_fac.
-    errfac_systematic:
+    errfac_systematic: float, optional, default 0.0.1
             An additional uncertainty of this factor multiplied by the data is added to the errors.
-    solver_tol:
+    solver_tol: float, optional
             Tolerance for the solver, default 2.5e-5
-    sky_reg:
+    sky_reg: float, optional
             Regularization factor for the sky source, larger values are a heavier penalty; default 1
-    inst_reg:
+    inst_reg: float, optional
             Regularization factor for per-pixel instrument source, default 1
-    stray_reg:
+    stray_reg: float, optional
             Regularization factor for the disk stray light functions, default 0.001
-    mask_source:
+    mask_source: bool, optional
             Attempts to mask off source coefficients with no connection to valid data. Not working.
 
     Returns:
@@ -97,19 +97,18 @@ def reconstruct_nfi_straylight(
 
     flat_data = np.hstack([d.flatten() for d in data_bin])
     flat_err = np.hstack([e.flatten() for e in err_bin]) + errfac_systematic * np.abs(flat_data)
-    solution = sparse_nlmap_solver(
+    solution = sparse_nonlinear_map_solver(
         data_mask_matrix * flat_data,
         data_mask_matrix * flat_err,
         fwdmat_masked,
-        adapt_lam=False,
-        reg_fac=1,
+        adapt_lamda=False,
+        regularization_factor=1,
         dtype="float32",
-        niter=40,
+        n_iterations=40,
         solver_tol=solver_tol,
         sqrmap=False,
         flatguess=True,
-        silent=False,
-        regmat=regmat_masked,
+        regularization_matrix=regmat_masked,
     )  # , guess = np.ones(reg_guess.size))
 
     soln = source_mask_matrix.T * solution[0]

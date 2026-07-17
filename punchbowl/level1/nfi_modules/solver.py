@@ -165,25 +165,26 @@ def sparse_nlmap_solver(
     def quadratic_derivative(s):
         return two * s  # quadratic derivative
 
+    # Set-up default functions
     if forward_func is None or derivative_func is None or inverse_func is None:
         if sqrmap:
-            forward_func, derivative_func, inverse_func = quadratic_forward, quadratic_derivative, quadratic_inverse
+            forward_func = quadratic_forward
+            derivative_func = quadratic_derivative
+            inverse_func = quadratic_inverse
         else:
-            forward_func, derivative_func, inverse_func = (
-                exponential_forward,
-                exponential_derivative,
-                exponential_inverse,
-            )
+            forward_func = exponential_forward
+            derivative_func = exponential_derivative
+            inverse_func = exponential_inverse
 
     if reg_func is None or deriv_reg_func is None or inverse_reg_func is None:
         if map_reg:
-            reg_func, deriv_reg_func, inverse_reg_func = (
-                identity_function,
-                linear_derivative_function,
-                inverse_identity_function,
-            )
+            reg_func = identity_function
+            deriv_reg_func = linear_derivative_function
+            inverse_reg_func = inverse_identity_function
         else:
-            reg_func, deriv_reg_func, inverse_reg_func = forward_func, derivative_func, inverse_func
+            reg_func = forward_func
+            deriv_reg_func = derivative_func
+            inverse_reg_func = inverse_func
 
     if solver is None:
         solver = lgmres

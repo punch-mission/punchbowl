@@ -76,22 +76,45 @@ def multivector_matrix_multiply(a, b):
     return np.dot(b, a.T)
 
 
-def forward_rolling_transpose(a):
+def forward_rolling_transpose(arr):
     """
     Forward rolling transpose.
 
     for switching from coordinate dimension last to coordinate dimension first in multidimensional coordinate arrays
+    
+    Parameters
+    ---------
+    arr: np.ndarray
+        array of interest to forward transpose and roll forward by one.
+
+    Returns
+    -------
+    np.ndarray
+        A new view of `arr` with the axes rotated that the original last axis is now axis 0.
+    
     """
-    return a.transpose(np.roll(np.arange(a.ndim), 1))
+    return arr.transpose(np.roll(np.arange(arr.ndim), 1))
 
 
-def backward_rolling_transpose(a):
+def backward_rolling_transpose(arr):
     """
     Backward rolling transpose.
 
     for switching from coordinate dimension first to coordinate dimension last in multidimensional coordinate arrays
+
+    Essentially the inverse function of `forward_rolling_transpose`. 
+    
+    Parameters
+    ----------
+    arr: np.ndarray
+        array of interest to backward transpose
+
+    Returns
+    -------
+    np.ndarray
+        A new view of `arr` witht the axes rotated so that the original first axis is now the last axis.
     """
-    return a.transpose(np.roll(np.arange(a.ndim), -1))
+    return arr.transpose(np.roll(np.arange(arr.ndim), -1))
 
 
 def roll_transpose_from_numpy_indices(dims, **kwargs):

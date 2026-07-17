@@ -29,7 +29,7 @@ from punchbowl.prefect import get_logger
 # Can this be done via the database for expected output files?
 # Will this result in an endless number of waiting processes? Built-in expected time delay?
 
-
+# Filename of PUNCH_CAM_yyyymmdd.jpg, and corresponding daily .mp4 file
 
 
 @task(cache_policy=NO_CACHE)

@@ -449,6 +449,7 @@ def plot_flow_map(filename: str | None, data: PUNCHCube, cmap: str = "magma") ->
         plt.savefig(filename)
     return fig
 
+
 @punch_flow(log_prints=True, timeout_seconds=21_600)
 def track_velocity(files: list[str],
                    delta_t: int = 12,

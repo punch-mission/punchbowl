@@ -35,10 +35,10 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync --no-sources --all-extras
-        source .venv/bin/activate 
+        source .venv/bin/activate
     - name: Lint with ruff
       run: |
-        ruff check .
+        uv run ruff check .
     - name: Run codespell on source code
       uses: codespell-project/actions-codespell@v2
       with:
@@ -54,7 +54,7 @@ jobs:
     - name: Test with pytest
       run: |
         uv pip install .
-        NUMBA_DISABLE_JIT=1 pytest --cov=punchbowl/
+        NUMBA_DISABLE_JIT=1 uv run pytest --cov=punchbowl/
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v7
       env:

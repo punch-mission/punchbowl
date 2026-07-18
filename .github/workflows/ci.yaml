@@ -53,7 +53,6 @@ jobs:
         path: docs
     - name: Test with pytest
       run: |
-        uv pip install .
         NUMBA_DISABLE_JIT=1 uv run --no-sources pytest --cov=punchbowl/
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v7

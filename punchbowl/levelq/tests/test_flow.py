@@ -12,7 +12,7 @@ from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow
 
 
 def test_cqm_flow_runs_with_filenames(sample_ndcube, tmpdir):
-    data_list = [sample_ndcube(shape=(10, 10), code=code, level="1") for code in ["QM1", "QZ1", "QP1", "QM2", "QZ2", "QP2", "QM3", "QZ3", "QP3"]]
+    data_list = [sample_ndcube(shape=(10, 10), code=code, level="1") for code in ["QR1", "QR2", "QR3", "QR4"]]
 
     paths = []
     for i, cube in enumerate(data_list):

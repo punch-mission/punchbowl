@@ -34,7 +34,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        uv sync --no-sources --no-dev --all-extras
+        uv sync --no-sources --all-extras
     - name: Lint with ruff
       run: |
         ruff check .

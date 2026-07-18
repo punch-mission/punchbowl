@@ -38,7 +38,7 @@ jobs:
         source .venv/bin/activate
     - name: Lint with ruff
       run: |
-        uv run ruff --no-sources check .
+        uv run --no-sources ruff check .
     - name: Run codespell on source code
       uses: codespell-project/actions-codespell@v2
       with:

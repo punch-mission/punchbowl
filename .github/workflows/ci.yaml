@@ -13,11 +13,14 @@ on:
       - develop
   schedule:
     - cron: '0 0 * * MON'
-
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+  
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -31,7 +34,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        uv sync
+        uv sync --no-sources --no-dev --all-extras
     - name: Lint with ruff
       run: |
         ruff check .

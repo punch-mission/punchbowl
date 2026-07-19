@@ -61,7 +61,7 @@ super_user = [
     "h5py",
     "lxml",
     "networkx",
-    "numba",
+    "numba>=0.62",
     "numexpr",
     "pre-commit",
     "prefect[dask]",

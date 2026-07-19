@@ -19,7 +19,7 @@ dependencies = [
     "python-dateutil",
     "regularizepsf",
     "requests",
-    "scipy",
+    "scipy>=1.16.1",
     "solpolpy",
     "sunpy[all]",
     "sunkit-image",

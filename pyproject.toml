@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "punchbowl"
 dynamic = ["version"]
 dependencies = [
-    "astropy",
+    "astropy>=7.2.0",
     "fastapi",
     "jupyter>=1.1.1",
     "lmfit",

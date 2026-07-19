@@ -58,7 +58,7 @@ super_user = [
     "astrometry",
     "click",
     "glymur",
-    "h5py",
+    "h5py>=3.15",
     "lxml",
     "networkx",
     "numba>=0.62",

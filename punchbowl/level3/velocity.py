@@ -517,7 +517,7 @@ def track_velocity(files: list[str],
     if ycens is None:
         ycens = np.arange(30, 90, 10)
     if rbands is None:
-        rbands = [0, 4, 8, 14]
+        rbands = list(range(len(ycens)))
 
     files.sort()
 

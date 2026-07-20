@@ -17,6 +17,61 @@ The PUNCH mission and the SDAC data repository only supports the most recent ver
 
 A history of data version releases is given below.
 
+Version 0l
+----------
+
+- Released July 13, 2026
+- Data improvements
+
+  - Switched labeling of NFI +60 & -60 degree polarization states to be consistent with WFI (https://github.com/punch-mission/punchbowl/pull/953).
+  - Alignment (https://github.com/punch-mission/punchbowl/pull/951, https://github.com/punch-mission/punchbowl/pull/964), https://github.com/punch-mission/punchbowl/pull/973)
+
+    - Changed method for determining refined celestial WCS. New method is faster and in most cases produces a more accurate WCS (https://github.com/punch-mission/punchbowl/pull/940).
+    - Added corrections for spacecraft velocity (including a special-relativistic aberration correction)
+    - Verified and corrected conversion between spacecraft positional coordinate systems
+
+  - Point Spread Function correction
+
+    - Fixed apodization so that it doesn't introduce a grid (https://github.com/punch-mission/regularizepsf/pull/256).
+    - Regenerated PSF models to reduce artifacts.
+    - Reduced residual coma.
+
+  - Polarization
+
+    - Fixed functions for roundtrip conversion of MZP from solar and instrument frames (https://github.com/punch-mission/solpolpy/pull/218).
+    - Improved polarization position angle maps generated from Level 0 and Level 1 data products, where solar north is not always at the image top (https://github.com/punch-mission/solpolpy/pull/217).
+    - Implemented coalignment in L1 frame before polarization resolution and mosaic assembly (https://github.com/punch-mission/punchbowl/pull/1060).
+
+  - Starfield modeling and subtraction are much improved:
+
+    - Implemented interpolation between the starfield models that are valid at distinct times in order to avoid sudden jumps in the subtacted values (https://github.com/punch-mission/punchbowl/pull/932).
+    - Added functionality to avoid holes in starfield maps resulting from insufficient per-pixel data (https://github.com/punch-mission/punchbowl/pull/949).
+
+  - For polarized mosaic quicklook images, the default layer is now pB instead of tB (https://github.com/punch-mission/punchbowl/pull/894).
+  - Implemented per-polarizer-state linear or non-linear calibration (https://github.com/punch-mission/punchbowl/pull/966).
+
+- Metadata improvements
+
+  - The spacecraft velocities are now written correctly in Level 0 files (https://github.com/punch-mission/punchbowl/pull/951).
+  - Spacecraft positions and velocities are included in FITS headers in several new Earth-centric frames, and are tied to the center of the exposure window (https://github.com/punch-mission/punchbowl/pull/964).
+  - DATE-BEG and DATE-END in Level 2 & 3 files now represent the earliest DATE-BEG and latest DATE-END of the input Level 1 files. Previously the DATE-BEG, DATE-OBS, and DATE-END of the Level 3 files were identical (https://github.com/punch-mission/punchbowl/pull/948).
+  - Additional date keywords are passed through the polarization transformations (https://github.com/punch-mission/punchbowl/pull/961).
+  - The CRVAL right ascension value produced by alignment is now wrapped to between 0 and 360 degrees (https://github.com/punch-mission/punchbowl/pull/973).
+  - L3_CAM/L3_PAM OUTLIER keyword was logically inverted, is now corrected (https://github.com/punch-mission/punchbowl/pull/934).
+  - Time-varying outlier identification limits are reused year after year (https://github.com/punch-mission/punchbowl/pull/941).
+  - Improved handling for metadata to avoid comment card overflow and shifts a few keys for JHelioviewer compatibility (https://github.com/punch-mission/punchbowl/pull/903).
+
+- Interface improvements
+
+  - The Fido search client now correctly filters when given a specific data version, or "newest", to search (https://github.com/punch-mission/punchbowl/pull/914).
+  - plot_punch can overlay the names of the PUNCH satellites on their respective fields-of-view when plotting mosaic images (https://github.com/punch-mission/punchbowl/pull/960).
+
+- Known problems
+
+  - Due to an error when migrating data between servers, the wrong f-corona model was subtracted from some data in the Level-3 calibration for Clear products only. This is visible as enhanced f-corona emission around 2025 August 29 -- September 1, and 2025 September 6 & 7.
+  - Background subtraction is overzealous in some cases and results in negative polarized brightness values. Users should not clip polarized brightness images at 0 when analyzing v0l data (https://github.com/punch-mission/punchbowl/issues/1061).
+  - Level 3 CAM files have not been produced for dates after 2026-05-25 due to an implementation mistake related to "Time-varying outlier identification limits are reused year after year" above. This mistake is causing too many Level-1 files to be marked as Outliers and impeding the creation of Level 3 CAM files for those dates.
+
 Version 0k
 ----------
 - Released April 1, 2026
@@ -27,7 +82,7 @@ Version 0k
 - Added per instrument F-corona calculation in https://github.com/punch-mission/punchbowl/pull/830
 - Added custom Fido client in https://github.com/punch-mission/punchbowl/pull/828
 - Corrected polarization calculations in https://github.com/punch-mission/punchbowl/pull/822
-- Added per-WFI masks to applied in level 2 before merging in https://github.com/punch-mission/punchbowl/pull/821
+- Added per-WFI masks to be applied in level 2 before merging in https://github.com/punch-mission/punchbowl/pull/821
 - Reworked stray light calculations in https://github.com/punch-mission/punchbowl/pull/843
 
 Version 0j

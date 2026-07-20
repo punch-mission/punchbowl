@@ -3,7 +3,7 @@ Data
 
 Welcome to PUNCH data!
 
-Our latest version of data is 0k (learn more about `data versions <data_versions.html>`_).
+Our latest version of data is 0l (learn more about `data versions <data_versions.html>`_).
 We will begin providing browse data and movies soon.
 
 PUNCH is still being calibrated, but you can take a look at the most up to date data

@@ -271,7 +271,7 @@ def generate_starfield_background(
             target_mem_usage=target_mem_usage)
         logger.info("Done building starfields")
 
-        out_data = starfield_mzp.starfield - percentile_filter(starfield_mzp.starfield, 5, (1, 10, 10))
+        out_data = starfield_mzp.starfield - percentile_filter(starfield_mzp.starfield, percentile=5, size=(1, 10, 10))
         out_data[out_data < 0] = 0
         out_wcs = calculate_helio_wcs_from_celestial(starfield_mzp.wcs, meta.astropy_time,
                                                      starfield_mzp.starfield.shape)
@@ -290,7 +290,7 @@ def generate_starfield_background(
             mask_strategy=BlockMasker(128, 128),
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
-        out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, 5, 10)
+        out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, percentile=5, size=10)
         out_data[out_data < 0] = 0
         out_wcs = calculate_helio_wcs_from_celestial(starfield_clear.wcs,
                                                         meta.astropy_time,

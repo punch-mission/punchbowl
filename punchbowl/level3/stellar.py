@@ -3,6 +3,7 @@ from math import floor
 from datetime import UTC, datetime
 
 import astropy.units as u
+import astropy.wcs
 import numpy as np
 import remove_starfield
 from astropy.io import fits
@@ -291,7 +292,7 @@ def generate_starfield_background(
 
     if is_polarized:
         logger.info("Building starfields")
-        starfield_m, starfield_z, starfield_p = remove_starfield.build_starfield_estimate(
+        starfield_mzp = remove_starfield.build_starfield_estimate(
             filenames,
             attribution=False,
             frame_count=False,
@@ -307,14 +308,10 @@ def generate_starfield_background(
             target_mem_usage=target_mem_usage)
         logger.info("Done building starfields")
 
-        starfield_m, starfield_z, starfield_p = starfield_m.starfield, starfield_z.starfield, starfield_p.starfield
-
-        for starfield in (starfield_m, starfield_z, starfield_p):
-            starfield -= percentile_filter(starfield, 5, 10) # noqa: PLW2901
-            starfield[starfield < 0] = 0
-
-        out_data = np.stack([starfield_m, starfield_z, starfield_p], axis=0)
-        out_wcs = calculate_helio_wcs_from_celestial(starfield_m.wcs, meta.astropy_time, starfield_m.starfield.shape)
+        out_data = starfield_mzp.starfield - percentile_filter(starfield_mzp.starfield, percentile=5, size=(1, 10, 10))
+        out_data[out_data < 0] = 0
+        out_wcs = calculate_helio_wcs_from_celestial(starfield_mzp.wcs, meta.astropy_time,
+                                                     starfield_mzp.starfield.shape)
     else:
         logger.info("Starting clear starfield")
         starfield_clear = remove_starfield.build_starfield_estimate(
@@ -331,7 +328,7 @@ def generate_starfield_background(
             pbar_class=LoggingProgressIndicator,
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
-        out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, 5, 10)
+        out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, percentile=5, size=10)
         out_data[out_data < 0] = 0
         out_wcs = calculate_helio_wcs_from_celestial(starfield_clear.wcs,
                                                         meta.astropy_time,
@@ -395,16 +392,30 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         shape_after = star_datacube_after.data.shape[-2:]
 
         wcs_celestial_before = star_datacube_before.celestial_wcs
+        if wcs_celestial_before.naxis == 3:
+            wcs_celestial_before_short = wcs_celestial_before.dropaxis(2)
+        else:
+            wcs_celestial_before_short = wcs_celestial_before
+        wcs_celestial_before_short.wcs.cdelt[0] *= -1
         wcs_celestial_before.wcs.cdelt[0] = wcs_celestial_before.wcs.cdelt[0] * -1
 
         wcs_celestial_after = star_datacube_after.celestial_wcs
+        if  wcs_celestial_after.naxis == 3:
+            wcs_celestial_after_short = wcs_celestial_after.dropaxis(2)
+        else:
+            wcs_celestial_after_short = wcs_celestial_after
+        wcs_celestial_after_short.wcs.cdelt[0] *= -1
         wcs_celestial_after.wcs.cdelt[0] = wcs_celestial_after.wcs.cdelt[0] * -1
 
         # TODO - Test with polarized data...
         union_wcs, union_shape = find_optimal_celestial_wcs(
-            [(shape_before, wcs_celestial_before),
-            (shape_after,  wcs_celestial_after)],
+            [(shape_before, wcs_celestial_before_short),
+            (shape_after,  wcs_celestial_after_short)],
             auto_rotate=False, projection="CAR")
+
+        if wcs_celestial_before.naxis == 3:
+            union_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(union_wcs, 2)
+            union_shape = (3, union_shape[0], union_shape[1])
 
         starfield_reprojected_before = reproject_interp(
             (np.stack([star_datacube_before.data, star_datacube_before.uncertainty.array], axis=0),
@@ -446,17 +457,17 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         # Is this going to require a change in the subtraction code to avoid more reprojections back and forth?
         if is_polarized:
             starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array), axis=0),
-                                        wcs_celestial[0])
+                                        wcs_celestial.celestial)
             subtracted = starfield_model.subtract_from_image(
                 PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array), axis=0),
-                       wcs=data_object.wcs.celestial_wcs,
+                       wcs=data_object.celestial_wcs.celestial,
                        meta=data_object.meta),
                 handle_wrap_point=False,
                 processor=PUNCHImageProcessor(key="A"))
 
-            data_object.data[...] = subtracted.subtracted[:3]
+            data_object.data[...] = subtracted.subtracted[0]
             data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array ** 2 +
-                                                         subtracted.subtracted[3:] ** 2)
+                                                         subtracted.subtracted[1] ** 2)
         else:
             starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
             subtracted = starfield_model.subtract_from_image(

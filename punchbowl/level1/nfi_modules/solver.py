@@ -7,9 +7,28 @@ from scipy.sparse.linalg import LinearOperator, lgmres
 
 class NonLinearMapOperator(LinearOperator):
     """
+    (Child class of `scipy.sparse.linalg.LinearOperator`)
+
     This operator implements the general linear operator for chi squared
     plus regularization with nonlinear mapping as outlined in Plowman &
     Caspi 2020.
+
+    Attributes
+    ----------
+    amat: np.ndarray
+        Sparse forward matrix that maps coefficients of the solution to the data values.
+    regmat: np.ndarray
+        Regularization matrix
+    map_derivative_vec: np.ndarray
+        Solution mapped to derivative of forward function.
+    weight_vector: np.ndarray
+        Weight vetor
+    reg_map_derivative_vector: np.ndarray
+        Solution mapped to derivative of regularization function.
+    dtype_internal: str, default = "float32"
+        Type contraint for computation speed, memory use, and/or calculation precision.
+    reg_fac: int, default = 1
+        Regularization factor.
     """
 
     def setup(self, amat, regmat, map_drvvec, wgtvec, reg_map_drvvec, dtype="float32", reg_fac=1):
@@ -22,6 +41,19 @@ class NonLinearMapOperator(LinearOperator):
         self.reg_fac = reg_fac
 
     def _matvec(self, vec):
+        """
+        Returns sum of chi-squared term and regularization term.
+        
+        Parameters
+        ----------
+        vec: np.ndarray
+            Vector of interest
+        
+        Returns
+        -------
+        float (dtype = self.dtype_internal)
+            Sum of chi-squared term and regularization term.
+        """
         # Potential GPU acceleration possibility
         chi2term = self.map_derivative_vec * (self.amat.T * (self.weight_vector * (self.amat * (self.map_derivative_vec * vec))))  # A-transpose times A (with non-lin map corrections)
         regterm = self.reg_map_derivative_vector * (self.reg_fac * self.regmat * (self.reg_map_derivative_vector * vec))
@@ -114,7 +146,7 @@ def sparse_nonlinear_map_solver(
     Returns:
     --------
     solution: np.ndarray
-
+        The converged solution.
     chi2: float
         The final chi-sqaured.
     resids: np.ndarray

@@ -22,11 +22,11 @@ class NonLinearMapOperator(LinearOperator):
     map_derivative_vec: np.ndarray
         Solution mapped to derivative of forward function.
     weight_vector: np.ndarray
-        Weight vetor
+        Weight vector
     reg_map_derivative_vector: np.ndarray
         Solution mapped to derivative of regularization function.
     dtype_internal: str, default = "float32"
-        Type contraint for computation speed, memory use, and/or calculation precision.
+        Type constraint for computation speed, memory use, and/or calculation precision.
     reg_fac: int, default = 1
         Regularization factor.
     """
@@ -133,7 +133,7 @@ def sparse_nonlinear_map_solver(
     niter: int, default=40
         Number of iterations to to get to non-linear solver.
     dtype: str or numpy.dtype, default="float32"
-        Type contraint for computation speed, memory use, and/or calculation precision.
+        Type constraint for computation speed, memory use, and/or calculation precision.
     steps: np.ndarray, optional
         Step sizes to try. Step sizes are fractions of the way to the solution returned by sparse matrix solver. First entry should be zero.
         Default np.array([0.00, 0.05, 0.15, 0.3, 0.5, 0.67, 0.85], dtype=dtype)

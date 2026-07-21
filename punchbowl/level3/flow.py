@@ -157,13 +157,23 @@ def generate_level3_low_noise_flow(data_list: list[str] | list[PUNCHCube],
 
 
 @punch_flow
-def generate_level3_velocity_flow(data_list: list[str],
+def generate_level3_velocity_flow(files: list[str],
+                                  delta_t: int = 12,
+                                  sparsity: int = 2,
+                                  n_ofs: int = 151,
+                                  ycens: np.ndarray | None = None,
+                                  rbands: list[int] | None = None,
                                   output_filename: str | None = None) -> list[PUNCHCube]:
     """Generate Level 3 velocity data product."""
     logger = get_logger()
 
     logger.info("Generating velocity data product")
-    velocity_data = track_velocity(data_list)
+    velocity_data = track_velocity(files=files,
+                                   delta_t=delta_t,
+                                   sparsity=sparsity,
+                                   n_ofs=n_ofs,
+                                   ycens=ycens,
+                                   rbands=rbands)
 
     if output_filename is not None:
         output_image_task(velocity_data, output_filename)

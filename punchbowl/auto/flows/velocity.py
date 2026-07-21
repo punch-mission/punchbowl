@@ -12,7 +12,7 @@ from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
-from punchbowl.level3.velocity import track_velocity
+from punchbowl.level3.flow import generate_level3_velocity_flow
 from punchbowl.prefect import get_logger
 
 
@@ -171,7 +171,7 @@ def level3_vam_call_data_processor(call_data: dict, pipeline_config, session=Non
 @flow
 def level3_vam_process_flow(flow_id: int, pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id,
-                               track_velocity,
+                               generate_level3_velocity_flow,
                                pipeline_config_path,
                                session=session,
                                call_data_processor=level3_vam_call_data_processor,

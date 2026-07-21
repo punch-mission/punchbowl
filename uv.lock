@@ -4860,7 +4860,7 @@ requires-dist = [
     { name = "pylibjpeg", extras = ["libjpeg", "openjpeg"], marker = "extra == 'super-user'" },
     { name = "python-dateutil" },
     { name = "regularizepsf" },
-    { name = "remove-starfield", marker = "extra == 'super-user'", specifier = ">=0.1" },
+    { name = "remove-starfield", marker = "extra == 'super-user'", specifier = ">=0.1.1" },
     { name = "reproject", marker = "extra == 'super-user'", specifier = ">=0.20.0" },
     { name = "requests" },
     { name = "scikit-image", marker = "extra == 'super-user'" },

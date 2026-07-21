@@ -43,12 +43,12 @@ class NonLinearMapOperator(LinearOperator):
     def _matvec(self, vec):
         """
         Returns sum of chi-squared term and regularization term.
-        
+
         Parameters
         ----------
         vec: np.ndarray
             Vector of interest
-        
+
         Returns
         -------
         float (dtype = self.dtype_internal)
@@ -111,8 +111,8 @@ def sparse_nonlinear_map_solver(
     inverse_func: Callable
         Inverse of the forward_func with respect to its argument.
     regmat: sparse matrix
-        Matrix to use for regularization. If passed as None, defaults to diagonal matrix (with variable 
-        or constant values depending on other flags). 
+        Matrix to use for regularization. If passed as None, defaults to diagonal matrix (with variable
+        or constant values depending on other flags).
     solver: Callable
         Which sparse matrix solver to use. Defaults to `scipy.sparse.linalg.lgmres` (`lmgres` stands for "Loose Generalized
         Minimal Residual")
@@ -123,7 +123,7 @@ def sparse_nonlinear_map_solver(
     deriv_reg_func: Callable
         Derivative of regularization function.
     inverse_reg_func: Callable
-        Inverse of regularization. 
+        Inverse of regularization.
     map_reg: bool, default=False
         If false, regularizes in the linear non-mapped space.
     adapt_lam: bool, default=True
@@ -138,7 +138,7 @@ def sparse_nonlinear_map_solver(
         Step sizes to try. Step sizes are fractions of the way to the solution returned by sparse matrix solver. First entry should be zero.
         Default np.array([0.00, 0.05, 0.15, 0.3, 0.5, 0.67, 0.85], dtype=dtype)
     flatguess: bool, default=True
-        Indicator of using a "flat guess" i.e. image with constant values, as opposed to using the adjoint (transpose of the forward matrix). 
+        Indicator of using a "flat guess" i.e. image with constant values, as opposed to using the adjoint (transpose of the forward matrix).
     chi2_th: float, default=1.0
         Threshold on (reduced) chi-squared, where its considered done.
     conv_chi2: float, default=1e-15
@@ -258,7 +258,7 @@ def sparse_nonlinear_map_solver(
             derivative_func(s_vector) * (regularization_matrix * guess), derivative_func(s_vector) * (amat0.T * (1 / flat_errs))
         ) / np.dot(derivative_func(s_vector) * (regularization_matrix * guess), derivative_func(s_vector) * (regularization_matrix * guess))
 
-    
+
     regularization_matrix = regularization_factor * regularization_matrix * reglam
     weights = (1 / flat_errs**2).astype(dtype)  # The weights are the errors...
 

@@ -184,7 +184,7 @@ def mask_data(amat_in, good_data_mask, mask_lvl=None):
             Created by `fwdmats.assemble_nfi_fwdmats`
     good_data_mask: np.array
             Per-row boolean mask indicating which rows are considered
-            valid a priori. Rows marked False are always excluded, 
+            valid a priori. Rows marked False are always excluded,
             regardless of `mask_lvl`.
     mask_lvl: float, optional, default=None
             Minimum row-sum threshold for a source to be kept.

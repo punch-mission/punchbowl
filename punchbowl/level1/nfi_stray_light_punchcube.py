@@ -137,7 +137,7 @@ smask = glint_mask(datacube.data.shape,sc1,sc2,srad,bottom_cut)
 	# use the binned down estimate for the stray light coefficients, just regenerating the stray light kernels
 	# to 2k. May need to increase the number of stray light terms (nstray in generate_nfi_fwdmats). This
 	# is not completely tested and had been locked to the number of pixels...
-	
+
 
 def get_solver_inputs(data_cube,smask,shape:list=[512,512]):
 	data_uncertainty = data_cube.uncertainty.array

@@ -9,7 +9,7 @@ TINY = 1.0e-4
 def bin_function_evaluator(point_coordinates, coordinate_array, params=None):
     """
     This is a basis function that's a set of rectilinear 'in' or 'out' boxes -- e.g., pixels in 2D:
-    
+
     The difference between the two coordinate arrays is rounded to the
     nearest integer (with a small offset `tiny` added before rounding to
     avoid floating-point ties landing exactly on 0.5) and compared to
@@ -22,18 +22,18 @@ def bin_function_evaluator(point_coordinates, coordinate_array, params=None):
     point_coordinates: np.ndarray
         Reference coordinates (for a single point) to compare against `coordinate_array`
     coordinate_array: np.ndarray
-        Coordinates to test for equality with `point_coordinates`. 
+        Coordinates to test for equality with `point_coordinates`.
 
         Likely an array given by `CoordGrid.get_coordinates_from_indices()`.
     params: None
-        Not used in this function. 
+        Not used in this function.
         Included parameter to meet the function requirements for `ElementGrid.function_evaluator`.
-    
+
     Returns
     -------
     np.ndarray
         Array of 1s and 0s (usable as a boolean mask) where 1 indicates that all coordinate dimensions
-        of the corresponding point in `coordinate_array` match `point_coordinates` (within rounding tolerance), 
+        of the corresponding point in `coordinate_array` match `point_coordinates` (within rounding tolerance),
         and 0 indicates at least one dimension differs.
     """
     return np.prod(np.round((point_coordinates - coordinate_array).T + TINY) == 0, axis=0)
@@ -82,13 +82,13 @@ def n_dimensional_gaussian_psf(pt, coords, inputs):
     pt: np.ndarray
         Coordinates for point of interest.
     coords: np.ndarray
-        Array of coordinates as given by `CoordGrid.get_coordinates_from_indices()` for the 
+        Array of coordinates as given by `CoordGrid.get_coordinates_from_indices()` for the
         relevant coordinate grid of interest.
     inputs: np.ndarray
-        An np.ndarray where the first element includes the precision matrix (i.e. the inverse of the 
+        An np.ndarray where the first element includes the precision matrix (i.e. the inverse of the
         covariance).
         Designed to fit the requirements to call as a callable function for `ElementGrid.function_evaluator`
-    
+
     Returns
     -------
     np.ndarray

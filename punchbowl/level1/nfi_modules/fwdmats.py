@@ -25,7 +25,11 @@ smooth_rad: If > 0, smooth the stray light kernels azimuthally with this radius 
 import numpy as np
 from scipy.sparse import csc_matrix, csr_matrix, diags
 
-from punchbowl.level1.nfi_modules.element_functions import bin_function_evaluator, get_2d_covariance, n_dimensional_gaussian_psf
+from punchbowl.level1.nfi_modules.element_functions import (
+    bin_function_evaluator,
+    get_2d_covariance,
+    n_dimensional_gaussian_psf,
+)
 from punchbowl.level1.nfi_modules.element_grid import DetectorGrid, SourceGrid
 from punchbowl.level1.nfi_modules.element_source_responses import element_source_responses as esr
 from punchbowl.level1.nfi_modules.indexgrid import CoordGrid

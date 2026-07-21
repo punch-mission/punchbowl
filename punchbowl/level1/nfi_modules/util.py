@@ -4,7 +4,6 @@ import numba
 import numpy as np
 
 
-
 @numba.jit(fastmath=True, parallel=True, forceobj=True)
 def _masked_medfilt_inner(
     flatinds, data, footprint_inds, footprint_ind_offset, tparg, dat_pad_shape, data_fppad, mask_fppad, data_filt
@@ -44,7 +43,7 @@ def multivector_matrix_multiply(a, b):
     here as a very small subroutine rather than spreading it all over the code
     for ease of maintenance and explanation. It works for single vectors, too.
     """
-    # TODO: (JK note) I'm pretty sure this is the same as np.matvec() 
+    # TODO: (JK note) I'm pretty sure this is the same as np.matvec()
     return np.dot(b, a.T)
 
 
@@ -53,7 +52,7 @@ def forward_rolling_transpose(arr):
     Forward rolling transpose.
 
     for switching from coordinate dimension last to coordinate dimension first in multidimensional coordinate arrays
-    
+
     Parameters
     ---------
     arr: np.ndarray
@@ -63,7 +62,7 @@ def forward_rolling_transpose(arr):
     -------
     np.ndarray
         A new view of `arr` with the axes rotated that the original last axis is now axis 0.
-    
+
     """
     return arr.transpose(np.roll(np.arange(arr.ndim), 1))
 
@@ -72,11 +71,11 @@ def backward_rolling_transpose(arr):
     """
     Backward rolling transpose.
 
-    for switching from coordinate dimension first to coordinate dimension last in multidimensional 
+    for switching from coordinate dimension first to coordinate dimension last in multidimensional
     coordinate arrays
 
-    Essentially the inverse function of `forward_rolling_transpose`. 
-    
+    Essentially the inverse function of `forward_rolling_transpose`.
+
     Parameters
     ----------
     arr: np.ndarray
@@ -85,7 +84,7 @@ def backward_rolling_transpose(arr):
     Returns
     -------
     np.ndarray
-        A new view of `arr` with the axes rotated so that the original first axis 
+        A new view of `arr` with the axes rotated so that the original first axis
         is now the last axis.
     """
     return arr.transpose(np.roll(np.arange(arr.ndim), -1))
@@ -150,7 +149,7 @@ def binup(data, factor):
     factor: float or array-like of float
         Per-axis scale factor(s) describing how much to expand each dimension.
         Rounded to the nearest integer before computing the output shape, so `factor` need not be an exact integer.
-    
+
     Returns
     -------
     np.ndarray

@@ -118,7 +118,7 @@ def level3_vam_construct_flow_info(level3_ptm_files: list[File],
             "delta_t": pipeline_config["flows"][flow_type].get("delta_t", 12),
             "sparsity": pipeline_config["flows"][flow_type].get("sparsity", 2),
             "n_ofs": pipeline_config["flows"][flow_type].get("n_ofs", 151),
-            "ycens": pipeline_config["flows"][flow_type].get("ycens", np.arange(30, 90, 10)),
+            "ycens": np.array(pipeline_config["flows"][flow_type].get("ycens", np.arange(30, 90, 10))),
             "rbands": pipeline_config["flows"][flow_type].get("rbands", None),
         },
     )

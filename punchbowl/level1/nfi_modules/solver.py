@@ -82,7 +82,8 @@ def sparse_nonlinear_map_solver(
         Matrix to use for regularization. If passed as None, defaults to diagonal matrix (with variable 
         or constant values depending on other flags). 
     solver: Callable
-        Which sparse matrix solver to use. Defaults to `lgmres`
+        Which sparse matrix solver to use. Defaults to `scipy.sparse.linalg.lgmres` (`lmgres` stands for "Loose Generalized
+        Minimal Residual")
     sqrmap: bool, default=False
         Flag to indicate use of c=s^2 instead of c=e^s.
     reg_func: Callable

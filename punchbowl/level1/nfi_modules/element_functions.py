@@ -3,24 +3,40 @@ from scipy.special import voigt_profile
 
 from punchbowl.level1.nfi_modules.util import multivector_matrix_multiply
 
-tiny = 1.0e-4
+TINY = 1.0e-4
 
 
-def bin_function(ptcoords, coordarr, params):
+def bin_function_evaluator(point_coordinates, coordinate_array, params=None):
     """
     This is a basis function that's a set of rectilinear 'in' or 'out' boxes -- e.g., pixels in 2D:
     
+    The difference between the two coordinate arrays is rounded to the
+    nearest integer (with a small offset `tiny` added before rounding to
+    avoid floating-point ties landing exactly on 0.5) and compared to
+    zero, elementwise. Taking the product along axis 0 acts as a logical
+    across coordinate dimensions, so a point is flagged as a match
+    only if *every* dimension's rounded difference is exactly zero.
+
     Parameters
     ----------
-    ptcoords:
+    point_coordinates: np.ndarray
+        Reference coordinates (for a single point) to compare against `coordinate_array`
+    coordinate_array: np.ndarray
+        Coordinates to test for equality with `point_coordinates`. 
 
-    coordarr: 
-
-    params
+        Likely an array given by `CoordGrid.get_coordinates_from_indices()`.
+    params: None
+        Not used in this function. 
+        Included parameter to meet the function requirements for `ElementGrid.function_evaluator`.
+    
+    Returns
+    -------
+    np.ndarray
+        Array of 1s and 0s (usable as a boolean mask) where 1 indicates that all coordinate dimensions
+        of the corresponding point in `coordinate_array` match `point_coordinates` (within rounding tolerance), 
+        and 0 indicates at least one dimension differs.
     """
-    
-    
-    return np.prod(np.round((ptcoords - coordarr).T + tiny) == 0, axis=0)
+    return np.prod(np.round((point_coordinates - coordinate_array).T + TINY) == 0, axis=0)
 
 def get_2d_covariance(sigmas, theta):
     """
@@ -60,13 +76,24 @@ def n_dimensional_gaussian_psf(pt, coords, inputs):
     coordinates coords, based on the q (inverse of covariance) matrix q.
     Coords must have dimensions npts by nd where nd is the dimensionality
     of the Gaussian. q can be larger than nd by nd; higher dimensions will be ignored.
-    """
-    dxa = coords - pt
-    q = inputs[0]
-    return np.exp(-0.5 * np.sum(dxa * multivector_matrix_multiply(q[0 : pt.size, 0 : pt.size], dxa), axis=-1))
 
-def nd_powgaussian_psf(pt, coords, inputs):
-    dxa = coords - pt
-    q = inputs[0]
-    exp = inputs[1]
-    return np.exp(-0.5 * np.sum(dxa * multivector_matrix_multiply(q[0 : pt.size, 0 : pt.size], dxa), axis=-1) ** exp)
+    Parameters
+    ----------
+    pt: np.ndarray
+        Coordinates for point of interest.
+    coords: np.ndarray
+        Array of coordinates as given by `CoordGrid.get_coordinates_from_indices()` for the 
+        relevant coordinate grid of interest.
+    inputs: np.ndarray
+        An np.ndarray where the first element includes the precision matrix (i.e. the inverse of the 
+        covariance).
+        Designed to fit the requirements to call as a callable function for `ElementGrid.function_evaluator`
+    
+    Returns
+    -------
+    np.ndarray
+        Gaussian PSF centered at point `pt`
+    """
+    displacement_vectors = coords - pt
+    precision_matrix = inputs[0]
+    return np.exp(-0.5 * np.sum(displacement_vectors * multivector_matrix_multiply(precision_matrix[0 : pt.size, 0 : pt.size], displacement_vectors), axis=-1))

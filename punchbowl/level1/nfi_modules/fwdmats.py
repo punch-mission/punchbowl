@@ -25,7 +25,7 @@ smooth_rad: If > 0, smooth the stray light kernels azimuthally with this radius 
 import numpy as np
 from scipy.sparse import csc_matrix, csr_matrix, diags
 
-from punchbowl.level1.nfi_modules.element_functions import bin_function, get_2d_covariance, n_dimensional_gaussian_psf
+from punchbowl.level1.nfi_modules.element_functions import bin_function_evaluator, get_2d_covariance, n_dimensional_gaussian_psf
 from punchbowl.level1.nfi_modules.element_grid import DetectorGrid, SourceGrid
 from punchbowl.level1.nfi_modules.element_source_responses import element_source_responses as esr
 from punchbowl.level1.nfi_modules.indexgrid import CoordGrid
@@ -256,7 +256,7 @@ def get_sky_source(dimensions: np.ndarray, crota: float = 0, center: np.ndarray 
     origin = forward_transform.dot(-0.5 * dimensions) + center
 
     src_coords = CoordGrid(dimensions, origin, forward_transform, src_frame)
-    return SourceGrid(src_coords, None, bin_function, nsubgrid=src_subgrid_fac)
+    return SourceGrid(src_coords, None, bin_function_evaluator, nsubgrid=src_subgrid_fac)
 
 
 def get_detector(

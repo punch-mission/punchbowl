@@ -38,10 +38,11 @@ def resolve_polarization(data_list: list[PUNCHCube], outsys: str = "mzpsolar") -
 
     for key in resolved_data_collection:
         # The resolved cube's meta is a "normal" header object, not our NormalizedMetadata, so no .value!
-        input_collection[key].meta["POLARREF"] = resolved_data_collection[key].meta["POLARREF"]
-        resolved_data_collection[key].meta = input_collection[key].meta
-        resolved_data_collection[key].uncertainty = input_collection[key].uncertainty
-        out.append(resolved_data_collection[key])
+        resolved_cube = resolved_data_collection[key]
+        source_cube = input_collection[key]
+        source_cube.meta["POLARREF"] = resolved_cube.meta["POLARREF"]
+        cube = source_cube.replace(data=resolved_cube.data, mask=resolved_cube.mask)
+        out.append(cube)
 
     return out
 

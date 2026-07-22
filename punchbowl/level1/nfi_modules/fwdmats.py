@@ -164,53 +164,53 @@ def generate_nfi_forward_matrices(
     }
 
 
-def assemble_nfi_fwdmats(amats):
+def assemble_nfi_fwdmats(fwdmats_dict):
     """
     Assemble a single sparse design matrix from per-component system matrices.
     Used by `reconstruct.reconstruct_nfi_straylight`
 
     Parameters:
     -----------
-    amats: dict
+    fwdmats_dict: dict
             dictionary containing the forward matrices for the sky, (per-pixel) instrument, and stray light
             sources.
             Created by `fwdmats.generate_nfi_forward_matrices`
     Returns:
     --------
-    amat_out: scipy.sparse.csc_matrix
+    fwdmat_final: scipy.sparse.csc_matrix
             The single sparse design matrix made with totaled values from the per-component system matrices as appropriate.
 
             The final object is a compressed sparse column matrix object with shape `(n_data_points, n_source)`, where `n_data_points` the number of
-            forward matrices of the `sky` component of `amats` (i.e. number of frames) multiplied by the number of detector pixels
+            forward matrices of the `sky` component of `fwdmats_dict` (i.e. number of frames) multiplied by the number of detector pixels
             per frame; and `n_source` is the total number of parameters from the sky model, instrument, and stray light model.
     """
     # TODO: (JK) not totally confident about this docstring explanation.
-    n_frames = len(amats["sky"])
-    n_pixels = amats["inst"].shape[0]
+    n_frames = len(fwdmats_dict["sky"])
+    n_pixels = fwdmats_dict["inst"].shape[0]
     n_data_points = n_frames * n_pixels
 
-    im_size = amats["im_size"]
+    im_size = fwdmats_dict["im_size"]
     n_sky = n_pixels  # number of sky parameters (one per pixel)
     n_inst = n_pixels * (n_frames > 1)  # number of instrument parameters
-    n_stray = n_frames * amats["stray"].shape[1]  # number of stray light parameters
+    n_stray = n_frames * fwdmats_dict["stray"].shape[1]  # number of stray light parameters
     n_source = n_sky + n_inst + n_stray
 
-    amat_out = csc_matrix(([], [], np.zeros(n_source + 1)), shape=(n_data_points, n_source))
+    fwdmat_final = csc_matrix(([], [], np.zeros(n_source + 1)), shape=(n_data_points, n_source))
 
     for i in range(n_frames):
         if n_frames == 1:
-            amat_out += csc_resize(amats["inst"], n_data_points, n_source, i * n_pixels, 0)
+            fwdmat_final += csc_resize(fwdmats_dict["inst"], n_data_points, n_source, i * n_pixels, 0)
         else:
-            amat_out += csc_resize(amats["sky"][i], n_data_points, n_source, i * n_pixels, 0)
+            fwdmat_final += csc_resize(fwdmats_dict["sky"][i], n_data_points, n_source, i * n_pixels, 0)
 
     for i in range(n_frames):
         if n_frames > 1:
-            amat_out += csc_resize(amats["inst"], n_data_points, n_source, i * n_pixels, n_sky)
+            fwdmat_final += csc_resize(fwdmats_dict["inst"], n_data_points, n_source, i * n_pixels, n_sky)
 
     for i in range(n_frames):
-        amat_out += csc_resize(amats["stray"].T, n_source, n_data_points, n_sky + n_inst + i * im_size, i * n_pixels).T
+        fwdmat_final += csc_resize(fwdmats_dict["stray"].T, n_source, n_data_points, n_sky + n_inst + i * im_size, i * n_pixels).T
 
-    return amat_out
+    return fwdmat_final
 
 
 def get_rotmat_2d(theta):

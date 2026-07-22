@@ -15,9 +15,9 @@ class NonLinearMapOperator(LinearOperator):
 
     Attributes
     ----------
-    amat: np.ndarray
+    fwdmat: scipy.sparse.csc_matrix
         Sparse forward matrix that maps coefficients of the solution to the data values.
-    regmat: np.ndarray
+    regmat: scipy.sparse.csc_matrix
         Regularization matrix
     map_derivative_vec: np.ndarray
         Solution mapped to derivative of forward function.
@@ -31,8 +31,8 @@ class NonLinearMapOperator(LinearOperator):
         Regularization factor.
     """
 
-    def setup(self, amat, regmat, map_drvvec, wgtvec, reg_map_drvvec, dtype="float32", reg_fac=1):
-        self.amat = amat
+    def setup(self, fwdmat, regmat, map_drvvec, wgtvec, reg_map_drvvec, dtype="float32", reg_fac=1):
+        self.fwdmat = fwdmat
         self.regmat = regmat
         self.map_derivative_vec = map_drvvec
         self.weight_vector = wgtvec
@@ -55,7 +55,7 @@ class NonLinearMapOperator(LinearOperator):
             Sum of chi-squared term and regularization term.
         """
         # Potential GPU acceleration possibility
-        chi2term = self.map_derivative_vec * (self.amat.T * (self.weight_vector * (self.amat * (self.map_derivative_vec * vec))))  # A-transpose times A (with non-lin map corrections)
+        chi2term = self.map_derivative_vec * (self.fwdmat.T * (self.weight_vector * (self.fwdmat * (self.map_derivative_vec * vec))))  # A-transpose times A (with non-lin map corrections)
         regterm = self.reg_map_derivative_vector * (self.reg_fac * self.regmat * (self.reg_map_derivative_vector * vec))
         return (chi2term + regterm).astype(self.dtype_internal)
 
@@ -66,7 +66,7 @@ class NonLinearMapOperator(LinearOperator):
 def sparse_nonlinear_map_solver(
     data0,
     errors0,
-    amat0,
+    fwdmat0,
     guess=None,
     regularization_factor=1,
     forward_func=None,
@@ -98,7 +98,7 @@ def sparse_nonlinear_map_solver(
         Data values of image(s) for the solver to fit.
     errors0: np.ndarray
         Uncertainties in the data values (`data0`)
-    amat0: scipy.sparse.csc_matrix
+    fwdmat0: scipy.sparse.csc_matrix
         Sparse forward matrix that maps coefficients of the solution to the data values.
     guess: np.ndarray, optional
         Initial guess for coefficients.
@@ -152,7 +152,7 @@ def sparse_nonlinear_map_solver(
     resids: np.ndarray
         Residuals. (Data-Solution)^2/uncertainty^2
     """
-    n_data, n_source = amat0.shape
+    n_data, n_source = fwdmat0.shape
 
     # Being really careful that everything is the right dtype
     # so (for example) nothing gets promoted to double if dtype is single:
@@ -217,15 +217,15 @@ def sparse_nonlinear_map_solver(
     flat_errs = errors0.flatten().astype(dtype)
     flat_errs[flat_errs == 0] = (0.05 * np.nanmean(flat_errs[flat_errs > 0])).astype(dtype)
 
-    guess0 = amat0.T * (np.clip(flat_data, np.min(flat_errs), None))
-    guess0_data = amat0 * guess0
+    guess0 = fwdmat0.T * (np.clip(flat_data, np.min(flat_errs), None))
+    guess0_data = fwdmat0 * guess0
     guess0_norm = np.sum(flat_data * guess0_data / flat_errs**2) / np.sum((guess0_data / flat_errs) ** 2)
     guess0 *= guess0_norm
     guess0 = np.clip(guess0, 0.05 * np.mean(np.abs(guess0)), None).astype(dtype)
     if guess is None:
         guess = guess0
     if flatguess:
-        guess = ((1 + np.zeros(n_source)) * np.mean(flat_data) / np.mean(amat0 * (1 + np.zeros(n_source))))
+        guess = ((1 + np.zeros(n_source)) * np.mean(flat_data) / np.mean(fwdmat0 * (1 + np.zeros(n_source))))
         guess = guess.astype(dtype)
     s_vector = inverse_func(guess).astype(dtype)
 
@@ -249,13 +249,13 @@ def sparse_nonlinear_map_solver(
     if regularization_matrix is None and map_regularization:
         regularization_matrix = diags(one / inverse_reg_func(guess0) ** two)
     if adapt_lamda and map_regularization:
-        reglam = (np.dot((regularization_matrix * s_vector), derivative_func(s_vector) * (amat0.T * (1 / flat_errs)))
+        reglam = (np.dot((regularization_matrix * s_vector), derivative_func(s_vector) * (fwdmat0.T * (1 / flat_errs)))
                   / np.dot((regularization_matrix * s_vector), (regularization_matrix * s_vector)))
     if regularization_matrix is None and not map_regularization:
         regularization_matrix = diags(1 / guess0 ** 2)
     if adapt_lamda and not map_regularization:
         reglam = np.dot(
-            derivative_func(s_vector) * (regularization_matrix * guess), derivative_func(s_vector) * (amat0.T * (1 / flat_errs))
+            derivative_func(s_vector) * (regularization_matrix * guess), derivative_func(s_vector) * (fwdmat0.T * (1 / flat_errs))
         ) / np.dot(derivative_func(s_vector) * (regularization_matrix * guess), derivative_func(s_vector) * (regularization_matrix * guess))
 
 
@@ -263,7 +263,7 @@ def sparse_nonlinear_map_solver(
     weights = (1 / flat_errs**2).astype(dtype)  # The weights are the errors...
 
     nlmo = NonLinearMapOperator(dtype=dtype, shape=(n_source, n_source))
-    nlmo.setup(amat0, regularization_matrix, derivative_func(s_vector), weights, deriv_reg_func(s_vector), reg_fac=regularization_factor)
+    nlmo.setup(fwdmat0, regularization_matrix, derivative_func(s_vector), weights, deriv_reg_func(s_vector), reg_fac=regularization_factor)
 
     # --------------------- Now do the iteration:
     setup_timer = 0
@@ -274,8 +274,8 @@ def sparse_nonlinear_map_solver(
         # Setup intermediate matrices for solution:
         d_guess = derivative_func(s_vector)     # derivative guess
         d_reg_guess = deriv_reg_func(s_vector)  # derivative of regularization guess
-        bvec = d_guess * amat0.T.dot(
-            weights * (flat_data - amat0 * (forward_func(s_vector) - s_vector * derivative_func(s_vector)))
+        bvec = d_guess * fwdmat0.T.dot(
+            weights * (flat_data - fwdmat0 * (forward_func(s_vector) - s_vector * derivative_func(s_vector)))
         )
         if not map_regularization:
             bvec -= d_reg_guess * (regularization_factor * regularization_matrix * (reg_func(s_vector) - s_vector * deriv_reg_func(s_vector)))
@@ -302,21 +302,21 @@ def sparse_nonlinear_map_solver(
         for j in range(n_steps):
             stepguess = forward_func(s_vector + steps[j] * deltas)
             stepguess_reg = reg_func(s_vector + steps[j] * deltas)
-            stepresid = (flat_data - amat0 * stepguess) * weights ** pt5
+            stepresid = (flat_data - fwdmat0 * stepguess) * weights ** pt5
             step_loss[j] = (
                 np.dot(stepresid, stepresid) / n_data
                 + np.sum(stepguess_reg.T * (regularization_factor * regularization_matrix * stepguess_reg)) / n_data
             )
 
         best_step = np.nanargmin(step_loss[1:n_steps]) + 1  # First step is zero for comparison purposes...
-        chi20 = np.sum(weights * (flat_data - amat0 * (forward_func(s_vector))) ** two) / n_data
+        chi20 = np.sum(weights * (flat_data - fwdmat0 * (forward_func(s_vector))) ** two) / n_data
         reg0 = np.sum(reg_func(s_vector.T) * (regularization_factor * regularization_matrix * (reg_func(s_vector)))) / n_data
 
         # Update the solution with the step size that has the best Chi squared:
         s_vector = s_vector + steps[best_step] * deltas
         reg1 = np.sum(reg_func(s_vector.T) * (regularization_factor * regularization_matrix * (reg_func(s_vector)))) / n_data
-        resids = weights * (flat_data - amat0 * (forward_func(s_vector))) ** two
-        chi21 = np.sum(weights * (flat_data - amat0 * (forward_func(s_vector))) ** two) / n_data
+        resids = weights * (flat_data - fwdmat0 * (forward_func(s_vector))) ** two
+        chi21 = np.sum(weights * (flat_data - fwdmat0 * (forward_func(s_vector))) ** two) / n_data
         stepper_timer += time.time() - tstepper
 
         if np.abs(step_loss[0] - step_loss[best_step]) < chi2_convergence or chi21 < chi2_threshold:

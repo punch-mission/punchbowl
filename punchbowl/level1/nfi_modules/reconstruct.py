@@ -8,7 +8,7 @@ from punchbowl.level1.nfi_modules.solver import sparse_nonlinear_map_solver
 def reconstruct_nfi_straylight(
     data,
     errs,
-    amats,
+    fwdmats_dict,
     good_dat,
     bin_fac=4,
     errfac_systematic=0.01,
@@ -28,7 +28,7 @@ def reconstruct_nfi_straylight(
             The images to invert, dimensions n_img, nx, ny
     errs: np.ndarray
             Uncertainties corresponding to the images
-    amats: dict
+    fwdmats_dict: dict
             dictionary containing the forward matrices for the sky, (per-pixel) instrument, and stray light
             sources.
             Created by `fwdmats.generate_nfi_forward_matrices`
@@ -62,13 +62,13 @@ def reconstruct_nfi_straylight(
             The input data, after being normalized. -- i.e. numerically equivalent to the original passed `data`,
             but returned for post-processing/sanity-check comparison.
     """
-    fwdmat = assemble_nfi_fwdmats(amats)
+    fwdmat = assemble_nfi_fwdmats(fwdmats_dict)
 
     n_frames, nx, ny = data.shape[0], round(data.shape[1]), round(data.shape[2])
     im_size = nx
     n_pixels = nx * ny
     dims = np.array([nx, ny], dtype=np.int32)
-    n_stray_coeffs = amats["stray"].shape[1]
+    n_stray_coeffs = fwdmats_dict["stray"].shape[1]
     n_sky = n_pixels
     n_instr = n_pixels * (n_frames > 1)
     n_stray = n_frames * n_stray_coeffs
@@ -113,17 +113,17 @@ def reconstruct_nfi_straylight(
 
     soln = source_mask_matrix.T * solution[0]
     if n_instr > 0:
-        soln_sky = datanorm * (amats["sky"][0] * (soln[0:n_pixels])).reshape(dims)
-        soln_ins = datanorm * (amats["inst"] * (soln[n_pixels : 2 * n_pixels])).reshape(dims)
+        soln_sky = datanorm * (fwdmats_dict["sky"][0] * (soln[0:n_pixels])).reshape(dims)
+        soln_ins = datanorm * (fwdmats_dict["inst"] * (soln[n_pixels : 2 * n_pixels])).reshape(dims)
     else:
-        soln_sky = datanorm * (amats["inst"] * (soln[0:n_pixels])).reshape(dims)
+        soln_sky = datanorm * (fwdmats_dict["inst"] * (soln[0:n_pixels])).reshape(dims)
         soln_ins = np.zeros(dims)
     soln_stray = []
     for i in range(n_frames):
         soln_stray.append(
             datanorm
             * (
-                amats["stray"]
+                fwdmats_dict["stray"]
                 * (soln[n_sky + n_instr + i * n_stray_coeffs : n_sky + n_instr + (i + 1) * n_stray_coeffs])
             ).reshape(dims)
         )
@@ -131,13 +131,13 @@ def reconstruct_nfi_straylight(
     return soln_sky, soln_ins, soln_stray, np.array(data_bin) * datanorm
 
 
-def mask_sources(amat_in, mask_lvl=None):
+def mask_sources(fwdmat_in, mask_lvl=None):
     """
     Mask sources that aren't present in the data.
 
     Parameters:
     -----------
-    amat_in: scipy.sparse.csc_matrix
+    fwdmat_in: scipy.sparse.csc_matrix
             Forward matrix of interest with sources to filtered.
             Created by `fwdmats.assemble_nfi_fwdmats`
 
@@ -145,16 +145,16 @@ def mask_sources(amat_in, mask_lvl=None):
             Minimum column-sum threshold for a source to be kept.
             Sources with column sum >= `mask_lvl` are retained.
             If `None` (default), the threshold is set adaptively to 5% of the mean column
-            sum of `amat_in`.
+            sum of `fwdmat_in`.
 
     Returns:
     --------
     mask_matrix_sparse: scipy.sparse.cscmatrix
             (Sparse) matrix for source mask.
-            Matrix multiply with compatible matrix (e.g. `amat_in`) to filter out the masked-out
+            Matrix multiply with compatible matrix (e.g. `fwdmat_in`) to filter out the masked-out
             sources.
     """
-    column_sums = np.sum(amat_in, axis=0).A1
+    column_sums = np.sum(fwdmat_in, axis=0).A1
     if mask_lvl is None:
         mask_lvl = 0.05 * np.mean(column_sums)
 
@@ -173,13 +173,13 @@ def mask_sources(amat_in, mask_lvl=None):
     return mask_matrix_sparse
 
 
-def mask_data(amat_in, good_data_mask, mask_lvl=None):
+def mask_data(fwdmat_in, good_data_mask, mask_lvl=None):
     """
     Mask data that aren't connected to the sources (or to anything).
 
     Parameters:
     -----------
-    amat_in: scipy.sparse.csc_matrix
+    fwdmat_in: scipy.sparse.csc_matrix
             Forward matrix of interest with sources to filtered.
             Created by `fwdmats.assemble_nfi_fwdmats`
     good_data_mask: np.array
@@ -190,14 +190,14 @@ def mask_data(amat_in, good_data_mask, mask_lvl=None):
             Minimum row-sum threshold for a source to be kept.
             Data with row sum >= `mask_lvl` are retained.
             If `None` (default), the threshold is set adaptively to 5% of the mean row
-            sum of `amat_in`.
+            sum of `fwdmat_in`.
 
     Returns:
     --------
     mask_matrix_sparse: scipy.sparse.csc_matrix
             (Sparse) matrix for masking the invalid data.
     """
-    row_sums = np.sum(amat_in, axis=1).A1
+    row_sums = np.sum(fwdmat_in, axis=1).A1
     if mask_lvl is None:
         mask_lvl = 0.05 * np.mean(row_sums)
 

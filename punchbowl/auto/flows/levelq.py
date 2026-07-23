@@ -660,9 +660,9 @@ def levelq_upload_process_flow(flow_id, pipeline_config_path=None, session=None)
 def levelq_CFM_query_ready_files(session, pipeline_config: dict, reference_time: datetime):
     logger = get_logger()
 
-    min_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["min_files_per_half"]
-    max_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_files_per_half"]
-    max_hours_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_hours_per_half"]
+    min_files_per_half = pipeline_config["flows"]["levelq_CFM"]["min_files_per_half"]
+    max_files_per_half = pipeline_config["flows"]["levelq_CFM"]["max_files_per_half"]
+    max_hours_per_half = pipeline_config["flows"]["levelq_CFM"]["max_hours_per_half"]
 
     before = reference_time - timedelta(hours=2 * max_hours_per_half)
     after = reference_time + timedelta(weeks=0)

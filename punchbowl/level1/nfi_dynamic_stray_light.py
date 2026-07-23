@@ -119,6 +119,15 @@ def get_solver_inputs(datacube: PUNCHCube, glint_mask: np.ndarray, bindown_shape
         PUNCH data of interest
     glint_mask : np.array
         Boolean mask for masking out glint spheres
+
+    Returns
+    -------
+    solver_data: np.ndarray
+        Final data to pass into `reconstruct_nfi_straylight`
+    solver_err: np.ndarray
+        Uncertainties associated with `solver_data`
+    good_data_mask: np.ndarray
+        Array flagging which data are good to use in the inversion.
     """
     data_uncertainty = datacube.uncertainty.array
     data_only = datacube.data
@@ -158,6 +167,54 @@ def remove_nfi_stray_light(
 ):
     """
     Remove the dynamic NFI stray light from a given PUNCHCube image.
+
+    Parameters
+    ----------
+    datacube: PUNCHCube
+        Input NFI images.
+    bin_factor: int
+        Binning down factor
+    fwd_mat_smooth_rad: int
+        Parameter for the `generate_nfi_forward_matrices()` function (i.e. to generate the kernels).
+        If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
+    sphere1_center: tuple
+        Parameter for `generate_glint_mask()` function to mask out the glint spheres.
+        Coordinate for the center of sphere 1
+    sphere2_center: tuple
+        Parameter for `generate_glint_mask()` function to mask out the glint spheres.
+        Coordinate for the center of sphere 2
+    glint_sphere_radius: int
+        Parameter for `generate_glint_mask()` function to mask out the glint spheres.
+        Radius of spheres (applied as same radius for both spheres)
+    glint_bottom_cut: int
+        Parameter for `generate_glint_mask()` function to mask out the glint spheres.
+        the height of the bottom sliver of the data image to which include everything above and mask out everything below
+    bindown_shape: tuple
+        Final shape of the binned down image.
+    solver_tol: float
+        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from 
+        the forward matrices.
+        Tolerance for the solver, default 1.5e-5
+    sky_reg: float
+        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from 
+        the forward matrices.
+        Regularization factor for the sky source, larger values are a heavier penalty; default 1
+    inst_reg: float
+        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from 
+        the forward matrices.
+        Regularization factor for per-pixel instrument source, default 1
+    stray_reg: float
+        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from 
+        the forward matrices.
+        egularization factor for the disk stray light functions, default 0.001
+    thread_count: int
+        The number of threads to use for parallel processing.
+        (Relevant to generating kernels and reconstructing the solutions.)
+
+    Returns
+    -------
+    datacube: PUNCHCube
+        The final stray light subtracted NFI image as a PUNCHCube.
     """
     # Generate forward matrices (kernels)
     x_offsets, y_offsets, crota_radians = get_fwd_mat_inputs(datacube=datacube, bin_factor=bin_factor)

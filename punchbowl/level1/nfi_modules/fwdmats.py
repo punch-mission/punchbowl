@@ -84,7 +84,8 @@ def generate_nfi_forward_matrices(
     smooth_rad : float
             If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
     radial_size : float
-
+        The size of the kernel in pixels. ("Radial" here means "radial out from image-center".)
+        Passed into function `straylight_kernels.generate_kernels()`
     Returns
     -------
     forward_matrices: dictionary of ndarray objects

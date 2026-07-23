@@ -694,7 +694,8 @@ def construct_levelq_CFM_flow_info(levelq_CTM_files: list[File],
         {
             "filenames": [ctm_file.filename() for ctm_file in levelq_CTM_files],
             "reference_time": str(reference_time),
-            "polarized": False
+            "polarized": False,
+            "is_quickpunch": True
         },
     )
     return Flow(

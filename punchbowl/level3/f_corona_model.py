@@ -89,7 +89,8 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
                              num_workers: int = 8,
                              num_loaders: int | None = None,
                              fill_nans: bool = False,
-                             polarized: bool = False) -> list[PUNCHCube]:
+                             polarized: bool = False,
+                             is_quickpunch: bool = False) -> list[PUNCHCube]:
     """Construct a full F corona model."""
     numba.set_num_threads(num_workers)
     logger = get_logger()
@@ -155,7 +156,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         trefoil_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
     else:
         output_data = models[0]
-        meta = NormalizedMetadata.load_template("CF" + obscode, "3")
+        meta = NormalizedMetadata.load_template("CF" + obscode, "3" if not is_quickpunch else "Q")
 
     meta.provenance = sorted([os.path.basename(f) for f in filenames])
 

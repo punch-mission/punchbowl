@@ -271,16 +271,14 @@ def levelq_QAM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
         out_list.append(o)
         o.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         o.meta.history = d.meta.history
-        for key in ["FILEVRSN", "ALL_INPT", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4", "DATE-AVG", "DATE-OBS",
-                    "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
-                    "CTRXNFI4", "CTRYNFI4"]:
+        for key in ["FILEVRSN", "DATE-AVG", "DATE-OBS", "DATE-BEG", "DATE-END"]:
             o.meta[key] = d.meta[key].value
         set_spacecraft_location_to_earth(o)
 
     logger.info("ending level Q QAM flow")
 
     for o in out_list:
-        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME"))]
 
     if output_filename is not None:
         output_image_task(out_list[0], output_filename)

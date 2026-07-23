@@ -212,7 +212,7 @@ def subtract_f_corona_background(data_object: PUNCHCube,
     return data_object
 
 @punch_task
-def subtract_f_corona_background_task(observation: PUNCHCube,
+def subtract_f_corona_background_task(observation: PUNCHCube,  #noqa: C901
                                       before_f_background_models: list[PUNCHCube | str],
                                       after_f_background_models: list[PUNCHCube | str],
                                       allow_extrapolation: bool = False) -> PUNCHCube:
@@ -258,6 +258,9 @@ def subtract_f_corona_background_task(observation: PUNCHCube,
         if observation.meta["TYPECODE"].value[1] == "P" and model.meta["TYPECODE"].value[0] == "P":
             before_model = model
             break
+        if observation.meta["TYPECODE"].value[1] == "Q" and model.meta["TYPECODE"].value[0] == "C":
+            before_model = model
+            break
     else:
         raise RuntimeError(f"Could not find before model for {observation.meta['FILENAME']}")
 
@@ -268,6 +271,9 @@ def subtract_f_corona_background_task(observation: PUNCHCube,
             after_model = model
             break
         if observation.meta["TYPECODE"].value[1] == "P" and model.meta["TYPECODE"].value[0] == "P":
+            after_model = model
+            break
+        if observation.meta["TYPECODE"].value[1] == "Q" and model.meta["TYPECODE"].value[0] == "C":
             after_model = model
             break
     else:

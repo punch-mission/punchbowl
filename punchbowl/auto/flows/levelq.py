@@ -903,6 +903,6 @@ def levelq_CFN_call_data_processor(call_data: dict, pipeline_config, session=Non
 
 @flow
 def levelq_CFN_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, partial(construct_qp_f_corona_model, product_code="CFN"),
+    generic_process_flow_logic(flow_id, partial(construct_f_corona_model, product_code="CFN"),
                                pipeline_config_path, session=session,
                                call_data_processor=levelq_CFN_call_data_processor)

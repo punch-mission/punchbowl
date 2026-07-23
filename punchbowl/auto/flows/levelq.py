@@ -517,8 +517,8 @@ def levelq_QAM_construct_file_info(levelq_files: list[File], pipeline_config: di
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
                 date_obs=reference_time,
-                date_beg=min([f.date_obs for f in levelq_files if f.outlier == 0]),
-                date_end=max([f.date_obs for f in levelq_files if f.outlier == 0]),
+                date_beg=min([f.date_obs for f in levelq_files]),
+                date_end=max([f.date_obs for f in levelq_files]),
                 state="planned",
                 # Outlier images are excluded from CAMs and PAMs
                 outlier=0,

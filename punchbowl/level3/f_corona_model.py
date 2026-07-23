@@ -69,8 +69,8 @@ def _load_file(path: str, data_destination: ShmPickleableNDArray) -> tuple[np.nd
         cropx = cube.meta["CROPX1"].value, cube.meta["CROPX2"].value
         cropy = cube.meta["CROPY1"].value, cube.meta["CROPY2"].value
     else:  # this is likely quickpunch since it doesn't have crop natively implemented now
-        cropx = 0, 2048
-        cropy = 0, 2048
+        cropx = 0, 4096
+        cropy = 0, 4096
 
     data_destination[:, cropy[0]:cropy[1], cropx[0]:cropx[1]] = (
         np.where(np.isfinite(cube.uncertainty.array), cube.data, np.nan)

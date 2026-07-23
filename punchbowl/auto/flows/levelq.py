@@ -407,7 +407,6 @@ def levelq_QAM_query_ready_files(session, pipeline_config: dict, reference_time=
                        .filter(File.level == "Q")
                        .filter(File.file_type == 'CT')
                        .filter(File.observatory == "M")
-                       .filter(File.outlier == 0)
                        .order_by(File.date_obs.desc()).all())
     logger.info(f"{len(all_ready_files)} Level Q CTM files need to be processed to low-noise.")
 
@@ -903,6 +902,6 @@ def levelq_CFN_call_data_processor(call_data: dict, pipeline_config, session=Non
 
 @flow
 def levelq_CFN_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, partial(construct_qp_f_corona_model, product_code="CFN"),
+    generic_process_flow_logic(flow_id, partial(construct_f_corona_model, product_code="CFN"),
                                pipeline_config_path, session=session,
                                call_data_processor=levelq_CFN_call_data_processor)

@@ -10,7 +10,7 @@ from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.punch_io import load_many_cubes
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import load_trefoil_wcs
-from punchbowl.level2.merge import merge_many_polarized_task
+from punchbowl.level2.merge import merge_many_clear_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
@@ -19,9 +19,7 @@ from punchbowl.levelq.pca import pca_filter
 from punchbowl.prefect import get_logger, punch_flow
 from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
 
-ORDER_QP = ["QM1", "QZ1", "QP1",
-            "QM2", "QZ2", "QP2",
-            "QM3", "QZ3", "QP3"]
+ORDER_QP = ["QR1", "QR2", "QR3"]
 
 SPACECRAFT_OBSCODE = {"1": "WFI1",
                       "2": "WFI2",
@@ -144,7 +142,7 @@ def levelq_CQM_core_flow(data_list: list[str] | list[PUNCHCube], #noqa: N802, C9
         output_dateend = max([d.meta.datetime for d in data_list_mosaic if d is not None],
                              ).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-        output_data_mosaic = merge_many_polarized_task(data_list_mosaic, quickpunch_mosaic_wcs, level="Q",
+        output_data_mosaic = merge_many_clear_task(data_list_mosaic, quickpunch_mosaic_wcs, level="Q",
                                                    product_code="CQM")
 
         for d in filter(None, data_list_mosaic):

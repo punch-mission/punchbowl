@@ -23,25 +23,29 @@ class ElementGrid:
     Attributes
     ----------
     threshold:
-
+        Final threshold for keeping points when evaluating the response/basis functions.
     coords:
         Information about the coordinate system of the output of elements and
         the input to response. Implemented as an instance of coordgrid.
     params:
-
+        Parameters or anything else used to evaluate the response function.
     function_evaluator:
-
+        The response function evaluator.
+        The callable should take indices, coordinates, and `params` as input, and return the response
+        for the point(s) of interest
     n_elements: int
         The number of elements in the element_grid, as well as the number
         of unique element id/indices.
     n_subgrid:
-
+        To take into account subgrid-scale effects, evaluate the response/basis functions.
+        at this multiple of the grid scale.
     subgrid:
-
+        Subgrid made by `CoordGrid.subgrid` factored `n_subgrid`
     eval_subgrid:
-
+        Grid returned from `get_eval_grid()` method
     stencil:
-
+        In addition to the footprint, a stencil is computed to
+        determine which grid points to use evaluate around the input point.
     n_addresses: int
         The number of element addresses in the element grid. These are
         how the elements are accessed via the elements method. In
@@ -52,11 +56,11 @@ class ElementGrid:
     Methods
     -------
     get_eval_grid():
-
+        Returns a grid for evaluating the response/basis functions
     get_n_addresses():
-
+        Returns the number of addresses.
     evaluate_basis_at_point(point):
-
+        Evaluate the source/basis function at a given point.
     elements(point):
         Returns the elements addressed by a given index
     response(point):

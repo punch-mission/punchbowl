@@ -18,6 +18,7 @@ from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
+from punchbowl.level3.f_corona_model import construct_f_corona_model
 from punchbowl.levelq.f_corona_model import construct_qp_f_corona_model
 from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow, levelq_QAM_core_flow, levelq_QNN_core_flow
 from punchbowl.prefect import get_logger
@@ -694,6 +695,7 @@ def construct_levelq_CFM_flow_info(levelq_CTM_files: list[File],
         {
             "filenames": [ctm_file.filename() for ctm_file in levelq_CTM_files],
             "reference_time": str(reference_time),
+            "polarized": False
         },
     )
     return Flow(
@@ -811,11 +813,13 @@ def levelq_CFM_scheduler_flow(pipeline_config_path=None, session=None, reference
 
 def levelq_CFM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
     call_data["filenames"] = file_name_to_full_path(call_data["filenames"], pipeline_config["root"])
+    call_data["num_workers"] = 10
+    call_data["num_loaders"] = 5
     return call_data
 
 @flow
 def levelq_CFM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, construct_qp_f_corona_model,
+    generic_process_flow_logic(flow_id, construct_f_corona_model,
                                pipeline_config_path, session=session,
                                call_data_processor=levelq_CFM_call_data_processor)
 

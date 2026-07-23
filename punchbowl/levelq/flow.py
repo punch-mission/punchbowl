@@ -239,7 +239,7 @@ def levelq_CTM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
     logger.info("ending level Q CTM flow")
 
     for o in out_list:
-        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME").value)]
+        o.meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME"))]
 
     if output_filename is not None:
         output_image_task(out_list[0], output_filename)

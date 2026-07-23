@@ -961,19 +961,13 @@ def level1_quick_scheduler_flow(pipeline_config_path=None, session=None, referen
 
 
 def level1_quick_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    for key in ["input_data", "mask_path", "stray_light_before_path", "stray_light_after_path", "distortion_path"]:
+    for key in ["input_data", "mask_path", "stray_light_before_path", "stray_light_after_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
 
-    # TODO: this is a hack to skip NFI PSF. Remove!
-    if call_data["psf_model_path"] == "":
-        call_data["psf_model_path"] = None
-    else:
-        call_data["psf_model_path"] = file_name_to_full_path(call_data["psf_model_path"], pipeline_config["root"])
-        call_data["psf_model_path"] = cache_layer.psf.wrap_if_appropriate(call_data["psf_model_path"])
-
-    # Anything more than 16 doesn't offer any real benefit, and the default of n_cpu on punch190 is actually slower than
-    # 16! Here we choose less to have less spiky CPU usage to play better with other flows.
-    call_data["max_workers"] = 2
+    call_data["stray_light_before_path"] = cache_layer.stray_light.wrap_if_appropriate(
+            call_data["stray_light_before_path"])
+    call_data["stray_light_after_path"] = cache_layer.stray_light.wrap_if_appropriate(
+            call_data["stray_light_after_path"])
     return call_data
 
 

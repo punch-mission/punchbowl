@@ -64,8 +64,13 @@ def _load_file(path: str, data_destination: ShmPickleableNDArray) -> tuple[np.nd
         cube = load_ndcube_from_fits(path, include_provenance=False, dtype=np.float32)
     except Exception as e:  # noqa: BLE001
         return str(e)
-    cropx = cube.meta["CROPX1"].value, cube.meta["CROPX2"].value
-    cropy = cube.meta["CROPY1"].value, cube.meta["CROPY2"].value
+
+    if "CROPX1" in cube.meta:
+        cropx = cube.meta["CROPX1"].value, cube.meta["CROPX2"].value
+        cropy = cube.meta["CROPY1"].value, cube.meta["CROPY2"].value
+    else:  # this is likely quickpunch since it doesn't have crop natively implemented now
+        cropx = 0, 4096
+        cropy = 0, 4096
 
     data_destination[:, cropy[0]:cropy[1], cropx[0]:cropx[1]] = (
         np.where(np.isfinite(cube.uncertainty.array), cube.data, np.nan)
@@ -84,7 +89,8 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
                              num_workers: int = 8,
                              num_loaders: int | None = None,
                              fill_nans: bool = False,
-                             polarized: bool = False) -> list[PUNCHCube]:
+                             polarized: bool = False,
+                             is_quickpunch: bool = False) -> list[PUNCHCube]:
     """Construct a full F corona model."""
     numba.set_num_threads(num_workers)
     logger = get_logger()
@@ -150,7 +156,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
         trefoil_wcs = astropy.wcs.utils.add_stokes_axis_to_wcs(trefoil_wcs, 2)
     else:
         output_data = models[0]
-        meta = NormalizedMetadata.load_template("CF" + obscode, "3")
+        meta = NormalizedMetadata.load_template("CF" + obscode, "3" if not is_quickpunch else "Q")
 
     meta.provenance = sorted([os.path.basename(f) for f in filenames])
 
@@ -212,7 +218,7 @@ def subtract_f_corona_background(data_object: PUNCHCube,
     return data_object
 
 @punch_task
-def subtract_f_corona_background_task(observation: PUNCHCube,
+def subtract_f_corona_background_task(observation: PUNCHCube,  #noqa: C901
                                       before_f_background_models: list[PUNCHCube | str],
                                       after_f_background_models: list[PUNCHCube | str],
                                       allow_extrapolation: bool = False) -> PUNCHCube:
@@ -258,6 +264,9 @@ def subtract_f_corona_background_task(observation: PUNCHCube,
         if observation.meta["TYPECODE"].value[1] == "P" and model.meta["TYPECODE"].value[0] == "P":
             before_model = model
             break
+        if observation.meta["TYPECODE"].value[1] == "Q" and model.meta["TYPECODE"].value[0] == "C":
+            before_model = model
+            break
     else:
         raise RuntimeError(f"Could not find before model for {observation.meta['FILENAME']}")
 
@@ -268,6 +277,9 @@ def subtract_f_corona_background_task(observation: PUNCHCube,
             after_model = model
             break
         if observation.meta["TYPECODE"].value[1] == "P" and model.meta["TYPECODE"].value[0] == "P":
+            after_model = model
+            break
+        if observation.meta["TYPECODE"].value[1] == "Q" and model.meta["TYPECODE"].value[0] == "C":
             after_model = model
             break
     else:

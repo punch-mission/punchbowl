@@ -407,7 +407,6 @@ def levelq_QAM_query_ready_files(session, pipeline_config: dict, reference_time=
                        .filter(File.level == "Q")
                        .filter(File.file_type == 'CT')
                        .filter(File.observatory == "M")
-                       .filter(File.outlier == 0)
                        .order_by(File.date_obs.desc()).all())
     logger.info(f"{len(all_ready_files)} Level Q CTM files need to be processed to low-noise.")
 

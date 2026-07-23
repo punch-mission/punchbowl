@@ -164,7 +164,32 @@ def generate_level3_velocity_flow(files: list[str],
                                   ycens: np.ndarray | None = None,
                                   rbands: list[int] | None = None,
                                   output_filename: str | None = None) -> list[PUNCHCube]:
-    """Generate Level 3 velocity data product."""
+    """
+    Generate level 3 flow tracking velocity product.
+
+    Parameters
+    ----------
+    files : list[str]
+        Input files used for velocity tracking
+    delta_t : int, optional
+        Time offset in frames between images, by default 12
+    sparsity : int, optional
+        Frame skip interval for averaging, by default 2
+    n_ofs : int, optional
+        Number of spatial offsets for cross-correlation, by default 151
+    ycens : np.ndarray | None, optional
+        Radial band centers in solar radii, by default None
+    rbands : list[int] | None, optional
+        Indices of radial bands to visualize, by default None
+    output_filename : str | None, optional
+        Output file name, by default None
+
+    Returns
+    -------
+    list[PUNCHCube]
+        List of generated velocity maps
+
+    """
     logger = get_logger()
 
     logger.info("Generating velocity data product")

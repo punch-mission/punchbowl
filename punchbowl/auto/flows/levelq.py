@@ -511,7 +511,7 @@ def levelq_QAM_construct_file_info(levelq_files: list[File], pipeline_config: di
                                    reference_time=None) -> list[File]:
     reference_time = levelq_files[0]._reference_time
     return [File(
-                level="3",
+                level="Q",
                 file_type="QA",
                 observatory="M",
                 polarization="C",

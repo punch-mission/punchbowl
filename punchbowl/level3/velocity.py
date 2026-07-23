@@ -83,7 +83,7 @@ def preprocess_image(data: PUNCHCube,
     # Replace with appropriate preprocessing needed to clean-up. We need to have finite values for the polar remap
     header = data.meta.to_fits_header(wcs=data.wcs)
 
-    if header["OBS-MODE"] == "Polarized":
+    if header["OBS-MODE"] == "Polar_BpB":
         image = data.data[0, ...]
     elif header["OBS-MODE"] == "Unpolarized":
         image = data.data[...]
@@ -515,9 +515,9 @@ def track_velocity(files: list[str],
     """
     # Set defaults for missing input parameters
     if ycens is None:
-        ycens = np.arange(7, 14.5, 0.5)
+        ycens = np.arange(30, 90, 10)
     if rbands is None:
-        rbands = [0, 4, 8, 14]
+        rbands = list(range(len(ycens)))
 
     files.sort()
 
@@ -542,9 +542,9 @@ def track_velocity(files: list[str],
     with fits.open(files[-1]) as hdul:
         output_meta["DATE-END"] = hdul[1].header["DATE-END"]
 
-    date_beg = datetime.strptime(output_meta["DATE-BEG"].value, "%Y-%m-%dT%H:%M:%S").astimezone()
-    date_end = datetime.strptime(output_meta["DATE-END"].value, "%Y-%m-%dT%H:%M:%S").astimezone()
-    date_avg = (date_beg + (date_end - date_beg) / 2).strftime("%Y-%m-%dT%H:%M:%S")
+    date_beg = datetime.fromisoformat(output_meta["DATE-BEG"].value)
+    date_end = datetime.fromisoformat(output_meta["DATE-END"].value)
+    date_avg = (date_beg + (date_end - date_beg) / 2).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_meta["DATE-AVG"] = date_avg
     output_meta["DATE-OBS"] = date_avg
 

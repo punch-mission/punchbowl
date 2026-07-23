@@ -7,7 +7,7 @@ from dateutil.parser import parse as parse_datetime_str
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_many_cubes_iterable
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.data.wcs import load_quickpunch_mosaic_wcs
+from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.level3.f_corona_model import fill_nans_with_interpolation, model_fcorona_for_cube
 from punchbowl.prefect import get_logger, punch_flow
 
@@ -27,7 +27,7 @@ def construct_qp_f_corona_model(filenames: list[str],
     elif isinstance(reference_time, str):
         reference_time = parse_datetime_str(reference_time)
 
-    trefoil_wcs, trefoil_shape = load_quickpunch_mosaic_wcs()
+    trefoil_wcs, trefoil_shape = load_trefoil_wcs()
 
     logger.info("construct_f_corona_background started")
 

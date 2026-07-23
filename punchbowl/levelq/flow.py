@@ -217,8 +217,8 @@ def levelq_CTM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
             cube.meta.history.clear()
 
     data_list = [subtract_f_corona_background_task(d,
-                                                   before_f_corona_model_path,
-                                                   after_f_corona_model_path,
+                                                   [before_f_corona_model_path],
+                                                   [after_f_corona_model_path],
                                                    allow_extrapolation=True) for d in data_list]
 
     out_list = []

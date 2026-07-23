@@ -11,6 +11,7 @@ from pytest_mock_resources import create_mysql_fixture
 from punchbowl.auto.control.cleaner import cleaner
 from punchbowl.auto.control.db import Base, File, FileRelationship, Flow
 from punchbowl.auto.control.util import load_pipeline_configuration
+from punchbowl.level3 import flow
 
 loop: asyncio.AbstractEventLoop
 

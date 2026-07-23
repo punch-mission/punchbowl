@@ -18,6 +18,7 @@ from punchbowl.level1.despike import despike_polseq_task
 from punchbowl.level1.destreak import destreak_task
 from punchbowl.level1.dynamic_stray_light import remove_dynamic_stray_light_task
 from punchbowl.level1.initial_uncertainty import update_initial_uncertainty_task
+from punchbowl.level1.nfi_dynamic_stray_light import remove_nfi_stray_light
 from punchbowl.level1.psf import correct_psf_task
 from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.sqrt import decode_sqrt_data
@@ -343,54 +344,48 @@ def level1_late_core_flow(
 
 
 @punch_flow
-def levelh_core_flow(
-    input_data: list[str] | list[PUNCHCube],
-    gain_bottom: float = 4.9,
-    gain_top: float = 4.9,
-    bias_level: float = 100,
-    dark_level: float = 55.81,
-    read_noise_level: float = 17,
-    bitrate_signal: int = 16,
-    psf_model_path: str | None = None,
-    distortion_path: str | None = None,
-    output_filename: str | None = None,
-) -> list[PUNCHCube]:
-    """Core flow for level 0.5 also known as level H."""
+def level1_nfi_core_flow(input_data: list[str | PUNCHCube]) -> list[PUNCHCube]:
+    """
+    Remove dynamic stray light from NFI images.
+
+    Parameters
+    ----------
+    input_data : list[str | PUNCHCube]
+        Input NFI images
+
+    Returns
+    -------
+    output_data : list[PUNCHCube]
+        The processed images.
+
+    """
     logger = get_logger()
 
-    logger.info("beginning level H core flow")
+    logger.info("beginning level 1 NFI core flow")
 
     output_data = []
-    for i, this_data in enumerate(input_data):
-        data = load_image_task(this_data) if isinstance(this_data, str) else this_data
-        data = decode_sqrt_data(data)
-        data = update_initial_uncertainty_task(data,
-                                               bias_level=bias_level,
-                                               dark_level=dark_level,
-                                               gain_bottom=gain_bottom,
-                                               gain_top=gain_top,
-                                               read_noise_level=read_noise_level,
-                                               bitrate_signal=bitrate_signal,
-                                               )
 
-        data = correct_psf_task(data, psf_model_path)
-        data = align_task(data, distortion_path)
+    for this_data in input_data:
+        this_data = load_image_task(this_data) if isinstance(this_data, str) else this_data # noqa: PLW2901
+        this_data = remove_nfi_stray_light(this_data) # noqa: PLW2901
 
         # Repackage data with proper metadata
-        product_code = data.meta["TYPECODE"].value + data.meta["OBSCODE"].value
-        new_meta = NormalizedMetadata.load_template(product_code, "H")
-        new_meta["DATE-OBS"] = data.meta["DATE-OBS"].value
+        product_code = "Z" + this_data.meta["TYPECODE"].value[1:] + this_data.meta["OBSCODE"].value
+        new_meta = NormalizedMetadata.load_template(product_code, "1")
+        # copy over the existing values
+        for key in this_data.meta.keys():  # noqa: SIM118
+            if key in KEYS_TO_NOT_COPY:
+                continue
+            if key in new_meta.keys():  # noqa: SIM118
+                new_meta[key] = this_data.meta[key].value
+        new_meta.history = this_data.meta.history
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["FILEVRSN"] = this_data.meta["FILEVRSN"].value
 
-        output_header = new_meta.to_fits_header(data.wcs)
-        for key in output_header:
-            if (key in data.meta.keys()) and output_header[key] == "" and (key != "COMMENT") and (key != "HISTORY"): # noqa: SIM118
-                new_meta[key].value = data.meta[key].value
-        new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
-        data = data.replace(meta=new_meta)
+        this_data = this_data.replace(meta=new_meta) # noqa: PLW2901
 
-        if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
-            output_image_task(data, output_filename[i])
-        output_data.append(data)
-        logger.info("ending level H core flow")
+        output_data.append(this_data)
+
+    logger.info("ending level 1 NFI core flow")
+
     return output_data

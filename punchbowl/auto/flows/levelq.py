@@ -19,7 +19,6 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
 from punchbowl.level3.f_corona_model import construct_f_corona_model
-from punchbowl.levelq.f_corona_model import construct_qp_f_corona_model
 from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow, levelq_QAM_core_flow, levelq_QNN_core_flow
 from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime

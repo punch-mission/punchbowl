@@ -13,7 +13,7 @@ from punchbowl.auto.control.util import get_database_session, load_pipeline_conf
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.data.meta import construct_all_product_codes
 from punchbowl.data.punch_io import (
-    convert_jpeg,
+    convert_jpg,
     load_ndcube_from_fits,
     write_ndcube_to_quicklook,
     write_quicklook_to_mp4,
@@ -29,7 +29,7 @@ from punchbowl.prefect import get_logger
 # Can this be done via the database for expected output files?
 # Will this result in an endless number of waiting processes? Built-in expected time delay?
 
-# Filename of PUNCH_CAM_yyyymmdd.jpg, and corresponding daily .mp4 file
+# Filename of PUNCH_CAM_yyyymmdd_v0l.jpg, and corresponding daily .mp4 file
 
 
 @task(cache_policy=NO_CACHE)

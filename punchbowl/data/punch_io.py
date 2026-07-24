@@ -240,17 +240,17 @@ def write_ndcube_to_quicklook(cube: PUNCHCube, # noqa: C901
         write_file_hash(filename)
 
 
-def convert_jpeg(path_jp2: str,
-                 path_jpg: str) -> None:
+def convert_jpg(path_jp2: str,
+                path_jpg: str) -> None:
     """
-    Convert jp2 file to standard jpeg.
+    Convert jp2 file to standard jpg.
 
     Parameters
     ----------
     path_jp2 : str
         Input path to jp2 file
     path_jpg : str
-        Output path to jpeg file
+        Output path to jpg file
 
     """
     cv.imwrite(path_jpg, cv.imread(path_jp2))

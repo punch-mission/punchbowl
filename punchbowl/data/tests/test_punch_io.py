@@ -1,6 +1,8 @@
 import os
 from datetime import UTC, datetime
 
+import glymur
+import lxml.etree as et
 import numpy as np
 import pytest
 from astropy.io import fits
@@ -100,6 +102,29 @@ def test_write_data_jp2(sample_ndcube, tmpdir):
     test_path = os.path.join(tmpdir, "test.jp2")
     write_ndcube_to_quicklook(cube, test_path)
     assert os.path.isfile(test_path)
+
+    #now check that the written file has the helioviewer tag.
+    #the tag should be in the jp2 xml meta box.
+    jp2_read_in = glymur.Jp2kr(test_path)
+    xml_box = next((box for box in jp2_read_in.box if isinstance(box, glymur.jp2box.XMLBox)),None)
+    has_fits_top_level = False
+    has_hv_top_level = False
+    if xml_box is not None:
+       raw_xml_bytes = et.tostring(xml_box.xml)
+       root = et.fromstring(raw_xml_bytes)
+       meta_elements = root.xpath("//*[local-name()='meta']")
+       meta_box = meta_elements[0]
+       for child in meta_box.iterchildren():
+           local_tag = et.QName(child).localname
+           if local_tag == 'fits':
+               has_fits_top_level = True
+           if local_tag == 'helioviewer':
+               has_hv_top_level = True
+           if has_fits_top_level and has_hv_top_level:
+               break
+           1
+    assert has_fits_top_level==True
+    assert has_hv_top_level==True
 
 def test_write_jpeg(sample_ndcube, tmpdir):
     from punchbowl.data.sample import PUNCH_PAM

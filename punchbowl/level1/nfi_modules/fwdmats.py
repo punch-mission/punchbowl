@@ -1,5 +1,4 @@
 """
-(Joe's Notes)
 These modules compute and assemble the forward matrices for the stray light problem.
 generate_nfi_fwdmats is called in the main correction script before the reconstruction
 (by `reconstruct_nfi_straylight`, which uses the output of `generate_nfi_fwdmats` as input)

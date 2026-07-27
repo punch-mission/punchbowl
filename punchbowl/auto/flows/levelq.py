@@ -18,7 +18,7 @@ from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
-from punchbowl.levelq.f_corona_model import construct_qp_f_corona_model
+from punchbowl.level3.f_corona_model import construct_f_corona_model
 from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow, levelq_QAM_core_flow, levelq_QNN_core_flow
 from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime
@@ -160,7 +160,9 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
     logger = get_logger()
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(or_(
-                            and_(File.level == "1", File.file_type.in_(["QM", "QZ", "QP"]), File.observatory.in_(["1", "2", "3"])),
+                            and_(File.level == "1",
+                                 File.file_type == 'QR',
+                                 File.observatory.in_(["1", "2", "3"])),
                             # We're excluding NFI
                             # and_(File.level == "Q", File.file_type == "CN"),
                        )).order_by(File.date_obs.desc()).all())
@@ -184,8 +186,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
         if len(grouped_ready_files) >= max_n:
             break
         # We're excluding NFI
-        # group_is_complete = len(group) == 10
-        group_is_complete = len(group) == 9
+        group_is_complete = len(group) == 3
         if group_is_complete:
             grouped_ready_files.append(group)
             continue
@@ -207,7 +208,7 @@ def levelq_CQM_query_ready_files(session, pipeline_config: dict, reference_time=
         # range within which to grab L0s.
         center = group[0].date_obs
         search_width = timedelta(minutes=1)
-        search_types = ["PM", "PZ", "PP"]
+        search_types = ["CR"]
 
         # Grab all the L0s that produce inputs for this trefoil
         expected_inputs = (session.query(File)
@@ -406,14 +407,13 @@ def levelq_QAM_query_ready_files(session, pipeline_config: dict, reference_time=
                        .filter(File.level == "Q")
                        .filter(File.file_type == 'CT')
                        .filter(File.observatory == "M")
-                       .filter(File.outlier == 0)
                        .order_by(File.date_obs.desc()).all())
     logger.info(f"{len(all_ready_files)} Level Q CTM files need to be processed to low-noise.")
 
     if len(all_ready_files) == 0:
         return []
 
-    t0 = parse_datetime(pipeline_config["flows"]["levelq_QAM"]["t0"])
+    t0 = parse_datetime_str(pipeline_config["flows"]["levelq_QAM"]["t0"])
     increment = timedelta(minutes=32)
 
     end_time = t0
@@ -510,15 +510,15 @@ def levelq_QAM_construct_file_info(levelq_files: list[File], pipeline_config: di
                                    reference_time=None) -> list[File]:
     reference_time = levelq_files[0]._reference_time
     return [File(
-                level="3",
+                level="Q",
                 file_type="QA",
                 observatory="M",
                 polarization="C",
                 file_version=pipeline_config["file_version"],
                 software_version=__version__,
                 date_obs=reference_time,
-                date_beg=min([f.date_obs for f in levelq_files if f.outlier == 0]),
-                date_end=max([f.date_obs for f in levelq_files if f.outlier == 0]),
+                date_beg=min([f.date_obs for f in levelq_files]),
+                date_end=max([f.date_obs for f in levelq_files]),
                 state="planned",
                 # Outlier images are excluded from CAMs and PAMs
                 outlier=0,
@@ -659,9 +659,9 @@ def levelq_upload_process_flow(flow_id, pipeline_config_path=None, session=None)
 def levelq_CFM_query_ready_files(session, pipeline_config: dict, reference_time: datetime):
     logger = get_logger()
 
-    min_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["min_files_per_half"]
-    max_files_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_files_per_half"]
-    max_hours_per_half = pipeline_config["flows"]["construct_f_corona_background"]["max_hours_per_half"]
+    min_files_per_half = pipeline_config["flows"]["levelq_CFM"]["min_files_per_half"]
+    max_files_per_half = pipeline_config["flows"]["levelq_CFM"]["max_files_per_half"]
+    max_hours_per_half = pipeline_config["flows"]["levelq_CFM"]["max_hours_per_half"]
 
     before = reference_time - timedelta(hours=2 * max_hours_per_half)
     after = reference_time + timedelta(weeks=0)
@@ -693,6 +693,8 @@ def construct_levelq_CFM_flow_info(levelq_CTM_files: list[File],
         {
             "filenames": [ctm_file.filename() for ctm_file in levelq_CTM_files],
             "reference_time": str(reference_time),
+            "polarized": False,
+            "is_quickpunch": True
         },
     )
     return Flow(
@@ -810,11 +812,13 @@ def levelq_CFM_scheduler_flow(pipeline_config_path=None, session=None, reference
 
 def levelq_CFM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
     call_data["filenames"] = file_name_to_full_path(call_data["filenames"], pipeline_config["root"])
+    call_data["num_workers"] = 10
+    call_data["num_loaders"] = 5
     return call_data
 
 @flow
 def levelq_CFM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, construct_qp_f_corona_model,
+    generic_process_flow_logic(flow_id, construct_f_corona_model,
                                pipeline_config_path, session=session,
                                call_data_processor=levelq_CFM_call_data_processor)
 
@@ -898,6 +902,6 @@ def levelq_CFN_call_data_processor(call_data: dict, pipeline_config, session=Non
 
 @flow
 def levelq_CFN_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, partial(construct_qp_f_corona_model, product_code="CFN"),
+    generic_process_flow_logic(flow_id, partial(construct_f_corona_model, product_code="CFN"),
                                pipeline_config_path, session=session,
                                call_data_processor=levelq_CFN_call_data_processor)

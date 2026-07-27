@@ -16,9 +16,6 @@ from punchbowl.level1.flow import level1_nfi_core_flow
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
 def test_nfi_core_flow_run(sample_ndcube):
-    # with prefect_test_harness():
-        # sample_data = sample_ndcube(shape=(10,10),code='XR4',level="1")
-
     data_path = THIS_DIRECTORY / "data" / "PUNCH_L1_XR4_20251001120821_v0j.fits"
     sample_data = load_ndcube_from_fits(data_path)
     output = level1_nfi_core_flow([sample_data])

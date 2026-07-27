@@ -192,19 +192,19 @@ def remove_nfi_stray_light(
     bindown_shape: tuple
         Final shape of the binned down image.
     solver_tol: float
-        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from 
+        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from
         the forward matrices.
         Tolerance for the solver, default 1.5e-5
     sky_reg: float
-        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from 
+        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from
         the forward matrices.
         Regularization factor for the sky source, larger values are a heavier penalty; default 1
     inst_reg: float
-        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from 
+        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from
         the forward matrices.
         Regularization factor for per-pixel instrument source, default 1
     stray_reg: float
-        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from 
+        Parameter for `reconstruct_nfi_straylight()` function to create the stray light, instrument, and sky solutions from
         the forward matrices.
         egularization factor for the disk stray light functions, default 0.001
     thread_count: int

@@ -262,7 +262,7 @@ def levelq_QAM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
         if cube is not None:
             cube.meta.history.clear()
 
-    data_list = [create_low_noise_task(data_list, reference_time=reference_time)]
+    data_list = [create_low_noise_task(data_list, reference_time=reference_time, exclude_outliers=False)]
 
     out_list = []
     for d in data_list:

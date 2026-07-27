@@ -59,10 +59,15 @@ You need Docker or Podman Desktop.
 Please open an issue or discussion on this repo.
 
 ## Contributing
-
+gi
 We appreciate all contributions.
 If you have a problem with the code or would like to see a new feature, please open an issue.
 Or you can submit a pull request.
+
+If you would like to contribute by submitting a pull request, ensure that you have installed the environment as a super-user to activate necessary dependencies.
+You will also need to set up pre-commit so that it will analyze your staged files.
+To do this, run `pre-commit install` in the punchbowl, solpolpy, and/or regularizepsf repositories after setting up your environment.
+This step should only need to be done once after installing the environment.
 
 Thanks to all the contributors to punchbowl!
 

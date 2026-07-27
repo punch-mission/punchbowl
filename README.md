@@ -59,7 +59,6 @@ You need Docker or Podman Desktop.
 Please open an issue or discussion on this repo.
 
 ## Contributing
-gi
 We appreciate all contributions.
 If you have a problem with the code or would like to see a new feature, please open an issue.
 Or you can submit a pull request.

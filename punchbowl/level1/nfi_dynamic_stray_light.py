@@ -223,7 +223,7 @@ def remove_nfi_stray_light(
     # Note: The inputs for "generate_nfi_fwdmats" are expected to be np.arrays to accommodate for
     # processing multiple files at a time and generating forward matrices in one function
     # TODO: Modify to optimize processing one file at a time w/o use of np.arrays
-    # TODO: OR fix above to append to arrays in the case of processing multiple frames at a time
+    # TODO: OR fix above to append to arrays in the case of processing multiple frames at a time [Issue #1111]
     nframes = 1
     forward_matrices = generate_nfi_forward_matrices(
         nframes,
@@ -237,7 +237,7 @@ def remove_nfi_stray_light(
     )
 
     # Mask out glint spheres
-    # TODO: Make mask optional
+    # TODO: Make mask optional [Issue #1112]
     glint_mask = generate_glint_mask(
         datacube.data.shape, sphere1_center, sphere2_center, glint_sphere_radius, glint_bottom_cut
     )

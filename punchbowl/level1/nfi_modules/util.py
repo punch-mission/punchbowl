@@ -43,7 +43,7 @@ def multivector_matrix_multiply(a, b):
     here as a very small subroutine rather than spreading it all over the code
     for ease of maintenance and explanation. It works for single vectors, too.
     """
-    # TODO: (JK note) I'm pretty sure this is the same as np.matvec()
+    # TODO: (JK note) I'm pretty sure this is the same as np.matvec() [Issue #1113]
     return np.dot(b, a.T)
 
 

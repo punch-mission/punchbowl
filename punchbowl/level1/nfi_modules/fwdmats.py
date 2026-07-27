@@ -184,7 +184,6 @@ def assemble_nfi_fwdmats(fwdmats_dict):
             forward matrices of the `sky` component of `fwdmats_dict` (i.e. number of frames) multiplied by the number of detector pixels
             per frame; and `n_source` is the total number of parameters from the sky model, instrument, and stray light model.
     """
-    # TODO: (JK) not totally confident about this docstring explanation.
     n_frames = len(fwdmats_dict["sky"])
     n_pixels = fwdmats_dict["inst"].shape[0]
     n_data_points = n_frames * n_pixels

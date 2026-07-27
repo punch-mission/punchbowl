@@ -156,7 +156,7 @@ def sparse_nonlinear_map_solver(
 
     # Being really careful that everything is the right dtype
     # so (for example) nothing gets promoted to double if dtype is single:
-    # TODO: (JK): unit tests will likely help here (or at least some assert statements)
+    # TODO: (JK): unit tests will likely help here (or at least some assert statements) [Issue #1004]
     solver_tol = np.dtype(dtype).type(solver_tol)
     zero = np.dtype(dtype).type(0.0)
     pt5 = np.dtype(dtype).type(0.5)

@@ -7,7 +7,7 @@ import numpy as np
 import scipy.ndimage
 
 
-def kernel_smoothing_matrix(angles_rev, smooth_rad=0.1):
+def kernel_smoothing_matrix(angles_rev, smooth_radius=0.1):
     """
     Build smoothing matrix for kernel.
 
@@ -30,9 +30,9 @@ def kernel_smoothing_matrix(angles_rev, smooth_rad=0.1):
     n_angles = len(angles_rev)  # [int]
     angle_diff = angles_rev[1] - angles_rev[0]  # [num]
     output_matrix = np.zeros([n_angles, n_angles])  # [array]
-    n_radius_steps = np.floor(smooth_rad / angle_diff).astype(np.int32)  # [int]
+    n_radius_steps = np.floor(smooth_radius / angle_diff).astype(np.int32)  # [int]
     na = 2 * n_radius_steps + 1  # kernel width? #[int]
-    smoothing_kernel_angles = angle_diff * (np.arange(na) - n_radius_steps) / smooth_rad  # [array]
+    smoothing_kernel_angles = angle_diff * (np.arange(na) - n_radius_steps) / smooth_radius  # [array]
 
     # Create array pf smoothing kernel
     smoothing_kernel = np.zeros(n_angles)  # [1D array]

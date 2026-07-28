@@ -153,7 +153,7 @@ def get_solver_inputs(datacube: PUNCHCube, glint_mask: np.ndarray, bindown_shape
 def remove_nfi_stray_light(
     datacube: PUNCHCube,
     bin_factor: int = 4,
-    fwd_mat_smooth_rad=0,
+    fwd_mat_smooth_radius=0,
     sphere1_center: tuple = (540, 790),
     sphere2_center: tuple = (540, 1210),
     glint_sphere_radius: int = 375,
@@ -174,7 +174,7 @@ def remove_nfi_stray_light(
         Input NFI images.
     bin_factor: int
         Binning down factor
-    fwd_mat_smooth_rad: int
+    fwd_mat_smooth_radius: int
         Parameter for the `generate_nfi_forward_matrices()` function (i.e. to generate the kernels).
         If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
     sphere1_center: tuple
@@ -232,7 +232,7 @@ def remove_nfi_stray_light(
         np.array([y_offsets]),
         np.array([crota_radians]),
         bin_factor=bin_factor,
-        smooth_rad=fwd_mat_smooth_rad,
+        smooth_radius=fwd_mat_smooth_radius,
         thread_count=thread_count,
     )
 

@@ -18,7 +18,7 @@ yoffs: The y offsets of each frame in pixels. For a correctly aligned fits file,
 crots: The rotation of each frame relative to the fixed sky, about its center.
 bin_fac: How much to bin down the data for speed (default 4). Needs to be set the same in
                         reconstruct_nfi_straylight.
-smooth_rad: If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
+smooth_radius: If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
 """
 
 import numpy as np
@@ -80,7 +80,7 @@ def generate_nfi_forward_matrices(
     bin_factor : int
             How much to bin down the data for speed (default 4).
             Needs to be set the same in `reconstruct_nfi_straylight`.
-    smooth_rad : float
+    smooth_radius : float
             If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
     radial_size : float
         The size of the kernel in pixels. ("Radial" here means "radial out from image-center".)
@@ -147,7 +147,7 @@ def generate_nfi_forward_matrices(
     if smooth_radius > 0:
         # Note: csc-matrix = "compressed sparse column matrix"
         stray_forward_mat = stray_forward_mat * csc_matrix(
-            kernel_smoothing_matrix(kernel_angles / 2 / np.pi, smooth_rad=smooth_radius)
+            kernel_smoothing_matrix(kernel_angles / 2 / np.pi, smooth_radius=smooth_radius)
         )
 
     # Create Forward Matrix for Instrument

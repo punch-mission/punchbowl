@@ -7,9 +7,9 @@ from punchbowl.level1.nfi_modules.solver import sparse_nonlinear_map_solver
 
 def reconstruct_nfi_straylight(
     data,
-    errs,
+    errors,
     fwdmats_dict,
-    good_dat,
+    good_data,
     bin_fac=4,
     errfac_systematic=0.01,
     mask_source=False,
@@ -26,13 +26,13 @@ def reconstruct_nfi_straylight(
     -----------
     data: np.array
             The images to invert, dimensions n_img, nx, ny
-    errs: np.ndarray
+    errors: np.ndarray
             Uncertainties corresponding to the images
     fwdmats_dict: dict
             dictionary containing the forward matrices for the sky, (per-pixel) instrument, and stray light
             sources.
             Created by `fwdmats.generate_nfi_forward_matrices`
-    good_dat: np.ndarray
+    good_data: np.ndarray
             Array flagging which data are good to use in the inversion, same shape as data
     bin_fac: int, optional
             how much to bin down the data for speed (default: 4). fwdmats.generate_nfi_fwdmats
@@ -75,8 +75,8 @@ def reconstruct_nfi_straylight(
     n_source = n_sky + n_instr + n_stray
 
     data_bin = [d / datanorm for d in data]
-    err_bin = [e / datanorm for e in errs]
-    mask_bin = [g for g in good_dat]
+    err_bin = [e / datanorm for e in errors]
+    mask_bin = [g for g in good_data]
     good_data_mask = np.hstack([m.flatten() for m in mask_bin])
 
     # Mask matrices

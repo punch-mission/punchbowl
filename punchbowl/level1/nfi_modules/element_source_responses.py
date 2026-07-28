@@ -28,25 +28,15 @@ def element_source_responses(source, detector, transform, n_buffers=10**7, dtype
         The callable must only take the `coords` attributes of a `SourceGrid` and `DetectorGrid` object.
         This callable should also return a callable object that takes points of the source coordinate
         system as input.
-
-        Example:
-            Transform must be callable with the following syntax:
-            `transformer = transform(source.coords,detector.coords)`
-            The transformer object it returns must be callable with the
-            following syntax:
-                `pts_det_frame = transformer(pts_src_frame)`
-            where `pts_det_frame` are `pts_src_frame` transformed from
-            the source frame to the detector frame
-
         This coordinate transform does not need to be reversible (e.g., the source system
         can be 3D and the detector system can be 2D) -- only the forward
         direction must be well defined. Naturally, this may result in a
         singular response matrix.
-
     n_buffers: int, default = 10**7
-
+        The number of buffers.
+        Buffers are used to limit the overhead used to update the sparse matrices.
     dtype: dtype, default = "float32"
-
+        Type constraint for computation speed, memory use, and/or calculation precision.
     Returns:
     --------
     response_matrix: scipy.csc_matrix

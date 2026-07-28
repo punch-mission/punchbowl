@@ -85,13 +85,13 @@ def generate_glint_mask(
     data_shape : tuple
         Shape of the image data
     sphere1_center : tuple
-        Coordinate for the center of sphere 1
+        Coordinate for the center of sphere 1 (pixel value)
     sphere2_center : tuple
-        Coordinate for the center of sphere 2
+        Coordinate for the center of sphere 2 (pixel value)
     sphere_radius : int
-        Radi of sphere (same radi for both spheres)
+        Radi of sphere (same radi for both spheres; pixel value)
     bottom_cut_off : int
-        the height to which include everything above and mask out everything below
+        the height to which include everything above and mask out everything below (pixel value)
 
     Returns
     -------

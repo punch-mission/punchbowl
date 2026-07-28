@@ -41,9 +41,9 @@ def generate_nfi_forward_matrices(
     data_size: tuple,
     x_offsets: np.ndarray,
     y_offsets: np.ndarray,
-    crots: np.ndarray,
+    crotas: np.ndarray,
     bin_factor: int = 4,
-    smooth_rad: float = 0.05,
+    smooth_radius: float = 0.05,
     radial_size: float = 175.4,
     elon_abs=130,
     cx=1009,
@@ -85,6 +85,20 @@ def generate_nfi_forward_matrices(
     radial_size : float
         The size of the kernel in pixels. ("Radial" here means "radial out from image-center".)
         Passed into function `straylight_kernels.generate_kernels()`
+    elon_abs : float | None
+        Set the distance from the center of the image to the center of the kernel. This is measured in pixels, but it is
+        otherwise the elongation angle of the kernel relative to the image center.
+        Passed into function `straylight_kernels.generate_kernels()`
+    cx, cy : int
+        The x and y coordinate around which the kernel is rotated (by the theta parameter). This coordinate then becomes
+        the center of the disk of kernels once kernels are computed for all theta values.
+        Passed into function `straylight_kernels.generate_kernels()`
+    nstray: optional default = None
+        Number of stray light kernel orientation angels, sampled uniformly over [0, 2*pi) (endpoint excluded to avoid duplicate kernels
+        at 0 and 2*pi)
+        If None, defaults to binned image size, `im_size`.
+    thread_count: int, default = 5
+        number of threads for parallel processing of `straylight_kernels.generate_kernels()`
     Returns
     -------
     forward_matrices: dictionary of ndarray objects
@@ -93,7 +107,7 @@ def generate_nfi_forward_matrices(
 
             Where `inst`, `sky`, and `stray` as keywords return the forward matrix for each relevant context, and `norms_inst`,
             `norms_sky`, and `norms_stray` gives the normalizers used to make each of the respective forward matrices.
-            Keyword, `im_size` give the image size
+            Keyword, `im_size` give the binned image size
     """
     nx, ny = data_size
     dimensions = np.round(np.array([nx, ny]) / bin_factor).astype(np.int32)
@@ -105,7 +119,7 @@ def generate_nfi_forward_matrices(
     detectors = []
     sky_forward_mat = []
     for i in range(nframes):
-        detectors.append(get_detector(dimensions, center=[x_offsets[i], y_offsets[i]], crota=crots[i]))
+        detectors.append(get_detector(dimensions, center=[x_offsets[i], y_offsets[i]], crota=crotas[i]))
         sky_forward_mat.append(esr(source_sky, detectors[i], CoordTransform))
 
     im_size = dimensions[0]
@@ -130,10 +144,10 @@ def generate_nfi_forward_matrices(
     kernels = kernels.reshape([nstray, im_size * im_size])
     # Note: csr-matrix = "compressed sparse row matrix"
     stray_forward_mat = csr_matrix(kernels.T)
-    if smooth_rad > 0:
+    if smooth_radius > 0:
         # Note: csc-matrix = "compressed sparse column matrix"
         stray_forward_mat = stray_forward_mat * csc_matrix(
-            kernel_smoothing_matrix(kernel_angles / 2 / np.pi, smooth_rad=smooth_rad)
+            kernel_smoothing_matrix(kernel_angles / 2 / np.pi, smooth_rad=smooth_radius)
         )
 
     # Create Forward Matrix for Instrument

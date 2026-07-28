@@ -170,11 +170,11 @@ class CoordGrid:
         Parameters
         ----------
         vals :
-
+            The value associated with each coordinate in `coords`
         coords :
-
+            The coordinates to convert into grid indices.
         threshold : int, default = 0
-
+            Points whose value in `vals` is not strictly greater than this threshold are excluded from the output.
         Returns
         -------
         elms : np.ndarray

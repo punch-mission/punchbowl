@@ -206,11 +206,11 @@ def generate_kernels(kernel_angles, *args, n_threads=5, **kwargs):
     ----------
     kernel_angles : list | np.ndarray
         The theta values at which to compute kernels
-    args : tuple
+    *args : tuple
         Arguments to pass to generate_kernel
     n_threads : int | None
         The number of threads to use for parallel processing
-    kwargs : dict
+    **kwargs : dict
         Keyword arguments to pass to generate_kernel
 
     Returns

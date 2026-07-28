@@ -4,7 +4,7 @@ share some ratios in their spacing. We add this small offset when discretizing
 grid indices to avoid this, which is a bit of a hack...
 """
 
-TINY = 1.0e-4
+from punchbowl.constants import TINY
 
 import numpy as np
 

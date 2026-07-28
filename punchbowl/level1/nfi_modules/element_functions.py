@@ -3,7 +3,7 @@ from scipy.special import voigt_profile
 
 from punchbowl.level1.nfi_modules.util import multivector_matrix_multiply
 
-TINY = 1.0e-4
+from punchbowl.constants import TINY
 
 
 def bin_function_evaluator(point_coordinates, coordinate_array, params=None):

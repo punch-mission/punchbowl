@@ -2,7 +2,7 @@ import numpy as np
 
 from punchbowl.level1.nfi_modules.util import forward_rolling_transpose, roll_transpose_from_numpy_indices
 
-TINY = 1.0e-4
+from punchbowl.constants import TINY
 
 
 class ElementGrid:

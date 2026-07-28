@@ -1,1 +1,0 @@
-Spacecraft position and velocity is written using the center of the exposure window.

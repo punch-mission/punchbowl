@@ -1,1 +1,0 @@
-The CRVAL right ascention value produced by alignment is now wrapped to between 0 and 360 degrees.

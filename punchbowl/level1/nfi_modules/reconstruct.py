@@ -37,7 +37,7 @@ def reconstruct_nfi_straylight(
     bin_fac: int, optional
             how much to bin down the data for speed (default: 4). fwdmats.generate_nfi_fwdmats
                             must be called with the same bin_fac.
-    errfac_systematic: float, optional, default 0.0.1
+    errfac_systematic: float, optional, default 0.01
             An additional uncertainty of this factor multiplied by the data is added to the errors.
     solver_tol: float, optional
             Tolerance for the solver, default 2.5e-5

@@ -1,1 +1,0 @@
-Updates version in CITATION.cff to the correct name.

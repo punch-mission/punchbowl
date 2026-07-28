@@ -15,10 +15,13 @@ from punchbowl.util import average_datetime
 KEYWORD_OMIT = ("COMMENT", "HISTORY", "", "NAXIS3", "OBSTYPE", "OBS-MODE", "OBSLAYR1", "OBSLAYR2", "OBSLAYR3")
 
 @punch_task
-def create_low_noise_task(cubes: list[PUNCHCube], reference_time: str | datetime | None = None) -> PUNCHCube:
+def create_low_noise_task(
+        cubes: list[PUNCHCube],
+        reference_time: str | datetime | None = None,
+        exclude_outliers: bool = True) -> PUNCHCube:
     """Create a low noise image from a set of inputs."""
     cube_count = len(cubes)
-    cubes = [cube for cube in cubes if not check_outlier(cube)]
+    cubes = [cube for cube in cubes if not (exclude_outliers and check_outlier(cube))]
 
     if isinstance(reference_time, str):
         reference_time = parse_datetime_str(reference_time)

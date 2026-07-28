@@ -1,1 +1,0 @@
-Alignment's find_catalog_in_image is now applied in GCRS coordinates, not ICRS.

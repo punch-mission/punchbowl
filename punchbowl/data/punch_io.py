@@ -72,15 +72,14 @@ class DefaultFormatter(string.Formatter):
 
 def _meta_for_helioviewer() -> et.Element:
     """Generate a helioviewer XML Tree so JPEG2000 files render properly."""
-    now_no_us = str(datetime.now(UTC).replace(microsecond=0))
-    hv = et.Element("helioviewer")
-    et.SubElement(hv,"HV_ROTATION").text = "0.0"
-    et.SubElement(hv,"HV_COMMENT").text = \
-    f"""JP2 file created at Southwest Research Institute using punchbowl's write_ndcube_to_quicklook at {now_no_us}.
-    Contact punch_soc@swri.org for more details regarding this JP2 file.
-    """
-    et.SubElement(hv,"HV_SUPPORTED").text = "TRUE"
-    return hv
+    now_no_microsecs = str(datetime.now(UTC).replace(microsecond=0))
+    helioviewer_element = et.Element("helioviewer")
+    et.SubElement(helioviewer_element,"HV_ROTATION").text = "0.0"
+    et.SubElement(helioviewer_element,"HV_COMMENT").text = \
+    f"""JP2 file created at Southwest Research Institute using punchbowl's write_ndcube_to_quicklook at {now_no_microsecs}.
+    Contact punch_soc@swri.org for more details regarding this JP2 file.""" # noqa: E501
+    et.SubElement(helioviewer_element,"HV_SUPPORTED").text = "TRUE"
+    return helioviewer_element
 
 
 def _header_to_xml(header: Header) -> et.Element:

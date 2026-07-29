@@ -601,8 +601,8 @@ def levelq_upload_scheduler_flow(pipeline_config_path=None, session=None, refere
 @flow
 def levelq_upload_core_flow(data_list, bucket_name, jp2_dir, aws_profile="noaa-prod"):
     data_list += ([fn + ".sha" for fn in data_list] +
-                 [file_name_to_full_path(fn, root_dir=jp2_dir).replace(".fits", ".jp2") for fn in data_list] +
-                  [file_name_to_full_path(fn, root_dir=jp2_dir).replace(".fits", ".jp2.sha") for fn in data_list])
+                 [file_name_to_full_path(os.path.basename(fn), root_dir=jp2_dir).replace(".fits", ".jp2") for fn in data_list] +
+                  [file_name_to_full_path(os.path.basename(fn), root_dir=jp2_dir).replace(".fits", ".jp2.sha") for fn in data_list])
     manifest_path = write_manifest(data_list)
     os.system(f"aws --profile {aws_profile} s3 cp {manifest_path} {bucket_name}")
     for file_name in data_list:

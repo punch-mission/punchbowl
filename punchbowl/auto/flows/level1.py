@@ -871,7 +871,25 @@ def level1_late_process_flow(flow_id: int | list[int], pipeline_config_path=None
 
 @task(cache_policy=NO_CACHE)
 def level1_nfi_dsl_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    logger = get_logger()
+    """
+    Query for files ready for processing.
+
+    Parameters
+    ----------
+    session : Session
+        Database session
+    pipeline_config : dict
+        Pipeline configuration dictionary
+    reference_time : datetime
+        Not used
+    max_n : float, optional
+        Max number of ready files to return
+
+    Returns
+    -------
+    list
+        Groups of ready files, one group per intended flow run
+    """
     child = aliased(File)
     child_exists_subquery = (session.query(FileRelationship)
                              .join(child, FileRelationship.child == child.file_id)
@@ -898,7 +916,28 @@ def level1_nfi_dsl_query_ready_files(session, pipeline_config: dict, reference_t
 
 
 def level1_nfi_dsl_construct_flow_info(input_files: list[File], output_files: list[File],
-                                    pipeline_config: dict, session=None, reference_time=None):
+                                       pipeline_config: dict, session=None, reference_time=None):
+    """
+    Construct `Flow` object for a flow run.
+
+    Parameters
+    ----------
+    input_files : list[File]
+        Input files for a flow run
+    output_files : File
+        Output files for a flow run
+    pipeline_config : dict
+        Pipeline configuration settings
+    session : Session, optional
+        Database session, by default None
+    reference_time : datetime
+        Not used
+
+    Returns
+    -------
+    Flow
+        The constructed `Flow` object
+    """
     flow_type = "level1_nfi_dsl"
     state = "planned"
     creation_time = datetime.now()
@@ -920,6 +959,23 @@ def level1_nfi_dsl_construct_flow_info(input_files: list[File], output_files: li
 
 
 def level1_nfi_dsl_construct_file_info(input_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+    """
+    Construct output `File` object for a flow run.
+
+    Parameters
+    ----------
+    input_files : list[File]
+        Input files used for flow run
+    pipeline_config : dict
+        Pipeline configuration settings
+    reference_time : datetime
+        Not used
+
+    Returns
+    -------
+    list[File]
+        List of output `File` objects for a flow run
+    """
     return [
         File(
             level="1",
@@ -939,6 +995,18 @@ def level1_nfi_dsl_construct_file_info(input_files: list[File], pipeline_config:
 
 @flow
 def level1_nfi_dsl_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+    """
+    Schedule flow runs.
+
+    Parameters
+    ----------
+    pipeline_config_path : str
+        Path to pipeline configuration settings
+    session : Session
+        Database session
+    reference_time : datetime
+        Not used
+    """
     generic_scheduler_flow_logic(
         level1_nfi_dsl_query_ready_files,
         level1_nfi_dsl_construct_file_info,
@@ -950,6 +1018,23 @@ def level1_nfi_dsl_scheduler_flow(pipeline_config_path=None, session=None, refer
 
 
 def level1_nfi_dsl_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
+    """
+    Pre-process call data for a flow run, right before running.
+
+    Parameters
+    ----------
+    call_data : dict
+        Call data
+    pipeline_config : dict
+        Pipeline configuration settings
+    session : Session, optional
+        Database session
+
+    Returns
+    -------
+    dict
+        Processed call data
+    """
     for key in ["input_data"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     return call_data
@@ -957,6 +1042,18 @@ def level1_nfi_dsl_call_data_processor(call_data: dict, pipeline_config, session
 
 @flow
 def level1_nfi_dsl_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
+    """
+    Run an individual flow run.
+
+    Parameters
+    ----------
+    flow_id : int
+        Flow ID number
+    pipeline_config_path : str, optional
+        Path to pipeline configuration settings
+    session : Session, optional
+        Database session
+    """
     generic_process_flow_logic(flow_id, level1_nfi_core_flow, pipeline_config_path, session=session,
                                call_data_processor=level1_nfi_dsl_call_data_processor)
 

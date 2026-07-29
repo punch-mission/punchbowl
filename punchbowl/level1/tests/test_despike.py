@@ -9,7 +9,7 @@ from astropy.wcs.utils import add_stokes_axis_to_wcs
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.level1.despike import despike_polseq
+from punchbowl.level1.despike import despike_polseq, despike_polseq_task
 
 
 @pytest.fixture
@@ -52,7 +52,6 @@ def test_spikes_are_removed(num_neighbors, sample_ndcube_for_despike):
 
     despiked, spike_map = despike_polseq(sample_data, sample_neighbors)
 
-    print("MAX", np.max(despiked.data))
     assert np.all(despiked.data <= 10)
     assert spike_map[-1][30, 20] == 1
 
@@ -69,3 +68,27 @@ def test_insufficient_spike_neighbors(num_neighbors, sample_ndcube_for_despike):
 
     with pytest.raises(RuntimeError):
         _, _ = despike_polseq(sample_data, sample_neighbors)
+
+def test_despike_polseq_task(sample_ndcube_for_despike):
+    reference = np.random.random((300, 300))
+    reference[30, 20] = 10
+
+    neighbors = [np.random.random((300, 300)) for _ in range(6)]
+    sample_data = sample_ndcube_for_despike(reference, code="PP3", level="0")
+    sample_neighbors = [sample_ndcube_for_despike(n, code="PP3", level="0") for n in neighbors]
+
+    despiked_data = despike_polseq_task.fn(sample_data, sample_neighbors)
+    assert(isinstance(despiked_data, PUNCHCube))
+    assert(despiked_data.meta.history.most_recent().comment=="neighbor_count=6")
+    assert(np.all(despiked_data.data <= 10))
+
+    #need to remake sample_data because it is altered above
+    reference = np.random.random((300, 300))
+    reference[30, 20] = 10
+    sample_data = sample_ndcube_for_despike(reference, code="PP3", level="0")
+
+    undespiked_data = despike_polseq_task.fn(sample_data, [sample_neighbors[0]])
+    assert(isinstance(undespiked_data, PUNCHCube))
+    assert(undespiked_data.meta.history.most_recent().comment=="Incompatible neighbor count so no correction applied")
+    assert(sample_data.data[30,20]==10)
+    assert(undespiked_data.data[30,20]==10)

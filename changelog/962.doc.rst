@@ -1,1 +1,0 @@
-Adds additional punchbowl authors to documentation.

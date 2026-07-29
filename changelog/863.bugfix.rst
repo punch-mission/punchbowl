@@ -1,1 +1,0 @@
-Corrects filename in quicklook metadata.

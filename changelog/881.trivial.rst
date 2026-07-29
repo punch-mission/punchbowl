@@ -1,1 +1,0 @@
-Enable dependabot updates for GitHub Actions, and enable dependency cooldowns.

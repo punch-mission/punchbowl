@@ -1,3 +1,116 @@
+0.0.24 (2026-07-28)
+===================
+
+Removals
+--------
+
+- Remove unused quadprog approach for F-corona modeling. (`#983 <https://github.com/punch-mission/punchbowl/pull/983>`__)
+
+
+New Features
+------------
+
+- Updates PSF application saturation threshold value. (`#835 <https://github.com/punch-mission/punchbowl/pull/835>`__)
+- Allow duplicating control flows by host, e.g. "launcher-chimera" runs on chimera while "launcher-phoenix" runs on phoenix. (`#839 <https://github.com/punch-mission/punchbowl/pull/839>`__)
+- Allows deploying flows only on certain machines using "run-on" option. (`#839 <https://github.com/punch-mission/punchbowl/pull/839>`__)
+- Adds host tracking to the health stats of the computer. (`#839 <https://github.com/punch-mission/punchbowl/pull/839>`__)
+- The config file can now contain per-server values. (`#867 <https://github.com/punch-mission/punchbowl/pull/867>`__)
+- The whole pipeline's memory use is now capped. (`#867 <https://github.com/punch-mission/punchbowl/pull/867>`__)
+- The maximum number of running flows can be capped. (`#867 <https://github.com/punch-mission/punchbowl/pull/867>`__)
+- Starfield generation uses 32-bit floats to reduce memory pressure. (`#867 <https://github.com/punch-mission/punchbowl/pull/867>`__)
+- Defaults quicklook layer to pB for polarized mosaics. (`#894 <https://github.com/punch-mission/punchbowl/pull/894>`__)
+- Temporarily hardcoded POLAROFF to 90 at Level 1 (`#902 <https://github.com/punch-mission/punchbowl/pull/902>`__)
+- Improves handling for metadata to avoid comment card overflow and shifts a few keys. (`#903 <https://github.com/punch-mission/punchbowl/pull/903>`__)
+- In the files dashboard, points by colored by binary outlier status. (`#913 <https://github.com/punch-mission/punchbowl/pull/913>`__)
+- Add script for creating Level 3 CAM and PAM file counts. (`#930 <https://github.com/punch-mission/punchbowl/pull/930>`__)
+- Allows interpolation between starfield models. (`#932 <https://github.com/punch-mission/punchbowl/pull/932>`__)
+- Alignment uses a median of the iterations that are run, allowing much fewer iterations to be used. (`#940 <https://github.com/punch-mission/punchbowl/pull/940>`__)
+- When selecting outlier limits, date-obs is wrapped into the first year post-launch, so our time-varying outlier
+  limits are reused year after year. (`#941 <https://github.com/punch-mission/punchbowl/pull/941>`__)
+- Use a BlockMasker for remove_starfield. (`#944 <https://github.com/punch-mission/punchbowl/pull/944>`__)
+- Starfield map generation and subtraction modifications. (`#949 <https://github.com/punch-mission/punchbowl/pull/949>`__)
+- Spacecraft velocities are now written correctly in L0 and used in alignment. (`#951 <https://github.com/punch-mission/punchbowl/pull/951>`__)
+- L1_early can be configured to exclude observatories or polarizations, and per-server flows can have files assigned based on the minute in the timestamp. (`#952 <https://github.com/punch-mission/punchbowl/pull/952>`__)
+- We now use PUNCHCube, and NDCube subclass, that stores a secondary celestial WCS. (`#955 <https://github.com/punch-mission/punchbowl/pull/955>`__)
+- Adds functionality to label satellites when plotting. (`#960 <https://github.com/punch-mission/punchbowl/pull/960>`__)
+- Spacecraft positions and velocities are included in FITS headers in several new Earth-centric frames. (`#964 <https://github.com/punch-mission/punchbowl/pull/964>`__)
+- `PUNCHCube.celestial_wcs` is now a GCRS-aware WCS, handling spacecraft position and velocity correctly. (`#964 <https://github.com/punch-mission/punchbowl/pull/964>`__)
+- Spacecraft position and velocity is written using the center of the exposure window. (`#964 <https://github.com/punch-mission/punchbowl/pull/964>`__)
+- `load_many_cubes` caps the number of workers at the number of files. (`#965 <https://github.com/punch-mission/punchbowl/pull/965>`__)
+- Allows per-polarizer state quartic coefficient calibration files. (`#966 <https://github.com/punch-mission/punchbowl/pull/966>`__)
+- Core pipeline functionality (the flows and the code they call) has reduced Prefect dependencies---only when running under Prefect do we use the Prefect logger or convert task and flow functions to Prefect Tasks and Flows. (`#967 <https://github.com/punch-mission/punchbowl/pull/967>`__)
+- Add threadpool_limits helper function. (`#970 <https://github.com/punch-mission/punchbowl/pull/970>`__)
+- Alignment is significantly sped up, by avoiding handling frames and units in the inner-most loop, and by
+  forward-applying the distortion map once to the identified star locations, instead of repeatedly backwards-applying
+  the map to expected star locations. (`#974 <https://github.com/punch-mission/punchbowl/pull/974>`__)
+- Reprojection is run at 32-bits, speeding up the level 2 flow. (`#975 <https://github.com/punch-mission/punchbowl/pull/975>`__)
+- Update pyproject environment to support new punch-mission developer and user environments. (`#992 <https://github.com/punch-mission/punchbowl/pull/992>`__)
+- Merges contents of pytest.ini into pyproject.toml for clarity. Adds a minimum version number for the reproject package. (`#993 <https://github.com/punch-mission/punchbowl/pull/993>`__)
+- Sets up QuickPUNCH to run on new product types from clears. (`#1019 <https://github.com/punch-mission/punchbowl/pull/1019>`__)
+- Starfield model generation now logs progress messages in Prefect. (`#1028 <https://github.com/punch-mission/punchbowl/pull/1028>`__)
+- In L2 mosaic assembly, polarized inputs are now co-aligned before the polarization is converted to MZP_solar, to
+  account for small pointing drift through the imaging sequence. (`#1060 <https://github.com/punch-mission/punchbowl/pull/1060>`__)
+
+
+Bug Fixes
+---------
+
+- Drops additional WCS axis for polarized data when computing starfield range. (`#856 <https://github.com/punch-mission/punchbowl/pull/856>`__)
+- Shifting masking in the starfield image processor before polarization transformations, to ensure masking. (`#857 <https://github.com/punch-mission/punchbowl/pull/857>`__)
+- Corrections for polarized data production. (`#860 <https://github.com/punch-mission/punchbowl/pull/860>`__)
+- Corrects filename in quicklook metadata. (`#863 <https://github.com/punch-mission/punchbowl/pull/863>`__)
+- Fixes auto flow tests. (`#864 <https://github.com/punch-mission/punchbowl/pull/864>`__)
+- Allows setting of dtype in polarization conversion, to assist in polarized starfield model generation. (`#869 <https://github.com/punch-mission/punchbowl/pull/869>`__)
+- Sets the polaroff keyword to 90 for level 0 products. (`#887 <https://github.com/punch-mission/punchbowl/pull/887>`__)
+- `max_workers` is passed through from `level1_early_core_flow` to the alignment step. (`#909 <https://github.com/punch-mission/punchbowl/pull/909>`__)
+- When non-square-root-compressed data is acquired, appropriately scale the color bar range in the daily movies. (`#912 <https://github.com/punch-mission/punchbowl/pull/912>`__)
+- Fix for querying specific data version in the Fido client. (`#914 <https://github.com/punch-mission/punchbowl/pull/914>`__)
+- Ensure packets are taken from correct TLM file in L0 when packets exist in multiple TLMs (e.g. after a replay) (`#922 <https://github.com/punch-mission/punchbowl/pull/922>`__)
+- Set DB polarization field for L3 *IM, *TM files. (`#929 <https://github.com/punch-mission/punchbowl/pull/929>`__)
+- Make the L3_VAM scheduling amenable to reprocessing. (`#933 <https://github.com/punch-mission/punchbowl/pull/933>`__)
+- L3_CAM/L3_PAM outlier check was backwards. (`#934 <https://github.com/punch-mission/punchbowl/pull/934>`__)
+- Checks for valid starfields before and after target date for CTM and PTM flows, when querying ready files. (`#942 <https://github.com/punch-mission/punchbowl/pull/942>`__)
+- DATE-BEG and DATE-END in Level 2 & 3 files now represent the earliest DATE-BEG and latest DATE-END of the input Level 1 files. Previously the DATE-BEG, DATE-OBS, and DATE-END of the Level 3 files were identical. (`#948 <https://github.com/punch-mission/punchbowl/pull/948>`__)
+- Spacecraft positions are written correctly in the FITS headers. (Previously, the rotation of the reference frame with Earth was not handled correctly.) (`#951 <https://github.com/punch-mission/punchbowl/pull/951>`__)
+- Change PFW order for NFI because it was correct without our flip. (`#953 <https://github.com/punch-mission/punchbowl/pull/953>`__)
+- We no longer register with Astropy a GCRS <-> Helioprojective transformation that ignores differences in observer location. (`#955 <https://github.com/punch-mission/punchbowl/pull/955>`__)
+- Fix starfield retrieval inequality since the sign was wrong. (`#958 <https://github.com/punch-mission/punchbowl/pull/958>`__)
+- Passes through additional date keywords in polarization transformation. (`#961 <https://github.com/punch-mission/punchbowl/pull/961>`__)
+- `NormalizedMetadata.get` now correctly returns the default value when appropriate, and it returns values directly, rather than returning  a MetaField, so match behavior when using the default. (`#964 <https://github.com/punch-mission/punchbowl/pull/964>`__)
+- Alignment's find_catalog_in_image is now applied in GCRS coordinates, not ICRS. (`#973 <https://github.com/punch-mission/punchbowl/pull/973>`__)
+- The CRVAL right ascention value produced by alignment is now wrapped to between 0 and 360 degrees. (`#973 <https://github.com/punch-mission/punchbowl/pull/973>`__)
+- Updates daily movie quicklook scheduling to include files created in the past 24 hours, not by the date of observation. (`#978 <https://github.com/punch-mission/punchbowl/pull/978>`__)
+- Removes unintended space that prevented labeling WFI-3 in `plot_punch`. (`#979 <https://github.com/punch-mission/punchbowl/pull/979>`__)
+- Fix input image cropping for NFI static stray light model generation. (`#985 <https://github.com/punch-mission/punchbowl/pull/985>`__)
+- Fix holes in L2 images after changing reprojection to run at 32 bits. (`#1053 <https://github.com/punch-mission/punchbowl/pull/1053>`__)
+
+
+Documentation
+-------------
+
+- Minor documentation update for data, to clarify new data version, and data physical units. (`#868 <https://github.com/punch-mission/punchbowl/pull/868>`__)
+- Adds an FAQ page to the documentation. (`#907 <https://github.com/punch-mission/punchbowl/pull/907>`__)
+- Documentation updates to include additional product codes. (`#910 <https://github.com/punch-mission/punchbowl/pull/910>`__)
+- Added v0k release notes. (`#923 <https://github.com/punch-mission/punchbowl/pull/923>`__)
+- Added text for the most useful data products. (`#925 <https://github.com/punch-mission/punchbowl/pull/925>`__)
+- Updates version in CITATION.cff to the correct name. (`#950 <https://github.com/punch-mission/punchbowl/pull/950>`__)
+- Adds additional punchbowl authors to documentation. (`#962 <https://github.com/punch-mission/punchbowl/pull/962>`__)
+- Add contact email to Help page, and link the Help page prominently from the Docs landing page. (`#986 <https://github.com/punch-mission/punchbowl/pull/986>`__)
+
+
+Internal Changes
+----------------
+
+- Enable dependabot updates for GitHub Actions, and enable dependency cooldowns. (`#881 <https://github.com/punch-mission/punchbowl/pull/881>`__)
+- Remove unused "Priority" column from sci_xfi database table. (`#956 <https://github.com/punch-mission/punchbowl/pull/956>`__)
+- Cleaned up uniqueness check for L0 image processing. (`#959 <https://github.com/punch-mission/punchbowl/pull/959>`__)
+- Bump codecov/codecov-action from 6 to 7 in /.github/workflows. (`#976 <https://github.com/punch-mission/punchbowl/pull/976>`__)
+- Bump actions/checkout from 6.0.2 to 6.0.3 in /.github/workflows. (`#977 <https://github.com/punch-mission/punchbowl/pull/977>`__)
+- Remove unused dependencies. (`#982 <https://github.com/punch-mission/punchbowl/pull/982>`__)
+- Introduce rules to omit test scripts themselves from test coverage metrics. (`#1031 <https://github.com/punch-mission/punchbowl/pull/1031>`__)
+- Switch to uv for ci actions. (`#1075 <https://github.com/punch-mission/punchbowl/pull/1075>`__)
+
+
 0.0.23 (2026-04-01)
 ===================
 

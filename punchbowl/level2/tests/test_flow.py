@@ -52,7 +52,7 @@ def test_ctm_flow_runs_with_filenames(sample_ndcube, tmpdir):
 
 @pytest.mark.parametrize("drop_indices", [[], [1], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]])
 def test_core_flow_runs_with_objects_and_calibration_files(sample_ndcube, drop_indices, tmpdir):
-    data_list = [sample_ndcube(shape=(10, 10), code=code, level="1")
+    data_list = [sample_ndcube(shape=(100, 100), code=code, level="1")
                  for i, code in enumerate(POLARIZED_FILE_ORDER) if i not in drop_indices]
 
     trefoil_wcs, _ = load_trefoil_wcs()

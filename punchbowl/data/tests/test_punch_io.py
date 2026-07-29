@@ -21,7 +21,7 @@ from punchbowl.data.punch_io import (
     write_ndcube_to_quicklook,
 )
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.data.wcs import calculate_pc_matrix
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_pc_matrix
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -65,7 +65,9 @@ def sample_ndcube():
             meta['CRLT_OBS'] = 1.6391084786225854
             meta['CRLN_OBS'] = 131.07429379735413
             meta['DSUN_OBS'] = 152011862324.1987
-        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+        celestial_wcs = calculate_celestial_wcs_from_helio(wcs, date_obs, data.shape)
+        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta, celestial_wcs=celestial_wcs)
     return _sample_ndcube
 
 

@@ -1,9 +1,8 @@
 import numpy as np
 from scipy.special import voigt_profile
 
-from punchbowl.level1.nfi_modules.util import multivector_matrix_multiply
-
 from punchbowl.constants import TINY
+from punchbowl.level1.nfi_modules.util import multivector_matrix_multiply
 
 
 def bin_function_evaluator(point_coordinates, coordinate_array, params=None):

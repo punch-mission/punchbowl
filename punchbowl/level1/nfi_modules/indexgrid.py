@@ -4,10 +4,9 @@ share some ratios in their spacing. We add this small offset when discretizing
 grid indices to avoid this, which is a bit of a hack...
 """
 
-from punchbowl.constants import TINY
-
 import numpy as np
 
+from punchbowl.constants import TINY
 from punchbowl.level1.nfi_modules.util import multivector_matrix_multiply
 
 

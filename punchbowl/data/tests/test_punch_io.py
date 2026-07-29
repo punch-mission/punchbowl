@@ -1,7 +1,6 @@
 import os
 from datetime import UTC, datetime
 
-import glymur
 import lxml.etree as et
 import numpy as np
 import pytest
@@ -9,6 +8,7 @@ from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, DistortionLookupTable
 from astropy.wcs.utils import add_stokes_axis_to_wcs
+from glymur import Jp2kr, jp2box
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import (
@@ -105,26 +105,31 @@ def test_write_data_jp2(sample_ndcube, tmpdir):
 
     #now check that the written file has the helioviewer tag.
     #the tag should be in the jp2 xml meta box.
-    jp2_read_in = glymur.Jp2kr(test_path)
-    xml_box = next((box for box in jp2_read_in.box if isinstance(box, glymur.jp2box.XMLBox)),None)
-    has_fits_top_level = False
-    has_hv_top_level = False
+    #open the JP2 file
+    jp2_read_in = Jp2kr(test_path)
+    #find the XML box, assuming there's only one
+    xml_box = next((box for box in jp2_read_in.box if isinstance(box, jp2box.XMLBox)), None)
+
     if xml_box is not None:
-       raw_xml_bytes = et.tostring(xml_box.xml)
-       root = et.fromstring(raw_xml_bytes)
-       meta_elements = root.xpath("//*[local-name()='meta']")
-       meta_box = meta_elements[0]
-       for child in meta_box.iterchildren():
-           local_tag = et.QName(child).localname
-           if local_tag == 'fits':
-               has_fits_top_level = True
-           if local_tag == 'helioviewer':
-               has_hv_top_level = True
-           if has_fits_top_level and has_hv_top_level:
-               break
-           1
-    assert has_fits_top_level==True
-    assert has_hv_top_level==True
+       #xml_box.xml is an lxml ElementTree or Element
+       xml_root = xml_box.xml
+
+       #If an ElementTree, get the root element
+       if isinstance(xml_root, et._ElementTree):
+           xml_root = xml_root.getroot()
+
+       #now xml_root is the "meta" tag
+       has_fits = xml_root.find('.//fits') is not None
+       hv_element = xml_root.find('.//helioviewer')
+       if hv_element is not None:
+           has_hv = True
+           has_hv_rotation = hv_element.find('.//HV_ROTATION') is not None
+           has_hv_comment = hv_element.find('.//HV_COMMENT') is not None
+
+    assert has_fits==True
+    assert has_hv==True
+    assert has_hv_rotation==True
+    assert has_hv_comment==True
 
 def test_write_jpeg(sample_ndcube, tmpdir):
     from punchbowl.data.sample import PUNCH_PAM

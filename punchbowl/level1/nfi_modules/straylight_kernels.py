@@ -6,6 +6,8 @@ import numba
 import numpy as np
 import scipy.ndimage
 
+from punchbowl.constants import ORIGINAL_PUNCH_RESOLUTION
+
 
 def kernel_smoothing_matrix(angles_rev, smooth_radius=0.1):
     """
@@ -93,6 +95,7 @@ def generate_kernel(
         the Gaussian in pixels.
     image_size : int
         The size of the (square) output image, in pixels.
+        Flexibility provided to account for binning (downsampling) data for computational efficiency
     oversamp : int
         If set, the kernel profile is computed on an over-sampled grid and downsampled to the final output size. This
         allows pixels at the edge of the kernel to have values between 0 and 1, rather
@@ -122,12 +125,12 @@ def generate_kernel(
     # Center of the kernel---the default values are the center of the occulted region, which isn't necessarily the
     # center of the donut of stray light
     if cx is None:
-        cx = (1014.50355056 - 1) * image_size / 2048
+        cx = (1014.50355056 - 1) * image_size / ORIGINAL_PUNCH_RESOLUTION
     if cy is None:
-        cy = (1037.37339562 - 1) * image_size / 2048
+        cy = (1037.37339562 - 1) * image_size / ORIGINAL_PUNCH_RESOLUTION
 
-    r_to_inner_edge *= image_size / 2048
-    r_to_center *= image_size / 2048
+    r_to_inner_edge *= image_size / ORIGINAL_PUNCH_RESOLUTION
+    r_to_center *= image_size / ORIGINAL_PUNCH_RESOLUTION
 
     if elon_abs is None:
         r_to_center = r_to_inner_edge + r_to_center + elon_offset

@@ -673,12 +673,12 @@ def levelq_CFM_query_ready_files(session, pipeline_config: dict, reference_time:
                        .filter(File.file_type == "CQ")
                        .filter(File.observatory == "M").all())
 
-    # To avoid selecting with a bias towards images all clumped around one time, we shuffle them and then keep 
+    # To avoid selecting with a bias towards images all clumped around one time, we shuffle them and then keep
     # only the number that we want to have. This hopefully avoids the problem of stale F-corona models being
     # generated.
     random.shuffle(all_ready_files)
     all_ready_files = all_ready_files[:2*max_files_per_half]
-    
+
     if len(all_ready_files) >= 2 * min_files_per_half:
         logger.info(f"{len(all_ready_files)} Level Q CQM files will be used for F corona background modeling.")
         return all_ready_files

@@ -70,7 +70,7 @@ class DefaultFormatter(string.Formatter):
         except (KeyError, AttributeError, IndexError):
             return "{" + field_name + "}", ()
 
-def _meta_for_helioviewer() -> et.Element:
+def _create_meta_for_helioviewer() -> et.Element:
     """Generate a helioviewer XML Tree so JPEG2000 files render properly."""
     now_no_microsecs = str(datetime.now(UTC).replace(microsecond=0))
     helioviewer_element = et.Element("helioviewer")
@@ -110,8 +110,7 @@ def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
     header_xml = _header_to_xml(header)
     meta = et.Element("meta")
     meta.append(header_xml)
-    helioviewer_xml = _meta_for_helioviewer()
-    meta.append(helioviewer_xml)
+    meta.append(_create_meta_for_helioviewer())
     tree = et.ElementTree(meta)
     return jp2box.XMLBox(xml=tree)
 

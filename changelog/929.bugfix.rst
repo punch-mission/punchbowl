@@ -1,1 +1,0 @@
-Set DB polarization field for L3 *IM, *TM files.

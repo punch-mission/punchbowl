@@ -11,6 +11,7 @@ import multiprocessing as mp
 from copy import deepcopy
 from typing import Any
 from pathlib import Path
+from datetime import UTC, datetime
 from itertools import repeat
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
@@ -70,6 +71,17 @@ class DefaultFormatter(string.Formatter):
         except (KeyError, AttributeError, IndexError):
             return "{" + field_name + "}", ()
 
+def _create_meta_for_helioviewer() -> et.Element:
+    """Generate a helioviewer XML Tree so JPEG2000 files render properly."""
+    now_no_microsecs = str(datetime.now(UTC).replace(microsecond=0))
+    helioviewer_element = et.Element("helioviewer")
+    et.SubElement(helioviewer_element,"HV_ROTATION").text = "0.0"
+    et.SubElement(helioviewer_element,"HV_COMMENT").text = \
+    f"""JP2 file created at Southwest Research Institute using punchbowl's write_ndcube_to_quicklook at {now_no_microsecs}.
+    Contact punch_soc@swri.org for more details regarding this JP2 file.""" # noqa: E501
+    et.SubElement(helioviewer_element,"HV_SUPPORTED").text = "TRUE"
+    return helioviewer_element
+
 
 def _header_to_xml(header: Header) -> et.Element:
     """
@@ -99,6 +111,7 @@ def _generate_jp2_xmlbox(header: Header) -> jp2box.XMLBox:
     header_xml = _header_to_xml(header)
     meta = et.Element("meta")
     meta.append(header_xml)
+    meta.append(_create_meta_for_helioviewer())
     tree = et.ElementTree(meta)
     return jp2box.XMLBox(xml=tree)
 

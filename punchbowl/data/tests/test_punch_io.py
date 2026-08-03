@@ -1,12 +1,14 @@
 import os
 from datetime import UTC, datetime
 
+import lxml.etree as et
 import numpy as np
 import pytest
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, DistortionLookupTable
 from astropy.wcs.utils import add_stokes_axis_to_wcs
+from glymur import Jp2kr, jp2box
 
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import (
@@ -21,7 +23,7 @@ from punchbowl.data.punch_io import (
     write_ndcube_to_quicklook,
 )
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.data.wcs import calculate_pc_matrix
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_pc_matrix
 
 TESTDATA_DIR = os.path.dirname(__file__)
 SAMPLE_FITS_PATH_UNCOMPRESSED = os.path.join(TESTDATA_DIR, "test_data.fits")
@@ -65,7 +67,9 @@ def sample_ndcube():
             meta['CRLT_OBS'] = 1.6391084786225854
             meta['CRLN_OBS'] = 131.07429379735413
             meta['DSUN_OBS'] = 152011862324.1987
-        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+
+        celestial_wcs = calculate_celestial_wcs_from_helio(wcs, date_obs, data.shape)
+        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta, celestial_wcs=celestial_wcs)
     return _sample_ndcube
 
 
@@ -98,6 +102,34 @@ def test_write_data_jp2(sample_ndcube, tmpdir):
     test_path = os.path.join(tmpdir, "test.jp2")
     write_ndcube_to_quicklook(cube, test_path)
     assert os.path.isfile(test_path)
+
+    #now check that the written file has the helioviewer tag.
+    #the tag should be in the jp2 xml meta box.
+    #open the JP2 file
+    jp2_read_in = Jp2kr(test_path)
+    #find the XML box, assuming there's only one
+    xml_box = next((box for box in jp2_read_in.box if isinstance(box, jp2box.XMLBox)), None)
+
+    if xml_box is not None:
+       #xml_box.xml is an lxml ElementTree or Element
+       xml_root = xml_box.xml
+
+       #If an ElementTree, get the root element
+       if isinstance(xml_root, et._ElementTree):
+           xml_root = xml_root.getroot()
+
+       #now xml_root is the "meta" tag
+       has_fits = xml_root.find('.//fits') is not None
+       hv_element = xml_root.find('.//helioviewer')
+       if hv_element is not None:
+           has_hv = True
+           has_hv_rotation = hv_element.find('.//HV_ROTATION') is not None
+           has_hv_comment = hv_element.find('.//HV_COMMENT') is not None
+
+    assert has_fits==True
+    assert has_hv==True
+    assert has_hv_rotation==True
+    assert has_hv_comment==True
 
 def test_write_jpeg(sample_ndcube, tmpdir):
     from punchbowl.data.sample import PUNCH_PAM

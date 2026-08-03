@@ -6,7 +6,7 @@ from astropy.wcs import WCS
 from scipy.ndimage import distance_transform_edt
 
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.data.wcs import calculate_celestial_wcs_from_helio
+from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
 from punchbowl.prefect import get_logger, punch_flow, punch_task
 
 
@@ -216,3 +216,48 @@ def find_central_pixel(data_list: list[PUNCHCube | None], trefoil_wcs: WCS) -> l
         # Convert from 0D numpy arrays to Python floats
         centers.append((location[0].item(), location[1].item()))
     return centers
+
+
+def coalign_L1_mzp(mzp_cubes: list[PUNCHCube], scale_factor: float=1) -> list[PUNCHCube]: # noqa: N802
+    """
+    Coalign a set of MZP L1 images into the same exact frame, to account for slight pointing drift.
+
+    The common frame is the frame of the middle of the three images, with the distortion maps removed and (optionally)
+    scaled up by a factor.
+
+    Parameters
+    ----------
+    mzp_cubes : list[PUNCHCube]
+        An L1 MZP triplet (three cubes from the same observatory in the same half of the roll position).
+    scale_factor : float
+        An amount by which to up-scale the common frame, to reduce the blurring effect of this extra round of
+        reprojection.
+
+    Returns
+    -------
+    coaligned_cubes : list[PUNCHCube]
+        The three images in a common frame
+
+    """
+    target_l1_frame = mzp_cubes[1].celestial_wcs.deepcopy()
+    target_l1_frame.cpdis1 = None
+    target_l1_frame.cpdis2 = None
+    target_l1_frame.wcs.cdelt /= scale_factor
+    target_l1_frame.wcs.crpix *= scale_factor
+    target_shape = int(target_l1_frame.array_shape[0] * scale_factor)
+    target_shape = (target_shape, target_shape)
+    target_helio_frame = calculate_helio_wcs_from_celestial(target_l1_frame, mzp_cubes[1].meta.astropy_time,
+                                                            target_shape)
+    coaligned_cubes = []
+    for j in range(3):
+        out_array = np.empty((2, *target_shape), dtype=mzp_cubes[j].data.dtype)
+        reproject.reproject_adaptive(
+            (np.stack((mzp_cubes[j].data, mzp_cubes[j].uncertainty.array), axis=0),
+             mzp_cubes[j].celestial_wcs),
+            target_l1_frame, target_shape,
+            output_array=out_array, roundtrip_coords=False, return_footprint=False)
+
+        res = mzp_cubes[j].replace(data=out_array[0], uncertainty=StdDevUncertainty(out_array[1]),
+                                   celestial_wcs=target_l1_frame, wcs=target_helio_frame)
+        coaligned_cubes.append(res)
+    return coaligned_cubes

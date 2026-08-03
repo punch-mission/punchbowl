@@ -1,1 +1,0 @@
-`max_workers` is passed through from `level1_early_core_flow` to the alignment step.

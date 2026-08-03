@@ -24,8 +24,8 @@ SCIENCE_LEVEL1_MIDDLE_OUTPUT_TYPE_CODES = ["YM", "YZ", "YP"]
 SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES = ["YM", "YZ", "YP", "XR"]
 SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES_NFI = ["XM", "XZ", "XP", "XR"]
 SCIENCE_LEVEL1_LATE_OUTPUT_TYPE_CODES = ["PM", "PZ", "PP", "CR"]
-SCIENCE_LEVEL1_QUICK_INPUT_TYPE_CODES = ["XM", "XZ", "ZP"]
-SCIENCE_LEVEL1_QUICK_OUTPUT_TYPE_CODES = ["QM", "QZ", "QP"]
+SCIENCE_LEVEL1_QUICK_INPUT_TYPE_CODES = ["XR"]
+SCIENCE_LEVEL1_QUICK_OUTPUT_TYPE_CODES = ["QR"]
 
 @task(cache_policy=NO_CACHE)
 def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99,
@@ -883,33 +883,17 @@ def level1_quick_query_ready_files(session, pipeline_config: dict, reference_tim
 
     actually_ready = []
     missing_stray_light = []
-    missing_distortion = []
-    missing_psf = []
-    distortion_paths = get_distortion_paths(ready, pipeline_config, session)
-    psf_paths = get_psf_model_paths(ready, pipeline_config, session)
     stray_lights = get_two_closest_stray_light(ready, session=session, dynamic=False)
-    for f, distortion_path, psf_path, closest_stray_light in zip(ready, distortion_paths, psf_paths, stray_lights):
+    for f, closest_stray_light in zip(ready, stray_lights):
         if closest_stray_light == [None, None]:
             missing_stray_light.append(f)
             continue
-        if distortion_path is None:
-            missing_distortion.append(f)
-            continue
-        if psf_path is None:
-            missing_psf.append(f)
-            continue
-        f.distortion_path = distortion_path
-        f.psf_path = psf_path
         f.stray_light = closest_stray_light
         actually_ready.append([f])
         if len(actually_ready) >= max_n:
             break
     if missing_stray_light:
         logger.info("Waiting for stray light models for " + summarize_files_missing_cal_files(missing_stray_light))
-    if missing_distortion:
-        logger.info("Missing distortion for " + summarize_files_missing_cal_files(missing_distortion))
-    if missing_psf:
-        logger.info("Missing PSF for " + summarize_files_missing_cal_files(missing_psf))
     # It's easiest to batch-query here, where we have all the File objects in one list
     masks = get_mask_files([f[0] for f in actually_ready], pipeline_config, session)
     for f, mask in zip(actually_ready, masks):
@@ -924,16 +908,12 @@ def level1_quick_construct_flow_info(input_files: list[File], output_files: list
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
 
-    best_psf_model = input_files[0].psf_path
-    best_distortion = input_files[0].distortion_path
     stray_light_before, stray_light_after = input_files[0].stray_light
     mask_function = input_files[0].mask_path
 
     call_data = json.dumps(
         {
             "input_data": [input_file.filename() for input_file in input_files],
-            "psf_model_path": best_psf_model,
-            "distortion_path": best_distortion.filename(),
             "stray_light_before_path": stray_light_before.filename() if stray_light_before else None,
             "stray_light_after_path": stray_light_after.filename() if stray_light_after else None,
             "mask_path": mask_function.filename().replace(".fits", ".bin"),
@@ -981,19 +961,13 @@ def level1_quick_scheduler_flow(pipeline_config_path=None, session=None, referen
 
 
 def level1_quick_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    for key in ["input_data", "mask_path", "stray_light_before_path", "stray_light_after_path", "distortion_path"]:
+    for key in ["input_data", "mask_path", "stray_light_before_path", "stray_light_after_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
 
-    # TODO: this is a hack to skip NFI PSF. Remove!
-    if call_data["psf_model_path"] == "":
-        call_data["psf_model_path"] = None
-    else:
-        call_data["psf_model_path"] = file_name_to_full_path(call_data["psf_model_path"], pipeline_config["root"])
-        call_data["psf_model_path"] = cache_layer.psf.wrap_if_appropriate(call_data["psf_model_path"])
-
-    # Anything more than 16 doesn't offer any real benefit, and the default of n_cpu on punch190 is actually slower than
-    # 16! Here we choose less to have less spiky CPU usage to play better with other flows.
-    call_data["max_workers"] = 2
+    call_data["stray_light_before_path"] = cache_layer.stray_light.wrap_if_appropriate(
+            call_data["stray_light_before_path"])
+    call_data["stray_light_after_path"] = cache_layer.stray_light.wrap_if_appropriate(
+            call_data["stray_light_after_path"])
     return call_data
 
 

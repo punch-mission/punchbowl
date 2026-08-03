@@ -123,8 +123,9 @@ def _write_quicklook(pipeline_config: dict, corresponding_file_db_entry: File, d
                                    corresponding_file_db_entry.filename())
         ql_filename = ql_filename.replace(".fits", ".jp2")
         os.makedirs(os.path.dirname(ql_filename), exist_ok=True)
-        layer = 1 if data.meta["TYPECODE"].value == "PA" else "tB"
-        write_ndcube_to_quicklook(data, ql_filename, layer=layer, write_hash=True)
+        layer = 1 if data.meta["TYPECODE"].value in ["PA", "PT"] else "tB"
+        vmin, vmax = load_quicklook_scaling(level=data.meta["LEVEL"].value, product=data.meta["TYPECODE"].value, obscode=data.meta["OBSCODE"].value)
+        write_ndcube_to_quicklook(data, ql_filename, layer=layer, vmin=vmin, vmax=vmax, write_hash=True)
 
 
 def match_data_with_file_db_entry(data: PUNCHCube, file_db_entry_list):

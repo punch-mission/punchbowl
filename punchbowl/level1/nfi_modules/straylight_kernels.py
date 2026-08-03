@@ -6,7 +6,7 @@ import numba
 import numpy as np
 import scipy.ndimage
 
-from punchbowl.constants import ORIGINAL_PUNCH_RESOLUTION, KERNEL_CENTER_X, KERNEL_CENTER_Y
+from punchbowl.constants import KERNEL_CENTER_X, KERNEL_CENTER_Y, ORIGINAL_PUNCH_RESOLUTION
 
 
 def kernel_smoothing_matrix(angles_rev, smooth_radius=0.1):

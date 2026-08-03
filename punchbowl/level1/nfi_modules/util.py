@@ -3,6 +3,7 @@ import copy
 import numba
 import numpy as np
 
+
 def multivector_matrix_multiply(a, b):
     """
     Multiply a matrix with each element of a set of vectors.

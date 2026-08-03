@@ -1,12 +1,19 @@
 import numpy as np
 from scipy.ndimage import zoom
 
+from punchbowl.constants import (
+    GLINT_MASK_BOTTOM_CUT_OFF,
+    GLINT_SPHERE1_CENTER,
+    GLINT_SPHERE2_CENTER,
+    GLINT_SPHERE_RADIUS,
+)
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.nfi_modules.fwdmats import generate_nfi_forward_matrices
 from punchbowl.level1.nfi_modules.reconstruct import reconstruct_nfi_straylight
 from punchbowl.level1.nfi_modules.util import bindown
 from punchbowl.util import limit_threads
-from punchbowl.constants import GLINT_SPHERE1_CENTER, GLINT_SPHERE2_CENTER,GLINT_SPHERE_RADIUS,GLINT_MASK_BOTTOM_CUT_OFF
+
+
 def get_bin_down_crval(crval, cdelt, bin_factor: int):
     """
     Calculates new sky coordinate value of reference pixel based on bin factor.

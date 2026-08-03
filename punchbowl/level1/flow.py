@@ -344,7 +344,7 @@ def level1_late_core_flow(
 
 
 @punch_flow
-def level1_nfi_core_flow(input_data: list[str | PUNCHCube]) -> list[PUNCHCube]:
+def level1_nfi_core_flow(input_data: list[str | PUNCHCube],*args:tuple,**kwargs:dict) -> list[PUNCHCube]:
     """
     Remove dynamic stray light from NFI images.
 
@@ -352,6 +352,10 @@ def level1_nfi_core_flow(input_data: list[str | PUNCHCube]) -> list[PUNCHCube]:
     ----------
     input_data : list[str | PUNCHCube]
         Input NFI images
+    *args : tuple
+        Arguments to pass to remove_nfi_stray_light
+    **kwargs : dict
+        Keyword arguments to remove_nfi_stray_light
 
     Returns
     -------
@@ -367,7 +371,7 @@ def level1_nfi_core_flow(input_data: list[str | PUNCHCube]) -> list[PUNCHCube]:
 
     for this_data in input_data:
         this_data = load_image_task(this_data) if isinstance(this_data, str) else this_data # noqa: PLW2901
-        this_data = remove_nfi_stray_light(this_data) # noqa: PLW2901
+        this_data = remove_nfi_stray_light(this_data, *args,**kwargs) # noqa: PLW2901
 
         # Repackage data with proper metadata
         product_code = "Z" + this_data.meta["TYPECODE"].value[1:] + this_data.meta["OBSCODE"].value

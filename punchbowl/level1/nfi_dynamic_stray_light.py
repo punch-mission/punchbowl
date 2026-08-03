@@ -67,10 +67,10 @@ def get_fwd_mat_inputs(datacube: PUNCHCube, bin_factor: int):
 
 def generate_glint_mask(
     data_shape,
-    sphere1_center: tuple = GLINT_SPHERE1_CENTER,
-    sphere2_center: tuple = GLINT_SPHERE2_CENTER,
-    sphere_radius: int = GLINT_SPHERE_RADIUS,
-    bottom_cut_off: int = GLINT_MASK_BOTTOM_CUT_OFF,
+    sphere1_center: tuple | None = None,
+    sphere2_center: tuple | None = None,
+    sphere_radius: int | None = None,
+    bottom_cut_off: int | None = None,
 ):
     """
     Create (boolean) mask for circular glints on bottom half of NFI data.
@@ -84,19 +84,23 @@ def generate_glint_mask(
     data_shape : tuple
         Shape of the image data
     sphere1_center : tuple
-        Coordinate for the center of sphere 1 (pixel value)
+        Coordinate for the center of sphere 1 (pixel value).
+        If None, defaults to GLINT_SPHERE1_CENTER.
         This parameter is technically modifiable for fine-tuning purposes, but likely will not vary significantly from the
         default value from the constants file.
     sphere2_center : tuple
-        Coordinate for the center of sphere 2 (pixel value)
+        Coordinate for the center of sphere 2 (pixel value).
+        If None, defaults to GLINT_SPHERE2_CENTER.
         This parameter is technically modifiable for fine-tuning purposes, but likely will not vary significantly from the
         default value from the constants file.
     sphere_radius : int
-        Radi of sphere (same radi for both spheres; pixel value)
+        Radius of spheres (same radius for both spheres; pixel value).
+        If None, defaults to GLINT_SPHERE_RADIUS.
         This parameter is technically modifiable for fine-tuning purposes, but likely will not vary significantly from the
         default value from the constants file.
     bottom_cut_off : int
-        the height to which include everything above and mask out everything below (pixel value)
+        The height to which include everything above and mask out everything below (pixel value).
+        If None, defaults to GLINT_MASK_BOTTOM_CUT_OFF.
         This parameter is technically modifiable for fine-tuning purposes, but likely will not vary significantly from the
         default value from the constants file.
 
@@ -105,6 +109,16 @@ def generate_glint_mask(
     mask : np.array
         Boolean mask for masking out glint spheres
     """
+    # set defaults from constants file
+    if sphere1_center is None:
+        sphere1_center = GLINT_SPHERE1_CENTER
+    if sphere2_center is None:
+        sphere2_center = GLINT_SPHERE2_CENTER
+    if sphere_radius is None:
+        sphere_radius = GLINT_SPHERE_RADIUS
+    if bottom_cut_off is None:
+        bottom_cut_off = GLINT_MASK_BOTTOM_CUT_OFF
+
     x_axis, y_axis = np.indices(data_shape)
     mask = (
         (((x_axis - sphere1_center[0]) ** 2 + (y_axis - sphere1_center[1]) ** 2) ** 0.5 > sphere_radius)
@@ -161,10 +175,11 @@ def remove_nfi_stray_light(
     datacube: PUNCHCube,
     bin_factor: int = 4,
     fwd_mat_smooth_radius: int = 0,
-    sphere1_center: tuple = GLINT_SPHERE1_CENTER,
-    sphere2_center: tuple = GLINT_SPHERE2_CENTER,
-    glint_sphere_radius: int = GLINT_SPHERE_RADIUS,
-    glint_bottom_cut: int = GLINT_MASK_BOTTOM_CUT_OFF,
+    fwd_mat_nstray_kernels: int | None = None,
+    sphere1_center: tuple | None = None,
+    sphere2_center: tuple | None = None,
+    glint_sphere_radius: int | None = None,
+    glint_bottom_cut: int | None = None,
     bindown_shape: tuple[int, int] = (512, 512),
     solver_tol: float = 1e-5,
     sky_reg: float = 0.1,
@@ -184,24 +199,33 @@ def remove_nfi_stray_light(
     fwd_mat_smooth_radius: int
         Parameter for the `generate_nfi_forward_matrices()` function (i.e. to generate the kernels).
         If > 0, smooth the stray light kernels azimuthally with this radius (in radians)
+    fwd_mat_nstray_kernels: int|None, optional default = None
+        Parameter for the `generate_nfi_forward_matrices()` function (i.e. to generate the kernels).
+        Number of stray light kernel orientation angels, sampled uniformly over [0, 2*pi) (endpoint excluded to avoid duplicate kernels
+        at 0 and 2*pi)
+        If None, defaults to binned image size, `im_size`.
     sphere1_center: tuple
         Parameter for `generate_glint_mask()` function to mask out the glint spheres.
         Coordinate for the center of sphere 1 (pixel value).
+        If None, defaults to GLINT_SPHERE1_CENTER.
         This parameter is technically modifiable for fine-tuning purposes, but likely will not vary significantly from the
         default value from the constants file.
     sphere2_center: tuple
         Parameter for `generate_glint_mask()` function to mask out the glint spheres.
         Coordinate for the center of sphere 2 (pixel value).
+        If None, defaults to GLINT_SPHERE2_CENTER.
         This parameter is technically modifiable for fine-tuning purposes, but likely will not vary significantly from the
         default value from the constants file.
     glint_sphere_radius: int
         Parameter for `generate_glint_mask()` function to mask out the glint spheres.
-        Radius of spheres (applied as same radius for both spheres; pixel value)
+        Radius of spheres (same radius for both spheres; pixel value).
+        If None, defaults to GLINT_SPHERE_RADIUS.
         This parameter is technically modifiable for fine-tuning purposes, but likely will not vary significantly from the
         default value from the constants file.
     glint_bottom_cut: int
         Parameter for `generate_glint_mask()` function to mask out the glint spheres.
-        The (pixel) height of the bottom sliver of the data image to which include everything above and mask out everything below.
+        The height to which include everything above and mask out everything below (pixel value).
+        If None, defaults to GLINT_MASK_BOTTOM_CUT_OFF.
         This parameter is technically modifiable for fine-tuning purposes, but likely will not vary significantly from the
         default value from the constants file.
     bindown_shape: tuple
@@ -248,6 +272,7 @@ def remove_nfi_stray_light(
         np.array([crota_radians]),
         bin_factor=bin_factor,
         smooth_radius=fwd_mat_smooth_radius,
+        nstray=fwd_mat_nstray_kernels,
         thread_count=thread_count,
     )
 

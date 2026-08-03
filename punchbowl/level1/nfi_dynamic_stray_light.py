@@ -276,7 +276,7 @@ def remove_nfi_stray_light(
     scale_x = orig_shape[0] / bindown_shape[0]
     scale_y = orig_shape[1] / bindown_shape[1]
 
-    upscaled_stray_light_model = zoom(soln_stray[0].T, (scale_x, scale_y), order=0)
+    upscaled_stray_light_model = zoom(soln_stray[0].T, (scale_x, scale_y), order=1)
     # subtract straylight model from data with glint masked out
     subtracted_data = (datacube.data * glint_mask) - upscaled_stray_light_model
 

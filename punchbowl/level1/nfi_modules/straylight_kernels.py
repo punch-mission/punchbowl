@@ -6,7 +6,7 @@ import numba
 import numpy as np
 import scipy.ndimage
 
-from punchbowl.constants import ORIGINAL_PUNCH_RESOLUTION
+from punchbowl.constants import ORIGINAL_PUNCH_RESOLUTION, KERNEL_CENTER_X, KERNEL_CENTER_Y
 
 
 def kernel_smoothing_matrix(angles_rev, smooth_radius=0.1):
@@ -125,9 +125,9 @@ def generate_kernel(
     # Center of the kernel---the default values are the center of the occulted region, which isn't necessarily the
     # center of the donut of stray light
     if cx is None:
-        cx = (1014.50355056 - 1) * image_size / ORIGINAL_PUNCH_RESOLUTION
+        cx = KERNEL_CENTER_X * image_size / ORIGINAL_PUNCH_RESOLUTION
     if cy is None:
-        cy = (1037.37339562 - 1) * image_size / ORIGINAL_PUNCH_RESOLUTION
+        cy = KERNEL_CENTER_Y * image_size / ORIGINAL_PUNCH_RESOLUTION
 
     r_to_inner_edge *= image_size / ORIGINAL_PUNCH_RESOLUTION
     r_to_center *= image_size / ORIGINAL_PUNCH_RESOLUTION

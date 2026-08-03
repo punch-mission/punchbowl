@@ -16,3 +16,9 @@ GLINT_SPHERE1_CENTER = (540,790)
 GLINT_SPHERE2_CENTER = (540,1210)
 GLINT_SPHERE_RADIUS = 375
 GLINT_MASK_BOTTOM_CUT_OFF = 250
+
+# --- Straylight Kernel generation related constants -------------------------------------------------------------------
+# Center of the kernel---the default values are the center of the occulted region, which isn't necessarily the
+# center of the donut of stray light
+KERNEL_CENTER_X = 1014.50355056 - 1
+KERNEL_CENTER_Y = 1037.37339562 - 1

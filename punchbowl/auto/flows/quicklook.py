@@ -131,30 +131,26 @@ def movie_core_flow(file_list: list, product_code: str, output_movie_dir: str,
     annotation = "{OBSRVTRY} - {TYPECODE}{OBSCODE} - {DATE-OBS} - polarizer: {POLAR} deg - exptime: {EXPTIME} secs - LEDPLSN: {LEDPLSN}"
     written_list = []
     if file_list:
-        for i, cube_file in enumerate(file_list):
-            cube = load_ndcube_from_fits(cube_file)
+        cube = load_ndcube_from_fits(file_list[0])
 
-            if i == 0:
-                obs_start = cube.meta.datetime
-            if i == len(file_list)-1:
-                obs_end = cube.meta.datetime
+        obs_time = cube.meta.datetime
 
-            img_file = os.path.join(tempdir.name, os.path.splitext(os.path.basename(cube_file))[0] + ".jp2")
+        img_file = os.path.join(tempdir.name, os.path.splitext(os.path.basename(file_list[0]))[0] + ".jpg")
 
-            written_list.append(img_file)
+        written_list.append(img_file)
 
-            vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
+        vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
 
-            if cube.meta["LEVEL"].value == "0" and cube.meta["ISSQRT"].value == 0 and cube.meta['SCALE'].value != 0:
-                # The values in the config file are sqrt-encoded, so need to undo it. SCALE is only used in
-                # sqrt-encoded data, but this assumes the value is not changed when sqrting is turned off.
-                vmin = vmin**2 / cube.meta['SCALE'].value
-                vmax = vmax**2 / cube.meta['SCALE'].value
+        if cube.meta["LEVEL"].value == "0" and cube.meta["ISSQRT"].value == 0 and cube.meta['SCALE'].value != 0:
+            # The values in the config file are sqrt-encoded, so need to undo it. SCALE is only used in
+            # sqrt-encoded data, but this assumes the value is not changed when sqrting is turned off.
+            vmin = vmin**2 / cube.meta['SCALE'].value
+            vmax = vmax**2 / cube.meta['SCALE'].value
 
-            write_ndcube_to_quicklook(cube, filename=img_file, annotation=annotation, vmin=vmin, vmax=vmax)
+        write_ndcube_to_quicklook(cube, filename=img_file, annotation=annotation, vmin=vmin, vmax=vmax)
 
         out_filename = os.path.join(output_movie_dir,
-                                    f"{product_code}_{obs_start.isoformat()}-{obs_end.isoformat()}.mp4")
+                                    f"{product_code}_{obs_time.isoformat()}.mp4")
         os.makedirs(os.path.dirname(out_filename), exist_ok=True)
         write_quicklook_to_mp4(files=written_list, filename=out_filename,
                                ffmpeg_cmd=ffmpeg_cmd,

@@ -3,21 +3,6 @@ import copy
 import numba
 import numpy as np
 
-
-@numba.jit(fastmath=True, parallel=True, forceobj=True)
-def _masked_medfilt_inner(
-    flatinds, data, footprint_inds, footprint_ind_offset, tparg, dat_pad_shape, data_fppad, mask_fppad, data_filt
-):
-    for ind in flatinds:
-        ijkpad = np.unravel_index(ind, data.shape) + footprint_inds - footprint_ind_offset
-        ijkpad = np.ravel_multi_index(ijkpad.transpose(tparg), dat_pad_shape)
-        dat = data_fppad[ijkpad]
-        good = mask_fppad[ijkpad]
-        if np.sum(good) > 0:
-            data_filt[ind] = np.median(dat[good])
-    return data_filt
-
-
 def multivector_matrix_multiply(a, b):
     """
     Multiply a matrix with each element of a set of vectors.
@@ -137,24 +122,3 @@ def bindown(data, out_shape):
     """
     inds = np.ravel_multi_index(np.floor(np.indices(data.shape).T * out_shape / np.array(data.shape)).T.astype(np.uint32), out_shape)
     return np.bincount(inds.flatten(), weights=data.flatten(), minlength=np.prod(out_shape)).reshape(out_shape)
-
-def binup(data, factor):
-    """
-    Upsample an N-dimensional array by repeating values (nearest-neighbor).
-
-    Parameters
-    ----------
-    data: np.ndarray
-        Input array of arbitrary dimensionality to be upsampled.
-    factor: float or array-like of float
-        Per-axis scale factor(s) describing how much to expand each dimension.
-        Rounded to the nearest integer before computing the output shape, so `factor` need not be an exact integer.
-
-    Returns
-    -------
-    np.ndarray
-        Data array upsampled by given `factor`.
-    """
-    n = np.round(np.array(data.shape) * np.round(factor)).astype(np.int32)
-    inds = np.ravel_multi_index(np.floor(np.indices(n).T / np.array(factor)).T.astype(np.uint32), data.shape)
-    return np.reshape(data.flatten()[inds], n)

@@ -89,10 +89,6 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
                 break
             current_group = [file]
 
-    cutoff_time = pipeline_config["flows"][flow_type].get("ignore_missing_after_days", None)
-    if cutoff_time is not None:
-        cutoff_time = datetime.now(tz=UTC) - timedelta(days=cutoff_time)
-
     grouped_ready_files = []
     for group in grouped_files:
         if len(grouped_ready_files) >= max_n:
@@ -101,11 +97,6 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
         group_is_complete = len(group) > min_file_count
 
         if group_is_complete:
-            grouped_ready_files.append(group)
-            continue
-
-        if cutoff_time and min(f.date_created for f in group).replace(tzinfo=UTC) < cutoff_time:
-            # We've waited long enough. Just go ahead and make it.
             grouped_ready_files.append(group)
             continue
 

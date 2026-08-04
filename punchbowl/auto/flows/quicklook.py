@@ -33,26 +33,28 @@ from punchbowl.prefect import get_logger
 
 
 @task(cache_policy=NO_CACHE)
-def visualize_query_ready_files(session, pipeline_config: dict, reference_time: datetime, lookback_hours: float = 24):
+def visualize_query_ready_files(session, pipeline_config: dict, reference_time: datetime, lookback_days: float = 7):
     logger = get_logger()
 
     all_ready_files = []
     all_product_codes = []
     levels = ["3", "Q"]
+    codes = ["CA", "PA", "CT", "PT", "QA", "QN"]
     for level in levels:
         product_codes = construct_all_product_codes(level=level)
         for product_code in product_codes:
-            product_ready_files = (session.query(File)
-                                    .filter(File.state.in_(["created", "progressed", "quickpunched"]))
-                                    .filter(File.date_obs >= (reference_time - timedelta(hours=lookback_hours)))
-                                    .filter(File.date_obs <= reference_time)
-                                    .filter(File.level == level)
-                                    .filter(File.file_type == product_code[0:2])
-                                    .filter(File.observatory == product_code[2])
-                                    .order_by(File.date_obs.asc()).all())
-            logger.info(f"Found {len(product_ready_files)} files to make for {level}_{product_code}")
-            all_ready_files.append(list(product_ready_files))
-            all_product_codes.append(f"L{level}_{product_code}")
+            if product_code in codes:
+                product_ready_files = (session.query(File)
+                                        .filter(File.state.in_(["created", "progressed", "quickpunched"]))
+                                        .filter(File.date_obs >= (reference_time - timedelta(days=lookback_days)))
+                                        .filter(File.date_obs <= reference_time)
+                                        .filter(File.level == level)
+                                        .filter(File.file_type == product_code[0:2])
+                                        .filter(File.observatory == product_code[2])
+                                        .order_by(File.date_obs.asc()).all())
+                logger.info(f"Found {len(product_ready_files)} files to make for {level}_{product_code}")
+                all_ready_files.append(list(product_ready_files))
+                all_product_codes.append(f"L{level}_{product_code}")
 
     logger.info(f"{len(all_ready_files)} files will be used for visualization.")
     return all_ready_files, all_product_codes
@@ -95,7 +97,7 @@ def visualize_flow_info(input_files: list[File],
 
 
 @flow
-def movie_scheduler_flow(pipeline_config_path=None, session=None, reference_time: datetime | None = None,
+def quicklook_scheduler_flow(pipeline_config_path=None, session=None, reference_time: datetime | None = None,
                          look_back_hours: float = 24, framerate: int = 5, resolution: int = 1024):
     if session is None:
         session = get_database_session()
@@ -122,32 +124,31 @@ def generate_flow_run_name():
 
 
 @flow(flow_run_name=generate_flow_run_name)
-def movie_core_flow(file_list: list, product_code: str, output_movie_dir: str,
-                    framerate: int = 5,
-                    resolution: int = 1024,
-                    ffmpeg_cmd: str = "ffmpeg") -> None:
+def quicklook_core_flow(file_list: list, product_code: str, output_movie_dir: str,
+                        framerate: int = 5,
+                        resolution: int = 1024,
+                        ffmpeg_cmd: str = "ffmpeg") -> None:
     tempdir = tempfile.TemporaryDirectory()
 
-    annotation = "{OBSRVTRY} - {TYPECODE}{OBSCODE} - {DATE-OBS} - polarizer: {POLAR} deg - exptime: {EXPTIME} secs - LEDPLSN: {LEDPLSN}"
     written_list = []
     if file_list:
-        cube = load_ndcube_from_fits(file_list[0])
+        for i, cube_file in enumerate(file_list):
+            cube = load_ndcube_from_fits(cube_file)
 
-        obs_time = cube.meta.datetime
+            obs_time = cube.meta.datetime
 
-        img_file = os.path.join(tempdir.name, os.path.splitext(os.path.basename(file_list[0]))[0] + ".jpg")
+            img_file = os.path.join(tempdir.name, os.path.splitext(os.path.basename(cube_file))[0] + ".jp2")
 
-        written_list.append(img_file)
+            written_list.append(img_file)
 
-        vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
+            vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
 
-        if cube.meta["LEVEL"].value == "0" and cube.meta["ISSQRT"].value == 0 and cube.meta['SCALE'].value != 0:
-            # The values in the config file are sqrt-encoded, so need to undo it. SCALE is only used in
-            # sqrt-encoded data, but this assumes the value is not changed when sqrting is turned off.
-            vmin = vmin**2 / cube.meta['SCALE'].value
-            vmax = vmax**2 / cube.meta['SCALE'].value
+            write_ndcube_to_quicklook(cube, filename=img_file, vmin=vmin, vmax=vmax)
 
-        write_ndcube_to_quicklook(cube, filename=img_file, annotation=annotation, vmin=vmin, vmax=vmax)
+            if i == 0:
+                img_file = os.path.join(output_movie_dir,
+                                        f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+                write_ndcube_to_quicklook(cube, filename=img_file, vmin=vmin, vmax=vmax)
 
         out_filename = os.path.join(output_movie_dir,
                                     f"{product_code}_{obs_time.isoformat()}.mp4")
@@ -160,7 +161,7 @@ def movie_core_flow(file_list: list, product_code: str, output_movie_dir: str,
 
 
 @flow
-def movie_process_flow(flow_id: int, pipeline_config_path=None, session=None):
+def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None):
     if session is None:
         session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
@@ -185,7 +186,7 @@ def movie_process_flow(flow_id: int, pipeline_config_path=None, session=None):
     flow_call_data["output_movie_dir"] = os.path.join(pipeline_config["root"], flow_call_data["output_movie_dir"])
 
     try:
-        movie_core_flow(**flow_call_data)
+        quicklook_core_flow(**flow_call_data)
     except Exception as e:
         flow_db_entry.state = "failed"
         flow_db_entry.end_time = datetime.now()

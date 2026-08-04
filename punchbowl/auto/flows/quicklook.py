@@ -148,12 +148,12 @@ def quicklook_core_flow(file_list: list, product_code: str, output_movie_dir: st
             if i == 0:
                 img_file = os.path.join(output_movie_dir,
                                         f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+                mov_file = os.path.join(output_movie_dir,
+                                        f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
                 write_ndcube_to_quicklook(cube, filename=img_file, vmin=vmin, vmax=vmax)
 
-        out_filename = os.path.join(output_movie_dir,
-                                    f"{product_code}_{obs_time.isoformat()}.mp4")
-        os.makedirs(os.path.dirname(out_filename), exist_ok=True)
-        write_quicklook_to_mp4(files=written_list, filename=out_filename,
+        os.makedirs(os.path.dirname(mov_file), exist_ok=True)
+        write_quicklook_to_mp4(files=written_list, filename=mov_file,
                                ffmpeg_cmd=ffmpeg_cmd,
                                framerate=framerate, resolution=resolution)
 

@@ -885,7 +885,7 @@ def level1_quick_query_ready_files(session, pipeline_config: dict, reference_tim
     missing_stray_light = []
     stray_lights = get_two_closest_stray_light(ready, session=session, dynamic=False)
     for f, closest_stray_light in zip(ready, stray_lights):
-        if closest_stray_light == [None, None]:
+        if None in closest_stray_light:
             missing_stray_light.append(f)
             continue
         f.stray_light = closest_stray_light

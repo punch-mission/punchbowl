@@ -443,7 +443,8 @@ def _load_files(filepaths: list[str], mosaic_wcs: WCS, logger: Logger, do_uncert
     n_failed = 0
     logger.info(f"Will read {len(filepaths)} {'triplets' if polarized else 'images'}")
     for i, result in enumerate(pool.map(
-            _load_and_reproject, filepaths, repeat(mosaic_wcs), data_array, reprojected_array, repeat(polarized))):
+            _safely_load_and_reproject, filepaths, repeat(mosaic_wcs),
+            data_array, reprojected_array, repeat(polarized))):
         if isinstance(result, str):
             logger.warning(f"Loading {filepaths[i]} failed")
             logger.warning(result)
@@ -476,6 +477,12 @@ def _load_files(filepaths: list[str], mosaic_wcs: WCS, logger: Logger, do_uncert
 # Amount to ignore at the bottom of each of the 3 WFI cameras
 bottom_crops = [230, 240, 243]
 
+def _safely_load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destination: np.ndarray,
+                        repro_destination: np.ndarray, polarized: bool) -> tuple[list, list] | str:
+    try:
+        return _load_and_reproject(paths, target_wcs, data_destination, repro_destination, polarized)
+    except Exception as e:  # noqa: BLE001
+        return str(e)
 
 def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destination: np.ndarray,
                         repro_destination: np.ndarray, polarized: bool) -> tuple[list, list] | str:

@@ -600,9 +600,9 @@ def levelq_upload_scheduler_flow(pipeline_config_path=None, session=None, refere
 
 @flow
 def levelq_upload_core_flow(data_list, bucket_name, jp2_dir, aws_profile="noaa-prod"):
-    fits_sha = [fn + ".sha" for fn in data_list]
+    fits_sha = [fn + ".sha256" for fn in data_list]
     jp2_path = [file_name_to_full_path(os.path.basename(fn), root_dir=jp2_dir).replace(".fits", ".jp2") for fn in data_list]
-    jp2_sha = [file_name_to_full_path(os.path.basename(fn), root_dir=jp2_dir).replace(".fits", ".jp2.sha") for fn in data_list]
+    jp2_sha = [file_name_to_full_path(os.path.basename(fn), root_dir=jp2_dir).replace(".fits", ".jp2.sha256") for fn in data_list]
 
     data_list = fits_sha + data_list + jp2_sha + jp2_path
 

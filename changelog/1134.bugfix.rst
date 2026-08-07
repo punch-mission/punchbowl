@@ -1,0 +1,1 @@
+Corrects a bug with starfield model cdelt during subtraction.

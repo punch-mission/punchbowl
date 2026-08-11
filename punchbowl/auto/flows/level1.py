@@ -270,7 +270,7 @@ def get_psf_model_paths(level0_files, pipeline_config: dict, session=None):
               .order_by(File.file_version.desc(), File.date_obs.desc()).all())
     results = []
     for l0_file in level0_files:
-        
+
         target_type = PSF_MODEL_CORRESPONDING_TYPES[l0_file.file_type[1]]
         # We want to pick the latest model that's before the observation, so we go backwards in time, past any
         # later-in-time models, until we hit the first model that's before the observation.
@@ -290,7 +290,7 @@ def get_psf_model_paths(level0_files, pipeline_config: dict, session=None):
 
 def get_psf_model_path(level0_file, pipeline_config: dict, session=None, reference_time=None) -> str:
     psf_model_type = PSF_MODEL_CORRESPONDING_TYPES[level0_file.file_type[1]]
-    
+
     best_model = (session.query(File)
                   .filter(File.file_type == psf_model_type)
                   .filter(File.observatory == level0_file.observatory)
@@ -572,7 +572,7 @@ def level1_early_call_data_processor(call_data: dict, pipeline_config, session=N
                 "second_vignetting_function_path", "mask_path", "distortion_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
 
-    
+
     call_data["psf_model_path"] = file_name_to_full_path(call_data["psf_model_path"], pipeline_config["root"])
     call_data["psf_model_path"] = cache_layer.psf.wrap_if_appropriate(call_data["psf_model_path"])
 

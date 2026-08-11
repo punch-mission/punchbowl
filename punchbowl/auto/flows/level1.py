@@ -270,10 +270,7 @@ def get_psf_model_paths(level0_files, pipeline_config: dict, session=None):
               .order_by(File.file_version.desc(), File.date_obs.desc()).all())
     results = []
     for l0_file in level0_files:
-        # TODO - Turn this back on once fine tuned for NFI
-        if l0_file.observatory == "4":
-            results.append("")
-            continue
+        
         target_type = PSF_MODEL_CORRESPONDING_TYPES[l0_file.file_type[1]]
         # We want to pick the latest model that's before the observation, so we go backwards in time, past any
         # later-in-time models, until we hit the first model that's before the observation.
@@ -293,9 +290,7 @@ def get_psf_model_paths(level0_files, pipeline_config: dict, session=None):
 
 def get_psf_model_path(level0_file, pipeline_config: dict, session=None, reference_time=None) -> str:
     psf_model_type = PSF_MODEL_CORRESPONDING_TYPES[level0_file.file_type[1]]
-    # TODO - Turn this back on once fine tuned for NFI
-    if level0_file.observatory == "4":
-        return ""
+    
     best_model = (session.query(File)
                   .filter(File.file_type == psf_model_type)
                   .filter(File.observatory == level0_file.observatory)

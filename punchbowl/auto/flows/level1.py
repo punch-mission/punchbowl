@@ -572,12 +572,9 @@ def level1_early_call_data_processor(call_data: dict, pipeline_config, session=N
                 "second_vignetting_function_path", "mask_path", "distortion_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
 
-    # TODO: this is a hack to skip NFI PSF. Remove!
-    if call_data["psf_model_path"] == "":
-        call_data["psf_model_path"] = None
-    else:
-        call_data["psf_model_path"] = file_name_to_full_path(call_data["psf_model_path"], pipeline_config["root"])
-        call_data["psf_model_path"] = cache_layer.psf.wrap_if_appropriate(call_data["psf_model_path"])
+    
+    call_data["psf_model_path"] = file_name_to_full_path(call_data["psf_model_path"], pipeline_config["root"])
+    call_data["psf_model_path"] = cache_layer.psf.wrap_if_appropriate(call_data["psf_model_path"])
 
     call_data["quartic_coefficient_path"] = cache_layer.quartic_coefficients.wrap_if_appropriate(
         call_data["quartic_coefficient_path"])

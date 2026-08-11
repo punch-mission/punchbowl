@@ -34,8 +34,7 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
     logger = get_logger()
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(File.level == "1")
-                        # TODO: This line temporarily excludes NFI
-                       .filter(File.observatory.in_(["1", "2", "3"]))
+                       .filter(File.observatory.in_(["1", "2", "3", "4"]))
                        .filter(File.file_type.in_(
                             SCIENCE_POLARIZED_LEVEL1_TYPES if polarized else SCIENCE_CLEAR_LEVEL1_TYPES))
                        # The ascending sort order is expected by the file grouping code
@@ -69,9 +68,7 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
     for group in grouped_files:
         if len(grouped_ready_files) >= max_n:
             break
-        # TODO: This line temporarily excludes NFI
-        # group_is_complete = len(group) == (12 if polarized else 4)
-        group_is_complete = len(group) == (9 if polarized else 3)
+        group_is_complete = len(group) == (12 if polarized else 4)
         if group_is_complete:
             grouped_ready_files.append(group)
             continue
@@ -114,8 +111,7 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
         # Grab all the L0s that produce inputs for this trefoil
         expected_inputs = (session.query(File)
                                   .filter(File.level == "0")
-                                  # TODO: This line temporarily excludes NFI
-                                  .filter(File.observatory.in_(["1", "2", "3"]))
+                                  .filter(File.observatory.in_(["1", "2", "3", "4"]))
                                   .filter(File.file_type.in_(search_types))
                                   .filter(File.date_obs > center - search_width)
                                   .filter(File.date_obs < center + search_width)

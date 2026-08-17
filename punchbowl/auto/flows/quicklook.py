@@ -38,23 +38,22 @@ def visualize_query_ready_files(session, pipeline_config: dict, reference_time: 
 
     all_ready_files = []
     all_product_codes = []
-    levels = ["3", "Q"]
-    codes = ["CA", "PA", "CT", "PT", "QA", "QN"]
-    for level in levels:
-        product_codes = construct_all_product_codes(level=level)
-        for product_code in product_codes:
-            if product_code in codes:
-                product_ready_files = (session.query(File)
-                                        .filter(File.state.in_(["created", "progressed", "quickpunched"]))
-                                        .filter(File.date_obs >= (reference_time - timedelta(days=lookback_days)))
-                                        .filter(File.date_obs <= reference_time)
-                                        .filter(File.level == level)
-                                        .filter(File.file_type == product_code[0:2])
-                                        .filter(File.observatory == product_code[2])
-                                        .order_by(File.date_obs.asc()).all())
-                logger.info(f"Found {len(product_ready_files)} files to make for {level}_{product_code}")
-                all_ready_files.append(list(product_ready_files))
-                all_product_codes.append(f"L{level}_{product_code}")
+
+    code_mapping = {"3": ["CA", "PA", "CT", "PT"],
+                    "Q": ["QA", "QN"]}
+    for level, codes in code_mapping:
+        for product_code in codes:
+            product_ready_files = (session.query(File)
+                                    .filter(File.state.in_(["created", "progressed", "quickpunched"]))
+                                    .filter(File.date_obs >= (reference_time - timedelta(days=lookback_days)))
+                                    .filter(File.date_obs <= reference_time)
+                                    .filter(File.level == level)
+                                    .filter(File.file_type == product_code[0:2])
+                                    .filter(File.observatory == product_code[2])
+                                    .order_by(File.date_obs.asc()).all())
+            logger.info(f"Found {len(product_ready_files)} files to make for {level}_{product_code}")
+            all_ready_files.append(list(product_ready_files))
+            all_product_codes.append(f"L{level}_{product_code}")
 
     logger.info(f"{len(all_ready_files)} files will be used for visualization.")
     return all_ready_files, all_product_codes

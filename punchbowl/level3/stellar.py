@@ -17,7 +17,6 @@ from remove_starfield import BlockMasker, ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 from reproject import reproject_interp
 from reproject.mosaicking import find_optimal_celestial_wcs
-from scipy.ndimage import percentile_filter
 from scipy.stats import circmean
 from solpolpy import resolve
 from solpolpy.util import solnorth_from_wcs
@@ -308,9 +307,7 @@ def generate_starfield_background(
             pbar_class=LoggingProgressIndicator,
             target_mem_usage=target_mem_usage)
         logger.info("Done building starfields")
-
-        out_data = starfield_mzp.starfield - percentile_filter(starfield_mzp.starfield, percentile=5, size=(1, 10, 10))
-        out_data[out_data < 0] = 0
+        out_data = starfield_mzp.starfield
         out_wcs = calculate_helio_wcs_from_celestial(starfield_mzp.wcs, meta.astropy_time,
                                                      starfield_mzp.starfield.shape)
     else:
@@ -329,8 +326,7 @@ def generate_starfield_background(
             pbar_class=LoggingProgressIndicator,
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
-        out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, percentile=5, size=10)
-        out_data[out_data < 0] = 0
+        out_data = starfield_clear.starfield
         out_wcs = calculate_helio_wcs_from_celestial(starfield_clear.wcs,
                                                         meta.astropy_time,
                                                         starfield_clear.starfield.shape)

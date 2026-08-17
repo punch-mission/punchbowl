@@ -1,0 +1,1 @@
+Corrects a bug with starfield model subtraction where the RA-axis cdelt was being accidentally sign flipped twice.

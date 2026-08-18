@@ -34,7 +34,6 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
     logger = get_logger()
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(File.level == "1")
-                       .filter(File.observatory.in_(["1", "2", "3", "4"]))
                        .filter(File.file_type.in_(
                             SCIENCE_POLARIZED_LEVEL1_TYPES if polarized else SCIENCE_CLEAR_LEVEL1_TYPES))
                        # The ascending sort order is expected by the file grouping code

@@ -18,6 +18,7 @@ from punchbowl.data.punch_io import (
     write_ndcube_to_quicklook,
     write_quicklook_to_mp4,
 )
+from punchbowl.data.visualize import animate_punch
 from punchbowl.prefect import get_logger
 
 # Need to figure out when a day is completed for level 3 and Q. Expected file number?
@@ -123,40 +124,21 @@ def generate_flow_run_name():
 
 
 @flow(flow_run_name=generate_flow_run_name)
-def quicklook_core_flow(file_list: list, product_code: str, output_movie_dir: str,
-                        framerate: int = 5,
-                        resolution: int = 1024,
-                        ffmpeg_cmd: str = "ffmpeg") -> None:
-    tempdir = tempfile.TemporaryDirectory()
-
-    written_list = []
+def quicklook_core_flow(file_list: list,
+                        output_movie_dir: str,
+                        framerate: int = 30) -> None:
     if file_list:
-        for i, cube_file in enumerate(file_list):
-            cube = load_ndcube_from_fits(cube_file)
+        cube = load_ndcube_from_fits(file_list[0])
+        vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
 
-            obs_time = cube.meta.datetime
+        path_image = os.path.join(output_movie_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+        path_movie = os.path.join(output_movie_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
 
-            img_file = os.path.join(tempdir.name, os.path.splitext(os.path.basename(cube_file))[0] + ".jp2")
+        os.makedirs(os.path.dirname(path_image), exist_ok=True)
 
-            written_list.append(img_file)
+        write_ndcube_to_quicklook(cube, filename=path_image, vmin=vmin, vmax=vmax)
 
-            vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
-
-            write_ndcube_to_quicklook(cube, filename=img_file, vmin=vmin, vmax=vmax)
-
-            if i == 0:
-                img_file = os.path.join(output_movie_dir,
-                                        f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
-                mov_file = os.path.join(output_movie_dir,
-                                        f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
-                write_ndcube_to_quicklook(cube, filename=img_file, vmin=vmin, vmax=vmax)
-
-        os.makedirs(os.path.dirname(mov_file), exist_ok=True)
-        write_quicklook_to_mp4(files=written_list, filename=mov_file,
-                               ffmpeg_cmd=ffmpeg_cmd,
-                               framerate=framerate, resolution=resolution)
-
-        tempdir.cleanup()
+        animate_punch(file_list, output_path=path_movie, fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax)
 
 
 @flow

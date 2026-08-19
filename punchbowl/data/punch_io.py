@@ -17,6 +17,7 @@ from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
 
 import astropy.units as u
+import cv2 as cv
 import lxml.etree as et
 import numpy as np
 from astropy.io import fits
@@ -250,6 +251,22 @@ def write_ndcube_to_quicklook(cube: PUNCHCube, # noqa: C901
 
     if write_hash:
         write_file_hash(filename)
+
+
+def convert_jpg(path_jp2: str,
+                path_jpg: str) -> None:
+    """
+    Convert jp2 file to standard jpg.
+
+    Parameters
+    ----------
+    path_jp2 : str
+        Input path to jp2 file
+    path_jpg : str
+        Output path to jpg file
+
+    """
+    cv.imwrite(path_jpg, cv.imread(path_jp2))
 
 
 def write_quicklook_to_mp4(files: list[str],

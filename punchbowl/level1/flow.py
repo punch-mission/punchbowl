@@ -342,7 +342,6 @@ def level1_late_core_flow(
     logger.info("ending level 1 late core flow")
     return output_data
 
-
 @punch_flow
 def level1_nfi_core_flow(input_data: list[str | PUNCHCube],*args:tuple,**kwargs:dict) -> list[PUNCHCube]:
     """

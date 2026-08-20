@@ -600,9 +600,12 @@ def levelq_upload_scheduler_flow(pipeline_config_path=None, session=None, refere
 
 @flow
 def levelq_upload_core_flow(data_list, bucket_name, jp2_dir, aws_profile="noaa-prod"):
-    data_list += ([fn + ".sha" for fn in data_list] +
-                 [file_name_to_full_path(fn, root_dir=jp2_dir).replace(".fits", ".jp2") for fn in data_list] +
-                  [file_name_to_full_path(fn, root_dir=jp2_dir).replace(".fits", ".jp2.sha") for fn in data_list])
+    fits_sha = [fn + ".sha256" for fn in data_list]
+    jp2_path = [file_name_to_full_path(os.path.basename(fn), root_dir=jp2_dir).replace(".fits", ".jp2") for fn in data_list]
+    jp2_sha = [file_name_to_full_path(os.path.basename(fn), root_dir=jp2_dir).replace(".fits", ".jp2.sha256") for fn in data_list]
+
+    data_list = fits_sha + data_list + jp2_sha + jp2_path
+
     manifest_path = write_manifest(data_list)
     os.system(f"aws --profile {aws_profile} s3 cp {manifest_path} {bucket_name}")
     for file_name in data_list:
@@ -671,8 +674,14 @@ def levelq_CFM_query_ready_files(session, pipeline_config: dict, reference_time:
                        .filter(File.date_obs <= after)
                        .filter(File.level == "Q")
                        .filter(File.file_type == "CQ")
-                       .filter(File.observatory == "M")
-                       .limit(2 * max_files_per_half).all())
+                       .filter(File.observatory == "M").all())
+
+    # To avoid selecting with a bias towards images all clumped around one time, we shuffle them and then keep
+    # only the number that we want to have. This hopefully avoids the problem of stale F-corona models being
+    # generated.
+    random.shuffle(all_ready_files)
+    all_ready_files = all_ready_files[:2*max_files_per_half]
+
     if len(all_ready_files) >= 2 * min_files_per_half:
         logger.info(f"{len(all_ready_files)} Level Q CQM files will be used for F corona background modeling.")
         return all_ready_files

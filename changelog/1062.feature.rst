@@ -1,0 +1,1 @@
+productionify.py supports running to generate jp2s and/or .sha files without changing the version string

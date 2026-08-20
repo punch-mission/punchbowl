@@ -18,6 +18,7 @@ from punchbowl.level1.despike import despike_polseq_task
 from punchbowl.level1.destreak import destreak_task
 from punchbowl.level1.dynamic_stray_light import remove_dynamic_stray_light_task
 from punchbowl.level1.initial_uncertainty import update_initial_uncertainty_task
+from punchbowl.level1.nfi_dynamic_stray_light import remove_nfi_stray_light
 from punchbowl.level1.psf import correct_psf_task
 from punchbowl.level1.quartic_fit import perform_quartic_fit_task
 from punchbowl.level1.sqrt import decode_sqrt_data
@@ -339,4 +340,55 @@ def level1_late_core_flow(
 
         output_data.append(data)
     logger.info("ending level 1 late core flow")
+    return output_data
+
+@punch_flow
+def level1_nfi_core_flow(input_data: list[str | PUNCHCube],*args:tuple,**kwargs:dict) -> list[PUNCHCube]:
+    """
+    Remove dynamic stray light from NFI images.
+
+    Parameters
+    ----------
+    input_data : list[str | PUNCHCube]
+        Input NFI images
+    *args : tuple
+        Arguments to pass to remove_nfi_stray_light
+    **kwargs : dict
+        Keyword arguments to remove_nfi_stray_light
+
+    Returns
+    -------
+    output_data : list[PUNCHCube]
+        The processed images.
+
+    """
+    logger = get_logger()
+
+    logger.info("beginning level 1 NFI core flow")
+
+    output_data = []
+
+    for this_data in input_data:
+        this_data = load_image_task(this_data) if isinstance(this_data, str) else this_data # noqa: PLW2901
+        this_data = remove_nfi_stray_light(this_data, *args,**kwargs) # noqa: PLW2901
+
+        # Repackage data with proper metadata
+        product_code = "Z" + this_data.meta["TYPECODE"].value[1:] + this_data.meta["OBSCODE"].value
+        new_meta = NormalizedMetadata.load_template(product_code, "1")
+        # copy over the existing values
+        for key in this_data.meta.keys():  # noqa: SIM118
+            if key in KEYS_TO_NOT_COPY:
+                continue
+            if key in new_meta.keys():  # noqa: SIM118
+                new_meta[key] = this_data.meta[key].value
+        new_meta.history = this_data.meta.history
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["FILEVRSN"] = this_data.meta["FILEVRSN"].value
+
+        this_data = this_data.replace(meta=new_meta) # noqa: PLW2901
+
+        output_data.append(this_data)
+
+    logger.info("ending level 1 NFI core flow")
+
     return output_data

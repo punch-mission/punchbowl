@@ -1,1 +1,0 @@
-Sets the polaroff keyword to 90 for level 0 products.

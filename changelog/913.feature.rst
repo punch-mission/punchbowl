@@ -1,1 +1,0 @@
-In the files dashboard, points by colored by binary outlier status.

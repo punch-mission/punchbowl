@@ -1,1 +1,0 @@
-Passes through additional date keywords in polarization transformation.

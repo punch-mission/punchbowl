@@ -82,14 +82,21 @@ def hostify_config(config):
             del config[key]
 
 
-def load_quicklook_scaling(level: str = None, product: str = None, obscode: str = None, path: str = None) -> (float, float):
-    if path is None:
-        path = Variable.get("punchpipe_config", "punchpipe_config.yaml")
-    with open(path) as f:
-        config = yaml.load(f, Loader=FullLoader)
-    if "quicklook_scaling" in config:
+def load_quicklook_scaling(level: str = None, product: str = None, obscode: str = None, config: str | dict = None) -> (float, float):
+    if isinstance(config, str):
+        with open(config) as f:
+            config_parameters = yaml.load(f, Loader=FullLoader)
+    elif isinstance(config, dict):
+        config_parameters = config
+    elif config is None:
+        config = Variable.get("punchpipe_config", "punchpipe_config.yaml")
+        with open(config) as f:
+            config_parameters = yaml.load(f, Loader=FullLoader)
+    else:
+        raise TypeError("config must be a path string or dictionary object")
+    if "quicklook_scaling" in config_parameters:
         if level:
-            level_data = config.get("quicklook_scaling", {}).get(level, {})
+            level_data = config_parameters.get("quicklook_scaling", {}).get(level, {})
             if product and isinstance(level_data, dict):
                 product_data = level_data.get(product, level_data.get("default"))
                 if obscode == "4":
@@ -123,8 +130,9 @@ def _write_quicklook(pipeline_config: dict, corresponding_file_db_entry: File, d
                                    corresponding_file_db_entry.filename())
         ql_filename = ql_filename.replace(".fits", ".jp2")
         os.makedirs(os.path.dirname(ql_filename), exist_ok=True)
-        layer = 1 if data.meta["TYPECODE"].value == "PA" else "tB"
-        write_ndcube_to_quicklook(data, ql_filename, layer=layer, write_hash=True)
+        layer = 1 if data.meta["TYPECODE"].value in ["PA", "PT"] else "tB"
+        vmin, vmax = load_quicklook_scaling(level=data.meta["LEVEL"].value, product=data.meta["TYPECODE"].value, obscode=data.meta["OBSCODE"].value, config=pipeline_config)
+        write_ndcube_to_quicklook(data, ql_filename, layer=layer, vmin=vmin, vmax=vmax, write_hash=True)
 
 
 def match_data_with_file_db_entry(data: PUNCHCube, file_db_entry_list):

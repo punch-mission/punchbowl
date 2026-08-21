@@ -415,6 +415,72 @@ def test_level2_construct_file_info():
     assert(constructed_PTM_files_info[0].date_beg == datetime(2026, 4, 8, 23, 49, 0, 934000, tzinfo=UTC)) #correct date_beg
     assert(constructed_PTM_files_info[0].date_end == datetime(2026, 4, 8, 23, 51, 58, 91000, tzinfo=UTC)) #correct date_end
 
+
+def test_level2_construct_file_info_keeps_x_flags_per_observatory():
+    """
+    Case: WFI2 has an outlier, while WFI3 has bad packets. These flags must not leak into the other X products.
+    """
+    pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
+    pipeline_config = load_pipeline_configuration(pipeline_config_path)
+    date_obs = datetime(2026, 4, 8, 23, 50, 0, tzinfo=UTC)
+
+    polarized_files = [
+        File(
+            level="1",
+            file_type=f"P{polarization}",
+            observatory=observatory,
+            state="created",
+            file_version="none",
+            software_version="none",
+            polarization=polarization,
+            date_obs=date_obs,
+            outlier=observatory == "2",
+            bad_packets=observatory == "3",
+        )
+        for observatory in ("1", "2", "3")
+        for polarization in ("P", "Z", "M")
+    ]
+    clear_files = [
+        File(
+            level="1",
+            file_type="CR",
+            observatory=observatory,
+            state="created",
+            file_version="none",
+            software_version="none",
+            polarization="C",
+            date_obs=date_obs,
+            outlier=observatory == "2",
+            bad_packets=observatory == "3",
+        )
+        for observatory in ("1", "2", "3")
+    ]
+
+    expected_x_flags = {
+        "1": (False, False),
+        "2": (True, False),
+        "3": (False, True),
+    }
+
+    for level1_files, mosaic_type, x_type in [
+        (polarized_files, "PT", "XP"),
+        (clear_files, "CT", "XR"),
+    ]:
+        level2_files = level2_construct_file_info(level1_files, pipeline_config)
+        mosaic_file = next(file for file in level2_files if file.observatory == "M")
+        x_files = {file.observatory: file for file in level2_files if file.observatory != "M"}
+
+        assert mosaic_file.file_type == mosaic_type
+        assert mosaic_file.outlier is True
+        assert mosaic_file.bad_packets is True
+        assert set(x_files) == set(expected_x_flags)
+
+        for observatory, (expected_outlier, expected_bad_packets) in expected_x_flags.items():
+            assert x_files[observatory].file_type == x_type
+            assert x_files[observatory].outlier is expected_outlier
+            assert x_files[observatory].bad_packets is expected_bad_packets
+
+
 def test_level2_construct_flow_info():
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
     pipeline_config = load_pipeline_configuration(pipeline_config_path)

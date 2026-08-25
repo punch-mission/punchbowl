@@ -268,8 +268,8 @@ def level2_construct_flow_info(level1_files: list[File], level2_file: File, pipe
 def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
     """Construct planned Level 2 File database records from input Level 1 files.
 
-    Creates the combined mosaic Level 2 file record (CTM or PTM) and resampled 
-    single-observatory Level 2 file records (XR or XP for each observatory 
+    Creates the combined mosaic Level 2 file record (CTM or PTM) and resampled
+    single-observatory Level 2 file records (XR or XP for each observatory
     present in the input Level 1 files).
 
     Parameters

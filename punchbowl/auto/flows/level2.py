@@ -283,8 +283,8 @@ def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, 
                 state="planned",
             )]
 
-    unique_obses = {f.observatory for f in level1_files}
-    for obs in unique_obses:
+    unique_observatories = {f.observatory for f in level1_files}
+    for obs in unique_observatories:
         input_files = [f for f in level1_files if f.observatory == obs]
         files.append(File(
                 level="2",

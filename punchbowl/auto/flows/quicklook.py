@@ -32,6 +32,11 @@ from punchbowl.prefect import get_logger
 
 # Filename of PUNCH_CAM_yyyymmdd_v0l.jpg, and corresponding daily .mp4 file
 
+# Add database to track day, level, code, moviemade, imagemade, other stats?
+# Check files that are ready. If sufficient, make movie. Else, check how long waiting. If waiting beyond duration, make it anyway.
+# Add file limits / time lag to config.
+# Will need to update database after creation.
+# TODO - look in db.py to set this up
 
 @task(cache_policy=NO_CACHE)
 def visualize_query_ready_files(session, pipeline_config: dict, reference_time: datetime, lookback_days: float = 7):
@@ -162,6 +167,8 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
 
     # load the call data and launch the core flow
     flow_call_data = json.loads(flow_db_entry.call_data)
+
+    # TODO - Quicklook root? Output to daily dirs instead.
 
     flow_call_data["file_list"] = file_name_to_full_path(flow_call_data["file_list"], pipeline_config["root"])
     flow_call_data["output_movie_dir"] = os.path.join(pipeline_config["root"], flow_call_data["output_movie_dir"])

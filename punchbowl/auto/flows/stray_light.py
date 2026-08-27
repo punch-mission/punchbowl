@@ -256,7 +256,6 @@ def construct_stray_light_scheduler_flow(pipeline_config_path=None, session=None
     for i in range(n, -1, -1):
         t = t0 + i * increment
         for model_type in ["SR", "SM", "SZ", "SP"]:
-            #for observatory in ["1", "2", "3", "4"]:
             for observatory in ["1", "2", "3"]: # Disable NFI static stray light processing
                 key = (model_type, observatory, t)
                 model = existing_models.get(key)

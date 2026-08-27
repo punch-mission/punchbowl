@@ -810,7 +810,7 @@ def get_metadata(first_image_packet,
         fits_info |= organize_lz_fits_keywords(best_lz_db, best_lz)
 
     fits_info |= organize_compression_and_acquisition_settings(compression_settings, acquisition_settings)
-    if spacecraft_id == 0x2F:
+    if spacecraft_id == 0x2F:   # if NFI
         fits_info["RAWBITS"] = 19
     else:
         fits_info["RAWBITS"] = 16
@@ -823,7 +823,9 @@ def get_metadata(first_image_packet,
     else:
         fits_info["BUNIT"] = "sqrt(DN)"
         fits_info["COMPBITS"] = round((fits_info["RAWBITS"] + int(np.log2(fits_info["SCALE"]))) / 2, 2)
-        fits_info["DSATVAL"] = 2**fits_info["COMPBITS"] - 1
+        # NOTE: The hardcoded value in the next line that doesn't use the RAWBITS or COMPBITS specifically associated with NFI vs. WFI
+        # but provides a quick fix that gives the DSATVAL we want for each instrument type
+        fits_info["DSATVAL"] = np.floor(np.sqrt((2**16-1) * fits_info["SCALE"] * fits_info["IMGCOUNT"]))
         fits_info["DESCRPTN"] = "PUNCH Level-0 data, square-root encoded DN values in camera coordinates"
 
     fits_info |= organize_gain_info(spacecraft_id)

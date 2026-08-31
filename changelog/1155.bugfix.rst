@@ -1,0 +1,1 @@
+Add robots=off to wget command as part of recent umbra.nascom.nasa.gov permissions updates.

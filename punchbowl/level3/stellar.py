@@ -378,13 +378,16 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
     logger = get_logger()
     logger.info("subtract_starfield_background started")
 
-    if before_starfield_path is None and after_starfield_path is None and starfield_path is None:
+    if not any((before_starfield_path, after_starfield_path, starfield_path)):
         output = data_object
         output.meta.history.add_now("LEVEL3-subtract_starfield_background",
                                            "starfield subtraction skipped since path is empty")
-    elif (before_starfield_path is None or after_starfield_path is None) and starfield_path is None:
+        return output
+
+    if (before_starfield_path is None or after_starfield_path is None) and starfield_path is None:
         raise InvalidDataError("subtract_starfield_background requires two input starfield models.")
-    elif starfield_path is not None:
+
+    if starfield_path is not None:
         star_datacube = load_ndcube_from_fits(starfield_path)
         wcs_celestial = star_datacube.celestial_wcs
         wcs_celestial.wcs.cdelt[0] = wcs_celestial.wcs.cdelt[0] * -1

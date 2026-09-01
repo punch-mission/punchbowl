@@ -266,6 +266,26 @@ def level2_construct_flow_info(level1_files: list[File], level2_file: File, pipe
 
 
 def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+    """Construct planned Level 2 File database records from input Level 1 files.
+
+    Creates the combined mosaic Level 2 file record (CTM or PTM) and resampled
+    single-observatory Level 2 file records (XR or XP for each observatory
+    present in the input Level 1 files).
+
+    Parameters
+    ----------
+    level1_files : list[File]
+        List of Level 1 input File objects to process.
+    pipeline_config : dict
+        Pipeline configuration dictionary containing file version and other metadata.
+    reference_time : datetime, optional
+        Optional reference time parameter.
+
+    Returns
+    -------
+    list[File]
+        List of Level 2 File objects (mosaic file followed by per-observatory resampled files).
+    """
     M_date_beg = min([f.date_beg for f in level1_files if f.date_beg is not None], default=None)
     M_date_end = max([f.date_end for f in level1_files if f.date_end is not None], default=None)
     files = [File(
@@ -283,8 +303,8 @@ def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, 
                 state="planned",
             )]
 
-    unique_obses = {f.observatory for f in level1_files}
-    for obs in unique_obses:
+    unique_observatories = {f.observatory for f in level1_files}
+    for obs in unique_observatories:
         input_files = [f for f in level1_files if f.observatory == obs]
         files.append(File(
                 level="2",
@@ -297,8 +317,8 @@ def level2_construct_file_info(level1_files: list[File], pipeline_config: dict, 
                 date_beg=M_date_beg,
                 date_obs=files[0].date_obs,
                 date_end=M_date_end,
-                outlier=any(f.outlier for f in files),
-                bad_packets=any(f.bad_packets for f in files),
+                outlier=any(f.outlier for f in input_files),
+                bad_packets=any(f.bad_packets for f in input_files),
                 crota=input_files[0].crota,
                 state="planned",
             ))

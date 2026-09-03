@@ -45,7 +45,7 @@ def write_file_hash(path: str) -> None:
         fb = f.read()
         file_hash.update(fb)
 
-    with open(path + ".sha", "w") as f:
+    with open(path + ".sha256", "w") as f:
         f.write(file_hash.hexdigest())
 
 

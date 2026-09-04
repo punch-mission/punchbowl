@@ -43,6 +43,7 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
                    .filter(File.level == "3")
                    .filter(File.file_type == "PT")
                    .filter(File.observatory == "M")
+                   .filter(File.outlier == 0)
                    .order_by(File.date_obs.desc()).all())
 
     if len(all_ready_files) == 0:
@@ -100,14 +101,8 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
             grouped_ready_files.append(group)
             continue
 
-    cleaned_ready_groups = []
-    for group in grouped_ready_files:
-        group = [f for f in group if f.outlier == 0]
-        if group:
-            cleaned_ready_groups.append(group)
-
-    logger.info(f"{len(cleaned_ready_groups)} groups heading out")
-    return cleaned_ready_groups
+    logger.info(f"{len(grouped_ready_files)} groups heading out")
+    return grouped_ready_files
 
 @task
 def level3_vam_construct_flow_info(level3_ptm_files: list[File],
@@ -184,8 +179,8 @@ def level3_vam_construct_file_info(level3_files: list[File], pipeline_config: di
         file_version=pipeline_config["file_version"],
         software_version=__version__,
         date_obs=reference_time,
-        date_beg=min([f.date_obs for f in level3_files if f.outlier == 0]),
-        date_end=max([f.date_obs for f in level3_files if f.outlier == 0]),
+        date_beg=min([f.date_obs for f in level3_files]),
+        date_end=max([f.date_obs for f in level3_files]),
         state="planned",
         polarization="Y",
         # Outlier images are excluded from VAMs

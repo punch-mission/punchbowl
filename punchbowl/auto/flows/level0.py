@@ -827,7 +827,7 @@ def get_metadata(first_image_packet,
         fits_info["COMPBITS"] = round((fits_info["RAWBITS"] + int(np.log2(fits_info["SCALE"]))) / 2, 2)
         # NOTE: 2**16 is used for both NFI and WFI (instead of using respective "COMPBITS") because NFI doesn't use
         # the entire 11 bit dynamic range
-        fits_info["DSATVAL"] = np.floor(np.sqrt((2**16 - 1) * fits_info["SCALE"] * fits_info["IMGCOUNT"]))
+        fits_info["DSATVAL"] = np.floor(np.sqrt((2**16 - 1) * fits_info["IMGCOUNT"] * fits_info["SCALE"]))
         fits_info["DESCRPTN"] = "PUNCH Level-0 data, square-root encoded DN values in camera coordinates"
 
     fits_info |= organize_gain_info(spacecraft_id)

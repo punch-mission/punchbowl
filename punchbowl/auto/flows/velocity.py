@@ -5,9 +5,10 @@ from datetime import UTC, datetime, timedelta
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
+from sqlalchemy.orm import aliased
 
 from punchbowl import __version__
-from punchbowl.auto.control.db import File, Flow
+from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
@@ -38,12 +39,18 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
     logger = get_logger()
     min_file_count = pipeline_config["flows"]["L3_VAM"]["min_file_count"]
 
+    child = aliased(File)
+    child_exists_subquery = (session.query(FileRelationship)
+                             .join(child, FileRelationship.child == child.file_id)
+                             .filter(FileRelationship.parent == File.file_id)
+                             .filter(child.file_type == "VA")
+                             .exists())
     all_ready_files = (session.query(File)
                    .filter(File.state.in_(["created", "progressed"]))
                    .filter(File.level == "3")
                    .filter(File.file_type == "PT")
                    .filter(File.observatory == "M")
-                   .filter(File.outlier == 0)
+                   .filter(~child_exists_subquery)
                    .order_by(File.date_obs.desc()).all())
 
     if len(all_ready_files) == 0:

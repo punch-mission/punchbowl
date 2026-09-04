@@ -176,10 +176,6 @@ def test_level2_query_ready_files():
                         expected_groups[expected_output_group].extend(triplet)
                     expected_output_group = (expected_output_group + 1) % 3
 
-                # TODO: we're temporarily excluding NFI in the L2 flows (remove these two lines when that changes)
-                input_files = [f for f in input_files if f.observatory != '4']
-                expected_groups = [[f for f in g if f.observatory != '4'] for g in expected_groups]
-
                 expected_groups = [set(f.file_id for f in g) for g in expected_groups if len(g)]
                 output_groups = group_l2_inputs(input_files)
                 output_groups = [set(f.file_id for f in g) for g in output_groups]

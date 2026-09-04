@@ -207,12 +207,15 @@ def write_ndcube_to_quicklook(cube: PUNCHCube, # noqa: C901
         image *= radial_mask
 
     if color:
+        # deprecation: this RGBA is not really used anymore because JHelioviewer wants greyscale images
         mode = "RGBA"
         scaled_arr = (cmap_punch(norm(np.flipud(image))) * 255).astype(np.uint8)
         fill_value = (255, 255, 255)
     else:
         mode = "L"
-        scaled_arr = (np.clip(norm(np.flipud(image)), 0, 1) * 255).astype(np.uint8)
+        zero_mask = (np.flipud(image) == 0)
+        scaled_arr = (np.clip(norm(np.flipud(image)) * 255, 1, 255)).astype(np.uint8)
+        scaled_arr[zero_mask] = 0
         fill_value = 255
 
     pil_image = Image.fromarray(scaled_arr, mode=mode)

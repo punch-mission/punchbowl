@@ -1,5 +1,6 @@
 import os
 import pathlib
+from datetime import datetime, timedelta
 
 import numpy as np
 import pytest
@@ -30,13 +31,20 @@ def synthetic_data(tmpdir):
         list of str: Paths to the generated FITS files.
     """
     files = []
-    num_files = 5  # You can parameterize this if needed
+    num_files = 5
+    obs_spacing = timedelta(minutes=4)
 
-    for i in range(num_files):
-        # Generate random data
+    obs_day = datetime(2026, 1, 1, 0, 0, 0)
+    reference_time = obs_day + timedelta(hours=12)
+
+    obs_tbegs = [obs_day + i * obs_spacing for i in range(num_files)]
+
+    for i, tbeg in enumerate(obs_tbegs):
+        tend = tbeg + obs_spacing
+        tavg = tbeg + obs_spacing / 2
+
         data = np.random.rand(128, 128)
 
-        # Define WCS for the PUNCHCube
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = ("HPLN-AZP", "HPLT-AZP")
         wcs.wcs.cunit = ("deg", "deg")
@@ -45,31 +53,28 @@ def synthetic_data(tmpdir):
         wcs.wcs.crval = (0, 24.75)
         wcs.array_shape = data.shape
 
-        # Define metadata for the PUNCHCube
         meta = NormalizedMetadata.load_template('PTM', '3')
-        meta['DATE-OBS'] = "2024-01-01T00:00:00"
-        meta['DATE-BEG'] = "2024-01-01T00:00:00"
-        meta['DATE-END'] = "2024-01-01T00:00:00"
-        meta['DATE-AVG'] = "2024-01-01T00:00:00"
-        meta["OBS-MODE"] = "Polarized"
+        meta['DATE-OBS'] = tavg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        meta['DATE-BEG'] = tbeg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        meta['DATE-END'] = tend.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        meta['DATE-AVG'] = tavg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        meta["OBS-MODE"] = "Polar_BpB"
 
-        # Create PUNCHCube
         uncertainty = StdDevUncertainty(np.zeros_like(data))
         cube = PUNCHCube(data=data, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
-        # Write PUNCHCube to a compressed FITS file
         file_path = os.path.join(str(tmpdir), f"file_{i}.fits")
         write_ndcube_to_fits(cube, str(file_path))
         files.append(str(file_path))
 
-    return files
+    return files, reference_time
 
 
 def test_shape_matching(synthetic_data):
     """Test that the output shape matches the expected configuration."""
-    files = synthetic_data
+    files, reference_time = synthetic_data
     ycens = np.arange(7, 14.5, 0.5)
-    result = track_velocity(files, ycens=ycens)
+    result = track_velocity(files, reference_time = reference_time, ycens=ycens)
 
     assert isinstance(result, PUNCHCube)
     assert result.data.shape[0] == len(ycens)
@@ -77,8 +82,8 @@ def test_shape_matching(synthetic_data):
 
 def test_no_nans_or_negatives(synthetic_data):
     """Test that the output does not contain NaNs or negative values."""
-    files = synthetic_data
-    result = track_velocity(files)
+    files, reference_time = synthetic_data
+    result = track_velocity(files, reference_time=reference_time)
 
     assert not np.isnan(result.data).any(), "Data contains NaNs"
     assert (result.data >= 0).all(), "Data contains negative values"
@@ -114,7 +119,7 @@ def test_with_bad_data(tmpdir):
     write_ndcube_to_fits(cube, file_path)
 
     with pytest.raises(ValueError):
-        _ = track_velocity([str(file_path)])
+        _ = track_velocity([str(file_path)], reference_time=datetime.fromisoformat(meta["DATE-OBS"].value))
 
 
 def test_sample_radial_outflows(tmpdir):
@@ -137,7 +142,7 @@ def test_sample_radial_outflows(tmpdir):
         meta['DATE-BEG'] = "2024-01-01T00:00:00"
         meta['DATE-END'] = "2024-01-01T00:00:00"
         meta['DATE-AVG'] = "2024-01-01T00:00:00"
-        meta["OBS-MODE"] = "Polarized"
+        meta["OBS-MODE"] = "Polar_BpB"
 
         # Create PUNCHCube
         uncertainty = StdDevUncertainty(np.zeros_like(radial_outflow_data))
@@ -148,7 +153,7 @@ def test_sample_radial_outflows(tmpdir):
         write_ndcube_to_fits(cube, file_path)
         files.append(str(file_path))
 
-    result = track_velocity(files)
+    result = track_velocity(files, reference_time = datetime.fromisoformat(meta["DATE-OBS"].value))
 
     assert isinstance(result, PUNCHCube)
     assert result.data.mean() > 0  # Verify that there is a positive outflow signal

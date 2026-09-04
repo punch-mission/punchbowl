@@ -83,7 +83,7 @@ def preprocess_image(data: PUNCHCube,
     # Replace with appropriate preprocessing needed to clean-up. We need to have finite values for the polar remap
     header = data.meta.to_fits_header(wcs=data.wcs)
 
-    if header["OBS-MODE"] == "Polarized":
+    if header["OBS-MODE"] == "Polar_BpB":
         image = data.data[0, ...]
     elif header["OBS-MODE"] == "Unpolarized":
         image = data.data[...]
@@ -451,6 +451,7 @@ def plot_flow_map(filename: str | None, data: PUNCHCube, cmap: str = "magma") ->
 
 @punch_flow(log_prints=True, timeout_seconds=21_600)
 def track_velocity(files: list[str],
+                   reference_time: datetime,
                    delta_t: int = 12,
                    sparsity: int = 2,
                    n_ofs: int = 151,
@@ -470,6 +471,9 @@ def track_velocity(files: list[str],
     ----------
     files : list[str]
         List of file paths for input data
+
+    reference_time : datetime
+        Nominal reference time used in generating velocity maps
 
     delta_t : int, optional
         Time offset in frames between images
@@ -515,9 +519,9 @@ def track_velocity(files: list[str],
     """
     # Set defaults for missing input parameters
     if ycens is None:
-        ycens = np.arange(7, 14.5, 0.5)
+        ycens = np.arange(30, 90, 10)
     if rbands is None:
-        rbands = [0, 4, 8, 14]
+        rbands = list(range(len(ycens)))
 
     files.sort()
 
@@ -542,11 +546,10 @@ def track_velocity(files: list[str],
     with fits.open(files[-1]) as hdul:
         output_meta["DATE-END"] = hdul[1].header["DATE-END"]
 
-    date_beg = datetime.strptime(output_meta["DATE-BEG"].value, "%Y-%m-%dT%H:%M:%S").astimezone()
-    date_end = datetime.strptime(output_meta["DATE-END"].value, "%Y-%m-%dT%H:%M:%S").astimezone()
-    date_avg = (date_beg + (date_end - date_beg) / 2).strftime("%Y-%m-%dT%H:%M:%S")
-    output_meta["DATE-AVG"] = date_avg
-    output_meta["DATE-OBS"] = date_avg
+    date_beg = datetime.fromisoformat(output_meta["DATE-BEG"].value)
+    date_end = datetime.fromisoformat(output_meta["DATE-END"].value)
+    output_meta["DATE-AVG"] = (date_beg + (date_end - date_beg) / 2).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     output_meta["DELTAT"] = delta_t
     output_meta["SPARSITY"] = sparsity

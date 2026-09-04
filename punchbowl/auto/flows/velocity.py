@@ -2,30 +2,55 @@ import os
 import json
 from datetime import UTC, datetime, timedelta
 
+import numpy as np
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
+from sqlalchemy.orm import aliased
 
 from punchbowl import __version__
-from punchbowl.auto.control.db import File, Flow
+from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
-from punchbowl.level3.velocity import track_velocity
+from punchbowl.level3.flow import generate_level3_velocity_flow
 from punchbowl.prefect import get_logger
 
 
 @task
-def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time: datetime=None, max_n: float=100):
+def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time: datetime=None, max_n: float=100) -> list:
+    """Queries files ready for velocity tracking.
+
+    Parameters
+    ----------
+    session
+        Database session
+    pipeline_config : dict
+        Pipeline configuration dictionary
+    max_n : float, optional
+        Max number of files to specify ready, by default 100
+
+    Returns
+    -------
+    list
+        Cleaned ready groups
+    """
     flow_type = "L3_VAM"
     logger = get_logger()
     min_file_count = pipeline_config["flows"]["L3_VAM"]["min_file_count"]
 
+    child = aliased(File)
+    child_exists_subquery = (session.query(FileRelationship)
+                             .join(child, FileRelationship.child == child.file_id)
+                             .filter(FileRelationship.parent == File.file_id)
+                             .filter(child.file_type == "VA")
+                             .exists())
     all_ready_files = (session.query(File)
                    .filter(File.state.in_(["created", "progressed"]))
                    .filter(File.level == "3")
                    .filter(File.file_type == "PT")
                    .filter(File.observatory == "M")
+                   .filter(~child_exists_subquery)
                    .order_by(File.date_obs.desc()).all())
 
     if len(all_ready_files) == 0:
@@ -58,7 +83,7 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
                 # Check if we've already generated a (presumably incomplete) file for this date_obs.
                 # TODO: it would be better to regenerate the file, but we don't have a way to do that sensibly now
                 if not (session.query(File).filter(File.level == "3")
-                        .filter(File.file_type == "PT")
+                        .filter(File.file_type == "VA")
                         .filter(File.observatory == "M")
                         .filter(File.date_obs == ref_time)
                         .first()):
@@ -72,10 +97,6 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
                 break
             current_group = [file]
 
-    cutoff_time = pipeline_config["flows"][flow_type].get("ignore_missing_after_days", None)
-    if cutoff_time is not None:
-        cutoff_time = datetime.now(tz=UTC) - timedelta(days=cutoff_time)
-
     grouped_ready_files = []
     for group in grouped_files:
         if len(grouped_ready_files) >= max_n:
@@ -87,26 +108,35 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
             grouped_ready_files.append(group)
             continue
 
-        if cutoff_time and min(f.date_created for f in group).replace(tzinfo=UTC) < cutoff_time:
-            # We've waited long enough. Just go ahead and make it.
-            grouped_ready_files.append(group)
-            continue
-
-    cleaned_ready_groups = []
-    for group in grouped_ready_files:
-        group = [f for f in group if f.outlier == 0]
-        if group:
-            cleaned_ready_groups.append(group)
-
-    logger.info(f"{len(cleaned_ready_groups)} groups heading out")
-    return cleaned_ready_groups
+    logger.info(f"{len(grouped_ready_files)} groups heading out")
+    return grouped_ready_files
 
 @task
 def level3_vam_construct_flow_info(level3_ptm_files: list[File],
                                    level3_velocity_file: File,
                                    pipeline_config: dict,
                                    reference_time: datetime,
-                                   session=None):
+                                   session=None) -> Flow:
+    """Constructs velocity tracking flow
+
+    Parameters
+    ----------
+    level3_ptm_files : list[File]
+        Input files used for velocity tracking
+    level3_velocity_file : File
+        Output file path for measurement
+    pipeline_config : dict
+        Pipeline configuration settings
+    reference_time : datetime
+        Reference time to use for marking velocity measurement
+    session : _type_, optional
+        Database session, by default None
+
+    Returns
+    -------
+    Flow
+        Velocity tracking flow to run
+    """
     flow_type = "L3_VAM"
     state = "planned"
     creation_time = datetime.now()
@@ -114,7 +144,12 @@ def level3_vam_construct_flow_info(level3_ptm_files: list[File],
     call_data = json.dumps(
         {
             "files": [ptm_file.filename() for ptm_file in level3_ptm_files],
-            "reference_time": reference_time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "reference_time": reference_time,
+            "delta_t": pipeline_config["flows"][flow_type].get("delta_t", 12),
+            "sparsity": pipeline_config["flows"][flow_type].get("sparsity", 2),
+            "n_ofs": pipeline_config["flows"][flow_type].get("n_ofs", 151),
+            "ycens": np.array(pipeline_config["flows"][flow_type].get("ycens", np.arange(30, 90, 10))),
+            "rbands": pipeline_config["flows"][flow_type].get("rbands", None),
         },
     )
     return Flow(
@@ -128,7 +163,23 @@ def level3_vam_construct_flow_info(level3_ptm_files: list[File],
 
 @task
 def level3_vam_construct_file_info(level3_files: list[File], pipeline_config: dict,
-                                            reference_time: datetime):
+                                            reference_time: datetime) -> list[File]:
+    """Constructs specified file information
+
+    Parameters
+    ----------
+    level3_files : list[File]
+        Input files used for velocity tracking
+    pipeline_config : dict
+        Pipeline configuration settings
+    reference_time : datetime
+        Reference time to use for marking velocity measurement
+
+    Returns
+    -------
+    list[File]
+        List of specified output velocity map files
+    """
     return [File(
         level="3",
         file_type="VA",
@@ -136,8 +187,8 @@ def level3_vam_construct_file_info(level3_files: list[File], pipeline_config: di
         file_version=pipeline_config["file_version"],
         software_version=__version__,
         date_obs=reference_time,
-        date_beg=min([f.date_obs for f in level3_files if f.outlier == 0]),
-        date_end=max([f.date_obs for f in level3_files if f.outlier == 0]),
+        date_beg=min([f.date_obs for f in level3_files]),
+        date_end=max([f.date_obs for f in level3_files]),
         state="planned",
         polarization="Y",
         # Outlier images are excluded from VAMs
@@ -147,7 +198,16 @@ def level3_vam_construct_file_info(level3_files: list[File], pipeline_config: di
 
 
 @flow
-def level3_vam_scheduler_flow(pipeline_config_path=None, session=None):
+def level3_vam_scheduler_flow(pipeline_config_path=None, session=None) -> None:
+    """Define the velocity tracking scheduler flow
+
+    Parameters
+    ----------
+    pipeline_config_path : _type_, optional
+        Path to pipeline configuration settings, by default None
+    session : _type_, optional
+        Database session, by default None
+    """
     generic_scheduler_flow_logic(
         level3_vam_query_ready_files,
         level3_vam_construct_file_info,
@@ -159,14 +219,41 @@ def level3_vam_scheduler_flow(pipeline_config_path=None, session=None):
 
 
 def level3_vam_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
+    """Generate velocity tracking call data
+
+    Parameters
+    ----------
+    call_data : dict
+        Call data
+    pipeline_config : dict
+        Pipeline configuration settings
+    session : _type_, optional
+        Database session, by default None
+
+    Returns
+    -------
+    dict
+        Call data
+    """
     call_data["files"] = file_name_to_full_path(call_data["files"], pipeline_config["root"])
     return call_data
 
 
 @flow
-def level3_vam_process_flow(flow_id: int, pipeline_config_path=None, session=None):
+def level3_vam_process_flow(flow_id: int, pipeline_config_path: str = None, session = None) -> None:
+    """Define the velocity tracking process flow
+
+    Parameters
+    ----------
+    flow_id : int
+        Flow identification number
+    pipeline_config_path : str, optional
+        Path to pipeline configuration settings, by default None
+    session : optional
+        Database session, by default None
+    """
     generic_process_flow_logic(flow_id,
-                               track_velocity,
+                               generate_level3_velocity_flow,
                                pipeline_config_path,
                                session=session,
                                call_data_processor=level3_vam_call_data_processor,

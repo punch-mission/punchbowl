@@ -458,7 +458,7 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
                             meta=star_datacube_before.meta)
         wcs_celestial = union_wcs
 
-    original_mask = data_object.data == 0
+    original_mask = (data_object.data == 0) * ~np.isfinite(data_object.uncertainty)
 
     # TODO - Think about where to do the interpolation at this stage...
     # Is this going to require a change in the subtraction code to avoid more reprojections back and forth?

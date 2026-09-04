@@ -75,7 +75,7 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
                 # Check if we've already generated a (presumably incomplete) file for this date_obs.
                 # TODO: it would be better to regenerate the file, but we don't have a way to do that sensibly now
                 if not (session.query(File).filter(File.level == "3")
-                        .filter(File.file_type == "PT")
+                        .filter(File.file_type == "VA")
                         .filter(File.observatory == "M")
                         .filter(File.date_obs == ref_time)
                         .first()):

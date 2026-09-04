@@ -84,30 +84,11 @@ Index("level0_uniqueness",
 class Quicklook(Base):
     __tablename__ = "quicklook"
     day = Column(DATETIME(fsp=6), primary_key=True, nullable=False)
-    level = Column(Integer, nullable=False)
-    code = Column(String(3), nullable=False)
-    movie_made = Column(Boolean, nullable=False)
-    image_made = Column(Boolean, nullable=False)
-    movie_nfile = Column(Integer, nullable=False)
-
-
-
-    flow_id = Column(Integer, primary_key=True)
-    flow_level = Column(String(1), nullable=False)
-    flow_type = Column(String(64), nullable=False)
-    flow_run_name = Column(String(64), nullable=True)
-    flow_run_id = Column(String(36), nullable=True)
-    state = Column(String(16), nullable=False)
-    creation_time = Column(DATETIME(fsp=6), nullable=False)
-    launch_time = Column(DATETIME(fsp=6), nullable=True)
-    start_time = Column(DATETIME(fsp=6), nullable=True)
-    end_time = Column(DATETIME(fsp=6), nullable=True)
-    priority = Column(Integer, nullable=False)
-    call_data = Column(MEDIUMTEXT, nullable=True)
-    is_backprocessing = Column(Boolean, nullable=False, default=False)
-
-    def __repr__(self):
-        return f"Flow(id={self.flow_id!r})"
+    level = Column(String(1), primary_key=True, nullable=False)
+    code = Column(String(3), primary_key=True, nullable=False)
+    movie_made = Column(Boolean, nullable=False, default=False)
+    image_made = Column(Boolean, nullable=False, default=False)
+    movie_nfile = Column(Integer, nullable=False, default=0)
 
 
 class Flow(Base):

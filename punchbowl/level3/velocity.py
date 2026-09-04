@@ -451,6 +451,7 @@ def plot_flow_map(filename: str | None, data: PUNCHCube, cmap: str = "magma") ->
 
 @punch_flow(log_prints=True, timeout_seconds=21_600)
 def track_velocity(files: list[str],
+                   reference_time: datetime,
                    delta_t: int = 12,
                    sparsity: int = 2,
                    n_ofs: int = 151,
@@ -470,6 +471,9 @@ def track_velocity(files: list[str],
     ----------
     files : list[str]
         List of file paths for input data
+
+    reference_time : datetime
+        Nominal reference time used in generating velocity maps
 
     delta_t : int, optional
         Time offset in frames between images
@@ -544,9 +548,8 @@ def track_velocity(files: list[str],
 
     date_beg = datetime.fromisoformat(output_meta["DATE-BEG"].value)
     date_end = datetime.fromisoformat(output_meta["DATE-END"].value)
-    date_avg = (date_beg + (date_end - date_beg) / 2).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    output_meta["DATE-AVG"] = date_avg
-    output_meta["DATE-OBS"] = date_avg
+    output_meta["DATE-AVG"] = (date_beg + (date_end - date_beg) / 2).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     output_meta["DELTAT"] = delta_t
     output_meta["SPARSITY"] = sparsity

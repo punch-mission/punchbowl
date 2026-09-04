@@ -144,6 +144,7 @@ def level3_vam_construct_flow_info(level3_ptm_files: list[File],
     call_data = json.dumps(
         {
             "files": [ptm_file.filename() for ptm_file in level3_ptm_files],
+            "reference_time": reference_time,
             "delta_t": pipeline_config["flows"][flow_type].get("delta_t", 12),
             "sparsity": pipeline_config["flows"][flow_type].get("sparsity", 2),
             "n_ofs": pipeline_config["flows"][flow_type].get("n_ofs", 151),

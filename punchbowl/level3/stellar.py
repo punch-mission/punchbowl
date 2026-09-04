@@ -17,7 +17,6 @@ from remove_starfield import BlockMasker, ImageHolder, ImageProcessor, Starfield
 from remove_starfield.reducers import GaussianReducer
 from reproject import reproject_interp
 from reproject.mosaicking import find_optimal_celestial_wcs
-from scipy.ndimage import percentile_filter
 from scipy.stats import circmean
 from solpolpy import resolve
 from solpolpy.util import solnorth_from_wcs
@@ -308,9 +307,7 @@ def generate_starfield_background(
             pbar_class=LoggingProgressIndicator,
             target_mem_usage=target_mem_usage)
         logger.info("Done building starfields")
-
-        out_data = starfield_mzp.starfield - percentile_filter(starfield_mzp.starfield, percentile=5, size=(1, 10, 10))
-        out_data[out_data < 0] = 0
+        out_data = starfield_mzp.starfield
         out_wcs = calculate_helio_wcs_from_celestial(starfield_mzp.wcs, meta.astropy_time,
                                                      starfield_mzp.starfield.shape)
     else:
@@ -329,8 +326,7 @@ def generate_starfield_background(
             pbar_class=LoggingProgressIndicator,
             target_mem_usage=target_mem_usage)
         logger.info("Ending clear starfield")
-        out_data = starfield_clear.starfield - percentile_filter(starfield_clear.starfield, percentile=5, size=10)
-        out_data[out_data < 0] = 0
+        out_data = starfield_clear.starfield
         out_wcs = calculate_helio_wcs_from_celestial(starfield_clear.wcs,
                                                         meta.astropy_time,
                                                         starfield_clear.starfield.shape)
@@ -350,8 +346,9 @@ def generate_starfield_background(
 
 @punch_task
 def subtract_starfield_background_task(data_object: PUNCHCube,
-                                       before_starfield_path: str | None,
-                                       after_starfield_path: str | None,
+                                       before_starfield_path: str | None = None,
+                                       after_starfield_path: str | None = None,
+                                       starfield_path: str | None = None,
                                        is_polarized: bool = False) -> PUNCHCube:
     """
     Subtracts a background starfield from an input data frame.
@@ -367,6 +364,8 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         path to a PUNCHCube background starfield map centered before the observation
     after_starfield_path : str
         path to a PUNCHCube background starfield map centered after the observation
+    starfield_path : str
+        path to a single PUNCHCube background starfield map centered around the observation
     is_polarized : bool
         whether the data is polarized
 
@@ -379,12 +378,19 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
     logger = get_logger()
     logger.info("subtract_starfield_background started")
 
-    if before_starfield_path is None and after_starfield_path is None:
+    if not any((before_starfield_path, after_starfield_path, starfield_path)):
         output = data_object
         output.meta.history.add_now("LEVEL3-subtract_starfield_background",
                                            "starfield subtraction skipped since path is empty")
-    elif before_starfield_path is None or after_starfield_path is None:
+        return output
+
+    if (before_starfield_path is None or after_starfield_path is None) and starfield_path is None:
         raise InvalidDataError("subtract_starfield_background requires two input starfield models.")
+
+    if starfield_path is not None:
+        star_datacube = load_ndcube_from_fits(starfield_path)
+        wcs_celestial = star_datacube.celestial_wcs
+        wcs_celestial.wcs.cdelt[0] = wcs_celestial.wcs.cdelt[0] * -1
     else:
         star_datacube_before = load_ndcube_from_fits(before_starfield_path)
         star_datacube_after = load_ndcube_from_fits(after_starfield_path)
@@ -452,42 +458,43 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
                             meta=star_datacube_before.meta)
         wcs_celestial = union_wcs
 
-        original_mask = data_object.data == 0
+    original_mask = (data_object.data == 0) * ~np.isfinite(data_object.uncertainty)
 
-        # TODO - Think about where to do the interpolation at this stage...
-        # Is this going to require a change in the subtraction code to avoid more reprojections back and forth?
-        if is_polarized:
-            starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array), axis=0),
-                                        wcs_celestial.celestial)
-            subtracted = starfield_model.subtract_from_image(
-                PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array), axis=0),
-                       wcs=data_object.celestial_wcs.celestial,
-                       meta=data_object.meta),
-                handle_wrap_point=False,
-                processor=PUNCHImageProcessor(key="A"))
+    # TODO - Think about where to do the interpolation at this stage...
+    # Is this going to require a change in the subtraction code to avoid more reprojections back and forth?
+    if is_polarized:
+        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array), axis=0),
+                                    wcs_celestial.celestial)
+        subtracted = starfield_model.subtract_from_image(
+            PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array), axis=0),
+                    wcs=data_object.celestial_wcs.celestial,
+                    meta=data_object.meta),
+            handle_wrap_point=False,
+            processor=PUNCHImageProcessor(key="A"))
 
-            data_object.data[...] = subtracted.subtracted[0]
-            data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array ** 2 +
-                                                         subtracted.subtracted[1] ** 2)
-        else:
-            starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
-            subtracted = starfield_model.subtract_from_image(
-                PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
-                       wcs=data_object.celestial_wcs,
-                       meta=data_object.meta),
-                handle_wrap_point=False,
-                processor=PUNCHImageProcessor(key="A"))
+        data_object.data[...] = subtracted.subtracted[0]
+        data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array ** 2 +
+                                                        subtracted.subtracted[1] ** 2)
+    else:
+        starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array)), wcs_celestial)
+        subtracted = starfield_model.subtract_from_image(
+            PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array)),
+                    wcs=data_object.celestial_wcs,
+                    meta=data_object.meta),
+            handle_wrap_point=False,
+            processor=PUNCHImageProcessor(key="A"))
 
-            data_object.data[...] = subtracted.subtracted[0]
-            data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 +
-                                                         subtracted.subtracted[1]**2)
+        data_object.data[...] = subtracted.subtracted[0]
+        data_object.uncertainty.array[...] = np.sqrt(data_object.uncertainty.array**2 +
+                                                        subtracted.subtracted[1]**2)
 
-        # Reset the data to be zero in invalid regions
-        data_object.data[original_mask] = 0
-        data_object.data[~np.isfinite(data_object.data)] = 0
+    # Reset the data to be zero in invalid regions
+    data_object.data[original_mask] = 0
+    data_object.data[~np.isfinite(data_object.data)] = 0
 
-        data_object.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
-        output = polarize_celestial_to_solar(data_object) if is_polarized else data_object
+    data_object.meta.history.add_now("LEVEL3-subtract_starfield_background", "subtracted starfield background")
+    output = polarize_celestial_to_solar(data_object) if is_polarized else data_object
+
     logger.info("subtract_starfield_background finished")
 
     return output

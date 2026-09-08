@@ -469,7 +469,7 @@ def organize_pfw_fits_keywords(pfw_packet_db, pfw_packet):
 def organize_stale_pfw_fits_keywords(pfw_packet_db):
     return {
         "PFWTIME": pfw_packet_db.timestamp.isoformat(),
-        "PFWSTAT": "STALE",
+        "PFWSTAT": -1, #s/c can only send unsigned (positive) ints.
     }
 
 

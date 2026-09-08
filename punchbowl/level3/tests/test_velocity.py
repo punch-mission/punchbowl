@@ -119,7 +119,7 @@ def test_with_bad_data(tmpdir):
     write_ndcube_to_fits(cube, file_path)
 
     with pytest.raises(ValueError):
-        _ = track_velocity([str(file_path)], reference_time=datetime.fromisoformat(meta["DATE-OBS"].value))
+        result = track_velocity([str(file_path)], reference_time=datetime.fromisoformat(meta["DATE-OBS"].value))
 
 
 def test_sample_radial_outflows(tmpdir):

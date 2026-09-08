@@ -451,7 +451,6 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
                                                         allow_extrapolation=False,
                                                         and_uncertainty=True,
                                                         infill_nans=True)
-        # TODO - metadata...
         star_datacube = PUNCHCube(data=starfield_data_interpolated,
                             uncertainty=StdDevUncertainty(starfield_uncert_interpolated),
                             wcs = union_wcs,
@@ -460,7 +459,6 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
 
     original_mask = (data_object.data == 0) * ~np.isfinite(data_object.uncertainty)
 
-    # TODO - Think about where to do the interpolation at this stage...
     # Is this going to require a change in the subtraction code to avoid more reprojections back and forth?
     if is_polarized:
         starfield_model = Starfield(np.stack((star_datacube.data, star_datacube.uncertainty.array), axis=0),

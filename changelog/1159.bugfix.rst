@@ -1,0 +1,1 @@
+We were previously clipping all negative values to 0. This led to negative values becoming transparent in JHelioviewer. This fixes that clipping bug by clipping to 1 instead.

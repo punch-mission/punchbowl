@@ -65,6 +65,7 @@ from punchbowl.data import NormalizedMetadata, get_base_file_name, punch_io, wri
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
 from punchbowl.exceptions import MissingMetadataError
+from punchbowl.level1.dynamic_stray_light import phase_in_window
 from punchbowl.limits import LimitSet
 from punchbowl.prefect import get_logger
 from punchbowl.util import load_mask_file
@@ -465,6 +466,13 @@ def organize_pfw_fits_keywords(pfw_packet_db, pfw_packet):
         "RPFWPOS5": pfw_packet["REDUNDANT_RESOLVER_POSITION_5"],
     }
 
+def organize_stale_pfw_fits_keywords(pfw_packet_db):
+    return {
+        "PFWTIME": pfw_packet_db.timestamp.isoformat(),
+        "PFWSTAT": "STALE",
+    }
+
+
 def organize_led_fits_keywords(led_packet_db, led_packet):
     return {
         "LEDTIME": led_packet_db.timestamp.isoformat(),
@@ -782,12 +790,36 @@ def get_metadata(first_image_packet,
                      "PFW_POSITION_CURR": best_pfw["POSITION_CURR"]}
 
     # fill in all the FITS info
-    fits_info = {"TYPECODE": determine_file_type(best_pfw,
-                                                 pfw_is_out_of_date,
-                                                 best_led_db,
-                                                 image_shape)}
+    typecode_first_guess = determine_file_type(best_pfw, pfw_is_out_of_date, best_led_db, image_shape)
+    # If this is a science image (the normal case) then take the typecode from the timestamp.
+    # Otherwise, use the first guess from above.
+    # If the first guess typecode is the same as the timestamp-derived typecode, either because the
+    # image is a science image and PFW info matches what is expected from the timestamp, OR because
+    # it is not a science image, then load the PFW metadata.
+    # Otherwise, load a highly truncated PFW metadata with the PFWSTAT set to "STALE".
+    if typecode_first_guess in ("PP","PZ","PM","CR","PX"):
+        phase_from_timestamp = phase_in_window(observation_midpoint.strftime("_%Y%m%d%H%M%S_"))
+        match phase_from_timestamp:
+            case 1 | 5:
+                typecode = "PP"
+            case 2 | 6:
+                typecode = "PM"
+            case 3 | 7:
+                typecode = "PZ"
+            case 4:
+                typecode = "CR"
+            case _:
+                typecode = typecode_first_guess
+    else:
+        typecode = typecode_first_guess
 
-    fits_info |= organize_pfw_fits_keywords(best_pfw_db, best_pfw)
+    fits_info = {"TYPECODE": typecode}
+
+    if typecode == typecode_first_guess:
+        # only put all the PFW info in if we think it is correct
+        fits_info |= organize_pfw_fits_keywords(best_pfw_db, best_pfw)
+    else:
+        fits_info |= organize_stale_pfw_fits_keywords(best_pfw_db)
 
     fits_info |= organize_spacecraft_position_keywords(observation_midpoint, middle_xact_db, middle_xact)
 

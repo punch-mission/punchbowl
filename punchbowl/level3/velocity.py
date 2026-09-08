@@ -517,7 +517,7 @@ def track_velocity(files: list[str],
         The generated velocity map
 
     """
-    # Set defaults for missing input parameters
+    # If no inputs are provided, create bands spanning the field of view of PUNCH
     if ycens is None:
         ycens = np.arange(30, 90, 10)
     if rbands is None:

@@ -1,0 +1,1 @@
+For science images, use the timestamp of the image to set to polarization state of the image. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images.

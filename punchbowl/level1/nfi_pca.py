@@ -389,7 +389,7 @@ def _inst_frame_filter_one_image(image: np.ndarray, filled_image: np.ndarray,
     unsharp_image = 0.4 * ims1 + 0.35 * ims2
     unsharp_image = upsample(unsharp_image, downsample_factor)
     unsharp_masked = image - unsharp_image
-    destination[:] = scipy.ndimage.percentile_filter(unsharp_masked, 80, size=5)
+    destination[:] = scipy.ndimage.percentile_filter(unsharp_masked, 50, size=5)
 
 
 def inst_frame_filter(filtered_images: np.ndarray, filtered_filled_images: np.ndarray,

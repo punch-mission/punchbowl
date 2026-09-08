@@ -1,0 +1,1 @@
+Fixes file writing to use operational config image scaling parameters.

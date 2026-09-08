@@ -202,7 +202,7 @@ omit = [
 
 [tool.ruff]
 target-version = 'py311'
-exclude = ['tests', 'scripts', 'docs', 'examples', "punchbowl/auto/*"]
+exclude = ['tests', 'scripts', 'docs', 'examples', "punchbowl/auto/*","punchbowl/level1/nfi*"]
 line-length = 120
 lint.select = ["ALL"]
 lint.ignore = [

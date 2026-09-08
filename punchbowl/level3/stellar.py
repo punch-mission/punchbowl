@@ -1,3 +1,4 @@
+import copy
 import warnings
 from math import floor
 from datetime import UTC, datetime
@@ -393,17 +394,17 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
 
         wcs_celestial_before = star_datacube_before.celestial_wcs
         if wcs_celestial_before.naxis == 3:
-            wcs_celestial_before_short = wcs_celestial_before.dropaxis(2)
+            wcs_celestial_before_short = copy.deepcopy(wcs_celestial_before.dropaxis(2))
         else:
-            wcs_celestial_before_short = wcs_celestial_before
+            wcs_celestial_before_short = copy.deepcopy(wcs_celestial_before)
         wcs_celestial_before_short.wcs.cdelt[0] *= -1
         wcs_celestial_before.wcs.cdelt[0] = wcs_celestial_before.wcs.cdelt[0] * -1
 
         wcs_celestial_after = star_datacube_after.celestial_wcs
         if  wcs_celestial_after.naxis == 3:
-            wcs_celestial_after_short = wcs_celestial_after.dropaxis(2)
+            wcs_celestial_after_short = copy.deepcopy(wcs_celestial_after.dropaxis(2))
         else:
-            wcs_celestial_after_short = wcs_celestial_after
+            wcs_celestial_after_short = copy.deepcopy(wcs_celestial_after)
         wcs_celestial_after_short.wcs.cdelt[0] *= -1
         wcs_celestial_after.wcs.cdelt[0] = wcs_celestial_after.wcs.cdelt[0] * -1
 

@@ -64,7 +64,8 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         good_mask_pca = find_outliers_with_PCA(x_cube_ds_filled, good_mask_headers, nfi_mask_ds, n_workers)
         good_mask = good_mask_headers * good_mask_pca
 
-        dsl_models = do_PCA_filtering(x_cube_ds_filled, good_mask, nfi_mask_ds, n_strides, n_components, process_pool)
+        dsl_models = do_PCA_filtering(x_cube_ds_filled, good_mask, nfi_mask_ds, n_strides, n_components, process_pool,
+                                      n_workers)
 
         logger.info("PCA filtering complete")
 
@@ -304,17 +305,18 @@ def find_outliers_with_headers(metas: list[NormalizedMetadata]) -> np.ndarray:
 
 
 def do_PCA_filtering(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, n_strides: int,
-                     n_componenets: int, process_pool: ProcessPoolExecutor) -> np.ndarray:
+                     n_componenets: int, process_pool: ProcessPoolExecutor, n_workers: int) -> np.ndarray:
     dsls = ShmPickleableNDArray.empty_like(x_cube_filled)
-    for x in process_pool.map(_do_PCA_filtering_one_stride, range(n_strides), repeat(n_strides), repeat(x_cube_filled),
-                              repeat(good_mask), repeat(dsls), repeat(nfi_mask), repeat(n_componenets)):
+    n_threads = max(1, int(round(n_workers / n_componenets)))
+    for _ in process_pool.map(_do_PCA_filtering_one_stride, range(n_strides), repeat(n_strides), repeat(x_cube_filled),
+                              repeat(good_mask), repeat(dsls), repeat(nfi_mask), repeat(n_componenets), repeat(n_threads)):
         # Loop is necessary for any exceptions from workers to be raised
         pass
     return dsls
 
 
 def _do_PCA_filtering_one_stride(stride: int, n_sets: int, x_cube_filled: np.ndarray, good_mask: np.ndarray,
-                                 dsls: np.ndarray, nfi_mask: np.ndarray, n_components: int) -> None:
+                                 dsls: np.ndarray, nfi_mask: np.ndarray, n_components: int, n_threads: int) -> None:
     phases = (np.arange(len(x_cube_filled)) - stride) % n_sets
     fit_idxs = (phases != 0) * (phases != 1) * (phases != n_sets - 1) * good_mask
     set_to_fit = x_cube_filled[fit_idxs][:, nfi_mask]
@@ -323,7 +325,7 @@ def _do_PCA_filtering_one_stride(stride: int, n_sets: int, x_cube_filled: np.nda
     set_to_filter = x_cube_filled[filter_idxs][:, nfi_mask]
 
     pca = PCA(n_components=n_components)
-    with limit_threads(4):
+    with limit_threads(n_threads):
         pca.fit(set_to_fit)
 
         t = pca.transform(set_to_filter)

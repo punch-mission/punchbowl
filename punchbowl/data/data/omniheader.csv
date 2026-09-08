@@ -210,7 +210,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 13,keyword,RBANDS,,Indices of radial bands to visualize,str,TRUE,TRUE,
 14,section,COMMENT,Polarizing Filter Wheel,,str,TRUE,TRUE,Polarizing Filter Wheel
 14,keyword,PFWTIME,,PFW packet timestamp,str,TRUE,TRUE,
-14,keyword,PFWSTAT,,"Current PFW Status (0 - no error, else error)",int,TRUE,TRUE,
+14,keyword,PFWSTAT,,"PFW Status (0=no error, -1=stale, else error)",int,TRUE,TRUE,
 14,keyword,STEPCALC,,Calculated step (0-1199),int,TRUE,TRUE,
 14,keyword,CMDSTEPS,,Commanded number of steps (1-1199),int,TRUE,TRUE,
 14,keyword,HOMEOVRD,,HOME Position OVERRIDE,int,TRUE,TRUE,

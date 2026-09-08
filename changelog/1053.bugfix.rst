@@ -1,0 +1,1 @@
+Fix holes in L2 images after changing reprojection to run at 32 bits.

@@ -11,6 +11,7 @@ from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2.bright_structure import identify_bright_structures_task
 from punchbowl.level2.finalize import finalize_output
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
+from punchbowl.level2.nfi_pca import pca_filter
 from punchbowl.level2.polarization import resolve_polarization_task
 from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import coalign_L1_mzp, find_central_pixel, reproject_many_flow
@@ -298,3 +299,34 @@ def level2_core_flow(data_list: list[str] | list[PUNCHCube], # noqa: C901
 
     logger.info("ending level 2 core flow")
     return output_cubes
+
+
+@punch_flow
+def level2_pca_core_flow(input_files: list[str],
+                         context_files: list[str],
+                         nfi_mask: str,
+                         n_loaders: int,
+                         n_workers: int ) -> list[PUNCHCube]:
+    """
+    Level 2 NFI PCA flow.
+
+    Parameters
+    ----------
+    input_files : list[str]
+        The files to be filtered
+    context_files : list[str]
+        The files to be used for PCA fitting but which don't need to be filtered
+    nfi_mask : str
+        Path to a NFI mask file
+    n_loaders : int
+        Number of worker processes for loading
+    n_workers : int
+        Number of worker processes for processing
+
+    Returns
+    -------
+    output_data: list[PUNCHCube]
+        The resulting data cubes
+
+    """
+    return pca_filter(input_files, context_files, nfi_mask, n_loaders=n_loaders, n_workers=n_workers)

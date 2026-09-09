@@ -519,3 +519,14 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: "{craftid}"
             TYPECODE: QP
+
+    AR?:
+        kinds: [Calibration, CR]
+        overrides:
+            TITLE: PUNCH Level-1 {craftname} PCA Components
+            OBSTYPE: "{crafttype} PCA components"
+            TYPECODE: AR
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]

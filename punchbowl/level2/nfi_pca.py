@@ -117,9 +117,9 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
                 new_meta = NormalizedMetadata.load_template("CNN", "3")
                 new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
                 for key in metas[i].keys():
-                    if (key in ['DATE-OBS', 'DATE-BEG', 'DATE-AVG', 'DATE-END', 'FILEVRSN', 'OUTLIER', 'BADPKTS',
-                                'XACTTIME', 'GEOD_LON', 'GEOD_LAT', 'GEOD_ALT', 'LOS_ALT']
-                            or key[-4:] in ['_OBS', '_VOB']):
+                    if (key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
+                                "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
+                            or key[-4:] in ["_OBS", "_VOB"]):
                         new_meta[key] = metas[i][key].value
                 _, _, _, _, moondist, xpix, ypix = check_moon_in_fov(
                     metas[i]["DATE-OBS"].value, wcs=wcses[i], image_shape=corrected_frames[i].shape)
@@ -135,7 +135,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
                                  uncertainty=StdDevUncertainty(uncertainty))
                 output_cubes.append(cube)
 
-        print('PCA flow done!')
+        print("PCA flow done!")
         return output_cubes
 
 
@@ -144,11 +144,10 @@ def reconstitute(flat_image: np.ndarray, mask: np.ndarray) -> np.ndarray:
         im = np.zeros(mask.shape)
         im[mask] = flat_image
         return im
-    else:
-        im = np.zeros((len(flat_image), *mask.shape))
-        for i in range(len(flat_image)):
-            im[i] = reconstitute(flat_image[i], mask)
-        return im
+    im = np.zeros((len(flat_image), *mask.shape))
+    for i in range(len(flat_image)):
+        im[i] = reconstitute(flat_image[i], mask)
+    return im
 
 
 def get_pylon_mask(shape: tuple, wcs: WCS) -> np.ndarray:
@@ -164,9 +163,9 @@ def get_pylon_mask(shape: tuple, wcs: WCS) -> np.ndarray:
 
 def _load_one_file(path: str, downsample_factor: int) -> tuple[NormalizedMetadata, WCS, WCS, str, np.ndarray, np.ndarray]:
     cube = load_ndcube_from_fits(path, include_uncertainty=False, include_provenance=False, dtype=np.float32)
-    if cube.meta['BADPKTS'].value or cube.meta['DATAP25'].value > 1e-9:
+    if cube.meta["BADPKTS"].value or cube.meta["DATAP25"].value > 1e-9:
         return None
-    l0 = load_ndcube_from_fits(path.replace('1/XR4', '0/CR4').replace("1_XR4", "0_CR4"))
+    l0 = load_ndcube_from_fits(path.replace("1/XR4", "0/CR4").replace("1_XR4", "0_CR4"))
     data = cube.data
     saturation_mask = l0.data > 1252
     if downsample_factor > 1:
@@ -216,7 +215,7 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
     fill_mask = np.zeros_like(src_data, dtype=bool)
     plot_mask = np.zeros_like(fill_mask, dtype=np.float32)
 
-    body_names = ['moon']
+    body_names = ["moon"]
     bodies = []
     for body in body_names:
         bodies.append(get_body(body, meta.astropy_time))
@@ -229,7 +228,7 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
         for body, x, y in zip(body_names, np.atleast_1d(xs), np.atleast_1d(ys)):
             if 0 < x < src_data.shape[1] and 0 < y < src_data.shape[0]:
                 x, y = int(x), int(y)
-                if body != 'moon':
+                if body != "moon":
                     w = int(round(9 * 2 / downsample_factor))
                 else:
                     w = int(round(30 * 2 / downsample_factor))
@@ -298,7 +297,7 @@ def find_outliers_with_PCA(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi
 
 def find_outliers_with_headers(metas: list[NormalizedMetadata]) -> np.ndarray:
     good_mask = np.ones(len(metas), dtype=bool)
-    for k in 'DATAP98', 'DATAP90', 'DATAP50':
+    for k in "DATAP98", "DATAP90", "DATAP50":
         d = np.array([m[k].value for m in metas])
         good_mask[d > np.median(d) + 2 * np.std(d)] = False
     return good_mask
@@ -368,7 +367,7 @@ def upsample(image, factor):
     binned_indices = (np.arange(0.5 * (factor - 1), target_shape[0], factor),
                       np.arange(0.5 * (factor - 1), target_shape[1], factor))
     upsample_indices = np.stack(np.indices(target_shape), axis=-1)
-    interp = RegularGridInterpolator(binned_indices, image, method='linear', bounds_error=False, fill_value=0)
+    interp = RegularGridInterpolator(binned_indices, image, method="linear", bounds_error=False, fill_value=0)
     return interp(upsample_indices)
 
 def downsample(image: np.ndarray, factor: int) -> np.ndarray:
@@ -407,7 +406,8 @@ def inst_frame_filter(filtered_images: np.ndarray, filtered_filled_images: np.nd
 
 
 def censor_wcs(wcs):
-    """Removes observer details from a WCS
+    """
+    Removes observer details from a WCS
 
     When input images have slightly different viewpoints, Sunpy will say this
     is an invalid coordinate transformation. Here we censor information from the
@@ -417,10 +417,10 @@ def censor_wcs(wcs):
     wcs.wcs.aux.hgln_obs = None
     wcs.wcs.aux.hglt_obs = None
     wcs.wcs.aux.dsun_obs = None
-    wcs.wcs.dateobs = ''
-    wcs.wcs.dateavg = ''
-    wcs.wcs.datebeg = ''
-    wcs.wcs.dateend = ''
+    wcs.wcs.dateobs = ""
+    wcs.wcs.dateavg = ""
+    wcs.wcs.datebeg = ""
+    wcs.wcs.dateend = ""
     return wcs
 
 
@@ -495,7 +495,7 @@ def _do_one_sinusoid(args: tuple, crota_vals: np.ndarray, images: np.ndarray, ma
                      ivals: np.ndarray) -> list:
     ix, i = args
     rets = []
-    with np.errstate(all='ignore'), warnings.catch_warnings():
+    with np.errstate(all="ignore"), warnings.catch_warnings():
         warnings.filterwarnings("ignore", ".*Degrees of freedom.*")
         warnings.filterwarnings("ignore", ".*Mean of empty slice.*")
         for jx, j in enumerate(ivals):
@@ -517,14 +517,14 @@ def _do_one_sinusoid(args: tuple, crota_vals: np.ndarray, images: np.ndarray, ma
             if not len(y):
                 continue
             try:
-                with limit_threads(2), np.errstate(all='ignore'), warnings.catch_warnings():
+                with limit_threads(2), np.errstate(all="ignore"), warnings.catch_warnings():
                     warnings.filterwarnings("ignore", ".*Mean of empty slice.*")
                     warnings.filterwarnings("ignore", ".*Degrees of freedom <= 0.*")
 
                     popt, _ = scipy.optimize.curve_fit(sinusoid, x, y * 1e12, p0=p0, jac=jac,
                                                        bounds=[lbounds, ubounds],
-                                                       loss='cauchy', f_scale=0.5,
-                                                       method='trf',
+                                                       loss="cauchy", f_scale=0.5,
+                                                       method="trf",
                                                        )
             except RuntimeError:
                 popt = np.full(n_comps * 2 + 1, np.nan)
@@ -571,12 +571,12 @@ def _desinusoid_one_image(src_image: np.ndarray, crota: float, t: float, ivals: 
 
 def do_sinusoid_filtering(oriented_images: np.ndarray, metas: list[NormalizedMetadata], mask: np.ndarray,
                           process_pool: ProcessPoolExecutor) -> np.ndarray:
-    crota_vals = np.array([m['CROTA'].value for m in metas])
+    crota_vals = np.array([m["CROTA"].value for m in metas])
     time_based_popts = []
-    dateobses = np.array([m['DATE-OBS'].value for m in metas], dtype=np.datetime64)
+    dateobses = np.array([m["DATE-OBS"].value for m in metas], dtype=np.datetime64)
 
     t0 = dateobses[0]
-    dt = np.timedelta64('3', 'D')
+    dt = np.timedelta64("3", "D")
     while t0 < dateobses[-1]:
         cut = (dateobses > t0) * (dateobses < t0 + dt)
         if np.sum(cut) > 250:
@@ -588,7 +588,7 @@ def do_sinusoid_filtering(oriented_images: np.ndarray, metas: list[NormalizedMet
             time_based_popts.append((tmid, popt))
         t0 += dt
 
-    if len(time_based_popts):
+    if time_based_popts:
         corrected_frames = ShmPickleableNDArray.empty_like(oriented_images)
         for _ in process_pool.map(_desinusoid_one_image, oriented_images, crota_vals, dateobses, repeat(ivals),
                                   repeat(time_based_popts), corrected_frames):

@@ -157,17 +157,52 @@ def generate_level3_low_noise_flow(data_list: list[str] | list[PUNCHCube],
 
 
 @punch_flow
-def generate_level3_velocity_flow(data_list: list[str],
+def generate_level3_velocity_flow(files: list[str],
+                                  delta_t: int = 12,
+                                  sparsity: int = 2,
+                                  n_ofs: int = 151,
+                                  ycens: np.ndarray | None = None,
+                                  rbands: list[int] | None = None,
                                   output_filename: str | None = None) -> list[PUNCHCube]:
-    """Generate Level 3 velocity data product."""
+    """
+    Generate level 3 flow tracking velocity product.
+
+    Parameters
+    ----------
+    files : list[str]
+        Input files used for velocity tracking
+    delta_t : int, optional
+        Time offset in frames between images, by default 12
+    sparsity : int, optional
+        Frame skip interval for averaging, by default 2
+    n_ofs : int, optional
+        Number of spatial offsets for cross-correlation, by default 151
+    ycens : np.ndarray | None, optional
+        Radial band centers in solar radii, by default None
+    rbands : list[int] | None, optional
+        Indices of radial bands to visualize, by default None
+    output_filename : str | None, optional
+        Output file name, by default None
+
+    Returns
+    -------
+    list[PUNCHCube]
+        List of generated velocity maps
+
+    """
     logger = get_logger()
 
     logger.info("Generating velocity data product")
-    velocity_data, plot_parameters = track_velocity(data_list)
+    velocity_data = track_velocity(files=files,
+                                   delta_t=delta_t,
+                                   sparsity=sparsity,
+                                   n_ofs=n_ofs,
+                                   ycens=ycens,
+                                   rbands=rbands)
 
     if output_filename is not None:
         output_image_task(velocity_data, output_filename)
         plot_filename = f"{os.path.splitext(output_filename)[0]}.png"
-        plot_flow_map(plot_filename, **plot_parameters)
+        plot_flow_map(plot_filename, velocity_data)
 
     return [velocity_data]

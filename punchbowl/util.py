@@ -50,7 +50,9 @@ def load_mask_file(path: str) -> np.ndarray:
 
 
 @punch_task
-def output_image_task(data: PUNCHCube, output_filename: str) -> None:
+def output_image_task(data: PUNCHCube,
+                      output_filename: str,
+                      skip_wcs_conversion: bool = False) -> None:
     """
     Prefect task to write an image to disk.
 
@@ -60,6 +62,8 @@ def output_image_task(data: PUNCHCube, output_filename: str) -> None:
         data that is to be written
     output_filename : str
         where to write the file out
+    skip_wcs_conversion : bool
+        toggle to skip WCS conversion in header, False by default
 
     Returns
     -------
@@ -69,7 +73,7 @@ def output_image_task(data: PUNCHCube, output_filename: str) -> None:
     output_dir = os.path.dirname(output_filename)
     if output_dir and not os.path.isdir(output_dir):
         os.makedirs(output_dir)
-    write_ndcube_to_fits(data, output_filename)
+    write_ndcube_to_fits(data, output_filename, skip_wcs_conversion=skip_wcs_conversion)
 
 
 @punch_task(tags=["image_loader"])

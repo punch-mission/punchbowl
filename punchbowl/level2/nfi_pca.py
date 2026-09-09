@@ -44,19 +44,19 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         nfi_mask_ds = nfi_mask.reshape((x_cube.shape[1] // downsample_factor_factor, downsample_factor_factor,
                                         x_cube.shape[2] // downsample_factor_factor, downsample_factor_factor)).all(axis=(1, 3))
 
-        x_cube_downsample_factord = ShmPickleableNDArray((x_cube.shape[0],
+        x_cube_downsampled = ShmPickleableNDArray((x_cube.shape[0],
                                                    x_cube.shape[1] // downsample_factor_factor,
                                                    x_cube.shape[1] // downsample_factor_factor), dtype=x_cube.dtype)
         for i in range(len(x_cube)):
-            x_cube_downsample_factord[i] = downsample(x_cube[i], downsample_factor_factor)
+            x_cube_downsampled[i] = downsample(x_cube[i], downsample_factor_factor)
 
         logger.info("Images loaded")
 
-        x_cube_ds_filled, plot_masks = fill_problem_regions(x_cube_downsample_factord, metas, cwcses, sat_mask_cube,
+        x_cube_ds_filled, plot_masks = fill_problem_regions(x_cube_downsampled, metas, cwcses, sat_mask_cube,
                                                             nfi_mask_ds, downsample_factor_factor, process_pool)
 
-        x_cube_downsample_factord.free()
-        del x_cube_downsample_factord
+        x_cube_downsampled.free()
+        del x_cube_downsampled
 
         logger.info("Problem regions filled")
 
@@ -103,18 +103,18 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
 
         logger.info("Sinusoidal trends removed")
 
-        xx, yy = np.mgrid[:corrected_frames.shape[1], :corrected_frames.shape[2]]
-        xx = xx - corrected_frames.shape[1] / 2 + 0.5
-        yy = yy - corrected_frames.shape[2] / 2 + 0.5
+        yy, xx = np.mgrid[:corrected_frames.shape[1], :corrected_frames.shape[2]]
+        xx = xx - corrected_frames.shape[2] / 2 + 0.5
+        yy = yy - corrected_frames.shape[1] / 2 + 0.5
         r = np.sqrt(xx ** 2 + yy ** 2)
-        inner_mask = r > 100
-        outer_mask = r < 480
-        mask = inner_mask * outer_mask
+        inner_mask = r > 200
+        outer_mask = r < 960
+        circular_mask = inner_mask * outer_mask
 
         output_cubes = []
         for i, path in enumerate(file_list):
             if path in input_files:
-                new_meta = NormalizedMetadata.load_template("CNN", "3")
+                new_meta = NormalizedMetadata.load_template("CNN", "2")
                 new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
                 for key in metas[i].keys():
                     if (key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
@@ -131,7 +131,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
 
                 uncertainty = np.full(corrected_frames[i].shape, 1e-13)
                 uncertainty[masks[i] < 0.5] = np.inf
-                cube = PUNCHCube(data=corrected_frames[i] * mask, meta=new_meta, wcs=wcses[i], celestial_wcs=cwcses[i],
+                cube = PUNCHCube(data=corrected_frames[i] * circular_mask, meta=new_meta, wcs=target_frame,
                                  uncertainty=StdDevUncertainty(uncertainty))
                 output_cubes.append(cube)
 
@@ -165,7 +165,10 @@ def _load_one_file(path: str, downsample_factor: int) -> tuple[NormalizedMetadat
     cube = load_ndcube_from_fits(path, include_uncertainty=False, include_provenance=False, dtype=np.float32)
     if cube.meta["BADPKTS"].value or cube.meta["DATAP25"].value > 1e-9:
         return None
-    l0 = load_ndcube_from_fits(path.replace("1/XR4", "0/CR4").replace("1_XR4", "0_CR4"))
+    l0_path = path.replace("1/XR4", "0/CR4").replace("1_XR4", "0_CR4")
+    if not os.path.exists(l0_path):
+        l0_path = l0_path.replace('/0/', '/0-old-before-0m/')
+    l0 = load_ndcube_from_fits(l0_path)
     data = cube.data
     saturation_mask = l0.data > 1252
     if downsample_factor > 1:

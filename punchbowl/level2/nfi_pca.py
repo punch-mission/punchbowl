@@ -17,6 +17,7 @@ from scipy.interpolate import RegularGridInterpolator
 from skimage.restoration import inpaint_biharmonic
 from sklearn.decomposition import PCA
 
+from punchbowl.level1.dynamic_stray_light import phase_in_day
 from punchbowl.auto.control.util import batched
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.meta import check_moon_in_fov
@@ -26,9 +27,37 @@ from punchbowl.util import ShmPickleableNDArray, limit_threads, load_mask_file, 
 
 
 @punch_task
-def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, n_components: int = 100,
-               n_strides: int = 8, downsample_factor_factor: int = 2, n_loaders: int = 4, n_workers: int = 20) -> list[PUNCHCube]:
-    """Run PCA-based filtering."""
+def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, ref_date: str, n_components: int = 100,
+               n_strides: int = 8, downsample_factor: int = 2, n_loaders: int = 4, n_workers: int = 20,
+               ) -> list[PUNCHCube]:
+    """
+    Run PCA-based NFI filtering
+
+    Parameters
+    ----------
+    input_files : list[str]
+        The files to be filtered
+    context_files : list[str]
+        The files to be used for PCA fitting but which don't need to be filtered
+    nfi_mask : str
+        Path to a NFI mask file
+    n_components : int
+        The number of PCA components to fit
+    n_strides : int
+        The number of strides to use
+    downsample_factor : int
+        How much the data should be down-sampled for PCA fitting
+    n_loaders : int
+        Number of worker processes for loading
+    n_workers : int
+        Number of worker processes for processing
+
+    Returns
+    -------
+    output_data: list[PUNCHCube]
+        The resulting data cubes
+
+    """
     logger = get_logger()
     logger.info("Starting PCA flow")
 
@@ -36,24 +65,27 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
     context = mp.get_context("forkserver")
     with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
         file_list = sorted(input_files + context_files)
+        logger.info(f"Loading {len(input_files)} to filter and {len(context_files)} context files")
         x_cube, metas, wcses, cwcses, loaded_files, sat_mask_cube = load_files(file_list,
                                                                                n_workers=n_loaders,
-                                                                               downsample_factor=downsample_factor_factor)
+                                                                               downsample_factor=downsample_factor)
+
+        phases = np.array([phase_in_day(path) for path in loaded_files])
 
         nfi_mask = load_mask_file(nfi_mask)
-        nfi_mask_ds = nfi_mask.reshape((x_cube.shape[1] // downsample_factor_factor, downsample_factor_factor,
-                                        x_cube.shape[2] // downsample_factor_factor, downsample_factor_factor)).all(axis=(1, 3))
+        nfi_mask_ds = nfi_mask.reshape((x_cube.shape[1] // downsample_factor, downsample_factor,
+                                        x_cube.shape[2] // downsample_factor, downsample_factor)).all(axis=(1, 3))
 
         x_cube_downsampled = ShmPickleableNDArray((x_cube.shape[0],
-                                                   x_cube.shape[1] // downsample_factor_factor,
-                                                   x_cube.shape[1] // downsample_factor_factor), dtype=x_cube.dtype)
+                                                   x_cube.shape[1] // downsample_factor,
+                                                   x_cube.shape[1] // downsample_factor), dtype=x_cube.dtype)
         for i in range(len(x_cube)):
-            x_cube_downsampled[i] = downsample(x_cube[i], downsample_factor_factor)
+            x_cube_downsampled[i] = downsample(x_cube[i], downsample_factor)
 
         logger.info("Images loaded")
 
         x_cube_ds_filled, plot_masks = fill_problem_regions(x_cube_downsampled, metas, cwcses, sat_mask_cube,
-                                                            nfi_mask_ds, downsample_factor_factor, process_pool)
+                                                            nfi_mask_ds, downsample_factor, process_pool)
 
         x_cube_downsampled.free()
         del x_cube_downsampled
@@ -64,13 +96,13 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         good_mask_pca = find_outliers_with_PCA(x_cube_ds_filled, good_mask_headers, nfi_mask_ds, n_workers)
         good_mask = good_mask_headers * good_mask_pca
 
-        dsl_models = do_PCA_filtering(x_cube_ds_filled, good_mask, nfi_mask_ds, n_strides, n_components, process_pool,
-                                      n_workers)
+        dsl_models, pca_components = do_PCA_filtering(x_cube_ds_filled, good_mask, nfi_mask_ds, phases, n_strides,
+                                                      n_components, process_pool, n_workers)
 
         logger.info("PCA filtering complete")
 
         filtered_images, filtered_filled_images = subtract_models_from_data(x_cube, x_cube_ds_filled, dsl_models,
-                                                                            downsample_factor_factor, process_pool)
+                                                                            downsample_factor, process_pool)
 
         x_cube.free()
         x_cube_ds_filled.free()
@@ -79,7 +111,8 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
 
         logger.info("Components upsampled and subtracted")
 
-        post_filtered_images = inst_frame_filter(filtered_images, filtered_filled_images, downsample_factor_factor, process_pool)
+        post_filtered_images, inst_frame_background = inst_frame_filter(
+            filtered_images, filtered_filled_images, downsample_factor, process_pool)
 
         filtered_images.free()
         filtered_filled_images.free()
@@ -88,7 +121,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         logger.info("Post-filtering complete")
 
         oriented_images, masks, target_frame = reproject_images(post_filtered_images, plot_masks, wcses, process_pool,
-                                                                downsample_factor_factor)
+                                                                downsample_factor)
 
         post_filtered_images.free()
         plot_masks.free()
@@ -103,37 +136,58 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
 
         logger.info("Sinusoidal trends removed")
 
-        yy, xx = np.mgrid[:corrected_frames.shape[1], :corrected_frames.shape[2]]
-        xx = xx - corrected_frames.shape[2] / 2 + 0.5
-        yy = yy - corrected_frames.shape[1] / 2 + 0.5
-        r = np.sqrt(xx ** 2 + yy ** 2)
-        inner_mask = r > 200
-        outer_mask = r < 960
-        circular_mask = inner_mask * outer_mask
+        circular_mask = make_circular_mask(corrected_frames.shape[1:])
+        corrected_frames *= circular_mask[None, :, :]
 
         output_cubes = []
-        for i, path in enumerate(file_list):
+        for i, path in enumerate(loaded_files):
             if path in input_files:
                 new_meta = NormalizedMetadata.load_template("CNN", "2")
                 new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
                 for key in metas[i].keys():
-                    if (key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
-                                "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
-                            or key[-4:] in ["_OBS", "_VOB"]):
+                    if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
+                                 "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
+                            or key[-4:] in ["_OBS", "_VOB"])
+                            and key in new_meta):
                         new_meta[key] = metas[i][key].value
                 _, _, _, _, moondist, xpix, ypix = check_moon_in_fov(
                     metas[i]["DATE-OBS"].value, wcs=wcses[i], image_shape=corrected_frames[i].shape)
                 new_meta["MOONDIST"] = moondist[0]
                 new_meta["MOON_X"] = xpix[0]
                 new_meta["MOON_Y"] = ypix[0]
+                new_meta["OUTLIER"] = not good_mask[i]
 
                 new_meta.provenance = [os.path.basename(path)]
 
-                uncertainty = np.full(corrected_frames[i].shape, 1e-13)
-                uncertainty[masks[i] < 0.5] = np.inf
-                cube = PUNCHCube(data=corrected_frames[i] * circular_mask, meta=new_meta, wcs=target_frame,
+                uncertainty = np.where(masks[i] < 0.5, np.inf, 1e-13)
+                cube = PUNCHCube(data=corrected_frames[i], meta=new_meta, wcs=target_frame,
                                  uncertainty=StdDevUncertainty(uncertainty))
                 output_cubes.append(cube)
+
+        dates = [m.datetime for m in metas]
+        new_meta = NormalizedMetadata.load_template("AR4", "1")
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta['DATE-OBS'] = ref_date
+        new_meta['DATE-AVG'] = ref_date
+        new_meta['DATE-BEG'] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta['DATE-END'] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        # TODO: Remove
+        new_meta['FILEVRSN'] = 'v0m'
+        #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
+        pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
+        output_cubes.append(pca_cube)
+
+        new_meta = NormalizedMetadata.load_template("SR4", "1")
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta['DATE-OBS'] = ref_date
+        new_meta['DATE-AVG'] = ref_date
+        new_meta['DATE-BEG'] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta['DATE-END'] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        # TODO: Remove
+        new_meta['FILEVRSN'] = 'v0m'
+        #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
+        bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
+        output_cubes.append(bg_cube)
 
         print("PCA flow done!")
         return output_cubes
@@ -162,9 +216,12 @@ def get_pylon_mask(shape: tuple, wcs: WCS) -> np.ndarray:
 
 
 def _load_one_file(path: str, downsample_factor: int) -> tuple[NormalizedMetadata, WCS, WCS, str, np.ndarray, np.ndarray]:
+    if not os.path.exists(path):
+        return "missing"
     cube = load_ndcube_from_fits(path, include_uncertainty=False, include_provenance=False, dtype=np.float32)
     if cube.meta["BADPKTS"].value or cube.meta["DATAP25"].value > 1e-9:
         return None
+    # TODO: remove
     l0_path = path.replace("1/XR4", "0/CR4").replace("1_XR4", "0_CR4")
     if not os.path.exists(l0_path):
         l0_path = l0_path.replace('/0/', '/0-old-before-0m/')
@@ -185,11 +242,17 @@ def load_files(files: list[str], n_workers: int, downsample_factor: int) -> tupl
     x_cube = ShmPickleableNDArray((len(files), 2048, 2048), dtype=np.float32)
     sat_mask_cube = ShmPickleableNDArray((len(files), 2048 // downsample_factor, 2048 // downsample_factor), dtype=bool)
     i = 0
+    n_missing = 0
     context = mp.get_context("forkserver")
     with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
         for result in process_pool.map(_load_one_file, files, repeat(downsample_factor), chunksize=2):
             # Files that were determined on load to be outliers got rejected
             if result is None:
+                continue
+            if result == "missing":
+                n_missing += 1
+                if n_missing > 0.05 * len(files):
+                    raise RuntimeError("More than 5% of input files are missing")
                 continue
             meta, wcs, cwcs, loaded_file, image, sat_mask = result
             metas.append(meta)
@@ -306,20 +369,65 @@ def find_outliers_with_headers(metas: list[NormalizedMetadata]) -> np.ndarray:
     return good_mask
 
 
-def do_PCA_filtering(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, n_strides: int,
-                     n_componenets: int, process_pool: ProcessPoolExecutor, n_workers: int) -> np.ndarray:
+def do_PCA_filtering(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, phases: np.ndarray,
+                     n_strides: int, n_components: int, process_pool: ProcessPoolExecutor, n_workers: int
+                     ) -> np.ndarray:
     dsls = ShmPickleableNDArray.empty_like(x_cube_filled)
-    n_threads = max(1, int(round(n_workers / n_componenets)))
+    pca_components = ShmPickleableNDArray((n_strides, n_components + 1, np.sum(nfi_mask)), dtype=np.float32)
+    n_threads = max(1, int(round(n_workers / n_components)))
     for _ in process_pool.map(_do_PCA_filtering_one_stride, range(n_strides), repeat(n_strides), repeat(x_cube_filled),
-                              repeat(good_mask), repeat(dsls), repeat(nfi_mask), repeat(n_componenets), repeat(n_threads)):
+                              repeat(good_mask), repeat(dsls), pca_components, repeat(nfi_mask), repeat(phases),
+                              repeat(n_components), repeat(n_threads)):
+        # Loop is necessary for any exceptions from workers to be raised
+        pass
+    return dsls, pca_components
+
+
+def build_models_with_existing_components(
+        x_cube_filled: np.ndarray, nfi_mask: np.ndarray, pca_components: np.ndarray,
+        phases: np.ndarray, process_pool: ProcessPoolExecutor) -> np.ndarray:
+    dsls = ShmPickleableNDArray.empty_like(x_cube_filled)
+
+    smoothed_components = ShmPickleableNDArray.empty_like(pca_components)
+    comp_smoothing = 5
+    for i in range(pca_components.shape[0]):
+        for j in range(pca_components.shape[1]):
+            component = reconstitute(pca_components[i, j], nfi_mask)
+            component = scipy.signal.medfilt2d(component, comp_smoothing)
+            smoothed_components[i, j] = component[nfi_mask]
+
+    for _ in process_pool.map(_make_one_model_from_components, phases, repeat(pca_components), repeat(smoothed_components),
+                              dsls, repeat(nfi_mask)):
         # Loop is necessary for any exceptions from workers to be raised
         pass
     return dsls
 
 
-def _do_PCA_filtering_one_stride(stride: int, n_sets: int, x_cube_filled: np.ndarray, good_mask: np.ndarray,
-                                 dsls: np.ndarray, nfi_mask: np.ndarray, n_components: int, n_threads: int) -> None:
-    phases = (np.arange(len(x_cube_filled)) - stride) % n_sets
+def _make_one_model_from_components(image, phase, pca_components, smoothed_pca_components,
+                                 dsl_dest: np.ndarray, nfi_mask: np.ndarray,
+                                 ) -> None:
+    n_components = pca_components.shape[1]
+    means = pca_components[phase][0]
+    components = pca_components[phase][1:]
+    smoothed_components = smoothed_pca_components[phase][1:]
+
+    pca = PCA(n_components=n_components)
+    pca.mean_ = means
+    pca.components_ = components
+    # This values don't matter but must be present
+    pca.explained_variance_ = np.ones(n_components)
+    with limit_threads(1):
+        t = pca.transform(image[nfi_mask].reshape((1, -1)))
+        pca.components_ = smoothed_components
+        recon = pca.inverse_transform(t)
+
+    dsl_dest[:] = reconstitute(recon, nfi_mask)
+
+
+def _do_PCA_filtering_one_stride(this_set_number: int, n_sets: int, x_cube_filled: np.ndarray, good_mask: np.ndarray,
+                                 dsl_dest: np.ndarray, component_dest: np.ndarray, nfi_mask: np.ndarray,
+                                 phases: np.ndarray, n_components: int, n_threads: int) -> None:
+    phases = (phases - this_set_number) % n_sets
     fit_idxs = (phases != 0) * (phases != 1) * (phases != n_sets - 1) * good_mask
     set_to_fit = x_cube_filled[fit_idxs][:, nfi_mask]
 
@@ -329,6 +437,8 @@ def _do_PCA_filtering_one_stride(stride: int, n_sets: int, x_cube_filled: np.nda
     pca = PCA(n_components=n_components)
     with limit_threads(n_threads):
         pca.fit(set_to_fit)
+        component_dest[0] = pca.mean_
+        component_dest[1:] = pca.components_
 
         t = pca.transform(set_to_filter)
 
@@ -341,7 +451,7 @@ def _do_PCA_filtering_one_stride(stride: int, n_sets: int, x_cube_filled: np.nda
         recon = pca.inverse_transform(t)
 
     dest_idxs = np.arange(len(x_cube_filled))[filter_idxs]
-    dsls[dest_idxs] = reconstitute(recon, nfi_mask)
+    dsl_dest[dest_idxs] = reconstitute(recon, nfi_mask)
 
 
 def subtract_models_from_data(x_cube: np.ndarray, x_cube_ds_filled: np.ndarray, dsl_models: np.ndarray,
@@ -395,17 +505,19 @@ def _inst_frame_filter_one_image(image: np.ndarray, filled_image: np.ndarray,
 
 
 def inst_frame_filter(filtered_images: np.ndarray, filtered_filled_images: np.ndarray,
-                      downsample_factor: int, process_pool: ProcessPoolExecutor) -> np.ndarray:
+                      downsample_factor: int, process_pool: ProcessPoolExecutor,
+                      background_image: np.ndarray = None) -> np.ndarray:
     post_filtered_images = ShmPickleableNDArray.empty_like(filtered_images)
     for _ in process_pool.map(_inst_frame_filter_one_image, filtered_images, filtered_filled_images, post_filtered_images,
                               repeat(downsample_factor), chunksize=2):
         # Loop is necessary for any exceptions from workers to be raised
         pass
 
-    min_image = nan_percentile(post_filtered_images, 4)
-    post_filtered_images -= min_image
+    if background_image is None:
+        background_image = nan_percentile(post_filtered_images, 4)
+    post_filtered_images -= background_image
 
-    return post_filtered_images
+    return post_filtered_images, background_image
 
 
 def censor_wcs(wcs):
@@ -601,3 +713,13 @@ def do_sinusoid_filtering(oriented_images: np.ndarray, metas: list[NormalizedMet
         corrected_frames = oriented_images
 
     return corrected_frames
+
+
+def make_circular_mask(shape):
+    yy, xx = np.mgrid[:shape[0], :shape[1]]
+    xx = xx - shape[1] / 2 + 0.5
+    yy = yy - shape[0] / 2 + 0.5
+    r = np.sqrt(xx ** 2 + yy ** 2)
+    inner_mask = r > 200
+    outer_mask = r < 960
+    return inner_mask * outer_mask

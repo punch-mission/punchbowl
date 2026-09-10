@@ -22,7 +22,7 @@ from punchbowl.prefect import get_logger
 
 
 def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pipeline_config_path: str, session=None,
-                               call_data_processor=None, write_in_parallel=False):
+                               call_data_processor=None, write_in_parallel=False, require_expected_files=True):
     if session is None:
         session = get_database_session()
     if isinstance(flow_id, int):
@@ -146,7 +146,12 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
 
             missing_file_ids = expected_file_ids.difference(output_file_ids)
             if missing_file_ids:
-                raise RuntimeError(f"We did not get an output cube for file ids {missing_file_ids}")
+                if require_expected_files:
+                    raise RuntimeError(f"We did not get an output cube for file ids {missing_file_ids}")
+                else:
+                    for db_entry in file_db_entry_list:
+                        if db_entry.file_id in missing_file_ids:
+                            db_entry.state = "skipped"
 
         session.commit()
 

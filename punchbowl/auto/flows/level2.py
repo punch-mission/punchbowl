@@ -7,9 +7,10 @@ from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from sqlalchemy import func, select, text
+from sqlalchemy.orm import aliased
 
 from punchbowl import __version__
-from punchbowl.auto.control.db import File, Flow
+from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import group_files_by_time
@@ -382,8 +383,15 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
     window_size_days = pipeline_config['flows']['level2_PCA']['window_size_days']
     n_batches_to_schedule = pipeline_config['flows']['level2_PCA']['n_batches_to_schedule']
 
+    child = aliased(File)
+    child_exists_subquery = (session.query(FileRelationship)
+                             .join(child, FileRelationship.child == child.file_id)
+                             .filter(FileRelationship.parent == File.file_id)
+                             .filter(child.file_type == "CN")
+                             .filter(child.level == "2")
+                             .exists())
     all_ready_files = (session.query(File)
-                       .filter(File.state == "created")
+                       .filter(~child_exists_subquery)
                        .filter(File.level == "1")
                        .filter(File.observatory == "4")
                        .filter(File.file_type == "XR")
@@ -402,7 +410,7 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
         dt = func.abs(func.timestampdiff(text("second"), File.date_obs, central_time))
         n_needed = batch_size - len(group)
         context_files = (session.query(File)
-                                .filter(File.state == "progressed")
+                                .filter(child_exists_subquery)
                                 .filter(File.level == "1")
                                 .filter(File.observatory == "4")
                                 .filter(File.file_type == "XR")
@@ -430,11 +438,14 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
 
 
 @task(cache_policy=NO_CACHE)
-def level2_PCA_construct_flow_info(level1_files: list[File], level_file: File, pipeline_config: dict, session=None, reference_time=None):
+def level2_PCA_construct_flow_info(level1_files: list[File], output_files: list[File], pipeline_config: dict,
+                                   session=None,
+                                   reference_time=None):
     flow_type = "level2_PCA"
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    ref_date = output_files[0]._reference_date
 
     mask = get_mask_file(level1_files[0], pipeline_config, session)
     call_data = json.dumps(
@@ -445,6 +456,7 @@ def level2_PCA_construct_flow_info(level1_files: list[File], level_file: File, p
             "nfi_mask": mask.filename().replace(".fits", ".bin"),
             "n_workers": int(pipeline_config["flows"][flow_type]["n_workers"]),
             "n_loaders": int(pipeline_config["flows"][flow_type]["n_loaders"]),
+            "ref_date": ref_date.strftime("%Y-%m-%dT%H:%M:%S"),
         },
     )
     return Flow(
@@ -475,7 +487,7 @@ def level2_PCA_construct_file_info(level1_files: list[File], pipeline_config: di
                     bad_packets=file.bad_packets,
                 ))
     dates = [f.date_obs for f in level1_files if f._to_filter]
-    date_obs = average_datetime(dates)
+    date_obs = average_datetime(dates).replace(microsecond=0)
     date_beg = min(dates)
     date_end = max(dates)
     output_files.append(File(
@@ -502,6 +514,8 @@ def level2_PCA_construct_file_info(level1_files: list[File], pipeline_config: di
             date_end=date_end,
             state="planned",
     ))
+    for file in output_files:
+        file._reference_date = date_obs
     return output_files
 
 
@@ -537,4 +551,5 @@ def level2_PCA_call_data_processor(call_data: dict, pipeline_config, session) ->
 @flow
 def level2_PCA_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id, level2_pca_core_flow, pipeline_config_path, session=session,
-                               call_data_processor=level2_PCA_call_data_processor)
+                               call_data_processor=level2_PCA_call_data_processor, write_in_parallel=True,
+                               require_expected_files=False)

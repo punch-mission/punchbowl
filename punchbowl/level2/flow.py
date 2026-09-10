@@ -306,7 +306,8 @@ def level2_pca_core_flow(input_files: list[str],
                          context_files: list[str],
                          nfi_mask: str,
                          n_loaders: int,
-                         n_workers: int ) -> list[PUNCHCube]:
+                         n_workers: int,
+                         ref_date: str) -> list[PUNCHCube]:
     """
     Level 2 NFI PCA flow.
 
@@ -329,4 +330,4 @@ def level2_pca_core_flow(input_files: list[str],
         The resulting data cubes
 
     """
-    return pca_filter(input_files, context_files, nfi_mask, n_loaders=n_loaders, n_workers=n_workers)
+    return pca_filter(input_files, context_files, nfi_mask, n_loaders=n_loaders, n_workers=n_workers, ref_date=ref_date)

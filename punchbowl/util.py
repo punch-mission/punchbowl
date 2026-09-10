@@ -161,6 +161,52 @@ def nan_percentile(array: np.ndarray, percentile: float | list[float]) -> float 
 
 
 @numba.njit(parallel=True, cache=True)
+def nan_percentile_window(array: np.ndarray, percentile: float | list[float],
+                          window_size: int) -> float | np.ndarray:
+    """
+    Calculate the nan percentile within a sliding window along the first axis of a 3D cube.
+
+    NaN values are ignored, and the result is a percentile of only the non-nan pixels in each window location.
+    """
+    percentiles = np.atleast_1d(np.array(percentile))
+    percentiles = percentiles / 100
+    hws = window_size // 2
+
+    output = np.empty((len(percentiles), *array.shape))
+    for i in numba.prange(array.shape[1]):
+        for j in range(array.shape[2]):
+            for l in range(array.shape[0]):
+                start = max(0, l - hws)
+                stop = min(array.shape[0], l + hws + 1)
+                sequence = array[start:stop, i, j].copy()
+                n_valid_obs = len(sequence)
+                sequence_max = np.nanmax(sequence)
+                for index in range(len(sequence)):
+                    if np.isnan(sequence[index]):
+                        sequence[index] = sequence_max
+                        n_valid_obs -= 1
+                if n_valid_obs == 0:
+                    for k in range(len(percentiles)):
+                        output[k, l, i, j] = np.nan
+                sequence.sort()
+
+                for k in range(len(percentiles)):
+                    index = (n_valid_obs - 1) * percentiles[k]
+                    f = int(np.floor(index))
+                    c = int(np.ceil(index))
+                    if f == c:
+                        output[k, l, i, j] = sequence[f]
+                    else:
+                        f_val = sequence[f]
+                        c_val = sequence[c]
+                        output[k, l, i, j] = f_val + (c_val - f_val) * (index - f)
+
+    if isinstance(percentile, (int, float)):
+        return output[0]
+    return output
+
+
+@numba.njit(parallel=True, cache=True)
 def parallel_sort_first_axis(array: np.ndarray, handle_nans: bool = False, inplace: bool = False) -> np.ndarray:
     """
     Sorts a 3D cube along the first axis.
@@ -272,6 +318,35 @@ def nan_gaussian(image: np.ndarray, sigma: float) -> np.ndarray:
         image /= valid_weight
     image[nans] = np.nan
     return image
+
+
+@numba.njit(parallel=True)
+def stack_images(images, masks, z_filter_index=1, out_array=None):
+    if out_array is None:
+        out_array = np.empty_like(images)
+    elif out_array.shape != images.shape:
+        raise RuntimeError("Invalid shape for out_array")
+    out_array[0] = images[0] * masks[0]
+    np.nan_to_num(out_array[0], copy=False)
+    for i in numba.prange(out_array.shape[1]):
+        for j, (image, mask) in enumerate(zip(images[1:, i], masks[1:, i])):
+            j += 1
+            for k in range(len(image)):
+                mval = mask[k] * z_filter_index
+                old_val = out_array[j - 1, i, k]
+                new_val = image[k]
+                if np.isnan(old_val):
+                    old_val = 0
+                if np.isnan(new_val):
+                    new_val = 0
+
+                if mval == 0:
+                    out_array[j, i, k] = old_val
+                elif mval == 1:
+                    out_array[j, i, k] = new_val
+                else:
+                    out_array[j, i, k] = mval * image[k] + (1 - mval) * old_val
+    return out_array
 
 
 def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_time: datetime, time_key: str = "DATE-OBS",

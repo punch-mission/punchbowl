@@ -58,7 +58,7 @@ def fill_nans_with_interpolation(image: np.ndarray) -> np.ndarray:
     return griddata((x, y), known_values, (grid_x, grid_y), method="cubic")
 
 
-def _load_file(path: str, data_destination: ShmPickleableNDArray) -> tuple[np.ndarray, datetime, str]:
+def _load_file(path: str, data_destination: ShmPickleableNDArray) -> tuple[np.ndarray, datetime, str] | str:
     data_destination[:] = np.nan
     try:
         cube = load_ndcube_from_fits(path, include_provenance=False, dtype=np.float32)
@@ -100,7 +100,7 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     elif isinstance(reference_time, str):
         reference_time = parse_datetime_str(reference_time)
 
-    trefoil_wcs, trefoil_shape = load_trefoil_wcs()
+    trefoil_wcs, trefoil_shape = load_trefoil_wcs(is_nfi="CNN" in filenames[0])
 
     logger.info("construct_f_corona_background started")
 
@@ -168,9 +168,9 @@ def construct_f_corona_model(filenames: list[str], # noqa: C901
     meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     output_cube = PUNCHCube(data=output_data,
-                         meta=meta,
-                         wcs=trefoil_wcs,
-                         uncertainty=StdDevUncertainty(uncertainty))
+                            meta=meta,
+                            wcs=trefoil_wcs,
+                            uncertainty=StdDevUncertainty(uncertainty))
 
     return [output_cube]
 

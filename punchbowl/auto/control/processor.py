@@ -134,15 +134,17 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
                     files_to_write.append((result, file_db_entry, pipeline_config))
                 else:
                     filename = write_file(result, file_db_entry, pipeline_config)
-                    logger.info(f"Wrote to {filename}")
+                    logger.info(f"Wrote {file_db_entry.file_id} to {filename}")
 
             if write_in_parallel:
                 context = multiprocessing.get_context("forkserver")
                 n_workers = pipeline_config.get('parallel_workers', 4)
                 with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
                     results, db_entries, configs = zip(*files_to_write)
-                    for filename in process_pool.map(write_file, results, db_entries, configs):
-                        logger.info(f"Wrote to {filename}")
+                    for i, (filename, file_db_entry) in enumerate(
+                            zip(process_pool.map(write_file, results, db_entries, configs),
+                                db_entries)):
+                        logger.info(f"Wrote {file_db_entry.file_id} to {filename} (number {i + 1} / {len(results)}")
 
             missing_file_ids = expected_file_ids.difference(output_file_ids)
             if missing_file_ids:

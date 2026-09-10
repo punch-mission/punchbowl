@@ -40,7 +40,7 @@ def visualize_query_ready_files(session,
                 quicklook_results = (session.query(Quicklook)
                                      .filter(Quicklook.day == day)
                                      .filter(Quicklook.level == level)
-                                     .filter(Quicklook.code == product_code))
+                                     .filter(Quicklook.code == product_code).all())
                 image_made = quicklook_results.image_made if quicklook_results else False
                 movie_made = quicklook_results.movie_made if quicklook_results else False
 

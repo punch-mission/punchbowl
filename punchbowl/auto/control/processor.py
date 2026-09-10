@@ -1,7 +1,9 @@
 import os
 import json
 import socket
+import multiprocessing
 from datetime import UTC, datetime
+from concurrent.futures import ProcessPoolExecutor
 
 from dateutil.parser import parse as parse_datetime_str
 from prefect import tags
@@ -20,7 +22,7 @@ from punchbowl.prefect import get_logger
 
 
 def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pipeline_config_path: str, session=None,
-                               call_data_processor=None ):
+                               call_data_processor=None, write_in_parallel=False):
     if session is None:
         session = get_database_session()
     if isinstance(flow_id, int):
@@ -94,6 +96,8 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
             tag_set = {entry.file_type + entry.observatory for entry in file_db_entry_list}
             with tags(*sorted(tag_set)):
                 results = core_flow_to_launch(**flow_call_data)
+
+            files_to_write = []
             for result in results:
                 result.meta["FILEVRSN"] = pipeline_config["file_version"]
                 file_db_entry = match_data_with_file_db_entry(result, file_db_entry_list)
@@ -126,10 +130,19 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
                     import remove_starfield
                     result.meta['RMSFVRSN'] = remove_starfield.__version__
                 result.meta['HOSTNAME'] = socket.gethostname()
-                filename = write_file(result, file_db_entry, pipeline_config)
-                logger.info(f"Wrote to {filename}")
-                if old_version_pattern := pipeline_config.get('old_fileversion_to_filter_in_meta', None):
-                    replace_file_version_in_metadata(filename, old_version_pattern, pipeline_config['file_version'])
+                if write_in_parallel:
+                    files_to_write.append((result, file_db_entry, pipeline_config))
+                else:
+                    filename = write_file(result, file_db_entry, pipeline_config)
+                    logger.info(f"Wrote to {filename}")
+
+            if write_in_parallel:
+                context = multiprocessing.get_context("forkserver")
+                n_workers = pipeline_config.get('parallel_workers', 4)
+                with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
+                    results, db_entries, configs = zip(*files_to_write)
+                    for filename in process_pool.map(write_file, results, db_entries, configs):
+                        logger.info(f"Wrote to {filename}")
 
             missing_file_ids = expected_file_ids.difference(output_file_ids)
             if missing_file_ids:

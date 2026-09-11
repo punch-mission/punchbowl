@@ -803,9 +803,9 @@ def get_metadata(first_image_packet,
             case 1 | 5:
                 typecode = "PP"
             case 2 | 6:
-                typecode = "PM"
-            case 3 | 7:
                 typecode = "PZ"
+            case 3 | 7:
+                typecode = "PM"
             case 4:
                 typecode = "CR"
             case _:

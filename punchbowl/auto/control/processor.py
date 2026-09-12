@@ -144,7 +144,7 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
                     for i, (filename, file_db_entry) in enumerate(
                             zip(process_pool.map(write_file, results, db_entries, configs),
                                 db_entries)):
-                        logger.info(f"Wrote {file_db_entry.file_id} to {filename} (number {i + 1} / {len(results)}")
+                        logger.info(f"Wrote {file_db_entry.file_id} to {filename} (number {i + 1} / {len(results)})")
 
             missing_file_ids = expected_file_ids.difference(output_file_ids)
             if missing_file_ids:

@@ -536,7 +536,7 @@ def level2_PCA_scheduler_flow(pipeline_config_path=None, session=None, reference
         pipeline_config_path,
         reference_time=reference_time,
         session=session,
-        relationship_generator=level2_PCA_relationship_generator
+        relationship_generator=level2_PCA_relationship_generator,
     )
 
 

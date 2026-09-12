@@ -1,6 +1,7 @@
 import os
 import json
 import random
+from typing import Generator
 from datetime import UTC, datetime, timedelta
 from functools import partial
 
@@ -9,14 +10,15 @@ from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
-from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy import and_, func, or_, text
+from sqlalchemy.orm import aliased
 
 from punchbowl import __version__
-from punchbowl.auto.control.cache_layer.nfi_l1 import wrap_if_appropriate
-from punchbowl.auto.control.db import File, Flow
+from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time, load_pipeline_configuration
+from punchbowl.auto.flows.level1 import get_mask_file, get_two_closest_stray_light
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
 from punchbowl.level3.f_corona_model import construct_f_corona_model
 from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow, levelq_QAM_core_flow, levelq_QNN_core_flow
@@ -29,35 +31,153 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
     logger = get_logger()
     pending_flows = session.query(Flow).filter(Flow.flow_type == "levelq_QNN").filter(Flow.state == "planned").all()
     if pending_flows:
-        logger.info("A pending flow already exists. Skipping scheduling to let the batch grow.")
+        logger.info("A pending flow already exists. Skipping scheduling.")
         return []
 
-    all_fittable_files = (session.query(File).filter(File.state.in_(("created", "progressed")))
-                          .filter(File.level == "1")
-                          .filter(File.observatory == "4")
-                          .filter(~File.outlier)
-                          .filter(File.file_type == "QR").limit(1000).all())
-    if len(all_fittable_files) < 1000:
-        logger.info("Not enough fittable files")
-        return []
-    all_ready_files = (session.query(File).filter(File.state == "created")
+    batch_size_cap = pipeline_config['flows']['levelq_QNN']['batch_size_cap']
+    n_batches_to_schedule = pipeline_config['flows']['levelq_QNN']['n_batches_to_schedule']
+    max_gap_seconds = pipeline_config['flows']['levelq_QNN']['max_gap_minutes'] * 60
+    median_window = pipeline_config['flows']['levelq_QNN']['median_window']
+    median_margin = median_window // 2
+    zfilter_margin = pipeline_config['flows']['levelq_QNN']['zfilter_margin']
+
+    child = aliased(File)
+    child_exists_subquery = (session.query(FileRelationship)
+                             .join(child, FileRelationship.child == child.file_id)
+                             .filter(FileRelationship.parent == File.file_id)
+                             .filter(child.file_type == "QN")
+                             .filter(child.level == "Q")
+                             .exists())
+    all_ready_files = (session.query(File)
+                       .filter(~child_exists_subquery)
                        .filter(File.level == "1")
                        .filter(File.observatory == "4")
-                       .filter(File.file_type == "QR").order_by(File.date_obs.desc()).limit(1000).all())
-    logger.info(f"{len(all_ready_files)} ready files")
+                       .filter(File.file_type == "XR")
+                       .filter(File.state.in_(["created", "progressed"]))
+                       .filter(~File.bad_packets)
+                       .order_by(File.date_obs.desc())
+                       .limit(batch_size_cap * n_batches_to_schedule).all())
 
-    if len(all_ready_files) == 0:
-        return []
+    logger.info(f"{len(all_ready_files)} files")
 
-    # We want a batch of lots of files, but we probably don't want them spread too far in time, so let's group these
-    # files up with a maximum time span, and take just the first group.
-    grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=60*60*24*15, max_per_group=1000)
-    grouped_files = grouped_files[0]
+    grouped_files = group_files_by_time(all_ready_files, max_seconds_between_images=max_gap_seconds)
 
-    # Let's order it oldest-to-newest. They're currently the opposite from the database's sort
-    grouped_files = grouped_files[::-1]
-    logger.info("1 group heading out")
-    return [grouped_files]
+    logger.info(f"{len(grouped_files)} groups")
+
+    files_is_new_cutoff = datetime.now() - timedelta(minutes=15)
+
+    groups = []
+    for group in grouped_files:
+        times = np.array([f.date_obs.timestamp() for f in group])
+        intervals = np.abs(np.diff(times))
+        missing_neighbor = np.zeros(len(group))
+        missing_neighbor[1:] += intervals > 10 * 60
+        missing_neighbor[:-1] += intervals > 10 * 60
+
+        group_start = 0
+        file_under_consideration = 0
+        while True:
+            file_under_consideration += 1
+            if file_under_consideration == len(group):
+                break
+            if (missing_neighbor[file_under_consideration]
+                    and group[file_under_consideration].date_created is not None
+                    and group[file_under_consideration].date_created > files_is_new_cutoff):
+                if file_under_consideration > group_start:
+                    groups.append(group[group_start:file_under_consideration - 1])
+                    logger.info("Splitting group because of potential files being generated")
+
+                group_start = file_under_consideration
+                while (group_start < len(group)
+                        and missing_neighbor[group_start]
+                        and group[group_start].date_created is not None
+                        and group[group_start].date_created > files_is_new_cutoff):
+                    group_start += 1
+            elif file_under_consideration - group_start > batch_size_cap:
+                logger.info("Splitting group because of size")
+                groups.append(group[group_start:file_under_consideration])
+                group_start = file_under_consideration - median_margin - zfilter_margin
+
+        groups.append(group[group_start:])
+    groups = [group[::-1] for group in groups]
+
+    logger.info(f"{len(groups)} groups after splitting")
+
+    final_selection = []
+    for group in groups:
+        if len(group) < median_window + zfilter_margin:
+            logger.info("Rejecting too-small group")
+            continue
+        ids = {f.file_id for f in group}
+        dateobses = [f.date_obs for f in group]
+        dstart = min(dateobses)
+        dend = max(dateobses)
+        sequence_wobble = 10
+        margin_before = timedelta(seconds=median_margin + zfilter_margin + sequence_wobble)
+        margin_after = timedelta(seconds=median_margin + sequence_wobble)
+        extra_files = (session.query(File)
+                              .filter(File.level == "1")
+                              .filter(File.observatory == "4")
+                              .filter(File.file_type == "XR")
+                              .filter(~File.bad_packets)
+                              .filter(File.date_obs > dstart - margin_before)
+                              .filter(File.date_obs < dend + margin_after).all())
+        for file in group:
+            file._to_filter = True
+        for file in extra_files:
+            if file.file_id not in ids:
+                file._to_filter = False
+                group.append(file)
+
+        sl_model = get_closest_stray_light(session, group[0])
+        if sl_model is None:
+            logger.info("Rejecting group w/o SL model")
+            continue
+        sl_model = sl_model.filename()
+
+        fcor_models = get_fcorona_models(session, group[0], level="3", observatory="N", file_type="CF")
+        if len(fcor_models) != 2 or fcor_models[0] is None:
+            logger.info("Rejecting group w/o F corona model")
+            continue
+        fcor_models = [m.filename() for m in fcor_models]
+
+        pca_components = get_pca_components(session, group[0])
+        if pca_components is None:
+            logger.info("Rejecting group w/o PCA components")
+            continue
+        pca_components = pca_components.filename()
+
+        for file in group:
+            file._sl_model = sl_model
+            file._fcor_models = fcor_models
+            file._pca_components = pca_components
+
+        final_selection.append(group)
+        logger.info(f"Scheduling a group of {len(group)} images (including {len(extra_files)} for context)")
+
+    return final_selection
+
+
+def get_pca_components(session, f: File) -> File | None:
+    dt = func.abs(func.timestampdiff(text("second"), File.date_obs, f.date_obs))
+    result = (session.query(File)
+            .filter(File.state == "created")
+            .filter(File.level == '1')
+            .filter(File.file_type == 'AR')
+            .filter(File.observatory == '4')
+            .order_by(dt.asc()).limit(1).all())
+    return result[0] if len(result) > 0 else None
+
+
+def get_closest_stray_light(session, f: File) -> File | None:
+    dt = func.abs(func.timestampdiff(text("second"), File.date_obs, f.date_obs))
+    result = (session.query(File)
+            .filter(File.state == "created")
+            .filter(File.level == '1')
+            .filter(File.file_type == 'SR')
+            .filter(File.observatory == '4')
+            .order_by(dt.asc()).limit(1).all())
+    return result[0] if len(result) > 0 else None
 
 
 @task(cache_policy=NO_CACHE)
@@ -66,12 +186,22 @@ def levelq_QNN_construct_flow_info(level1_files: list[File], levelq_file: File, 
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+
+    mask = get_mask_file(level1_files[0], pipeline_config, session)
     call_data = json.dumps(
         {
-            "data_list": [level1_file.filename() for level1_file in level1_files],
-            # This date_obs is only used to find other files to fit the PCA to, if there aren't enough
-            # to-be-subtracted images in the batch
-            "date_obs": average_datetime([f.date_obs for f in level1_files]).strftime("%Y-%m-%d %H:%M:%S"),
+            "input_files": [level1_file.filename() for level1_file in level1_files if level1_file._to_filter],
+            "context_files": [level1_file.filename() for level1_file in level1_files
+                              if not level1_file._to_filter],
+            "nfi_mask": mask.filename().replace(".fits", ".bin"),
+            "n_workers": int(pipeline_config["flows"][flow_type]["n_workers"]),
+            "n_loaders": int(pipeline_config["flows"][flow_type]["n_loaders"]),
+            "instrument_frame_background": level1_files[0]._sl_model,
+            "first_helio_frame_background": level1_files[0]._fcor_models[0],
+            "second_helio_frame_background": level1_files[0]._fcor_models[1],
+            "pca_components": level1_files[0]._pca_components,
+            "median_window": int(pipeline_config["flows"][flow_type]["median_window"]),
+            "zfilter_margin": int(pipeline_config["flows"][flow_type]["zfilter_margin"]),
         },
     )
     return Flow(
@@ -86,20 +216,27 @@ def levelq_QNN_construct_flow_info(level1_files: list[File], levelq_file: File, 
 
 @task
 def levelq_QNN_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
-    return [File(
-                level="Q",
-                file_type="QN",
-                observatory="N",
-                polarization="C",
-                file_version=pipeline_config["file_version"],
-                software_version=__version__,
-                date_obs=level1_file.date_obs,
-                state="planned",
-                outlier=level1_file.outlier,
-                bad_packets=level1_file.bad_packets,
-            )
-        for level1_file in level1_files
-    ]
+    output_files = []
+    for file in level1_files:
+        if file._to_filter:
+            output_files.append(File(
+                    level="Q",
+                    file_type="QN",
+                    observatory="N",
+                    polarization="C",
+                    file_version=pipeline_config["file_version"],
+                    software_version=__version__,
+                    date_obs=file.date_obs,
+                    state="planned",
+                    outlier=file.outlier,
+                    bad_packets=file.bad_packets,
+                ))
+    return output_files
+
+
+def levelq_QNN_relationship_generator(parent_files: list[File], child_files: list[File]) -> Generator:
+    files_to_filter = [f for f in parent_files if f._to_filter]
+    yield from zip(files_to_filter, child_files)
 
 
 @flow
@@ -111,48 +248,24 @@ def levelq_QNN_scheduler_flow(pipeline_config_path=None, session=None, reference
         pipeline_config_path,
         reference_time=reference_time,
         session=session,
-        children_are_one_to_one=True,
+        relationship_generator=levelq_QNN_relationship_generator,
     )
 
 
 def levelq_QNN_call_data_processor(call_data: dict, pipeline_config, session) -> dict:
     # Prepend the data root to each input file
-    for key in ["data_list"]:
+    for key in ["input_files", "context_files", "nfi_mask", "instrument_frame_background",
+                "first_helio_frame_background", "second_helio_frame_background", "pca_components"]:
         if call_data[key] is not None:
             call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
-
-    # How many files we want for the PCA fitting
-    target_number = 1100
-    files_to_fit = session.execute(
-        select(File,
-               dt := func.abs(func.timestampdiff(text("second"), File.date_obs, call_data["date_obs"])))
-        .filter(File.state.in_(("created", "progressed")))
-        .filter(File.level == "1")
-        .filter(File.file_type == "QR")
-        .filter(File.observatory == "4")
-        .filter(~File.outlier)
-        .filter(dt > 10 * 60)
-        .order_by(dt.asc()).limit(target_number)).all()
-
-    files_to_fit = [os.path.join(f.directory(pipeline_config["root"]), f.filename()) for f, _ in files_to_fit]
-
-    # Remove files that we're subtracting
-    files_to_fit = [f for f in files_to_fit if f not in call_data["data_list"]]
-    # Figure out how many of these extra files we need to meet our target number for fitting
-    n_to_use = target_number - len(call_data["data_list"])
-    n_to_use = max(0, n_to_use)
-    files_to_fit = files_to_fit[:n_to_use]
-    files_to_fit = [wrap_if_appropriate(f) for f in files_to_fit]
-
-    call_data["files_to_fit"] = files_to_fit
-    del call_data["date_obs"]
     return call_data
 
 
 @flow
 def levelq_QNN_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id, levelq_QNN_core_flow, pipeline_config_path, session=session,
-                               call_data_processor=levelq_QNN_call_data_processor)
+                               call_data_processor=levelq_QNN_call_data_processor, write_in_parallel=True,
+                               require_expected_files=False)
 
 
 @task(cache_policy=NO_CACHE)
@@ -301,10 +414,10 @@ def levelq_CQM_process_flow(flow_id: int | list[int], pipeline_config_path=None,
                                call_data_processor=levelq_CQM_call_data_processor)
 
 
-def get_fcorona_models(session, f: File):
+def get_fcorona_models(session, f: File, level: str = "Q", file_type: str = "CF", observatory: str = "M"):
     dt = func.abs(func.timestampdiff(text("second"), File.date_obs, f.date_obs))
-    return (session.query(File).filter(File.state == "created").filter(File.level == "Q")
-                      .filter(File.file_type == "CF").filter(File.observatory == "M")
+    return (session.query(File).filter(File.state == "created").filter(File.level == level)
+                      .filter(File.file_type == file_type).filter(File.observatory == observatory)
                       .order_by(dt.asc()).limit(2).all())
 
 

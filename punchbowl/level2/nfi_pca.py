@@ -17,11 +17,11 @@ from scipy.interpolate import RegularGridInterpolator
 from skimage.restoration import inpaint_biharmonic
 from sklearn.decomposition import PCA
 
-from punchbowl.level1.dynamic_stray_light import phase_in_day
 from punchbowl.auto.control.util import batched
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.meta import check_moon_in_fov
 from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.level1.dynamic_stray_light import phase_in_day
 from punchbowl.prefect import get_logger, punch_task
 from punchbowl.util import ShmPickleableNDArray, limit_threads, load_mask_file, nan_percentile, nan_percentile_2d
 
@@ -65,7 +65,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
     context = mp.get_context("forkserver")
     with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
         file_list = sorted(input_files + context_files)
-        logger.info(f"Loading {len(input_files)} to filter and {len(context_files)} context files")
+        logger.info(f"Loading {len(input_files)} images to filter and {len(context_files)} context files")
         x_cube, metas, wcses, cwcses, loaded_files, sat_mask_cube = load_files(file_list,
                                                                                n_workers=n_loaders,
                                                                                downsample_factor=downsample_factor)
@@ -167,12 +167,12 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         dates = [m.datetime for m in metas]
         new_meta = NormalizedMetadata.load_template("AR4", "1")
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta['DATE-OBS'] = ref_date
-        new_meta['DATE-AVG'] = ref_date
-        new_meta['DATE-BEG'] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta['DATE-END'] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-OBS"] = ref_date
+        new_meta["DATE-AVG"] = ref_date
+        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         # TODO: Remove
-        new_meta['FILEVRSN'] = 'v0m'
+        new_meta["FILEVRSN"] = "v0m"
         #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
         pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
         pca_cube["PCANCOMP"] = n_components
@@ -181,12 +181,12 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
 
         new_meta = NormalizedMetadata.load_template("SR4", "1")
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta['DATE-OBS'] = ref_date
-        new_meta['DATE-AVG'] = ref_date
-        new_meta['DATE-BEG'] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta['DATE-END'] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-OBS"] = ref_date
+        new_meta["DATE-AVG"] = ref_date
+        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         # TODO: Remove
-        new_meta['FILEVRSN'] = 'v0m'
+        new_meta["FILEVRSN"] = "v0m"
         #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
         bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
         output_cubes.append(bg_cube)
@@ -226,7 +226,7 @@ def _load_one_file(path: str, downsample_factor: int) -> tuple[NormalizedMetadat
     # TODO: remove
     l0_path = path.replace("1/XR4", "0/CR4").replace("1_XR4", "0_CR4")
     if not os.path.exists(l0_path):
-        l0_path = l0_path.replace('/0/', '/0-old-before-0m/')
+        l0_path = l0_path.replace("/0/", "/0-old-before-0m/")
     l0 = load_ndcube_from_fits(l0_path)
     data = cube.data
     saturation_mask = l0.data > 1252
@@ -372,7 +372,7 @@ def find_outliers_with_headers(metas: list[NormalizedMetadata]) -> np.ndarray:
 
 
 def do_PCA_filtering(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, phases: np.ndarray,
-                     n_strides: int, n_components: int, process_pool: ProcessPoolExecutor, n_workers: int
+                     n_strides: int, n_components: int, process_pool: ProcessPoolExecutor, n_workers: int,
                      ) -> np.ndarray:
     dsls = ShmPickleableNDArray.empty_like(x_cube_filled)
     pca_components = ShmPickleableNDArray((n_strides, n_components + 1, np.sum(nfi_mask)), dtype=np.float32)
@@ -390,24 +390,32 @@ def build_models_with_existing_components(
         phases: np.ndarray, process_pool: ProcessPoolExecutor) -> np.ndarray:
     dsls = ShmPickleableNDArray.empty_like(x_cube_filled)
 
+    shape = pca_components.shape
+    pca_components = pca_components.reshape((-1, pca_components.shape[-1]))
     smoothed_components = ShmPickleableNDArray.empty_like(pca_components)
-    comp_smoothing = 5
-    for i in range(pca_components.shape[0]):
-        for j in range(pca_components.shape[1]):
-            component = reconstitute(pca_components[i, j], nfi_mask)
-            component = scipy.signal.medfilt2d(component, comp_smoothing)
-            smoothed_components[i, j] = component[nfi_mask]
+    for _ in process_pool.map(_smooth_one_component, pca_components, smoothed_components, repeat(nfi_mask)):
+        # Loop is necessary for any exceptions from workers to be raised
+        pass
+    pca_components = pca_components.reshape(shape)
+    smoothed_components = smoothed_components.reshape(shape)
 
-    for _ in process_pool.map(_make_one_model_from_components, phases, repeat(pca_components), repeat(smoothed_components),
-                              dsls, repeat(nfi_mask)):
+    for _ in process_pool.map(_make_one_model_from_components, x_cube_filled, phases, repeat(pca_components),
+                              repeat(smoothed_components), dsls, repeat(nfi_mask)):
         # Loop is necessary for any exceptions from workers to be raised
         pass
     return dsls
 
 
+def _smooth_one_component(component, smooth_dest, nfi_mask):
+    reconstituted = reconstitute(component, nfi_mask)
+    comp_smoothing = 5
+    smoothed = scipy.signal.medfilt2d(reconstituted, comp_smoothing)
+    smooth_dest[:] = smoothed[nfi_mask]
+
+
 def _make_one_model_from_components(image, phase, pca_components, smoothed_pca_components,
-                                 dsl_dest: np.ndarray, nfi_mask: np.ndarray,
-                                 ) -> None:
+                                 dsl_dest: np.ndarray, nfi_mask: np.ndarray) -> None:
+    phase = phase % pca_components.shape[0]
     n_components = pca_components.shape[1]
     means = pca_components[phase][0]
     components = pca_components[phase][1:]
@@ -484,6 +492,7 @@ def upsample(image, factor):
     upsample_indices = np.stack(np.indices(target_shape), axis=-1)
     interp = RegularGridInterpolator(binned_indices, image, method="linear", bounds_error=False, fill_value=0)
     return interp(upsample_indices)
+
 
 def downsample(image: np.ndarray, factor: int) -> np.ndarray:
     if factor == 1:

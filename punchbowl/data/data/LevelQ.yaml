@@ -46,7 +46,10 @@ Kinds:
         omits: [Spacecraft Location & Environment, NAXIS3, OBSLAYR1, OBSLAYR2, OBSLAYR3,
                 Velocity, Calibration Data,
                 HAS_WFI1, HAS_WFI2, HAS_WFI3, HAS_NFI4, ALL_INPT, CTRXWFI1, CTRYWFI1, CTRXWFI2, CTRYWFI2, CTRXWFI3,
-                CTRYWFI3, CTRXNFI4, CTRYNFI4]
+                CTRYWFI3, CTRXNFI4, CTRYNFI4, PCACOMPS, PCADWNSP, PCANCOMP]
+
+    WFI:
+        omits: [PCACOMPS, PCADWNSP, PCANCOMP]
 
 
 # Product specifications
@@ -76,7 +79,7 @@ Products:
             HAS_NFI4: 1
             ALL_INPT: 1
     CQM:
-        kinds: [Unpolarized]
+        kinds: [Unpolarized, WFI]
         overrides:
             NAXIS1: 4096
             NAXIS2: 4096
@@ -88,7 +91,7 @@ Products:
             OBSCODE: M
         omits: [CALFCOR1, CALFCOR2]
     CTM:
-        kinds: [Unpolarized]
+        kinds: [Unpolarized, WFI]
         overrides:
             NAXIS1: 4096
             NAXIS2: 4096
@@ -99,7 +102,7 @@ Products:
             TELESCOP: "{obsname}"
             OBSCODE: M
     QAM:
-        kinds: [ Unpolarized ]
+        kinds: [ Unpolarized, WFI]
         overrides:
             NAXIS1: 4096
             NAXIS2: 4096

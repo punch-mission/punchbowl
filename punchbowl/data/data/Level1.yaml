@@ -19,7 +19,7 @@ Level:
     Camera and Readout State:
     Onboard Image Processing:
     Calibration Data:
-        omits: [CALFCOR1, CALFCOR2, CALSTAR1, CALSTAR2]
+        omits: [CALFCOR1, CALFCOR2, CALSTAR1, CALSTAR2, PCACOMPS]
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
@@ -38,14 +38,14 @@ Kinds:
             NAXIS2: 2048
             POLARREF: 'Instrument'
             POLAROFF: 90
-        omits: [NAXIS3]
+        omits: [NAXIS3, PCADWNSP, PCANCOMP]
 
     Unpolarized:
         overrides:
             NAXIS: 2
             NAXIS1: 2048
             NAXIS2: 2048
-        omits: [NAXIS3]
+        omits: [NAXIS3, PCADWNSP, PCANCOMP]
 
     Calibration:
         overrides:
@@ -53,6 +53,12 @@ Kinds:
             NAXIS1: 2048
             NAXIS2: 2048
         omits: [Camera and Readout State, Onboard Image Processing, Calibration Data, Spacecraft Location & Environment,
+                RPSFVRSN, NAXIS3]
+
+    PCA:
+        overrides:
+            NAXIS: 2
+        omits: [Camera and Readout State, Onboard Image Processing, Spacecraft Location & Environment,
                 RPSFVRSN, NAXIS3]
 
     QuarticCalibration:
@@ -521,7 +527,7 @@ Products:
             TYPECODE: QP
 
     AR?:
-        kinds: [Calibration, CR]
+        kinds: [PCA]
         overrides:
             TITLE: PUNCH Level-1 {craftname} PCA Components
             OBSTYPE: "{crafttype} PCA components"

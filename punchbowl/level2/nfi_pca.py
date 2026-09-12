@@ -175,6 +175,8 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         new_meta['FILEVRSN'] = 'v0m'
         #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
         pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
+        pca_cube["PCANCOMP"] = n_components
+        pca_cube["PCADWNSP"] = downsample_factor
         output_cubes.append(pca_cube)
 
         new_meta = NormalizedMetadata.load_template("SR4", "1")

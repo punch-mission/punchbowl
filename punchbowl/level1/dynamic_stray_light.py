@@ -17,6 +17,8 @@ from punchbowl.util import DataLoader, average_datetime, nan_gaussian, nan_perce
 
 fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
 
+n_rolls_per_day = 24 * 60 // 8
+
 
 def fname_date_to_utime(timestamp: str) -> int:
     """Get a timestamp."""
@@ -42,6 +44,15 @@ def phase_in_window(fname: str) -> int:
     """Get roll position phase."""
     utime = fname_to_utime(fname)
     return int(((utime - fiducial_utime))/60) % 8
+
+
+def phase_in_day(fname: str) -> int:
+    """Get roll position number in the day.
+
+    Note that the "day" starts 4 minutes before midnight, because we're in the middle of a roll position at midnight.
+    """
+    utime = fname_to_utime(fname)
+    return (int(((utime - fiducial_utime))/60) // 8) % n_rolls_per_day
 
 
 def phase_in_window_from_cube(cube: PUNCHCube) -> int:

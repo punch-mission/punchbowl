@@ -7,7 +7,6 @@ from astropy.wcs import WCS
 
 from punchbowl.data import NormalizedMetadata, get_base_file_name
 from punchbowl.data.meta import set_spacecraft_location_to_earth
-from punchbowl.data.punch_io import load_many_cubes
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import load_trefoil_wcs
 from punchbowl.level2.merge import merge_many_clear_task
@@ -15,9 +14,9 @@ from punchbowl.level2.preprocess import preprocess_trefoil_inputs
 from punchbowl.level2.resample import find_central_pixel, reproject_many_flow
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
-from punchbowl.levelq.pca import pca_filter
+from punchbowl.levelq.quickpunch_pca import quickpunch_pca_filter
 from punchbowl.prefect import get_logger, punch_flow
-from punchbowl.util import DataLoader, average_datetime, find_first_existing_file, load_image_task, output_image_task
+from punchbowl.util import average_datetime, find_first_existing_file, load_image_task, output_image_task
 
 ORDER_QP = ["QR1", "QR2", "QR3"]
 
@@ -28,25 +27,30 @@ SPACECRAFT_OBSCODE = {"1": "WFI1",
                       "N": "NFI4"}
 
 @punch_flow
-def levelq_QNN_core_flow(data_list: list[str] | list[PUNCHCube], #noqa: N802
-                         output_filename: list[str] | None = None,
-                         files_to_fit: list[str | PUNCHCube | DataLoader] | None = None,
-                         data_root: str | None = None) -> list[PUNCHCube]:
+def levelq_QNN_core_flow(input_files: list[str],
+                          context_files: list[str],
+                          nfi_mask: str,
+                          pca_components: str,
+                          instrument_frame_background: str,
+                          first_helio_frame_background: str,
+                          second_helio_frame_background: str,
+                          median_window: int,
+                          zfilter_margin: int,
+                          n_workers: int,
+                          n_loaders: int) -> list[PUNCHCube]:
     """
     Run the LQ QNN flow.
-
-    This flow is designed to run on a batch of input CR4 images to facilitate more efficient PCA fitting.
 
     Parameters
     ----------
     data_list : list[str | PUNCHCube]
         The input images, either as paths or PUNCHCubes
+    nfi_mask : str
+    pca_components : str
+    instrument_frame_background : str
+
     output_filename : list[str]
         Optional output paths at which the QNN files should be written
-    files_to_fit : list[str | PUNCHCube | DataLoader]
-        Additional files to use for the PCA fitting, but not to actually be filtered or output
-    data_root : str
-        The root directory which the paths in ``data_list`` are relative to
 
     Returns
     -------
@@ -54,50 +58,9 @@ def levelq_QNN_core_flow(data_list: list[str] | list[PUNCHCube], #noqa: N802
         The QNN data cubes
 
     """
-    logger = get_logger()
-    logger.info("beginning level quickPUNCH QNN core flow")
-    logger.info(f"Got {len(data_list)} input files and {len(files_to_fit)} extra files for fitting")
-
-    output_cubes = []
-
-    data_cubes = [input_file for input_file in data_list if isinstance(input_file, PUNCHCube)]
-    input_paths = [input_file for input_file in data_list if isinstance(input_file, str)]
-    if data_root is not None:
-        input_paths = [os.path.join(data_root, path) for path in input_paths]
-
-    data_cubes += load_many_cubes(input_paths, n_workers=3)
-
-    logger.info("Loaded images to be subtracted")
-
-    pca_filter(data_cubes, files_to_fit)
-
-    for i, data_cube in enumerate(data_cubes):
-        data = data_cube.data
-        uncertainty = data_cube.uncertainty.array
-
-        isnan = np.isnan(data)
-        uncertainty[isnan] = np.inf
-        data[isnan] = 0
-
-        output_meta_nfi = NormalizedMetadata.load_template("QNN", "Q")
-        output_cube = data_cube.replace(data=data,
-                                        uncertainty=StdDevUncertainty(uncertainty),
-                                        meta=output_meta_nfi)
-        output_cube.meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        output_cube.meta["DATE-AVG"] = data_cube.meta["DATE-AVG"].value
-        output_cube.meta["DATE-OBS"] = data_cube.meta["DATE-OBS"].value
-        output_cube.meta["DATE-BEG"] = data_cube.meta["DATE-BEG"].value
-        output_cube.meta["DATE-END"] = data_cube.meta["DATE-END"].value
-        output_cube.meta["FILEVRSN"] = data_cube.meta["FILEVRSN"].value
-        set_spacecraft_location_to_earth(output_cube)
-
-        output_cubes.append(output_cube)
-
-        if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
-            output_image_task(output_cube, output_filename[i])
-
-    logger.info("ending level quickPUNCH QNN core flow")
-    return output_cubes
+    return quickpunch_pca_filter(input_files, context_files, nfi_mask, pca_components, instrument_frame_background,
+                                 first_helio_frame_background, second_helio_frame_background,
+                                 median_window, zfilter_margin, n_workers, n_loaders)
 
 
 @punch_flow

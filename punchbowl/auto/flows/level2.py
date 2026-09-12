@@ -1,18 +1,22 @@
 import json
+from typing import Generator
 from datetime import UTC, datetime, timedelta
+from itertools import product
 
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
+from sqlalchemy import func, select, text
+from sqlalchemy.orm import aliased
 
 from punchbowl import __version__
-from punchbowl.auto.control.db import File, Flow
+from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import group_files_by_time
-from punchbowl.auto.flows.level1 import get_mask_files
+from punchbowl.auto.flows.level1 import get_mask_file, get_mask_files
 from punchbowl.auto.flows.util import file_name_to_full_path
-from punchbowl.level2.flow import level2_core_flow
+from punchbowl.level2.flow import level2_core_flow, level2_pca_core_flow
 from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime
 
@@ -364,3 +368,188 @@ def level2_process_flow(flow_id: int | list[int], pipeline_config_path=None, ses
 def level2_clear_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id, level2_core_flow, pipeline_config_path, session=session,
                                call_data_processor=level2_call_data_processor)
+
+
+
+@task(cache_policy=NO_CACHE)
+def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+    logger = get_logger()
+    pending_flows = session.query(Flow).filter(Flow.flow_type == "level2_PCA").filter(Flow.state == "planned").all()
+    if pending_flows:
+        logger.info("A pending flow already exists. Skipping scheduling.")
+        return []
+
+    batch_size = pipeline_config['flows']['level2_PCA']['batch_size']
+    window_size_days = pipeline_config['flows']['level2_PCA']['window_size_days']
+    n_batches_to_schedule = pipeline_config['flows']['level2_PCA']['n_batches_to_schedule']
+
+    child = aliased(File)
+    child_exists_subquery = (session.query(FileRelationship)
+                             .join(child, FileRelationship.child == child.file_id)
+                             .filter(FileRelationship.parent == File.file_id)
+                             .filter(child.file_type == "CN")
+                             .filter(child.level == "2")
+                             .exists())
+    all_ready_files = (session.query(File)
+                       .filter(~child_exists_subquery)
+                       .filter(File.level == "1")
+                       .filter(File.observatory == "4")
+                       .filter(File.file_type == "XR")
+                       .filter(~File.bad_packets)
+                       .order_by(File.date_obs.desc())
+                       .limit(batch_size * n_batches_to_schedule).all())
+
+    grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=60*60*24*window_size_days,
+                                        max_per_group=batch_size)
+    grouped_files = grouped_files[:n_batches_to_schedule]
+
+    outputs = []
+    for group in grouped_files:
+        dateobses = [f.date_obs for f in group]
+        central_time = average_datetime(dateobses)
+        dt = func.abs(func.timestampdiff(text("second"), File.date_obs, central_time))
+        n_needed = batch_size - len(group)
+        context_files = (session.query(File)
+                                .filter(child_exists_subquery)
+                                .filter(File.level == "1")
+                                .filter(File.observatory == "4")
+                                .filter(File.file_type == "XR")
+                                .filter(~File.bad_packets)
+                                .filter(dt < 60*60*24*window_size_days / 2)
+                                .order_by(dt.asc())
+                                .limit(n_needed).all())
+        for f in group:
+            f._to_filter = True
+        for f in context_files:
+            f._to_filter = False
+        group = group + context_files
+
+        if len(group) < batch_size:
+            logger.warning(f"Only {len(group)} files (including {len(context_files)} context files) for group centered "
+                           f"on {central_time}---skipping")
+            continue
+
+        logger.info(f"{len(group)} files (including {len(context_files)} context files) for group centered "
+                    f"on {central_time}---scheduling")
+        outputs.append(group)
+
+    logger.info(f"{len(outputs)} groups heading out")
+    return outputs
+
+
+@task(cache_policy=NO_CACHE)
+def level2_PCA_construct_flow_info(level1_files: list[File], output_files: list[File], pipeline_config: dict,
+                                   session=None,
+                                   reference_time=None):
+    flow_type = "level2_PCA"
+    state = "planned"
+    creation_time = datetime.now()
+    priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    ref_date = output_files[0]._reference_date
+
+    mask = get_mask_file(level1_files[0], pipeline_config, session)
+    call_data = json.dumps(
+        {
+            "input_files": [level1_file.filename() for level1_file in level1_files if level1_file._to_filter],
+            "context_files": [level1_file.filename() for level1_file in level1_files
+                              if not level1_file._to_filter],
+            "nfi_mask": mask.filename().replace(".fits", ".bin"),
+            "n_workers": int(pipeline_config["flows"][flow_type]["n_workers"]),
+            "n_loaders": int(pipeline_config["flows"][flow_type]["n_loaders"]),
+            "ref_date": ref_date.strftime("%Y-%m-%dT%H:%M:%S"),
+        },
+    )
+    return Flow(
+        flow_type=flow_type,
+        state=state,
+        flow_level="Q",
+        creation_time=creation_time,
+        priority=priority,
+        call_data=call_data,
+    )
+
+
+@task
+def level2_PCA_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+    output_files = []
+    for file in level1_files:
+        if file._to_filter:
+            output_files.append(File(
+                    level="2",
+                    file_type="CN",
+                    observatory="N",
+                    polarization="C",
+                    file_version=pipeline_config["file_version"],
+                    software_version=__version__,
+                    date_obs=file.date_obs,
+                    state="planned",
+                    outlier=file.outlier,
+                    bad_packets=file.bad_packets,
+                ))
+    dates = [f.date_obs for f in level1_files if f._to_filter]
+    date_obs = average_datetime(dates).replace(microsecond=0)
+    date_beg = min(dates)
+    date_end = max(dates)
+    output_files.append(File(
+            level="1",
+            file_type="AR",
+            observatory="4",
+            polarization="C",
+            file_version=pipeline_config["file_version"],
+            software_version=__version__,
+            date_obs=date_obs,
+            date_beg=date_beg,
+            date_end=date_end,
+            state="planned",
+    ))
+    output_files.append(File(
+            level="1",
+            file_type="SR",
+            observatory="4",
+            polarization="C",
+            file_version=pipeline_config["file_version"],
+            software_version=__version__,
+            date_obs=date_obs,
+            date_beg=date_beg,
+            date_end=date_end,
+            state="planned",
+    ))
+    for file in output_files:
+        file._reference_date = date_obs
+    return output_files
+
+
+def level2_PCA_relationship_generator(parent_files: list[File], child_files: list[File]) -> Generator:
+    files_to_filter = [f for f in parent_files if f._to_filter]
+    filtered_files = [f for f in child_files if f.file_type == "CN"]
+    yield from zip(files_to_filter, filtered_files)
+    cal_files = [f for f in child_files if f.file_type != "CN"]
+    yield from product(parent_files, cal_files)
+
+
+@flow
+def level2_PCA_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+    generic_scheduler_flow_logic(
+        level2_PCA_query_ready_files,
+        level2_PCA_construct_file_info,
+        level2_PCA_construct_flow_info,
+        pipeline_config_path,
+        reference_time=reference_time,
+        session=session,
+        relationship_generator=level2_PCA_relationship_generator,
+    )
+
+
+def level2_PCA_call_data_processor(call_data: dict, pipeline_config, session) -> dict:
+    # Prepend the data root to each input file
+    for key in ["input_files", "context_files", "nfi_mask"]:
+        if call_data[key] is not None:
+            call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
+    return call_data
+
+
+@flow
+def level2_PCA_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
+    generic_process_flow_logic(flow_id, level2_pca_core_flow, pipeline_config_path, session=session,
+                               call_data_processor=level2_PCA_call_data_processor, write_in_parallel=True,
+                               require_expected_files=False)

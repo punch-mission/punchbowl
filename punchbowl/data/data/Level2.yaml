@@ -15,6 +15,9 @@ Level:
     Temporal Information:
     Instrument and Spacecraft State:
     World Coordinate System:
+    Calibration Data:
+        omits: [CALCF, CALVI, CALVI2, CALPSF, CALPM, CALDSL0, CALDSL1, CALSL0, CALSL1, CALFCOR1, CALFCOR2, CALSTAR1,
+                CALSTAR2]
     Image Statistics and Properties:
     Solar Reference Data:
     Spacecraft Location & Environment:
@@ -43,6 +46,9 @@ Kinds:
 
     NoQuirks:
         omits: ["Quirks for files not generally used by the public"]
+
+    NotNFI:
+        omits: [PCACOMPS, PCADWNSP, PCANCOMP]
 
     Intermediary:
         overrides:
@@ -84,7 +90,7 @@ Kinds:
 # Product specifications
 Products:
     PTM:
-        kinds: [Polarized, NoQuirks]
+        kinds: [Polarized, NoQuirks, NotNFI]
         overrides:
             TITLE: PUNCH Level-2 Polarized Mosaic
             OBSTYPE: Polarized mosaic
@@ -108,7 +114,7 @@ Products:
             ALL_INPT: 1
 
     CTM:
-        kinds: [Unpolarized, NoQuirks]
+        kinds: [Unpolarized, NoQuirks, NotNFI]
         overrides:
             TITLE: PUNCH Level-2 Unpolarized Mosaic
             OBSTYPE: Unpolarized mosaic
@@ -132,7 +138,7 @@ Products:
             ALL_INPT: 1
 
     XP?:
-        kinds: [Polarized, Intermediary]
+        kinds: [Polarized, Intermediary, NotNFI]
         overrides:
             TITLE: PUNCH Level-2 {craftname} Polarized Image, Intermediary
             OBSTYPE: Polarized {crafttype} image
@@ -146,7 +152,7 @@ Products:
             POLAR: +60
 
     XR?:
-        kinds: [Unpolarized, Intermediary]
+        kinds: [Unpolarized, Intermediary, NotNFI]
         overrides:
             TITLE: PUNCH Level-2 {craftname} Clear Image, Intermediary
             OBSTYPE: Unpolarized {crafttype} image

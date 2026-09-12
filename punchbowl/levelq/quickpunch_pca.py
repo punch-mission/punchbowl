@@ -17,21 +17,27 @@ from punchbowl.util import ShmPickleableNDArray, interpolate_data, load_mask_fil
 
 
 @punch_task
-def quickpunch_pca_filter(input_files,
-                          context_files,
-                          nfi_mask,
-                          pca_components,
-                          instrument_frame_background,
-                          first_helio_frame_background,
-                          second_helio_frame_background,
-                          n_workers,
-                          n_loaders,
-                          downsample_factor):
+def quickpunch_pca_filter(input_files: list[str],
+                          context_files: list[str],
+                          nfi_mask: str,
+                          pca_components_path: str,
+                          instrument_frame_background: str,
+                          first_helio_frame_background: str,
+                          second_helio_frame_background: str,
+                          median_window: int,
+                          zfilter_margin: int,
+                          n_workers: int,
+                          n_loaders: int) -> list[PUNCHCube]:
     logger = get_logger()
     logger.info("Starting PCA flow")
 
+    pca_components = load_ndcube_from_fits(pca_components_path)
+    downsample_factor = pca_components.meta["PCADWNSP"].value
+    n_components = pca_components.meta["PCANCOMP"].value
+    pca_components = ShmPickleableNDArray.from_array(pca_components.data)
+
     instrument_frame_background = load_ndcube_from_fits(
-        instrument_frame_background, include_uncertainty=False, include_provenance=False)
+        instrument_frame_background, include_uncertainty=False, include_provenance=False).data
     first_helio_frame_background = load_ndcube_from_fits(
         first_helio_frame_background, include_uncertainty=False, include_provenance=False)
     second_helio_frame_background = load_ndcube_from_fits(
@@ -41,7 +47,7 @@ def quickpunch_pca_filter(input_files,
     context = mp.get_context("forkserver")
     with (ProcessPoolExecutor(n_workers, mp_context=context) as process_pool):
         file_list = sorted(input_files + context_files)
-        logger.info(f"Loading {len(input_files)} to filter and {len(context_files)} context files")
+        logger.info(f"Loading {len(input_files)} images to filter and {len(context_files)} context files")
         x_cube, metas, wcses, cwcses, loaded_files, sat_mask_cube = nfi_pca.load_files(
             file_list, n_workers=n_loaders, downsample_factor=downsample_factor)
 
@@ -67,7 +73,8 @@ def quickpunch_pca_filter(input_files,
 
         logger.info("Problem regions filled")
 
-        good_mask = nfi_pca.find_outliers_with_PCA(x_cube_ds_filled, np.ones(len(x_cube)), nfi_mask_ds, n_workers)
+        good_mask = nfi_pca.find_outliers_with_PCA(x_cube_ds_filled, np.ones(len(x_cube), dtype=bool), nfi_mask_ds,
+                                                   n_workers)
 
         dsl_models = nfi_pca.build_models_with_existing_components(
             x_cube_ds_filled, nfi_mask_ds, pca_components, phases, process_pool)
@@ -109,16 +116,19 @@ def quickpunch_pca_filter(input_files,
         circular_mask = nfi_pca.make_circular_mask(oriented_images.shape[1:])
         oriented_images *= circular_mask[None, :, :]
 
-        nan_percentile_window(oriented_images, percentile=50, window_size=7)
+        filtered_images = nan_percentile_window(oriented_images, percentile=50, window_size=median_window)
 
-        output_array = ShmPickleableNDArray.empty_like(oriented_images)
         vmin = 3e-15
         vmax = 6e-13
         value_masks = (oriented_images > vmin / 10) * (oriented_images < vmax * 10)
-        stack_images(oriented_images, value_masks, z_filter_index=0.5, output_array=output_array)
+        output_array = ShmPickleableNDArray.empty_like(filtered_images)
+        stack_images(filtered_images, value_masks, z_filter_index=0.5, out_array=output_array)
+
+        logger.info("Temporal filtering complete")
 
         output_cubes = []
-        for i, path in enumerate(loaded_files):
+        median_margin = median_window // 2
+        for i, path in enumerate(loaded_files[zfilter_margin + median_margin:-median_margin]):
             if path in input_files:
                 new_meta = NormalizedMetadata.load_template("QNN", "Q")
                 new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -134,6 +144,9 @@ def quickpunch_pca_filter(input_files,
                 new_meta["MOON_X"] = xpix[0]
                 new_meta["MOON_Y"] = ypix[0]
                 new_meta["OUTLIER"] = not good_mask[i] or metas[i]["OUTLIER"].value
+                new_meta["PCANCOMP"] = n_components
+                new_meta["PCADWNSP"] = downsample_factor
+                new_meta["PCACOMPS"] = os.path.basename(pca_components_path)
 
                 new_meta.provenance = [os.path.basename(path)]
 
@@ -143,7 +156,7 @@ def quickpunch_pca_filter(input_files,
                                  uncertainty=StdDevUncertainty(uncertainty))
                 output_cubes.append(cube)
 
-        print("PCA flow done!")
+        logger.info("PCA flow done!")
         return output_cubes
 
 

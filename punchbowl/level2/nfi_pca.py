@@ -18,7 +18,7 @@ from skimage.restoration import inpaint_biharmonic
 from sklearn.decomposition import PCA
 
 from punchbowl.auto.control.util import batched
-from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
+from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits
 from punchbowl.data.meta import check_moon_in_fov
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.dynamic_stray_light import phase_in_day
@@ -140,6 +140,35 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         corrected_frames *= circular_mask[None, :, :]
 
         output_cubes = []
+
+        dates = [m.datetime for m in metas]
+        new_meta = NormalizedMetadata.load_template("AR4", "1")
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-OBS"] = ref_date
+        new_meta["DATE-AVG"] = ref_date
+        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["PCANCOMP"] = n_components
+        new_meta["PCADWNSP"] = downsample_factor
+        # TODO: Remove
+        new_meta["FILEVRSN"] = "v0m"
+        #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
+        pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
+
+        output_cubes.append(pca_cube)
+
+        new_meta = NormalizedMetadata.load_template("SR4", "1")
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-OBS"] = ref_date
+        new_meta["DATE-AVG"] = ref_date
+        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        # TODO: Remove
+        new_meta["FILEVRSN"] = "v0m"
+        #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
+        bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
+        output_cubes.append(bg_cube)
+
         for i, path in enumerate(loaded_files):
             if path in input_files:
                 new_meta = NormalizedMetadata.load_template("CNN", "2")
@@ -156,6 +185,10 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
                 new_meta["MOON_X"] = xpix[0]
                 new_meta["MOON_Y"] = ypix[0]
                 new_meta["OUTLIER"] = not good_mask[i]
+                new_meta["PCANCOMP"] = n_components
+                new_meta["PCADWNSP"] = downsample_factor
+                new_meta["PCACOMPS"] = get_base_file_name(pca_cube)
+                new_meta["CALSL0"] = get_base_file_name(bg_cube)
 
                 new_meta.provenance = [os.path.basename(path)]
 
@@ -163,33 +196,6 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
                 cube = PUNCHCube(data=corrected_frames[i], meta=new_meta, wcs=target_frame,
                                  uncertainty=StdDevUncertainty(uncertainty))
                 output_cubes.append(cube)
-
-        dates = [m.datetime for m in metas]
-        new_meta = NormalizedMetadata.load_template("AR4", "1")
-        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-OBS"] = ref_date
-        new_meta["DATE-AVG"] = ref_date
-        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        # TODO: Remove
-        new_meta["FILEVRSN"] = "v0m"
-        #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
-        pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
-        pca_cube["PCANCOMP"] = n_components
-        pca_cube["PCADWNSP"] = downsample_factor
-        output_cubes.append(pca_cube)
-
-        new_meta = NormalizedMetadata.load_template("SR4", "1")
-        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-OBS"] = ref_date
-        new_meta["DATE-AVG"] = ref_date
-        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        # TODO: Remove
-        new_meta["FILEVRSN"] = "v0m"
-        #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
-        bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
-        output_cubes.append(bg_cube)
 
         print("PCA flow done!")
         return output_cubes
@@ -654,7 +660,9 @@ def _do_one_sinusoid(args: tuple, crota_vals: np.ndarray, images: np.ndarray, ma
                                                        )
             except RuntimeError:
                 popt = np.full(n_comps * 2 + 1, np.nan)
-            popt[0] *= 1e-12
+            # We need to fit the center to meaningfully fit the sinusoids, but we don't want to subtract out that
+            # center. (The "f corona" subtraction step will handle that)
+            popt[0] = 0
             for n in range(1, len(popt), 2):
                 popt[n] *= 1e-12
             rets.append((popt, ix, jx))

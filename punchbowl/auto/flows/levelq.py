@@ -40,6 +40,7 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
     median_window = pipeline_config['flows']['levelq_QNN']['median_window']
     median_margin = median_window // 2
     zfilter_margin = pipeline_config['flows']['levelq_QNN']['zfilter_margin']
+    tstart = datetime.now() - timedelta(days=pipeline_config['flows']['levelq_QNN']['only_last_n_days'])
 
     child = aliased(File)
     child_exists_subquery = (session.query(FileRelationship)
@@ -55,8 +56,8 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
                        .filter(File.file_type == "XR")
                        .filter(File.state.in_(["created", "progressed"]))
                        .filter(~File.bad_packets)
-                       .order_by(File.date_obs.desc())
-                       .limit(batch_size_cap * n_batches_to_schedule).all())
+                       .filter(File.date_obs >= tstart)
+                       .order_by(File.date_obs.desc()).all())
 
     logger.info(f"{len(all_ready_files)} files")
 
@@ -70,9 +71,10 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
     for group in grouped_files:
         times = np.array([f.date_obs.timestamp() for f in group])
         intervals = np.abs(np.diff(times))
-        missing_neighbor = np.zeros(len(group))
-        missing_neighbor[1:] += intervals > 10 * 60
-        missing_neighbor[:-1] += intervals > 10 * 60
+        gap = intervals > 10 * 60
+        missing_later_neighbor = np.concatenate(([0], gap))
+        missing_earlier_neighbor = np.concatenate((gap, [0]))
+        missing_neighbor = missing_earlier_neighbor + missing_later_neighbor
 
         group_start = 0
         file_under_consideration = 0
@@ -84,7 +86,11 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
                     and group[file_under_consideration].date_created is not None
                     and group[file_under_consideration].date_created > files_is_new_cutoff):
                 if file_under_consideration > group_start:
-                    groups.append(group[group_start:file_under_consideration - 1])
+                    stop = file_under_consideration
+                    if missing_earlier_neighbor[file_under_consideration]:
+                        # Include the new file that has a missing neighbor
+                        stop += 1
+                    groups.append(group[group_start:stop])
                     logger.info("Splitting group because of potential files being generated")
 
                 group_start = file_under_consideration
@@ -93,7 +99,7 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
                         and group[group_start].date_created is not None
                         and group[group_start].date_created > files_is_new_cutoff):
                     group_start += 1
-            elif file_under_consideration - group_start > batch_size_cap:
+            elif file_under_consideration - group_start >= batch_size_cap:
                 logger.info("Splitting group because of size")
                 groups.append(group[group_start:file_under_consideration])
                 group_start = file_under_consideration - median_margin - zfilter_margin
@@ -124,10 +130,12 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
                               .filter(File.date_obs < dend + margin_after).all())
         for file in group:
             file._to_filter = True
+        n_context = 0
         for file in extra_files:
             if file.file_id not in ids:
                 file._to_filter = False
                 group.append(file)
+                n_context += 1
 
         sl_model = get_closest_stray_light(session, group[0])
         if sl_model is None:
@@ -137,7 +145,7 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
 
         fcor_models = get_fcorona_models(session, group[0], level="3", observatory="N", file_type="CF")
         if len(fcor_models) != 2 or fcor_models[0] is None:
-            logger.info("Rejecting group w/o F corona model")
+            logger.info("Rejecting group w/o F corona models")
             continue
         fcor_models = [m.filename() for m in fcor_models]
 
@@ -153,7 +161,9 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
             file._pca_components = pca_components
 
         final_selection.append(group)
-        logger.info(f"Scheduling a group of {len(group)} images (including {len(extra_files)} for context)")
+        logger.info(f"Scheduling a group of {len(group)} images (including {n_context} for context)")
+        if len(final_selection) >= n_batches_to_schedule:
+            break
 
     return final_selection
 

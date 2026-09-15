@@ -31,7 +31,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
                n_strides: int = 8, downsample_factor: int = 2, n_loaders: int = 4, n_workers: int = 20,
                ) -> list[PUNCHCube]:
     """
-    Run PCA-based NFI filtering
+    Run PCA-based NFI filtering.
 
     Parameters
     ----------
@@ -199,7 +199,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
                                  uncertainty=StdDevUncertainty(uncertainty))
                 output_cubes.append(cube)
 
-        print("PCA flow done!")
+        logger.info("PCA flow done!")
         return output_cubes
 
 
@@ -214,18 +214,20 @@ def reconstitute(flat_image: np.ndarray, mask: np.ndarray) -> np.ndarray:
     return im
 
 
-def get_pylon_mask(shape: tuple, wcs: WCS) -> np.ndarray:
+def get_pylon_mask(shape: tuple, wcs: WCS, blur: bool = False) -> np.ndarray:
     yy, xx = np.indices(shape, dtype=float)
     yy -= wcs.wcs.crpix[0] - 1 + 40
     xx -= wcs.wcs.crpix[1] - 1
     ang = np.arctan2(yy, xx) * 180 / np.pi
     mask = (np.abs(ang + 90) > 75) + (np.abs(xx) > 700)
     mask[(np.abs(ang + 90) < 65)] = 0
-    # mask = scipy.ndimage.gaussian_filter(mask.astype(np.float32), sigma=15)
+    if blur:
+        mask = scipy.ndimage.gaussian_filter(mask.astype(np.float32), sigma=15)
     return mask
 
 
-def _load_one_file(path: str, downsample_factor: int) -> tuple[NormalizedMetadata, WCS, WCS, str, np.ndarray, np.ndarray]:
+def _load_one_file(path: str, downsample_factor: int,
+                   ) -> tuple[NormalizedMetadata, WCS, WCS, str, np.ndarray, np.ndarray]:
     if not os.path.exists(path):
         return "missing"
     cube = load_ndcube_from_fits(path, include_uncertainty=False, include_provenance=False, dtype=np.float32)
@@ -240,11 +242,13 @@ def _load_one_file(path: str, downsample_factor: int) -> tuple[NormalizedMetadat
     saturation_mask = l0.data > 1252
     if downsample_factor > 1:
         saturation_mask = saturation_mask.reshape((data.shape[0] // downsample_factor, downsample_factor,
-                                                   data.shape[1] // downsample_factor, downsample_factor)).any(axis=(1, 3))
+                                                   data.shape[1] // downsample_factor, downsample_factor),
+                                                  ).any(axis=(1, 3))
     return cube.meta, cube.wcs, cube.celestial_wcs, path, data, saturation_mask
 
 
-def load_files(files: list[str], n_workers: int, downsample_factor: int) -> tuple[np.ndarray, list, list, list, list, np.ndarray]:
+def load_files(files: list[str], n_workers: int, downsample_factor: int,
+               ) -> tuple[np.ndarray, list, list, list, list, np.ndarray]:
     metas = []
     wcses = []
     cwcses = []
@@ -282,8 +286,9 @@ def load_files(files: list[str], n_workers: int, downsample_factor: int) -> tupl
     return x_cube, metas, wcses, cwcses, loaded_files, sat_mask_cube
 
 
-def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarray, meta: NormalizedMetadata, wcs: WCS,
-                    sat_mask: np.ndarray, nfi_mask: np.ndarray, downsample_factor: int) -> None:
+def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarray, # noqa: C901
+                    meta: NormalizedMetadata, wcs: WCS, sat_mask: np.ndarray,
+                    nfi_mask: np.ndarray, downsample_factor: int) -> None:
     numba.set_num_threads(2)
 
     if downsample_factor > 1:
@@ -303,7 +308,7 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
 
         for body, x, y in zip(body_names, np.atleast_1d(xs), np.atleast_1d(ys)):
             if 0 < x < src_data.shape[1] and 0 < y < src_data.shape[0]:
-                x, y = int(x), int(y)
+                x, y = int(x), int(y) # noqa: PLW2901
                 if body != "moon":
                     w = int(round(9 * 2 / downsample_factor))
                 else:
@@ -348,7 +353,8 @@ def fill_problem_regions(x_cube: np.ndarray, metas: list[NormalizedMetadata], cw
     return x_cube_filled, plot_masks
 
 
-def find_outliers_with_PCA(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, n_workers: int) -> np.ndarray:
+def find_outliers_with_PCA(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, n_workers: int
+                           ) -> np.ndarray:
     data = x_cube_filled[:, nfi_mask]
     data = data[good_mask]
 
@@ -473,7 +479,8 @@ def _do_PCA_filtering_one_stride(this_set_number: int, n_sets: int, x_cube_fille
 
 
 def subtract_models_from_data(x_cube: np.ndarray, x_cube_ds_filled: np.ndarray, dsl_models: np.ndarray,
-                              downsample_factor: int, process_pool: ProcessPoolExecutor) -> tuple[np.ndarray, np.ndarray]:
+                              downsample_factor: int, process_pool: ProcessPoolExecutor
+                              ) -> tuple[np.ndarray, np.ndarray]:
     filtered_images = ShmPickleableNDArray.empty_like(x_cube)
     filtered_filled_images = ShmPickleableNDArray.empty_like(x_cube_ds_filled)
     for _ in process_pool.map(_subtract_one_model_from_data, x_cube, x_cube_ds_filled, dsl_models,
@@ -527,8 +534,8 @@ def inst_frame_filter(filtered_images: np.ndarray, filtered_filled_images: np.nd
                       downsample_factor: int, process_pool: ProcessPoolExecutor,
                       background_image: np.ndarray = None) -> np.ndarray:
     post_filtered_images = ShmPickleableNDArray.empty_like(filtered_images)
-    for _ in process_pool.map(_inst_frame_filter_one_image, filtered_images, filtered_filled_images, post_filtered_images,
-                              repeat(downsample_factor), chunksize=2):
+    for _ in process_pool.map(_inst_frame_filter_one_image, filtered_images, filtered_filled_images,
+                              post_filtered_images, repeat(downsample_factor), chunksize=2):
         # Loop is necessary for any exceptions from workers to be raised
         pass
 
@@ -541,7 +548,7 @@ def inst_frame_filter(filtered_images: np.ndarray, filtered_filled_images: np.nd
 
 def censor_wcs(wcs):
     """
-    Removes observer details from a WCS
+    Remove observer details from a WCS.
 
     When input images have slightly different viewpoints, Sunpy will say this
     is an invalid coordinate transformation. Here we censor information from the
@@ -589,8 +596,8 @@ def reproject_images(dfiltered_images: np.ndarray, plot_masks: np.ndarray, wcses
 
     oriented_images = ShmPickleableNDArray.empty_like(dfiltered_images)
     masks = ShmPickleableNDArray(dfiltered_images.shape, dtype=bool)
-    for _ in process_pool.map(_reproject_one_image, dfiltered_images, plot_masks, wcses, repeat(pylon_mask), repeat(target_frame),
-                              oriented_images, masks, repeat(downsample_factor)):
+    for _ in process_pool.map(_reproject_one_image, dfiltered_images, plot_masks, wcses, repeat(pylon_mask),
+                              repeat(target_frame), oriented_images, masks, repeat(downsample_factor)):
         # Loop is necessary for any exceptions from workers to be raised
         pass
     return oriented_images, masks, target_frame
@@ -601,15 +608,15 @@ def sinusoid(x: int | float | np.ndarray, dy: np.ndarray, *args) -> np.ndarray:
         result = dy
     else:
         result = np.full(len(x), dy, dtype=float)
-    for f, (A, dphi) in enumerate(batched(args, 2)):
+    for f, (A, dphi) in enumerate(batched(args, 2)): # noqa: N806
         result += A * np.sin(x * ((f + 1) * np.pi / 180) + dphi)
     return result
 
 
-def jac(x: np.ndarray, dy: np.ndarray, *args) -> np.ndarray:
+def jac(x: np.ndarray, dy: np.ndarray, *args) -> np.ndarray: # noqa: ARG001
     ddy = np.full_like(x, 1)
     ret = [ddy]
-    for f, (A, dphi) in enumerate(batched(args, 2)):
+    for f, (A, dphi) in enumerate(batched(args, 2)): # noqa: N806
         ret.append(np.sin(x * ((f + 1) * np.pi / 180) + dphi))
         ret.append(A * np.cos(x * ((f + 1) * np.pi / 180) + dphi))
 
@@ -617,12 +624,12 @@ def jac(x: np.ndarray, dy: np.ndarray, *args) -> np.ndarray:
 
 
 def make_correction_map(crota: float, popts: np.ndarray, ivals: np.ndarray) -> np.ndarray:
-    map = np.zeros(popts.shape[1:])
+    correction_map = np.zeros(popts.shape[1:])
 
     for i in range(len(ivals)):
         for j in range(len(ivals)):
-            map[i, j] = sinusoid(crota, *popts[:, i, j])
-    return map
+            correction_map[i, j] = sinusoid(crota, *popts[:, i, j])
+    return correction_map
 
 
 def _do_one_sinusoid(args: tuple, crota_vals: np.ndarray, images: np.ndarray, mask: np.ndarray, n_comps: int, whs: int,
@@ -686,9 +693,9 @@ def compute_popts(crota_vals: np.ndarray, images: np.ndarray, mask: np.ndarray, 
 def _desinusoid_one_image(src_image: np.ndarray, crota: float, t: float, ivals: np.ndarray,
                           time_based_popts: np.ndarray, dest: np.ndarray) -> None:
     if t <= time_based_popts[0][0]:
-        map = make_correction_map(crota, time_based_popts[0][1], ivals)
+        correction_map = make_correction_map(crota, time_based_popts[0][1], ivals)
     elif t >= time_based_popts[-1][0]:
-        map = make_correction_map(crota, time_based_popts[-1][1], ivals)
+        correction_map = make_correction_map(crota, time_based_popts[-1][1], ivals)
     else:
         i = 0
         while not time_based_popts[i][0] <= t <= time_based_popts[i + 1][0]:
@@ -697,10 +704,10 @@ def _desinusoid_one_image(src_image: np.ndarray, crota: float, t: float, ivals: 
         t2 = time_based_popts[i + 1][0]
         map1 = make_correction_map(crota, time_based_popts[i][1], ivals)
         map2 = make_correction_map(crota, time_based_popts[i + 1][1], ivals)
-        map = (t - t1) / (t2 - t1) * (map2 - map1) + map1
+        correction_map = (t - t1) / (t2 - t1) * (map2 - map1) + map1
 
-    map = scipy.ndimage.median_filter(map, 9)
-    interp = RegularGridInterpolator([ivals] * 2, map, bounds_error=False, fill_value=None)
+    correction_map = scipy.ndimage.median_filter(correction_map, 9)
+    interp = RegularGridInterpolator([ivals] * 2, correction_map, bounds_error=False, fill_value=None)
     correction = interp(np.stack(np.mgrid[:src_image.shape[0], :src_image.shape[1]], axis=-1))
     dest[:] = src_image - correction
 

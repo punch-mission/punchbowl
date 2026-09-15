@@ -170,5 +170,6 @@ def subtract_fcorona_models(data_cube, metas, first_helio_frame_background, seco
             second_helio_frame_background,
             metas[i].datetime,
             time_key="DATE-END",
+            and_uncertainty=False,
             allow_extrapolation=True)
         data_cube[i] -= interpolated_model

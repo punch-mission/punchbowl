@@ -129,6 +129,8 @@ def quickpunch_pca_filter(input_files: list[str],
         output_cubes = []
         median_margin = median_window // 2
         for i, path in enumerate(loaded_files[zfilter_margin + median_margin:-median_margin]):
+            if i < zfilter_margin + median_margin or i >= len(loaded_files) - median_margin:
+                continue
             if path in input_files:
                 new_meta = NormalizedMetadata.load_template("QNN", "Q")
                 new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]

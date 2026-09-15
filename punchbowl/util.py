@@ -365,10 +365,12 @@ def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_tim
 
     if before_date == observation_date:
         data_interpolated = data_before.data
-        uncert_interpolated = data_before.uncertainty.array
+        if and_uncertainty:
+            uncert_interpolated = data_before.uncertainty.array
     elif after_date == observation_date:
         data_interpolated = data_after.data
-        uncert_interpolated = data_after.uncertainty.array
+        if and_uncertainty:
+            uncert_interpolated = data_after.uncertainty.array
     else:
         data_interpolated = ((data_after.data - data_before.data)
                               * (observation_date - before_date) / (after_date - before_date)

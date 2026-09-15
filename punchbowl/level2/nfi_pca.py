@@ -150,9 +150,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         new_meta["PCANCOMP"] = n_components
         new_meta["PCADWNSP"] = downsample_factor
-        # TODO: Remove
-        new_meta["FILEVRSN"] = "v0m"
-        #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
+        new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
         pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
 
         output_cubes.append(pca_cube)

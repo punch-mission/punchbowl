@@ -150,6 +150,8 @@ def quickpunch_pca_filter(input_files: list[str],
                 new_meta["CALSL0"] = os.path.basename(instrument_frame_background_path)
                 new_meta["CALFCOR1"] = os.path.basename(first_helio_frame_background_path)
                 new_meta["CALFCOR2"] = os.path.basename(second_helio_frame_background_path)
+                new_meta["CTRXNFI4"] = target_frame.wcs.crpix[1] - 1
+                new_meta["CTRYNFI4"] = target_frame.wcs.crpix[0] - 1
 
                 new_meta.provenance = [os.path.basename(path)]
 

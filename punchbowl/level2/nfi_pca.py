@@ -187,6 +187,8 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
                 new_meta["PCADWNSP"] = downsample_factor
                 new_meta["PCACOMPS"] = get_base_file_name(pca_cube)
                 new_meta["CALSL0"] = get_base_file_name(bg_cube)
+                new_meta["CTRXNFI4"] = target_frame.wcs.crpix[1] - 1
+                new_meta["CTRYNFI4"] = target_frame.wcs.crpix[0] - 1
 
                 new_meta.provenance = [os.path.basename(path)]
 

@@ -21,9 +21,9 @@ def quickpunch_pca_filter(input_files: list[str],
                           context_files: list[str],
                           nfi_mask: str,
                           pca_components_path: str,
-                          instrument_frame_background: str,
-                          first_helio_frame_background: str,
-                          second_helio_frame_background: str,
+                          instrument_frame_background_path: str,
+                          first_helio_frame_background_path: str,
+                          second_helio_frame_background_path: str,
                           median_window: int,
                           zfilter_margin: int,
                           n_workers: int,
@@ -37,11 +37,11 @@ def quickpunch_pca_filter(input_files: list[str],
     pca_components = ShmPickleableNDArray.from_array(pca_components.data)
 
     instrument_frame_background = load_ndcube_from_fits(
-        instrument_frame_background, include_uncertainty=False, include_provenance=False).data
+        instrument_frame_background_path, include_uncertainty=False, include_provenance=False).data
     first_helio_frame_background = load_ndcube_from_fits(
-        first_helio_frame_background, include_uncertainty=False, include_provenance=False)
+        first_helio_frame_background_path, include_uncertainty=False, include_provenance=False)
     second_helio_frame_background = load_ndcube_from_fits(
-        second_helio_frame_background, include_uncertainty=False, include_provenance=False)
+        second_helio_frame_background_path, include_uncertainty=False, include_provenance=False)
 
     numba.set_num_threads(n_workers)
     context = mp.get_context("forkserver")
@@ -147,9 +147,9 @@ def quickpunch_pca_filter(input_files: list[str],
                 new_meta["PCANCOMP"] = n_components
                 new_meta["PCADWNSP"] = downsample_factor
                 new_meta["PCACOMPS"] = os.path.basename(pca_components_path)
-                new_meta["CALSL0"] = os.path.basename(instrument_frame_background)
-                new_meta["CALFCOR1"] = os.path.basename(first_helio_frame_background)
-                new_meta["CALFCOR2"] = os.path.basename(second_helio_frame_background)
+                new_meta["CALSL0"] = os.path.basename(instrument_frame_background_path)
+                new_meta["CALFCOR1"] = os.path.basename(first_helio_frame_background_path)
+                new_meta["CALFCOR2"] = os.path.basename(second_helio_frame_background_path)
 
                 new_meta.provenance = [os.path.basename(path)]
 

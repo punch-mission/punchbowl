@@ -62,12 +62,20 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
 
     logger.info(f"{len(all_ready_files)} files")
 
+    # The DB query gives us files sorted by time. Break them into groups, with group boundaries every time there's a
+    # gap over a set size
     grouped_files = group_files_by_time(all_ready_files, max_seconds_between_images=max_gap_seconds)
 
     logger.info(f"{len(grouped_files)} groups")
 
     files_is_new_cutoff = datetime.now() - timedelta(minutes=15)
 
+    # Now we're gonna split up the groups further. We'll define a "very new" file as anything written to disk in the
+    # last N minutes. If we find a gap of even a single frame that neighbors a very-new file, it's very likely that
+    # the missing file will soon be generated. So we split the groups at those points. We also split groups if they
+    # exceed a set size. In that case, the two groups post-split will overlap. That's because the very beginning and
+    # end of each group don't actually get filtered or written to disk, and the overlap ensures we don't leave
+    # anything unfiltered.
     groups = []
     for group in grouped_files:
         times = np.array([f.date_obs.timestamp() for f in group])
@@ -80,6 +88,8 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
         group_start = 0
         file_under_consideration = 0
         while True:
+            # We're walking through this group, looking for places to split it apart. Remember that the files are
+            # currently sorted by date-obs in *descending* order (newest first)
             file_under_consideration += 1
             if file_under_consideration == len(group):
                 break
@@ -89,7 +99,8 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
                 if file_under_consideration > group_start:
                     stop = file_under_consideration
                     if missing_earlier_neighbor[file_under_consideration]:
-                        # Include the new file that has a missing neighbor
+                        # The new file that has a missing neighbor is on the "near" side of the gap, so include it in
+                        # this group.
                         stop += 1
                     groups.append(group[group_start:stop])
                     logger.info("Splitting group because of potential files being generated")
@@ -99,20 +110,29 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
                         and missing_neighbor[group_start]
                         and group[group_start].date_created is not None
                         and group[group_start].date_created > files_is_new_cutoff):
+                    # Keep walking forward until we find an OK file to start the next group
                     group_start += 1
             elif file_under_consideration - group_start >= batch_size_cap:
                 logger.info("Splitting group because of size")
                 groups.append(group[group_start:file_under_consideration])
+                # Build in that overlap
                 group_start = file_under_consideration - median_margin - zfilter_margin
 
         groups.append(group[group_start:])
+
+    # Our groups are now in oldest-dateobs-first order
     groups = [group[::-1] for group in groups]
 
     logger.info(f"{len(groups)} groups after splitting")
 
+    # Now we do a final round of filtering
     final_selection = []
     files_set_to_be_filtered = set()
     for group in groups:
+        # If there are any already-filtered files that fall within the time range this group spans, let's include
+        # them as "context files" that won't produce output files, but do allow more continuity in the temporal
+        # filtering. Let's also grab any already-filtered files on either end of the time range, to account for the
+        # bit at the beginning and end that can't be temporally-filtered and written out.
         ids = {f.file_id for f in group}
         dateobses = [f.date_obs for f in group]
         dstart = min(dateobses)

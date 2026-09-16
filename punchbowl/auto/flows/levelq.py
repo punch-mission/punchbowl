@@ -29,7 +29,8 @@ from punchbowl.util import average_datetime
 @task(cache_policy=NO_CACHE)
 def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
     logger = get_logger()
-    pending_flows = session.query(Flow).filter(Flow.flow_type == "levelq_QNN").filter(Flow.state == "planned").all()
+    pending_flows = session.query(Flow).filter(Flow.flow_type == "levelq_QNN").filter(
+        Flow.state.in_(["planned", "launched", "running"])).all()
     if pending_flows:
         logger.info("A pending flow already exists. Skipping scheduling.")
         return []

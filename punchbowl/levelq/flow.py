@@ -36,6 +36,7 @@ def levelq_QNN_core_flow(input_files: list[str],
                           second_helio_frame_background: str,
                           median_window: int,
                           zfilter_margin: int,
+                          zfilter_index: float,
                           n_workers: int,
                           n_loaders: int) -> list[PUNCHCube]:
     """
@@ -58,9 +59,13 @@ def levelq_QNN_core_flow(input_files: list[str],
         The QNN data cubes
 
     """
-    return quickpunch_pca_filter(input_files, context_files, nfi_mask, pca_components, instrument_frame_background,
-                                 first_helio_frame_background, second_helio_frame_background,
-                                 median_window, zfilter_margin, n_workers, n_loaders)
+    return quickpunch_pca_filter(input_files=input_files, context_files=context_files, nfi_mask=nfi_mask,
+                                 pca_components_path=pca_components,
+                                 instrument_frame_background_path=instrument_frame_background,
+                                 first_helio_frame_background_path=first_helio_frame_background,
+                                 second_helio_frame_background_path=second_helio_frame_background,
+                                 median_window=median_window, zfilter_margin=zfilter_margin, zfilter_index=zfilter_index,
+                                 n_workers=n_workers, n_loaders=n_loaders)
 
 
 @punch_flow

@@ -212,6 +212,7 @@ def levelq_QNN_construct_flow_info(level1_files: list[File], levelq_file: File, 
             "pca_components": level1_files[0]._pca_components,
             "median_window": int(pipeline_config["flows"][flow_type]["median_window"]),
             "zfilter_margin": int(pipeline_config["flows"][flow_type]["zfilter_margin"]),
+            "zfilter_index": int(pipeline_config["flows"][flow_type]["zfilter_index"]),
         },
     )
     return Flow(

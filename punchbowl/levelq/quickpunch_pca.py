@@ -26,6 +26,7 @@ def quickpunch_pca_filter(input_files: list[str],
                           second_helio_frame_background_path: str,
                           median_window: int,
                           zfilter_margin: int,
+                          zfilter_index: float,
                           n_workers: int,
                           n_loaders: int) -> list[PUNCHCube]:
     logger = get_logger()
@@ -122,7 +123,7 @@ def quickpunch_pca_filter(input_files: list[str],
         vmax = 6e-13
         value_masks = (oriented_images > vmin / 10) * (oriented_images < vmax * 10)
         output_array = ShmPickleableNDArray.empty_like(filtered_images)
-        stack_images(filtered_images, value_masks, z_filter_index=0.5, out_array=output_array)
+        stack_images(filtered_images, value_masks, z_filter_index=zfilter_index, out_array=output_array)
 
         logger.info("Temporal filtering complete")
 

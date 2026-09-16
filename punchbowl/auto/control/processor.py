@@ -136,7 +136,7 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
                     filename = write_file(result, file_db_entry, pipeline_config)
                     logger.info(f"Wrote {file_db_entry.file_id} to {filename}")
 
-            if write_in_parallel:
+            if write_in_parallel and files_to_write:
                 context = multiprocessing.get_context("forkserver")
                 n_workers = pipeline_config.get('parallel_workers', 4)
                 with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:

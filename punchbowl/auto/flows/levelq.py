@@ -18,7 +18,7 @@ from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time, load_pipeline_configuration
-from punchbowl.auto.flows.level1 import get_mask_file, get_two_closest_stray_light
+from punchbowl.auto.flows.level1 import get_mask_file
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
 from punchbowl.level3.f_corona_model import construct_f_corona_model
 from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow, levelq_QAM_core_flow, levelq_QNN_core_flow
@@ -112,16 +112,15 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
 
     final_selection = []
     for group in groups:
-        if len(group) < median_window + zfilter_margin:
-            logger.info("Rejecting too-small group")
-            continue
         ids = {f.file_id for f in group}
         dateobses = [f.date_obs for f in group]
         dstart = min(dateobses)
         dend = max(dateobses)
         sequence_wobble = 10
-        margin_before = timedelta(seconds=median_margin + zfilter_margin + sequence_wobble)
-        margin_after = timedelta(seconds=median_margin + sequence_wobble)
+        cadence = 8 * 60
+        allowed_gaps = 2
+        margin_before = timedelta(seconds=cadence * (allowed_gaps + median_margin + zfilter_margin) + sequence_wobble)
+        margin_after = timedelta(seconds=cadence * (allowed_gaps + median_margin) + sequence_wobble)
         extra_files = (session.query(File)
                               .filter(File.level == "1")
                               .filter(File.observatory == "4")
@@ -137,6 +136,21 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
                 file._to_filter = False
                 group.append(file)
                 n_context += 1
+
+        group.sort(key=lambda f: f.date_obs)
+        for i, file in enumerate(group):
+            if i < zfilter_margin + median_margin or i >= len(group) - median_margin:
+                # This ensures we don't generate expected output files for these inputs we can't filter, allowing them
+                # to be filtered later in another group
+                file._to_filter = False
+
+        if not [f for f in group if f._to_filter]:
+            logger.info("Rejecting group with no filterable files")
+            continue
+
+        if len(group) < median_window + zfilter_margin:
+            logger.info("Rejecting too-small group")
+            continue
 
         sl_model = get_closest_stray_light(session, group[0])
         if sl_model is None:

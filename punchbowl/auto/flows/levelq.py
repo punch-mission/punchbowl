@@ -111,6 +111,7 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
     logger.info(f"{len(groups)} groups after splitting")
 
     final_selection = []
+    files_set_to_be_filtered = set()
     for group in groups:
         ids = {f.file_id for f in group}
         dateobses = [f.date_obs for f in group]
@@ -152,6 +153,10 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
             logger.info("Rejecting too-small group")
             continue
 
+        if len(set(f.file_id for f in group if f._to_filter) & files_set_to_be_filtered):
+            logger.info("Rejecting group for overlap with already-selected group")
+            continue
+
         sl_model = get_closest_stray_light(session, group[0])
         if sl_model is None:
             logger.info("Rejecting group w/o SL model")
@@ -176,6 +181,7 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
             file._pca_components = pca_components
 
         final_selection.append(group)
+        files_set_to_be_filtered.update([f.file_id for f in group if f._to_filter])
         logger.info(f"Scheduling a group of {len(group)} images (including {n_context} for context)")
         if len(final_selection) >= n_batches_to_schedule:
             break

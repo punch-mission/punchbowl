@@ -129,7 +129,7 @@ def quickpunch_pca_filter(input_files: list[str],
 
         output_cubes = []
         median_margin = median_window // 2
-        for i, path in enumerate(loaded_files[zfilter_margin + median_margin:-median_margin]):
+        for i, path in enumerate(loaded_files):
             if i < zfilter_margin + median_margin or i >= len(loaded_files) - median_margin:
                 continue
             if path in input_files:

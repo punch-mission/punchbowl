@@ -23,7 +23,14 @@ from punchbowl.data.meta import check_moon_in_fov
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.dynamic_stray_light import phase_in_day
 from punchbowl.prefect import get_logger, punch_task
-from punchbowl.util import ShmPickleableNDArray, limit_threads, load_mask_file, nan_percentile, nan_percentile_2d
+from punchbowl.util import (
+    ShmPickleableNDArray,
+    limit_threads,
+    load_mask_file,
+    make_circular_mask,
+    nan_percentile,
+    nan_percentile_2d,
+)
 
 
 @punch_task
@@ -136,7 +143,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
 
         logger.info("Sinusoidal trends removed")
 
-        circular_mask = make_circular_mask(corrected_frames.shape[1:])
+        circular_mask = make_edge_mask(corrected_frames.shape[1:])
         corrected_frames *= circular_mask[None, :, :]
 
         output_cubes = []
@@ -351,7 +358,7 @@ def fill_problem_regions(x_cube: np.ndarray, metas: list[NormalizedMetadata], cw
     return x_cube_filled, plot_masks
 
 
-def find_outliers_with_PCA(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, n_workers: int
+def find_outliers_with_PCA(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, n_workers: int,
                            ) -> np.ndarray:
     data = x_cube_filled[:, nfi_mask]
     data = data[good_mask]
@@ -477,7 +484,7 @@ def _do_PCA_filtering_one_stride(this_set_number: int, n_sets: int, x_cube_fille
 
 
 def subtract_models_from_data(x_cube: np.ndarray, x_cube_ds_filled: np.ndarray, dsl_models: np.ndarray,
-                              downsample_factor: int, process_pool: ProcessPoolExecutor
+                              downsample_factor: int, process_pool: ProcessPoolExecutor,
                               ) -> tuple[np.ndarray, np.ndarray]:
     filtered_images = ShmPickleableNDArray.empty_like(x_cube)
     filtered_filled_images = ShmPickleableNDArray.empty_like(x_cube_ds_filled)
@@ -741,11 +748,7 @@ def do_sinusoid_filtering(oriented_images: np.ndarray, metas: list[NormalizedMet
     return corrected_frames
 
 
-def make_circular_mask(shape):
-    yy, xx = np.mgrid[:shape[0], :shape[1]]
-    xx = xx - shape[1] / 2 + 0.5
-    yy = yy - shape[0] / 2 + 0.5
-    r = np.sqrt(xx ** 2 + yy ** 2)
-    inner_mask = r > 200
-    outer_mask = r < 960
+def make_edge_mask(shape):
+    inner_mask = ~make_circular_mask(shape, 200)
+    outer_mask = make_circular_mask(shape, 960)
     return inner_mask * outer_mask

@@ -123,7 +123,7 @@ def quickpunch_pca_filter(input_files: list[str],
 
         logger.info('"F corona" models subtracted')
 
-        circular_mask = nfi_pca.make_circular_mask(oriented_images.shape[1:])
+        circular_mask = nfi_pca.make_edge_mask(oriented_images.shape[1:])
         oriented_images *= circular_mask[None, :, :]
 
         filtered_images = nan_percentile_window(oriented_images, percentile=50, window_size=median_window)

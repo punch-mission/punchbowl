@@ -1304,32 +1304,33 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
     for count, reason in reasons:
         logger.info(f"Skipped {count} images for reason {reason}")
 
-    # Split into multiple files and append updates instead of making a new file each time
-    # We label not with the spacecraft telemetry ID but with the spelled out name
-    all_replays = pd.DataFrame(replay_needs)
-    for df_spacecraft in all_replays.spacecraft.unique():
-        date_str = datetime.now(UTC).strftime("%Y_%j")
-        spacecraft_secrets = SpacecraftMapping.load("spacecraft-ids").mapping.get_secret_value()
-        try:
-            moc_index = spacecraft_secrets["moc"].index(df_spacecraft)
-            soc_spacecraft_id = spacecraft_secrets["soc"][moc_index]
-        except:  # noqa: E722
-            # we cannot find the spacecraft id and need to use an unknown indicator
-            soc_spacecraft_id = 0
-        file_spacecraft_id = {0: "UNKN", 1: "WFI01", 2: "WFI02", 3: "WFI03", 4: "NFI00"}[soc_spacecraft_id]
-        df_path = os.path.join(pipeline_config["root"],
-                               "REPLAY",
-                               f"PUNCH_{file_spacecraft_id}_REPLAY_{date_str}.csv")
-        new_entries = all_replays[all_replays.spacecraft == df_spacecraft]
-        new_entries = new_entries.drop(columns=["spacecraft"])
-        if os.path.exists(df_path):
-            existing_table = pd.read_csv(df_path)
-            new_table = pd.concat([existing_table, new_entries], ignore_index=True)
-            new_table = new_table.drop_duplicates()
-        else:
-            new_table = new_entries
-        os.makedirs(os.path.dirname(df_path), exist_ok=True)
-        new_table.to_csv(df_path, index=False)
+    if replay_needs:
+        # Split into multiple files and append updates instead of making a new file each time
+        # We label not with the spacecraft telemetry ID but with the spelled out name
+        all_replays = pd.DataFrame(replay_needs)
+        for df_spacecraft in all_replays.spacecraft.unique():
+            date_str = datetime.now(UTC).strftime("%Y_%j")
+            spacecraft_secrets = SpacecraftMapping.load("spacecraft-ids").mapping.get_secret_value()
+            try:
+                moc_index = spacecraft_secrets["moc"].index(df_spacecraft)
+                soc_spacecraft_id = spacecraft_secrets["soc"][moc_index]
+            except:  # noqa: E722
+                # we cannot find the spacecraft id and need to use an unknown indicator
+                soc_spacecraft_id = 0
+            file_spacecraft_id = {0: "UNKN", 1: "WFI01", 2: "WFI02", 3: "WFI03", 4: "NFI00"}[soc_spacecraft_id]
+            df_path = os.path.join(pipeline_config["root"],
+                                   "REPLAY",
+                                   f"PUNCH_{file_spacecraft_id}_REPLAY_{date_str}.csv")
+            new_entries = all_replays[all_replays.spacecraft == df_spacecraft]
+            new_entries = new_entries.drop(columns=["spacecraft"])
+            if os.path.exists(df_path):
+                existing_table = pd.read_csv(df_path)
+                new_table = pd.concat([existing_table, new_entries], ignore_index=True)
+                new_table = new_table.drop_duplicates()
+            else:
+                new_table = new_entries
+            os.makedirs(os.path.dirname(df_path), exist_ok=True)
+            new_table.to_csv(df_path, index=False)
     session.close()
 
 @flow(log_prints=True)

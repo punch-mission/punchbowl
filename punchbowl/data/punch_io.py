@@ -338,7 +338,7 @@ def write_ndcube_to_fits(cube: PUNCHCube,
                                             quantize_method=2)
         hdul.insert(2, hdu_uncertainty)
     hdul.append(hdu_provenance)
-    
+
     if write_hash:
         buffer = io.BytesIO()
         # Write the FITS file to an in-memory buffer

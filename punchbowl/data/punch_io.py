@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import os
 import string
 import hashlib
@@ -38,12 +39,13 @@ _ROOT = os.path.abspath(os.path.dirname(__file__))
 CALIBRATION_ANNOTATION = "{OBSRVTRY} - {TYPECODE}{OBSCODE} - {DATE-OBS} - exptime: {EXPTIME} s - polarizer: {POLAR} deg"
 
 
-def write_file_hash(path: str) -> None:
+def write_file_hash(path: str, data: bytes | None = None) -> None:
     """Create a SHA-256 hash for a file."""
     file_hash = hashlib.sha256()
-    with open(path, "rb") as f:
-        fb = f.read()
-        file_hash.update(fb)
+    if data is None:
+        with open(path, "rb") as f:
+            data = f.read()
+    file_hash.update(data)
 
     with open(path + ".sha256", "w") as f:
         f.write(file_hash.hexdigest())
@@ -336,10 +338,20 @@ def write_ndcube_to_fits(cube: PUNCHCube,
                                             quantize_method=2)
         hdul.insert(2, hdu_uncertainty)
     hdul.append(hdu_provenance)
-    hdul.writeto(filename, overwrite=overwrite, checksum=True)
-    hdul.close()
+
     if write_hash:
-        write_file_hash(filename)
+        buffer = io.BytesIO()
+        # Write the FITS file to an in-memory buffer
+        hdul.writeto(buffer, overwrite=overwrite, checksum=True)
+        hdul.close()
+        # Generate a hash using the data in the buffer
+        write_file_hash(filename, buffer.getbuffer())
+        with open(filename, "wb") as f:
+            # Now write the buffered data to disk
+            f.write(buffer.getbuffer())
+    else:
+        hdul.writeto(filename, overwrite=overwrite, checksum=True)
+        hdul.close()
 
 
 def _make_provenance_hdu(filenames: list[str]) -> fits.BinTableHDU:

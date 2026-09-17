@@ -130,9 +130,9 @@ def quickpunch_pca_filter(input_files: list[str],
 
         vmin = 3e-15
         vmax = 6e-13
-        value_masks = (oriented_images > vmin / 10) * (oriented_images < vmax * 10)
+        non_outlier_pixels = (filtered_images > vmin / 10) * (filtered_images < vmax * 10)
         output_array = ShmPickleableNDArray.empty_like(filtered_images)
-        stack_images(filtered_images, value_masks, z_filter_index=zfilter_index, out_array=output_array)
+        stack_images(filtered_images, non_outlier_pixels, z_filter_index=zfilter_index, out_array=output_array)
 
         logger.info("Temporal filtering complete")
 

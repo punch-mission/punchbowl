@@ -70,12 +70,21 @@ def quickpunch_pca_filter(input_files: list[str],
             x_cube_downsampled, metas, cwcses, sat_mask_cube, nfi_mask_ds, downsample_factor, process_pool)
 
         x_cube_downsampled.free()
-        del x_cube_downsampled
+        sat_mask_cube.free()
+        del x_cube_downsampled, sat_mask_cube
 
         logger.info("Problem regions filled")
 
         good_mask = nfi_pca.find_outliers_with_PCA(x_cube_ds_filled, np.ones(len(x_cube), dtype=bool), nfi_mask_ds,
                                                    n_workers)
+        x_cube = ShmPickleableNDArray.from_array(x_cube[good_mask])
+        x_cube_ds_filled = ShmPickleableNDArray.from_array(x_cube_ds_filled[good_mask])
+        plot_masks = ShmPickleableNDArray.from_array(plot_masks[good_mask])
+        phases = phases[good_mask]
+        metas = [m for m, g in zip(metas, good_mask) if g]
+        wcses = [m for m, g in zip(wcses, good_mask) if g]
+        cwcses = [m for m, g in zip(cwcses, good_mask) if g]
+        loaded_files = [m for m, g in zip(loaded_files, good_mask) if g]
 
         dsl_models = nfi_pca.build_models_with_existing_components(
             x_cube_ds_filled, nfi_mask_ds, pca_components, phases, process_pool)
@@ -146,7 +155,7 @@ def quickpunch_pca_filter(input_files: list[str],
                 new_meta["MOONDIST"] = moondist[0]
                 new_meta["MOON_X"] = xpix[0]
                 new_meta["MOON_Y"] = ypix[0]
-                new_meta["OUTLIER"] = not good_mask[i] or metas[i]["OUTLIER"].value
+                new_meta["OUTLIER"] = metas[i]["OUTLIER"].value
                 new_meta["PCANCOMP"] = n_components
                 new_meta["PCADWNSP"] = downsample_factor
                 new_meta["PCACOMPS"] = os.path.basename(pca_components_path)

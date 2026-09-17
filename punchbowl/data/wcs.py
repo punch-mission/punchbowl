@@ -356,14 +356,29 @@ def compute_hp_to_eq_rotation_angle(wcs_helio: WCS, date_obs: str | Time | None=
     return -angle_between_vectors(northward_in_new_frame_proj, rotated_proj, axis_rotated).to(u.deg)
 
 
-def load_trefoil_wcs() -> tuple[astropy.wcs.WCS, tuple[int, int]]:
-    """Load Level 2 trefoil world coordinate system and shape."""
+def load_trefoil_wcs(is_nfi: bool = False) -> tuple[astropy.wcs.WCS, tuple[int, int]]:
+    """
+    Load Level 2 trefoil world coordinate system and shape.
+
+    Parameters
+    ----------
+    is_nfi : bool
+        Indicates whether the WCS should be for a full-res NFI product.
+
+    Returns
+    -------
+    WCS
+        The mosaic WCS
+    tuple
+        The array shape of the frame
+
+    """
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", ".*The WCS transformation has more axes \\(2\\) than the image it is "
                                           "associated with \\(0\\).*", FITSFixedWarning)
         trefoil_wcs = WCS(os.path.join(_ROOT, "data", "trefoil_wcs.fits"))
     trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"  # TODO: figure out why this is necessary, seems like a bug
-    trefoil_shape = (4096, 4096)
+    trefoil_shape = (2048, 2048) if is_nfi else (4096, 4096)
 
     trefoil_wcs.array_shape = trefoil_shape
 

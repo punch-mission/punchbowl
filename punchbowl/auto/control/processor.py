@@ -138,7 +138,7 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
 
             if write_in_parallel and files_to_write:
                 context = multiprocessing.get_context("forkserver")
-                n_workers = pipeline_config.get('parallel_workers', 4)
+                n_workers = pipeline_config.get('parallel_writers', 4)
                 with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
                     results, db_entries, configs = zip(*files_to_write)
                     for i, (filename, file_db_entry) in enumerate(

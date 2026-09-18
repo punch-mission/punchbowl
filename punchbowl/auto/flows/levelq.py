@@ -129,6 +129,8 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
     final_selection = []
     files_set_to_be_filtered = set()
     for group in groups:
+        if not group:
+            continue
         # If there are any already-filtered files that fall within the time range this group spans, let's include
         # them as "context files" that won't produce output files, but do allow more continuity in the temporal
         # filtering. Let's also grab any already-filtered files on either end of the time range, to account for the

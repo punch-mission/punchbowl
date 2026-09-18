@@ -304,3 +304,13 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M
+
+    XR?:
+        kinds: [Unpolarized]
+        overrides:
+            TITLE: PUNCH Level-3 {craftname} Clear Image, Intermediary
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: XR

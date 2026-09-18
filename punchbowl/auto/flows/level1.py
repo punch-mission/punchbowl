@@ -1071,6 +1071,7 @@ def level1_quick_query_ready_files(session, pipeline_config: dict, reference_tim
     ready = (session.query(File)
              .filter(File.file_type.in_(SCIENCE_LEVEL1_QUICK_INPUT_TYPE_CODES))
              .filter(File.level == "1")
+             .filter(File.observatory != "4")
              .filter(File.state.in_(["created", "progressed"]))
              .filter(File.date_obs >= no_earlier_than)
              .filter(~child_exists_subquery)

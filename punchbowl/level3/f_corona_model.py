@@ -258,7 +258,8 @@ def subtract_f_corona_background_task(observation: PUNCHCube,  #noqa: C901
     for model in before_f_background_models:
         if model.meta["OBSCODE"].value != observation.meta["OBSCODE"].value:
             continue
-        if observation.meta["TYPECODE"].value[1] == "R" and model.meta["TYPECODE"].value[0] == "C":
+        if ((observation.meta["TYPECODE"].value[1] == "R" or observation.meta["TYPECODE"].value[0] == "C") and
+                model.meta["TYPECODE"].value[0] == "C"):
             before_model = model
             break
         if observation.meta["TYPECODE"].value[1] == "P" and model.meta["TYPECODE"].value[0] == "P":
@@ -273,7 +274,8 @@ def subtract_f_corona_background_task(observation: PUNCHCube,  #noqa: C901
     for model in after_f_background_models:
         if model.meta["OBSCODE"].value != observation.meta["OBSCODE"].value:
             continue
-        if observation.meta["TYPECODE"].value[1] == "R" and model.meta["TYPECODE"].value[0] == "C":
+        if ((observation.meta["TYPECODE"].value[1] == "R" or observation.meta["TYPECODE"].value[0] == "C") and
+                model.meta["TYPECODE"].value[0] == "C"):
             after_model = model
             break
         if observation.meta["TYPECODE"].value[1] == "P" and model.meta["TYPECODE"].value[0] == "P":

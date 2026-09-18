@@ -1,0 +1,1 @@
+Undo all code disablements of NFI, to now put NFI back into the mosaics.

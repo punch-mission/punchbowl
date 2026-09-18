@@ -291,8 +291,7 @@ def level3_CIM_PIM_query_ready_files(session, pipeline_config: dict, reference_t
     target_type = 'XP' if polarized else 'XR'
     all_ready_files = (session.query(File).filter(File.state == "created")
                        .filter(File.level == "2")
-                       # TODO: This line temporarily excludes NFI
-                       .filter(File.observatory.in_(["1", "2", "3"]))
+                       .filter(File.observatory.in_(["1", "2", "3", "4"]))
                        .filter(File.file_type == target_type)
                        # The ascending sort order is expected by the file grouping code
                        .order_by(File.date_obs.asc()).all())

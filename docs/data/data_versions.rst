@@ -36,7 +36,7 @@ Version 0m
 - Metadata fixes
   
   - Fixed outlier flagging for L2+ products. (https://github.com/punch-mission/punchbowl/pull/1141)
-  - Fixed DSATVAL calculation error so that saturated pixels get flagged properly. (https://github.com/punch-mission/punchbowl/pull/1153)
+  - Fixed DSATVAL calculation error so that saturated pixels get flagged properly (particularly for NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
   - For science images, use the timestamp of the image to set to polarization state of the image. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. The PFWSTAT header value now reads -1 if the PFW packet is stale (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
 
 - Starfield processing improvements

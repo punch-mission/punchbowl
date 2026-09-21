@@ -339,19 +339,17 @@ def write_ndcube_to_fits(cube: PUNCHCube,
         hdul.insert(2, hdu_uncertainty)
     hdul.append(hdu_provenance)
 
+    # We write the FITS file to an in-memory buffer, which then gets written to disk. Test show that over NFS this
+    # halves the write-out time.
+    buffer = io.BytesIO()
+    hdul.writeto(buffer, overwrite=overwrite, checksum=True)
+    hdul.close()
     if write_hash:
-        buffer = io.BytesIO()
-        # Write the FITS file to an in-memory buffer
-        hdul.writeto(buffer, overwrite=overwrite, checksum=True)
-        hdul.close()
         # Generate a hash using the data in the buffer
         write_file_hash(filename, buffer.getbuffer())
-        with open(filename, "wb") as f:
-            # Now write the buffered data to disk
-            f.write(buffer.getbuffer())
-    else:
-        hdul.writeto(filename, overwrite=overwrite, checksum=True)
-        hdul.close()
+    with open(filename, "wb") as f:
+         # Now write the buffered data to disk
+         f.write(buffer.getbuffer())
 
 
 def _make_provenance_hdu(filenames: list[str]) -> fits.BinTableHDU:

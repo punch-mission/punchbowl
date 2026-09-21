@@ -42,8 +42,8 @@ def visualize_query_ready_files(session: Session,
     all_product_codes = []
     all_tasks = []
 
-    code_mapping = {"3": ["CA", "PA", "CT", "PT"],
-                    "Q": ["QA", "QN"]}
+    code_mapping = {"3": ["CAM", "PAM", "CTM", "PTM"],
+                    "Q": ["QAM", "QNN"]}
 
     expected_files = pipeline_config["flows"]["quicklook"]["expected_files"]
 
@@ -126,7 +126,7 @@ def visualize_flow_info(input_files: list[File],
     state = "planned"
 
     creation_time = datetime.now()
-    out_path = creation_time.strftime("%Y/%m/%d")
+    out_path = os.path.join(str(task_item["level"]), task_item["code"], task_item["day"].strftime("%Y/%m/%d"))
 
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
     call_data = json.dumps(
@@ -138,7 +138,7 @@ def visualize_flow_info(input_files: list[File],
             "code": task_item["code"],
             "make_image": task_item["make_image"],
             "make_movie": task_item["make_movie"],
-            "output_movie_dir": os.path.join("movies", out_path),
+            "output_movie_dir": out_path,
             "framerate": framerate,
             "resolution": resolution,
             "ffmpeg_cmd": pipeline_config["flows"]["movie"]["options"].get("ffmpeg_cmd", "ffmpeg"),

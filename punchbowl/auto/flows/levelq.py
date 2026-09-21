@@ -148,6 +148,7 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
                               .filter(File.level == "1")
                               .filter(File.observatory == "4")
                               .filter(File.file_type == "XR")
+                              .filter(File.state.in_(["created", "progressed"]))
                               .filter(~File.bad_packets)
                               .filter(File.date_obs > dstart - margin_before)
                               .filter(File.date_obs < dend + margin_after).all())

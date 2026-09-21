@@ -53,7 +53,7 @@ def visualize_query_ready_files(session: Session,
     day = reference_time.replace(hour=0, minute=0, second=0, microsecond=0)
 
     # Starting at the reference time, step backwards in time to query files ready for quicklook
-    while (day >= day_zero) and (len(all_tasks < flows_max)):
+    while (day >= day_zero) and (len(all_tasks) < flows_max):
         day = day - timedelta(days=1)
         for level, codes in code_mapping.items():
             for product_code in codes:

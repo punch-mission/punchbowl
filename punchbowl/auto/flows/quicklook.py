@@ -47,11 +47,12 @@ def visualize_query_ready_files(session: Session,
 
     expected_files = pipeline_config["flows"]["quicklook"]["expected_files"]
 
-    day = datetime.fromisoformat(pipeline_config["flows"]["quicklook"]["start_time"])
-    reference_time = reference_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_zero = datetime.fromisoformat(pipeline_config["flows"]["quicklook"]["start_time"])
+    day = reference_time.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    while day <= reference_time:
-        day = day + timedelta(days=1)
+    # Starting at the reference time, step backwards in time to query files ready for quicklook
+    while day >= day_zero:
+        day = day - timedelta(days=1)
         for level, codes in code_mapping.items():
             for product_code in codes:
                 quicklook_results = (session.query(Quicklook)

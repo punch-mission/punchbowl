@@ -301,6 +301,7 @@ def levelq_QNN_scheduler_flow(pipeline_config_path=None, session=None, reference
         levelq_QNN_construct_file_info,
         levelq_QNN_construct_flow_info,
         pipeline_config_path,
+        update_input_file_state=False,
         reference_time=reference_time,
         session=session,
         relationship_generator=levelq_QNN_relationship_generator,

@@ -6,6 +6,7 @@ from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from prefect.runtime import flow_run
+from sqlalchemy.orm import Session
 
 from punchbowl.auto.control.db import File, Flow, Quicklook
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration, load_quicklook_scaling
@@ -16,9 +17,25 @@ from punchbowl.prefect import get_logger
 
 
 @task(cache_policy=NO_CACHE)
-def visualize_query_ready_files(session,
+def visualize_query_ready_files(session: Session,
                                 pipeline_config: dict,
-                                reference_time: datetime) -> tuple[list, list]:
+                                reference_time: datetime) -> tuple[list, list, list]:
+    """Queries files ready for visualization.
+
+    Parameters
+    ----------
+    session : Session
+        Database session
+    pipeline_config : dict
+        Pipeline configuration parameters
+    reference_time : datetime
+        Reference time up to which to create quicklook files
+
+    Returns
+    -------
+    tuple[list, list, list]
+        Lists of ready files, product codes, and all ready tasks
+    """
     logger = get_logger()
 
     all_ready_files = []
@@ -79,7 +96,29 @@ def visualize_flow_info(input_files: list[File],
                         task_item: dict,
                         framerate: int = 10,
                         resolution: int = 1024,
-                        ):
+                        ) -> Flow:
+    """Constructs visualization flow.
+
+    Parameters
+    ----------
+    input_files : list[File]
+        List of input files
+    product_code : str
+        Data product code
+    pipeline_config : dict
+        Pipeline configuration parameters
+    task_item : dict
+        Task descriptive dictionary
+    framerate : int, optional
+        Output movie framerate, by default 10
+    resolution : int, optional
+        Output quicklook movie resolution, by default 1024
+
+    Returns
+    -------
+    Flow
+        Scheduled flow
+    """
     flow_type = "movie"
     state = "planned"
 
@@ -117,7 +156,22 @@ def quicklook_scheduler_flow(pipeline_config_path=None,
                              session=None,
                              reference_time: datetime | None = None,
                              framerate: int = 10,
-                             resolution: int = 1024):
+                             resolution: int = 1024) -> None:
+    """Schedules quicklook flow.
+
+    Parameters
+    ----------
+    pipeline_config_path : _type_, optional
+        Path to pipeline configuration parameters, by default None
+    session : _type_, optional
+        Database session, by default None
+    reference_time : datetime | None, optional
+        Reference time up to which to create quicklook files, by default None
+    framerate : int, optional
+        Output movie framerate, by default 10
+    resolution : int, optional
+        Output quicklook movie resolution, by default 1024
+    """
     if session is None:
         session = get_database_session()
 
@@ -136,7 +190,14 @@ def quicklook_scheduler_flow(pipeline_config_path=None,
 
     session.commit()
 
-def generate_flow_run_name():
+def generate_flow_run_name() -> str:
+    """Generates a flow name.
+
+    Returns
+    -------
+    str
+        Quicklook flow name
+    """
     parameters = flow_run.parameters
     code = parameters["product_code"]
     files = parameters["file_list"]
@@ -149,6 +210,21 @@ def quicklook_core_flow(file_list: list,
                         make_image: bool,
                         make_movie: bool,
                         framerate: int = 10) -> None:
+    """Performs primary quicklook file generation.
+
+    Parameters
+    ----------
+    file_list : list
+        List of input files
+    output_movie_dir : str
+        Path to output quicklook movie
+    make_image : bool
+        Toggle to create quicklook image
+    make_movie : bool
+        Toggle to create quicklook movie
+    framerate : int, optional
+        Output movie framerate, by default 10
+    """
     cube = load_ndcube_from_fits(file_list[0])
     vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
 
@@ -164,7 +240,18 @@ def quicklook_core_flow(file_list: list,
 
 
 @flow
-def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None):
+def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None) -> None:
+    """Loads flow parameters and calls core flow.
+
+    Parameters
+    ----------
+    flow_id : int
+        Flow ID number
+    pipeline_config_path : _type_, optional
+        Path to pipeline configuration parameters, by default None
+    session : _type_, optional
+        Database session, by default None
+    """
     if session is None:
         session = get_database_session()
     pipeline_config = load_pipeline_configuration(pipeline_config_path)

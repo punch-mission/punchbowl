@@ -291,7 +291,7 @@ def load_files(files: list[str], n_workers: int, downsample_factor: int,
     return x_cube, metas, wcses, cwcses, loaded_files, sat_mask_cube
 
 
-def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarray, # noqa: C901
+def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarray,
                     meta: NormalizedMetadata, wcs: WCS, sat_mask: np.ndarray,
                     nfi_mask: np.ndarray, downsample_factor: int) -> None:
     numba.set_num_threads(2)
@@ -318,14 +318,6 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
                     w = int(round(9 * 2 / downsample_factor))
                 else:
                     w = int(round(30 * 2 / downsample_factor))
-                    if not np.any(nfi_mask[y - w:y + w + 1, x - w:x + w + 1]):
-                        thresh = np.mean(src_data[y - w:y + w + 1, x - w:x + w + 1])
-                        while (np.all(src_data[y - w, x - w:x + w + 1] < thresh)
-                               and np.all(src_data[y + w, x - w:x + w + 1] < thresh)
-                               and np.all(src_data[y - w:y + w + 1, x - w] < thresh)
-                               and np.all(src_data[y - w:y + w + 1, x + w] < thresh)):
-                            w -= 1
-                        w += 1
                 fill_mask[y - w:y + w + 1, x - w:x + w + 1] = 1
 
     sat_idxs = np.nonzero(sat_mask)

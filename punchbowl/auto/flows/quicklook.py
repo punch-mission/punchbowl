@@ -162,9 +162,9 @@ def quicklook_scheduler_flow(pipeline_config_path=None,
 
     Parameters
     ----------
-    pipeline_config_path : _type_, optional
+    pipeline_config_path : str, optional
         Path to pipeline configuration parameters, by default None
-    session : _type_, optional
+    session : Session, optional
         Database session, by default None
     reference_time : datetime | None, optional
         Reference time up to which to create quicklook files, by default None
@@ -248,9 +248,9 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
     ----------
     flow_id : int
         Flow ID number
-    pipeline_config_path : _type_, optional
+    pipeline_config_path : str, optional
         Path to pipeline configuration parameters, by default None
-    session : _type_, optional
+    session : Session, optional
         Database session, by default None
     """
     if session is None:

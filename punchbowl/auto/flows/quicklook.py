@@ -47,11 +47,13 @@ def visualize_query_ready_files(session: Session,
 
     expected_files = pipeline_config["flows"]["quicklook"]["expected_files"]
 
+    flows_max = pipeline_config["flows"]["quicklook"]["flows_days"]
+
     day_zero = datetime.fromisoformat(pipeline_config["flows"]["quicklook"]["start_time"])
     day = reference_time.replace(hour=0, minute=0, second=0, microsecond=0)
 
     # Starting at the reference time, step backwards in time to query files ready for quicklook
-    while day >= day_zero:
+    while (day >= day_zero) and (len(all_tasks < flows_max)):
         day = day - timedelta(days=1)
         for level, codes in code_mapping.items():
             for product_code in codes:

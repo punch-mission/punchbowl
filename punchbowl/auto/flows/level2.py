@@ -416,7 +416,7 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
                                 .filter(File.observatory == "4")
                                 .filter(File.file_type == "XR")
                                 .filter(~File.bad_packets)
-                                .filter(dt < 60*60*24*window_size_days / 2)
+                                .filter(dt < 60*60*24*window_size_days)
                                 .order_by(dt.asc())
                                 .limit(n_needed).all())
         for f in group:

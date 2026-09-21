@@ -278,15 +278,11 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
     day = datetime.fromisoformat(flow_call_data.pop("day"))
     level = flow_call_data.pop("level")
     code = flow_call_data.pop("code")
-    make_image = flow_call_data.pop("make_image")
-    make_movie = flow_call_data.pop("make_movie")
-    nfiles = len(flow_call_data["file_list"])
-
-    flow_call_data["file_list"] = file_name_to_full_path(flow_call_data["file_list"], pipeline_config["root"])
-    flow_call_data["output_movie_dir"] = os.path.join(pipeline_config["ql_root"], flow_call_data["output_movie_dir"])
     flow_call_data.pop("product_code", None)
-    flow_call_data["make_image"] = make_image
-    flow_call_data["make_movie"] = make_movie
+
+    nfiles = len(flow_call_data["file_list"])
+    make_image = flow_call_data["make_image"]
+    make_movie = flow_call_data["make_movie"]
 
     flow_call_data["file_list"] = file_name_to_full_path(flow_call_data["file_list"], pipeline_config["root"])
     flow_call_data["output_movie_dir"] = os.path.join(pipeline_config["ql_root"], flow_call_data["output_movie_dir"])

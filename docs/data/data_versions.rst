@@ -45,21 +45,6 @@ Version 0m
   - Improved starfield model generation and subtraction. A median background subtraction that is no longer needed was removed. This should improve capturing the Milky Way into the starfield models. This also allows for a single starfield model subtraction. (https://github.com/punch-mission/punchbowl/pull/1145)
   - Improved starfield blur by reprojecting directly to the image frame instead of intermediate union WCS. (https://github.com/punch-mission/punchbowl/pull/1180)
 
-
-Doesn't seem relevant to data release notes:
-
-- Introduce rules to omit test scripts themselves from test coverage. ("trivial" changelog) (https://github.com/punch-mission/punchbowl/pull/1057) 
-
-- Sounds more like prefect/processing improvements
-  
-  - Better error reporting in import_export.py (https://github.com/punch-mission/punchbowl/pull/1062)
-  - Starfield model generation now logs progress messages in Prefect. (https://github.com/punch-mission/punchbowl/pull/1028)
-  - Fix logic to avoid attempting regeneration of CAM/PAMs when some input files are severely delayed. (https://github.com/punch-mission/punchbowl/pull/1142)
-  - (No changelog; description from PR) We had made changes to allow M, Z and P starfield models to be built in one go, saving reprojection work. The bulk of the changes were in remove_starfield, and it looks like it didn't get properly wired up here. This fixes the crashes on 190. (https://github.com/punch-mission/punchbowl/pull/1027)
-  - Disable NFI static light processing in the construct_stray_light_scheduler_flow (https://github.com/punch-mission/punchbowl/pull/1152)
-  - Avoid crash in L0 flow if there aren't any replay needs. (https://github.com/punch-mission/punchbowl/pull/1186)
-  
-
 Version 0l
 ----------
 

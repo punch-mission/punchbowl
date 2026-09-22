@@ -18,8 +18,8 @@ import numpy as np
 from matplotlib.colors import LogNorm
 
 from punchbowl.data import load_ndcube_from_fits
+from punchbowl.data.colors import cmap_punch
 from punchbowl.data.sample import PUNCH_DK4
-from punchbowl.data.visualize import cmap_punch
 from punchbowl.level1.sqrt import decode_sqrt
 
 # %%

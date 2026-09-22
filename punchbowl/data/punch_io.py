@@ -28,9 +28,10 @@ from matplotlib.colors import PowerNorm
 from ndcube import NDCollection
 from PIL import Image, ImageDraw, ImageFont
 
+from punchbowl.data.colors import cmap_punch
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.data.visualize import cmap_punch, radial_distance
+from punchbowl.data.visualize import radial_distance
 from punchbowl.data.wcs import GCRSWCS
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))

@@ -1,0 +1,1 @@
+Introduces data kind of towncrier changelog to track changes that impact data quality.

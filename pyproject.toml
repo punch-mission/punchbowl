@@ -309,3 +309,8 @@ showcontent = true
 directory = "trivial"
 name = "Internal Changes"
 showcontent = true
+
+[[tool.towncrier.type]]
+directory = "data"
+name = "Changes to Data"
+showcontent = true

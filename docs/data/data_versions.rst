@@ -21,8 +21,8 @@ Version 0m
 ----------
 - Released September __, 2026
 
-- Set up QuickPUNCH to run on new product types from clears. (PRs 1088-1097, 1101-1106, 1114, https://github.com/punch-mission/punchbowl/pull/1019)
-- Fixed file writing to use operational config image scaling parameters. (https://github.com/punch-mission/punchbowl/pull/1128)
+- Re-engineered QuickPUNCH files to meet SWPC requirements. Started real-time production and currently shipping. (PRs 1088-1097, 1101-1106, 1114, https://github.com/punch-mission/punchbowl/pull/1019)
+- Fixed file writing to use operational config image scaling parameters to quicklook files. (https://github.com/punch-mission/punchbowl/pull/1128)
 - Added robots=off to wget command as part of recent umbra.nascom.nasa.gov permission updates. (https://github.com/punch-mission/punchbowl/pull/1156)
 - Updated solar wind flow tracking modules to work with PUNCH data for initial activation. (https://github.com/punch-mission/punchbowl/pull/1079)
 

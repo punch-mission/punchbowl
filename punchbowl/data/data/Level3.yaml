@@ -218,6 +218,7 @@ Products:
             OBSCODE: N
             HAS_NFI4: 1
             ALL_INPT: 1
+        omits: [CALSTAR1, CALSTAR2]
 
     VAM:
         kinds: [Velocity]

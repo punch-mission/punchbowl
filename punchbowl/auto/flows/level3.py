@@ -465,7 +465,8 @@ def level3_NFI_construct_flow_info(level2_files: list[File], level3_file: File, 
             "data_list": [level2_files[0].filename()],
             "before_f_corona_model_path": level2_files[0].fcor_models[0].filename(),
             "after_f_corona_model_path": level2_files[0].fcor_models[1].filename(),
-            "mask_radius": pipeline_config["nfi_wfi_divide_radius"],
+            "outer_mask_radius": pipeline_config["nfi_wfi_divide_radius"],
+            "inner_mask_radius": pipeline_config["flows"][flow_type]["inner_radius"],
         },
     )
     return Flow(

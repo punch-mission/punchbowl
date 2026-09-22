@@ -183,6 +183,7 @@ def nan_percentile_window(array: np.ndarray, percentile: float | list[float], # 
     nd.ndarray
         The calculated percentiles. If multiple percentiles were requestion, the resulting
         percentiles will be along the first dimension.
+
     """
     percentiles = np.atleast_1d(np.array(percentile))
     percentiles = percentiles / 100
@@ -195,14 +196,14 @@ def nan_percentile_window(array: np.ndarray, percentile: float | list[float], # 
                 start = max(0, image_idx - half_window_size)
                 stop = min(array.shape[0], image_idx + half_window_size + 1)
                 sequence = array[start:stop, i, j].copy()
-                
+
                 n_valid_obs = len(sequence)
                 sequence_max = np.nanmax(sequence)
                 for index in range(len(sequence)):
                     if np.isnan(sequence[index]):
                         sequence[index] = sequence_max
                         n_valid_obs -= 1
-                
+
                 if n_valid_obs == 0:
                     for k in range(len(percentiles)):
                         output[k, image_idx, i, j] = np.nan
@@ -368,6 +369,7 @@ def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 
     -------
     np.ndarray
         The filtered stack of images.
+
     """
     if out_array is None:
         out_array = np.empty_like(images)

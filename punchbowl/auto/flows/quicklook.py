@@ -301,10 +301,7 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
         quicklook_query = (session.query(Quicklook)
                            .filter(Quicklook.day == day)
                            .filter(Quicklook.level == level)
-                           .filter(Quicklook.code == code))
-        if quicklook_query is None:
-            quicklook_query = Quicklook(day=day, level=level, code=code)
-            session.add(quicklook_query)
+                           .filter(Quicklook.code == code).all())
         if make_image:
             quicklook_query.image_made = True
         if make_movie:

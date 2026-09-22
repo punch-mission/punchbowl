@@ -161,14 +161,14 @@ def nan_percentile(array: np.ndarray, percentile: float | list[float]) -> float 
 
 
 @numba.njit(parallel=True, cache=True)
-def nan_percentile_window(array: np.ndarray, percentile: float | list[float],
+def nan_percentile_window(array: np.ndarray, percentile: float | list[float], # noqa: C901
                           window_size: int) -> np.ndarray:
     """
     Calculate the nan percentile within a sliding window along the first axis of a 3D cube.
 
     NaN values are ignored, and the result is a percentile of only the non-nan pixels in each window location. The
     window is truncated at the beginning and end of the array.
-    
+
     Parameters
     ----------
     array : np.ndarray
@@ -186,24 +186,26 @@ def nan_percentile_window(array: np.ndarray, percentile: float | list[float],
     """
     percentiles = np.atleast_1d(np.array(percentile))
     percentiles = percentiles / 100
-    hws = window_size // 2
+    half_window_size = window_size // 2
 
     output = np.empty((len(percentiles), *array.shape))
     for i in numba.prange(array.shape[1]):
         for j in range(array.shape[2]):
-            for l in range(array.shape[0]):
-                start = max(0, l - hws)
-                stop = min(array.shape[0], l + hws + 1)
+            for image_idx in range(array.shape[0]):
+                start = max(0, image_idx - half_window_size)
+                stop = min(array.shape[0], image_idx + half_window_size + 1)
                 sequence = array[start:stop, i, j].copy()
+                
                 n_valid_obs = len(sequence)
                 sequence_max = np.nanmax(sequence)
                 for index in range(len(sequence)):
                     if np.isnan(sequence[index]):
                         sequence[index] = sequence_max
                         n_valid_obs -= 1
+                
                 if n_valid_obs == 0:
                     for k in range(len(percentiles)):
-                        output[k, l, i, j] = np.nan
+                        output[k, image_idx, i, j] = np.nan
                 sequence.sort()
 
                 for k in range(len(percentiles)):
@@ -211,11 +213,11 @@ def nan_percentile_window(array: np.ndarray, percentile: float | list[float],
                     f = int(np.floor(index))
                     c = int(np.ceil(index))
                     if f == c:
-                        output[k, l, i, j] = sequence[f]
+                        output[k, image_idx, i, j] = sequence[f]
                     else:
                         f_val = sequence[f]
                         c_val = sequence[c]
-                        output[k, l, i, j] = f_val + (c_val - f_val) * (index - f)
+                        output[k, image_idx, i, j] = f_val + (c_val - f_val) * (index - f)
 
     if isinstance(percentile, (int, float)):
         return output[0]
@@ -337,20 +339,20 @@ def nan_gaussian(image: np.ndarray, sigma: float) -> np.ndarray:
 
 
 @numba.njit(parallel=True, cache=True)
-def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 1, out_array: np.ndarray = None,
-                 ) -> np.ndarray:
+def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 1,
+                 out_array: np.ndarray = None) -> np.ndarray:
     """
     Apply a "z filter" to a stack of images.
-    
+
     This is a form of temporal smoothing. Each image i of the output array becomes
     `images[i] * z_filter_index + images[i-1] * (1 - z_filter_index)`. This is calculated forward along the stack, and
     the first image is unchanged.
-    
+
     This function computes in parallel across the pixel dimensions.
-    
+
     Per-image masks can be provided, and masked pixels are ignored---when a pixel in `images[i]` is masked, that
     pixel becomes just the pixel value in `images[i-1]`.
-    
+
     Parameters
     ----------
     images : np.ndarray
@@ -358,7 +360,7 @@ def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 
     masks : np.ndarray
         The stack of masks. The first index should correspond to image number.
     z_filter_index : float
-        The filter index, a value beteen 0 and 1.
+        The filter index, a value between 0 and 1.
     out_array : np.ndarray
         Optional, an array to place the output values in.
 
@@ -374,8 +376,8 @@ def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 
     out_array[0] = images[0] * masks[0]
     np.nan_to_num(out_array[0], copy=False)
     for i in numba.prange(out_array.shape[1]):
-        for j, (image, mask) in enumerate(zip(images[1:, i], masks[1:, i])):
-            j += 1
+        for j, (image, mask) in enumerate(zip(images[1:, i], masks[1:, i], strict=True)):
+            j += 1 # noqa: PLW2901
             for k in range(len(image)):
                 mval = mask[k] * z_filter_index
                 old_val = out_array[j - 1, i, k]
@@ -397,7 +399,7 @@ def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 
 def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_time: datetime, time_key: str = "DATE-OBS",
                      allow_extrapolation: bool = False, and_uncertainty: bool = False,
                      infill_nans: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
-    """Interpolates between two data objects."""
+    """Interpolates bewtween two data objects."""
     before_date = parse_datetime(data_before.meta[time_key].value + " UTC").timestamp()
     after_date = parse_datetime(data_after.meta[time_key].value + " UTC").timestamp()
     if reference_time.tzinfo is None:

@@ -25,7 +25,8 @@ from punchbowl.util import load_image_task, make_circular_mask, output_image_tas
 def level3_NFI_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                     before_f_corona_model_path: str | DataLoader,
                     after_f_corona_model_path: str | DataLoader,
-                    mask_radius: float) -> list[PUNCHCube]:
+                    inner_mask_radius: float,
+                    outer_mask_radius: float) -> list[PUNCHCube]:
     """Level 3 NFI F-corona subtraction and reprojection flow."""
     logger = get_logger()
 
@@ -46,7 +47,9 @@ def level3_NFI_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
 
 
     mosaic_wcs, mosaic_shape = load_trefoil_wcs()
-    mask = ~make_circular_mask(mosaic_shape, mask_radius)
+    inner_mask = ~make_circular_mask(mosaic_shape, inner_mask_radius)
+    outer_mask = make_circular_mask(mosaic_shape, outer_mask_radius)
+    mask = inner_mask * outer_mask
     output_cubes = []
     for cube in data_list:
         cube = subtract_f_corona_background_task(cube, [before_f_corona_model], [after_f_corona_model])

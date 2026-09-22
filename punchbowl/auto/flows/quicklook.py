@@ -46,6 +46,7 @@ def visualize_query_ready_files(session: Session,
                     "Q": ["QAM", "QNN"]}
 
     expected_files = pipeline_config["flows"]["quicklook"]["expected_files"]
+    max_wait_days = pipeline_config["flows"]["quicklook"]["max_wait_days"]
 
     flows_max = pipeline_config["flows"]["quicklook"]["flows_days"]
 
@@ -79,7 +80,10 @@ def visualize_query_ready_files(session: Session,
                 movie_nfiles = expected_files[f"L{level}_{product_code}"]
 
                 make_image = (not image_made) and (len(files) > 0)
-                make_movie = (not movie_made) and (len(files) > movie_nfiles)
+                if (reference_time - day) < timedelta(days=max_wait_days):
+                    make_movie = (not movie_made) and (len(files) >= movie_nfiles)
+                else:
+                    make_movie = True
 
                 if make_image or make_movie:
                     all_ready_files.append(list(files))

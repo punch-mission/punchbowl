@@ -13,7 +13,7 @@ from matplotlib.figure import Figure
 from tqdm.auto import tqdm
 
 from punchbowl.data import punch_io
-from punchbowl.data.colors import cmap_punch, cmap_punch_pb
+from punchbowl.data.color import cmap_punch, cmap_punch_pb
 from punchbowl.data.punchcube import PUNCHCube
 
 

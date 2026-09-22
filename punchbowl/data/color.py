@@ -1,8 +1,10 @@
+import matplotlib as mpl
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 from skimage.color import lab2rgb
 
 
+# PUNCH total brightness
 def _cmap_punch() -> LinearSegmentedColormap:
     """Generate PUNCH colormap."""
     # Define key colors in LAB space
@@ -27,7 +29,10 @@ def _cmap_punch() -> LinearSegmentedColormap:
     rgb_colors = lab2rgb(lab_colors.reshape(1, -1, 3)).reshape(n, 3)
     return LinearSegmentedColormap.from_list("PUNCH", rgb_colors, N=n)
 
+cmap_punch = _cmap_punch()
+cmap_punch_r = _cmap_punch().reversed()
 
+# PUNCH polarized brightness
 def _cmap_punch_pb() -> LinearSegmentedColormap:
     """Generate PUNCH colormap."""
     black_lab = np.array([0, 0, 0])
@@ -53,5 +58,14 @@ def _cmap_punch_pb() -> LinearSegmentedColormap:
 cmap_punch_pb = _cmap_punch_pb()
 cmap_punch_pb_r = _cmap_punch_pb().reversed()
 
-cmap_punch = _cmap_punch()
-cmap_punch_r = _cmap_punch().reversed()
+
+colormap_list = {
+    "punch_r": cmap_punch_r,
+    "punch_tb": cmap_punch,
+    "punch_tb_r": cmap_punch_r,
+    "punch_pb": cmap_punch_pb,
+    "punch_pb_r": cmap_punch_pb_r,
+}
+
+for name, cmap in colormap_list.items():
+    mpl.colormaps.register(cmap, name=name)

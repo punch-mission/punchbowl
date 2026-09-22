@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
-from punchbowl.data.colors import cmap_punch, cmap_punch_pb, cmap_punch_pb_r, cmap_punch_r
+from punchbowl.data.color import cmap_punch, cmap_punch_pb, cmap_punch_pb_r, cmap_punch_r
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.data.visualize import plot_punch, radial_distance, radial_filter
 

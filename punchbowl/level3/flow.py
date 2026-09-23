@@ -213,15 +213,19 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
 
 
 @punch_flow
-def level3_core_flow(data_list: list[str] | list[PUNCHCube],
+def level3_core_flow(data_list: list[str | PUNCHCube],
+                     nfi_list: list[str | PUNCHCube | None],
                      before_starfield_path: str | None,
                      after_starfield_path: str | None,
+                     nfi_wfi_divide_radius: float | None,
+                     nfi_scale_factor: float = 1,
                      output_filename: str | None = None) -> list[PUNCHCube]:
     """Level 3 CTM flow."""
     logger = get_logger()
 
     logger.info("beginning level 3 flow")
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+    nfi_list = [load_image_task(d) if isinstance(d, str) else d for d in nfi_list]
     is_polarized = data_list[0].meta["TYPECODE"].value == "PI"
     data_list = [subtract_starfield_background_task(d,
                                                     before_starfield_path,
@@ -230,19 +234,27 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
     if is_polarized:
         data_list = [convert_polarization(d) for d in data_list]
 
+    mask = make_circular_mask(data_list[0].shape, nfi_wfi_divide_radius) if nfi_wfi_divide_radius is not None else None
+
     out_data_list = []
-    for o in data_list:
+    for wfi_cube, nfi_cube in zip(data_list, nfi_list, strict=True):
+        if nfi_cube is not None and mask is not None:
+            wfi_cube.data[:] = np.where(mask, nfi_scale_factor * nfi_cube.data, wfi_cube.data)
+            wfi_cube.uncertainty.array[:] = np.where(mask, nfi_cube.uncertainty.array, wfi_cube.uncertainty.array)
+
         out_meta: NormalizedMetadata = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3")
         out_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        out_meta.provenance = [fname for d in data_list if d is not None and (fname := d.meta.get("FILENAME"))]
-        out_meta.history = o.meta.history
+        out_meta.provenance = [wfi_cube.meta["FILENAME"].value]
+        if nfi_cube is not None and mask is not None:
+            out_meta.provenance += [nfi_cube.meta["FILENAME"].value]
+        out_meta.history = wfi_cube.meta.history
         out_meta["CALSTAR1"] = before_starfield_path
         out_meta["CALSTAR2"] = after_starfield_path
         for key in ["FILEVRSN", "ALL_INPT", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4", "DATE-AVG", "DATE-OBS",
                     "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
                     "CTRXNFI4", "CTRYNFI4"]:
-            out_meta[key] = o.meta[key].value
-        output_data = o.replace(meta=out_meta)
+            out_meta[key] = wfi_cube.meta[key].value
+        output_data = wfi_cube.replace(meta=out_meta)
         output_data = set_spacecraft_location_to_earth(output_data)
         out_data_list.append(output_data)
 

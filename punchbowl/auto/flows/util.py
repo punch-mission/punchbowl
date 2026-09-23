@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from punchbowl.auto.control.db import File
 
@@ -30,3 +30,13 @@ def summarize_files_missing_cal_files(files: list[File]):
         summary = (f"{len(files)} files, of types {sorted(types)}, with date-obs ranging from "
                    f"{min(dates).isoformat()} to {max(dates).isoformat()}")
     return summary
+
+
+def pick_closest_file(files: list[File], target_file: File, max_difference: timedelta | None = None) -> File | None:
+    if not files:
+        return None
+    files = sorted(files, key=lambda f: abs(f.date_obs - target_file.date_obs))
+    closest = files[0]
+    if max_difference is not None and abs(closest.date_obs - target_file.date_obs) > max_difference:
+        return None
+    return closest

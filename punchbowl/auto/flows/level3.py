@@ -7,7 +7,7 @@ from collections import defaultdict
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 
 from punchbowl import __version__
 from punchbowl.auto.control import cache_layer
@@ -15,7 +15,7 @@ from punchbowl.auto.control.db import File, Flow, get_closest_after_file, get_cl
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time
-from punchbowl.auto.flows.util import file_name_to_full_path
+from punchbowl.auto.flows.util import file_name_to_full_path, pick_closest_file
 from punchbowl.level3.flow import generate_level3_low_noise_flow, level3_core_flow, level3_NFI_flow, level3_PIM_CIM_flow
 from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime
@@ -545,9 +545,14 @@ def level3_NFI_process_flow(flow_id: int | list[int], pipeline_config_path=None,
 @task(cache_policy=NO_CACHE)
 def level3_CTM_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
     logger = get_logger()
-    all_ready_files = session.query(File).where(and_(and_(File.state.in_(["created"]),
-                                                          File.level == "3"),
-                                                     File.file_type == "CI")).order_by(File.date_obs.asc()).all()
+    wfi_input = File.file_type == "CI"
+    nfi_input = and_(File.file_type == "XR", File.observatory == "4")
+
+    all_ready_files = (session.query(File)
+                       .where(File.state.in_(["created"]))
+                       .where(File.level == "3")
+                       .where(wfi_input)
+                       .order_by(File.date_obs.asc()).all())
     logger.info(f"{len(all_ready_files)} Level 3 CIM files need to be processed.")
 
     starfield_window = pipeline_config["flows"]["level3_CTM"]["starfield_window"]
@@ -561,14 +566,34 @@ def level3_CTM_query_ready_files(session, pipeline_config: dict, reference_time=
             if len(actually_ready_files) >= max_n:
                 break
     logger.info(f"{len(actually_ready_files)} Level 3 CIM files selected with necessary calibration data.")
+    if not actually_ready_files:
+        return []
 
-    return [[f.file_id] for f in actually_ready_files]
+    if pipeline_config['nfi_mode'] == 'pca':
+        dates = [f.date_obs for f in actually_ready_files]
+        nfi_inputs = (session.query(File)
+                             .where(File.state.in_(["created", "progressed"]))
+                             .where(File.level == "3")
+                             .where(nfi_input)
+                             .where(File.date_obs.between(min(dates) - timedelta(seconds=30),
+                                                          max(dates) - timedelta(seconds=30)))
+                             .order_by(File.date_obs.asc()).all())
+
+        final_groups = []
+        for wfi_file in actually_ready_files:
+            closest = pick_closest_file(nfi_inputs, wfi_file, max_difference=timedelta(seconds=30))
+            if closest is not None:
+                final_groups.append([wfi_file, closest])
+            else:
+                final_groups.append([wfi_file])
+    else:
+        final_groups = [[f] for f in actually_ready_files]
+
+    return final_groups
 
 
 def level3_CTM_construct_flow_info(level2_files: list[File], level3_file: File,
                                    pipeline_config: dict, session=None, reference_time=None):
-    session = get_database_session()  # TODO: replace so this works in the tests by passing in a test
-
     flow_type = "level3_CTM"
     state = "planned"
     creation_time = datetime.now()
@@ -585,9 +610,12 @@ def level3_CTM_construct_flow_info(level2_files: list[File], level3_file: File,
 
     call_data = json.dumps(
         {
-            "data_list": [level2_file.filename() for level2_file in level2_files],
+            "data_list": [level2_files[0].filename()],
+            "nfi_list": [level2_files[1].filename() if len(level2_files) > 1 else None],
             "before_starfield_path": before_starfield_path,
             "after_starfield_path": after_starfield_path,
+            "nfi_wfi_divide_radius": pipeline_config.get('nfi_wfi_divide_radius', None),
+            "nfi_scale_factor": pipeline_config["flows"][flow_type].get('nfi_scale_factor', 1),
         },
     )
     return Flow(
@@ -632,7 +660,7 @@ def level3_CTM_scheduler_flow(pipeline_config_path=None, session=None, reference
 
 
 def level3_CTM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
-    for key in ["data_list" , "before_starfield_path", "after_starfield_path"]:
+    for key in ["data_list" , "before_starfield_path", "after_starfield_path", "nfi_list"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     return call_data
 

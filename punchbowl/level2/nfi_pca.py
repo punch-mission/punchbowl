@@ -157,9 +157,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         new_meta["PCANCOMP"] = n_components
         new_meta["PCADWNSP"] = downsample_factor
-        # TODO: Remove
-        new_meta['FILEVRSN'] = 'v0m'
-        #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
+        new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
         pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
 
         output_cubes.append(pca_cube)
@@ -170,9 +168,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         new_meta['DATE-AVG'] = ref_date
         new_meta['DATE-BEG'] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         new_meta['DATE-END'] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        # TODO: Remove
-        new_meta['FILEVRSN'] = 'v0m'
-        #new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
+        new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
         bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
         output_cubes.append(bg_cube)
 
@@ -240,13 +236,9 @@ def _load_one_file(path: str, downsample_factor: int,
     cube = load_ndcube_from_fits(path, include_uncertainty=False, include_provenance=False, dtype=np.float32)
     if cube.meta["BADPKTS"].value or cube.meta["DATAP25"].value > 1e-9:
         return None
-    # TODO: remove
-    l0_path = path.replace("1/XR4", "0/CR4").replace("1_XR4", "0_CR4")
-    if not os.path.exists(l0_path):
-        l0_path = l0_path.replace('/0/', '/0-old-before-0m/')
-    l0 = load_ndcube_from_fits(l0_path)
+    
     data = cube.data
-    saturation_mask = l0.data > 1252
+    saturation_mask = np.isinf(cube.uncertainty.array)
     if downsample_factor > 1:
         saturation_mask = saturation_mask.reshape((data.shape[0] // downsample_factor, downsample_factor,
                                                    data.shape[1] // downsample_factor, downsample_factor),

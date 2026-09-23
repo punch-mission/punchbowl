@@ -7,7 +7,7 @@ from collections import defaultdict
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, func, or_, text
 
 from punchbowl import __version__
 from punchbowl.auto.control import cache_layer
@@ -768,6 +768,25 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
         if group:
             cleaned_ready_groups.append(group)
 
+    for group in cleaned_ready_groups:
+        for file in group:
+            file._is_nfi_extra = False
+        if pipeline_config['nfi_mode'] == 'pca' and not polarized:
+            main_group_ids = set(f.file_id for f in group)
+            dt = func.abs(func.timestampdiff(text("second"), File.date_obs, group[0]._reference_time))
+            extra_files = (session.query(File)
+                           .filter(File.state.in_(["created", "progressed"]))
+                           .filter(File.level == "3")
+                           .filter(File.file_type == target_type)
+                           .filter(File.observatory == "M")
+                           .filter(~File.outlier)
+                           .filter(dt < pipeline_config['flows'][flow_type]['nfi_search_margin_minutes'] * 60)
+                           .order_by(dt.desc()).all())
+            extra_files = [f for f in extra_files if f.file_id not in main_group_ids]
+            for f in extra_files:
+                f._is_nfi_extra = True
+            group.extend(extra_files)
+
     logger.info(f"{len(cleaned_ready_groups)} groups heading out")
     return cleaned_ready_groups
 
@@ -782,11 +801,10 @@ def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out:
 
     call_data = json.dumps(
         {
-            "data_list": [
-                os.path.join(level3_file.directory(pipeline_config["root"]), level3_file.filename())
-                for level3_file in level3_files
-            ],
+            "data_list": [level3_file.filename() for level3_file in level3_files if not level3_file._is_nfi_extra],
+            "nfi_extras_list": [level3_file.filename() for level3_file in level3_files if level3_file._is_nfi_extra],
             "reference_time": reference_time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "nfi_wfi_divide_radius": pipeline_config.get('nfi_wfi_divide_radius', None),
         },
     )
     return Flow(
@@ -832,7 +850,9 @@ def level3_CAM_scheduler_flow(pipeline_config_path=None, session=None):
 
 @flow
 def level3_CAM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session)
+    generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session,
+                               call_data_processor=level3_CAMPAM_call_data_processor)
+
 
 @flow
 def level3_PAM_scheduler_flow(pipeline_config_path=None, session=None):
@@ -847,4 +867,12 @@ def level3_PAM_scheduler_flow(pipeline_config_path=None, session=None):
 
 @flow
 def level3_PAM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session)
+    generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session,
+                               call_data_processor=level3_CAMPAM_call_data_processor)
+
+
+def level3_CAMPAM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
+    for key in ["data_list", "nfi_extras_list"]:
+        if key in call_data:
+            call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
+    return call_data

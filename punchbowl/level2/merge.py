@@ -7,10 +7,12 @@ from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import encode_outliers
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_task
-from punchbowl.util import average_datetime
+from punchbowl.util import average_datetime, make_circular_mask
 
 
-def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | None = None) -> PUNCHCube:
+def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | None = None,
+                   median_within_radius: float | None = 0, extra_cubes_for_median: list[PUNCHCube] | None = None,
+                   ) -> PUNCHCube:
     """Create a merged data product from a set of input data, weighting by uncertainty."""
     if cubes is None:
         return None
@@ -45,8 +47,24 @@ def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | No
 
     new_data[np.isnan(new_data)] = 0
 
+    if median_within_radius and extra_cubes_for_median:
+        data_stack = np.stack([cube.data for cube in cubes + extra_cubes_for_median if cube.meta["HASNFI4"].value],
+                              axis=0)
+        uncertainty_stack = np.stack([cube.uncertainty.array for cube in cubes + extra_cubes_for_median
+                                      if cube.meta["HASNFI4"].value],
+                                     axis=0)
+        if len(data_stack):
+            median = np.nanmedian(data_stack, axis=0)
+            mask = make_circular_mask(new_data.shape, median_within_radius)
+            new_data = np.where(mask, median, new_data)
+            all_inf = np.all(np.isinf(uncertainty_stack), axis=0)
+            # Place a fill value
+            final_uncertainty[mask] = 1e-14
+            # But if there were no input samples (e.g. in the occulter region), output inf
+            final_uncertainty[mask * all_inf * (median == 0)] = np.inf
+
     return PUNCHCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty),
-                    wcs=cubes[reference_cube_index].wcs)
+                     wcs=cubes[reference_cube_index].wcs)
 
 
 @punch_task

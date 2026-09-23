@@ -8,6 +8,7 @@ from astropy.nddata import StdDevUncertainty
 from punchbowl.auto.control.cache_layer.loader_base_class import DataLoader
 from punchbowl.data import load_ndcube_from_fits, load_trefoil_wcs
 from punchbowl.data.meta import MetaField, NormalizedMetadata, check_moon_in_fov, set_spacecraft_location_to_earth
+from punchbowl.data.punch_io import encode_outliers
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2.finalize import finalize_output
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
@@ -238,11 +239,13 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
 
     out_data_list = []
     for wfi_cube, nfi_cube in zip(data_list, nfi_list, strict=True):
+        out_meta: NormalizedMetadata = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3")
+
         if nfi_cube is not None and mask is not None:
             wfi_cube.data[:] = np.where(mask, nfi_scale_factor * nfi_cube.data, wfi_cube.data)
             wfi_cube.uncertainty.array[:] = np.where(mask, nfi_cube.uncertainty.array, wfi_cube.uncertainty.array)
+            out_meta["OUTLIER"] = wfi_cube.meta["OUTLIER"].value | encode_outliers([nfi_cube])
 
-        out_meta: NormalizedMetadata = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3")
         out_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         out_meta.provenance = [wfi_cube.meta["FILENAME"].value]
         if nfi_cube is not None and mask is not None:

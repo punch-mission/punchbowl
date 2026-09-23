@@ -643,7 +643,7 @@ def level3_CTM_construct_file_info(input_files: list[File], pipeline_config: dic
                 date_beg=input_file.date_beg,
                 date_end=input_file.date_end,
                 outlier=input_file.outlier,
-                bad_packets=input_file.bad_packets,
+                bad_packets=any(f.bad_packets for f in input_files),
             )]
 
 

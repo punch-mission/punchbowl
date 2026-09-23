@@ -401,7 +401,7 @@ def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 
 def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_time: datetime, time_key: str = "DATE-OBS",
                      allow_extrapolation: bool = False, and_uncertainty: bool = False,
                      infill_nans: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
-    """Interpolates bewtween two data objects."""
+    """Interpolates between two data objects."""
     before_date = parse_datetime(data_before.meta[time_key].value + " UTC").timestamp()
     after_date = parse_datetime(data_after.meta[time_key].value + " UTC").timestamp()
     if reference_time.tzinfo is None:

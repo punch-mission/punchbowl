@@ -40,13 +40,15 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern, ne
                 os.rename(old_sha_path, new_sha_path)
             elif os.path.exists(new_path):
                 # We should overwrite existing sha files because we might have changed the metadata
-                write_file_hash(new_path)
+                if config['write_sha_files']:
+                    write_file_hash(new_path)
 
         old_ql_path = old_path.replace('.fits', '.jp2')
         new_ql_path = new_path.replace('.fits', '.jp2')
         if os.path.exists(old_ql_path) and new_version is not None:
             os.rename(old_ql_path, new_ql_path)
-        elif os.path.exists(new_path) and not os.path.exists(new_ql_path) and file.file_type[0] not in ('S', 'T'):
+        elif (os.path.exists(new_path) and not os.path.exists(new_ql_path) and file.file_type[0] not in ('S', 'T')
+                and config['write_quicklooks']):
             cube = load_ndcube_from_fits(new_path)
             with np.errstate(all='ignore'):
                 _write_quicklook(config, file, cube)

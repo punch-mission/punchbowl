@@ -235,34 +235,38 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
     if is_polarized:
         data_list = [convert_polarization(d) for d in data_list]
 
-    mask = make_circular_mask(data_list[0].shape, nfi_wfi_divide_radius) if nfi_wfi_divide_radius is not None else None
+    nfi_wfi_mask = (make_circular_mask(data_list[0].shape, nfi_wfi_divide_radius)
+                    if nfi_wfi_divide_radius is not None else None)
 
     out_data_list = []
     for wfi_cube, nfi_cube in zip(data_list, nfi_list, strict=True):
         out_meta: NormalizedMetadata = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3")
 
-        if nfi_cube is not None and mask is not None:
-            wfi_cube.data[:] = np.where(mask, nfi_scale_factor * nfi_cube.data, wfi_cube.data)
-            wfi_cube.uncertainty.array[:] = np.where(mask, nfi_cube.uncertainty.array, wfi_cube.uncertainty.array)
+        if nfi_cube is not None and nfi_wfi_mask is not None:
+            wfi_cube.data[:] = np.where(nfi_wfi_mask, nfi_scale_factor * nfi_cube.data, wfi_cube.data)
+            wfi_cube.uncertainty.array[:] = np.where(
+                nfi_wfi_mask, nfi_cube.uncertainty.array, wfi_cube.uncertainty.array)
+            wfi_cube.mask[:] = np.isinf(wfi_cube.uncertainty.array)
             out_meta["OUTLIER"] = wfi_cube.meta["OUTLIER"].value | encode_outliers([nfi_cube])
+            out_meta["HAS_NFI4"] = 1
+            out_meta["CTRXNFI4"] = 2047.5
+            out_meta["CTRYNFI4"] = 2047.5
+            out_meta["ALL_INPT"] = wfi_cube.meta["ALL_INPUT"].value
+        else:
+            out_meta["ALL_INPT"] = 0
+            out_meta["HAS_NFI4"] = 0
 
         out_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         out_meta.provenance = [wfi_cube.meta["FILENAME"].value]
-        if nfi_cube is not None and mask is not None:
+        if nfi_cube is not None and nfi_wfi_mask is not None:
             out_meta.provenance += [nfi_cube.meta["FILENAME"].value]
         out_meta.history = wfi_cube.meta.history
         out_meta["CALSTAR1"] = before_starfield_path
         out_meta["CALSTAR2"] = after_starfield_path
-        for key in ["FILEVRSN", "ALL_INPT", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "HAS_NFI4", "DATE-AVG", "DATE-OBS",
+        for key in ["FILEVRSN", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "DATE-AVG", "DATE-OBS",
                     "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
                     "CTRXNFI4", "CTRYNFI4"]:
             out_meta[key] = wfi_cube.meta[key].value
-        if nfi_cube:
-            out_meta["HAS_NFI4"] = True
-            out_meta["CTRXNFI4"] = 2047.5
-            out_meta["CTRYNFI4"] = 2047.5
-        else:
-            out_meta["ALL_INPT"] = False
         output_data = wfi_cube.replace(meta=out_meta)
         output_data = set_spacecraft_location_to_earth(output_data)
         out_data_list.append(output_data)

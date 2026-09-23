@@ -50,6 +50,7 @@ def create_low_noise_task(
         new_cube.uncertainty.array[mask] = 1e-15
         # Inf elsewhere (e.g. in the occulter)
         new_cube.uncertainty.array[mask * masked_pixels] = np.inf
+        new_meta["HAS_NFI4"] = 1
 
     for k in cubes[0].meta.fits_keys:
         if k not in KEYWORD_OMIT and k in new_meta:

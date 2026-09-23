@@ -424,7 +424,7 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         data_object.celestial_wcs,
     )
 
-    original_mask = (data_object.data == 0) * ~np.isfinite(data_object.uncertainty)
+    original_mask = (data_object.data == 0) * ~np.isfinite(data_object.uncertainty.array)
 
     subtracted = starfield_model.subtract_from_image(
         PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array)),

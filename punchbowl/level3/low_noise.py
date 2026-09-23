@@ -10,41 +10,46 @@ from punchbowl.data.punch_io import check_outlier
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2.merge import _merge_ndcubes
 from punchbowl.prefect import punch_task
-from punchbowl.util import average_datetime, make_circular_mask
+from punchbowl.util import average_datetime, make_circular_mask, nan_percentile
 
 KEYWORD_OMIT = ("COMMENT", "HISTORY", "", "NAXIS3", "OBSTYPE", "OBS-MODE", "OBSLAYR1", "OBSLAYR2", "OBSLAYR3")
 
 @punch_task
 def create_low_noise_task(
         cubes: list[PUNCHCube],
-        extra_nfi_cubes: list[PUNCHCube] | None,
+        nfi_cubes: list[PUNCHCube] | None,
         reference_time: str | datetime | None = None,
         exclude_outliers: bool = True,
-        nfi_wfi_divide_radius: float | None = None) -> PUNCHCube:
+        nfi_wfi_divide_radius: float | None = None,
+        nfi_scale_factor: float = 1) -> PUNCHCube:
     """Create a low noise image from a set of inputs."""
     cube_count = len(cubes)
     cubes = [cube for cube in cubes if not (exclude_outliers and check_outlier(cube))]
-    if extra_nfi_cubes:
-        mask = make_circular_mask(cubes[0].data.shape, nfi_wfi_divide_radius)
-        extra_nfi_cubes = [cube for cube in cubes if not (exclude_outliers and check_outlier(extra_nfi_cubes))]
-        # Drop images that don't have any NFI data
-        extra_nfi_cubes = [cube for cube in extra_nfi_cubes if np.any(cube.data[mask])]
-        n_nfi_in_main_cubes = len([cube for cube in cubes if np.any(cube.data[mask])])
-        n_extras_needed = 5 - n_nfi_in_main_cubes
-        extra_nfi_cubes = extra_nfi_cubes[:n_extras_needed]
 
     if isinstance(reference_time, str):
         reference_time = parse_datetime_str(reference_time)
 
     # TODO - Note to future self: be clever and use the outlier flag to excise bad data spatially.
     reference_cube_index = len(cubes)//2 - 1
-    new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index, extra_cubes_for_median=extra_nfi_cubes,
-                              median_within_radius=nfi_wfi_divide_radius)
+    new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index)
 
     # TODO - will need to restore polarization resolution for starfield skipping
 
     new_code = cubes[0].meta.product_code[0] + "A" + cubes[0].meta.product_code[2]
     new_meta = NormalizedMetadata.load_template(new_code, "3")
+
+    if nfi_cubes and nfi_wfi_divide_radius:
+        mask = make_circular_mask(cubes[0].data.shape, nfi_wfi_divide_radius)
+        nfi_cubes = [cube for cube in nfi_cubes if not (exclude_outliers and check_outlier(cube))]
+        nfi_data = np.array([cube.data for cube in nfi_cubes])
+        maybe_masked = [(cube.data == 0) * np.isinf(cube.uncertainty.array) for cube in nfi_cubes]
+        masked_pixels = np.all(maybe_masked, axis=0)
+        median_nfi = nan_percentile(nfi_data, 50)
+        new_cube.data[mask] = median_nfi[mask] * nfi_scale_factor
+        # Fill value for good samples
+        new_cube.uncertainty.array[mask] = 1e-15
+        # Inf elsewhere (e.g. in the occulter)
+        new_cube.uncertainty.array[mask * masked_pixels] = np.inf
 
     for k in cubes[0].meta.fits_keys:
         if k not in KEYWORD_OMIT and k in new_meta:
@@ -58,8 +63,8 @@ def create_low_noise_task(
         new_meta["OUTLIER"] = 1
 
     new_meta.provenance = [c.meta["FILENAME"] for c in cubes]
-    if extra_nfi_cubes:
-        new_meta.provenance += [c.meta["FILENAME"] for c in extra_nfi_cubes]
+    if nfi_cubes:
+        new_meta.provenance += [c.meta["FILENAME"] for c in nfi_cubes]
 
     mean_date = average_datetime([cube.meta.datetime for cube in cubes])
     date_obs = mean_date if reference_time is None else reference_time

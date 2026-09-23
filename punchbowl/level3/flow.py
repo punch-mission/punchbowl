@@ -257,6 +257,12 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
                     "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
                     "CTRXNFI4", "CTRYNFI4"]:
             out_meta[key] = wfi_cube.meta[key].value
+        if nfi_cube:
+            out_meta["HAS_NFI4"] = True
+            out_meta["CTRXNFI4"] = 2047.5
+            out_meta["CTRYNFI4"] = 2047.5
+        else:
+            out_meta["ALL_INPT"] = False
         output_data = wfi_cube.replace(meta=out_meta)
         output_data = set_spacecraft_location_to_earth(output_data)
         out_data_list.append(output_data)

@@ -251,7 +251,7 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
             out_meta["HAS_NFI4"] = 1
             out_meta["CTRXNFI4"] = 2047.5
             out_meta["CTRYNFI4"] = 2047.5
-            out_meta["ALL_INPT"] = wfi_cube.meta["ALL_INPUT"].value
+            out_meta["ALL_INPT"] = wfi_cube.meta["ALL_INPT"].value
         else:
             out_meta["ALL_INPT"] = 0
             out_meta["HAS_NFI4"] = 0

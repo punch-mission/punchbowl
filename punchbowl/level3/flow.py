@@ -219,7 +219,7 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
         if nfi_cube is not None and mask is not None:
             wfi_cube.data[:] = np.where(mask, nfi_scale_factor * nfi_cube.data, wfi_cube.data)
             wfi_cube.uncertainty.array[:] = np.where(mask, nfi_cube.uncertainty.array, wfi_cube.uncertainty.array)
-            out_meta["OUTLIER"] = wfi_cube["OUTLIER"].value | encode_outliers([nfi_cube])
+            out_meta["OUTLIER"] = wfi_cube.meta["OUTLIER"].value | encode_outliers([nfi_cube])
 
         out_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         out_meta.provenance = [wfi_cube.meta["FILENAME"].value]

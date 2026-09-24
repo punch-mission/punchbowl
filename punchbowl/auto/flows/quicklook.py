@@ -62,8 +62,8 @@ def visualize_query_ready_files(session: Session,
                                      .filter(Quicklook.day == day)
                                      .filter(Quicklook.level == level)
                                      .filter(Quicklook.code == product_code).all())
-                image_made = quicklook_results.image_made if quicklook_results else False
-                movie_made = quicklook_results.movie_made if quicklook_results else False
+                image_made = quicklook_results[0].image_made if quicklook_results else False
+                movie_made = quicklook_results[0].movie_made if quicklook_results else False
 
                 if image_made and movie_made:
                     continue
@@ -145,7 +145,7 @@ def visualize_flow_info(input_files: list[File],
             "output_movie_dir": out_path,
             "framerate": framerate,
             "resolution": resolution,
-            "ffmpeg_cmd": pipeline_config["flows"]["movie"]["options"].get("ffmpeg_cmd", "ffmpeg"),
+            "ffmpeg_cmd": pipeline_config["flows"]["quicklook"]["options"].get("ffmpeg_cmd", "ffmpeg"),
         },
     )
     return Flow(

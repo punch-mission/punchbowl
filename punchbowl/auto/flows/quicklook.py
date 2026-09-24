@@ -197,21 +197,7 @@ def quicklook_scheduler_flow(pipeline_config_path=None,
 
     session.commit()
 
-def generate_flow_run_name() -> str:
-    """Generates a flow name.
-
-    Returns
-    -------
-    str
-        Quicklook flow name
-    """
-    parameters = flow_run.parameters
-    code = parameters["product_code"]
-    files = parameters["file_list"]
-    return f"movie-{code}-len={len(files)}-{datetime.now()}"
-
-
-@flow(flow_run_name=generate_flow_run_name)
+@flow()
 def quicklook_core_flow(file_list: list,
                         output_movie_dir: str,
                         make_image: bool,
@@ -280,9 +266,8 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
     flow_call_data = json.loads(flow_db_entry.call_data)
 
     day = datetime.fromisoformat(flow_call_data.pop("day"))
-    level = flow_call_data.pop("level")
-    code = flow_call_data.pop("code")
-    flow_call_data.pop("product_code", None)
+    level = flow_call_data["level"]
+    code = flow_call_data["code"]
 
     nfiles = len(flow_call_data["file_list"])
     make_image = flow_call_data["make_image"]

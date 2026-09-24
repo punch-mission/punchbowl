@@ -32,13 +32,13 @@ Version 0m
   - We were previously clipping all negative values to 0. This led to negative values becoming transparent in JHelioviewer. We fixed that clipping bug by clipping to 1 instead. (https://github.com/punch-mission/punchbowl/pull/1159)
 
 - Metadata fixes
-  
+
   - Fixed outlier flagging for L2+ products. (https://github.com/punch-mission/punchbowl/pull/1141)
   - Fixed DSATVAL calculation error so that saturated pixels get flagged properly (particularly for NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
   - For science images, use the timestamp of the image to set the polarization state of the image. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. The PFWSTAT header value now reads -1 if the PFW packet is stale (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
 
 - Starfield processing improvements
-  
+
   - Corrected a bug with starfield model subtraction where the RA-axis cdelt was being accidentally sign flipped. (https://github.com/punch-mission/punchbowl/pull/1134)
   - Improved starfield model generation and subtraction. A median background subtraction that is no longer needed was removed. This should improve capturing the Milky Way into the starfield models. This also allows for a single starfield model subtraction. (https://github.com/punch-mission/punchbowl/pull/1145)
   - Improved starfield blur by reprojecting directly to the image frame instead of intermediate union WCS. (https://github.com/punch-mission/punchbowl/pull/1180)

@@ -374,7 +374,8 @@ def level2_clear_process_flow(flow_id: int | list[int], pipeline_config_path=Non
 @task(cache_policy=NO_CACHE)
 def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
     logger = get_logger()
-    pending_flows = session.query(Flow).filter(Flow.flow_type == "level2_PCA").filter(Flow.state == "planned").all()
+    pending_flows = session.query(Flow).filter(Flow.flow_type == "level2_PCA").filter(
+        Flow.state.in_(["planned", "launched", "running"])).all()
     if pending_flows:
         logger.info("A pending flow already exists. Skipping scheduling.")
         return []

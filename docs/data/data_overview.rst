@@ -11,7 +11,7 @@ products.  Each data product is identified with a three-character code, that ind
 which spacecraft produced the data.
 
 PUNCH is a polarimeter, so image data arrive in both unpolarized and polarized forms.  PUNCH represents polarization in two major ways:
-first, as the quasi-Stokes parameters B, :sup:`⟂` pB, and :sup:`⟂` pB';
+first, as the quasi-Stokes parameters tB, :sup:`⟂` pB (pB), and :sup:`⟂` pB' (pBp);
 and second, as polarization triplets in the "M,Z,P" tri-polarizer system which uses three (real or virtual) polarizer
 channels at M(inus) 60 degrees, Z(ero) degrees, and P(lus) 60 degrees relative to a reference angle in the
 instrument or image plane.  Both systems are described by
@@ -26,11 +26,11 @@ These are data direct from the PUNCH cameras, assembled into FITS files and merg
 square-root coded and losslessly compressed on board the spacecraft; L0 images have been decompressed into their original square-root
 coded form, but the coding is preserved. The square-root coding is tuned to match the effective digital step size to the photon noise
 level, across the dynamic range of the image.  To reconstruct direct camera values that are roughly proportional to photometric intensity,
-you can examine the "ISSQRT" field in the header.  If "ISSQRT" has a nonzero value, then the radiance B of a particular pixel is given by
+you can examine the "ISSQRT" field in the header.  If "ISSQRT" has a nonzero value, then the radiance tB of a particular pixel is given by
 
-B = P * P / SCALE
+tB = P * P / SCALE
 
-where B is an approximation of the original value (in digitizer number units) from the camera, P is the value of a particular pixel,
+where tB is an approximation of the original value (in digitizer number units) from the camera, P is the value of a particular pixel,
 and SCALE is the "SCALE" field in the header.
 
 Raw camera pixel values are digitized at 16 bits.  NFI pixel values are sums of several camera frames, and can therefore have values

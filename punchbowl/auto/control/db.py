@@ -80,6 +80,17 @@ Index("level0_uniqueness",
       File.observatory, File.file_version, File.date_obs,
       unique=True)
 
+
+class Quicklook(Base):
+    __tablename__ = "quicklook"
+    day = Column(DATETIME(fsp=6), primary_key=True, nullable=False)
+    level = Column(String(1), primary_key=True, nullable=False)
+    code = Column(String(3), primary_key=True, nullable=False)
+    movie_made = Column(Boolean, nullable=False, default=False)
+    image_made = Column(Boolean, nullable=False, default=False)
+    movie_nfile = Column(Integer, nullable=False, default=0)
+
+
 class Flow(Base):
     __tablename__ = "flows"
     flow_id = Column(Integer, primary_key=True)

@@ -48,7 +48,7 @@ def visualize_query_ready_files(session: Session,
     expected_files = pipeline_config["flows"]["quicklook"]["expected_files"]
     max_wait_days = pipeline_config["flows"]["quicklook"]["max_wait_days"]
 
-    flows_max = pipeline_config["flows"]["quicklook"]["flows_days"]
+    flows_max = pipeline_config["flows"]["quicklook"]["flows_max"]
 
     day_zero = datetime.fromisoformat(pipeline_config["flows"]["quicklook"]["start_time"])
     day = reference_time.replace(hour=0, minute=0, second=0, microsecond=0)

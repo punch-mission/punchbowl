@@ -292,7 +292,11 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
     flow_call_data["output_movie_dir"] = os.path.join(pipeline_config["ql_root"], flow_call_data["output_movie_dir"])
 
     try:
-        quicklook_core_flow(**flow_call_data)
+        quicklook_core_flow(file_list=flow_call_data["file_list"],
+                            output_movie_dir=flow_call_data["output_movie_dir"],
+                            make_image=make_image,
+                            make_movie=make_movie,
+                            framerate=flow_call_data["resolution"])
     except Exception as e:
         flow_db_entry.state = "failed"
         flow_db_entry.end_time = datetime.now()

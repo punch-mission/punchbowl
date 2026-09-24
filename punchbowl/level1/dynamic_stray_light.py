@@ -47,7 +47,8 @@ def phase_in_window(fname: str) -> int:
 
 
 def phase_in_day(fname: str) -> int:
-    """Get roll position number in the day.
+    """
+    Get roll position number in the day.
 
     Note that the "day" starts 4 minutes before midnight, because we're in the middle of a roll position at midnight.
     """

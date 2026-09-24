@@ -311,6 +311,30 @@ def test_fits_header_has_both_distortion_models():
     assert "DP1A" in h
     assert "DP2A" in h
 
+    # make a celestial WCS, pretend that it was read from a file,
+    # and test that the distortion keywords are written to a new header
+    cwcs = WCS(naxis=2)
+    cwcs.wcs.ctype = "RA", "Dec"
+    cwcs.wcs.cunit = "deg", "deg"
+    cwcs.wcs.cdelt = 0.025, 0.025
+    cwcs.wcs.crpix = 0, 0
+    cwcs.wcs.crval = 1, 1
+    cwcs.wcs.cname = "Right Asc.", "Declination"
+    cwcs.cpdis1 = cpdis1
+    cwcs.cpdis2 = cpdis2
+    # next line is important, it makes it look like it was already written/read from a FITS file
+    cwcs.wcs.alt = 'A'
+
+    h2 = m.to_fits_header(wcs = wcs, celestial_wcs = cwcs)
+    assert "CPDIS1" in h2
+    assert "CPDIS2" in h2
+    assert "CPDIS1A" in h2
+    assert "CPDIS2A" in h2
+
+    assert "DP1" in h2
+    assert "DP2" in h2
+    assert "DP1A" in h2
+    assert "DP2A" in h2
 
 def test_check_moon_in_fov():
     with fits.open(SAMPLE_FITS_PATH_UNCOMPRESSED) as hdul:

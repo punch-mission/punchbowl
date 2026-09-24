@@ -17,11 +17,11 @@ from scipy.interpolate import RegularGridInterpolator
 from skimage.restoration import inpaint_biharmonic
 from sklearn.decomposition import PCA
 
-from punchbowl.level1.dynamic_stray_light import phase_in_day
 from punchbowl.auto.control.util import batched
 from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits
 from punchbowl.data.meta import check_moon_in_fov
 from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.level1.dynamic_stray_light import phase_in_day
 from punchbowl.prefect import get_logger, punch_task
 from punchbowl.util import (
     ShmPickleableNDArray,
@@ -48,6 +48,8 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         The files to be used for PCA fitting but which don't need to be filtered
     nfi_mask : str
         Path to a NFI mask file
+    ref_date : str
+        The date to use for the PCA components
     n_components : int
         The number of PCA components to fit
     n_strides : int
@@ -92,7 +94,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         logger.info("Images loaded")
 
         x_cube_ds_filled, plot_masks = fill_problem_regions(x_cube_downsampled, metas, cwcses, sat_mask_cube,
-                                                            nfi_mask_ds, downsample_factor, process_pool)
+                                                            downsample_factor, process_pool)
 
         x_cube_downsampled.free()
         del x_cube_downsampled
@@ -100,10 +102,10 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         logger.info("Problem regions filled")
 
         good_mask_headers = find_outliers_with_headers(metas)
-        good_mask_pca = find_outliers_with_PCA(x_cube_ds_filled, good_mask_headers, nfi_mask_ds, n_workers)
+        good_mask_pca = find_outliers_with_pca(x_cube_ds_filled, good_mask_headers, nfi_mask_ds, n_workers)
         good_mask = good_mask_headers * good_mask_pca
 
-        dsl_models, pca_components = do_PCA_filtering(x_cube_ds_filled, good_mask, nfi_mask_ds, phases, n_strides,
+        dsl_models, pca_components = do_pca_filtering(x_cube_ds_filled, good_mask, nfi_mask_ds, phases, n_strides,
                                                       n_components, process_pool, n_workers)
 
         logger.info("PCA filtering complete")
@@ -157,18 +159,18 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         new_meta["PCANCOMP"] = n_components
         new_meta["PCADWNSP"] = downsample_factor
-        new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
+        new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
         pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
 
         output_cubes.append(pca_cube)
 
         new_meta = NormalizedMetadata.load_template("SR4", "1")
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta['DATE-OBS'] = ref_date
-        new_meta['DATE-AVG'] = ref_date
-        new_meta['DATE-BEG'] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta['DATE-END'] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta['FILEVRSN'] = metas[0]['FILEVRSN'].value
+        new_meta["DATE-OBS"] = ref_date
+        new_meta["DATE-AVG"] = ref_date
+        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
         bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
         output_cubes.append(bg_cube)
 
@@ -176,7 +178,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
             if path in input_files:
                 new_meta = NormalizedMetadata.load_template("CNN", "2")
                 new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-                for key in metas[i].keys():
+                for key in metas[i]:
                     if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
                                  "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                             or key[-4:] in ["_OBS", "_VOB"])
@@ -207,6 +209,26 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
 
 
 def reconstitute(flat_image: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    """
+    Put selected data back into an array.
+
+    If you did `my_pixels = my_array[mask]` to select certain pixels and operate on those pixels, this function takes
+    `my_pixels` and puts them back where they were in an empty array of the original shape.
+
+    Parameters
+    ----------
+    flat_image : np.ndarray
+        The selected pixels. If 2D, it is assumed to be extractions from multiple images stacked along the first
+        dimension.
+    mask : np.ndarray
+        The mask originally used to extract the pixels
+
+    Returns
+    -------
+    np.ndarray
+        The restored image(s)
+
+    """
     if flat_image.ndim == 1:
         im = np.zeros(mask.shape)
         im[mask] = flat_image
@@ -218,6 +240,24 @@ def reconstitute(flat_image: np.ndarray, mask: np.ndarray) -> np.ndarray:
 
 
 def get_pylon_mask(shape: tuple, wcs: WCS, blur: bool = False) -> np.ndarray:
+    """
+    Generate a mask for the pylon region.
+
+    Parameters
+    ----------
+    shape : tuple
+        The mask shape
+    wcs : WCS
+        The WCS for the image we're masking
+    blur : bool
+        If true, the mask is blurred so it has a soft edge.
+
+    Returns
+    -------
+    np.ndarray
+        The mask
+
+    """
     yy, xx = np.indices(shape, dtype=float)
     yy -= wcs.wcs.crpix[0] - 1 + 40
     xx -= wcs.wcs.crpix[1] - 1
@@ -231,12 +271,38 @@ def get_pylon_mask(shape: tuple, wcs: WCS, blur: bool = False) -> np.ndarray:
 
 def _load_one_file(path: str, downsample_factor: int,
                    ) -> tuple[NormalizedMetadata, WCS, WCS, str, np.ndarray, np.ndarray]:
+    """
+    Load one file in a parallel worker.
+
+    Parameters
+    ----------
+    path : str
+        The path to load
+    downsample_factor : int
+        The factor by which the image data will later be downsampled.
+
+    Returns
+    -------
+    meta : NormalizedMetadata
+        The loaded metadata
+    wcs : WCS
+        The loaded helio wcs
+    cwcs : WCS
+        The loaded celestial wcs
+    path : str
+        The file path that was loaded
+    data : np.ndarray
+        The loaded image
+    sat_mask_cube : np.ndarray
+        The loaded saturation mask
+
+    """
     if not os.path.exists(path):
         return "missing"
     cube = load_ndcube_from_fits(path, include_uncertainty=False, include_provenance=False, dtype=np.float32)
     if cube.meta["BADPKTS"].value or cube.meta["DATAP25"].value > 1e-9:
         return None
-    
+
     data = cube.data
     saturation_mask = np.isinf(cube.uncertainty.array)
     if downsample_factor > 1:
@@ -248,6 +314,37 @@ def _load_one_file(path: str, downsample_factor: int,
 
 def load_files(files: list[str], n_workers: int, downsample_factor: int,
                ) -> tuple[np.ndarray, list, list, list, list, np.ndarray]:
+    """
+    Load the input files.
+
+    Loading is done in parallel. Terribly obvious outliers are skipped.
+
+    Parameters
+    ----------
+    files : list[str]
+        The files to load.
+    n_workers : int
+        The number of workers.
+    downsample_factor : int
+        The factor by which the saturation mask is downsampled. (Full-res data is returned because it's always needed,
+        but if we're downsampling the data later, we'll only need the saturation mask at the reduced resolution.)
+
+    Returns
+    -------
+    x_cube : np.ndarray
+        The loaded data
+    metas : list[NormalizedMetadata]
+        The loaded metadata
+    wcses : list[WCS]
+        The loaded helio wcses
+    cwcses : list[WCS]
+        The loaded celestial wcses
+    loaded_files : list[str]
+        The file paths that were actually loaded (not skipped)
+    sat_mask_cube : np.ndarray
+        The saturation mask array
+
+    """
     metas = []
     wcses = []
     cwcses = []
@@ -287,7 +384,7 @@ def load_files(files: list[str], n_workers: int, downsample_factor: int,
 
 def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarray,
                     meta: NormalizedMetadata, wcs: WCS, sat_mask: np.ndarray,
-                    nfi_mask: np.ndarray, downsample_factor: int) -> None:
+                    downsample_factor: int) -> None:
     numba.set_num_threads(2)
 
     if downsample_factor > 1:
@@ -305,17 +402,15 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
         warnings.filterwarnings("ignore", ".*All-NaN slice.*")
         xs, ys = wcs.world_to_pixel(bodies)
 
-        for body, x, y in zip(body_names, np.atleast_1d(xs), np.atleast_1d(ys)):
+        for body, x, y in zip(body_names, np.atleast_1d(xs), np.atleast_1d(ys), strict=True):
             if 0 < x < src_data.shape[1] and 0 < y < src_data.shape[0]:
                 x, y = int(x), int(y) # noqa: PLW2901
-                if body != "moon":
-                    w = int(round(9 * 2 / downsample_factor))
-                else:
-                    w = int(round(30 * 2 / downsample_factor))
+                w = 30 if body == "moon" else 9
+                w = round(w * 2 / downsample_factor)
                 fill_mask[y - w:y + w + 1, x - w:x + w + 1] = 1
 
     sat_idxs = np.nonzero(sat_mask)
-    for y, x in zip(*sat_idxs):
+    for y, x in zip(*sat_idxs, strict=True):
         fill_mask[y - 1:y + 2, x - 1:x + 2] = 1
         plot_mask[y - 1:y + 2, x - 1:x + 2] = 1
 
@@ -324,28 +419,77 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
             fill_mask[y] = 1
             plot_mask[y - 1:y + 2] = 1
 
-    filtered_image = nan_percentile_2d(np.where(fill_mask, np.nan, src_data), 50, int(round(5 * 2 / downsample_factor)))
+    filtered_image = nan_percentile_2d(np.where(fill_mask, np.nan, src_data), 50, round(5 * 2 / downsample_factor))
     dest[:] = inpaint_biharmonic(filtered_image, fill_mask)
     mask_dest[:] = plot_mask
 
 
 def fill_problem_regions(x_cube: np.ndarray, metas: list[NormalizedMetadata], cwcses: list[WCS],
-                         sat_mask_cube: np.ndarray, nfi_mask: np.ndarray, downsample_factor: int,
+                         sat_mask_cube: np.ndarray, downsample_factor: int,
                          process_pool: ProcessPoolExecutor) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Generate fill values for problem regions in images (e.g. planets or saturated pixels).
+
+    Problem regions are identified and then filled with a smooth inpainting.
+
+    Parameters
+    ----------
+    x_cube : np.ndarray
+        The data to filter
+    metas : list[NormalizedMetadata]
+        Corresponding metadata
+    cwcses : list[WCS]
+        Corresponding wcses
+    sat_mask_cube : np.ndarray
+        Corresponding saturation masks
+    downsample_factor: int
+        The factor by which the provided data is downsampled
+    process_pool : ProcessPoolExecutor
+        Executor for parallel work
+
+    Returns
+    -------
+    np.ndarray
+        The filled data
+    np.ndarray
+        A mask cube indicating where fill values were generated
+
+    """
     # Copy x_cube
     x_cube_filled = ShmPickleableNDArray.empty_like(x_cube)
     plot_masks = ShmPickleableNDArray.empty_like(x_cube)
 
     for _ in process_pool.map(_fill_one_image, x_cube, x_cube_filled, plot_masks, metas, cwcses, sat_mask_cube,
-                              repeat(nfi_mask), repeat(downsample_factor), chunksize=2):
+                              repeat(downsample_factor), chunksize=2):
         # Loop is necessary for any exceptions from workers to be raised
         pass
 
     return x_cube_filled, plot_masks
 
 
-def find_outliers_with_PCA(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, n_workers: int,
+def find_outliers_with_pca(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, n_workers: int,
                            ) -> np.ndarray:
+    """
+    Identify outliers with by calculating a few PCA components and finding images with very strong amplitudes.
+
+    Parameters
+    ----------
+    x_cube_filled : np.ndarray
+        The data to filter
+    good_mask : np.ndarray
+        A mask indicating whether images are good. Images already known to be bad will be excluded to make this test
+        more sensitive.
+    nfi_mask : np.ndarray
+        The NFI mask
+    n_workers : int
+        Number of parallel threads to use
+
+    Returns
+    -------
+    np.ndarray
+        A mask indicating which images are good
+
+    """
     data = x_cube_filled[:, nfi_mask]
     data = data[good_mask]
 
@@ -369,6 +513,23 @@ def find_outliers_with_PCA(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi
 
 
 def find_outliers_with_headers(metas: list[NormalizedMetadata]) -> np.ndarray:
+    """
+    Identify outliers by checking stats in the image headers.
+
+    A first round of outlier rejection. Images with percentiles exceeding the population median by two sigma are
+    flagged.
+
+    Parameters
+    ----------
+    metas : list[NormalizedMetadata]
+        The image metadata
+
+    Returns
+    -------
+    np.ndarray
+        A mask indicating which images are good
+
+    """
     good_mask = np.ones(len(metas), dtype=bool)
     for k in "DATAP98", "DATAP90", "DATAP50":
         d = np.array([m[k].value for m in metas])
@@ -376,13 +537,44 @@ def find_outliers_with_headers(metas: list[NormalizedMetadata]) -> np.ndarray:
     return good_mask
 
 
-def do_PCA_filtering(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, phases: np.ndarray,
-                     n_strides: int, n_components: int, process_pool: ProcessPoolExecutor, n_workers: int
+def do_pca_filtering(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, phases: np.ndarray,
+                     n_strides: int, n_components: int, process_pool: ProcessPoolExecutor, n_workers: int,
                      ) -> np.ndarray:
+    """
+    Compute PCA components and corresponding dynamic stray light estimates.
+
+    Parameters
+    ----------
+    x_cube_filled : np.ndarray
+        The data to filter
+    good_mask : np.ndarray
+        Flag for each image indicating whether to include it when fitting components.
+    nfi_mask : np.ndarray
+        The NFI mask
+    phases : np.ndarray
+        The phase in the day of each NFI image. Used for reproducible striding.
+    n_strides : int
+        The number of stride positions to use
+    n_components : int
+        The number of components to fit
+    process_pool : ProcessPoolExecutor
+        An executor to use for parallelization
+    n_workers : int
+        Maximum number of cores to use. Will be divided among processes for each stride position and threads within
+        each process.
+
+    Returns
+    -------
+    np.ndarray
+        The dynamic stray light models for each image
+    np.ndarray
+        The fitted PCA components
+
+    """
     dsls = ShmPickleableNDArray.empty_like(x_cube_filled)
     pca_components = ShmPickleableNDArray((n_strides, n_components + 1, np.sum(nfi_mask)), dtype=np.float32)
-    n_threads = max(1, int(round(n_workers / n_components)))
-    for _ in process_pool.map(_do_PCA_filtering_one_stride, range(n_strides), repeat(n_strides), repeat(x_cube_filled),
+    n_threads = max(1, round(n_workers / n_components))
+    for _ in process_pool.map(_do_pca_filtering_one_stride, range(n_strides), repeat(n_strides), repeat(x_cube_filled),
                               repeat(good_mask), repeat(dsls), pca_components, repeat(nfi_mask), repeat(phases),
                               repeat(n_components), repeat(n_threads)):
         # Loop is necessary for any exceptions from workers to be raised
@@ -393,6 +585,28 @@ def do_PCA_filtering(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask:
 def build_models_with_existing_components(
         x_cube_filled: np.ndarray, nfi_mask: np.ndarray, pca_components: np.ndarray,
         phases: np.ndarray, process_pool: ProcessPoolExecutor) -> np.ndarray:
+    """
+    Compute dynamic stray light estimates from previously-fitted PCA components.
+
+    Parameters
+    ----------
+    x_cube_filled : np.ndarray
+        The data to filter
+    nfi_mask : np.ndarray
+        The NFI mask
+    pca_components : np.ndarray
+        The PCA components to use
+    phases : np.ndarray
+        The phase in the day of each NFI image. Used for reproducible striding.
+    process_pool : ProcessPoolExecutor
+        An executor to use for parallelization
+
+    Returns
+    -------
+    np.ndarray
+        The dynamic stray light models for each image
+
+    """
     dsls = ShmPickleableNDArray.empty_like(x_cube_filled)
 
     smoothed_components = ShmPickleableNDArray.empty_like(pca_components)
@@ -403,16 +617,16 @@ def build_models_with_existing_components(
             component = scipy.signal.medfilt2d(component, comp_smoothing)
             smoothed_components[i, j] = component[nfi_mask]
 
-    for _ in process_pool.map(_make_one_model_from_components, phases, repeat(pca_components), repeat(smoothed_components),
-                              dsls, repeat(nfi_mask)):
+    for _ in process_pool.map(_make_one_model_from_components, phases, repeat(pca_components),
+                              repeat(smoothed_components), dsls, repeat(nfi_mask)):
         # Loop is necessary for any exceptions from workers to be raised
         pass
     return dsls
 
 
-def _make_one_model_from_components(image, phase, pca_components, smoothed_pca_components,
-                                 dsl_dest: np.ndarray, nfi_mask: np.ndarray,
-                                 ) -> None:
+def _make_one_model_from_components(image: np.ndarray, phase: int, pca_components: np.ndarray,
+                                    smoothed_pca_components: np.ndarray, dsl_dest: np.ndarray, nfi_mask: np.ndarray,
+                                    ) -> None:
     n_components = pca_components.shape[1]
     means = pca_components[phase][0]
     components = pca_components[phase][1:]
@@ -421,7 +635,7 @@ def _make_one_model_from_components(image, phase, pca_components, smoothed_pca_c
     pca = PCA(n_components=n_components)
     pca.mean_ = means
     pca.components_ = components
-    # This values don't matter but must be present
+    # These values don't matter but must be present
     pca.explained_variance_ = np.ones(n_components)
     with limit_threads(1):
         t = pca.transform(image[nfi_mask].reshape((1, -1)))
@@ -431,7 +645,7 @@ def _make_one_model_from_components(image, phase, pca_components, smoothed_pca_c
     dsl_dest[:] = reconstitute(recon, nfi_mask)
 
 
-def _do_PCA_filtering_one_stride(this_set_number: int, n_sets: int, x_cube_filled: np.ndarray, good_mask: np.ndarray,
+def _do_pca_filtering_one_stride(this_set_number: int, n_sets: int, x_cube_filled: np.ndarray, good_mask: np.ndarray,
                                  dsl_dest: np.ndarray, component_dest: np.ndarray, nfi_mask: np.ndarray,
                                  phases: np.ndarray, n_components: int, n_threads: int) -> None:
     phases = (phases - this_set_number) % n_sets
@@ -464,6 +678,30 @@ def _do_PCA_filtering_one_stride(this_set_number: int, n_sets: int, x_cube_fille
 def subtract_models_from_data(x_cube: np.ndarray, x_cube_ds_filled: np.ndarray, dsl_models: np.ndarray,
                               downsample_factor: int, process_pool: ProcessPoolExecutor,
                               ) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Upscale and subtract dynamic stray light models from data.
+
+    Parameters
+    ----------
+    x_cube : np.ndarray
+        The full-resolution data from which to subtract the models
+    x_cube_ds_filled : np.ndarray
+        The downsampled, inpainted data from which to subtract the models
+    dsl_models : np.ndarray
+        The dynamic stray light models
+    downsample_factor : int
+        The previously-used downsampling factor--we'll upscale by this amount.
+    process_pool : ProcessPoolExecutor
+        A ProcessPoolExecutor to use for multiprocessing
+
+    Returns
+    -------
+    np.ndarray
+        The full-resolution, model-subtracted data
+    np.ndarray
+        The downsampled and filtered, model-subtracted data
+
+    """
     filtered_images = ShmPickleableNDArray.empty_like(x_cube)
     filtered_filled_images = ShmPickleableNDArray.empty_like(x_cube_ds_filled)
     for _ in process_pool.map(_subtract_one_model_from_data, x_cube, x_cube_ds_filled, dsl_models,
@@ -481,7 +719,27 @@ def _subtract_one_model_from_data(x_data: np.ndarray, x_data_ds_filled: np.ndarr
     np.subtract(x_data_ds_filled, dsl_model, out=filtered_filled_image)
 
 
-def upsample(image, factor):
+def upsample(image: np.ndarray, factor: int) -> np.ndarray:
+    """
+    Upsample an image.
+
+    Tries to be very careful about being an exact inverse of binning. Each pixel in the downsampled image is
+    positioned at the center of the corresponding bin in the full-res image, and the data are then interpolated to
+    full-res. Padded with zero at the edges where interpolation can't happen.
+
+    Parameters
+    ----------
+    image : np.ndarray
+        The image to upsample
+    factor : int
+        The factor to upsample by
+
+    Returns
+    -------
+    np.ndarray
+        The upsampled image
+
+    """
     if factor == 1:
         return image
     target_shape = np.array(image.shape) * factor
@@ -491,7 +749,24 @@ def upsample(image, factor):
     interp = RegularGridInterpolator(binned_indices, image, method="linear", bounds_error=False, fill_value=0)
     return interp(upsample_indices)
 
+
 def downsample(image: np.ndarray, factor: int) -> np.ndarray:
+    """
+    Downsample an image by binning and averaging.
+
+    Parameters
+    ----------
+    image : np.ndarray
+        The image to downsample
+    factor : int
+        The factor to downsample by
+
+    Returns
+    -------
+    np.ndarray
+        The downsampled image
+
+    """
     if factor == 1:
         return image
     if len(image.shape) == 2:
@@ -504,7 +779,7 @@ def downsample(image: np.ndarray, factor: int) -> np.ndarray:
 
 def _inst_frame_filter_one_image(image: np.ndarray, filled_image: np.ndarray,
                                  destination: np.ndarray, downsample_factor: int) -> None:
-    ims1 = scipy.ndimage.percentile_filter(filled_image, 30, size=int(round(11 * 2 / downsample_factor)))
+    ims1 = scipy.ndimage.percentile_filter(filled_image, 30, size=round(11 * 2 / downsample_factor))
     ims2 = scipy.ndimage.gaussian_filter(filled_image, sigma=15 * 2 / downsample_factor)
     unsharp_image = 0.4 * ims1 + 0.35 * ims2
     unsharp_image = upsample(unsharp_image, downsample_factor)
@@ -515,6 +790,33 @@ def _inst_frame_filter_one_image(image: np.ndarray, filled_image: np.ndarray,
 def inst_frame_filter(filtered_images: np.ndarray, filtered_filled_images: np.ndarray,
                       downsample_factor: int, process_pool: ProcessPoolExecutor,
                       background_image: np.ndarray = None) -> np.ndarray:
+    """
+    Apply a spatial post-filter to the PCA-filtered images in the instrument frame.
+
+    The filter is mostly just unsharp-masking followed by a spatial median filter, and then a low-percentile
+    background across the ensemble.
+
+    Parameters
+    ----------
+    filtered_images : np.ndarray
+        The PCA-filtered images to post-filter
+    filtered_filled_images : np.ndarray
+        The PCA-filtered images with problem regions filled, used to build the unsharp-mask background.
+    downsample_factor : int
+        The factor by which `filtered_filled_images` is downsampled. The unsharp mask will be upscaled by this factor.
+    process_pool : ProcessPoolExecutor
+        A ProcessPoolExecutor to use for multiprocessing
+    background_image : np.ndarray
+        An optional image-frame background to subtract. If not provided, a percentile is calculated and subtracted.
+
+    Returns
+    -------
+    np.ndarray
+        The post-filtered images
+    np.ndarray
+        The instrument-frame background image that was computed and subtracted
+
+    """
     post_filtered_images = ShmPickleableNDArray.empty_like(filtered_images)
     for _ in process_pool.map(_inst_frame_filter_one_image, filtered_images, filtered_filled_images,
                               post_filtered_images, repeat(downsample_factor), chunksize=2):
@@ -528,13 +830,24 @@ def inst_frame_filter(filtered_images: np.ndarray, filtered_filled_images: np.nd
     return post_filtered_images, background_image
 
 
-def censor_wcs(wcs):
+def censor_wcs(wcs: WCS) -> WCS:
     """
     Remove observer details from a WCS.
 
     When input images have slightly different viewpoints, Sunpy will say this
     is an invalid coordinate transformation. Here we censor information from the
     WCS to pacify Sunpy.
+
+    Parameters
+    ----------
+    wcs : WCS
+        The WCS to censor
+
+    Returns
+    -------
+    WCS
+        The censored WCS
+
     """
     wcs = wcs.deepcopy()
     wcs.wcs.aux.hgln_obs = None
@@ -567,6 +880,32 @@ def _reproject_one_image(image: np.ndarray, plot_mask: np.ndarray, wcs: WCS, mas
 
 def reproject_images(dfiltered_images: np.ndarray, plot_masks: np.ndarray, wcses: list[WCS],
                      process_pool: ProcessPoolExecutor, downsample_factor: int) -> tuple[np.ndarray, np.ndarray, WCS]:
+    """
+    Reproject images to the helio frame.
+
+    Parameters
+    ----------
+    dfiltered_images : np.ndarray
+        The doubly-filtered images to reproject
+    plot_masks : np.ndarray
+        Masks to take along through the reprojection
+    wcses : list[WCS]
+        The image WCSes
+    process_pool : ProcessPoolExecutor
+        The ProcessPoolExecutor to use for multiprocessing
+    downsample_factor : int
+        The factor by which the masks have been downsampled. They will be upsampled before reprojection
+
+    Returns
+    -------
+    np.ndarray
+        The reprojected images
+    np.ndarray
+        The reprojected masks
+    WCS
+        The frame the data were reprojected into
+
+    """
     target_frame = wcses[0].deepcopy()
     target_frame.wcs.pc = np.eye(2)
     target_frame.wcs.crpix = dfiltered_images.shape[2] / 2 + 0.5, dfiltered_images.shape[1] / 2 + 0.5
@@ -585,17 +924,54 @@ def reproject_images(dfiltered_images: np.ndarray, plot_masks: np.ndarray, wcses
     return oriented_images, masks, target_frame
 
 
-def sinusoid(x: int | float | np.ndarray, dy: np.ndarray, *args) -> np.ndarray:
-    if isinstance(x, (int, float)):
-        result = dy
-    else:
-        result = np.full(len(x), dy, dtype=float)
+def sinusoid(x: int | float | np.ndarray, dy: np.ndarray, *args: list[float]) -> np.ndarray:
+    """
+    Compute a sum of sinusoids.
+
+    Each additional sinusoid is a higher harmonic of the first, which has a frequency of 1/360 degrees.
+
+    Parameters
+    ----------
+    x : int | float | np.ndarray
+        The points at which to compute the sinusoids
+    dy : np.ndarray
+        A zero-frequency component
+    args : list[float]
+        The first and second values are the amplitude and phase offset of the first sinusoid. Each additional two values
+        are the same for the next sinusoid.
+
+    Returns
+    -------
+    np.ndarray
+        The sum of the sinusoids and fixed offset
+
+    """
+    result = dy if isinstance(x, (int, float)) else np.full(len(x), dy, dtype=float)
     for f, (A, dphi) in enumerate(batched(args, 2)): # noqa: N806
         result += A * np.sin(x * ((f + 1) * np.pi / 180) + dphi)
     return result
 
 
-def jac(x: np.ndarray, dy: np.ndarray, *args) -> np.ndarray: # noqa: ARG001
+def jac(x: np.ndarray, dy: np.ndarray, *args: list[float]) -> np.ndarray: # noqa: ARG001
+    """
+    Compute the jacobian of `sinusoid`.
+
+    Parameters
+    ----------
+    x : int | float | np.ndarray
+        The points at which to compute the sinusoids
+    dy : np.ndarray
+        A zero-frequency component
+    args : list[float]
+        The first and second values are the amplitude and phase offset of the first sinusoid. Each additional two values
+        are the same for the next sinusoid.
+
+    Returns
+    -------
+    np.ndarray
+        The Jacobian
+
+    """
     ddy = np.full_like(x, 1)
     ret = [ddy]
     for f, (A, dphi) in enumerate(batched(args, 2)): # noqa: N806
@@ -606,6 +982,23 @@ def jac(x: np.ndarray, dy: np.ndarray, *args) -> np.ndarray: # noqa: ARG001
 
 
 def make_correction_map(crota: float, popts: np.ndarray, ivals: np.ndarray) -> np.ndarray:
+    """
+    Compute a 2D correction map for a given image from a grid of fit sinusoids.
+
+    Parameters
+    ----------
+    crota : float
+        The orbital phase value for which to prepare a map
+    popts : np.ndarray
+        The fitted sinusoid components
+    ivals : np.ndarray
+        The grid points at which the sinusoids were computed.
+
+    Returns
+    -------
+    A 2D map containing at each pixel the value of the sinusoids for that pixel at the given CROTA value
+
+    """
     correction_map = np.zeros(popts.shape[1:])
 
     for i in range(len(ivals)):
@@ -614,8 +1007,8 @@ def make_correction_map(crota: float, popts: np.ndarray, ivals: np.ndarray) -> n
     return correction_map
 
 
-def _do_one_sinusoid(args: tuple, crota_vals: np.ndarray, images: np.ndarray, mask: np.ndarray, n_comps: int, whs: int,
-                     ivals: np.ndarray) -> list:
+def _do_one_fit(args: tuple, crota_vals: np.ndarray, images: np.ndarray, mask: np.ndarray, n_comps: int, whs: int,
+                ivals: np.ndarray) -> list:
     ix, i = args
     rets = []
     with np.errstate(all="ignore"), warnings.catch_warnings():
@@ -662,10 +1055,39 @@ def _do_one_sinusoid(args: tuple, crota_vals: np.ndarray, images: np.ndarray, ma
 
 def compute_popts(crota_vals: np.ndarray, images: np.ndarray, mask: np.ndarray, process_pool: ProcessPoolExecutor,
                   n_comps: int, grid_size: int = 110, whs: int = 2) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Fit sinusoids for one time window at a grid of pixel positions.
+
+    Parameters
+    ----------
+    crota_vals : np.ndarray
+        The orbital phase values---the x axis of the sinusoids
+    images : np.ndarray
+        The images to fit
+    mask : np.ndarray
+        The NFI mask
+    process_pool : ProcessPoolExecutor
+        A ProcessPoolExecutor to use for parallelization
+    n_comps : int
+        The number of sinusoids to fit. Each additional component will be a higher-yet harmonic.
+    grid_size : int
+        The number of grid points in each dimension at which to compute fits
+    whs : int
+        The window half-size---how big of a box around each grid point to use as the y-values for the fit.
+
+    Returns
+    -------
+    np.ndarray
+        The fitted coefficients, shape (n_comps, grid_size_y, grid_size_x)
+    np.ndarray
+        The pixel locations of the grid points. This is a one-dimensional array, and these values are used for both the
+        x and y dimension.
+
+    """
     ivals = np.round(np.linspace(0, images.shape[1], grid_size)).astype(int)
     popts = np.zeros((2 * n_comps + 1, ivals.size, ivals.size))
 
-    for ret in process_pool.map(_do_one_sinusoid, enumerate(ivals), repeat(crota_vals), repeat(images), repeat(mask),
+    for ret in process_pool.map(_do_one_fit, enumerate(ivals), repeat(crota_vals), repeat(images), repeat(mask),
                                 repeat(n_comps), repeat(whs), repeat(ivals)):
         for popt, ix, jx in ret:
             popts[:, ix, jx] = popt
@@ -696,6 +1118,32 @@ def _desinusoid_one_image(src_image: np.ndarray, crota: float, t: float, ivals: 
 
 def do_sinusoid_filtering(oriented_images: np.ndarray, metas: list[NormalizedMetadata], mask: np.ndarray,
                           process_pool: ProcessPoolExecutor) -> np.ndarray:
+    """
+    Run orbital-phase de-trending.
+
+    At a grid of pixel locations, a few sinusoids are fit to the time-series of images as a function of orbital
+    phase. The sinusoid frequencies are the orbital frequency plus a few harmonics. The resulting sinusoids are then
+    subtracted from the data. The image sequence is broken up into 3-day windows, and each window is fit separately
+    (assuming sufficient samples in the window). To subtract a given image, the sinusoid windows are interpolated
+    between.
+
+    Parameters
+    ----------
+    oriented_images : np.ndarray
+        The images to fit and filter
+    metas : list[NormalizedMetadata]
+        The image metadata
+    mask : np.ndarray
+        The NFI mask
+    process_pool : ProcessPoolExecutor
+        A ProcessPoolExecutor to use for parallelization
+
+    Returns
+    -------
+    np.ndarray
+        The filtered images
+
+    """
     crota_vals = np.array([m["CROTA"].value for m in metas])
     time_based_popts = []
     dateobses = np.array([m["DATE-OBS"].value for m in metas], dtype=np.datetime64)
@@ -725,7 +1173,21 @@ def do_sinusoid_filtering(oriented_images: np.ndarray, metas: list[NormalizedMet
     return corrected_frames
 
 
-def make_edge_mask(shape):
+def make_edge_mask(shape: tuple) -> np.ndarray:
+    """
+    Make a mask to trim the inner and outer edges of NFI.
+
+    Parameters
+    ----------
+    shape : tuple
+        The image shape
+
+    Returns
+    -------
+    np.ndarray
+        A mask with an inner and outer edge.
+
+    """
     inner_mask = ~make_circular_mask(shape, 200)
     outer_mask = make_circular_mask(shape, 960)
     return inner_mask * outer_mask

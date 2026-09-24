@@ -373,6 +373,25 @@ def level2_clear_process_flow(flow_id: int | list[int], pipeline_config_path=Non
 
 @task(cache_policy=NO_CACHE)
 def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+    """
+    Query for run-able PCA batches.
+
+    Waiting L1 XR4 files are collected from the DB. The FileRelationships table is used to exclude XR4s that have
+    already gone through PCA. Ready files are divided into groups of a maximum duration and image count. Groups that
+    are under the required image size are augmented with "context" images that have already been PCA filtered. These
+    images will be used for fitting, but will not produce output files.
+
+    Parameters
+    ----------
+    session
+    pipeline_config
+    reference_time
+    max_n
+
+    Returns
+    -------
+
+    """
     logger = get_logger()
     pending_flows = session.query(Flow).filter(Flow.flow_type == "level2_PCA").filter(
         Flow.state.in_(["planned", "launched", "running"])).all()
@@ -401,26 +420,32 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
                        .order_by(File.date_obs.desc())
                        .limit(batch_size * n_batches_to_schedule).all())
 
-    grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=60*60*24*window_size_days,
+    # Divide these files into groups of a maximum size and duration
+    grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=60 * 60 * 24 * window_size_days,
                                         max_per_group=batch_size)
     grouped_files = grouped_files[:n_batches_to_schedule]
 
     outputs = []
     for group in grouped_files:
+        # We'll look for extra "context" files as needed.
         dateobses = [f.date_obs for f in group]
         central_time = average_datetime(dateobses)
         dt = func.abs(func.timestampdiff(text("second"), File.date_obs, central_time))
         n_needed = batch_size - len(group)
         context_files = (session.query(File)
+                                # Look only for files that have already been filtered
                                 .filter(child_exists_subquery)
                                 .filter(File.state.in_(["created", "progressed"]))
                                 .filter(File.level == "1")
                                 .filter(File.observatory == "4")
                                 .filter(File.file_type == "XR")
                                 .filter(~File.bad_packets)
-                                .filter(dt < 60*60*24*window_size_days)
+                                # This was our maximum group size earlier. By looking for dt under that size, we've
+                                # effectively doubled our window size for finding context files.
+                                .filter(dt < 60 * 60 * 24 * window_size_days)
                                 .order_by(dt.asc())
                                 .limit(n_needed).all())
+        # level2_PCA_construct_file_info will use these flags to separate the context flags
         for f in group:
             f._to_filter = True
         for f in context_files:
@@ -525,7 +550,9 @@ def level2_PCA_construct_file_info(level1_files: list[File], pipeline_config: di
 def level2_PCA_relationship_generator(parent_files: list[File], child_files: list[File]) -> Generator:
     files_to_filter = [f for f in parent_files if f._to_filter]
     filtered_files = [f for f in child_files if f.file_type == "CN"]
+    # One-to-one mapping between input XR4s and output CNNs
     yield from zip(files_to_filter, filtered_files)
+    # Link each XR4 to the AR4 and SR4 outputs
     cal_files = [f for f in child_files if f.file_type != "CN"]
     yield from product(parent_files, cal_files)
 

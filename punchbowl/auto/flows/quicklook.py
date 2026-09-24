@@ -50,7 +50,7 @@ def visualize_query_ready_files(session: Session,
 
     flows_max = pipeline_config["flows"]["quicklook"]["flows_max"]
 
-    day_zero = datetime.fromisoformat(pipeline_config["flows"]["quicklook"]["start_time"])
+    day_zero = datetime.fromisoformat(pipeline_config["flows"]["quicklook"]["start_time"]).astimezone(UTC)
     day = reference_time.replace(hour=0, minute=0, second=0, microsecond=0)
 
     # Starting at the reference time, step backwards in time to query files ready for quicklook

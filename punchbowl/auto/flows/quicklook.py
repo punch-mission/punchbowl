@@ -82,7 +82,7 @@ def visualize_query_ready_files(session: Session,
                 make_image = (not image_made) and (len(files) > 0)
                 if (reference_time - day) < timedelta(days=max_wait_days):
                     make_movie = (not movie_made) and (len(files) >= movie_nfiles)
-                else:
+                else: # we've been waiting more than the configured wait time
                     make_movie = True
 
                 if make_image or make_movie:

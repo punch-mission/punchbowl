@@ -129,6 +129,8 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
     final_selection = []
     files_set_to_be_filtered = set()
     for group in groups:
+        if not group:
+            continue
         # If there are any already-filtered files that fall within the time range this group spans, let's include
         # them as "context files" that won't produce output files, but do allow more continuity in the temporal
         # filtering. Let's also grab any already-filtered files on either end of the time range, to account for the
@@ -146,6 +148,7 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
                               .filter(File.level == "1")
                               .filter(File.observatory == "4")
                               .filter(File.file_type == "XR")
+                              .filter(File.state.in_(["created", "progressed"]))
                               .filter(~File.bad_packets)
                               .filter(File.date_obs > dstart - margin_before)
                               .filter(File.date_obs < dend + margin_after).all())
@@ -298,6 +301,7 @@ def levelq_QNN_scheduler_flow(pipeline_config_path=None, session=None, reference
         levelq_QNN_construct_file_info,
         levelq_QNN_construct_flow_info,
         pipeline_config_path,
+        update_input_file_state=False,
         reference_time=reference_time,
         session=session,
         relationship_generator=levelq_QNN_relationship_generator,

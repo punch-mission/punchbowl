@@ -10,7 +10,7 @@ giving you the cleanest possible signal for heliospheric science.
 Each of these two product types are produced every 32 minutes, allowing multiple images to be averaged together at every point in the mosiac field of view,
 offering improved signal-to-noise relative to other products.
 PAM files (with the "P" standing for "polarized") have three data layers: total brightness (tB), which is effectively an unpolarized image, followed by
-polarized brightness (pB) and its radial component (pB'), making PAM the product of
+polarized brightness (pB) and its radial component (pB', also referred to as pBp), making PAM the product of
 choice for studies of CMEs, shocks, the solar wind, etc.
 CAM files (with the "C" standing for "clear") provide only unpolarized data. The PAMs' unpolarized total brightness is reconstructed from sets of polarized
 observations, while the CAMs are produced from unpolarized observations which are made at a reduced cadence. So while the total brightness layer of the PAMs

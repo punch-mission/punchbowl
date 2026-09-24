@@ -769,6 +769,9 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
             cleaned_ready_groups.append(group)
 
     for group in cleaned_ready_groups:
+        # Now that we know we have the WFI data to make this CAM, let's find NFI data to include. The NFI data gets
+        # merged by a median, which handles residual pylon artifacts really well. This really needs enough input
+        # images, so we cast a wider net in time to make sure we get enough.
         if pipeline_config['nfi_mode'] == 'pca' and not polarized:
             dt = func.abs(func.timestampdiff(text("second"), File.date_obs, group[0]._reference_time))
             nfi_files = (session.query(File)

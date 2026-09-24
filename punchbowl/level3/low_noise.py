@@ -42,14 +42,20 @@ def create_low_noise_task(
         mask = make_circular_mask(cubes[0].data.shape, nfi_wfi_divide_radius)
         nfi_cubes = [cube for cube in nfi_cubes if not (exclude_outliers and check_outlier(cube))]
         nfi_data = np.array([cube.data for cube in nfi_cubes])
+        # We'll want to figure out where there isn't good data in each NFI image. If an output pixel didn't have any
+        # good samples to go on, we'll flag it in the output image's uncertainty. (This is mostly just handling the
+        # occulter region.)
         maybe_masked = [(cube.data == 0) * np.isinf(cube.uncertainty.array) for cube in nfi_cubes]
         masked_pixels = np.all(maybe_masked, axis=0)
+
         median_nfi = nan_percentile(nfi_data, 50)
         new_cube.data[mask] = median_nfi[mask] * nfi_scale_factor
-        # Fill value for good samples
+
+        # Uncertainty fill value for good samples
         new_cube.uncertainty.array[mask] = 1e-15
-        # Inf elsewhere (e.g. in the occulter)
+        # Set the uncertainty to inf elsewhere (e.g. in the occulter)
         new_cube.uncertainty.array[mask * masked_pixels] = np.inf
+
         new_meta["HAS_NFI4"] = 1
 
     for k in cubes[0].meta.fits_keys:

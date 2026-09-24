@@ -40,6 +40,55 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
     """
     Run PCA-based NFI filtering.
 
+    There are several steps:
+    1) The input images are loaded in parallel
+
+    2) Downsampled copies of the images are made. Some steps are run at reduced resolution and the results are
+    up-sampled back to the data.
+
+    3) The images are searched for planets, the Moon, and saturated pixels. Copies of the images are made with these
+    regions filled in smoothly. These copies also receive a spatial median filter.
+
+    4) Images that are out-of-distribution are identified, so they can be excluded from the PCA fitting
+
+    5) PCA components are fit to the downsampled, filled images from (3). (If outliers, planets, saturated pixels,
+    etc. made it into this stage, we'd get artifacts in the PCA components.)
+
+    6) Dynamic stray light models are generated from each image using the components and the downsampled,
+    filled images. These models are upscaled and subtracted from the raw images. The models are also subtracted from
+    the downsampled, filled images.
+
+    7) Instrument-frame post-processing occurs. Each image receives something like an unsharp mask. (The downsampled,
+    filled, PCA-filtered images are smoothed, upscaled, and subtracted from the full-res images. If planets,
+    the moon, etc. made it into this smoothing, the subtraction would produce dark halos.) Each image then receives a
+    spatial median filter. A low-percentile background across all images is then subtracted.
+
+    8) The images are reprojected to the helio frame.
+
+    9) To remove brightness variations that correlate with orbital phase, the images are fit with sinusoids whose
+    frequencies are the orbital frequency, as well as a few harmonics. The sinusoids are then subtracted.
+
+    10) The inner and outer edge of the data is trimmed, and the output cubes are assembled. We also write out the
+    PCA components and the instrument-frame backgrounds, for use by QuickPUNCH.
+
+    The output images from this flow are then put through the normal F corona modeling code to produce and subtract a
+    helio-frame background.
+
+    Because a large number of images are needed for outlier rejection, PCA fitting, background generation,
+    and sinusoid fitting, this flow can accept "context" files---files which have already been through this flow,
+    but which are made available to this flow to have a proper ensemble of images. These extra images run through all
+    the steps, but output cubes are not generated for them.
+
+    When PCA components are fit, we take a strided approach. The idea is that we'll be more confident we're not
+    fitting and removing dynamic K corona structure if a given image is filtered using PCA components that have never
+    seen that image. So we do N rounds of PCA filtering. For the first, we exclude from PCA fitting images N, 2N, 3N,
+    etc., as well as the image before and after each of those. Those PCA components are used to subtract images N,
+    2N, etc. The exclusions are then shifted relative to the image sequence and the process repeated, until we've
+    done N rounds of PCA fitting. This lets each image be subtracted using components that have never seen that image
+    (nor the images closest to it in time). To ensure this striding can be properly applied to QuickPUNCH images,
+    we take this a little further and for each image, we compute which image number it is in the day's imaging
+    sequence. The striding and exclusions are then based on that sequence number mod-N.
+
     Parameters
     ----------
     input_files : list[str]
@@ -270,7 +319,7 @@ def get_pylon_mask(shape: tuple, wcs: WCS, blur: bool = False) -> np.ndarray:
 
 
 def _load_one_file(path: str, downsample_factor: int,
-                   ) -> tuple[NormalizedMetadata, WCS, WCS, str, np.ndarray, np.ndarray]:
+                   ) -> tuple[NormalizedMetadata, WCS, WCS, str, np.ndarray, np.ndarray] | str | None:
     """
     Load one file in a parallel worker.
 
@@ -389,9 +438,12 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
 
     if downsample_factor > 1:
         wcs = wcs[::downsample_factor, ::downsample_factor]
+    # Mark spots to in-paint
     fill_mask = np.zeros_like(src_data, dtype=bool)
+    # Mark pixels that should be flagged in the output image
     plot_mask = np.zeros_like(fill_mask, dtype=np.float32)
 
+    # We used to search for planets as well, but they seem to be handled well by the saturated-pixel flagging
     body_names = ["moon"]
     bodies = []
     for body in body_names:
@@ -400,6 +452,7 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", ".*failed to converge.*")
         warnings.filterwarnings("ignore", ".*All-NaN slice.*")
+
         xs, ys = wcs.world_to_pixel(bodies)
 
         for body, x, y in zip(body_names, np.atleast_1d(xs), np.atleast_1d(ys), strict=True):
@@ -409,16 +462,21 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
                 w = round(w * 2 / downsample_factor)
                 fill_mask[y - w:y + w + 1, x - w:x + w + 1] = 1
 
+    # Flag saturated pixels
     sat_idxs = np.nonzero(sat_mask)
     for y, x in zip(*sat_idxs, strict=True):
         fill_mask[y - 1:y + 2, x - 1:x + 2] = 1
         plot_mask[y - 1:y + 2, x - 1:x + 2] = 1
 
+    # Every saturated pixel leaves a residual in the rest of its row, since the L1 de-streaking undercorrects. If
+    # enough saturated pixels show up in a given row, the streak becomes visible in our images. So for rows with too
+    # many saturated pixels, flag the whole row.
     for y in np.unique(sat_idxs[0]):
         if np.sum(sat_idxs[0] == y) > 9:
             fill_mask[y] = 1
             plot_mask[y - 1:y + 2] = 1
 
+    # Generate replacement values for flagged pixels
     filtered_image = nan_percentile_2d(np.where(fill_mask, np.nan, src_data), 50, round(5 * 2 / downsample_factor))
     dest[:] = inpaint_biharmonic(filtered_image, fill_mask)
     mask_dest[:] = plot_mask
@@ -428,7 +486,7 @@ def fill_problem_regions(x_cube: np.ndarray, metas: list[NormalizedMetadata], cw
                          sat_mask_cube: np.ndarray, downsample_factor: int,
                          process_pool: ProcessPoolExecutor) -> tuple[np.ndarray, np.ndarray]:
     """
-    Generate fill values for problem regions in images (e.g. planets or saturated pixels).
+    Generate fill values for problem regions in images (e.g. the Moon or saturated pixels).
 
     Problem regions are identified and then filled with a smooth inpainting.
 
@@ -539,7 +597,7 @@ def find_outliers_with_headers(metas: list[NormalizedMetadata]) -> np.ndarray:
 
 def do_pca_filtering(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, phases: np.ndarray,
                      n_strides: int, n_components: int, process_pool: ProcessPoolExecutor, n_workers: int,
-                     ) -> np.ndarray:
+                     ) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute PCA components and corresponding dynamic stray light estimates.
 
@@ -574,6 +632,7 @@ def do_pca_filtering(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask:
     dsls = ShmPickleableNDArray.empty_like(x_cube_filled)
     pca_components = ShmPickleableNDArray((n_strides, n_components + 1, np.sum(nfi_mask)), dtype=np.float32)
     n_threads = max(1, round(n_workers / n_components))
+    # Run once per stride position
     for _ in process_pool.map(_do_pca_filtering_one_stride, range(n_strides), repeat(n_strides), repeat(x_cube_filled),
                               repeat(good_mask), repeat(dsls), pca_components, repeat(nfi_mask), repeat(phases),
                               repeat(n_components), repeat(n_threads)):
@@ -637,6 +696,7 @@ def _make_one_model_from_components(image: np.ndarray, phase: int, pca_component
     pca.components_ = components
     # These values don't matter but must be present
     pca.explained_variance_ = np.ones(n_components)
+    # This function is being run in parallel
     with limit_threads(1):
         t = pca.transform(image[nfi_mask].reshape((1, -1)))
         pca.components_ = smoothed_components
@@ -906,6 +966,8 @@ def reproject_images(dfiltered_images: np.ndarray, plot_masks: np.ndarray, wcses
         The frame the data were reprojected into
 
     """
+    # We just need a frame that's north-up. Take a single NFI WCS, strip out the unique pointing and rotation info,
+    # but keep the projection.
     target_frame = wcses[0].deepcopy()
     target_frame.wcs.pc = np.eye(2)
     target_frame.wcs.crpix = dfiltered_images.shape[2] / 2 + 0.5, dfiltered_images.shape[1] / 2 + 0.5
@@ -913,6 +975,7 @@ def reproject_images(dfiltered_images: np.ndarray, plot_masks: np.ndarray, wcses
     target_frame.cpdis1 = None
     target_frame.cpdis2 = None
 
+    # We'll take this mask for the pylon region and reproject it with each image, so we can flag the region
     pylon_mask = get_pylon_mask(dfiltered_images[0].shape, wcses[0])
 
     oriented_images = ShmPickleableNDArray.empty_like(dfiltered_images)
@@ -1017,10 +1080,12 @@ def _do_one_fit(args: tuple, crota_vals: np.ndarray, images: np.ndarray, mask: n
         for jx, j in enumerate(ivals):
             if np.any(mask[i - whs:i + whs + 1, j - whs:j + whs + 1] == 0):
                 continue
+            # Take the pixels in a small window around our grid point, to be our y values to fit
             x, y = crota_vals, images[:, i - whs:i + whs + 1, j - whs:j + whs + 1]
             x = np.broadcast_to(x, y.T.shape).T.ravel()
             y = y.ravel()
 
+            # Find outliers
             med = np.median(y)
             bad = np.abs(y - med) / np.std(y) > 2
             x = x[~bad]
@@ -1037,6 +1102,7 @@ def _do_one_fit(args: tuple, crota_vals: np.ndarray, images: np.ndarray, mask: n
                     warnings.filterwarnings("ignore", ".*Mean of empty slice.*")
                     warnings.filterwarnings("ignore", ".*Degrees of freedom <= 0.*")
 
+                    # The y values are scaled up to ~1-ish, to play nicely with the termination thresholds
                     popt, _ = scipy.optimize.curve_fit(sinusoid, x, y * 1e12, p0=p0, jac=jac,
                                                        bounds=[lbounds, ubounds],
                                                        loss="cauchy", f_scale=0.5,
@@ -1047,6 +1113,7 @@ def _do_one_fit(args: tuple, crota_vals: np.ndarray, images: np.ndarray, mask: n
             # We need to fit the center to meaningfully fit the sinusoids, but we don't want to subtract out that
             # center. (The "f corona" subtraction step will handle that)
             popt[0] = 0
+            # Scale amplitudes back down to MSB units
             for n in range(1, len(popt), 2):
                 popt[n] *= 1e-12
             rets.append((popt, ix, jx))
@@ -1101,6 +1168,7 @@ def _desinusoid_one_image(src_image: np.ndarray, crota: float, t: float, ivals: 
     elif t >= time_based_popts[-1][0]:
         correction_map = make_correction_map(crota, time_based_popts[-1][1], ivals)
     else:
+        # Interpolate in time between two maps
         i = 0
         while not time_based_popts[i][0] <= t <= time_based_popts[i + 1][0]:
             i += 1
@@ -1148,10 +1216,12 @@ def do_sinusoid_filtering(oriented_images: np.ndarray, metas: list[NormalizedMet
     time_based_popts = []
     dateobses = np.array([m["DATE-OBS"].value for m in metas], dtype=np.datetime64)
 
+    # Divide the data into windows in time, to be fit separately
     t0 = dateobses[0]
     dt = np.timedelta64("3", "D")
     while t0 < dateobses[-1]:
         cut = (dateobses > t0) * (dateobses < t0 + dt)
+        # Don't fit windows with too few images
         if np.sum(cut) > 250:
             idxs = np.nonzero(cut)[0]
             istart, istop = idxs[0], idxs[-1] + 1

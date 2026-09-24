@@ -202,7 +202,8 @@ def quicklook_core_flow(file_list: list,
                         output_movie_dir: str,
                         make_image: bool,
                         make_movie: bool,
-                        framerate: int = 10) -> None:
+                        framerate: int = 10,
+                        ffmpeg_command: str = "ffmpeg") -> None:
     """Performs primary quicklook file generation.
 
     Parameters
@@ -229,7 +230,12 @@ def quicklook_core_flow(file_list: list,
     if make_image:
         write_ndcube_to_quicklook(cube, filename=path_image, vmin=vmin, vmax=vmax)
     if make_movie:
-        animate_punch(file_list, output_path=path_movie, fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax)
+        animate_punch(file_list,
+                      output_path=path_movie,
+                      fps=framerate, n_jobs=12,
+                      vmin=vmin,
+                      vmax=vmax,
+                      ffmpeg_path=ffmpeg_command)
 
 
 @flow
@@ -281,7 +287,8 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
                             output_movie_dir=flow_call_data["output_movie_dir"],
                             make_image=make_image,
                             make_movie=make_movie,
-                            framerate=flow_call_data["resolution"])
+                            framerate=flow_call_data["resolution"],
+                            ffmpeg_command=flow_call_data["ffmpeg_cmd"])
     except Exception as e:
         flow_db_entry.state = "failed"
         flow_db_entry.end_time = datetime.now()

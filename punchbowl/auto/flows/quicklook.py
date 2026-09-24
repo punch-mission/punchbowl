@@ -287,7 +287,7 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
                             output_movie_dir=flow_call_data["output_movie_dir"],
                             make_image=make_image,
                             make_movie=make_movie,
-                            framerate=flow_call_data["resolution"],
+                            framerate=flow_call_data["framerate"],
                             ffmpeg_command=flow_call_data["ffmpeg_cmd"])
     except Exception as e:
         flow_db_entry.state = "failed"

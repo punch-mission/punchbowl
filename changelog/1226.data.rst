@@ -1,0 +1,2 @@
+We now produce L3 CNN files, containing full-resolution PCA-filtered NFI images with a helio-frame background
+subtracted.

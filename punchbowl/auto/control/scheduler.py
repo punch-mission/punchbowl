@@ -1,5 +1,6 @@
 import inspect
 import itertools
+from typing import Callable
 from datetime import UTC, datetime, timedelta
 
 from punchbowl.auto.control.db import File, FileRelationship, Flow
@@ -14,6 +15,7 @@ def generic_scheduler_flow_logic(
         args_dictionary: dict = {},
         children_are_one_to_one: bool = False,
         cap_planned_flows: bool = True,
+        relationship_generator: Callable | None = None,
     ) -> int:
     """
     Implement the core logic of each scheduler flow.
@@ -46,6 +48,8 @@ def generic_scheduler_flow_logic(
         files, and FileRelationships are generated accordingly. In a case where a batch of input files are to be
         processed in one flow, this assumption doesn't hold. When this flag is set to True, it is assumed each input
         file connects to only one output file (at the corresponding position in the list of child File objects).
+    relationship_generator
+        A function that returns a generator for database relationships, to override the default behavior
 
     """
     logger = get_logger()
@@ -135,7 +139,9 @@ def generic_scheduler_flow_logic(
             child_file.processing_flow = database_flow_info.flow_id
 
         # create a file relationship between the prior and next levels
-        if children_are_one_to_one:
+        if relationship_generator is not None:
+            iterable = relationship_generator(parent_files, children_files)
+        elif children_are_one_to_one:
             iterable = zip(parent_files, children_files)
         else:
             iterable = itertools.product(parent_files, children_files)

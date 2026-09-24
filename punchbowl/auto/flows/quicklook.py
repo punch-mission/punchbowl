@@ -291,14 +291,17 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
         flow_db_entry.state = "completed"
         flow_db_entry.end_time = datetime.now()
 
-        quicklook_query = (session.query(Quicklook)
-                           .filter(Quicklook.day == day)
-                           .filter(Quicklook.level == level)
-                           .filter(Quicklook.code == code).all())
+        quicklook_entry = Quicklook(day=day, level=level, code=code)
         if make_image:
-            quicklook_query.image_made = True
+            quicklook_entry.image_made = True
+        else:
+            quicklook_entry.image_made = False
         if make_movie:
-            quicklook_query.movie_made = True
-            quicklook_query.movie_nfile = nfiles
+            quicklook_entry.movie_made = True
+            quicklook_entry.movie_nfile = nfiles
+        else:
+            quicklook_entry.movie_made = False
+
+        session.add(quicklook_entry)
 
         session.commit()

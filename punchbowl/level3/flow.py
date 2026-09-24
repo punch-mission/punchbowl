@@ -22,12 +22,36 @@ from punchbowl.util import load_image_task, make_circular_mask, output_image_tas
 
 
 @punch_flow
-def level3_NFI_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
+def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
                     before_f_corona_model_path: str | DataLoader,
                     after_f_corona_model_path: str | DataLoader,
                     inner_mask_radius: float,
                     outer_mask_radius: float) -> list[PUNCHCube]:
-    """Level 3 NFI F-corona subtraction and reprojection flow."""
+    """
+    Run Level 3 NFI F-corona subtraction and reprojection flow.
+
+    L2 NFI images have an F-corona model subtracted and are reprojected to the full-mosaic frame. Returns both the
+    full-res image (as an L3 CNN) and the mosaic-frame (as an XR4).
+
+    Parameters
+    ----------
+    data_list : list[str | PUNCHCube]
+        The images to process
+    before_f_corona_model_path : str | DataLoader
+        The first F corona model
+    after_f_corona_model_path : str | DataLoader
+        The second F corona model
+    inner_mask_radius : float
+        The mosaic-frame image will be cropped at this inner radius
+    outer_mask_radius : float
+        The mosaic-frame image will be cropped at this outer radius
+
+    Returns
+    -------
+    list[PUNCHCube]
+        The output data cubes
+
+    """
     logger = get_logger()
 
     logger.info("beginning level 3 NFI flow")
@@ -50,9 +74,10 @@ def level3_NFI_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
     inner_mask = ~make_circular_mask(mosaic_shape, inner_mask_radius)
     outer_mask = make_circular_mask(mosaic_shape, outer_mask_radius)
     mask = inner_mask * outer_mask
+
     output_cubes = []
     for cube in data_list:
-        cube = subtract_f_corona_background_task(cube, [before_f_corona_model], [after_f_corona_model])
+        cube = subtract_f_corona_background_task(cube, [before_f_corona_model], [after_f_corona_model]) # noqa: PLW2901
         mosaic_data, mosaic_uncert = reproject_cube(cube, mosaic_wcs, mosaic_shape, rolloff_strength=0, rolloff_width=0)
         np.nan_to_num(mosaic_data, copy=False)
         np.nan_to_num(mosaic_uncert, copy=False, nan=np.inf)
@@ -63,7 +88,7 @@ def level3_NFI_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
 
         new_meta = NormalizedMetadata.load_template("CNN", "3")
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        for key in cube.meta.keys():
+        for key in cube.meta:
             if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS", "OUTLIER",
                          "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                     or key[-4:] in ["_OBS", "_VOB"]
@@ -82,12 +107,12 @@ def level3_NFI_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
 
         new_meta.provenance = [cube.meta["FILENAME"].value]
 
-        cube = cube.replace(meta=new_meta)
+        cube = cube.replace(meta=new_meta) # noqa: PLW2901
         output_cubes.append(cube)
 
         new_meta = NormalizedMetadata.load_template("XR4", "3")
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        for key in mosaic_cube.meta.keys():
+        for key in mosaic_cube.meta:
             if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS", "OUTLIER",
                          "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                     or key[-4:] in ["_OBS", "_VOB"]

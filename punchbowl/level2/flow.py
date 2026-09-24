@@ -323,6 +323,8 @@ def level2_pca_core_flow(input_files: list[str],
         Number of worker processes for loading
     n_workers : int
         Number of worker processes for processing
+    ref_date: str
+        The date to assign to the output cubes for the PCA components and the instrument-frame background
 
     Returns
     -------

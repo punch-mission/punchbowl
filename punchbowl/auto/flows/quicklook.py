@@ -126,7 +126,7 @@ def visualize_flow_info(input_files: list[File],
     Flow
         Scheduled flow
     """
-    flow_type = "movie"
+    flow_type = "quicklook"
     state = "planned"
 
     creation_time = datetime.now()

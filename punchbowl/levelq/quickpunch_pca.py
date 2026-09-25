@@ -147,6 +147,9 @@ def quickpunch_pca_filter(input_files: list[str],
                 new_meta["PCANCOMP"] = n_components
                 new_meta["PCADWNSP"] = downsample_factor
                 new_meta["PCACOMPS"] = os.path.basename(pca_components_path)
+                new_meta["CALSL0"] = os.path.basename(instrument_frame_background)
+                new_meta["CALFCOR1"] = os.path.basename(first_helio_frame_background)
+                new_meta["CALFCOR2"] = os.path.basename(second_helio_frame_background)
 
                 new_meta.provenance = [os.path.basename(path)]
 

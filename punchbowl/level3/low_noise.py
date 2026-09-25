@@ -38,25 +38,31 @@ def create_low_noise_task(
     new_code = cubes[0].meta.product_code[0] + "A" + cubes[0].meta.product_code[2]
     new_meta = NormalizedMetadata.load_template(new_code, "3")
 
-    if nfi_cubes and nfi_wfi_divide_radius:
-        mask = make_circular_mask(cubes[0].data.shape, nfi_wfi_divide_radius)
-        nfi_cubes = [cube for cube in nfi_cubes if not (exclude_outliers and check_outlier(cube))]
-        nfi_data = np.array([cube.data for cube in nfi_cubes])
-        # We'll want to figure out where there isn't good data in each NFI image. If an output pixel didn't have any
-        # good samples to go on, we'll flag it in the output image's uncertainty. (This is mostly just handling the
-        # occulter region.)
-        maybe_masked = [(cube.data == 0) * np.isinf(cube.uncertainty.array) for cube in nfi_cubes]
-        masked_pixels = np.all(maybe_masked, axis=0)
+    if nfi_wfi_divide_radius:
+        nfi_wfi_mask = make_circular_mask(cubes[0].data.shape, nfi_wfi_divide_radius)
+        if nfi_cubes:
+            nfi_cubes = [cube for cube in nfi_cubes if not (exclude_outliers and check_outlier(cube))]
+            nfi_data = np.array([cube.data for cube in nfi_cubes])
+            # We'll want to figure out where there isn't good data in each NFI image. If an output pixel didn't have any
+            # good samples to go on, we'll flag it in the output image's uncertainty. (This is mostly just handling the
+            # occulter region.)
+            maybe_masked = [(cube.data == 0) * np.isinf(cube.uncertainty.array) for cube in nfi_cubes]
+            masked_pixels = np.all(maybe_masked, axis=0)
 
-        median_nfi = nan_percentile(nfi_data, 50)
-        new_cube.data[mask] = median_nfi[mask] * nfi_scale_factor
+            median_nfi = nan_percentile(nfi_data, 50)
+            new_cube.data[nfi_wfi_mask] = median_nfi[nfi_wfi_mask] * nfi_scale_factor
 
-        # Uncertainty fill value for good samples
-        new_cube.uncertainty.array[mask] = 1e-15
-        # Set the uncertainty to inf elsewhere (e.g. in the occulter)
-        new_cube.uncertainty.array[mask * masked_pixels] = np.inf
+            # Uncertainty fill value for good samples
+            new_cube.uncertainty.array[nfi_wfi_mask] = 1e-15
+            # Set the uncertainty to inf elsewhere (e.g. in the occulter)
+            new_cube.uncertainty.array[nfi_wfi_mask * masked_pixels] = np.inf
 
-        new_meta["HAS_NFI4"] = 1
+            new_meta["HAS_NFI4"] = 1
+        # We've been given a radius for a NFI-only region, but we don't have NFI data. Make sure that region gets
+        # cleared and marked properly.
+        new_cube.data[:] = np.where(nfi_wfi_mask, 0, new_cube.data)
+        new_cube.uncertainty.array[:] = np.where(
+            nfi_wfi_mask, np.inf, new_cube.uncertainty.array)
 
     for k in cubes[0].meta.fits_keys:
         if k not in KEYWORD_OMIT and k in new_meta:

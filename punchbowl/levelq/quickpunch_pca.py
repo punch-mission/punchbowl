@@ -29,6 +29,63 @@ def quickpunch_pca_filter(input_files: list[str],
                           zfilter_index: float,
                           n_workers: int,
                           n_loaders: int) -> list[PUNCHCube]:
+    """
+    Run the QuickPUNCH NFI PCA flow.
+
+    This flow largely copies the L2 PCA flow, with adjustments. The main differences are:
+        * We take in a smaller batch of NFI XR4s
+        * We take in pre-computed PCA components, made by the L2 PCA flow
+        * We take in a pre-computed instrument-frame background, made by the L2 PCA flow
+        * We skip the sinusoidal de-trending, since we don't have a batch large enough to do it
+        * We run F-corona subtraction, which the L2 flow leaves for the L3 NFI flow
+        * We perform median filtering and then z-filtering on the resulting cubes, per SWPC's request
+    These differences are all to let this flow run quickly and nimbly as data comes down, to give very low-latency
+    PCA-filtered NFI images. We can run small batches as the XR4 files are ready, rather than waiting for larger batches
+    like the L2 flow, or frequently having to fit PCA components to a large batch of NFI images.
+
+    This flow cannot produce output files for every input file, since the frames at the beginning and end of the
+    sequence won't have a full window of images for median filtering, and the frames at the beginning won't have
+    enough preceding frames for z-filtering. Extra "context" images can be provided, which may have already been run
+    through this flow. These images fill out those windows at the beginning and end, so that every non-context image
+    can produce an output image.
+
+    Parameters
+    ----------
+    input_files : list[str]
+        The input files to load
+    context_files : list[str]
+        The context files to use
+    nfi_mask : str
+        The path to the NFI mask
+    pca_components_path : str
+        The path to the PCA components file
+    instrument_frame_background_path : str
+        The path to the instrument frame background file
+    first_helio_frame_background_path : str
+        The path to a helio-frame background file (an F corona model)
+    second_helio_frame_background_path : str
+        The path to a helio-frame background file (an F corona model)
+    median_window : int
+        The number of frames to use as the window size for median filtering
+    zfilter_margin : int
+        Z-filtering requires knowing the previous z-filtered frames to produce the next one. For a given image stack,
+        the first few frames will therefore not be "valid", since we didn't have their preceding frames. This argument
+        sets the number of initial frames that will be "thrown out"---i.e. will not produce an output file, since we
+        couldn't z-filter them properly.
+    zfilter_index : float
+        A number between 0 and 1. Each z-filtered frame will be this much the new frame, and (1-this_much) the previous
+        frame.
+    n_workers : int
+        The number of parallel workers to use
+    n_loaders : int
+        The number of parallel loaders to use
+
+    Returns
+    -------
+    list[PUNCHCube]
+        The output image cubes
+
+    """
     logger = get_logger()
     logger.info("Starting PCA flow")
 
@@ -81,10 +138,10 @@ def quickpunch_pca_filter(input_files: list[str],
         x_cube_ds_filled = ShmPickleableNDArray.from_array(x_cube_ds_filled[good_mask])
         plot_masks = ShmPickleableNDArray.from_array(plot_masks[good_mask])
         phases = phases[good_mask]
-        metas = [m for m, g in zip(metas, good_mask) if g]
-        wcses = [m for m, g in zip(wcses, good_mask) if g]
-        cwcses = [m for m, g in zip(cwcses, good_mask) if g]
-        loaded_files = [m for m, g in zip(loaded_files, good_mask) if g]
+        metas = [m for m, g in zip(metas, good_mask, strict=True) if g]
+        wcses = [m for m, g in zip(wcses, good_mask, strict=True) if g]
+        cwcses = [m for m, g in zip(cwcses, good_mask, strict=True) if g]
+        loaded_files = [m for m, g in zip(loaded_files, good_mask, strict=True) if g]
 
         dsl_models = nfi_pca.build_models_with_existing_components(
             x_cube_ds_filled, nfi_mask_ds, pca_components, phases, process_pool)
@@ -128,6 +185,8 @@ def quickpunch_pca_filter(input_files: list[str],
 
         filtered_images = nan_percentile_window(oriented_images, percentile=50, window_size=median_window)
 
+        # The z-filtering performs better if we exclude very high and very low values, so they can't skew the
+        # average. These values are tuned to typical NFI images.
         vmin = 3e-15
         vmax = 6e-13
         non_outlier_pixels = (filtered_images > vmin / 10) * (filtered_images < vmax * 10)
@@ -140,11 +199,12 @@ def quickpunch_pca_filter(input_files: list[str],
         median_margin = median_window // 2
         for i, path in enumerate(loaded_files):
             if i < zfilter_margin + median_margin or i >= len(loaded_files) - median_margin:
+                # This image doesn't have enough context for median filtering and/or z-filtering.
                 continue
             if path in input_files:
                 new_meta = NormalizedMetadata.load_template("QNN", "Q")
                 new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-                for key in metas[i].keys():
+                for key in metas[i]:
                     if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
                                  "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                             or key[-4:] in ["_OBS", "_VOB"])
@@ -177,7 +237,23 @@ def quickpunch_pca_filter(input_files: list[str],
         return output_cubes
 
 
-def subtract_fcorona_models(data_cube, metas, first_helio_frame_background, second_helio_frame_background):
+def subtract_fcorona_models(data_cube: np.ndarray, metas: list[NormalizedMetadata],
+                            first_helio_frame_background: PUNCHCube, second_helio_frame_background: PUNCHCube) -> None:
+    """
+    Subtract f-corona models in-place.
+
+    Parameters
+    ----------
+    data_cube : np.ndarray
+        The stack of images to be subtracted
+    metas : list[NormalizedMetadata]
+        The image metadata
+    first_helio_frame_background : PUNCHCube
+        The first background to interpolate or extrapolate from
+    second_helio_frame_background : PUNCHCube
+        The second background to interpolate or extrapolate from
+
+    """
     for i in range(len(data_cube)):
         interpolated_model = interpolate_data(
             first_helio_frame_background,

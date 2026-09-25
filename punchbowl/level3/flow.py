@@ -243,6 +243,7 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
         out_meta: NormalizedMetadata = NormalizedMetadata.load_template("PTM" if is_polarized else "CTM", "3")
 
         if nfi_cube is not None and nfi_wfi_mask is not None:
+            # Paste NFI into the defined region
             wfi_cube.data[:] = np.where(nfi_wfi_mask, nfi_scale_factor * nfi_cube.data, wfi_cube.data)
             wfi_cube.uncertainty.array[:] = np.where(
                 nfi_wfi_mask, nfi_cube.uncertainty.array, wfi_cube.uncertainty.array)
@@ -253,6 +254,12 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
             out_meta["CTRYNFI4"] = 2047.5
             out_meta["ALL_INPT"] = wfi_cube.meta["ALL_INPT"].value
         else:
+            if nfi_wfi_mask is not None:
+                # We've been given a radius for a NFI-only region, but we don't have NFI data. Make sure that region
+                # gets cleared and marked properly.
+                wfi_cube.data[:] = np.where(nfi_wfi_mask, 0, wfi_cube.data)
+                wfi_cube.uncertainty.array[:] = np.where(
+                    nfi_wfi_mask, np.inf, wfi_cube.uncertainty.array)
             out_meta["ALL_INPT"] = 0
             out_meta["HAS_NFI4"] = 0
 

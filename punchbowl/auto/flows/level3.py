@@ -614,7 +614,8 @@ def level3_CTM_construct_flow_info(level2_files: list[File], level3_file: File,
             "nfi_list": [level2_files[1].filename() if len(level2_files) > 1 else None],
             "before_starfield_path": before_starfield_path,
             "after_starfield_path": after_starfield_path,
-            "nfi_wfi_divide_radius": pipeline_config.get('nfi_wfi_divide_radius', None),
+            "nfi_wfi_divide_radius": (pipeline_config.get('nfi_wfi_divide_radius', 0)
+                                      if pipeline_config['nfi_mode'] == 'pca' else None),
             "nfi_scale_factor": pipeline_config["flows"][flow_type].get('nfi_scale_factor', 1),
         },
     )

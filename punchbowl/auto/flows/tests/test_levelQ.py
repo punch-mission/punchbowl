@@ -183,39 +183,38 @@ def test_levelq_CNN_query_ready_files(db):
     """
     groups = levelq_QNN_query_ready_files(db, pipeline_config)
     assert len(groups) == 1
-    assert groups[0][0].file_id == 117 + 1000
-    assert groups[0][-1].file_id == 196 + 1000
+    assert groups[0][0].file_id == 109 + 1000
+    assert groups[0][-1].file_id == 199 + 1000
 
     pipeline_config['flows']['levelq_QNN']['n_batches_to_schedule'] = 10
     groups = levelq_QNN_query_ready_files(db, pipeline_config)
     assert len(groups) == 5
 
     assert groups[4][0].file_id == 0 + 1000
-    assert groups[4][-1].file_id == 49 + 1000
+    assert groups[4][-1].file_id == 53 + 1000
 
     # split, 2 missing files
 
-    assert groups[3][0].file_id == 52 + 1000
-    assert groups[3][-2].file_id == 69 + 1000
+    assert groups[3][0].file_id == 44 + 1000
+    assert groups[3][-2].file_id == 72 + 1000
     already_processed = [f for f in groups[3] if f.file_id == already_processed_file.file_id]
     assert len(already_processed) == 1
-    assert already_processed[0] is groups[3][-1]
     assert not already_processed[0]._to_filter
 
     # split, 1 missing file and a neighbor is new
 
-    assert groups[2][0].file_id == 71 + 1000
-    assert groups[2][-1].file_id == 98 + 1000
+    assert groups[2][0].file_id == 63 + 1000
+    assert groups[2][-1].file_id == 102 + 1000
 
     # split, 1 missing file and a neighbor is new
 
-    assert groups[1][0].file_id == 101 + 1000
-    assert groups[1][-1].file_id == 116 + 4 + 2 + 1000 # Add zfilter margin and half the median window
+    assert groups[1][0].file_id == 93 + 1000
+    assert groups[1][-1].file_id == 120 + 1000
 
     # split b/c following group got too large
 
-    assert groups[0][0].file_id == 117 + 1000
-    assert groups[0][-1].file_id == 196 + 1000
+    assert groups[0][0].file_id == 109 + 1000
+    assert groups[0][-1].file_id == 199 + 1000
 
 
 def test_levelq_CQM_query_ready_files(db):

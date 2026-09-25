@@ -1,0 +1,1 @@
+Workaround astropy bug, ensure that all WCS keywords including distortion keywords are written for both the helio and celestial WCS in level1 files.

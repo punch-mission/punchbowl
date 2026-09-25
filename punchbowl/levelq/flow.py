@@ -27,36 +27,56 @@ SPACECRAFT_OBSCODE = {"1": "WFI1",
                       "N": "NFI4"}
 
 @punch_flow
-def levelq_QNN_core_flow(input_files: list[str],
-                          context_files: list[str],
-                          nfi_mask: str,
-                          pca_components: str,
-                          instrument_frame_background: str,
-                          first_helio_frame_background: str,
-                          second_helio_frame_background: str,
-                          median_window: int,
-                          zfilter_margin: int,
-                          zfilter_index: float,
-                          n_workers: int,
-                          n_loaders: int) -> list[PUNCHCube]:
+def levelq_qnn_core_flow(input_files: list[str],
+                         context_files: list[str],
+                         nfi_mask: str,
+                         pca_components: str,
+                         instrument_frame_background: str,
+                         first_helio_frame_background: str,
+                         second_helio_frame_background: str,
+                         median_window: int,
+                         zfilter_margin: int,
+                         zfilter_index: float,
+                         n_workers: int,
+                         n_loaders: int) -> list[PUNCHCube]:
     """
-    Run the LQ QNN flow.
+    Run the QuickPUNCH NFI PCA flow.
 
     Parameters
     ----------
-    data_list : list[str | PUNCHCube]
-        The input images, either as paths or PUNCHCubes
+    input_files : list[str]
+        The input files to load
+    context_files : list[str]
+        The context files to use
     nfi_mask : str
+        The path to the NFI mask
     pca_components : str
+        The path to the PCA components file
     instrument_frame_background : str
-
-    output_filename : list[str]
-        Optional output paths at which the QNN files should be written
+        The path to the instrument frame background file
+    first_helio_frame_background : str
+        The path to a helio-frame background file (an F corona model)
+    second_helio_frame_background : str
+        The path to a helio-frame background file (an F corona model)
+    median_window : int
+        The number of frames to use as the window size for median filtering
+    zfilter_margin : int
+        Z-filtering requires knowing the previous z-filtered frames to produce the next one. For a given image stack,
+        the first few frames will therefore not be "valid", since we didn't have their preceding frames. This argument
+        sets the number of initial frames that will be "thrown out"---i.e. will not produce an output file, since we
+        couldn't z-filter them properly.
+    zfilter_index : float
+        A number between 0 and 1. Each z-filtered frame will be this much the new frame, and (1-this_much) the previous
+        frame.
+    n_workers : int
+        The number of parallel workers to use
+    n_loaders : int
+        The number of parallel loaders to use
 
     Returns
     -------
-    output_cubes : list[PUNCHCube]
-        The QNN data cubes
+    list[PUNCHCube]
+        The output image cubes
 
     """
     return quickpunch_pca_filter(input_files=input_files, context_files=context_files, nfi_mask=nfi_mask,
@@ -64,8 +84,8 @@ def levelq_QNN_core_flow(input_files: list[str],
                                  instrument_frame_background_path=instrument_frame_background,
                                  first_helio_frame_background_path=first_helio_frame_background,
                                  second_helio_frame_background_path=second_helio_frame_background,
-                                 median_window=median_window, zfilter_margin=zfilter_margin, zfilter_index=zfilter_index,
-                                 n_workers=n_workers, n_loaders=n_loaders)
+                                 median_window=median_window, zfilter_margin=zfilter_margin,
+                                 zfilter_index=zfilter_index, n_workers=n_workers, n_loaders=n_loaders)
 
 
 @punch_flow

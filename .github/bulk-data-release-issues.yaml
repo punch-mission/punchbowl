@@ -1,0 +1,43 @@
+issues:
+  - title: "Create release notes"
+    description: |
+      The goal of this issue is to create the release notes for this data version release. 
+      Work in this ticket will address the following tasks: 
+      ### Tasks
+      - [ ] Run towncrier
+      - [ ] Review with team
+      - [ ] Merge branch
+
+  - title: "Initialize final data reprocessing"
+    description: |
+      Work in this ticket will initialize the final data reprocessing for this data version release. 
+      Note that multiple iterations may be needed depending on the resulting data quality. 
+      Work in this ticket includes: 
+      ### Tasks
+      - [ ] Pull the main branch of (which repos?) to the server
+      - [ ] Run on the server (do we have instructions?)
+
+  - title: "Review and validate clear images"
+    description: |
+      Work in this ticket will review and validate release candidate clear images for this data version release. 
+      Note that multiple iterations may be needed depending on the resulting data quality. 
+      Work in this ticket includes: 
+      ### Tasks
+      - [ ] (This would be a great time to have a notebook that we could point to as a step-by-step for our review/validation)
+      - [ ] Send results to team on Mattermost channel or review with team at a meeting
+
+  - title: "Review and validate polarized images"
+    description: |
+      Work in this ticket will review and validate release candidate clear images for this data version release. 
+      Note that multiple iterations may be needed depending on the resulting data quality. 
+      Work in this ticket includes: 
+      ### Tasks
+      - [ ] (This would be a great time to have a notebook that we could point to as a step-by-step for our review/validation)
+      - [ ] Send results to team on Mattermost channel or review with team at a meeting
+
+
+  - title: "Transfer data to NASA SDAC"
+    description: |
+      Work in this ticket will transfer the final release data to the NASA SDAC. 
+      (Do we have instructions for this?)
+      

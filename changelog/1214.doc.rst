@@ -1,0 +1,1 @@
+Change B to tB and clarify that pB' is referred to as pBp in the online documentation.

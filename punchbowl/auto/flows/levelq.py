@@ -21,7 +21,7 @@ from punchbowl.auto.control.util import get_database_session, group_files_by_tim
 from punchbowl.auto.flows.level1 import get_mask_file
 from punchbowl.auto.flows.util import file_name_to_full_path, summarize_files_missing_cal_files
 from punchbowl.level3.f_corona_model import construct_f_corona_model
-from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow, levelq_QAM_core_flow, levelq_QNN_core_flow
+from punchbowl.levelq.flow import levelq_CQM_core_flow, levelq_CTM_core_flow, levelq_QAM_core_flow, levelq_qnn_core_flow
 from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime
 
@@ -316,7 +316,7 @@ def levelq_QNN_call_data_processor(call_data: dict, pipeline_config, session) ->
 
 @flow
 def levelq_QNN_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, levelq_QNN_core_flow, pipeline_config_path, session=session,
+    generic_process_flow_logic(flow_id, levelq_qnn_core_flow, pipeline_config_path, session=session,
                                call_data_processor=levelq_QNN_call_data_processor, write_in_parallel=True,
                                require_expected_files=False)
 

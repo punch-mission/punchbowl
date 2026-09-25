@@ -1,7 +1,7 @@
 Polarization Resolution
 =======================
 
-Data enters level 3 processing in the MZP (minus 60 degrees, zero, and plus 60 degrees) representation of polarized light with respect to solar north in the unified mosaic frame. These observations can be transformed into brightness (B) and polarized brightness (pB).
+Data enters level 3 processing in the MZP (minus 60 degrees, zero, and plus 60 degrees) representation of polarized light with respect to solar north in the unified mosaic frame. These observations can be transformed into brightness (tB) and polarized brightness (pB).
 
 Concept
 -------

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 PUNCH_STOKES_MAPPING = custom_stokes_symbol_mapping({10: StokesSymbol("pB", "polarized brightness"),
-                                                     11: StokesSymbol("B", "total brightness")})
+                                                     11: StokesSymbol("tB", "total brightness")})
 
 
 def extract_crota_from_wcs(wcs: WCS) -> u.deg:

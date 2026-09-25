@@ -73,9 +73,7 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
     # Now we're gonna split up the groups further. We'll define a "very new" file as anything written to disk in the
     # last N minutes. If we find a gap of even a single frame that neighbors a very-new file, it's very likely that
     # the missing file will soon be generated. So we split the groups at those points. We also split groups if they
-    # exceed a set size. In that case, the two groups post-split will overlap. That's because the very beginning and
-    # end of each group don't actually get filtered or written to disk, and the overlap ensures we don't leave
-    # anything unfiltered.
+    # exceed a set size.
     groups = []
     for group in grouped_files:
         times = np.array([f.date_obs.timestamp() for f in group])
@@ -115,8 +113,7 @@ def levelq_QNN_query_ready_files(session, pipeline_config: dict, reference_time=
             elif file_under_consideration - group_start >= batch_size_cap:
                 logger.info("Splitting group because of size")
                 groups.append(group[group_start:file_under_consideration])
-                # Build in that overlap
-                group_start = file_under_consideration - median_margin - zfilter_margin
+                group_start = file_under_consideration
 
         groups.append(group[group_start:])
 

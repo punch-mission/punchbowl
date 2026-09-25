@@ -13,9 +13,9 @@ from punchbowl.prefect import get_logger, punch_task
 @punch_task
 def convert_polarization(
         input_data: PUNCHCube) -> PUNCHCube:
-    """Convert polarization from MZP to BpB."""
+    """Convert polarization from MZP to tBpB."""
     logger = get_logger()
-    logger.info("convert2bpb started")
+    logger.info("convert2tbpb started")
 
     collection_contents = [(label,
                             PUNCHCube(data=input_data[i].data,
@@ -28,7 +28,7 @@ def convert_polarization(
 
     resolved_data_collection = resolve(data_collection, "bp3")
 
-    new_data = np.stack([resolved_data_collection["B"].data,
+    new_data = np.stack([resolved_data_collection["tB"].data,
                                 resolved_data_collection["pB"].data,
                                 resolved_data_collection["pBp"].data], axis=0)
     new_wcs = input_data.wcs.copy()
@@ -42,7 +42,7 @@ def convert_polarization(
     output = PUNCHCube(data=new_data, wcs=new_wcs, meta=output_meta)
     output = set_spacecraft_location_to_earth(output)
 
-    logger.info("convert2bpb finished")
-    output.meta.history.add_now("LEVEL3-convert2bp3", "Convert MZP to B-pB-pBp")
+    logger.info("convert2tbpb finished")
+    output.meta.history.add_now("LEVEL3-convert2bp3", "Convert MZP to tB-pB-pBp")
 
     return output

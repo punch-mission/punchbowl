@@ -808,8 +808,8 @@ def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out:
             "nfi_list": [level3_file.filename() for level3_file in level3_files
                                 if level3_file.file_type == 'XR'],
             "reference_time": reference_time.strftime("%Y-%m-%dT%H:%M:%S"),
-            "nfi_wfi_divide_radius": (pipeline_config.get('nfi_wfi_divide_radius', None)
-                                      if flow_type == "level3_CAM" else None),
+            "nfi_wfi_divide_radius": (pipeline_config.get('nfi_wfi_divide_radius', 0)
+                                      if flow_type == "level3_CAM" and pipeline_config['nfi_mode'] == 'pca' else None),
             "nfi_scale_factor": pipeline_config.get('nfi_scale_factor', 1),
         },
     )

@@ -123,7 +123,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
     context = mp.get_context("forkserver")
     with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
         file_list = sorted(input_files + context_files)
-        logger.info(f"Loading {len(input_files)} to filter and {len(context_files)} context files")
+        logger.info(f"Loading {len(input_files)} images to filter and {len(context_files)} context files")
         x_cube, metas, wcses, cwcses, loaded_files, sat_mask_cube = load_files(file_list,
                                                                                n_workers=n_loaders,
                                                                                downsample_factor=downsample_factor)
@@ -252,6 +252,29 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
                 cube = PUNCHCube(data=corrected_frames[i], meta=new_meta, wcs=target_frame,
                                  uncertainty=StdDevUncertainty(uncertainty))
                 output_cubes.append(cube)
+
+        dates = [m.datetime for m in metas]
+        new_meta = NormalizedMetadata.load_template("AR4", "1")
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-OBS"] = ref_date
+        new_meta["DATE-AVG"] = ref_date
+        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
+        pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
+        pca_cube["PCANCOMP"] = n_components
+        pca_cube["PCADWNSP"] = downsample_factor
+        output_cubes.append(pca_cube)
+
+        new_meta = NormalizedMetadata.load_template("SR4", "1")
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-OBS"] = ref_date
+        new_meta["DATE-AVG"] = ref_date
+        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
+        bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
+        output_cubes.append(bg_cube)
 
         logger.info("PCA flow done!")
         return output_cubes
@@ -668,13 +691,14 @@ def build_models_with_existing_components(
     """
     dsls = ShmPickleableNDArray.empty_like(x_cube_filled)
 
+    shape = pca_components.shape
+    pca_components = pca_components.reshape((-1, pca_components.shape[-1]))
     smoothed_components = ShmPickleableNDArray.empty_like(pca_components)
-    comp_smoothing = 5
-    for i in range(pca_components.shape[0]):
-        for j in range(pca_components.shape[1]):
-            component = reconstitute(pca_components[i, j], nfi_mask)
-            component = scipy.signal.medfilt2d(component, comp_smoothing)
-            smoothed_components[i, j] = component[nfi_mask]
+    for _ in process_pool.map(_smooth_one_component, pca_components, smoothed_components, repeat(nfi_mask)):
+        # Loop is necessary for any exceptions from workers to be raised
+        pass
+    pca_components = pca_components.reshape(shape)
+    smoothed_components = smoothed_components.reshape(shape)
 
     for _ in process_pool.map(_make_one_model_from_components, phases, repeat(pca_components),
                               repeat(smoothed_components), dsls, repeat(nfi_mask)):
@@ -683,9 +707,17 @@ def build_models_with_existing_components(
     return dsls
 
 
+def _smooth_one_component(component: np.ndarray, smooth_dest: np.ndarray, nfi_mask: np.ndarray) -> None:
+    reconstituted = reconstitute(component, nfi_mask)
+    comp_smoothing = 5
+    smoothed = scipy.signal.medfilt2d(reconstituted, comp_smoothing)
+    smooth_dest[:] = smoothed[nfi_mask]
+
+
 def _make_one_model_from_components(image: np.ndarray, phase: int, pca_components: np.ndarray,
                                     smoothed_pca_components: np.ndarray, dsl_dest: np.ndarray, nfi_mask: np.ndarray,
                                     ) -> None:
+    phase = phase % pca_components.shape[0]
     n_components = pca_components.shape[1]
     means = pca_components[phase][0]
     components = pca_components[phase][1:]

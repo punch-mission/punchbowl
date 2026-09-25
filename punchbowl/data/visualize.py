@@ -8,41 +8,13 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
-from matplotlib.colors import Colormap, LinearSegmentedColormap, Normalize, PowerNorm
+from matplotlib.colors import Colormap, Normalize, PowerNorm
 from matplotlib.figure import Figure
-from skimage.color import lab2rgb
 from tqdm.auto import tqdm
 
 from punchbowl.data import punch_io
+from punchbowl.data.color import cmap_punch, cmap_punch_pb
 from punchbowl.data.punchcube import PUNCHCube
-
-
-def _cmap_punch() -> LinearSegmentedColormap:
-    """Generate PUNCH colormap."""
-    # Define key colors in LAB space
-    black_lab = np.array([0, 0, 0])
-    orange_lab = np.array([50, 15, 50])
-    white_lab = np.array([100, 0, 0])
-
-    # Define the number of colors
-    n = 256
-    lab_colors = np.zeros((n, 3))
-
-    # Transition from black to orange
-    for i in range(n // 2):
-        t = i / (n // 2 - 1)
-        lab_colors[i] = black_lab * (1 - t) + orange_lab * t
-
-    # Transition from orange to white
-    for i in range(n // 2, n):
-        t = (i - n // 2) / (n // 2 - 1)
-        lab_colors[i] = orange_lab * (1 - t) + white_lab * t
-
-    rgb_colors = lab2rgb(lab_colors.reshape(1, -1, 3)).reshape(n, 3)
-    return LinearSegmentedColormap.from_list("PUNCH", rgb_colors, N=n)
-
-cmap_punch = _cmap_punch()
-cmap_punch_r = _cmap_punch().reversed()
 
 
 def radial_distance(h: int, w: int, center: tuple[int, int] | None = None, radius: float | None = None) -> np.ndarray:
@@ -194,7 +166,7 @@ def animate_punch(
 def plot_punch(  # noqa: C901
     data: Path | PUNCHCube,
     layer: int = 0,
-    cmap: str | Colormap | None = cmap_punch,
+    cmap: str | Colormap | None = None,
     norm: Normalize | None = PowerNorm,
     vmin: float = 1e-14,
     vmax: float = 1e-12,
@@ -286,6 +258,9 @@ def plot_punch(  # noqa: C901
         cube.data[mask] = persistence_array.data[mask]
 
     norm = norm(gamma, vmin=vmin, vmax=vmax)
+
+    if cmap is None:
+        cmap = cmap_punch_pb if cube.data.shape == 3 or layer == 1 else cmap_punch
 
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
                                                         else cube.wcs[layer]})

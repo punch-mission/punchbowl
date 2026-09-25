@@ -2,8 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
+from punchbowl.data.color import cmap_punch, cmap_punch_pb, cmap_punch_pb_r, cmap_punch_r
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.data.visualize import cmap_punch, cmap_punch_r, plot_punch, radial_distance, radial_filter
+from punchbowl.data.visualize import plot_punch, radial_distance, radial_filter
 
 
 def test_radial_distance():
@@ -23,10 +24,12 @@ def test_radial_filter():
 
 def test_cmap_punch():
     assert isinstance(cmap_punch, LinearSegmentedColormap)
+    assert isinstance(cmap_punch_pb, LinearSegmentedColormap)
 
 
 def test_cmap_punch_r():
     assert isinstance(cmap_punch_r, LinearSegmentedColormap)
+    assert isinstance(cmap_punch_pb_r, LinearSegmentedColormap)
 
 
 def test_plot_punch(sample_ndcube):

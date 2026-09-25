@@ -67,7 +67,7 @@ COMMENT ----- Instrument and Spacecraft State ----------------------------------
 WAVELNTH=                  530 / [nm] average peak response
 WAVEUNIT= 'nanometer'          / Unit of observation measurement
 OBS-MODE= 'Polar_BpB'          / Image Mode (Unpolarized, Polar_MZP, Polar_BpB)
-OBSLAYR1= 'Polar_B '           / Image Mode for first datacube layer
+OBSLAYR1= 'Polar_tB'           / Image Mode for first datacube layer
 OBSLAYR2= 'Polar_pB'           / Image Mode for second datacube layer
 INSTRUME= 'WFI+NFI Mosaic'     / Instrument name
 TELESCOP= 'PUNCH 1-2-3-4'      / Satellite name

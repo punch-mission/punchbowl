@@ -23,13 +23,10 @@ from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.visualize import plot_punch
 
 # %%
-# With a range of dates and a PUNCH data product in mind, we can begin querying data.
-# Here we'll search for level 3 clear low-noise mosaics from 1-2 November 2025.
-# We're looking for CAM data, so a product code of "CA" and a instrument code of "M".
-# We can construct a query using the Fido tool, specifying search attributes:
+# Let's start with a search of some suitable data to plot.
 
 # %%
-result = Fido.search(a.Time('2025/10/30 12:00:00', '2025/10/31 12:00:00'),
+result = Fido.search(a.Time('2025/09/30 12:00:00', '2025/09/30 13:00:00'),
                      a.punch.ProductCode.pa, # (ca for clear low-noise), or pa for polarized low-noise, etc.
                      a.Instrument.m, # (m for mosaic), or a.Instrument.nfi_4, etc for earlier levels.
                      a.Level.three,
@@ -65,7 +62,7 @@ fig, ax = plot_punch(datacube, layer=0)
 # Now we can plot the polarized brightness layer of this data. Note that the punch plotter will automatically use the correct colormap here. You can also manually specify it by passing through cmap="punch_pb"
 
 # %%
-fig, ax = plot_punch(datacube, layer=1)
+fig, ax = plot_punch(datacube, layer=1, title_prefix="PUNCH PAM pB")
 
 # %%
 # We can calculate derived quantities, such as the degree of polarzation. We'll compute that manually into an array, and then create a PUNCHCube object we can use to plot this.

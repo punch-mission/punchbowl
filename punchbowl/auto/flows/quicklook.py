@@ -227,14 +227,24 @@ def quicklook_core_flow(file_list: list,
 
     os.makedirs(os.path.dirname(path_image), exist_ok=True)
 
+    if cube.meta["OBS-MODE"] == "Polar_BpB":
+        layer = 1
+        title_prefix = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"]} pB"
+    else:
+        layer = 0
+        title_prefix = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"]} tB"
+
     if make_image:
-        write_ndcube_to_quicklook(cube, filename=path_image, vmin=vmin, vmax=vmax)
+        # TODO - use this or some other mechanism?
+        write_ndcube_to_quicklook(cube, filename=path_image, vmin=vmin, vmax=vmax, layer=layer, annotation=title_prefix)
     if make_movie:
         animate_punch(file_list,
                       output_path=path_movie,
                       fps=framerate, n_jobs=12,
                       vmin=vmin,
                       vmax=vmax,
+                      layer=layer,
+                      title_prefix=title_prefix,
                       ffmpeg_path=ffmpeg_command)
 
 

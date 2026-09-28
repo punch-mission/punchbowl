@@ -253,29 +253,6 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
                                  uncertainty=StdDevUncertainty(uncertainty))
                 output_cubes.append(cube)
 
-        dates = [m.datetime for m in metas]
-        new_meta = NormalizedMetadata.load_template("AR4", "1")
-        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-OBS"] = ref_date
-        new_meta["DATE-AVG"] = ref_date
-        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
-        pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
-        pca_cube["PCANCOMP"] = n_components
-        pca_cube["PCADWNSP"] = downsample_factor
-        output_cubes.append(pca_cube)
-
-        new_meta = NormalizedMetadata.load_template("SR4", "1")
-        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-OBS"] = ref_date
-        new_meta["DATE-AVG"] = ref_date
-        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
-        bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
-        output_cubes.append(bg_cube)
-
         logger.info("PCA flow done!")
         return output_cubes
 

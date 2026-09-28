@@ -35,9 +35,9 @@ REQUIRED_HEADER_KEYWORDS = ["SIMPLE", "BITPIX", "NAXIS", "EXTEND"]
 WCS_OMITTED_KEYWORDS = ["TIMESYS", "DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "TELAPSE",
                         "RSUN_REF", "DSUN_OBS", "CRLN_OBS", "CRLT_OBS", "HGLN_OBS", "HGLT_OBS"]
 # these keywords need to work around a bug in astropy <8.1
-WCS_DISTORTION_SPECIAL_KW = ["CPDIS1", "DP1.EXTVER", "DP1.NAXES", "DP1.AXIS.1", "DP1.AXIS.2",
-                             "CPDIS2", "DP2.EXTVER", "DP2.NAXES", "DP2.AXIS.1", "DP2.AXIS.2",
-                             "MJDREF","MJD-OBS", "MJD-BEG", "MJD-AVG", "MJD-END"]
+WCS_DISTORTION_SPECIAL_KEYWORDS = ["CPDIS1", "DP1.EXTVER", "DP1.NAXES", "DP1.AXIS.1", "DP1.AXIS.2",
+                                   "CPDIS2", "DP2.EXTVER", "DP2.NAXES", "DP2.AXIS.1", "DP2.AXIS.2",
+                                   "MJDREF","MJD-OBS", "MJD-BEG", "MJD-AVG", "MJD-END"]
 
 
 def load_omniheader(path: str | None = None) -> pd.DataFrame:
@@ -360,7 +360,10 @@ class NormalizedMetadata(Mapping):
                             # Example: card = ('DP1.EXTVER', ...) => DP1A.EXTVER
                             # Example: card = ('DP1.AXIS.1', ...) => DP1A.AXIS.1
                             keyword_parts = card[0].split(".")
-                            if (card[0] in WCS_DISTORTION_SPECIAL_KW and astropy.__version__ < "8.1" and
+
+                            # Working around astropy issue https://github.com/astropy/astropy/issues/20441,
+                            # which is expected to be fixed in version 8.1
+                            if (card[0] in WCS_DISTORTION_SPECIAL_KEYWORDS and astropy.__version__ < "8.1" and
                                 this_wcs.wcs.alt != " "):
                                 if len(keyword_parts) == 1:
                                     new_keyword = keyword_parts[0] + this_wcs.wcs.alt

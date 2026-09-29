@@ -36,7 +36,7 @@ Kinds:
             OBS-MODE: Unpolarized
             POLAR: -999
         omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, CALCF, CALVI, CALVI2, CALPSF, CALPM,
-                CALDSL0, CALDSL1, CALSL0, CALSL1]
+                CALDSL0, CALDSL1, CALSL1]
 
     Calibration:
         overrides:
@@ -49,7 +49,7 @@ Kinds:
                 CTRYWFI3, CTRXNFI4, CTRYNFI4, PCACOMPS, PCADWNSP, PCANCOMP]
 
     WFI:
-        omits: [PCACOMPS, PCADWNSP, PCANCOMP]
+        omits: [PCACOMPS, PCADWNSP, PCANCOMP, CALSL0]
 
 
 # Product specifications
@@ -127,4 +127,3 @@ Products:
             OBSCODE: N
             HAS_NFI4: 1
             ALL_INPT: 1
-        omits: [CALFCOR1, CALFCOR2]

@@ -185,7 +185,10 @@ def batched(iterable, n):
 
 def group_files_by_time(files: list[File],
                         max_duration_seconds: float = inf,
-                        max_per_group: int = inf) -> list[list[File]]:
+                        max_per_group: int = inf,
+                        max_seconds_between_images: float = inf) -> list[list[File]]:
+    if len(files) == 0:
+        return []
     # We need to group up files by date_obs, but we need to handle small variations in date_obs. The files are coming
     # from the database already sorted, so let's just walk through the list of files and cut a group boundary every time
     # date_obs increases by more than a threshold.
@@ -193,6 +196,7 @@ def group_files_by_time(files: list[File],
     # We'll keep track of where the current group started, and then keep stepping to find the end of this group.
     group_start = 0
     tstamp_start = files[0].date_obs.replace(tzinfo=UTC).timestamp()
+    tstamp_prev = tstamp_start
     file_under_consideration = 0
     while True:
         file_under_consideration += 1
@@ -200,12 +204,14 @@ def group_files_by_time(files: list[File],
             break
         this_tstamp = files[file_under_consideration].date_obs.replace(tzinfo=UTC).timestamp()
         if (abs(this_tstamp - tstamp_start) > max_duration_seconds
+                or abs(this_tstamp - tstamp_prev) > max_seconds_between_images
                 or file_under_consideration - group_start >= max_per_group):
             # date_obs has jumped by more than our tolerance, so let's cut the group and then start tracking the next
             # one
             grouped_files.append(files[group_start:file_under_consideration])
             group_start = file_under_consideration
             tstamp_start = this_tstamp
+        tstamp_prev = this_tstamp
     grouped_files.append(files[group_start:])
     return grouped_files
 

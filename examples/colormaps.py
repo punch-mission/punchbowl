@@ -13,6 +13,7 @@ How to plot PUNCH data and derived quantities using built-in colormaps
 # %%
 # Load libraries
 
+import numpy as np
 from sunpy.net import Fido
 from sunpy.net import attrs as a
 
@@ -26,7 +27,7 @@ from punchbowl.data.visualize import plot_punch
 # Let's start with a search of some suitable data to plot.
 
 # %%
-result = Fido.search(a.Time('2025/09/30 12:00:00', '2025/09/30 13:00:00'),
+result = Fido.search(a.Time('2025/08/31 20:00:00', '2025/08/31 21:00:00'),
                      a.punch.ProductCode.pa, # (ca for clear low-noise), or pa for polarized low-noise, etc.
                      a.Instrument.m, # (m for mosaic), or a.Instrument.nfi_4, etc for earlier levels.
                      a.Level.three,
@@ -62,7 +63,7 @@ fig, ax = plot_punch(datacube, layer=0)
 # Now we can plot the polarized brightness layer of this data. Note that the punch plotter will automatically use the correct colormap here. You can also manually specify it by passing through cmap="punch_pb"
 
 # %%
-fig, ax = plot_punch(datacube, layer=1, title_prefix="PUNCH PAM pB")
+fig, ax = plot_punch(datacube, layer=1, title_prefix="PUNCH PAM pB", vmin=1e-15, vmax=1e-13)
 
 # %%
 # We can calculate derived quantities, such as the degree of polarzation. We'll compute that manually into an array, and then create a PUNCHCube object we can use to plot this.
@@ -75,4 +76,11 @@ polarization_degree = PUNCHCube(data = datacube.data[1,...] / datacube.data[0,..
 fig, ax = plot_punch(polarization_degree, title_prefix="PUNCH Degree of Polarization", cmap="punch_p", vmin=0, vmax=1)
 
 # %%
-# We could in the same way compute |tau| # TODO - Do this.
+# In the same way we can also compute tau.
+
+# %%
+tau = PUNCHCube(data = np.arcsin(np.sqrt((1 - polarization_degree.data) / (1 + polarization_degree.data))),
+                wcs = datacube.wcs[0],
+                meta = datacube.meta)
+
+fig, ax = plot_punch(tau, title_prefix="PUNCH Tau", cmap="punch_tau", vmin=0, vmax=np.pi/2)

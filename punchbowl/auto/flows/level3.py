@@ -16,7 +16,7 @@ from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import get_database_session, group_files_by_time
 from punchbowl.auto.flows.util import file_name_to_full_path
-from punchbowl.level3.flow import generate_level3_low_noise_flow, level3_core_flow, level3_PIM_CIM_flow
+from punchbowl.level3.flow import generate_level3_low_noise_flow, level3_core_flow, level3_NFI_flow, level3_PIM_CIM_flow
 from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime
 
@@ -419,9 +419,127 @@ def level3_CIM_call_data_processor(call_data: dict, pipeline_config, session=Non
 
 @flow
 def level3_CIM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    # NOTE: this is not a typo... we're using the PIM core flow for this because it's flexible
     generic_process_flow_logic(flow_id, level3_PIM_CIM_flow, pipeline_config_path, session=session,
                                call_data_processor=level3_CIM_call_data_processor)
+
+
+
+@task(cache_policy=NO_CACHE)
+def level3_NFI_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+    logger = get_logger()
+    all_ready_files = (session.query(File).filter(File.state == "created")
+                       .filter(File.level == "2")
+                       .filter(File.file_type == "CN")
+                       .filter(File.observatory == "N")
+                       .order_by(File.date_obs.desc()).all())
+    logger.info(f"{len(all_ready_files)} ready files")
+
+    if len(all_ready_files) == 0:
+        return []
+
+    actually_ready_files = []
+    missing_fcor = []
+
+    fcorona_models = get_fcorona_pairs(session, all_ready_files, model_type="CF")
+    for file, fcor_models in zip(all_ready_files, fcorona_models):
+        if None in fcor_models:
+            missing_fcor.append(file)
+        else:
+            file.fcor_models = fcor_models
+            actually_ready_files.append([file])
+        if len(actually_ready_files) >= max_n:
+            break
+    logger.info(f"{len(actually_ready_files)} Level 2 CNN files selected with necessary calibration data.")
+
+    return actually_ready_files
+
+
+def level3_NFI_construct_flow_info(level2_files: list[File], level3_file: File, pipeline_config: dict,
+                                   session=None, reference_time=None):
+    flow_type = "level3_NFI"
+    state = "planned"
+    creation_time = datetime.now()
+    priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    call_data = json.dumps(
+        {
+            "data_list": [level2_files[0].filename()],
+            "before_f_corona_model_path": level2_files[0].fcor_models[0].filename(),
+            "after_f_corona_model_path": level2_files[0].fcor_models[1].filename(),
+            "outer_mask_radius": pipeline_config["nfi_wfi_divide_radius"],
+            "inner_mask_radius": pipeline_config["flows"][flow_type]["inner_radius"],
+        },
+    )
+    return Flow(
+        flow_type=flow_type,
+        state=state,
+        flow_level="3",
+        creation_time=creation_time,
+        priority=priority,
+        call_data=call_data,
+    )
+
+
+def level3_NFI_construct_file_info(level2_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+    return [
+        File(level="3",
+             file_type="CN",
+             observatory="N",
+             polarization="C",
+             file_version=pipeline_config["file_version"],
+             software_version=__version__,
+             date_obs=level2_files[0].date_obs,
+             state="planned",
+             date_beg=level2_files[0].date_beg,
+             date_end=level2_files[0].date_end,
+             outlier=level2_files[0].outlier,
+             bad_packets=level2_files[0].bad_packets,
+             ),
+        File(level="3",
+             file_type="XR",
+             observatory="4",
+             polarization="C",
+             file_version=pipeline_config["file_version"],
+             software_version=__version__,
+             date_obs=level2_files[0].date_obs,
+             state="planned",
+             date_beg=level2_files[0].date_beg,
+             date_end=level2_files[0].date_end,
+             outlier=level2_files[0].outlier,
+             bad_packets=level2_files[0].bad_packets,
+             )
+    ]
+
+
+@flow
+def level3_NFI_scheduler_flow(pipeline_config_path: str | None = None,
+                              session=None,
+                              reference_time: datetime | None = None):
+    generic_scheduler_flow_logic(
+        level3_NFI_query_ready_files,
+        level3_NFI_construct_file_info,
+        level3_NFI_construct_flow_info,
+        pipeline_config_path,
+        reference_time=reference_time,
+        session=session,
+    )
+
+
+def level3_NFI_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
+    for key in ["data_list", "before_f_corona_model_path", "after_f_corona_model_path"]:
+        call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
+
+    call_data["before_f_corona_model_path"] = cache_layer.f_corona.wrap_if_appropriate(
+        call_data["before_f_corona_model_path"])
+    call_data["after_f_corona_model_path"] = cache_layer.f_corona.wrap_if_appropriate(
+        call_data["after_f_corona_model_path"])
+    return call_data
+
+
+@flow
+def level3_NFI_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
+    generic_process_flow_logic(flow_id, level3_NFI_flow, pipeline_config_path, session=session,
+                               call_data_processor=level3_NFI_call_data_processor)
+
 
 
 @task(cache_policy=NO_CACHE)

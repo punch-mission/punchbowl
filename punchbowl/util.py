@@ -790,7 +790,7 @@ def limit_threads(n_threads: int | None) -> None:
         yield
 
 
-def make_circular_mask(shape: tuple, radius: float) -> np.ndarray:
+def make_circular_mask(shape: tuple[int, int], radius: float) -> np.ndarray:
     """
     Make a circular mask centered in the array. Pixels within the radius are set to 1.
 

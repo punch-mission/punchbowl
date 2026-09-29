@@ -17,6 +17,38 @@ The PUNCH mission and the SDAC data repository only supports the most recent ver
 
 A history of data version releases is given below.
 
+Version 0m
+----------
+- Released September __, 2026
+
+- Re-engineered QuickPUNCH files to meet SWPC requirements. Started real-time production and currently shipping. (PRs 1088-1097, 1101-1106, 1114, https://github.com/punch-mission/punchbowl/pull/1019)
+- Fixed file writing to use operational config image scaling parameters to quicklook files. (https://github.com/punch-mission/punchbowl/pull/1128)
+- Added robots=off to wget command as part of recent umbra.nascom.nasa.gov permission updates. (https://github.com/punch-mission/punchbowl/pull/1156)
+- Updated solar wind flow tracking modules to work with PUNCH data for initial activation. (https://github.com/punch-mission/punchbowl/pull/1079)
+
+- Helioviewer and JHelioviewer improvements
+
+  - Added the helioviewer tag to the JPEG2000 quicklook files. This will allow the image scaling of PUNCH data in Helioviewer to be correct. (https://github.com/punch-mission/punchbowl/pull/1109)
+  - We were previously clipping all negative values to 0. This led to negative values becoming transparent in JHelioviewer. We fixed that clipping bug by clipping to 1 instead. (https://github.com/punch-mission/punchbowl/pull/1159)
+
+- Metadata fixes
+
+  - Fixed outlier flagging for L2+ products. (https://github.com/punch-mission/punchbowl/pull/1141)
+  - Fixed DSATVAL calculation error so that saturated pixels get flagged properly (particularly for NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
+  - For science images, use the timestamp of the image to set the polarization state of the image. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. The PFWSTAT header value now reads -1 if the PFW packet is stale (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
+
+- Starfield processing improvements
+
+  - Corrected a bug with starfield model subtraction where the RA-axis cdelt was being accidentally sign flipped. (https://github.com/punch-mission/punchbowl/pull/1134)
+  - Improved starfield model generation and subtraction. A median background subtraction that is no longer needed was removed. This should improve capturing the Milky Way into the starfield models. This also allows for a single starfield model subtraction. (https://github.com/punch-mission/punchbowl/pull/1145)
+  - Improved starfield blur by reprojecting directly to the image frame instead of intermediate union WCS. (https://github.com/punch-mission/punchbowl/pull/1180)
+
+- Mosiac assembly improvements
+
+  - Fixed holes in L2 images after changing reprojection to run at 32 bits. (https://github.com/punch-mission/punchbowl/pull/1053)
+  - In L2 mosaic assembly, polarized inputs are now co-aligned before the polarization is converted to MZP_solar, to account for small pointing drift through the imaging sequence.(https://github.com/punch-mission/punchbowl/pull/1060)
+
+
 Version 0l
 ----------
 

@@ -1,0 +1,1 @@
+FITS files output is buffered to speed hash file generation.

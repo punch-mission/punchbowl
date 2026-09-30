@@ -14,44 +14,18 @@ How to plot PUNCH data and derived quantities using built-in colormaps
 # Load libraries
 
 import numpy as np
-from sunpy.net import Fido
-from sunpy.net import attrs as a
 
-import punchbowl  # Note that this import is needed to register PUNCH fido tools
 import punchbowl.data.color  # Note that this import is needed to register PUNCH colormaps with matplotlib
 from punchbowl.data import punch_io
 from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.data.sample import PUNCH_PAM
 from punchbowl.data.visualize import plot_punch
 
 # %%
-# Let's start with a search of some suitable data to plot.
+# Let's start by loading a PUNCH polarized low-noise mosaic into a datacube.
 
 # %%
-result = Fido.search(a.Time('2025/08/31 20:00:00', '2025/08/31 21:00:00'),
-                     a.punch.ProductCode.pa, # (ca for clear low-noise), or pa for polarized low-noise, etc.
-                     a.Instrument.m, # (m for mosaic), or a.Instrument.nfi_4, etc for earlier levels.
-                     a.Level.three,
-                     a.punch.DataVersion.newest, # or a.punch.DataVersion.zero_j, etc.
-                     a.punch.FileType.fits) # or a.punch.FileType.jp2
-
-result
-
-# %%
-# This results in a table of available data products that match the search criteria.
-# Next, let's download the first file from this list of results:
-
-# %%
-try:
-    files = Fido.fetch(result[0][0])
-except IndexError:
-    print("Oops no files were found!")
-    files = None
-# %%
-# With that file downloaded, let's load the file into memory.
-
-# %%
-if files:
-    datacube = punch_io.load_ndcube_from_fits(files[0])
+datacube = punch_io.load_ndcube_from_fits(PUNCH_PAM)
 
 # %%
 # Now we can plot the total brightness layer of this data. Note that it will use the default total brightness colortable.

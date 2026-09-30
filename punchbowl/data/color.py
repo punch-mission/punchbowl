@@ -99,6 +99,7 @@ cmap_punch_p_r = mpl.colormaps["plasma"].reversed()
 
 
 colormap_list = {
+    "punch": cmap_punch,
     "punch_r": cmap_punch_r,
     "punch_tb": cmap_punch,
     "punch_tb_r": cmap_punch_r,

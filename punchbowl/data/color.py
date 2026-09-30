@@ -18,8 +18,7 @@ def create_cdict(r: np.ndarray, g: np.ndarray, b: np.ndarray) -> dict:
 
 
 def _cmap_from_rgb(r: np.ndarray, g: np.ndarray, b: np.ndarray, name: str) -> LinearSegmentedColormap:
-    cdict = create_cdict(r, g, b)
-    return colors.LinearSegmentedColormap(name, cdict)
+    return colors.LinearSegmentedColormap(name, create_cdict(r, g, b))
 
 
 def cmap_from_rgb_file(name: str, fname: str) -> LinearSegmentedColormap:

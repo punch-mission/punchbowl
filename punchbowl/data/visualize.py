@@ -260,7 +260,7 @@ def plot_punch(  # noqa: C901
     norm = norm(gamma, vmin=vmin, vmax=vmax)
 
     if cmap is None:
-        cmap = cmap_punch_pb if cube.data.shape == 3 and layer == 1 else cmap_punch
+        cmap = cmap_punch_pb if len(cube.data.shape) == 3 and layer == 1 else cmap_punch
 
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
                                                         else cube.wcs[layer]})

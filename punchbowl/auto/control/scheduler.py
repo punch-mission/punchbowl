@@ -121,7 +121,7 @@ def generic_scheduler_flow_logic(
             database_flow_info.state = "being_planned"
             if backprocess_cutoff := pipeline_config.get("prioritize_most_recent_n_days", None):
                 cutoff = datetime.now(UTC) - timedelta(days=backprocess_cutoff)
-                if all(cf.date_obs.replace(tzinfo=UTC) < cutoff for cf in children_files):
+                if children_files and all(cf.date_obs.replace(tzinfo=UTC) < cutoff for cf in children_files):
                     database_flow_info.is_backprocessing = True
 
         for child_file in children_files:

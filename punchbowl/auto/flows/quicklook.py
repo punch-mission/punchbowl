@@ -220,23 +220,47 @@ def quicklook_core_flow(file_list: list,
         Output movie framerate, by default 10
     """
     cube = load_ndcube_from_fits(file_list[0])
-    vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
+    if cube.meta["OBS-MODE"].value in ["Polar_tBpB", "Polar_BpB"]:
+        vmin_pb, vmax_pb = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
+        vmin_tb, vmax_tb = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value.replace("P", "C", 1), obscode=cube.meta["OBSCODE"].value)
 
-    path_image = os.path.join(output_movie_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
-    path_movie = os.path.join(output_movie_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+        title_prefix_tb = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value} tB v{cube.meta["FILEVRSN"].value}"
+        title_prefix_pb = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value} pB v{cube.meta["FILEVRSN"].value}"
 
-    os.makedirs(os.path.dirname(path_image), exist_ok=True)
+        path_image_tb = os.path.join(output_movie_dir,
+                                     f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_tB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+        path_image_pb = os.path.join(output_movie_dir,
+                                     f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_pB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
 
-    if cube.meta["OBS-MODE"] == "Polar_BpB":
-        layer = 1
-        title_prefix = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"]} pB"
+        os.makedirs(os.path.dirname(path_image_tb), exist_ok=True)
+
+        if make_image:
+            write_ndcube_to_quicklook(cube, filename=path_image_tb, vmin=vmin_tb, vmax=vmax_tb, layer=0, annotation=title_prefix_tb)
+            write_ndcube_to_quicklook(cube, filename=path_image_pb, vmin=vmin_pb, vmax=vmax_pb, layer=1, annotation=title_prefix_pb)
+
+        layer=1
+        vmin, vmax = vmin_pb, vmax_pb
+        title_prefix = title_prefix_pb
+        path_movie = os.path.join(output_movie_dir,
+                        f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+
     else:
-        layer = 0
-        title_prefix = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"]} tB"
+        vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
 
-    if make_image:
-        # TODO - use this or some other mechanism?
-        write_ndcube_to_quicklook(cube, filename=path_image, vmin=vmin, vmax=vmax, layer=layer, annotation=title_prefix)
+        title_prefix = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value} tB v{cube.meta["FILEVRSN"].value}"
+
+        path_image = os.path.join(output_movie_dir,
+                                  f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+
+        os.makedirs(os.path.dirname(path_image), exist_ok=True)
+
+        if make_image:
+            write_ndcube_to_quicklook(cube, filename=path_image, vmin=vmin, vmax=vmax, annotation=title_prefix)
+
+        layer=0
+        path_movie = os.path.join(output_movie_dir,
+                        f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+
     if make_movie:
         animate_punch(file_list,
                       output_path=path_movie,

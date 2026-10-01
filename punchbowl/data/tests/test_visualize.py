@@ -26,10 +26,22 @@ def test_cmap_punch():
     assert isinstance(cmap_punch, LinearSegmentedColormap)
     assert isinstance(cmap_punch_pb, LinearSegmentedColormap)
 
+    assert np.allclose(cmap_punch(0.0), (0, 0, 0, 1))
+    assert np.allclose(cmap_punch(1.0), (1, 1, 1, 1))
+
+    assert np.allclose(cmap_punch_pb(0.0), (0, 0, 0, 1))
+    assert np.allclose(cmap_punch_pb(1.0), (1, 1, 1, 1))
+
 
 def test_cmap_punch_r():
     assert isinstance(cmap_punch_r, LinearSegmentedColormap)
     assert isinstance(cmap_punch_pb_r, LinearSegmentedColormap)
+
+    assert np.allclose(cmap_punch_r(1.0), (0, 0, 0, 1))
+    assert np.allclose(cmap_punch_r(0.0), (1, 1, 1, 1))
+
+    assert np.allclose(cmap_punch_pb_r(1.0), (0, 0, 0, 1))
+    assert np.allclose(cmap_punch_pb_r(0.0), (1, 1, 1, 1))
 
 
 def test_plot_punch(sample_ndcube):

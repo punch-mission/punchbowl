@@ -1,6 +1,6 @@
 """
 ==============================
-Plotting PUNCH data with color
+Colormaps for PUNCH Data
 ==============================
 
 How to plot PUNCH data and derived quantities using built-in colormaps

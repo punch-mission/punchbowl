@@ -236,6 +236,11 @@ def write_ndcube_to_quicklook(cube: PUNCHCube, # noqa: C901
         draw.text(text_position, text, font=font, fill=fill_value)
         pil_image = padded_image
 
+    if filename.endswith((".jpeg", ".jpg")):
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        pil_image.convert("RGB").save(filename)
+        return
+
     arr_image = np.array(pil_image)
 
     tmp_filename = f"{filename}tmp.jp2"

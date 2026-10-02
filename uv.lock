@@ -4859,7 +4859,7 @@ requires-dist = [
     { name = "punchbowl", extras = ["super-user"], marker = "extra == 'all'" },
     { name = "pylibjpeg", extras = ["libjpeg", "openjpeg"], marker = "extra == 'super-user'" },
     { name = "python-dateutil" },
-    { name = "regularizepsf" },
+    { name = "regularizepsf", editable = "../regularizepsf" },
     { name = "remove-starfield", marker = "extra == 'super-user'", specifier = ">=0.1.1" },
     { name = "reproject", marker = "extra == 'super-user'", specifier = ">=0.20.0" },
     { name = "requests" },
@@ -4868,7 +4868,7 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.16.1" },
     { name = "sep", marker = "extra == 'super-user'" },
     { name = "setuptools", marker = "extra == 'super-user'" },
-    { name = "solpolpy" },
+    { name = "solpolpy", editable = "../solpolpy" },
     { name = "sunkit-image" },
     { name = "sunpy", extras = ["all"] },
     { name = "threadpoolctl", marker = "extra == 'super-user'" },
@@ -4917,7 +4917,7 @@ dev = [
     { name = "pytest-runner" },
     { name = "pyyaml" },
     { name = "ruff" },
-    { name = "simpunch" },
+    { name = "simpunch", editable = "../simpunch" },
     { name = "sphinx" },
     { name = "sphinx-autoapi" },
     { name = "sphinx-automodapi" },
@@ -4973,7 +4973,7 @@ pipe = [
     { name = "pydantic" },
     { name = "pymysql" },
     { name = "pyyaml" },
-    { name = "simpunch" },
+    { name = "simpunch", editable = "../simpunch" },
     { name = "sqlalchemy" },
     { name = "xlrd" },
 ]
@@ -5862,8 +5862,7 @@ wheels = [
 
 [[package]]
 name = "regularizepsf"
-version = "1.2.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../regularizepsf" }
 dependencies = [
     { name = "astropy" },
     { name = "h5py" },
@@ -5874,7 +5873,32 @@ dependencies = [
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "sep" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4f/b6/ca907083fe57fec26e28676cd0e6bc6389aa538813247b1ad57c6d9eaa85/regularizepsf-1.2.0.tar.gz", hash = "sha256:4bfb7ae47b9e483c8c23948e1e999e3425e3237ddb38e021b133835208ce38d7", size = 9006932, upload-time = "2026-03-28T16:51:35.117Z" }
+
+[package.metadata]
+requires-dist = [
+    { name = "astropy" },
+    { name = "coverage", marker = "extra == 'test'" },
+    { name = "h5py" },
+    { name = "hypothesis", marker = "extra == 'test'" },
+    { name = "ipython", marker = "extra == 'docs'" },
+    { name = "matplotlib" },
+    { name = "nbsphinx", marker = "extra == 'docs'" },
+    { name = "numpy" },
+    { name = "packaging", marker = "extra == 'docs'" },
+    { name = "pre-commit", marker = "extra == 'dev'" },
+    { name = "pydata-sphinx-theme", marker = "extra == 'docs'" },
+    { name = "pytest", marker = "extra == 'test'" },
+    { name = "pytest-cov", marker = "extra == 'test'" },
+    { name = "pytest-mpl", marker = "extra == 'test'" },
+    { name = "regularizepsf", extras = ["docs", "test"], marker = "extra == 'dev'" },
+    { name = "ruff", marker = "extra == 'test'" },
+    { name = "scikit-image" },
+    { name = "scipy" },
+    { name = "sep" },
+    { name = "sphinx", marker = "extra == 'docs'" },
+    { name = "sphinx-autoapi", marker = "extra == 'docs'" },
+]
+provides-extras = ["test", "docs", "dev"]
 
 [[package]]
 name = "remove-starfield"
@@ -6562,22 +6586,47 @@ wheels = [
 
 [[package]]
 name = "simpunch"
-version = "0.0.3"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../simpunch" }
 dependencies = [
     { name = "astropy" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "photutils" },
-    { name = "prefect", extra = ["dask", "sqlalchemy"] },
+    { name = "prefect", extra = ["dask"] },
     { name = "punchbowl" },
     { name = "regularizepsf" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "toml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e0/22/9a7ceda800c9f9fd53428b8d10b2228700acf1da1ef7e2868434432df404/simpunch-0.0.3.tar.gz", hash = "sha256:11d0a271a5ce45d6dc3295d154bd74d7a20c0c39258842de241581007a2edbe0", size = 3090821, upload-time = "2024-12-19T16:11:55.069Z" }
+
+[package.metadata]
+requires-dist = [
+    { name = "astropy" },
+    { name = "coverage", marker = "extra == 'test'" },
+    { name = "ipython", marker = "extra == 'docs'" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "packaging", marker = "extra == 'docs'" },
+    { name = "pandas" },
+    { name = "photutils" },
+    { name = "prefect", extras = ["dask"] },
+    { name = "punchbowl" },
+    { name = "pydata-sphinx-theme", marker = "extra == 'docs'" },
+    { name = "pytest", marker = "extra == 'test'" },
+    { name = "pytest-cov", marker = "extra == 'test'" },
+    { name = "pytest-doctestplus", marker = "extra == 'test'" },
+    { name = "regularizepsf" },
+    { name = "ruff", marker = "extra == 'test'" },
+    { name = "scipy" },
+    { name = "sphinx", marker = "extra == 'docs'" },
+    { name = "sphinx-autoapi", marker = "extra == 'docs'" },
+    { name = "sphinx-automodapi", marker = "extra == 'docs'" },
+    { name = "sphinx-favicon", marker = "extra == 'docs'" },
+    { name = "toml" },
+]
+provides-extras = ["test", "docs"]
 
 [[package]]
 name = "six"
@@ -6617,8 +6666,7 @@ wheels = [
 
 [[package]]
 name = "solpolpy"
-version = "0.6.1"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../solpolpy" }
 dependencies = [
     { name = "astropy" },
     { name = "matplotlib" },
@@ -6630,7 +6678,31 @@ dependencies = [
     { name = "sunpy", version = "7.0.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "sunpy", version = "8.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/92/53/f938fdc72d35c824d3966faaf4e17168db8a800839e26ef9a97477dc179c/solpolpy-0.6.1.tar.gz", hash = "sha256:07876510e037df6102abdc45c4de88441a69bedf2b65079573a26a51eda299af", size = 22738786, upload-time = "2026-04-01T17:38:41.535Z" }
+
+[package.metadata]
+requires-dist = [
+    { name = "astropy" },
+    { name = "coverage", marker = "extra == 'test'" },
+    { name = "ipython", marker = "extra == 'docs'" },
+    { name = "matplotlib" },
+    { name = "nbsphinx", marker = "extra == 'docs'" },
+    { name = "ndcube" },
+    { name = "networkx" },
+    { name = "numpy" },
+    { name = "packaging", marker = "extra == 'docs'" },
+    { name = "pandoc", marker = "extra == 'docs'" },
+    { name = "pre-commit", marker = "extra == 'dev'" },
+    { name = "pydata-sphinx-theme", marker = "extra == 'docs'" },
+    { name = "pytest", marker = "extra == 'test'" },
+    { name = "pytest-cov", marker = "extra == 'test'" },
+    { name = "ruff", marker = "extra == 'test'" },
+    { name = "solpolpy", extras = ["docs", "test"], marker = "extra == 'dev'" },
+    { name = "sphinx", marker = "extra == 'docs'" },
+    { name = "sphinx-autoapi", marker = "extra == 'docs'" },
+    { name = "sunkit-image", specifier = ">=0.6" },
+    { name = "sunpy" },
+]
+provides-extras = ["test", "docs", "dev"]
 
 [[package]]
 name = "sortedcontainers"

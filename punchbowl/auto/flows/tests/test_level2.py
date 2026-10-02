@@ -2,6 +2,7 @@ import os
 import itertools
 from datetime import UTC, datetime, timedelta
 
+import pytest
 from freezegun import freeze_time
 from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
@@ -13,6 +14,7 @@ from punchbowl.auto.control.util import batched, load_pipeline_configuration
 from punchbowl.auto.flows.level2 import (
     group_l2_inputs,
     group_l2_inputs_single_observatory,
+    keep_accepted_phase_images,
     level2_construct_file_info,
     level2_construct_flow_info,
     level2_query_ready_clear_files,
@@ -124,9 +126,166 @@ def session_fn(session):
     session.add(level1_file_clear)
     session.add(level1_file_clear_not_ready)
 
+def session_fn_phases(session):
+    level0_fileP_1 = File(level='0',
+                        file_type='PP',
+                        observatory='2',
+                        state='progressed',
+                        file_version='none',
+                        software_version='none',
+                        polarization='P',
+                        date_created=datetime(2026, 5, 5, 0, 5, 26),
+                        date_obs=datetime(2026, 5, 5, 0, 5, 26))
+
+    level1_fileP_1 = File(level='1',
+                       file_type='PP',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='P',
+                       date_created=datetime(2026, 5, 5, 0, 5, 26),
+                       date_obs=datetime(2026, 5, 5, 0, 5, 26))
+
+    level0_fileZ_2 = File(level='0',
+                        file_type='PZ',
+                        observatory='2',
+                        state='progressed',
+                        file_version='none',
+                        software_version='none',
+                        polarization='Z',
+                        date_created=datetime(2026, 5, 5, 0, 6, 30),
+                        date_obs=datetime(2026, 5, 5, 0, 6, 30))
+
+    level1_fileZ_2 = File(level='1',
+                       file_type='PZ',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='Z',
+                       date_created=datetime(2026, 5, 5, 0, 6, 30),
+                       date_obs=datetime(2026, 5, 5, 0, 6, 30))
+
+    level0_fileM_3 = File(level='0',
+                        file_type='PM',
+                        observatory='2',
+                        state='progressed',
+                        file_version='none',
+                        software_version='none',
+                        polarization='M',
+                        date_created=datetime(2026, 5, 5, 0, 7, 32),
+                        date_obs=datetime(2026, 5, 5, 0, 7, 32))
+
+    level1_fileM_3 = File(level='1',
+                       file_type='PM',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='M',
+                       date_created=datetime(2026, 5, 5, 0, 7, 32),
+                       date_obs=datetime(2026, 5, 5, 0, 7, 32))
+
+    level0_fileC_4 = File(level='0',
+                        file_type='CR',
+                        observatory='2',
+                        state='progressed',
+                        file_version='none',
+                        software_version='none',
+                        polarization='C',
+                        date_created=datetime(2026, 5, 5, 0, 8, 29),
+                        date_obs=datetime(2026, 5, 5, 0, 8, 29))
+
+    level1_fileC_4 = File(level='1',
+                       file_type='CR',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='C',
+                       date_created=datetime(2026, 5, 5, 0, 8, 29),
+                       date_obs=datetime(2026, 5, 5, 0, 8, 29))
+
+    level0_fileP_5 = File(level='0',
+                        file_type='PP',
+                        observatory='2',
+                        state='progressed',
+                        file_version='none',
+                        software_version='none',
+                        polarization='P',
+                        date_created=datetime(2026, 5, 5, 0, 9, 26),
+                        date_obs=datetime(2026, 5, 5, 0, 9, 26))
+
+    level1_fileP_5 = File(level='1',
+                       file_type='PP',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='P',
+                       date_created=datetime(2026, 5, 5, 0, 9, 26),
+                       date_obs=datetime(2026, 5, 5, 0, 9, 26))
+
+    level0_fileZ_6 = File(level='0',
+                        file_type='PZ',
+                        observatory='2',
+                        state='progressed',
+                        file_version='none',
+                        software_version='none',
+                        polarization='Z',
+                        date_created=datetime(2026, 5, 5, 0, 10, 30),
+                        date_obs=datetime(2026, 5, 5, 0, 10, 30))
+
+    level1_fileZ_6 = File(level='1',
+                       file_type='PZ',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='Z',
+                       date_created=datetime(2026, 5, 5, 0, 10, 30),
+                       date_obs=datetime(2026, 5, 5, 0, 10, 30))
+
+    level0_fileM_7 = File(level='0',
+                        file_type='PM',
+                        observatory='2',
+                        state='progressed',
+                        file_version='none',
+                        software_version='none',
+                        polarization='M',
+                        date_created=datetime(2026, 5, 5, 0, 11, 32),
+                        date_obs=datetime(2026, 5, 5, 0, 11, 32))
+
+    level1_fileM_7 = File(level='1',
+                       file_type='PM',
+                       observatory='2',
+                       state='created',
+                       file_version='none',
+                       software_version='none',
+                       polarization='M',
+                       date_created=datetime(2026, 5, 5, 0, 11, 32),
+                       date_obs=datetime(2026, 5, 5, 0, 11, 32))
+
+    session.add(level0_fileP_1)
+    session.add(level1_fileP_1)
+    session.add(level0_fileZ_2)
+    session.add(level1_fileZ_2)
+    session.add(level0_fileM_3)
+    session.add(level1_fileM_3)
+
+    session.add(level0_fileC_4)
+    session.add(level1_fileC_4)
+
+    session.add(level0_fileP_5)
+    session.add(level1_fileP_5)
+    session.add(level0_fileZ_6)
+    session.add(level1_fileZ_6)
+    session.add(level0_fileM_7)
+    session.add(level1_fileM_7)
 
 db = create_mysql_fixture(Base, session_fn, session=True)
-
+db_phases = create_mysql_fixture(Base, session_fn_phases, session=True)
 
 def test_level2_query_ready_files():
     """
@@ -503,11 +662,119 @@ def test_level2_construct_flow_info():
 
 def test_level2_scheduler_flow(db):
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
-    with prefect_test_harness():
+    with prefect_test_harness(), disable_run_logger():
         level2_scheduler_flow(pipeline_config_path, db)
     results = db.query(Flow).where(Flow.state == 'planned').all()
     assert len(results) == 1
 
+@pytest.mark.parametrize("accepted_phases, num_flows", [
+    ( "1, 2, 3, 4, 5, 6, 7", 2), # use all images, only make the two flows
+    ("1, 2, 3, 5, 6, 7", 2), # use all but clears, only make the two flows
+        ("1, 2, 3", 1), # use only phase 1 polarized, only make one flow
+            ("1, 3", 0) # use only PP and PM from phase 1, no flows made
+])
+def test_level2_scheduler_flow_with_accepted_phases(db_phases, accepted_phases, num_flows):
+    pipeline_config = load_pipeline_configuration(os.path.join(TEST_DIR, "punchpipe_config.yaml"))
+    pipeline_config["flows"]["level2"]["accepted_phases"] = accepted_phases
+    with prefect_test_harness(), disable_run_logger():
+        level2_scheduler_flow(pipeline_config, db_phases)
+    results = db_phases.query(Flow).where(Flow.state == 'planned').all()
+    print(results)
+    assert len(results) == num_flows
 
-def test_level2_process_flow(db):
-    pass
+def test_keep_accepted_phase_images():
+    level1_fileP_1 = File(level='1',
+                          file_type='PP',
+                          observatory='2',
+                          state='created',
+                          file_version='none',
+                          software_version='none',
+                          polarization='P',
+                          date_created=datetime(2026, 5,5, 0, 5, 26),
+                          date_obs=datetime(2026, 5,5, 0, 5, 26))
+
+    level1_fileZ_2 = File(level='1',
+                          file_type='PZ',
+                          observatory='2',
+                          state='created',
+                          file_version='none',
+                          software_version='none',
+                          polarization='P',
+                          date_created=datetime(2026, 5,5, 0, 6, 30),
+                          date_obs=datetime(2026, 5,5, 0, 6, 30))
+
+    level1_fileM_3 = File(level='1',
+                          file_type='PM',
+                          observatory='2',
+                          state='created',
+                          file_version='none',
+                          software_version='none',
+                          polarization='P',
+                          date_created=datetime(2026, 5,5, 0, 7, 32),
+                          date_obs=datetime(2026, 5,5, 0, 7, 32))
+
+    level1_fileC_4 = File(level='1',
+                          file_type='CR',
+                          observatory='2',
+                          state='created',
+                          file_version='none',
+                          software_version='none',
+                          polarization='C',
+                          date_created=datetime(2026, 5,5, 0, 8, 29),
+                          date_obs=datetime(2026, 5,5, 0, 8, 29))
+
+    level1_fileP_5 = File(level='1',
+                          file_type='PP',
+                          observatory='2',
+                          state='created',
+                          file_version='none',
+                          software_version='none',
+                          polarization='P',
+                          date_created=datetime(2026, 5,5, 0, 9, 26),
+                          date_obs=datetime(2026, 5,5, 0, 9, 26))
+
+    level1_fileZ_6 = File(level='1',
+                          file_type='PZ',
+                          observatory='2',
+                          state='created',
+                          file_version='none',
+                          software_version='none',
+                          polarization='P',
+                          date_created=datetime(2026, 5,5, 0, 10, 30),
+                          date_obs=datetime(2026, 5,5, 0, 10, 30))
+
+    level1_fileM_7 = File(level='1',
+                          file_type='PM',
+                          observatory='2',
+                          state='created',
+                          file_version='none',
+                          software_version='none',
+                          polarization='P',
+                          date_created=datetime(2026, 5,5, 0, 11, 32),
+                          date_obs=datetime(2026, 5,5, 0, 11, 32))
+
+    a = [level1_fileP_1, level1_fileZ_2, level1_fileM_3,
+         level1_fileC_4,
+         level1_fileP_5, level1_fileZ_6, level1_fileM_7]
+
+    a_out = keep_accepted_phase_images(a, (1, 2, 3, 4, 5, 6, 7))
+    assert len(a_out) == 7
+    assert level1_fileP_1 in a_out
+    assert level1_fileZ_2 in a_out
+    assert level1_fileM_3 in a_out
+    assert level1_fileC_4 in a_out
+    assert level1_fileP_5 in a_out
+    assert level1_fileZ_6 in a_out
+    assert level1_fileM_7 in a_out
+
+    b_out = keep_accepted_phase_images(a, (1, 2, 3))
+    assert len(b_out) == 3
+    assert level1_fileP_1 in b_out
+    assert level1_fileZ_2 in b_out
+    assert level1_fileM_3 in b_out
+
+    c_out = keep_accepted_phase_images(a, (2, 4, 6))
+    assert len(c_out) == 3
+    assert level1_fileZ_2 in c_out
+    assert level1_fileC_4 in c_out
+    assert level1_fileZ_6 in c_out

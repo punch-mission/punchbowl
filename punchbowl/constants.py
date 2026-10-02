@@ -1,4 +1,5 @@
 """Constant values used in PUNCHBOWL project."""
+from enum import IntEnum
 
 ORIGINAL_PUNCH_RESOLUTION = 2048
 
@@ -22,3 +23,21 @@ GLINT_MASK_BOTTOM_CUT_OFF = 250
 # center of the donut of stray light
 KERNEL_CENTER_X = 1014.50355056 - 1
 KERNEL_CENTER_Y = 1037.37339562 - 1
+
+# --- Phases of images -------------------------------------------------------------------------------------------------
+class ImagePhase(IntEnum):
+    """
+    Represents phases of image collection.
+
+    1 through 3 are the early polarized.
+    4 is the clear.
+    4 through 7 are the late polarized.
+    """
+
+    POLARIZED_PLUS_EARLY = 1
+    POLARIZED_ZERO_EARLY = 2
+    POLARIZED_MINUS_EARLY = 3
+    CLEAR = 4
+    POLARIZED_PLUS_LATE = 5
+    POLARIZED_ZERO_LATE = 6
+    POLARIZED_MINUS_LATE = 7

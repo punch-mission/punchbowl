@@ -1,0 +1,1 @@
+Allow level 2 to skip including image based on configurable accepted phases.

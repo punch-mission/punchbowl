@@ -61,14 +61,14 @@ from punchbowl.auto.control.db import (
 )
 from punchbowl.auto.control.util import load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
+from punchbowl.constants import ImagePhase
 from punchbowl.data import NormalizedMetadata, get_base_file_name, punch_io, write_ndcube_to_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
 from punchbowl.exceptions import MissingMetadataError
-from punchbowl.level1.dynamic_stray_light import phase_in_window
 from punchbowl.limits import LimitSet
 from punchbowl.prefect import get_logger
-from punchbowl.util import load_mask_file
+from punchbowl.util import load_mask_file, phase_in_window
 
 FIXED_PACKETS = ["ENG_XACT", "ENG_LED", "ENG_PFW", "ENG_CEB", "ENG_LZ"]
 VARIABLE_PACKETS = ["SCI_XFI"]
@@ -800,13 +800,13 @@ def get_metadata(first_image_packet,
     if typecode_first_guess in ("PP","PZ","PM","CR","PX"):
         phase_from_timestamp = phase_in_window(observation_midpoint.strftime("_%Y%m%d%H%M%S_"))
         match phase_from_timestamp:
-            case 1 | 5:
+            case ImagePhase.POLARIZED_PLUS_EARLY | ImagePhase.POLARIZED_PLUS_LATE:
                 typecode = "PP"
-            case 2 | 6:
+            case ImagePhase.POLARIZED_ZERO_EARLY | ImagePhase.POLARIZED_ZERO_LATE:
                 typecode = "PZ"
-            case 3 | 7:
+            case ImagePhase.POLARIZED_MINUS_EARLY | ImagePhase.POLARIZED_MINUS_LATE:
                 typecode = "PM"
-            case 4:
+            case ImagePhase.CLEAR:
                 typecode = "CR"
             case _:
                 typecode = typecode_first_guess

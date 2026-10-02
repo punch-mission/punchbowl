@@ -1,4 +1,5 @@
 import os
+import re
 import abc
 import warnings
 import threading
@@ -20,6 +21,7 @@ from scipy.signal import convolve2d
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning
+from punchbowl.level1.dynamic_stray_light import fiducial_utime
 from punchbowl.prefect import punch_task
 
 
@@ -788,3 +790,63 @@ def limit_threads(n_threads: int | None) -> None:
 
     with threadpoolctl.threadpool_limits(n_threads):
         yield
+
+
+def fname_date_to_utime(timestamp: str) -> int:
+    """Get a timestamp from a filename."""
+    dt = datetime.strptime(timestamp, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
+    return int(dt.timestamp())
+
+
+def fname_to_utime(fname: str) -> int:
+    """Get a timestamp."""
+    tstr = re.findall(r"_(\d{14})_", fname)[0]
+    if len(tstr):
+        return fname_date_to_utime(tstr)
+    raise ValueError
+
+
+def cube_to_utime(cube: PUNCHCube) -> int:
+    """Get a timestamp."""
+    t = cube.meta.datetime.replace(tzinfo=UTC)
+    return t.timestamp()
+
+
+def phase_in_window(fname: str) -> int:
+    """Get roll position phase."""
+    utime = fname_to_utime(fname)
+    return int(((utime - fiducial_utime))/60) % 8
+
+
+def phase_in_window_from_cube(cube: PUNCHCube) -> int:
+    """Get roll position phase."""
+    utime = cube_to_utime(cube)
+    return int(((utime - fiducial_utime))/60) % 8
+
+
+def make_phases(file_list: list[str]) -> list[list[str]]:
+    """Group files by phase within roll position."""
+    phases = [[],[],[],[],[],[],[],[]]
+    for fname in file_list:
+        phase = phase_in_window(fname)
+        phases[phase].append(fname)
+    return phases
+
+
+def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) -> list[tuple[str, str]]:
+    """Match pairs of files across two phases."""
+    pairs = []
+    j = 0
+    for i in range(len(phases[phase1])):
+        ti = fname_to_utime(phases[phase1][i])
+        tj = fname_to_utime(phases[phase2][j])
+        while tj > ti and j > 0:
+            j = j - 1
+            tj = fname_to_utime(phases[phase2][j])
+        while tj <= ti and j < len(phases[phase2]) - 1:
+            j = j + 1
+            tj = fname_to_utime(phases[phase2][j])
+        dt_min = (tj - ti) / 60
+        if dt_min > 0 and dt_min < 8:
+            pairs.append((phases[phase1][i], phases[phase2][j]))
+    return pairs

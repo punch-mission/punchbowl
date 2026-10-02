@@ -1,0 +1,1 @@
+Add github action to check that uv.lock is updated when pyproject.toml is changed.

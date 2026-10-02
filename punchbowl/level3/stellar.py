@@ -383,6 +383,9 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
     star_datacube_before = load_ndcube_from_fits(before_starfield_path)
     star_datacube_after = load_ndcube_from_fits(after_starfield_path)
 
+    star_datacube_before.celestial_wcs.wcs.cdelt[0] *= -1
+    star_datacube_after.celestial_wcs.wcs.cdelt[0] *= -1
+
     starfield_reprojected_before = reproject_adaptive(
         (np.stack([star_datacube_before.data, star_datacube_before.uncertainty.array], axis=0),
         star_datacube_before.celestial_wcs),

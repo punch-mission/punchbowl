@@ -1,0 +1,185 @@
+XTENSION= 'BINTABLE'           / binary table extension
+BITPIX  =                    8 / array data type
+NAXIS   =                    2 / number of array dimensions
+NAXIS1  =                   32 / width of table in bytes
+NAXIS2  =                 8192 / number of rows in table
+PCOUNT  =             38324531 / number of group parameters
+GCOUNT  =                    1 / number of groups
+TFIELDS =                    4 / number of fields in each row
+TTYPE1  = 'COMPRESSED_DATA'    / label for field 1
+TFORM1  = '1PB(7504)'          / data format of field: variable length array
+TTYPE2  = 'GZIP_COMPRESSED_DATA' / label for field 2
+TFORM2  = '1PB(51) '           / data format of field: variable length array
+TTYPE3  = 'ZSCALE  '           / label for field 3
+TFORM3  = '1D      '           / data format of field: 8-byte DOUBLE
+TTYPE4  = 'ZZERO   '           / label for field 4
+TFORM4  = '1D      '           / data format of field: 8-byte DOUBLE
+ZIMAGE  =                    T / extension contains compressed image
+ZSIMPLE = 'T       '           / Conforms to FITS Standard
+ZBITPIX =                  -32 / Number of bits per pixel
+ZNAXIS  =                    3 / Number of axes
+ZNAXIS1 =                 4096 / Length of the first axis
+ZNAXIS2 =                 4096 / Length of the second axis
+ZNAXIS3 =                    2 / Length of the third axis
+ZTILE1  =                 4096 / size of tiles to be compressed
+ZTILE2  =                    1 / size of tiles to be compressed
+ZTILE3  =                    1 / size of tiles to be compressed
+ZCMPTYPE= 'RICE_1  '           / compression algorithm
+ZNAME1  = 'BLOCKSIZE'          / compression block size
+ZVAL1   =                   32 / pixels per block
+ZNAME2  = 'BYTEPIX '           / bytes per pixel (1, 2, 4, or 8)
+ZVAL2   =                    4 / bytes per pixel (1, 2, 4, or 8)
+ZNAME3  = 'NOISEBIT'           / floating point quantization level
+ZVAL3   =                 16.0 / floating point quantization level
+ZQUANTIZ= 'NO_DITHER'          / No dithering during quantization
+COMMENT ----- FITS Required ----------------------------------------------------
+EXTNAME = 'PRIMARY DATA ARRAY' / Name of this binary table extension
+LONGSTRN= 'OGIP 1.0'           / The OGIP long string convention may be used
+COMMENT ----- Documentation, Contact, and Collection Metadata ------------------
+DOI     = 'https://doi.org/TBD' / Data reference DOI
+PROJECT = 'PUNCH   '
+TITLE   = 'PUNCH Level-3 Polarized Low Noise Mosaic'
+KEYVOCAB= 'Unified Astronomy Thesaurus Keywords'
+KEYWORDS= 'Solar Corona (1483), Solar K Corona (2042), Solar F Corona (1991), &'
+CONTINUE  'Solar Coronal Streamers (1486), Solar Coronal Plumes (2039), Solar &'
+CONTINUE  'Wind (1534), Fast Solar Wind (1872), Slow Solar Wind (1873), Solar &'
+CONTINUE  'Coronal Mass Ejection (310), Heliosphere (711), Polarimetry (1278)'
+LICENSE = 'Creative Commons Attribution 4.0 International | CC BY 4.0'
+DESCRPTN= 'PUNCH Level-3 data, Composite mosaic in output coordinates'
+DOC_URL = 'https://punch.spaceops.swri.org'
+COMMENT ----- File Type and Provenance -----------------------------------------
+FILENAME= '' / Name of file
+LEVEL   = '3       '           / Product Level
+OBSTYPE = 'Polarized low noise mosaic' / Plain text observation
+TYPECODE= 'PA      '           / Observation product type code
+OBSCODE = 'M       '           / Observatory spacecraft code
+PIPEVRSN= '' / PUNCHPipe software version number
+FILE_RAW= '' / Raw telemetry filename
+ORIGIN  = 'SwRI    '           / Institution responsible for creating the file
+COMMENT ----- Temporal Information ---------------------------------------------
+TIMESYS = 'UTC     '           / Principal time system
+DATE-BEG= '2024-06-20T00:00:00.000' / UTC time observation
+DATE-OBS= '2024-06-20T00:00:00.000' / UTC reference time
+DATE-AVG= '2024-06-20T00:16:00.000' / UTC reference time
+DATE-END= '2024-06-20T00:32:00.000' / UTC time of observation end
+DATE    = '2024-06-20T12:32:00.000' / UTC file generation date and time
+COMMENT ----- Instrument and Spacecraft State ----------------------------------
+WAVELNTH=                  530 / [nm] average peak response
+WAVEUNIT= 'nanometer'          / Unit of observation measurement
+OBS-MODE= 'Polar_BpB'          / Image Mode (Unpolarized, Polar_MZP, Polar_BpB)
+OBSLAYR1= 'Polar_B '           / Image Mode for first datacube layer
+OBSLAYR2= 'Polar_pB'           / Image Mode for second datacube layer
+INSTRUME= 'WFI+NFI Mosaic'     / Instrument name
+TELESCOP= 'PUNCH 1-2-3-4'      / Satellite name
+OBSRVTRY= 'PUNCH   '           / Observatory name
+OBJECT  = 'Heliosphere white light' / Object observed
+COMMENT ----- World Coordinate System ------------------------------------------
+WCSAXES =                    3 / Number of coordinate axes
+CRPIX1  =               2047.5 / Pixel coordinate of reference point
+CRPIX2  =               2047.5 / Pixel coordinate of reference point
+CRPIX3  =                  0.0 / Pixel coordinate of reference point
+PC1_1   =                  1.0 / Coordinate transformation matrix element
+PC1_2   =                  0.0 / Coordinate transformation matrix element
+PC1_3   =                  0.0 / Coordinate transformation matrix element
+PC2_1   =                  0.0 / Coordinate transformation matrix element
+PC2_2   =                  1.0 / Coordinate transformation matrix element
+PC2_3   =                  0.0 / Coordinate transformation matrix element
+PC3_1   =                  0.0 / Coordinate transformation matrix element
+PC3_2   =                  0.0 / Coordinate transformation matrix element
+PC3_3   =                  1.0 / Coordinate transformation matrix element
+CDELT1  =               0.0225 / [deg] Coordinate increment at reference point
+CDELT2  =               0.0225 / [deg] Coordinate increment at reference point
+CDELT3  =                  1.0 / Coordinate increment at reference point
+CUNIT1  = 'deg     '           / Units of coordinate increment and value
+CUNIT2  = 'deg     '           / Units of coordinate increment and value
+CUNIT3  = '' / Units of coordinate increment and value
+CTYPE1  = 'HPLN-ARC'           / Coordinate type codezenithal/azimuthal equidist
+CTYPE2  = 'HPLT-ARC'           / Coordinate type codezenithal/azimuthal equidist
+CTYPE3  = 'STOKES  '           / Coordinate type
+CRVAL1  =                  0.0 / [deg] Coordinate value at reference point
+CRVAL2  =                  0.0 / [deg] Coordinate value at reference point
+CRVAL3  =                  0.0 / Coordinate value at reference point
+LONPOLE =                180.0 / [deg] Native longitude of celestial pole
+LATPOLE =                  0.0 / [deg] Native latitude of celestial pole
+CNAME3  = 'STOKES  '           / Axis name for labelling purposes
+MJDREF  =                  0.0 / [d] MJD of fiducial time
+WCSAXESA=                    3 / Number of coordinate axes
+CRPIX1A =               2047.5 / Pixel coordinate of reference point
+CRPIX2A =               2047.5 / Pixel coordinate of reference point
+CRPIX3A =                  0.0 / Pixel coordinate of reference point
+PC1_1A  =   0.9912781666299199 / Coordinate transformation matrix element
+PC1_2A  =  0.13178617667579878 / Coordinate transformation matrix element
+PC1_3A  =                  0.0 / Coordinate transformation matrix element
+PC2_1A  = -0.13178617667579878 / Coordinate transformation matrix element
+PC2_2A  =   0.9912781666299199 / Coordinate transformation matrix element
+PC2_3A  =                  0.0 / Coordinate transformation matrix element
+PC3_1A  =                  0.0 / Coordinate transformation matrix element
+PC3_2A  =                  0.0 / Coordinate transformation matrix element
+PC3_3A  =                  1.0 / Coordinate transformation matrix element
+CDELT1A =              -0.0225 / [deg] Coordinate increment at reference point
+CDELT2A =               0.0225 / [deg] Coordinate increment at reference point
+CDELT3A =                  1.0 / Coordinate increment at reference point
+CUNIT1A = 'deg     '           / Units of coordinate increment and value
+CUNIT2A = 'deg     '           / Units of coordinate increment and value
+CUNIT3A = '        '           / Units of coordinate increment and value
+CTYPE1A = 'RA---ARC'           / Coordinate type codezenithal/azimuthal equidist
+CTYPE2A = 'DEC--ARC'           / Coordinate type codezenithal/azimuthal equidist
+CTYPE3A = 'STOKES  '           / Coordinate type
+CRVAL1A =    88.72529939915754 / [deg] Coordinate value at reference point
+CRVAL2A =    23.43076999917664 / [deg] Coordinate value at reference point
+CRVAL3A =                  0.0 / Coordinate value at reference point
+LONPOLEA=                180.0 / [deg] Native longitude of celestial pole
+LATPOLEA=                  0.0 / [deg] Native latitude of celestial pole
+CNAME3A = 'STOKES  '           / Axis name for labelling purposes
+MJDREFA =                  0.0 / [d] MJD of fiducial time
+COMMENT ----- Image Statistics and Properties ----------------------------------
+BUNIT   = 'Mean Solar Brightness' / Units of observation
+BSUN_DEF=           20090000.0 / [W/m2/sr] Mean Solar Brightness
+DATAZER =              9214166 / number of pixels=0
+DATASAT =                    0 / number of saturated pixels
+DSATVAL =              65535.0 / saturation value in calibrated units
+DATAAVG = 4.73192923104541E-14 / average non-zero pixel value
+DATAMDN = 2.73807889474573E-15 / median non-zero pixel value
+DATASIG = 5.05454673341981E-13 / standard deviation of non-zero pixels
+DATAP01 = 6.96018566522324E-16 / 1% of non-zero pixels are LE this value
+DATAP10 = 1.07249935352800E-15 / 10% of non-zero pixels are LE this value
+DATAP25 = 1.53683609188879E-15 / 25% of non-zero pixels are LE this value
+DATAP50 = 2.73807889474573E-15 / 50% of non-zero pixels are LE this value
+DATAP75 = 7.08962384038760E-15 / 75% of non-zero pixels are LE this value
+DATAP90 = 2.67974000872335E-14 / 90% of non-zero pixels are LE this value
+DATAP95 = 7.37835153760170E-14 / 95% of non-zero pixels are LE this value
+DATAP98 = 2.76662996982410E-13 / 98% of non-zero pixels are LE this value
+DATAP99 = 7.17754143880061E-13 / 99% of non-zero pixels are LE this value
+DATAMIN =                  0.0 / minimum valid physical value
+DATAMAX = 3.78083328533840E-11 / maximum valid physical value
+COMMENT ----- Solar Reference Data ---------------------------------------------
+RSUN_ARC=  / [arcsec] photospheric solar radius
+RSUN_REF=          695700000.0 / [m] assumed physical solar radius
+SOLAR_EP=   -7.424749732800329 / [deg] S/C ecliptic North to solar North angle
+CAR_ROT =   2285.6359047394517 / Carrington Rotation number
+COMMENT ----- Spacecraft Location & Environment --------------------------------
+GEOD_LAT=                  0.0 / [deg] S/C sub-point geodetic latitude
+GEOD_LON=                  0.0 / [deg] S/C sub-point longitude
+GEOD_ALT=                  0.0 / [m] S/C WGS84 altitude
+HGLT_OBS=   1.6391084786225854 / [deg] S/C heliographic latitude
+HGLN_OBS=                  0.0 / [deg] S/C heliographic longitude (B0)
+CRLT_OBS=   1.6391084786225854 / [deg] S/C Carrington latitude (B0)
+CRLN_OBS=   131.07429379735413 / [deg] S/C Carrington longitude
+DSUN_OBS=    152011862324.1987 / [m] S/C distance from Sun
+HEEX_OBS=   152011862324.19867 / [m] S/C Heliocentric Earth Ecliptic X
+HEEY_OBS= 2.20584297521290E-05 / [m] S/C Heliocentric Earth Ecliptic Y
+HEEZ_OBS=   0.2938932294216845 / [m] S/C Heliocentric Earth Ecliptic Z
+HCIX_OBS=  -148073749483.16226 / [m] S/C Heliocentric Inertial X
+HCIY_OBS=  -34100802021.633644 / [m] S/C Heliocentric Inertial Y
+HCIZ_OBS=    4348137848.573463 / [m] S/C Heliocentric Inertial Z
+HEQX_OBS=    151949662666.6902 / [m] S/C Heliocentric Earth Equatorial X
+HEQY_OBS=                  0.0 / [m] S/C Heliocentric Earth Equatorial Y
+HEQZ_OBS=   4348137848.5734625 / [m] S/C Heliocentric Earth Equatorial Z
+COMMENT ----- Fixity -----------------------------------------------------------
+CHECKSUM= 'kNDelKCdkKCdkKCd'   / HDU checksum updated 2024-06-14T19:50:12
+DATASUM = '1584718452'         / data unit checksum updated 2024-06-14T19:50:12
+ZHECKSUM= '5bKK5aHH5aHH5aHH'   / HDU checksum updated 2024-06-14T19:50:11
+ZDATASUM= '3773111760'         / data unit checksum updated 2024-06-14T19:50:11
+COMMENT ----- History ----------------------------------------------------------
+HISTORY Records of processing from pipeline
+END

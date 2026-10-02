@@ -36,7 +36,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,WAVELNTH,530,[nm] average peak response,int,TRUE,TRUE,530
 4,keyword,WAVEUNIT,nanometer,Unit of observation measurement,str,TRUE,TRUE,nanometer
 4,keyword,FILTER,,Name of filter for observations,str,TRUE,TRUE,
-4,keyword,OBS-MODE,,"Image Mode (Unpolarized, Polar_MZP, Polar_BpB)",str,TRUE,TRUE,
+4,keyword,OBS-MODE,,"Image Mode (Unpolarized, Polar_MZP, Polar_tBpB)",str,TRUE,TRUE,
 4,keyword,OBSLAYR1,,Image Mode for first datacube layer,str,TRUE,TRUE,
 4,keyword,OBSLAYR2,,Image Mode for second datacube layer,str,TRUE,TRUE,
 4,keyword,OBSLAYR3,,Image Mode for third datacube layer,str,TRUE,TRUE,

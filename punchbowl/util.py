@@ -596,7 +596,7 @@ def compute_tb(data: PUNCHCube | np.ndarray) -> np.ndarray:
     if isinstance(data, np.ndarray):
         return 2/3 * np.sum(data, axis=0)
 
-    if data.meta["OBS-MODE"].value == "Polar_BpB":
+    if data.meta["OBS-MODE"].value == "Polar_tBpB":
         return data.data[0, ...]
 
     return 2/3 * np.sum(data.data, axis=0)

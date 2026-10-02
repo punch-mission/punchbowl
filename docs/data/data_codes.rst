@@ -55,10 +55,10 @@ Data Product Codes
      - Quicklook Polarized Mosaic images
    * - 3
      - PAN
-     - Polarized low-noise NFI science image, bkg-sub & resolved into B, pB with uncertainty
+     - Polarized low-noise NFI science image, bkg-sub & resolved into tB, pB with uncertainty
    * - 3
      - CAN
-     - Clear low-noise NFI science image, bkg-sub & resolved into B with uncertainty
+     - Clear low-noise NFI science image, bkg-sub & resolved into tB with uncertainty
    * - 3
      - PIM
      - Polarized science mosaics (trefoils), with F-corona subtraction, without starfield subtraction, and still in the MZP system
@@ -67,25 +67,25 @@ Data Product Codes
      - Clear science mosaics (trefoils), with F-corona subtraction and without starfield subtraction
    * - 3
      - PTM
-     - Polarized K PUNCH science mosaics (trefoil), bkg-sub & resolved into B, pB with uncertainty
+     - Polarized K PUNCH science mosaics (trefoil), bkg-sub & resolved into tB, pB with uncertainty
    * - 3
      - CTM
-     - Clear K science mosaics (trefoil), bkg-sub & resolved into B with uncertainty
+     - Clear K science mosaics (trefoil), bkg-sub & resolved into tB with uncertainty
    * - 3
      - PNN
-     - Polarized K NFI science image, bkg-sub & resolved into B, pB with uncertainty
+     - Polarized K NFI science image, bkg-sub & resolved into tB, pB with uncertainty
    * - 3
      - CNN
-     - Clear K NFI science image, bkg-sub & resolved into B with uncertainty
+     - Clear K NFI science image, bkg-sub & resolved into tB with uncertainty
    * - 3
      - VAM
      - Mosaic derived wind velocity maps: 1440 pos. angles at various altitudes
    * - 3
      - PAM
-     - Polarized low-noise science mosaic, bkg-sub & resolved into B, pB, pB' with uncertainty
+     - Polarized low-noise science mosaic, bkg-sub & resolved into tB, pB, pB' (pBp) with uncertainty
    * - 3
      - CAM
-     - Clear low-noise science mosaic, bkg-sub & resolved into B with uncertainty
+     - Clear low-noise science mosaic, bkg-sub & resolved into tB with uncertainty
 
 
 Calibration Product Codes

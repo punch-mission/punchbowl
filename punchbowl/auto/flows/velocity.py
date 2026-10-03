@@ -2,7 +2,6 @@ import os
 import json
 from datetime import UTC, datetime, timedelta
 
-import numpy as np
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
 from sqlalchemy.orm import aliased
@@ -57,7 +56,10 @@ def level3_vam_query_ready_files(session, pipeline_config: dict, reference_time:
         return []
 
     t0 = parse_datetime_str(pipeline_config["flows"][flow_type]["t0"])
-    increment = timedelta(minutes=6*60)
+    # track_velocity needs the flow-map integration window plus a temporal-average buffer
+    # covering at least buffer_target_hours (12 h by default) on either side, i.e. roughly
+    # 13 hours of PTM frames in total, so gather files over a 13-hour window.
+    increment = timedelta(minutes=13*60)
 
     end_time = t0
     # I'm sure there's a better way to do this, but let's step forward by increments to the present, and then we'll work
@@ -141,15 +143,33 @@ def level3_vam_construct_flow_info(level3_ptm_files: list[File],
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    flow_config = pipeline_config["flows"][flow_type]
+    # "reference_time" is no longer passed to the flow: track_velocity now derives
+    # it from the input files' own metadata. Any parameter left unset (None) in the
+    # pipeline config falls back to the authoritative defaults of track_velocity.
     call_data = json.dumps(
         {
             "files": [ptm_file.filename() for ptm_file in level3_ptm_files],
-            "reference_time": reference_time,
-            "delta_t": pipeline_config["flows"][flow_type].get("delta_t", 12),
-            "sparsity": pipeline_config["flows"][flow_type].get("sparsity", 2),
-            "n_ofs": pipeline_config["flows"][flow_type].get("n_ofs", 151),
-            "ycens": np.array(pipeline_config["flows"][flow_type].get("ycens", np.arange(30, 90, 10))),
-            "rbands": pipeline_config["flows"][flow_type].get("rbands", None),
+            "product_code": flow_config.get("product_code", "PTM"),
+            "frames_per_window": flow_config.get("frames_per_window"),
+            "delta_t": flow_config.get("delta_t"),
+            "sparsity": flow_config.get("sparsity"),
+            "n_ofs": flow_config.get("n_ofs"),
+            "delta_px": flow_config.get("delta_px"),
+            "expected_wind_kps": flow_config.get("expected_wind_kps"),
+            "offset_speed_kps": flow_config.get("offset_speed_kps"),
+            "annuli_centers_rs": flow_config.get("annuli_centers_rs"),
+            "annuli_width_rs": flow_config.get("annuli_width_rs"),
+            "azimuth_bins_remap": flow_config.get("azimuth_bins_remap"),
+            "az_bin": flow_config.get("az_bin"),
+            "vel_bin_width": flow_config.get("vel_bin_width"),
+            "speed_max": flow_config.get("speed_max"),
+            "buffer_target_hours": flow_config.get("buffer_target_hours"),
+            "use_median": flow_config.get("use_median"),
+            "rotate90": flow_config.get("rotate90"),
+            "remove_temporal_median": flow_config.get("remove_temporal_median"),
+            "deflicker": flow_config.get("deflicker"),
+            "hdu": flow_config.get("hdu"),
         },
     )
     return Flow(

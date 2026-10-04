@@ -218,6 +218,7 @@ Products:
             OBSCODE: N
             HAS_NFI4: 1
             ALL_INPT: 1
+        omits: [CALSTAR1, CALSTAR2]
 
     VAM:
         kinds: [Velocity]
@@ -304,3 +305,13 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M
+
+    XR?:
+        kinds: [Unpolarized]
+        overrides:
+            TITLE: PUNCH Level-3 {craftname} Clear Image, Intermediary
+            OBSTYPE: Unpolarized {crafttype} image
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+            TYPECODE: XR

@@ -21,9 +21,9 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
                                           reference_file: File):
     logger = get_logger()
 
-    polarized = reference_file.file_type != "CF"
-    pol_type = 'pol' if polarized else 'clear'
-    target_file_type = 'XP' if polarized else 'XR'
+    polarized = reference_file.file_type == "PF"
+    pol_type = 'pol' if polarized else 'nfi' if reference_file.observatory == "N" else 'clear'
+    target_file_type = 'XP' if polarized else 'CN' if reference_file.observatory == "N" else 'XR'
 
     max_hours_per_half = pipeline_config["flows"]["construct_f_corona_background"][f"{pol_type}_max_hours_per_half"]
     t_start = reference_time - timedelta(hours=max_hours_per_half)
@@ -37,21 +37,19 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     base_query = (session.query(File)
                   .filter(File.state.in_(["created", "progressed"]))
                   .filter(File.observatory == reference_file.observatory)
+                  .filter(File.file_type == target_file_type)
+                  .filter(File.level == "2")
                   .filter(File.outlier == 0)
                   )
 
     first_half_inputs = (base_query
                          .filter(File.date_obs >= t_start)
                          .filter(File.date_obs <= reference_time)
-                         .filter(File.file_type == target_file_type)
-                         .filter(File.level == "2")
                          .order_by(File.date_obs.desc())
                          .limit(max_files_per_half * count_multiplier).all())
     second_half_inputs = (base_query
                           .filter(File.date_obs >= reference_time)
                           .filter(File.date_obs <= t_end)
-                          .filter(File.file_type == target_file_type)
-                          .filter(File.level == "2")
                           .order_by(File.date_obs.asc())
                           .limit(max_files_per_half * count_multiplier).all())
 
@@ -64,8 +62,7 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     enough_L2s = len(first_half_inputs) > min_files_per_half and len(second_half_inputs) > min_files_per_half
     if enough_L2s:
         all_ready_files = first_half_inputs + second_half_inputs
-        logger.info(f"{len(all_ready_files)} Level 2 files will be used "
-                     "for F corona estimation.")
+        logger.info(f"{len(all_ready_files)} Level 2 files will be used for F corona estimation.")
         return [f for f in all_ready_files]
     else:
         status = []
@@ -166,7 +163,7 @@ def construct_f_corona_background_scheduler_flow(pipeline_config_path=None, sess
     for i in range(n, -1, -1):
         t = t0 + i * increment
         for model_type in ["CF", "PF"]:
-            for observatory in ["1", "2", "3", "4"]:
+            for observatory in ["1", "2", "3", "N"]:
                 key = (model_type, observatory, t)
                 model = existing_models.get(key)
                 if model is None:

@@ -3,20 +3,135 @@ from copy import deepcopy
 from datetime import UTC, datetime
 
 import numpy as np
+from astropy.nddata import StdDevUncertainty
 
 from punchbowl.auto.control.cache_layer.loader_base_class import DataLoader
-from punchbowl.data import load_ndcube_from_fits
-from punchbowl.data.meta import MetaField, NormalizedMetadata, set_spacecraft_location_to_earth
+from punchbowl.data import load_ndcube_from_fits, load_trefoil_wcs
+from punchbowl.data.meta import MetaField, NormalizedMetadata, check_moon_in_fov, set_spacecraft_location_to_earth
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2.finalize import finalize_output
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
+from punchbowl.level2.resample import reproject_cube
 from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization
 from punchbowl.level3.stellar import subtract_starfield_background_task
 from punchbowl.level3.velocity import plot_flow_map, track_velocity
 from punchbowl.prefect import get_logger, punch_flow
-from punchbowl.util import load_image_task, output_image_task
+from punchbowl.util import load_image_task, make_circular_mask, output_image_task
+
+
+@punch_flow
+def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
+                    before_f_corona_model_path: str | DataLoader,
+                    after_f_corona_model_path: str | DataLoader,
+                    inner_mask_radius: float,
+                    outer_mask_radius: float) -> list[PUNCHCube]:
+    """
+    Run Level 3 NFI F-corona subtraction and reprojection flow.
+
+    L2 NFI images have an F-corona model subtracted and are reprojected to the full-mosaic frame. Returns both the
+    full-res image (as an L3 CNN) and the mosaic-frame (as an XR4).
+
+    Parameters
+    ----------
+    data_list : list[str | PUNCHCube]
+        The images to process
+    before_f_corona_model_path : str | DataLoader
+        The first F corona model
+    after_f_corona_model_path : str | DataLoader
+        The second F corona model
+    inner_mask_radius : float
+        The mosaic-frame image will be cropped at this inner radius
+    outer_mask_radius : float
+        The mosaic-frame image will be cropped at this outer radius
+
+    Returns
+    -------
+    list[PUNCHCube]
+        The output data cubes
+
+    """
+    logger = get_logger()
+
+    logger.info("beginning level 3 NFI flow")
+    data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
+
+    if isinstance(before_f_corona_model_path, str):
+        before_f_corona_model = load_ndcube_from_fits(before_f_corona_model_path)
+    else:
+        before_f_corona_model = before_f_corona_model_path.load()
+        before_f_corona_model_path = before_f_corona_model_path.src_repr()
+
+    if isinstance(after_f_corona_model_path, str):
+        after_f_corona_model = load_ndcube_from_fits(after_f_corona_model_path)
+    else:
+        after_f_corona_model = after_f_corona_model_path.load()
+        after_f_corona_model_path = after_f_corona_model_path.src_repr()
+
+
+    mosaic_wcs, mosaic_shape = load_trefoil_wcs()
+    inner_mask = ~make_circular_mask(mosaic_shape, inner_mask_radius)
+    outer_mask = make_circular_mask(mosaic_shape, outer_mask_radius)
+    mask = inner_mask * outer_mask
+
+    output_cubes = []
+    for cube in data_list:
+        cube = subtract_f_corona_background_task(cube, [before_f_corona_model], [after_f_corona_model]) # noqa: PLW2901
+        mosaic_data, mosaic_uncert = reproject_cube(cube, mosaic_wcs, mosaic_shape, rolloff_strength=0, rolloff_width=0)
+        np.nan_to_num(mosaic_data, copy=False)
+        np.nan_to_num(mosaic_uncert, copy=False, nan=np.inf)
+        mosaic_cube = PUNCHCube(data=mosaic_data, uncertainty=StdDevUncertainty(mosaic_uncert), wcs=mosaic_wcs,
+                                meta=cube.meta)
+        mosaic_cube.data *= mask
+        mosaic_cube.uncertainty.array[~mask] = np.inf
+
+        new_meta = NormalizedMetadata.load_template("CNN", "3")
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        for key in cube.meta:
+            if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS", "OUTLIER",
+                         "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
+                    or key[-4:] in ["_OBS", "_VOB"]
+                    or key[:3] in ("PCA", "CAL"))
+                    and key in new_meta):
+                new_meta[key] = cube.meta[key].value
+        _, _, _, _, moondist, xpix, ypix = check_moon_in_fov(
+            cube.meta["DATE-OBS"].value, wcs=cube.wcs, image_shape=cube.data.shape)
+        new_meta["MOONDIST"] = moondist[0]
+        new_meta["MOON_X"] = xpix[0]
+        new_meta["MOON_Y"] = ypix[0]
+        new_meta["CALFCOR1"] = os.path.basename(before_f_corona_model_path)
+        new_meta["CALFCOR2"] = os.path.basename(after_f_corona_model_path)
+        new_meta["CTRXNFI4"] = cube.wcs.wcs.crpix[1] - 1
+        new_meta["CTRYNFI4"] = cube.wcs.wcs.crpix[0] - 1
+
+        new_meta.provenance = [cube.meta["FILENAME"].value]
+
+        cube = cube.replace(meta=new_meta) # noqa: PLW2901
+        output_cubes.append(cube)
+
+        new_meta = NormalizedMetadata.load_template("XR4", "3")
+        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+        for key in mosaic_cube.meta:
+            if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS", "OUTLIER",
+                         "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
+                    or key[-4:] in ["_OBS", "_VOB"]
+                    or key[:3] in ("PCA", "CAL"))
+                    and key in new_meta):
+                new_meta[key] = mosaic_cube.meta[key].value
+        new_meta["CALFCOR1"] = os.path.basename(before_f_corona_model_path)
+        new_meta["CALFCOR2"] = os.path.basename(after_f_corona_model_path)
+        new_meta["CTRXNFI4"] = mosaic_cube.wcs.wcs.crpix[1] - 1
+        new_meta["CTRYNFI4"] = mosaic_cube.wcs.wcs.crpix[0] - 1
+
+        new_meta.provenance = [mosaic_cube.meta["FILENAME"].value]
+
+        mosaic_cube = mosaic_cube.replace(meta=new_meta)
+        output_cubes.append(mosaic_cube)
+
+    logger.info("ending level 3 NFI flow")
+
+    return output_cubes
 
 
 @punch_flow

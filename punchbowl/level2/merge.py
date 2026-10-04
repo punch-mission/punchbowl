@@ -46,7 +46,7 @@ def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | No
     new_data[np.isnan(new_data)] = 0
 
     return PUNCHCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty),
-                    wcs=cubes[reference_cube_index].wcs)
+                     wcs=cubes[reference_cube_index].wcs)
 
 
 @punch_task

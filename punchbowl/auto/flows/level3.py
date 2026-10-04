@@ -7,7 +7,7 @@ from collections import defaultdict
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, func, or_, text
 
 from punchbowl import __version__
 from punchbowl.auto.control import cache_layer
@@ -616,7 +616,7 @@ def level3_CTM_construct_flow_info(level2_files: list[File], level3_file: File,
             "after_starfield_path": after_starfield_path,
             "nfi_wfi_divide_radius": (pipeline_config.get('nfi_wfi_divide_radius', 0)
                                       if pipeline_config['nfi_mode'] == 'pca' else None),
-            "nfi_scale_factor": pipeline_config["flows"][flow_type].get('nfi_scale_factor', 1),
+            "nfi_scale_factor": pipeline_config.get('nfi_scale_factor', 1),
         },
     )
     return Flow(
@@ -768,6 +768,28 @@ def _level3_CAMPAM_query_ready_files(session, polarized: bool, pipeline_config: 
         if group:
             cleaned_ready_groups.append(group)
 
+    for group in cleaned_ready_groups:
+        # Now that we know we have the WFI data to make this CAM, let's find NFI data to include. The NFI data gets
+        # merged by a median, which handles residual pylon artifacts really well. This really needs enough input
+        # images, so we cast a wider net in time to make sure we get enough.
+        if pipeline_config['nfi_mode'] == 'pca' and not polarized:
+            dt = func.abs(func.timestampdiff(text("second"), File.date_obs, group[0]._reference_time))
+            nfi_files = (session.query(File)
+                           .filter(File.state.in_(["created", "progressed"]))
+                           .filter(File.level == "3")
+                           .filter(File.file_type == "XR")
+                           .filter(File.observatory == "4")
+                           .filter(~File.outlier)
+                           .filter(dt < pipeline_config['flows'][flow_type]['nfi_search_margin_minutes'] * 60)
+                           .order_by(dt.desc()).all())
+            if len(nfi_files) < pipeline_config['flows'][flow_type]['min_num_nfis']:
+                logger.info(
+                    f"Sending a group with {len(group)} CTMs and no XR4s (found only {len(nfi_files)} in the DB)")
+                continue
+            nfi_files = nfi_files[:pipeline_config['flows'][flow_type]['max_num_nfis']]
+            logger.info(f"Sending a group with {len(group)} CTMs and {len(nfi_files)} XR4s")
+            group.extend(nfi_files)
+
     logger.info(f"{len(cleaned_ready_groups)} groups heading out")
     return cleaned_ready_groups
 
@@ -782,11 +804,13 @@ def level3_CAMPAM_construct_flow_info(level3_files: list[File], level3_file_out:
 
     call_data = json.dumps(
         {
-            "data_list": [
-                os.path.join(level3_file.directory(pipeline_config["root"]), level3_file.filename())
-                for level3_file in level3_files
-            ],
+            "data_list": [level3_file.filename() for level3_file in level3_files if level3_file.file_type != 'XR'],
+            "nfi_list": [level3_file.filename() for level3_file in level3_files
+                                if level3_file.file_type == 'XR'],
             "reference_time": reference_time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "nfi_wfi_divide_radius": (pipeline_config.get('nfi_wfi_divide_radius', 0)
+                                      if flow_type == "level3_CAM" and pipeline_config['nfi_mode'] == 'pca' else None),
+            "nfi_scale_factor": pipeline_config.get('nfi_scale_factor', 1),
         },
     )
     return Flow(
@@ -832,7 +856,9 @@ def level3_CAM_scheduler_flow(pipeline_config_path=None, session=None):
 
 @flow
 def level3_CAM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session)
+    generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session,
+                               call_data_processor=level3_CAMPAM_call_data_processor)
+
 
 @flow
 def level3_PAM_scheduler_flow(pipeline_config_path=None, session=None):
@@ -847,4 +873,12 @@ def level3_PAM_scheduler_flow(pipeline_config_path=None, session=None):
 
 @flow
 def level3_PAM_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session)
+    generic_process_flow_logic(flow_id, generate_level3_low_noise_flow, pipeline_config_path, session=session,
+                               call_data_processor=level3_CAMPAM_call_data_processor)
+
+
+def level3_CAMPAM_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
+    for key in ["data_list", "nfi_list"]:
+        if key in call_data:
+            call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
+    return call_data

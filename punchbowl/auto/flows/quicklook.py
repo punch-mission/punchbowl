@@ -247,7 +247,23 @@ def quicklook_core_flow(file_list: list,
             animate_punch(file_list, layer=1, output_path=path_movie_pb, fps=framerate, n_jobs=12,
                                       vmin=vmin_pb, vmax=vmax_pb, title_prefix=title_prefix_pb, ffmpeg_path=ffmpeg_command)
 
-    else:
+    elif cube.meta["OBS-MODE"].value == "Polar_MZP":
+        vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
+
+        for layer, polarizer in enumerate(["M", "Z", "P"]):
+            title_prefix = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value} {polarizer} v{cube.meta["FILEVRSN"].value}"
+
+            if make_image:
+                path_image = os.path.join(output_movie_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{polarizer}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+                os.makedirs(os.path.dirname(path_image), exist_ok=True)
+                write_ndcube_to_quicklook(cube, filename=path_image, vmin=vmin, vmax=vmax, layer=layer, annotation=title_prefix)
+
+            if make_movie:
+                path_movie = os.path.join(output_movie_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{polarizer}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+                os.makedirs(os.path.dirname(path_movie), exist_ok=True)
+                animate_punch(file_list, layer=layer, output_path=path_movie, fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax, title_prefix=title_prefix, ffmpeg_path=ffmpeg_command)
+
+    elif cube.meta["OBS-MODE"].value == "Unpolarized":
         vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
 
         title_prefix = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value} tB v{cube.meta["FILEVRSN"].value}"

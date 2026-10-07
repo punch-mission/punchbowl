@@ -66,7 +66,6 @@ super_user = [
     "numexpr",
     "pre-commit",
     "prefect[dask]",
-    "pylibjpeg[libjpeg,openjpeg]",
     "remove_starfield>=0.1.1",
     "reproject>=0.20.0",
     "scikit-image",

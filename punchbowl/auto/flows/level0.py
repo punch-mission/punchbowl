@@ -67,7 +67,7 @@ from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
 from punchbowl.exceptions import MissingMetadataError
 from punchbowl.limits import LimitSet
-from punchbowl.prefect import get_logger
+from punchbowl.prefect import detect_if_running_in_prefect, get_logger
 from punchbowl.util import load_mask_file, phase_in_window
 
 FIXED_PACKETS = ["ENG_XACT", "ENG_LED", "ENG_PFW", "ENG_CEB", "ENG_LZ"]
@@ -76,8 +76,9 @@ PACKET_CADENCE = {}
 SC_TIME_EPOCH = Time(2000.0, format="decimalyear", scale="tai")
 PFW_POSITION_MAPPING = ["PP", "DK", "PZ", "PM", "CR"]
 
-credentials = SqlAlchemyConnector.load("mariadb-creds", _sync=True)
-engine = credentials.get_engine()
+if detect_if_running_in_prefect():
+    credentials = SqlAlchemyConnector.load("mariadb-creds", _sync=True)
+    engine = credentials.get_engine()
 
 def initializer():
     """

@@ -196,7 +196,7 @@ def determine_wcs(filenames: list, map_scale: float) -> WCS:
     # included on either side of crpix
     starfield_wcs.wcs.crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
     starfield_wcs.wcs.crval = crval
-    starfield_wcs.wcs.cdelt = map_scale, map_scale
+    starfield_wcs.wcs.cdelt = -map_scale, map_scale
     starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
     starfield_wcs.wcs.cunit = "deg", "deg"
     starfield_wcs.array_shape = shape

@@ -16,7 +16,6 @@ import astropy.units as u
 import ccsdspy
 import numpy as np
 import pandas as pd
-import pylibjpeg
 import quaternion
 from astropy.coordinates import GCRS, CartesianDifferential, EarthLocation, HeliocentricMeanEcliptic, SkyCoord
 from astropy.time import Time, TimeDelta
@@ -24,6 +23,7 @@ from astropy.wcs import WCS
 from ccsdspy import PacketArray, PacketField, converters
 from ccsdspy.utils import split_by_apid
 from dateutil.parser import parse as parse_datetime_str
+from imagecodecs import jpegls_decode
 from prefect import flow, task
 from prefect.blocks.core import Block
 from prefect.blocks.fields import SecretDict
@@ -621,7 +621,7 @@ def decode_image_packets(img_packets, compression_settings):
             pixel_values = unpack_n_bit_values(img_packets, byteorder=">", n_bits=16)
             # either 12-bit values, but placed into 16b words where the 4 MSb are 0000; or 16-bit truncated pixel values
         else: # data is in JPEG-LS format
-            pixel_values: np.ndarray = pylibjpeg.decode(img_packets.tobytes())
+            pixel_values: np.ndarray = jpegls_decode(img_packets.tobytes())
     else:
         pixel_values = unpack_n_bit_values(img_packets, byteorder="<", n_bits=19)
     if pixel_values.max() < 2**16:

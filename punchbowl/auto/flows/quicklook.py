@@ -220,6 +220,7 @@ def quicklook_core_flow(file_list: list,
         Output movie framerate, by default 10
     """
     cube = load_ndcube_from_fits(file_list[0])
+    # We used to put `Polar_BpB` in files and changed to `Polar_tBpB`. Keep both for backwards compatibility.
     if cube.meta["OBS-MODE"].value in ["Polar_tBpB", "Polar_BpB"]:
         vmin_pb, vmax_pb = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
         vmin_tb, vmax_tb = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value.replace("P", "C", 1), obscode=cube.meta["OBSCODE"].value)
@@ -332,6 +333,7 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
         flow_db_entry.state = "completed"
         flow_db_entry.end_time = datetime.now()
 
+       # Check that there isn't already an entry in the database for a partial processing
         quicklook_results = (session.query(Quicklook)
                            .filter(Quicklook.day==day)
                            .filter(Quicklook.level==level)
@@ -342,16 +344,14 @@ def quicklook_process_flow(flow_id: int, pipeline_config_path=None, session=None
         else:
             quicklook_entry = Quicklook(day=day, level=level, code=code)
 
-        if make_image:
-            quicklook_entry.image_made = True
-        else:
-            quicklook_entry.image_made = False
+        quicklook_entry.image_made = make_image
         if make_movie:
             quicklook_entry.movie_made = True
             quicklook_entry.movie_nfile = nfiles
         else:
             quicklook_entry.movie_made = False
 
+       # Add the entry to the database if the results were empty because we haven't seen this date
         if len(quicklook_results) == 0:
             session.add(quicklook_entry)
 

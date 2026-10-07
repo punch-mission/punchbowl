@@ -196,7 +196,7 @@ def determine_wcs(filenames: list, map_scale: float) -> WCS:
     # included on either side of crpix
     starfield_wcs.wcs.crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
     starfield_wcs.wcs.crval = crval
-    starfield_wcs.wcs.cdelt = map_scale, map_scale
+    starfield_wcs.wcs.cdelt = -map_scale, map_scale
     starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
     starfield_wcs.wcs.cunit = "deg", "deg"
     starfield_wcs.array_shape = shape
@@ -382,11 +382,6 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
 
     star_datacube_before = load_ndcube_from_fits(before_starfield_path)
     star_datacube_after = load_ndcube_from_fits(after_starfield_path)
-
-    # Right Ascension (RA) celestial coordinates have a negative sign relative to heliographic coordinates
-    # This correction allows subtraction with starfield maps generated with remove_starfield
-    star_datacube_before.celestial_wcs.wcs.cdelt[0] *= -1
-    star_datacube_after.celestial_wcs.wcs.cdelt[0] *= -1
 
     starfield_reprojected_before = reproject_adaptive(
         (np.stack([star_datacube_before.data, star_datacube_before.uncertainty.array], axis=0),

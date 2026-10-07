@@ -15,13 +15,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from punchbowl.data.punch_io import load_ndcube_from_fits
-from punchbowl.data.sample import PUNCH_PIM
+from punchbowl.data.sample import PUNCH_L2_PTM
 from punchbowl.data.visualize import generate_mzp_to_rgb_map
 
 #%%
-# We'll being by loading data from a sample PIM data product into an ndcube object.
+# We'll being by loading data from a sample PTM data product into an ndcube object.
 # Note that other polarized data could be substituted in place - see the example notebook on querying data using Fido.
-punch_cube = load_ndcube_from_fits(PUNCH_PIM)
+punch_cube = load_ndcube_from_fits(PUNCH_L2_PTM)
 
 #%%
 # Check if the data contains any infs and mask them out.

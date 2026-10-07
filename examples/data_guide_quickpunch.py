@@ -17,21 +17,21 @@ from astropy.wcs import WCS
 from ndcube import NDCube
 from sunpy.map import Map
 
-from punchbowl.data.sample import QUICKPUNCH_NQN, QUICKPUNCH_WQM
+from punchbowl.data.sample import QUICKPUNCH_QAM, QUICKPUNCH_QNN
 
 # %%
 # Open the HDU list, and read out the appropriate data
 # As the data is RICE compressed, the *second* HDU contains the main data frame
 # The third HDU contains a corresponding uncertainty array
 
-with fits.open(QUICKPUNCH_WQM) as hdul:
+with fits.open(QUICKPUNCH_QAM) as hdul:
     print("WFI QuickPUNCH HDU List:")
     hdul.info()
     wfi_qp_data = hdul[1].data
     wfi_qp_header = hdul[1].header
     wfi_qp_uncertainty = hdul[2].data
 
-with fits.open(QUICKPUNCH_NQN) as hdul:
+with fits.open(QUICKPUNCH_QNN) as hdul:
     print("NFI QuickPUNCH HDU List:")
     hdul.info()
     nfi_qp_data = hdul[1].data
@@ -124,7 +124,7 @@ plt.title("QuickPUNCH NFI total brightness - " + nfi_qp_header["DATE-OBS"] + "UT
 # Again noting that these files are compressed, additional keywords will be visible when viewing these FITS files outside of Python.
 # These keywords relate to the compression implementation, and can be retrieved using astropy.io.fits, if needed, using the disable_image_compression keyword.
 
-with fits.open(QUICKPUNCH_WQM, disable_image_compression=True) as hdul:
+with fits.open(QUICKPUNCH_QAM, disable_image_compression=True) as hdul:
     header_compression = hdul[1].header
 
 header_compression

@@ -280,6 +280,8 @@ def quicklook_core_flow(file_list: list,
                             f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
             animate_punch(file_list, output_path=path_movie, fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax, title_prefix=title_prefix, ffmpeg_path=ffmpeg_command)
 
+    else:
+        raise ValueError(f"Undefined quicklook OBS-MODE: {cube.meta['OBS-MODE'].value}")
 
 
 @flow

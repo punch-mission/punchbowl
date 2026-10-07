@@ -220,6 +220,7 @@ def quicklook_core_flow(file_list: list,
         Output movie framerate, by default 10
     """
     cube = load_ndcube_from_fits(file_list[0])
+
     # We used to put `Polar_BpB` in files and changed to `Polar_tBpB`. Keep both for backwards compatibility.
     if cube.meta["OBS-MODE"].value in ["Polar_tBpB", "Polar_BpB"]:
         vmin_pb, vmax_pb = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
@@ -228,49 +229,41 @@ def quicklook_core_flow(file_list: list,
         title_prefix_tb = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value} tB v{cube.meta["FILEVRSN"].value}"
         title_prefix_pb = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value} pB v{cube.meta["FILEVRSN"].value}"
 
-        path_image_tb = os.path.join(output_movie_dir,
-                                     f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_tB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
-        path_image_pb = os.path.join(output_movie_dir,
-                                     f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_pB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
-
-        os.makedirs(os.path.dirname(path_image_tb), exist_ok=True)
-
         if make_image:
+            path_image_tb = os.path.join(output_movie_dir,
+                                     f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_tB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+            path_image_pb = os.path.join(output_movie_dir,
+                                     f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_pB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+            os.makedirs(os.path.dirname(path_image_tb), exist_ok=True)
             write_ndcube_to_quicklook(cube, filename=path_image_tb, vmin=vmin_tb, vmax=vmax_tb, layer=0, annotation=title_prefix_tb)
             write_ndcube_to_quicklook(cube, filename=path_image_pb, vmin=vmin_pb, vmax=vmax_pb, layer=1, annotation=title_prefix_pb)
 
-        layer=1
-        vmin, vmax = vmin_pb, vmax_pb
-        title_prefix = title_prefix_pb
-        path_movie = os.path.join(output_movie_dir,
-                        f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+        if make_movie:
+            path_movie_tb = os.path.join(output_movie_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_tB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+            path_movie_pb = os.path.join(output_movie_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_pB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+            os.makedirs(os.path.dirname(path_movie_tb), exist_ok=True)
+            animate_punch(file_list, layer=0, output_path=path_movie_tb, fps=framerate, n_jobs=12,
+                          vmin=vmin_tb, vmax=vmax_tb, title_prefix=title_prefix_tb, ffmpeg_path=ffmpeg_command)
+            animate_punch(file_list, layer=1, output_path=path_movie_pb, fps=framerate, n_jobs=12,
+                                      vmin=vmin_pb, vmax=vmax_pb, title_prefix=title_prefix_pb, ffmpeg_path=ffmpeg_command)
 
     else:
         vmin, vmax = load_quicklook_scaling(level=cube.meta["LEVEL"].value, product=cube.meta["TYPECODE"].value, obscode=cube.meta["OBSCODE"].value)
 
         title_prefix = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value} tB v{cube.meta["FILEVRSN"].value}"
 
-        path_image = os.path.join(output_movie_dir,
-                                  f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
-
-        os.makedirs(os.path.dirname(path_image), exist_ok=True)
-
         if make_image:
+            path_image = os.path.join(output_movie_dir,
+                                    f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+
+            os.makedirs(os.path.dirname(path_image), exist_ok=True)
             write_ndcube_to_quicklook(cube, filename=path_image, vmin=vmin, vmax=vmax, annotation=title_prefix)
 
-        layer=0
-        path_movie = os.path.join(output_movie_dir,
-                        f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+        if make_movie:
+            path_movie = os.path.join(output_movie_dir,
+                            f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+            animate_punch(file_list, output_path=path_movie, fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax, title_prefix=title_prefix, ffmpeg_path=ffmpeg_command)
 
-    if make_movie:
-        animate_punch(file_list,
-                      output_path=path_movie,
-                      fps=framerate, n_jobs=12,
-                      vmin=vmin,
-                      vmax=vmax,
-                      layer=layer,
-                      title_prefix=title_prefix,
-                      ffmpeg_path=ffmpeg_command)
 
 
 @flow

@@ -47,7 +47,8 @@ polarization_degree = PUNCHCube(data = datacube.data[1,...] / datacube.data[0,..
                                   wcs = datacube.wcs[0], # Taking a slice of the original WCS to make it 2D
                                   meta = datacube.meta)
 
-fig, ax = plot_punch(polarization_degree, title_prefix="PUNCH Degree of Polarization", cmap="punch_p", vmin=0, vmax=1, gamma=1)
+fig, ax = plot_punch(polarization_degree, title_prefix="PUNCH Degree of Polarization", cmap="punch_p",
+                     vmin=0, vmax=1, gamma=1, colorbar_label="Degree of polarization")
 
 # %%
 # In the same way we can also compute tau.
@@ -57,4 +58,5 @@ tau = PUNCHCube(data = np.arcsin(np.sqrt((1 - polarization_degree.data) / (1 + p
                 wcs = datacube.wcs[0],
                 meta = datacube.meta)
 
-fig, ax = plot_punch(tau, title_prefix="PUNCH Tau", cmap="punch_tau", vmin=0, vmax=np.pi/2, gamma=1)
+fig, ax = plot_punch(tau, title_prefix="PUNCH Tau", cmap="punch_tau",
+                     vmin=0, vmax=np.pi/2, gamma=1, colorbar_label="tau")

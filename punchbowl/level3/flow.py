@@ -138,11 +138,11 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
     before_starfield_path : list[str | DataLoader]
         Input starfield model file path with timestamps prior to the input PUNCH data.
         Will be used with after_starfield_path to interpolate for a starfield model at the time of the PUNCH data
-        timestamp. Optional.
+        timestamp. At least one of before_starfield_path or after_starfield_path must be provided.
     after_starfield_path: list[str | DataLoader]
         Input starfield model file path with timestamps after the input PUNCH data.
         Will be used with before_starfield_path to interpolate for a starfield model at the time of the PUNCH data
-        timestamp. Optional.
+        timestamp. At least one of before_starfield_path or after_starfield_path must be provided.
     output_filename : str | None
         Filename for the starfield-subtracted PAM or CAM file/s. Optional.
 

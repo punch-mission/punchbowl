@@ -9,7 +9,7 @@ from punchbowl.conftest import prefect_test_fixture
 from punchbowl.data.punch_io import write_ndcube_to_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.level3.flow import level3_PIM_CIM_flow
+from punchbowl.level3.flow import level3_core_flow, level3_PIM_CIM_flow
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 
@@ -27,7 +27,9 @@ def test_PIM_flow_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixtur
     for i, f in enumerate(data_list):
         before_f_corona_model = sample_ndcube(shape=(3, 10, 10), code="PF" + f.meta['OBSCODE'].value, level="3")
         before_f_corona_model_path = os.path.join(tmpdir, f"before_f_corona_{i}.fits")
-        before_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1) - timedelta(hours=5))
+        before_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22,
+                                                              16, 0, 1)
+                                                     - timedelta(hours=5))
         before_models.append(before_f_corona_model_path)
         write_ndcube_to_fits(before_f_corona_model, before_f_corona_model_path, write_hash=False, skip_stats=True)
 
@@ -35,7 +37,9 @@ def test_PIM_flow_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixtur
     for i, f in enumerate(data_list):
         after_f_corona_model = sample_ndcube(shape=(3, 10, 10), code="PF" + f.meta['OBSCODE'].value, level="3")
         after_f_corona_model_path = os.path.join(tmpdir, f"after_f_corona_{i}.fits")
-        after_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1) + timedelta(hours=5))
+        after_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22,
+                                                             16, 0, 1)
+                                                    + timedelta(hours=5))
         after_models.append(after_f_corona_model_path)
         write_ndcube_to_fits(after_f_corona_model, after_f_corona_model_path, write_hash=False, skip_stats=True)
 
@@ -68,7 +72,9 @@ def test_CIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_
     for i, f in enumerate(data_list):
         before_f_corona_model = sample_ndcube(shape=(10, 10), code="CF" + f.meta['OBSCODE'].value, level="3")
         before_f_corona_model_path = os.path.join(tmpdir, f"before_f_corona_{i}.fits")
-        before_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1) - timedelta(hours=5))
+        before_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22,
+                                                              16, 0, 1)
+                                                     - timedelta(hours=5))
         before_models.append(before_f_corona_model_path)
         write_ndcube_to_fits(before_f_corona_model, before_f_corona_model_path, write_hash=False, skip_stats=True)
 
@@ -76,7 +82,9 @@ def test_CIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_
     for i, f in enumerate(data_list):
         after_f_corona_model = sample_ndcube(shape=(10, 10), code="CF" + f.meta['OBSCODE'].value, level="3")
         after_f_corona_model_path = os.path.join(tmpdir, f"after_f_corona_{i}.fits")
-        after_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1) + timedelta(hours=5))
+        after_f_corona_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22,
+                                                             16, 0, 1)
+                                                    + timedelta(hours=5))
         after_models.append(after_f_corona_model_path)
         write_ndcube_to_fits(after_f_corona_model, after_f_corona_model_path, write_hash=False, skip_stats=True)
 
@@ -92,4 +100,29 @@ def test_CIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_
                                  None)
     assert isinstance(output[0], PUNCHCube)
     assert output[0].meta['TYPECODE'].value == 'CI'
+    assert output[0].meta['OBSCODE'].value == 'M'
+
+
+
+def test_level3_flow_CTM_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixture):
+    data_list = sample_ndcube(shape=(10, 10), code="CIM", level="3")
+
+    before_starfield_model = sample_ndcube(shape=(10, 10), code="CSM", level="3")
+    before_starfield_model_path = os.path.join(tmpdir, f"before_starfield.fits")
+    before_starfield_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1)
+                                                  - timedelta(hours=5))
+    write_ndcube_to_fits(before_starfield_model, before_starfield_model_path, write_hash=False, skip_stats=True)
+
+    after_starfield_model = sample_ndcube(shape=(10, 10), code="CSM", level="3")
+    after_starfield_model_path = os.path.join(tmpdir, f"after_starfield.fits")
+    after_starfield_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1)
+                                                 + timedelta(hours=5))
+    write_ndcube_to_fits(after_starfield_model, after_starfield_model_path, write_hash=False, skip_stats=True)
+
+    output = level3_core_flow([data_list],
+                                 before_starfield_model_path,
+                                 after_starfield_model_path,
+                                 None)
+    assert isinstance(output[0], PUNCHCube)
+    assert output[0].meta['TYPECODE'].value == 'CT'
     assert output[0].meta['OBSCODE'].value == 'M'

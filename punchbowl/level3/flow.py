@@ -24,7 +24,30 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                         before_f_corona_model_paths: list[str | DataLoader],
                         after_f_corona_model_paths: list[str | DataLoader],
                         output_filename: str | None = None) -> list[PUNCHCube]:
-    """Level 3 PIM/CIM flow."""
+    """
+    Level 3 PIM/CIM flow.
+
+    Parameters
+    ----------
+    data_list : list[str | PUNCHCube]
+        Input list string of punch data files or a list of Level 2 PUNCHCubes
+    before_f_corona_model_paths : list[str | DataLoader]
+        Input list of F-corona filepaths or model data with timestamps prior to the input PUNCH data.
+        Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH data
+        timestamp.
+    after_f_corona_model_paths : list[str | DataLoader]
+        Input list of F-corona filepaths or model data with timestamps after to the input PUNCH data.
+        Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH data
+        timestamp.
+    output_filename : str | None
+        Path for the output PUNCHCube file.
+
+
+    Returns
+    -------
+    Interpolated F-corona model or models corresponding to the input data.
+
+    """
     logger = get_logger()
 
     logger.info("beginning level 3 PIM/CIM flow")

@@ -16,7 +16,6 @@ import astropy.units as u
 import ccsdspy
 import numpy as np
 import pandas as pd
-import pylibjpeg
 import quaternion
 from astropy.coordinates import GCRS, CartesianDifferential, EarthLocation, HeliocentricMeanEcliptic, SkyCoord
 from astropy.time import Time, TimeDelta
@@ -24,6 +23,7 @@ from astropy.wcs import WCS
 from ccsdspy import PacketArray, PacketField, converters
 from ccsdspy.utils import split_by_apid
 from dateutil.parser import parse as parse_datetime_str
+from imagecodecs import jpegls_decode
 from prefect import flow, task
 from prefect.blocks.core import Block
 from prefect.blocks.fields import SecretDict
@@ -66,7 +66,7 @@ from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial, calculate_pc_matrix
 from punchbowl.exceptions import MissingMetadataError
 from punchbowl.limits import LimitSet
-from punchbowl.prefect import get_logger
+from punchbowl.prefect import detect_if_running_in_prefect, get_logger
 from punchbowl.util import load_mask_file
 
 FIXED_PACKETS = ["ENG_XACT", "ENG_LED", "ENG_PFW", "ENG_CEB", "ENG_LZ"]
@@ -75,8 +75,9 @@ PACKET_CADENCE = {}
 SC_TIME_EPOCH = Time(2000.0, format="decimalyear", scale="tai")
 PFW_POSITION_MAPPING = ["PP", "DK", "PZ", "PM", "CR"]
 
-credentials = SqlAlchemyConnector.load("mariadb-creds", _sync=True)
-engine = credentials.get_engine()
+if detect_if_running_in_prefect():
+    credentials = SqlAlchemyConnector.load("mariadb-creds", _sync=True)
+    engine = credentials.get_engine()
 
 def initializer():
     """
@@ -621,7 +622,7 @@ def decode_image_packets(img_packets, compression_settings):
             pixel_values = unpack_n_bit_values(img_packets, byteorder=">", n_bits=16)
             # either 12-bit values, but placed into 16b words where the 4 MSb are 0000; or 16-bit truncated pixel values
         else: # data is in JPEG-LS format
-            pixel_values: np.ndarray = pylibjpeg.decode(img_packets.tobytes())
+            pixel_values: np.ndarray = jpegls_decode(img_packets.tobytes())
     else:
         pixel_values = unpack_n_bit_values(img_packets, byteorder="<", n_bits=19)
     if pixel_values.max() < 2**16:

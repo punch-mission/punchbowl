@@ -59,6 +59,7 @@ super_user = [
     "click",
     "glymur",
     "h5py>=3.15",
+    "imagecodecs[all]",
     "lxml",
     "networkx",
     "numba>=0.62",

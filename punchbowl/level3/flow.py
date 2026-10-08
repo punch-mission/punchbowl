@@ -25,12 +25,12 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                         after_f_corona_model_paths: list[str | DataLoader],
                         output_filename: str | None = None) -> list[PUNCHCube]:
     """
-    Level 3 flow for PIM and CIM files.
+    Level 3 flow to generate PIM and CIM files.
 
     Parameters
     ----------
     data_list : list[str | PUNCHCube]
-        Input list string of punch data files or a list of Level 2 PUNCHCubes
+        Input list string of data files or a list PUNCHCubes of CTM or PTM PUNCH data.
     before_f_corona_model_paths : list[str | DataLoader]
         Input list of F-corona filepaths or model data with timestamps prior to the input PUNCH data.
         Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH data
@@ -40,11 +40,11 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
         Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH data
         timestamp.
     output_filename : str | None
-        Filename for the output PUNCHCube file. Optional.
+        Filename for the output PTM or CTM PUNCHCube file/s. Optional.
 
     Returns
     -------
-    Interpolated F-corona model or models corresponding to the input data.
+    F-corona subtracted CTM or PTM PUNCHCubes.
 
     """
     logger = get_logger()
@@ -129,7 +129,7 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
                      after_starfield_path: str | None,
                      output_filename: str | None = None) -> list[PUNCHCube]:
     """
-    Level 3 flow for CTM files.
+    Level 3 flow to generate PTM and CTM files.
 
     Parameters
     ----------
@@ -138,17 +138,17 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
     before_starfield_path : list[str | DataLoader]
         Input starfield model file path with timestamps prior to the input PUNCH data.
         Will be used with after_starfield_path to interpolate for a starfield model at the time of the PUNCH data
-        timestamp.
+        timestamp. Optional.
     after_starfield_path: list[str | DataLoader]
         Input starfield model file path with timestamps after the input PUNCH data.
         Will be used with before_starfield_path to interpolate for a starfield model at the time of the PUNCH data
-        timestamp.
+        timestamp. Optional.
     output_filename : str | None
-        Filename for the starfield-subtracted PUNCH file/s. Optional.
+        Filename for the starfield-subtracted PAM or CAM file/s. Optional.
 
     Returns
     -------
-    Starfield-subtracted PUNCH data from the input PUNCHCubes.
+    Starfield-subtracted starfield subtracted PAM or CAM PUNCHCubes.
 
     """
     logger = get_logger()

@@ -25,7 +25,7 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                         after_f_corona_model_paths: list[str | DataLoader],
                         output_filename: str | None = None) -> list[PUNCHCube]:
     """
-    Level 3 PIM/CIM flow.
+    Level 3 flow for PIM and CIM files.
 
     Parameters
     ----------
@@ -40,8 +40,7 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
         Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH data
         timestamp.
     output_filename : str | None
-        Path for the output PUNCHCube file.
-
+        Filename for the output PUNCHCube file. Optional.
 
     Returns
     -------
@@ -129,7 +128,29 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
                      before_starfield_path: str | None,
                      after_starfield_path: str | None,
                      output_filename: str | None = None) -> list[PUNCHCube]:
-    """Level 3 CTM flow."""
+    """
+    Level 3 flow for CTM files.
+
+    Parameters
+    ----------
+    data_list : list[str | PUNCHCube]
+        Input list string of punch data files or a list of Level 2 PUNCHCubes
+    before_starfield_path : list[str | DataLoader]
+        Input starfield model file path with timestamps prior to the input PUNCH data.
+        Will be used with after_starfield_path to interpolate for a starfield model at the time of the PUNCH data
+        timestamp.
+    after_starfield_path: list[str | DataLoader]
+        Input starfield model file path with timestamps after the input PUNCH data.
+        Will be used with before_starfield_path to interpolate for a starfield model at the time of the PUNCH data
+        timestamp.
+    output_filename : str | None
+        Filename for the starfield-subtracted PUNCH file/s. Optional.
+
+    Returns
+    -------
+    Starfield-subtracted PUNCH data from the input PUNCHCubes.
+
+    """
     logger = get_logger()
 
     logger.info("beginning level 3 flow")

@@ -10,7 +10,9 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, LinearSegmentedColormap, Normalize, PowerNorm
 from matplotlib.figure import Figure
+from ndcube import NDCollection, NDCube
 from skimage.color import lab2rgb
+from solpolpy import resolve
 from tqdm.auto import tqdm
 
 from punchbowl.data import punch_io
@@ -122,6 +124,44 @@ def generate_mzp_to_rgb_map(data_cube: np.ndarray,
     rgb_sat = mcolors.hsv_to_rgb(hsv)
 
     return rgb_sat, color_image
+
+
+def generate_tbpb_to_rgb_map(cube_bpb: PUNCHCube,
+                             gamma:float=0.7,
+                             frac:float=0.125,
+                             s_boost:float=2.25) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Create an RGB composite from an tBpB cube.
+
+    Parameters
+    ----------
+    cube_bpb : PUNCHCube
+        Data cube containing total and polarized brightness layers
+    gamma : float
+        Power-law exponent to apply to each channel.
+    frac : float
+        Fractional scaling applied after median normalization.
+    s_boost : float
+        HSV saturation boost factor (>1 increases color saturation).
+
+    Returns
+    -------
+    rgb_sat : ndarray (ny, nx, 3)
+        Float RGB array in [0,1] with enhanced saturation.
+    color_image : ndarray (3, ny, nx)
+        8-bit RGB image before HSV saturation.
+
+    """
+    meta = dict(cube_bpb.meta.to_fits_header(wcs=cube_bpb.wcs))
+
+    collection_mzp = resolve(NDCollection(
+        [("B", NDCube(cube_bpb.data[0], wcs=cube_bpb[0].wcs, meta=meta)),
+         ("pB", NDCube(cube_bpb.data[1], wcs=cube_bpb[1].wcs, meta=meta))],
+         aligned_axes="all"), "mzpsolar")
+
+    return generate_mzp_to_rgb_map(
+        np.stack([collection_mzp[k].data for k in ("M", "Z", "P")]),
+        gamma=gamma, frac=frac, s_boost=s_boost)
 
 
 def _render_frame(args: tuple[int, Path | PUNCHCube, str, dict]) -> Path:

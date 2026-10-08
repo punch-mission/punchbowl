@@ -56,7 +56,7 @@ def test_PIM_flow_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixtur
     assert output[0].meta['OBSCODE'].value == 'M'
 
 
-def test_PIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixture):
+def test_CIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixture):
     data_list = [sample_ndcube(shape=(10, 10), code=f"XR{obs + 1}", level="2") for obs in range(4)]
     for c in data_list:
         c.meta['CROPX2'] = 10

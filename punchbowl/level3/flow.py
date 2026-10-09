@@ -44,7 +44,8 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
 
     Returns
     -------
-    F-corona subtracted PIM or CIM PUNCHCubes.
+    outcubes : list[PUNCHCube]
+        F-corona subtracted PIM or CIM PUNCHCubes.
 
     """
     logger = get_logger()
@@ -148,7 +149,8 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
 
     Returns
     -------
-    Starfield-subtracted starfield subtracted Level 3 PTM or CTM PUNCHCubes.
+    output : list[PUNCHCube]
+        Starfield-subtracted starfield subtracted Level 3 PTM or CTM PUNCHCubes.
 
     """
     logger = get_logger()

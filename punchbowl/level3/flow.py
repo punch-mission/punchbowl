@@ -73,8 +73,8 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
     after_f_corona_models = [load_ndcube_from_fits(path) if isinstance(path, str)
                               else path.load()  for path in after_f_corona_model_paths]
 
-    before_f_corona_model_short_path = [os.path.basename(model_string) for model_string in before_f_corona_model_paths]
-    after_f_corona_model_short_path = [os.path.basename(model_string) for model_string in after_f_corona_model_paths]
+    before_f_corona_model_short_paths = [os.path.basename(model_string) for model_string in before_f_corona_model_paths]
+    after_f_corona_model_short_paths = [os.path.basename(model_string) for model_string in after_f_corona_model_paths]
 
     data_list = [subtract_f_corona_background_task(d,
                                                    before_f_corona_models,
@@ -114,8 +114,8 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
         if cube.meta[f"CTRX{obs}{obs_no}"].value > 0:
             output_data[0].meta[f"CTRX{obs}{obs_no}"] = cube.meta[f"CTRX{obs}{obs_no}"].value
             output_data[0].meta[f"CTRY{obs}{obs_no}"] = cube.meta[f"CTRY{obs}{obs_no}"].value
-        output_data[0].meta["CALFCOR1"] = ", ".join(before_f_corona_model_short_path)
-        output_data[0].meta["CALFCOR2"] = ", ".join(after_f_corona_model_short_path)
+        output_data[0].meta["CALFCOR1"] = ", ".join(before_f_corona_model_short_paths)
+        output_data[0].meta["CALFCOR2"] = ", ".join(after_f_corona_model_short_paths)
     logger.info("ending level 3 PIM/CIM flow")
 
     if output_filename is not None:

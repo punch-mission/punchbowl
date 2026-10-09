@@ -30,7 +30,7 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
     Parameters
     ----------
     data_list : list[str | PUNCHCube]
-        Input list string of data files or a list PUNCHCubes of Level 2 CTM or PTM PUNCH data.
+        Input list string of data files or a list PUNCHCubes of Level 2 XR or XP PUNCH data.
     before_f_corona_model_paths : list[str | DataLoader]
         Input list of F-corona (PF{1-3} or CF{1-3}) filepaths or model data with timestamps prior to the input PUNCH
         data. Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH

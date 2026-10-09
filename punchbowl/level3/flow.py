@@ -24,7 +24,30 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                         before_f_corona_model_paths: list[str | DataLoader],
                         after_f_corona_model_paths: list[str | DataLoader],
                         output_filename: str | None = None) -> list[PUNCHCube]:
-    """Level 3 PIM/CIM flow."""
+    """
+    Level 3 flow to generate PIM and CIM files.
+
+    Parameters
+    ----------
+    data_list : list[str | PUNCHCube]
+        Input list string of data files or a list PUNCHCubes of Level 2 XR or XP PUNCH data.
+    before_f_corona_model_paths : list[str | DataLoader]
+        Input list of F-corona (PF{1-3} or CF{1-3}) filepaths or model data with timestamps prior to the input PUNCH
+        data. Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH
+        data timestamp.
+    after_f_corona_model_paths : list[str | DataLoader]
+        Input list of F-corona (PF{1-3} or CF{1-3}) filepaths or model data with timestamps after to the input PUNCH
+        data. Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH
+        data timestamp.
+    output_filename : str | None
+        Filename for the output PTM or CTM PUNCHCube file/s. Optional.
+
+    Returns
+    -------
+    outcubes : list[PUNCHCube]
+        F-corona subtracted PIM or CIM PUNCHCubes.
+
+    """
     logger = get_logger()
 
     logger.info("beginning level 3 PIM/CIM flow")
@@ -49,6 +72,14 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                               else path.load() for path in before_f_corona_model_paths]
     after_f_corona_models = [load_ndcube_from_fits(path) if isinstance(path, str)
                               else path.load()  for path in after_f_corona_model_paths]
+
+    # Extract filenames from DataLoader or string inputs to save to FITS headers
+    before_f_corona_model_short_paths = [model_string.src_repr if isinstance(model_string, DataLoader)
+                                         else os.path.basename(model_string)
+                                         for model_string in before_f_corona_model_paths]
+    after_f_corona_model_short_paths = [model_string.src_repr if isinstance(model_string, DataLoader)
+                                        else os.path.basename(model_string)
+                                        for model_string in after_f_corona_model_paths]
 
     data_list = [subtract_f_corona_background_task(d,
                                                    before_f_corona_models,
@@ -88,7 +119,8 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
         if cube.meta[f"CTRX{obs}{obs_no}"].value > 0:
             output_data[0].meta[f"CTRX{obs}{obs_no}"] = cube.meta[f"CTRX{obs}{obs_no}"].value
             output_data[0].meta[f"CTRY{obs}{obs_no}"] = cube.meta[f"CTRY{obs}{obs_no}"].value
-
+        output_data[0].meta["CALFCOR1"] = ", ".join(before_f_corona_model_short_paths)
+        output_data[0].meta["CALFCOR2"] = ", ".join(after_f_corona_model_short_paths)
     logger.info("ending level 3 PIM/CIM flow")
 
     if output_filename is not None:
@@ -102,7 +134,30 @@ def level3_core_flow(data_list: list[str] | list[PUNCHCube],
                      before_starfield_path: str | None,
                      after_starfield_path: str | None,
                      output_filename: str | None = None) -> list[PUNCHCube]:
-    """Level 3 CTM flow."""
+    """
+    Level 3 flow to generate Level 3 PTM and CTM files.
+
+    Parameters
+    ----------
+    data_list : list[str | PUNCHCube]
+        Input list string of data files or a list PUNCHCubes of Level 3 PIM or CIM PUNCH data.
+    before_starfield_path : list[str | DataLoader]
+        Input starfield model (CSM or PSM) file path with timestamps prior to the input PUNCH data.
+        Will be used with after_starfield_path to interpolate for a starfield model at the time of the PUNCH data
+        timestamp. At least one of before_starfield_path or after_starfield_path must be provided.
+    after_starfield_path: list[str | DataLoader]
+        Input starfield model (CSM or PSM) file path with timestamps after the input PUNCH data.
+        Will be used with before_starfield_path to interpolate for a starfield model at the time of the PUNCH data
+        timestamp. At least one of before_starfield_path or after_starfield_path must be provided.
+    output_filename : str | None
+        Filename for the starfield-subtracted PAM or CAM file/s. Optional.
+
+    Returns
+    -------
+    output : list[PUNCHCube]
+        Starfield-subtracted starfield subtracted Level 3 PTM or CTM PUNCHCubes.
+
+    """
     logger = get_logger()
 
     logger.info("beginning level 3 flow")

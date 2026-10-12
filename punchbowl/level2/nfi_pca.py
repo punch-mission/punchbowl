@@ -124,15 +124,16 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
     with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
         file_list = sorted(input_files + context_files)
         logger.info(f"Loading {len(input_files)} images to filter and {len(context_files)} context files")
-        x_cube, metas, wcses, cwcses, loaded_files, sat_mask_cube = load_files(file_list,
+        x_cube, metas, wcses, celestial_wcses, loaded_paths, saturation_mask_cube = load_files(file_list,
                                                                                n_workers=n_loaders,
                                                                                downsample_factor=downsample_factor)
 
-        phases = np.array([phase_in_day(path) for path in loaded_files])
+        phases = np.array([phase_in_day(path) for path in loaded_paths])
 
         nfi_mask = load_mask_file(nfi_mask)
-        nfi_mask_ds = nfi_mask.reshape((x_cube.shape[1] // downsample_factor, downsample_factor,
-                                        x_cube.shape[2] // downsample_factor, downsample_factor)).all(axis=(1, 3))
+        nfi_mask_downsampled = nfi_mask.reshape((x_cube.shape[1] // downsample_factor, downsample_factor,
+                                                 x_cube.shape[2] // downsample_factor, downsample_factor),
+                                                ).all(axis=(1, 3))
 
         x_cube_downsampled = ShmPickleableNDArray((x_cube.shape[0],
                                                    x_cube.shape[1] // downsample_factor,
@@ -142,8 +143,8 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
 
         logger.info("Images loaded")
 
-        x_cube_ds_filled, plot_masks = fill_problem_regions(x_cube_downsampled, metas, cwcses, sat_mask_cube,
-                                                            downsample_factor, process_pool)
+        x_cube_ds_filled, plot_masks = fill_problem_regions(x_cube_downsampled, metas, celestial_wcses,
+                                                            saturation_mask_cube, downsample_factor, process_pool)
 
         x_cube_downsampled.free()
         del x_cube_downsampled
@@ -151,11 +152,11 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         logger.info("Problem regions filled")
 
         good_mask_headers = find_outliers_with_headers(metas)
-        good_mask_pca = find_outliers_with_pca(x_cube_ds_filled, good_mask_headers, nfi_mask_ds, n_workers)
+        good_mask_pca = find_outliers_with_pca(x_cube_ds_filled, good_mask_headers, nfi_mask_downsampled, n_workers)
         good_mask = good_mask_headers * good_mask_pca
 
-        dsl_models, pca_components = do_pca_filtering(x_cube_ds_filled, good_mask, nfi_mask_ds, phases, n_strides,
-                                                      n_components, process_pool, n_workers)
+        dsl_models, pca_components = do_pca_filtering(x_cube_ds_filled, good_mask, nfi_mask_downsampled, phases,
+                                                      n_strides, n_components, process_pool, n_workers)
 
         logger.info("PCA filtering complete")
 
@@ -223,7 +224,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
         output_cubes.append(bg_cube)
 
-        for i, path in enumerate(loaded_files):
+        for i, path in enumerate(loaded_paths):
             if path in input_files:
                 new_meta = NormalizedMetadata.load_template("CNN", "2")
                 new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -257,7 +258,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
         return output_cubes
 
 
-def reconstitute(flat_image: np.ndarray, mask: np.ndarray) -> np.ndarray:
+def pixels_back_into_image(flat_image: np.ndarray, mask: np.ndarray) -> np.ndarray:
     """
     Put selected data back into an array.
 
@@ -284,7 +285,7 @@ def reconstitute(flat_image: np.ndarray, mask: np.ndarray) -> np.ndarray:
         return im
     im = np.zeros((len(flat_image), *mask.shape))
     for i in range(len(flat_image)):
-        im[i] = reconstitute(flat_image[i], mask)
+        im[i] = pixels_back_into_image(flat_image[i], mask)
     return im
 
 
@@ -342,7 +343,7 @@ def _load_one_file(path: str, downsample_factor: int,
         The file path that was loaded
     data : np.ndarray
         The loaded image
-    sat_mask_cube : np.ndarray
+    saturation_mask_cube : np.ndarray
         The loaded saturation mask
 
     """
@@ -386,20 +387,21 @@ def load_files(files: list[str], n_workers: int, downsample_factor: int,
         The loaded metadata
     wcses : list[WCS]
         The loaded helio wcses
-    cwcses : list[WCS]
+    celestial_wcses : list[WCS]
         The loaded celestial wcses
-    loaded_files : list[str]
+    loaded_paths : list[str]
         The file paths that were actually loaded (not skipped)
-    sat_mask_cube : np.ndarray
+    saturation_mask_cube : np.ndarray
         The saturation mask array
 
     """
     metas = []
     wcses = []
-    cwcses = []
-    loaded_files = []
+    celestial_wcses = []
+    loaded_paths = []
     x_cube = ShmPickleableNDArray((len(files), 2048, 2048), dtype=np.float32)
-    sat_mask_cube = ShmPickleableNDArray((len(files), 2048 // downsample_factor, 2048 // downsample_factor), dtype=bool)
+    saturation_mask_cube = ShmPickleableNDArray((len(files), 2048 // downsample_factor, 2048 // downsample_factor),
+                                                dtype=bool)
     i = 0
     n_missing = 0
     context = mp.get_context("forkserver")
@@ -416,10 +418,10 @@ def load_files(files: list[str], n_workers: int, downsample_factor: int,
             meta, wcs, cwcs, loaded_file, image, sat_mask = result
             metas.append(meta)
             wcses.append(wcs)
-            cwcses.append(cwcs)
-            loaded_files.append(loaded_file)
+            celestial_wcses.append(cwcs)
+            loaded_paths.append(loaded_file)
             x_cube[i] = image
-            sat_mask_cube[i] = sat_mask
+            saturation_mask_cube[i] = sat_mask
             i += 1
             # Each cube will have an identical distortion map, and we don't need to hold them all in memory
             wcs.cpdis1 = wcses[0].cpdis1
@@ -427,8 +429,8 @@ def load_files(files: list[str], n_workers: int, downsample_factor: int,
             cwcs.cpdis1 = wcses[0].cpdis1
             cwcs.cpdis2 = wcses[0].cpdis2
     x_cube = x_cube[:i]
-    sat_mask_cube = sat_mask_cube[:i]
-    return x_cube, metas, wcses, cwcses, loaded_files, sat_mask_cube
+    saturation_mask_cube = saturation_mask_cube[:i]
+    return x_cube, metas, wcses, celestial_wcses, loaded_paths, saturation_mask_cube
 
 
 def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarray,
@@ -482,8 +484,8 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
     mask_dest[:] = plot_mask
 
 
-def fill_problem_regions(x_cube: np.ndarray, metas: list[NormalizedMetadata], cwcses: list[WCS],
-                         sat_mask_cube: np.ndarray, downsample_factor: int,
+def fill_problem_regions(x_cube: np.ndarray, metas: list[NormalizedMetadata], celestial_wcses: list[WCS],
+                         saturation_mask_cube: np.ndarray, downsample_factor: int,
                          process_pool: ProcessPoolExecutor) -> tuple[np.ndarray, np.ndarray]:
     """
     Generate fill values for problem regions in images (e.g. the Moon or saturated pixels).
@@ -496,9 +498,9 @@ def fill_problem_regions(x_cube: np.ndarray, metas: list[NormalizedMetadata], cw
         The data to filter
     metas : list[NormalizedMetadata]
         Corresponding metadata
-    cwcses : list[WCS]
+    celestial_wcses : list[WCS]
         Corresponding wcses
-    sat_mask_cube : np.ndarray
+    saturation_mask_cube : np.ndarray
         Corresponding saturation masks
     downsample_factor: int
         The factor by which the provided data is downsampled
@@ -517,8 +519,8 @@ def fill_problem_regions(x_cube: np.ndarray, metas: list[NormalizedMetadata], cw
     x_cube_filled = ShmPickleableNDArray.empty_like(x_cube)
     plot_masks = ShmPickleableNDArray.empty_like(x_cube)
 
-    for _ in process_pool.map(_fill_one_image, x_cube, x_cube_filled, plot_masks, metas, cwcses, sat_mask_cube,
-                              repeat(downsample_factor), chunksize=2):
+    for _ in process_pool.map(_fill_one_image, x_cube, x_cube_filled, plot_masks, metas, celestial_wcses,
+                              saturation_mask_cube, repeat(downsample_factor), chunksize=2):
         # Loop is necessary for any exceptions from workers to be raised
         pass
 
@@ -685,7 +687,7 @@ def build_models_with_existing_components(
 
 
 def _smooth_one_component(component: np.ndarray, smooth_dest: np.ndarray, nfi_mask: np.ndarray) -> None:
-    reconstituted = reconstitute(component, nfi_mask)
+    reconstituted = pixels_back_into_image(component, nfi_mask)
     comp_smoothing = 5
     smoothed = scipy.signal.medfilt2d(reconstituted, comp_smoothing)
     smooth_dest[:] = smoothed[nfi_mask]
@@ -711,7 +713,7 @@ def _make_one_model_from_components(image: np.ndarray, phase: int, pca_component
         pca.components_ = smoothed_components
         recon = pca.inverse_transform(t)
 
-    dsl_dest[:] = reconstitute(recon, nfi_mask)
+    dsl_dest[:] = pixels_back_into_image(recon, nfi_mask)
 
 
 def _do_pca_filtering_one_stride(this_set_number: int, n_sets: int, x_cube_filled: np.ndarray, good_mask: np.ndarray,
@@ -734,14 +736,14 @@ def _do_pca_filtering_one_stride(this_set_number: int, n_sets: int, x_cube_fille
 
         comp_smoothing = 5
         for j in range(len(pca.components_)):
-            component = reconstitute(pca.components_[j], nfi_mask)
+            component = pixels_back_into_image(pca.components_[j], nfi_mask)
             component = scipy.signal.medfilt2d(component, comp_smoothing)
             pca.components_[j] = component[nfi_mask]
 
         recon = pca.inverse_transform(t)
 
     dest_idxs = np.arange(len(x_cube_filled))[filter_idxs]
-    dsl_dest[dest_idxs] = reconstitute(recon, nfi_mask)
+    dsl_dest[dest_idxs] = pixels_back_into_image(recon, nfi_mask)
 
 
 def subtract_models_from_data(x_cube: np.ndarray, x_cube_ds_filled: np.ndarray, dsl_models: np.ndarray,

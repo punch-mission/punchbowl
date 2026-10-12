@@ -297,10 +297,10 @@ def plot_punch(  # noqa: C901
     elif isinstance(trim_edge, float):
         radial_mask = radial_distance(cube.data.shape[-2], cube.data.shape[-1]) < trim_edge
     else:
-        radial_mask = 1
+        radial_mask = np.ones(cube.data.shape[-2:], dtype=bool)
 
-    im = ax.imshow(cube.data * radial_mask if cube.data.ndim == 2 else
-                   cube.data[layer,...] * radial_mask, cmap=cmap, norm=norm)
+    im = ax.imshow(np.where(radial_mask, cube.data if cube.data.ndim == 2 else cube.data[layer, ...], np.nan),
+                   cmap=cmap, norm=norm)
 
     lon, lat = ax.coords
     lat.set_ticks(np.arange(-90, 90, grid_spacing) * u.degree)

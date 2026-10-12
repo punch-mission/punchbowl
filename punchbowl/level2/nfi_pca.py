@@ -1,6 +1,7 @@
 import os
 import warnings
 import multiprocessing as mp
+from typing import Any
 from datetime import UTC, datetime
 from itertools import repeat
 from concurrent.futures import ProcessPoolExecutor
@@ -197,65 +198,77 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str, 
 
         circular_mask = make_edge_mask(corrected_frames.shape[1:])
         corrected_frames *= circular_mask[None, :, :]
+        inst_frame_background *= circular_mask
 
-        output_cubes = []
-
-        dates = [m.datetime for m in metas]
-        new_meta = NormalizedMetadata.load_template("AR4", "1")
-        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-OBS"] = ref_date
-        new_meta["DATE-AVG"] = ref_date
-        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["PCANCOMP"] = n_components
-        new_meta["PCADWNSP"] = downsample_factor
-        new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
-        pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
-
-        output_cubes.append(pca_cube)
-
-        new_meta = NormalizedMetadata.load_template("SR4", "1")
-        new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-OBS"] = ref_date
-        new_meta["DATE-AVG"] = ref_date
-        new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
-        bg_cube = PUNCHCube(data=inst_frame_background * circular_mask, meta=new_meta, wcs=target_frame)
-        output_cubes.append(bg_cube)
-
-        for i, path in enumerate(loaded_paths):
-            if path in input_files:
-                new_meta = NormalizedMetadata.load_template("CNN", "2")
-                new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-                for key in metas[i]:
-                    if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
-                                 "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
-                            or key[-4:] in ["_OBS", "_VOB"])
-                            and key in new_meta):
-                        new_meta[key] = metas[i][key].value
-                _, _, _, _, moondist, xpix, ypix = check_moon_in_fov(
-                    metas[i]["DATE-OBS"].value, wcs=wcses[i], image_shape=corrected_frames[i].shape)
-                new_meta["MOONDIST"] = moondist[0]
-                new_meta["MOON_X"] = xpix[0]
-                new_meta["MOON_Y"] = ypix[0]
-                new_meta["OUTLIER"] = not good_mask[i]
-                new_meta["PCANCOMP"] = n_components
-                new_meta["PCADWNSP"] = downsample_factor
-                new_meta["PCACOMPS"] = get_base_file_name(pca_cube)
-                new_meta["CALSL0"] = get_base_file_name(bg_cube)
-                new_meta["CTRXNFI4"] = target_frame.wcs.crpix[1] - 1
-                new_meta["CTRYNFI4"] = target_frame.wcs.crpix[0] - 1
-
-                new_meta.provenance = [os.path.basename(path)]
-
-                uncertainty = np.where(masks[i] < 0.5, np.inf, 1e-13)
-                cube = PUNCHCube(data=corrected_frames[i], meta=new_meta, wcs=target_frame,
-                                 uncertainty=StdDevUncertainty(uncertainty))
-                output_cubes.append(cube)
+        output_cubes = _generate_output_cubes(
+            corrected_frames, masks, inst_frame_background, pca_components, good_mask, metas, input_files, loaded_paths,
+                          n_components, downsample_factor, ref_date, target_frame)
 
         logger.info("PCA flow done!")
         return output_cubes
+
+
+def _generate_output_cubes(corrected_frames: np.ndarray, masks: np.ndarray, inst_frame_background: np.ndarray,
+                           pca_components: np.ndarray, good_mask: np.ndarray, metas: list[NormalizedMetadata],
+                           input_files: list[str], loaded_paths: list[str],
+                           n_components: int, downsample_factor: int,
+                           ref_date: str, target_frame: WCS) -> list[Any]:
+    output_cubes = []
+
+    dates = [m.datetime for m in metas]
+    new_meta = NormalizedMetadata.load_template("AR4", "1")
+    new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    new_meta["DATE-OBS"] = ref_date
+    new_meta["DATE-AVG"] = ref_date
+    new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    new_meta["PCANCOMP"] = n_components
+    new_meta["PCADWNSP"] = downsample_factor
+    new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
+    pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
+
+    output_cubes.append(pca_cube)
+
+    new_meta = NormalizedMetadata.load_template("SR4", "1")
+    new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    new_meta["DATE-OBS"] = ref_date
+    new_meta["DATE-AVG"] = ref_date
+    new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
+    bg_cube = PUNCHCube(data=inst_frame_background, meta=new_meta, wcs=target_frame)
+    output_cubes.append(bg_cube)
+
+    for i, path in enumerate(loaded_paths):
+        if path in input_files:
+            new_meta = NormalizedMetadata.load_template("CNN", "2")
+            new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+            for key in metas[i]:
+                if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
+                             "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
+                     or key[-4:] in ["_OBS", "_VOB"])
+                        and key in new_meta):
+                    new_meta[key] = metas[i][key].value
+            _, _, _, _, moondist, xpix, ypix = check_moon_in_fov(
+                metas[i]["DATE-OBS"].value, wcs=target_frame, image_shape=corrected_frames[i].shape)
+            new_meta["MOONDIST"] = moondist[0]
+            new_meta["MOON_X"] = xpix[0]
+            new_meta["MOON_Y"] = ypix[0]
+            new_meta["OUTLIER"] = not good_mask[i]
+            new_meta["PCANCOMP"] = n_components
+            new_meta["PCADWNSP"] = downsample_factor
+            new_meta["PCACOMPS"] = get_base_file_name(pca_cube)
+            new_meta["CALSL0"] = get_base_file_name(bg_cube)
+            new_meta["CTRXNFI4"] = target_frame.wcs.crpix[1] - 1
+            new_meta["CTRYNFI4"] = target_frame.wcs.crpix[0] - 1
+
+            new_meta.provenance = [os.path.basename(path)]
+
+            uncertainty = np.where(masks[i] < 0.5, np.inf, 1e-13)
+            cube = PUNCHCube(data=corrected_frames[i], meta=new_meta, wcs=target_frame,
+                             uncertainty=StdDevUncertainty(uncertainty))
+            output_cubes.append(cube)
+    return output_cubes
 
 
 def pixels_back_into_image(flat_image: np.ndarray, mask: np.ndarray) -> np.ndarray:
@@ -860,12 +873,14 @@ def downsample(image: np.ndarray, factor: int) -> np.ndarray:
     """
     if factor == 1:
         return image
-    if len(image.shape) == 2:
+    if image.ndim == 2:
         return image.reshape((image.shape[0] // factor, factor,
                               image.shape[1] // factor, factor)).mean(axis=(1, 3))
-    return image.reshape((image.shape[0],
-                          image.shape[1] // factor, factor,
-                          image.shape[2] // factor, factor)).mean(axis=(2, 4))
+    if image.ndim == 3:
+        return image.reshape((image.shape[0],
+                              image.shape[1] // factor, factor,
+                              image.shape[2] // factor, factor)).mean(axis=(2, 4))
+    raise ValueError("Only 2D and 3D arrays are supported.")
 
 
 def _inst_frame_filter_one_image(image: np.ndarray, filled_image: np.ndarray,

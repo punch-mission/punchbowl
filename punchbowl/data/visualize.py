@@ -16,6 +16,7 @@ from tqdm.auto import tqdm
 from punchbowl.data import punch_io
 from punchbowl.data.punchcube import PUNCHCube
 
+CONFIG_SCALING_PATH = Path(__file__).parent / "data" / "config_scaling.yaml"
 
 def _cmap_punch() -> LinearSegmentedColormap:
     """Generate PUNCH colormap."""
@@ -196,8 +197,8 @@ def plot_punch(  # noqa: C901
     layer: int = 0,
     cmap: str | Colormap | None = cmap_punch,
     norm: Normalize | None = PowerNorm,
-    vmin: float = 1e-14,
-    vmax: float = 1e-12,
+    vmin: float | None = None,
+    vmax: float | None = None,
     gamma: float = 1/2.2,
     figsize: tuple[float, float] = (10,8),
     axes_labels: tuple[str, str] = ("Helioprojective longitude", "Helioprojective latitude"),
@@ -269,6 +270,7 @@ def plot_punch(  # noqa: C901
     tuple of (figure, axes)
 
     """
+    from punchbowl.auto.control.util import load_quicklook_scaling  # Avoids circular import  # noqa: PLC0415
     if isinstance(data, PUNCHCube):
         cube = data
     elif isinstance(data, Path | str):
@@ -285,7 +287,22 @@ def plot_punch(  # noqa: C901
     elif isinstance(persistence_array, PUNCHCube):
         cube.data[mask] = persistence_array.data[mask]
 
-    norm = norm(gamma, vmin=vmin, vmax=vmax)
+    if vmin is None or vmax is None:
+        if layer == 0 and cube.meta["OBS-MODE"].value in ["Polar_tBpB", "Polar_BpB"]:
+            scaling_product = cube.meta["TYPECODE"].value.replace("P", "C", 1)
+        else:
+            scaling_product = cube.meta["TYPECODE"].value
+
+        try:
+            vmin_default, vmax_default = load_quicklook_scaling(level=cube.meta["LEVEL"].value,
+                                                                product=scaling_product,
+                                                                obscode=cube.meta["OBSCODE"].value,
+                                                                config=str(CONFIG_SCALING_PATH))
+        except TypeError as err:
+            raise ValueError("Default scaling values not found, please provide vmin and vmax scaling values.") from err
+
+        vmin = vmin_default if vmin is None else vmin
+        vmax = vmax_default if vmax is None else vmax
 
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
                                                         else cube.wcs[layer]})
@@ -300,7 +317,7 @@ def plot_punch(  # noqa: C901
         radial_mask = np.ones(cube.data.shape[-2:], dtype=bool)
 
     im = ax.imshow(np.where(radial_mask, cube.data if cube.data.ndim == 2 else cube.data[layer, ...], np.nan),
-                   cmap=cmap, norm=norm)
+                   cmap=cmap, norm=norm(gamma, vmin=vmin, vmax=vmax))
 
     lon, lat = ax.coords
     lat.set_ticks(np.arange(-90, 90, grid_spacing) * u.degree)

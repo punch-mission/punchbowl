@@ -329,6 +329,7 @@ def get_pylon_mask(shape: tuple, wcs: WCS, blur: float = 0) -> np.ndarray:
 
 
 def _load_one_file(path: str, downsample_factor: int,
+                   too_bright_threshold: float = 1e-9,
                    ) -> tuple[NormalizedMetadata, WCS, WCS, str, np.ndarray, np.ndarray] | str | None:
     """
     Load one file in a parallel worker.
@@ -339,6 +340,8 @@ def _load_one_file(path: str, downsample_factor: int,
         The path to load
     downsample_factor : int
         The factor by which the image data will later be downsampled.
+    too_bright_threshold : float
+        Images whose DATAP25 is greater than this value won't be loaded.
 
     Returns
     -------
@@ -359,7 +362,7 @@ def _load_one_file(path: str, downsample_factor: int,
     if not os.path.exists(path):
         return "missing"
     cube = load_ndcube_from_fits(path, include_uncertainty=False, include_provenance=False, dtype=np.float32)
-    if cube.meta["BADPKTS"].value or cube.meta["DATAP25"].value > 1e-9:
+    if cube.meta["BADPKTS"].value or cube.meta["DATAP25"].value > too_bright_threshold:
         return None
 
     data = cube.data
@@ -461,6 +464,8 @@ def _fill_one_image(src_data: np.ndarray, dest: np.ndarray, mask_dest: np.ndarra
         bodies.append(get_body(body, meta.astropy_time))
     bodies = bodies[0] if len(bodies) == 1 else astropy.coordinates.concatenate(bodies)
     with warnings.catch_warnings():
+        # When the body is well outside the bounds of the image, the coordinate calculation can generate a lot of
+        # warnings.
         warnings.filterwarnings("ignore", ".*failed to converge.*")
         warnings.filterwarnings("ignore", ".*All-NaN slice.*")
 
@@ -537,7 +542,7 @@ def fill_problem_regions(x_cube: np.ndarray, metas: list[NormalizedMetadata], ce
 
 
 def find_outliers_with_pca(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi_mask: np.ndarray, n_workers: int,
-                           ) -> np.ndarray:
+                           n_components: int = 10, n_std: float = 4) -> np.ndarray:
     """
     Identify outliers with by calculating a few PCA components and finding images with very strong amplitudes.
 
@@ -552,6 +557,10 @@ def find_outliers_with_pca(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi
         The NFI mask
     n_workers : int
         Number of parallel threads to use
+    n_components : int
+        The number of PCA components to compute
+    n_std : float
+        Images with a PCA component amplitude more than this many standard deviations from the median will be flagged.
 
     Returns
     -------
@@ -563,14 +572,14 @@ def find_outliers_with_pca(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi
     data = data[good_mask]
 
     with limit_threads(n_workers):
-        pca_global = PCA(n_components=10)
+        pca_global = PCA(n_components=n_components)
         pca_global.fit(data)
         t_global = pca_global.transform(data)
 
     maybe_bad = set()
-    for i in range(10):
+    for i in range(n_components):
         s = t_global[:, i]
-        suspects = set(np.where(np.abs(s - np.median(s)) > 4 * np.std(s))[0])
+        suspects = set(np.where(np.abs(s - np.median(s)) > n_std * np.std(s))[0])
         maybe_bad |= suspects
 
     indices = np.arange(len(x_cube_filled))
@@ -581,17 +590,19 @@ def find_outliers_with_pca(x_cube_filled: np.ndarray, good_mask: np.ndarray, nfi
     return good_mask
 
 
-def find_outliers_with_headers(metas: list[NormalizedMetadata]) -> np.ndarray:
+def find_outliers_with_headers(metas: list[NormalizedMetadata], n_std: float = 2) -> np.ndarray:
     """
     Identify outliers by checking stats in the image headers.
 
-    A first round of outlier rejection. Images with percentiles exceeding the population median by two sigma are
-    flagged.
+    A first round of outlier rejection. Images with percentiles exceeding the population median by a number of
+    standard deviations are flagged.
 
     Parameters
     ----------
     metas : list[NormalizedMetadata]
         The image metadata
+    n_std : float
+        The number of standard deviations to use as the threshold.
 
     Returns
     -------
@@ -602,7 +613,7 @@ def find_outliers_with_headers(metas: list[NormalizedMetadata]) -> np.ndarray:
     good_mask = np.ones(len(metas), dtype=bool)
     for k in "DATAP98", "DATAP90", "DATAP50":
         d = np.array([m[k].value for m in metas])
-        good_mask[d > np.median(d) + 2 * np.std(d)] = False
+        good_mask[d > np.median(d) + n_std * np.std(d)] = False
     return good_mask
 
 
@@ -697,8 +708,8 @@ def build_models_with_existing_components(
 
 def _smooth_one_component(component: np.ndarray, smooth_dest: np.ndarray, nfi_mask: np.ndarray) -> None:
     reconstituted = pixels_back_into_image(component, nfi_mask)
-    comp_smoothing = 5
-    smoothed = scipy.signal.medfilt2d(reconstituted, comp_smoothing)
+    component_smoothing = 5
+    smoothed = scipy.signal.medfilt2d(reconstituted, component_smoothing)
     smooth_dest[:] = smoothed[nfi_mask]
 
 
@@ -859,11 +870,17 @@ def downsample(image: np.ndarray, factor: int) -> np.ndarray:
 
 def _inst_frame_filter_one_image(image: np.ndarray, filled_image: np.ndarray,
                                  destination: np.ndarray, downsample_factor: int) -> None:
+    # Build two smoothed versions of the image---one with a percentile filter, one with a Gaussian filter. The window
+    # sizes of the filters have been tuned to work well for our NFI data, and auto-scale up or down as appropriate to
+    # match the downsample factor.
     ims1 = scipy.ndimage.percentile_filter(filled_image, 30, size=round(11 * 2 / downsample_factor))
     ims2 = scipy.ndimage.gaussian_filter(filled_image, sigma=15 * 2 / downsample_factor)
+    # Blend the two masks in a ratio that was tuned to work well with our data
     unsharp_image = 0.4 * ims1 + 0.35 * ims2
     unsharp_image = upsample(unsharp_image, downsample_factor)
+    # Do the unsharp masking
     unsharp_masked = image - unsharp_image
+    # And a final, very small-window filter to clean up the pixel-to-pixel variation, which can be very strong
     destination[:] = scipy.ndimage.percentile_filter(unsharp_masked, 50, size=5)
 
 

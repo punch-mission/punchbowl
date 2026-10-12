@@ -7,16 +7,19 @@ import astropy.units as u
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+import yaml
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, LinearSegmentedColormap, Normalize, PowerNorm
 from matplotlib.figure import Figure
+from prefect.variables import Variable
 from skimage.color import lab2rgb
 from tqdm.auto import tqdm
 
 from punchbowl.data import punch_io
 from punchbowl.data.punchcube import PUNCHCube
 
-CONFIG_SCALING_PATH = Path(__file__).parent / "data" / "config_scaling.yaml"
+CONFIG_SCALING_PATH = Path(__file__).parent / "data" / "scaling_parameters.yaml"
+DEFAULT_SCALING = (5e-13, 5e-11)
 
 def _cmap_punch() -> LinearSegmentedColormap:
     """Generate PUNCH colormap."""
@@ -192,6 +195,37 @@ def animate_punch(
         subprocess.run(ffmpeg_command, check=True, stdout = subprocess.DEVNULL)  # noqa: S603
 
 
+def load_quicklook_scaling(level: str | None = None,
+                           product: str | None = None,
+                           obscode: str | None = None,
+                           config: str | dict | None = None) -> tuple[float, float]:
+    """Load quicklook data scaling values."""
+    if isinstance(config, str):
+        with open(config) as f:
+            config_parameters = yaml.safe_load(f)
+    elif isinstance(config, dict):
+        config_parameters = config
+    elif config is None:
+        config = Variable.get("punchpipe_config", "punchpipe_config.yaml")
+        with open(config) as f:
+            config_parameters = yaml.safe_load(f)
+    else:
+        raise TypeError("config must be a path string or dictionary object")
+    if "quicklook_scaling" in config_parameters:
+        if level:
+            level_data = config_parameters.get("quicklook_scaling", {}).get(level, {})
+            if product and isinstance(level_data, dict):
+                product_data = level_data.get(product, level_data.get("default"))
+                if obscode == "4":
+                    return product_data[1]
+                return product_data[0]
+            if obscode == "4":
+                return level_data.get("default")[1]
+            return level_data.get("default")[0]
+        return DEFAULT_SCALING
+    return DEFAULT_SCALING
+
+
 def plot_punch(  # noqa: C901
     data: Path | PUNCHCube,
     layer: int = 0,
@@ -270,7 +304,6 @@ def plot_punch(  # noqa: C901
     tuple of (figure, axes)
 
     """
-    from punchbowl.auto.control.util import load_quicklook_scaling  # Avoids circular import  # noqa: PLC0415
     if isinstance(data, PUNCHCube):
         cube = data
     elif isinstance(data, Path | str):

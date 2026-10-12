@@ -1,10 +1,20 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.data.visualize import cmap_punch, cmap_punch_r, plot_punch, radial_distance, radial_filter
+from punchbowl.data.visualize import (
+    cmap_punch,
+    cmap_punch_r,
+    load_quicklook_scaling,
+    plot_punch,
+    radial_distance,
+    radial_filter,
+)
 
+CONFIG_SCALING_PATH = Path(__file__).resolve().parent.parent / "data" / "scaling_parameters.yaml"
 
 def test_radial_distance():
     shape = (100, 100)
@@ -49,3 +59,24 @@ def test_plot_punch_options(sample_ndcube):
     assert ax is not None
 
     plt.close(fig)
+
+
+def test_load_quicklook_scaling():
+    vmin, vmax = load_quicklook_scaling(level="0", product="CR", obscode="2", config=str(CONFIG_SCALING_PATH))
+
+    assert vmin == 100
+    assert vmax == 800
+
+
+def test_load_quicklook_scaling_no_input():
+    vmin, vmax = load_quicklook_scaling(config=str(CONFIG_SCALING_PATH))
+
+    assert vmin == 5e-13
+    assert vmax == 5e-11
+
+
+def test_load_quicklook_scaling_no_product():
+    vmin, vmax = load_quicklook_scaling(level="0", config=str(CONFIG_SCALING_PATH))
+
+    assert vmin == 100
+    assert vmax == 800

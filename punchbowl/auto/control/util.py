@@ -18,8 +18,8 @@ from punchbowl.auto.control.db import File
 from punchbowl.data import get_base_file_name, write_ndcube_to_fits, write_ndcube_to_quicklook
 from punchbowl.data.punch_io import _make_provenance_hdu
 from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.data.visualize import load_quicklook_scaling
 
-DEFAULT_SCALING = (5e-13, 5e-11)
 
 def get_database_session(get_engine=False,
                          engine_kwargs={},
@@ -80,33 +80,6 @@ def hostify_config(config):
             new_key = key.replace(tag, '')
             config[new_key] = config[key]
             del config[key]
-
-
-def load_quicklook_scaling(level: str = None, product: str = None, obscode: str = None, config: str | dict = None) -> (float, float):
-    if isinstance(config, str):
-        with open(config) as f:
-            config_parameters = yaml.load(f, Loader=FullLoader)
-    elif isinstance(config, dict):
-        config_parameters = config
-    elif config is None:
-        config = Variable.get("punchpipe_config", "punchpipe_config.yaml")
-        with open(config) as f:
-            config_parameters = yaml.load(f, Loader=FullLoader)
-    else:
-        raise TypeError("config must be a path string or dictionary object")
-    if "quicklook_scaling" in config_parameters:
-        if level:
-            level_data = config_parameters.get("quicklook_scaling", {}).get(level, {})
-            if product and isinstance(level_data, dict):
-                product_data = level_data.get(product, level_data.get("default"))
-                if obscode == "4":
-                    return product_data[1]
-                return product_data[0]
-            if obscode == "4":
-                return level_data.get("default")[1]
-            return level_data.get("default")[0]
-        return DEFAULT_SCALING
-    return DEFAULT_SCALING
 
 
 def write_file(data: PUNCHCube, corresponding_file_db_entry, pipeline_config) -> None:

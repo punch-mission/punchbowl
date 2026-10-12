@@ -18,6 +18,7 @@ from numpy.typing import ArrayLike
 from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve2d
 
+from punchbowl.constants import N_ROLLS_PER_DAY
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning
@@ -815,13 +816,39 @@ def make_circular_mask(shape: tuple, radius: float) -> np.ndarray:
 
 
 def fname_date_to_utime(timestamp: str) -> int:
-    """Get a timestamp from a filename."""
+    """
+    Get a Unix timestamp from the date portion of a filename.
+
+    Parameters
+    ----------
+    timestamp : str
+        The timestamp portion (YYYYMMDDHHMMSS) of a filename.
+
+    Returns
+    -------
+    timestamp : int
+        The corresponding Unix timestamp.
+
+    """
     dt = datetime.strptime(timestamp, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
     return int(dt.timestamp())
 
 
 def fname_to_utime(fname: str) -> int:
-    """Get a timestamp."""
+    """
+    Get a Unix timestamp corresponding to the datetime portion of a filename.
+
+    Parameters
+    ----------
+    fname : str
+        A PUNCH filename
+
+    Returns
+    -------
+    timestamp : int
+        The corresponding Unix timestamp.
+
+    """
     tstr = re.findall(r"_(\d{14})_", fname)[0]
     if len(tstr):
         return fname_date_to_utime(tstr)
@@ -829,26 +856,81 @@ def fname_to_utime(fname: str) -> int:
 
 
 def cube_to_utime(cube: PUNCHCube) -> int:
-    """Get a timestamp."""
+    """
+    Get a Unix timestamp corresponding to the DATE-OBS value of a PUNCHCube.
+
+    Parameters
+    ----------
+    cube : PUNCHCube
+        A PUNCH data cube.
+
+    Returns
+    -------
+    timestamp : int
+        The corresponding Unix timestamp.
+
+    """
     t = cube.meta.datetime.replace(tzinfo=UTC)
     return t.timestamp()
 
 fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
 
 def phase_in_window(fname: str) -> int:
-    """Get roll position phase."""
+    """
+    Get the roll-position phase of a given PUNCH file.
+
+    Parameters
+    ----------
+    fname : str
+        A PUNCH L1 filename.
+
+    Returns
+    -------
+    phase : int
+        The image's phase in a roll position, where 0 represents the "spacecraft is rolling" part of the sequence, and
+        1-7 are the imaging portions of the sequence.
+
+    """
     utime = fname_to_utime(fname)
     return int(((utime - fiducial_utime))/60) % 8
 
 
 def phase_in_window_from_cube(cube: PUNCHCube) -> int:
-    """Get roll position phase."""
+    """
+    Get the roll-position phase of a given PUNCHCube.
+
+    Parameters
+    ----------
+    cube : PUNCHCube
+        A PUNCHCube.
+
+    Returns
+    -------
+    phase : int
+        The image's phase in a roll position, where 0 represents the "spacecraft is rolling" part of the sequence, and
+        1-7 are the imaging portions of the sequence.
+
+    """
     utime = cube_to_utime(cube)
     return int(((utime - fiducial_utime))/60) % 8
 
 
 def make_phases(file_list: list[str]) -> list[list[str]]:
-    """Group files by phase within roll position."""
+    """
+    Group files by phase within roll position.
+
+    Parameters
+    ----------
+    file_list : list[str]
+        A list of PUNCH L1 filenames.
+
+    Returns
+    -------
+    grouped_files : list[list[str]]
+        8 lists, each containing all the files belonging to one of the 8 phases in a roll position. The 0th list will
+        normally be empty, as no images are taken during phase 0.
+
+    """
     phases = [[],[],[],[],[],[],[],[]]
     for fname in file_list:
         phase = phase_in_window(fname)
@@ -857,7 +939,29 @@ def make_phases(file_list: list[str]) -> list[list[str]]:
 
 
 def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) -> list[tuple[str, str]]:
-    """Match pairs of files across two phases."""
+    """
+    Match pairs of files across two phases.
+
+    If you have a list of PUNCH file names and need matched polarization pairs (e.g. the first and second M image
+    from each roll position), this is the function to do it. This function returns tuples of two files, where both
+    files are from the same roll position, and each file has one of the two specified phase values.
+
+    Parameters
+    ----------
+    phases : list[list[str]]
+        The output of `make_phases`, containing 8 lists of files, one for each phase in a roll position.
+    phase1 : int
+        The first phase use.
+    phase2 : int
+        The second phase use.
+
+    Returns
+    -------
+    pairs : list[tuple[str, str]]
+        A list of matched files. Each tuple will contain a filename from phase1 and a filename from phase2, and each of
+        the two files in a given tuple will come from the same roll position.
+
+    """
     pairs = []
     j = 0
     for i in range(len(phases[phase1])):
@@ -873,3 +977,25 @@ def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) ->
         if dt_min > 0 and dt_min < 8:
             pairs.append((phases[phase1][i], phases[phase2][j]))
     return pairs
+
+
+def phase_in_day(fname: str) -> int:
+    """
+    Get roll position number in the day.
+
+    Note that the "day" starts 4 minutes before midnight, because we're in the middle of a roll position at midnight.
+
+    Parameters
+    ----------
+    fname : str
+        A PUNCH L1 filename.
+
+    Returns
+    -------
+    position_number : int
+        The roll position number in the day, where 0 is the first roll position of the day. (This number will increase
+        every time the spacecraft rolls, once every 8 minutes in standard operations.)
+
+    """
+    utime = fname_to_utime(fname)
+    return (int(((utime - fiducial_utime))/60) // 8) % N_ROLLS_PER_DAY

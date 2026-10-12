@@ -45,3 +45,6 @@ class ImagePhase(IntEnum):
     POLARIZED_PP_PHASE_2 = 5
     POLARIZED_PZ_PHASE_2 = 6
     POLARIZED_PM_PHASE_2 = 7
+
+# --- Observing sequence details ---------------------------------------------------------------------------------------
+N_ROLLS_PER_DAY = 24 * 60 // 8

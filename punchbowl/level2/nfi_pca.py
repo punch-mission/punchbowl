@@ -21,7 +21,6 @@ from punchbowl.auto.control.util import batched
 from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits
 from punchbowl.data.meta import check_moon_in_fov
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.level1.dynamic_stray_light import phase_in_day
 from punchbowl.prefect import get_logger, punch_task
 from punchbowl.util import (
     ShmPickleableNDArray,
@@ -30,6 +29,7 @@ from punchbowl.util import (
     make_circular_mask,
     nan_percentile,
     nan_percentile_2d,
+    phase_in_day,
 )
 
 

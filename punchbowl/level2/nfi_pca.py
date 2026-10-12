@@ -289,7 +289,7 @@ def pixels_back_into_image(flat_image: np.ndarray, mask: np.ndarray) -> np.ndarr
     return im
 
 
-def get_pylon_mask(shape: tuple, wcs: WCS, blur: bool = False) -> np.ndarray:
+def get_pylon_mask(shape: tuple, wcs: WCS, blur: float = 0) -> np.ndarray:
     """
     Generate a mask for the pylon region.
 
@@ -299,23 +299,32 @@ def get_pylon_mask(shape: tuple, wcs: WCS, blur: bool = False) -> np.ndarray:
         The mask shape
     wcs : WCS
         The WCS for the image we're masking
-    blur : bool
-        If true, the mask is blurred so it has a soft edge.
+    blur : float
+        If > 0, the standard deviation (in pixels) of a Gaussian kernel to blue the mask with, to give it smoother
+        edges.
 
     Returns
     -------
     np.ndarray
-        The mask
+        The mask---1 for pixels outside the pylon zone, 0 for pixels within.
 
     """
     yy, xx = np.indices(shape, dtype=float)
+    # We're basically just drawing some radial lines out from the image center to define the edges of the pylon area.
+    # We can do a bit better of a job by vertically shifting that center slightly.
     yy -= wcs.wcs.crpix[0] - 1 + 40
     xx -= wcs.wcs.crpix[1] - 1
+    # The angular position of each pixel relative to the offset center
     ang = np.arctan2(yy, xx) * 180 / np.pi
+    # Set the mask to zero where the pixel is with 75 degrees of the center and within 700 horizontal pixels of the
+    # center (by computing a mask that's 1 where either of those is not true). This sets a wider angular extent for
+    # the central part of the image.
     mask = (np.abs(ang + 90) > 75) + (np.abs(xx) > 700)
+    # Zero out pixels that are within 65 degrees of "straight down", giving slightly more contained "wings" to the
+    # masked region
     mask[(np.abs(ang + 90) < 65)] = 0
-    if blur:
-        mask = scipy.ndimage.gaussian_filter(mask.astype(np.float32), sigma=15)
+    if blur > 0:
+        mask = scipy.ndimage.gaussian_filter(mask.astype(np.float32), sigma=blur)
     return mask
 
 

@@ -223,7 +223,28 @@ def load_quicklook_scaling(level: str | None = None,
                 return level_data.get("default")[1]
             return level_data.get("default")[0]
         return DEFAULT_SCALING
+
     return DEFAULT_SCALING
+
+def _draw_satellite_legend(ax: Axes,
+                           cube: PUNCHCube,
+                           radius: float = 0.022,
+                           center: tuple[float, float] = (0.94, 0.94),
+                           fontsize: int = 8) -> None:
+    """Add a legend illustrating relative WFI spacecraft angles."""
+    ny, nx = cube.data.shape[-2:]
+    pix = ax.get_transform("pixel")
+    cx, cy, r = center[0] * nx, center[1] * ny, radius * nx
+    for n in (1, 2, 3):
+        kx, ky = f"CTRXWFI{n}", f"CTRYWFI{n}"
+        if kx not in cube.meta or ky not in cube.meta:
+            continue
+        x, y = cube.meta[kx].value, cube.meta[ky].value
+        if x == -1 or y == -1:
+            continue
+        a = np.arctan2(y - ny / 2, x - nx / 2)
+        ax.text(cx + r * np.cos(a), cy + r * np.sin(a), str(n), color="white", fontsize=fontsize,
+                fontfamily="monospace", ha="center", va="center", transform=pix)
 
 
 def plot_punch(  # noqa: C901
@@ -242,6 +263,7 @@ def plot_punch(  # noqa: C901
     grid_alpha: float = 0.25,
     title_prefix: str | None = None,
     label_satellites: bool = False,
+    legend_satellites: bool = False,
     colorbar: bool = True,
     colorbar_label: str = "Mean Solar Brightness (MSB)",
     persistence_array: np.ndarray | PUNCHCube | None = None,
@@ -284,6 +306,8 @@ def plot_punch(  # noqa: C901
         Prefix to prepend to plot title
     label_satellites : bool, optional
         Adds text labels for each satellite in a mosaic if True.
+    legend_satellites : bool, optional
+        Adds a legend illustrating relative WFI spacecraft angles.
     colorbar : bool, optional
         Toggle for plotting colorbar
     colorbar_label : str, optional
@@ -405,6 +429,9 @@ def plot_punch(  # noqa: C901
                     ax.text(x, y, satellite, color="white",
                             verticalalignment="center", horizontalalignment="center",
                             fontsize=8, fontfamily="monospace")
+
+    if legend_satellites:
+        _draw_satellite_legend(ax, cube)
 
     if colorbar and not axes_off:
         fig.colorbar(im, ax=ax, label=colorbar_label)

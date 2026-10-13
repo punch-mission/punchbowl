@@ -171,6 +171,13 @@ def test_plot_punch_float_trim_no_colorbar(sample_ndcube):
     plt.close(fig)
 
 
+def test_plot_punch_axes_off_colorbar(sample_ndcube):
+    cube = sample_ndcube(shape=(10, 10), code="CAM", level="3")
+    fig, ax = plot_punch(cube, axes_off=True, colorbar=True, vmin=1e-14, vmax=1e-12)
+    assert len(ax.child_axes) == 1
+    plt.close(fig)
+
+
 def test_animate_punch_no_frames(tmp_path):
     with pytest.raises(RuntimeError):
         animate_punch([], tmp_path / "out.mp4")

@@ -359,6 +359,8 @@ def plot_punch(  # noqa: C901
         vmin = vmin_default if vmin is None else vmin
         vmax = vmax_default if vmax is None else vmax
 
+    vmin, vmax = float(vmin), float(vmax)
+
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
                                                         else cube.wcs[layer]})
 
@@ -433,6 +435,18 @@ def plot_punch(  # noqa: C901
 
     if colorbar and not axes_off:
         fig.colorbar(im, ax=ax, label=colorbar_label)
+
+    if colorbar and axes_off:
+        cax = ax.inset_axes([0.84, 0.012, 0.15, 0.015], axes_class=Axes)
+        cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticklocation="top")
+        cb.set_ticks([vmin, vmax])
+        cb.set_ticklabels([f"{vmin:.3g}", f"{vmax:.3g}"])
+        cb.ax.tick_params(colors="white", labelsize=8, length=0)
+        labels = cb.ax.get_xticklabels()
+        labels[0].set_ha("left")
+        labels[-1].set_ha("right")
+        for lab in labels:
+            lab.set_fontfamily("monospace")
 
     if save_path is not None:
         fig.savefig(save_path, dpi=dpi, bbox_inches="tight")

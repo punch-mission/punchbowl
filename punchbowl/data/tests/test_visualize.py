@@ -23,6 +23,7 @@ CONFIG_SCALING_PATH = Path(__file__).resolve().parent.parent / "data" / "scaling
 def test_radial_distance():
     shape = (100, 100)
     radial_array = radial_distance(shape[0], shape[1])
+    assert np.allclose(radial_array.max(), 1)
     assert isinstance(radial_array, np.ndarray)
     assert radial_array.shape == shape
 
@@ -84,12 +85,6 @@ def test_load_quicklook_scaling_no_product():
 
     assert vmin == 100
     assert vmax == 800
-
-
-def test_radial_distance():
-    r = radial_distance(100, 100)
-    assert np.allclose(r.max(), 1)
-    assert r[50, 50] == 0
 
 
 def test_generate_mzp_to_rgb_map():

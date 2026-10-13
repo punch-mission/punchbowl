@@ -389,7 +389,7 @@ def plot_punch(  # noqa: C901
     timestamp = cube.meta.datetime.strftime("%Y/%m/%d %H:%M:%S UT")
 
     if title_prefix is None:
-        title_prefix = f"PUNCH {cube.meta['TYPECODE']}{cube.meta['OBSCODE']}"
+        title_prefix = f"PUNCH L{cube.meta['LEVEL']} {cube.meta['TYPECODE']}{cube.meta['OBSCODE']}"
     ax.set_title(f"{title_prefix} {timestamp}")
 
     if axes_off:

@@ -263,7 +263,7 @@ def plot_punch(  # noqa: C901
     label_satellites: bool = False,
     legend_satellites: bool = False,
     colorbar: bool = True,
-    colorbar_label: str = "Mean Solar Brightness (MSB)",
+    colorbar_label: str = "MSB",
     persistence_array: np.ndarray | PUNCHCube | None = None,
     trim_edge: float | tuple[float, float] | list[float, float] | None = None,
     save_path: str | Path | None = None,
@@ -439,14 +439,18 @@ def plot_punch(  # noqa: C901
     if colorbar and axes_off:
         cax = ax.inset_axes([0.84, 0.012, 0.15, 0.015], axes_class=Axes)
         cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticklocation="top")
-        cb.set_ticks([vmin, vmax])
-        cb.set_ticklabels([f"{vmin:.3g}", f"{vmax:.3g}"])
-        cb.ax.tick_params(colors="white", labelsize=8, length=0)
+        cb.set_ticks(np.append(vmin, np.linspace(0.1 * vmax, vmax, 10)))
+        cb.set_ticklabels([f"{vmin:.3g}"] + [""] * 9 + [f"{vmax:.3g}"])
+        cb.ax.tick_params(colors="white", labelsize=8, length=3, width=0.5, pad=2)
         labels = cb.ax.get_xticklabels()
         labels[0].set_ha("left")
         labels[-1].set_ha("right")
         for lab in labels:
             lab.set_fontfamily("monospace")
+        if colorbar_label:
+            ax.text(0.99, 0.065, colorbar_label, transform=ax.transAxes, color="white",
+                    verticalalignment="bottom", horizontalalignment="right",
+                    fontsize=8, fontfamily="monospace")
 
     if save_path is not None:
         fig.savefig(save_path, dpi=dpi, bbox_inches="tight")

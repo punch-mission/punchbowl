@@ -29,9 +29,19 @@ _SAMPLE_DATA = {
     "PUNCH_CTM": f"3/CTM/2026/05/24/PUNCH_L3_CTM_20260524000029_{_VERSION}.fits",
     "QUICKPUNCH_QAM": f"Q/QAM/2026/10/01/PUNCH_LQ_QAM_20261001001600_{_VERSION}.fits",
     "QUICKPUNCH_QNN": f"Q/QAM/2026/10/01/PUNCH_LQ_QNN_20261001000021_{_VERSION}.fits",
+    "PUNCH_CAM_SEQUENCE": [
+        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524001600_{_VERSION}.fits",
+        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524004800_{_VERSION}.fits",
+        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524012000_{_VERSION}.fits",
+        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524015200_{_VERSION}.fits",
+        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524022400_{_VERSION}.fits",
+    ],
 }
 
-_SAMPLE_FILES = {v: k for k, v in _SAMPLE_DATA.items()}
+_SAMPLE_FILES = {}
+for _name, _paths in _SAMPLE_DATA.items():
+    for _path in ([_paths] if isinstance(_paths, str) else _paths):
+        _SAMPLE_FILES[_path] = _name
 
 
 def get_and_create_sample_dir() -> Path:
@@ -187,16 +197,19 @@ def __dir__():  # noqa: ANN202
     return __all__
 
 
-# See PEP 562 (https://peps.python.org/pep-0562/) for module-level __getattr__()
+def _resolve(value, **kwargs):  # noqa: ANN001, ANN003, ANN202
+    if isinstance(value, str):
+        return _get_sample_files([value], **kwargs)[0]
+    return _get_sample_files(value, **kwargs)
+
+
 def __getattr__(name):  # noqa: ANN001, ANN202
     if name in _SAMPLE_DATA:
-        return _get_sample_files([_SAMPLE_DATA[name]])[0]
+        return _resolve(_SAMPLE_DATA[name])
     if name == "file_dict":
-        return dict(sorted(zip(_SAMPLE_DATA.keys(),
-                               _get_sample_files(_SAMPLE_DATA.values(), no_download=True), strict=False)))
-    if name == "file_list":
-        return [v for v in __getattr__("file_dict").values() if v]
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+        return dict(sorted((k, _resolve(v, no_download=True)) for k, v in _SAMPLE_DATA.items()))
+    return None
+    # ... keep the remainder of the original function unchanged
 
 
 def download_all(force_download:bool=False) -> list[Path]:

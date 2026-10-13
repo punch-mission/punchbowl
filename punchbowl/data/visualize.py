@@ -167,7 +167,7 @@ def animate_punch(
     with TemporaryDirectory() as tmpdir:
         if persistence:
             for i, data in tqdm(enumerate(data_list), total=len(data_list)):
-                cube = punch_io.load_ndcube_from_fits(data)
+                cube = data if isinstance(data, PUNCHCube) else punch_io.load_ndcube_from_fits(data)
                 if i == 0:
                     persistence_array = cube.data.copy()
                 frame_path = Path(tmpdir) / f"frame_{i:07d}.png"
@@ -206,25 +206,23 @@ def load_quicklook_scaling(level: str | None = None,
     elif isinstance(config, dict):
         config_parameters = config
     elif config is None:
-        config = Variable.get("punchpipe_config", "punchpipe_config.yaml")
+        config = Variable.get("punchpipe_config", str(CONFIG_SCALING_PATH))
         with open(config) as f:
             config_parameters = yaml.safe_load(f)
     else:
         raise TypeError("config must be a path string or dictionary object")
-    if "quicklook_scaling" in config_parameters:
-        if level:
-            level_data = config_parameters.get("quicklook_scaling", {}).get(level, {})
-            if product and isinstance(level_data, dict):
-                product_data = level_data.get(product, level_data.get("default"))
-                if obscode == "4":
-                    return product_data[1]
-                return product_data[0]
-            if obscode == "4":
-                return level_data.get("default")[1]
-            return level_data.get("default")[0]
+
+    scaling = config_parameters.get("quicklook_scaling")
+    if scaling is None or not level:
         return DEFAULT_SCALING
 
-    return DEFAULT_SCALING
+    level_data = scaling.get(level, {})
+    product_data = level_data.get(product, level_data.get("default"))
+    if product_data is None:
+        raise KeyError("Data product is undefined in scaling configuration.")
+
+    return product_data[1] if obscode == "4" else product_data[0]
+
 
 def _draw_satellite_legend(ax: Axes,
                            cube: PUNCHCube,
@@ -355,8 +353,8 @@ def plot_punch(  # noqa: C901
                                                                 product=scaling_product,
                                                                 obscode=cube.meta["OBSCODE"].value,
                                                                 config=str(CONFIG_SCALING_PATH))
-        except TypeError as err:
-            raise ValueError("Default scaling values not found, please provide vmin and vmax scaling values.") from err
+        except KeyError as err:
+            raise KeyError("Default scaling values not found, please provide vmin and vmax scaling values.") from err
 
         vmin = vmin_default if vmin is None else vmin
         vmax = vmax_default if vmax is None else vmax

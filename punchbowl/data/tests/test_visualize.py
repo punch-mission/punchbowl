@@ -113,6 +113,11 @@ def test_load_quicklook_scaling_dict_config():
     assert tuple(load_quicklook_scaling("0", "??", "2", config)) == (5, 6)
 
 
+def test_load_quicklook_scaling_none():
+    vmin, vmax = load_quicklook_scaling(level="0", product="CR", obscode="3", config=None)
+    assert vmin < vmax
+
+
 def test_load_quicklook_scaling_missing_key():
     assert load_quicklook_scaling("0", "CR", "2", config={}) == DEFAULT_SCALING
 
@@ -125,6 +130,13 @@ def test_load_quicklook_scaling_bad_config_type():
 def test_plot_punch_bad_input():
     with pytest.raises(TypeError):
         plot_punch(42)
+
+
+def test_plot_punch_no_set_scaling(sample_ndcube):
+    cube = sample_ndcube(shape=(10, 10), code="CTM", level="3")
+    cube.meta["LEVEL"] = "-1"
+    with pytest.raises(KeyError):
+        fig, ax = plot_punch(cube)
 
 
 def test_plot_punch_save_path(sample_ndcube, tmp_path):
@@ -141,6 +153,17 @@ def test_plot_punch_title_prefix(sample_ndcube):
     plt.close(fig)
 
 
+def test_plot_punch_labels(sample_ndcube):
+    cube = sample_ndcube(shape=(10, 10), code="CTM", level="3")
+    for n in (1, 2, 3):
+        cube.meta[f"CTRXWFI{n}"] = 2 * n
+        cube.meta[f"CTRYWFI{n}"] = 3 * n
+    fig, ax = plot_punch(cube, label_satellites=True, legend_satellites=True)
+    assert {"1", "2", "3"} <= {t.get_text() for t in ax.texts}
+    assert {"WFI1", "WFI2", "WFI3"} <= {t.get_text() for t in ax.texts}
+    plt.close(fig)
+
+
 def test_plot_punch_float_trim_no_colorbar(sample_ndcube):
     cube = sample_ndcube(shape=(10, 10), code="CAM", level="3")
     fig, _ = plot_punch(cube, trim_edge=0.5, colorbar=False, label_satellites=True)
@@ -151,3 +174,25 @@ def test_plot_punch_float_trim_no_colorbar(sample_ndcube):
 def test_animate_punch_no_frames(tmp_path):
     with pytest.raises(RuntimeError):
         animate_punch([], tmp_path / "out.mp4")
+
+
+def test_animate_punch_persistence(tmp_path, sample_ndcube):
+    cube0 = sample_ndcube(shape=(10, 10), code="CAM", level="3")
+    cube1 = sample_ndcube(shape=(10, 10), code="CAM", level="3")
+
+    out_path = tmp_path / "out.mp4"
+
+    animate_punch([cube0, cube1], out_path, persistence=True)
+
+    assert out_path.exists()
+
+
+def test_animate_punch_parallel(tmp_path, sample_ndcube):
+    cube0 = sample_ndcube(shape=(10, 10), code="CAM", level="3")
+    cube1 = sample_ndcube(shape=(10, 10), code="CAM", level="3")
+
+    out_path = tmp_path / "out.mp4"
+
+    animate_punch([cube0, cube1], out_path, persistence=False)
+
+    assert out_path.exists()

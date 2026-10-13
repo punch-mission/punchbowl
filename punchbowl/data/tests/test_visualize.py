@@ -2,12 +2,16 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 from matplotlib.colors import LinearSegmentedColormap
 
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.data.visualize import (
+    DEFAULT_SCALING,
+    animate_punch,
     cmap_punch,
     cmap_punch_r,
+    generate_mzp_to_rgb_map,
     load_quicklook_scaling,
     plot_punch,
     radial_distance,
@@ -80,3 +84,70 @@ def test_load_quicklook_scaling_no_product():
 
     assert vmin == 100
     assert vmax == 800
+
+
+def test_radial_distance():
+    r = radial_distance(100, 100)
+    assert np.allclose(r.max(), 1)
+    assert r[50, 50] == 0
+
+
+def test_generate_mzp_to_rgb_map():
+    data_cube = np.random.random((3, 16, 16))
+    rgb, color_image = generate_mzp_to_rgb_map(data_cube)
+    assert rgb.shape == (16, 16, 3)
+    assert color_image.shape == (3, 16, 16)
+    assert rgb.min() >= 0
+    assert rgb.max() <= 1
+
+
+def test_load_quicklook_scaling():
+    vmin, vmax = load_quicklook_scaling(level="0", product="CR", obscode="3", config=str(CONFIG_SCALING_PATH))
+    assert vmin < vmax
+
+
+def test_load_quicklook_scaling_dict_config():
+    config = {"quicklook_scaling": {"0": {"CR": [[1, 2], [3, 4]], "default": [[5, 6], [7, 8]]}}}
+    assert tuple(load_quicklook_scaling("0", "CR", "2", config)) == (1, 2)
+    assert tuple(load_quicklook_scaling("0", "CR", "4", config)) == (3, 4)
+    assert tuple(load_quicklook_scaling("0", "??", "2", config)) == (5, 6)
+
+
+def test_load_quicklook_scaling_missing_key():
+    assert load_quicklook_scaling("0", "CR", "2", config={}) == DEFAULT_SCALING
+
+
+def test_load_quicklook_scaling_bad_config_type():
+    with pytest.raises(TypeError):
+        load_quicklook_scaling(config=123)
+
+
+def test_plot_punch_bad_input():
+    with pytest.raises(TypeError):
+        plot_punch(42)
+
+
+def test_plot_punch_save_path(sample_ndcube, tmp_path):
+    cube = sample_ndcube(shape=(10, 10), code="CAM", level="3")
+    out = tmp_path / "out.png"
+    assert plot_punch(cube, save_path=out, dpi=50) is None
+    assert out.exists()
+
+
+def test_plot_punch_title_prefix(sample_ndcube):
+    cube = sample_ndcube(shape=(10, 10), code="CAM", level="3")
+    fig, ax = plot_punch(cube, title_prefix="TEST")
+    assert ax.get_title().startswith("TEST")
+    plt.close(fig)
+
+
+def test_plot_punch_float_trim_no_colorbar(sample_ndcube):
+    cube = sample_ndcube(shape=(10, 10), code="CAM", level="3")
+    fig, _ = plot_punch(cube, trim_edge=0.5, colorbar=False, label_satellites=True)
+    assert len(fig.axes) == 1  # no colorbar axis
+    plt.close(fig)
+
+
+def test_animate_punch_no_frames(tmp_path):
+    with pytest.raises(RuntimeError):
+        animate_punch([], tmp_path / "out.mp4")

@@ -13,6 +13,7 @@ dependencies = [
     "matplotlib",
     "ndcube",
     "numpy",
+    "opencv-python",
     "pandas",
     "photutils",
     "plotly",

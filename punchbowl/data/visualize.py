@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 from matplotlib.axes import Axes
-from matplotlib.colors import Colormap, LinearSegmentedColormap, Normalize, PowerNorm
+from matplotlib.colors import Colormap, LinearSegmentedColormap, LogNorm, Normalize, PowerNorm
 from matplotlib.figure import Figure
 from prefect.variables import Variable
 from skimage.color import lab2rgb
@@ -66,6 +66,14 @@ def radial_distance(h: int, w: int, center: tuple[int, int] | None = None, radiu
 def radial_filter(data: np.ndarray) -> np.ndarray:
     """Filter data with radial distance function."""
     return data * radial_distance(*data.shape) ** 2.5
+
+
+def _build_norm(norm: type[Normalize], vmin: float, vmax: float, gamma: float) -> Normalize:
+    """Instantiate norm class; gamma applies only to PowerNorm."""
+    if issubclass(norm, PowerNorm):
+        return norm(gamma=gamma, vmin=vmin, vmax=vmax)
+    return norm(vmin=vmin, vmax=vmax)
+
 
 def generate_mzp_to_rgb_map(data_cube: np.ndarray,
                             gamma:float=0.7,
@@ -249,13 +257,13 @@ def plot_punch(  # noqa: C901
     data: Path | PUNCHCube,
     layer: int = 0,
     cmap: str | Colormap | None = cmap_punch,
-    norm: Normalize | None = PowerNorm,
+    norm: Normalize | None = LogNorm,
     vmin: float | None = None,
     vmax: float | None = None,
     gamma: float = 1/2.2,
     figsize: tuple[float, float] = (10,8),
     axes_labels: tuple[str, str] = ("Helioprojective longitude", "Helioprojective latitude"),
-    axes_off: bool = False,
+    axes_off: bool = True,
     annotate: bool = True,
     grid_spacing: int = 15,
     grid_alpha: float = 0.25,
@@ -263,7 +271,7 @@ def plot_punch(  # noqa: C901
     label_satellites: bool = False,
     legend_satellites: bool = False,
     colorbar: bool = True,
-    colorbar_label: str = "MSB",
+    colorbar_label: str | None = "auto",
     persistence_array: np.ndarray | PUNCHCube | None = None,
     trim_edge: float | tuple[float, float] | list[float, float] | None = None,
     save_path: str | Path | None = None,
@@ -374,7 +382,7 @@ def plot_punch(  # noqa: C901
         radial_mask = np.ones(cube.data.shape[-2:], dtype=bool)
 
     im = ax.imshow(np.where(radial_mask, cube.data if cube.data.ndim == 2 else cube.data[layer, ...], np.nan),
-                   cmap=cmap, norm=norm(gamma, vmin=vmin, vmax=vmax))
+                   cmap=cmap, norm=_build_norm(norm, vmin, vmax, gamma))
 
     lon, lat = ax.coords
     lat.set_ticks(np.arange(-90, 90, grid_spacing) * u.degree)
@@ -433,20 +441,30 @@ def plot_punch(  # noqa: C901
     if legend_satellites:
         _draw_satellite_legend(ax, cube)
 
+    if colorbar_label == "auto":
+        colorbar_label = "MSB" if int(cube.meta["LEVEL"].value) >= 2 else "DN"
+
     if colorbar and not axes_off:
         fig.colorbar(im, ax=ax, label=colorbar_label)
 
     if colorbar and axes_off:
-        cax = ax.inset_axes([0.84, 0.012, 0.15, 0.015], axes_class=Axes)
+        cax = ax.inset_axes([0.82, 0.012, 0.15, 0.015], axes_class=Axes)
         cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticklocation="top")
-        cb.set_ticks(np.append(vmin, np.linspace(0.1 * vmax, vmax, 10)))
-        cb.set_ticklabels([f"{vmin:.3g}"] + [""] * 9 + [f"{vmax:.3g}"])
-        cb.ax.tick_params(colors="white", labelsize=8, length=3, width=0.5, pad=2)
-        labels = cb.ax.get_xticklabels()
-        labels[0].set_ha("left")
-        labels[-1].set_ha("right")
-        for lab in labels:
+        if not isinstance(im.norm, LogNorm):
+            cb.set_ticks([vmin, vmax])
+            cb.set_ticklabels([f"{vmin:.3g}", f"{vmax:.3g}"])
+            cb.minorticks_off()
+            cb.ax.xaxis.get_offset_text().set_visible(False)
+        cb.ax.xaxis.set_ticks_position("top")
+        cb.ax.tick_params(axis="x", which="both", colors="white", labelsize=8,
+                        length=3, width=0.5, pad=2, labeltop=True, labelbottom=False)
+        cb.ax.tick_params(axis="x", which="minor", length=1.5)
+        for lab in cb.ax.get_xticklabels():
             lab.set_fontfamily("monospace")
+        if not isinstance(im.norm, LogNorm):
+            labels = cb.ax.get_xticklabels()
+            labels[0].set_ha("left")
+            labels[-1].set_ha("right")
         if colorbar_label:
             ax.text(0.99, 0.065, colorbar_label, transform=ax.transAxes, color="white",
                     verticalalignment="bottom", horizontalalignment="right",

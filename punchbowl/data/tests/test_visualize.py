@@ -58,7 +58,7 @@ def test_plot_punch(sample_ndcube):
 def test_plot_punch_options(sample_ndcube):
     cube = sample_ndcube(shape=(10, 10), code="CAM", level="3")
 
-    fig, ax = plot_punch(cube, trim_edge=(0.1, 0.9), axes_off=True, vmin=0, vmax=1)
+    fig, ax = plot_punch(cube, trim_edge=(0.1, 0.9), axes_off=True, vmin=1e-14, vmax=1e-12)
 
     assert fig is not None
     assert ax is not None
@@ -143,7 +143,7 @@ def test_plot_punch_save_path(sample_ndcube, tmp_path):
 
 def test_plot_punch_title_prefix(sample_ndcube):
     cube = sample_ndcube(shape=(10, 10), code="CAM", level="3")
-    fig, ax = plot_punch(cube, title_prefix="TEST")
+    fig, ax = plot_punch(cube, title_prefix="TEST", axes_off=False)
     assert ax.get_title().startswith("TEST")
     plt.close(fig)
 

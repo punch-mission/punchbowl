@@ -11,13 +11,12 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import parfive
-from sunpy import log
+from sunpy import config, log
 from sunpy.util.config import _is_writable_dir
 from sunpy.util.parfive_helpers import Downloader
 
-_BASE_URLS = (
-    "https://umbra.nascom.nasa.gov/punch/"
-)
+_BASE_URL = "https://umbra.nascom.nasa.gov/punch/"
+_FALLBACK_URL = "https://github.com/punch-mission/punch-sample-data/raw/main/"
 
 _VERSION = "v0l"
 
@@ -41,14 +40,15 @@ _SAMPLE_DATA = {
 _SAMPLE_FILES = {}
 for _name, _paths in _SAMPLE_DATA.items():
     for _path in ([_paths] if isinstance(_paths, str) else _paths):
-        _SAMPLE_FILES[_path] = _name
+        _SAMPLE_FILES[Path(_path).name] = _name
 
 
 def get_and_create_sample_dir() -> Path:
     """Get the config of download directory and create one if not present."""
-    sample_dir = Path("PUNCH_SAMPLE").expanduser().resolve()
+    sample_dir = Path(config.get("downloads", "download_dir")).expanduser().resolve() / "punch"
+    sample_dir.mkdir(parents=True, exist_ok=True)
     if not _is_writable_dir(sample_dir):
-        raise RuntimeError(f'Could not write to SunPy sample data directory="{sample_dir}"')
+        raise RuntimeError(f'Could not write to PUNCH sample data directory="{sample_dir}"')
 
     return sample_dir
 
@@ -173,9 +173,11 @@ def _get_sample_files(filename_list: list, no_download:bool=False, force_downloa
             to_download = [(fn, fp) for fn, fp in to_download if not fp.exists()]
 
         if to_download:
-            results = _download_sample_data(_BASE_URLS, to_download, overwrite=force_download)
+            results = _download_sample_data(_BASE_URL, to_download, overwrite=force_download)
 
-            # Try the other mirrors for any download errors
+            if results.errors:
+                results = _retry_sample_data(results, _FALLBACK_URL)
+
             if results.errors:
                 _handle_final_errors(results)
                 raise RuntimeError

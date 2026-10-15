@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Colormap, LinearSegmentedColormap, LogNorm, Normalize, PowerNorm
 from matplotlib.figure import Figure
 from prefect.variables import Variable
@@ -253,6 +254,32 @@ def _draw_satellite_legend(ax: Axes,
                 fontfamily="monospace", ha="center", va="center", transform=pix)
 
 
+def _draw_inset_colorbar(fig:Figure, ax:Axes, im:ScalarMappable,
+                         vmin:float, vmax:float, colorbar_label:str) -> None:
+    """Draws a minimal inset colorbar."""
+    cax = ax.inset_axes([0.82, 0.012, 0.15, 0.015], axes_class=Axes)
+    cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticklocation="top")
+    if not isinstance(im.norm, LogNorm):
+        cb.set_ticks([vmin, vmax])
+        cb.set_ticklabels([f"{vmin:.3g}", f"{vmax:.3g}"])
+        cb.minorticks_off()
+        cb.ax.xaxis.get_offset_text().set_visible(False)
+    cb.ax.xaxis.set_ticks_position("top")
+    cb.ax.tick_params(axis="x", which="both", colors="white", labelsize=8,
+                    length=3, width=0.5, pad=2, labeltop=True, labelbottom=False)
+    cb.ax.tick_params(axis="x", which="minor", length=1.5)
+    for lab in cb.ax.get_xticklabels():
+        lab.set_fontfamily("monospace")
+    if not isinstance(im.norm, LogNorm):
+        labels = cb.ax.get_xticklabels()
+        labels[0].set_ha("left")
+        labels[-1].set_ha("right")
+    if colorbar_label:
+        ax.text(0.99, 0.065, colorbar_label, transform=ax.transAxes, color="white",
+                verticalalignment="bottom", horizontalalignment="right",
+                fontsize=8, fontfamily="monospace")
+
+
 def plot_punch(  # noqa: C901
     data: Path | PUNCHCube,
     layer: int = 0,
@@ -448,27 +475,7 @@ def plot_punch(  # noqa: C901
         fig.colorbar(im, ax=ax, label=colorbar_label)
 
     if colorbar and axes_off:
-        cax = ax.inset_axes([0.82, 0.012, 0.15, 0.015], axes_class=Axes)
-        cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticklocation="top")
-        if not isinstance(im.norm, LogNorm):
-            cb.set_ticks([vmin, vmax])
-            cb.set_ticklabels([f"{vmin:.3g}", f"{vmax:.3g}"])
-            cb.minorticks_off()
-            cb.ax.xaxis.get_offset_text().set_visible(False)
-        cb.ax.xaxis.set_ticks_position("top")
-        cb.ax.tick_params(axis="x", which="both", colors="white", labelsize=8,
-                        length=3, width=0.5, pad=2, labeltop=True, labelbottom=False)
-        cb.ax.tick_params(axis="x", which="minor", length=1.5)
-        for lab in cb.ax.get_xticklabels():
-            lab.set_fontfamily("monospace")
-        if not isinstance(im.norm, LogNorm):
-            labels = cb.ax.get_xticklabels()
-            labels[0].set_ha("left")
-            labels[-1].set_ha("right")
-        if colorbar_label:
-            ax.text(0.99, 0.065, colorbar_label, transform=ax.transAxes, color="white",
-                    verticalalignment="bottom", horizontalalignment="right",
-                    fontsize=8, fontfamily="monospace")
+        _draw_inset_colorbar(fig, ax, im, vmin, vmax, colorbar_label)
 
     if save_path is not None:
         fig.savefig(save_path, dpi=dpi, bbox_inches="tight")

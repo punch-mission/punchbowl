@@ -208,7 +208,33 @@ def load_quicklook_scaling(level: str | None = None,
                            product: str | None = None,
                            obscode: str | None = None,
                            config: str | dict | None = None) -> tuple[float, float]:
-    """Load quicklook data scaling values."""
+    """
+    Load quicklook data scaling values.
+
+    Parameters
+    ----------
+    level : str | None, optional
+        Data product level, by default None
+    product : str | None, optional
+        Data product code, by default None
+    obscode : str | None, optional
+        Data obs code, by default None
+    config : str | dict | None, optional
+        Path to scaling config file, or the config dictionary itself, by default None
+
+    Returns
+    -------
+    tuple[float, float]
+        Scaling (min, max) values to use in data visualization
+
+    Raises
+    ------
+    TypeError
+        Error resulting from invalid input config dictionary
+    KeyError
+        Error resulting from data product with no corresponding scaling config entry
+
+    """
     if isinstance(config, str):
         with open(config) as f:
             config_parameters = yaml.safe_load(f)

@@ -296,7 +296,7 @@ def plot_punch(  # noqa: C901
     grid_alpha: float = 0.25,
     title_prefix: str | None = None,
     label_satellites: bool = False,
-    legend_satellites: bool = False,
+    draw_satellite_legend: bool = False,
     colorbar: bool = True,
     colorbar_label: str | None = "auto",
     persistence_array: np.ndarray | PUNCHCube | None = None,
@@ -339,7 +339,7 @@ def plot_punch(  # noqa: C901
         Prefix to prepend to plot title
     label_satellites : bool, optional
         Adds text labels for each satellite in a mosaic if True.
-    legend_satellites : bool, optional
+    draw_satellite_legend : bool, optional
         Adds a legend illustrating relative WFI spacecraft angles.
     colorbar : bool, optional
         Toggle for plotting colorbar
@@ -465,7 +465,7 @@ def plot_punch(  # noqa: C901
                             verticalalignment="center", horizontalalignment="center",
                             fontsize=8, fontfamily="monospace")
 
-    if legend_satellites:
+    if draw_satellite_legend:
         _draw_satellite_legend(ax, cube)
 
     if colorbar_label == "auto":

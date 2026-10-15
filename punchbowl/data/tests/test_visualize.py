@@ -153,7 +153,7 @@ def test_plot_punch_labels(sample_ndcube):
     for n in (1, 2, 3):
         cube.meta[f"CTRXWFI{n}"] = 2 * n
         cube.meta[f"CTRYWFI{n}"] = 3 * n
-    fig, ax = plot_punch(cube, label_satellites=True, legend_satellites=True)
+    fig, ax = plot_punch(cube, label_satellites=True, draw_satellite_legend=True)
     assert {"1", "2", "3"} <= {t.get_text() for t in ax.texts}
     assert {"WFI1", "WFI2", "WFI3"} <= {t.get_text() for t in ax.texts}
     plt.close(fig)

@@ -10,7 +10,7 @@ import numpy as np
 import yaml
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
-from matplotlib.colors import Colormap, LinearSegmentedColormap, LogNorm, Norm, Normalize, PowerNorm
+from matplotlib.colors import Colormap, LinearSegmentedColormap, Norm, Normalize, PowerNorm
 from matplotlib.figure import Figure
 from prefect.variables import Variable
 from skimage.color import lab2rgb
@@ -283,12 +283,14 @@ def _draw_satellite_legend(ax: Axes,
 def _draw_inset_colorbar(fig:Figure, ax:Axes, im:ScalarMappable,
                          vmin:float, vmax:float, colorbar_label:str) -> None:
     """Draws a minimal inset colorbar."""
-    cax = ax.inset_axes([0.82, 0.012, 0.15, 0.015], axes_class=Axes)
+    cax = ax.inset_axes([0.817, 0.012, 0.15, 0.015], axes_class=Axes)
     cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticklocation="top")
-    if not isinstance(im.norm, LogNorm):
+    if isinstance(im.norm, PowerNorm):
         cb.set_ticks([vmin, vmax])
         cb.set_ticklabels([f"{vmin:.3g}", f"{vmax:.3g}"])
-        cb.minorticks_off()
+        step = 10.0 ** (np.ceil(np.log10(vmax)) - 1)
+        n = int(vmax // step)
+        cb.ax.xaxis.set_ticks(step * np.arange(1, n + 1), minor=True)
         cb.ax.xaxis.get_offset_text().set_visible(False)
     cb.ax.xaxis.set_ticks_position("top")
     cb.ax.tick_params(axis="x", which="both", colors="white", labelsize=8,
@@ -296,10 +298,6 @@ def _draw_inset_colorbar(fig:Figure, ax:Axes, im:ScalarMappable,
     cb.ax.tick_params(axis="x", which="minor", length=1.5)
     for lab in cb.ax.get_xticklabels():
         lab.set_fontfamily("monospace")
-    if not isinstance(im.norm, LogNorm):
-        labels = cb.ax.get_xticklabels()
-        labels[0].set_ha("left")
-        labels[-1].set_ha("right")
     if colorbar_label:
         ax.text(0.99, 0.065, colorbar_label, transform=ax.transAxes, color="white",
                 verticalalignment="bottom", horizontalalignment="right",
@@ -310,7 +308,7 @@ def plot_punch(  # noqa: C901
     data: Path | PUNCHCube,
     layer: int = 0,
     cmap: str | Colormap | None = cmap_punch,
-    norm: Normalize | None = LogNorm,
+    norm: Normalize | None = PowerNorm,
     vmin: float | None = None,
     vmax: float | None = None,
     gamma: float = 1/2.2,

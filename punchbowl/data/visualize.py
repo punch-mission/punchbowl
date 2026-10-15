@@ -10,7 +10,7 @@ import numpy as np
 import yaml
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
-from matplotlib.colors import Colormap, LinearSegmentedColormap, LogNorm, Normalize, PowerNorm
+from matplotlib.colors import Colormap, LinearSegmentedColormap, LogNorm, Norm, Normalize, PowerNorm
 from matplotlib.figure import Figure
 from prefect.variables import Variable
 from skimage.color import lab2rgb
@@ -69,7 +69,7 @@ def radial_filter(data: np.ndarray) -> np.ndarray:
     return data * radial_distance(*data.shape) ** 2.5
 
 
-def _build_norm(norm: type[Normalize], vmin: float, vmax: float, gamma: float) -> Normalize:
+def _build_norm(norm: Norm, vmin: float, vmax: float, gamma: float) -> Normalize:
     """Instantiate norm class; gamma applies only to PowerNorm."""
     if issubclass(norm, PowerNorm):
         return norm(gamma=gamma, vmin=vmin, vmax=vmax)

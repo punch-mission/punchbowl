@@ -21,26 +21,33 @@ _FALLBACK_URL = "https://github.com/punch-mission/punch-sample-data/raw/main/"
 _VERSION = "v0l"
 
 _SAMPLE_DATA = {
-    "PUNCH_DK4": f"0/DK4/2026/04/22/PUNCH_L0_DK4_20260422232519_{_VERSION}.fits",
-    "PUNCH_PAM": f"3/PAM/2026/05/24/PUNCH_L3_PAM_20260524001600_{_VERSION}.fits",
-    "PUNCH_CAM": f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524001600_{_VERSION}.fits",
-    "PUNCH_PTM": f"3/PTM/2026/05/24/PUNCH_L3_PTM_20260524000230_{_VERSION}.fits",
-    "PUNCH_CTM": f"3/CTM/2026/05/24/PUNCH_L3_CTM_20260524000029_{_VERSION}.fits",
-    "QUICKPUNCH_QAM": f"Q/QAM/2026/10/01/PUNCH_LQ_QAM_20261001001600_{_VERSION}.fits",
-    "QUICKPUNCH_QNN": f"Q/QNN/2026/10/01/PUNCH_LQ_QNN_20261001000021_{_VERSION}.fits",
+    "PUNCH_DK4": f"PUNCH_L0_DK4_20260422232519_{_VERSION}.fits",
+    "PUNCH_PAM": f"PUNCH_L3_PAM_20260524001600_{_VERSION}.fits",
+    "PUNCH_CAM": f"PUNCH_L3_CAM_20260524001600_{_VERSION}.fits",
+    "PUNCH_PTM": f"PUNCH_L3_PTM_20260524000230_{_VERSION}.fits",
+    "PUNCH_CTM": f"PUNCH_L3_CTM_20260524000029_{_VERSION}.fits",
+    "QUICKPUNCH_QAM": f"PUNCH_LQ_QAM_20261001001600_{_VERSION}.fits",
+    "QUICKPUNCH_QNN": f"PUNCH_LQ_QNN_20261001000021_{_VERSION}.fits",
     "PUNCH_CAM_SEQUENCE": [
-        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524001600_{_VERSION}.fits",
-        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524004800_{_VERSION}.fits",
-        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524012000_{_VERSION}.fits",
-        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524015200_{_VERSION}.fits",
-        f"3/CAM/2026/05/24/PUNCH_L3_CAM_20260524022400_{_VERSION}.fits",
+        f"PUNCH_L3_CAM_20260524001600_{_VERSION}.fits",
+        f"PUNCH_L3_CAM_20260524004800_{_VERSION}.fits",
+        f"PUNCH_L3_CAM_20260524012000_{_VERSION}.fits",
+        f"PUNCH_L3_CAM_20260524015200_{_VERSION}.fits",
+        f"PUNCH_L3_CAM_20260524022400_{_VERSION}.fits",
     ],
 }
 
 _SAMPLE_FILES = {}
 for _name, _paths in _SAMPLE_DATA.items():
     for _path in ([_paths] if isinstance(_paths, str) else _paths):
-        _SAMPLE_FILES[Path(_path).name] = _name
+        _SAMPLE_FILES.setdefault(Path(_path).name, _name)
+
+
+def _sdac_path(filename: str) -> str:
+    """Derive the SDAC full path from the filename."""
+    _, level, code, timestamp, _ = filename.split("_")
+    level = level.removeprefix("L")
+    return f"{level}/{code}/{timestamp[:4]}/{timestamp[4:6]}/{timestamp[6:8]}/{filename}"
 
 
 def get_and_create_sample_dir() -> Path:
@@ -105,7 +112,7 @@ def _retry_sample_data(results: parfive.Results, new_url_base:str) -> parfive.Re
         log.debug(
             f"Failed to download {_SAMPLE_FILES[file_name]} from {err.url}: {err.exception}")
         # Update the url to a mirror and requeue the file.
-        new_url = urljoin(new_url_base, file_name)
+        new_url = urljoin(new_url_base, file_name) # Fallback URL files are at the base of that path
         log.debug(f"Attempting redownload of {_SAMPLE_FILES[file_name]} using {new_url}")
         dl.enqueue_file(new_url, filename=err.filepath_partial)
 
@@ -125,7 +132,7 @@ def _handle_final_errors(results:parfive.Results) -> None:
         log.debug(f"Failed to download {_SAMPLE_FILES[file_name]} from {err.url}: {err.exception}",
                   )
         log.error(
-            f"Failed to download {_SAMPLE_FILES[file_name]} from all mirrors,"
+            f"Failed to download {_SAMPLE_FILES[file_name]} from all mirrors, "
             "the file will not be available.",
         )
 
@@ -168,11 +175,12 @@ def _get_sample_files(filename_list: list, no_download:bool=False, force_downloa
     if no_download:
         fullpaths = [fp if fp.exists() else None for fp in fullpaths]
     else:
-        to_download = zip(filename_list, fullpaths, strict=False)
+        to_download = list(zip(filename_list, fullpaths, strict=False))
         if not force_download:
             to_download = [(fn, fp) for fn, fp in to_download if not fp.exists()]
 
         if to_download:
+            to_download = [(_sdac_path(fn), fp) for fn, fp in to_download]
             results = _download_sample_data(_BASE_URL, to_download, overwrite=force_download)
 
             if results.errors:
@@ -210,8 +218,10 @@ def __getattr__(name):  # noqa: ANN001, ANN202
         return _resolve(_SAMPLE_DATA[name])
     if name == "file_dict":
         return dict(sorted((k, _resolve(v, no_download=True)) for k, v in _SAMPLE_DATA.items()))
-    return None
-    # ... keep the remainder of the original function unchanged
+    if name == "file_list":
+        return [p for v in __getattr__("file_dict").values() for p in (v if isinstance(v, list) else [v])]
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
 
 
 def download_all(force_download:bool=False) -> list[Path]:
@@ -230,4 +240,4 @@ def download_all(force_download:bool=False) -> list[Path]:
         List of filepaths for sample data
 
     """
-    return _get_sample_files(_SAMPLE_DATA.values(), force_download=force_download)
+    return _get_sample_files(list(_SAMPLE_FILES), force_download=force_download)

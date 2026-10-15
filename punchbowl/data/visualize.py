@@ -298,7 +298,7 @@ def plot_punch(  # noqa: C901
     label_satellites: bool = False,
     draw_satellite_legend: bool = False,
     colorbar: bool = True,
-    colorbar_label: str | None = "auto",
+    colorbar_label: str | None = None,
     persistence_array: np.ndarray | PUNCHCube | None = None,
     trim_edge: float | tuple[float, float] | list[float, float] | None = None,
     save_path: str | Path | None = None,
@@ -468,7 +468,7 @@ def plot_punch(  # noqa: C901
     if draw_satellite_legend:
         _draw_satellite_legend(ax, cube)
 
-    if colorbar_label == "auto":
+    if colorbar_label is None:
         colorbar_label = "MSB" if int(cube.meta["LEVEL"].value) >= 2 else "DN"
 
     if colorbar and not axes_off:

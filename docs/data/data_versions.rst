@@ -32,13 +32,19 @@ Version 0m
 - PCA-processed NFI included in mosaics
 
   - Clear NFI images now undergo PCA filtering (including post-processing steps). These images are written as L2 CNN files.(https://github.com/punch-mission/punchbowl/pull/1210)
+    
     - This approach removes the variable stray light that NFI experiences and makes usable K-corona images.
     - This processing method produces images that are useful for morphological studies, but photometry should not be relied on. 
+  
   - L3 CNN files now contain full-resolution PCA-filtered NFI images with a helio-frame background subtracted. (https://github.com/punch-mission/punchbowl/pull/1226)
+  
   - PCA filtered NFI images are now included in L3 CTMs. (https://github.com/punch-mission/punchbowl/pull/1227)
+    
     - Note that the visual appearance of the NFI data is greatly improved by the median filtering applied to it in the CAM stage. 
     - Within each CTM, there is a circular region in the center in which all and only NFI data appears. Outside that radius, all and only WFI data appears. 
+  
   - PCA filtered NFI images are now included in L3 CAMs. (https://github.com/punch-mission/punchbowl/pull/1228)
+    
     - Note that input NFI images under median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median.
     - Within each CAM, there is a circular region in the center in which all and only NFI data appears. Outside that radius, all and only WFI data appears. 
      

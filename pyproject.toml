@@ -111,7 +111,7 @@ test = [
     "pytest-runner",
     "pytest-mpl",
     "pre-commit",
-    "ruff==0.16.10",
+    "ruff==0.17.0",
     "hypothesis",
 
 ]

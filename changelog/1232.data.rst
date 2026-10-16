@@ -1,0 +1,2 @@
+NFI QuickPUNCH imags are now produced, as L3 QNN files. These images use the PCA processing now implemented in the
+science pipeline.

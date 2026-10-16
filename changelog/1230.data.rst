@@ -1,0 +1,1 @@
+Level 1 files have header keywords related to distortion for both the helio and celestial WCSs again. They were present in both WCSs in v0k but the celestial WCS distortion keywords disappeared in v0l.

@@ -138,6 +138,7 @@ def animate_punch(
     fps: int = 10,
     n_jobs: int | None = None,
     persistence: bool = False,
+    ffmpeg_path: str = "ffmpeg",
     **plot_kwargs: dict,
 ) -> None:
     """
@@ -156,6 +157,8 @@ def animate_punch(
     persistence : bool, optional
         Toggle for persistence of vision animation, which updates each frame in valid data areas,
         keeping a running value elsewhere. False by default.
+    ffmpeg_path : str
+        Option to provide a different path to ffmpeg
     **plot_kwargs
         Additional formatting arguments passed to plot_punch
 
@@ -181,7 +184,7 @@ def animate_punch(
             raise RuntimeError("No frames were created")
 
         ffmpeg_command = [
-            "ffmpeg", "-y", "-framerate", str(fps),
+            ffmpeg_path, "-y", "-framerate", str(fps),
             "-i", f"{tmpdir}/frame_%07d.png",
             "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
             "-c:v", "libx264", "-pix_fmt", "yuv420p",

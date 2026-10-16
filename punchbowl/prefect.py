@@ -56,10 +56,10 @@ def punch_flow(func: Callable | None = None, **kwargs: Any) -> Flow | Callable:
         # Delegate everything to Prefect
         return flow(func, **kwargs, validate_parameters=False)
     if func is None:
-        # We've been used as @punch_task() or @punch_task(arg=val), so we are to return a function that does the
+        # We've been used as @punch_flow() or @punch_flow(arg=val), so we are to return a function that does the
         # decoration
         return _compatability_decorator
-    # We've been used as @punch_task, so we are to do the decoration directly
+    # We've been used as @punch_flow, so we are to do the decoration directly
     return _compatability_decorator(func)
 
 

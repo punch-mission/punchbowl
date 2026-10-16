@@ -36,7 +36,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 4,keyword,WAVELNTH,530,[nm] average peak response,int,TRUE,TRUE,530
 4,keyword,WAVEUNIT,nanometer,Unit of observation measurement,str,TRUE,TRUE,nanometer
 4,keyword,FILTER,,Name of filter for observations,str,TRUE,TRUE,
-4,keyword,OBS-MODE,,"Image Mode (Unpolarized, Polar_MZP, Polar_BpB)",str,TRUE,TRUE,
+4,keyword,OBS-MODE,,"Image Mode (Unpolarized, Polar_MZP, Polar_tBpB)",str,TRUE,TRUE,
 4,keyword,OBSLAYR1,,Image Mode for first datacube layer,str,TRUE,TRUE,
 4,keyword,OBSLAYR2,,Image Mode for second datacube layer,str,TRUE,TRUE,
 4,keyword,OBSLAYR3,,Image Mode for third datacube layer,str,TRUE,TRUE,
@@ -121,6 +121,9 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 9,keyword,CALFCOR2,,second F corona model filename,str,TRUE,TRUE,
 9,keyword,CALSTAR1,,first starfield model filename,str,TRUE,TRUE,
 9,keyword,CALSTAR2,,first starfield model filename,str,TRUE,TRUE,
+9,keyword,PCACOMPS,,PCA components filename,str,TRUE,TRUE,
+9,keyword,PCADWNSP,,PCA downsample factor,int,TRUE,TRUE,
+9,keyword,PCANCOMP,,PCA number of components,int,TRUE,TRUE,
 10,section,COMMENT,Image Statistics and Properties,,str,TRUE,TRUE,Image Statistics and Properties
 10,keyword,OUTLIER,,Probable bad-image status,int,TRUE,TRUE,0
 10,keyword,BADPKTS,,Whether image data suffers from corrupt packets,int,TRUE,TRUE,0

@@ -1,20 +1,24 @@
 import json
+from typing import Generator
 from datetime import UTC, datetime, timedelta
+from itertools import product
 
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
+from sqlalchemy import func, select, text
+from sqlalchemy.orm import aliased
 
 from punchbowl import __version__
-from punchbowl.auto.control.db import File, Flow
+from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import group_files_by_time
-from punchbowl.auto.flows.level1 import get_mask_files
+from punchbowl.auto.flows.level1 import get_mask_file, get_mask_files
 from punchbowl.auto.flows.util import file_name_to_full_path
-from punchbowl.level2.flow import level2_core_flow
+from punchbowl.level2.flow import level2_core_flow, level2_pca_core_flow
 from punchbowl.prefect import get_logger
-from punchbowl.util import average_datetime
+from punchbowl.util import average_datetime, phase_in_window
 
 SCIENCE_POLARIZED_LEVEL1_TYPES = ["PM", "PZ", "PP"]
 SCIENCE_CLEAR_LEVEL1_TYPES = ["CR"]
@@ -49,6 +53,14 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
         grouped_files = group_l2_inputs(all_ready_files)
     else:
         grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=10)
+
+    # we check that the accepted phase condition is met and only proceed for those images
+    accepted_phases = (pipeline_config["flows"]["level2" if polarized else "level2_clear"]
+                   .get("accepted_phases", "1, 2, 3, 4, 5, 6, 7"))  # if parameter is not set, we accept all phases
+    accepted_phases = [int(phase) for phase in accepted_phases.split(",")]  # make sure every element is an integer
+    grouped_files = [keep_accepted_phase_images(group, accepted_phases) for group in grouped_files]
+    # we might have made empty groups at this point, so we drop all empty lists
+    grouped_files = [group for group in grouped_files if len(group) > 0]
 
     target_date = pipeline_config.get("target_date")
     target_date = parse_datetime_str(target_date) if target_date else None
@@ -126,12 +138,45 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
         # Otherwise, we'll pass for now on processing this trefoil
         continue
 
+    # flatten the grouped ready files
     final_input_files = [f for g in grouped_ready_files for f in g]
+
     masks = get_mask_files(final_input_files, pipeline_config, session, level='2')
     for file, mask in zip(final_input_files, masks):
         file.mask = mask
     logger.info(f"{len(grouped_ready_files)} groups heading out")
     return grouped_ready_files
+
+def keep_accepted_phase_images(input_files: list[File], accepted_phases: list[int]) -> list[File]:
+    """
+    Given a list of input files, only keep those that have a phase in the accepted list.
+
+    Phases 1, 5 are PP
+    Phases 2, 6 are PZ
+    Phases 3, 7 are PM
+    Phase 4 is CR
+    Phases 1, 2, 3 are the first images acquired in a roll while 5, 6, 7 are the last
+
+    Parameters
+    ----------
+    input_files : list[File]
+        the files from the database to check their phase
+    accepted_phases : list[int]
+        only keep files that have a phase number in this list
+
+    Returns
+    -------
+    list[File]
+        the filtered file list
+    """
+    kept = []
+
+    for f in input_files:
+        phase_from_timestamp = phase_in_window(f.date_obs.strftime("_%Y%m%d%H%M%S_"))
+        if phase_from_timestamp in accepted_phases:
+            kept.append(f)
+
+    return kept
 
 
 def group_l2_inputs(files: list[File]) -> list[tuple[File]]:
@@ -364,3 +409,319 @@ def level2_process_flow(flow_id: int | list[int], pipeline_config_path=None, ses
 def level2_clear_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id, level2_core_flow, pipeline_config_path, session=session,
                                call_data_processor=level2_call_data_processor)
+
+
+
+@task(cache_policy=NO_CACHE)
+def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+    """
+    Query for run-able PCA batches.
+
+    Waiting L1 XR4 files are collected from the DB. The FileRelationships table is used to exclude XR4s that have
+    already gone through PCA. Ready files are divided into groups of a maximum duration and image count. Groups that
+    are under the required image size are augmented with "context" images that have already been PCA filtered. These
+    images will be used for fitting, but will not produce output files.
+
+    Parameters
+    ----------
+    session : Session
+        Database session
+    pipeline_config : dict
+        Pipeline configuration dictionary
+    reference_time : datetime
+        Not used
+    max_n : float, optional
+        Not used
+
+    Returns
+    -------
+
+    """
+    logger = get_logger()
+    pending_flows = session.query(Flow).filter(Flow.flow_type == "level2_PCA").filter(
+        Flow.state.in_(["planned", "launched", "running"])).all()
+    if pending_flows:
+        logger.info("A pending flow already exists. Skipping scheduling.")
+        return []
+
+    batch_size = pipeline_config['flows']['level2_PCA']['batch_size']
+    window_size_days = pipeline_config['flows']['level2_PCA']['window_size_days']
+    n_batches_to_schedule = pipeline_config['flows']['level2_PCA']['n_batches_to_schedule']
+
+    child = aliased(File)
+    child_exists_subquery = (session.query(FileRelationship)
+                             .join(child, FileRelationship.child == child.file_id)
+                             .filter(FileRelationship.parent == File.file_id)
+                             .filter(child.file_type == "CN")
+                             .filter(child.level == "2")
+                             .exists())
+    all_ready_files = (session.query(File)
+                       .filter(~child_exists_subquery)
+                       .filter(File.state.in_(["created", "progressed"]))
+                       .filter(File.level == "1")
+                       .filter(File.observatory == "4")
+                       .filter(File.file_type == "XR")
+                       .filter(~File.bad_packets)
+                       .order_by(File.date_obs.desc())
+                       .limit(batch_size * n_batches_to_schedule).all())
+
+    # Divide these files into groups of a maximum size and duration
+    grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=60 * 60 * 24 * window_size_days,
+                                        max_per_group=batch_size)
+    grouped_files = grouped_files[:n_batches_to_schedule]
+
+    outputs = []
+    for group in grouped_files:
+        # We'll look for extra "context" files as needed.
+        dateobses = [f.date_obs for f in group]
+        central_time = average_datetime(dateobses)
+        dt = func.abs(func.timestampdiff(text("second"), File.date_obs, central_time))
+        n_needed = batch_size - len(group)
+        context_files = (session.query(File)
+                                # Look only for files that have already been filtered
+                                .filter(child_exists_subquery)
+                                .filter(File.state.in_(["created", "progressed"]))
+                                .filter(File.level == "1")
+                                .filter(File.observatory == "4")
+                                .filter(File.file_type == "XR")
+                                .filter(~File.bad_packets)
+                                # This was our maximum group size earlier. By looking for dt under that size, we've
+                                # effectively doubled our window size for finding context files.
+                                .filter(dt < 60 * 60 * 24 * window_size_days)
+                                .order_by(dt.asc())
+                                .limit(n_needed).all())
+        # level2_PCA_construct_file_info will use these flags to separate the context flags
+        for f in group:
+            f._to_filter = True
+        for f in context_files:
+            f._to_filter = False
+        group = group + context_files
+
+        if len(group) < batch_size:
+            logger.warning(f"Only {len(group)} files (including {len(context_files)} context files) for group centered "
+                           f"on {central_time}---skipping")
+            continue
+
+        logger.info(f"{len(group)} files (including {len(context_files)} context files) for group centered "
+                    f"on {central_time}---scheduling")
+        outputs.append(group)
+
+    logger.info(f"{len(outputs)} groups heading out")
+    return outputs
+
+
+@task(cache_policy=NO_CACHE)
+def level2_PCA_construct_flow_info(level1_files: list[File], output_files: list[File], pipeline_config: dict,
+                                   session=None, reference_time=None):
+    """
+    Construct `Flow` object for a flow run.
+
+    Parameters
+    ----------
+    level1_files : list[File]
+        Input files for a flow run
+    output_files : File
+        Output files for a flow run
+    pipeline_config : dict
+        Pipeline configuration settings
+    session : Session, optional
+        Database session
+    reference_time : datetime
+        Not used
+
+    Returns
+    -------
+    Flow
+        The constructed `Flow` object
+    """
+    flow_type = "level2_PCA"
+    state = "planned"
+    creation_time = datetime.now()
+    priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
+    ref_date = output_files[0]._reference_date
+
+    mask = get_mask_file(level1_files[0], pipeline_config, session)
+    call_data = json.dumps(
+        {
+            "input_files": [level1_file.filename() for level1_file in level1_files if level1_file._to_filter],
+            "context_files": [level1_file.filename() for level1_file in level1_files
+                              if not level1_file._to_filter],
+            "nfi_mask": mask.filename().replace(".fits", ".bin"),
+            "n_workers": int(pipeline_config["flows"][flow_type]["n_workers"]),
+            "n_loaders": int(pipeline_config["flows"][flow_type]["n_loaders"]),
+            "ref_date": ref_date.strftime("%Y-%m-%dT%H:%M:%S"),
+        },
+    )
+    return Flow(
+        flow_type=flow_type,
+        state=state,
+        flow_level="Q",
+        creation_time=creation_time,
+        priority=priority,
+        call_data=call_data,
+    )
+
+
+@task
+def level2_PCA_construct_file_info(level1_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
+    """
+    Construct output `File` objects for a flow run.
+
+    Parameters
+    ----------
+    input_files : list[File]
+        Input files used for flow run
+    pipeline_config : dict
+        Pipeline configuration settings
+    reference_time : datetime
+        Not used
+
+    Returns
+    -------
+    list[File]
+        List of output `File` objects for a flow run
+    """
+    output_files = []
+    for file in level1_files:
+        if file._to_filter:
+            output_files.append(File(
+                    level="2",
+                    file_type="CN",
+                    observatory="N",
+                    polarization="C",
+                    file_version=pipeline_config["file_version"],
+                    software_version=__version__,
+                    date_obs=file.date_obs,
+                    state="planned",
+                    outlier=file.outlier,
+                    bad_packets=file.bad_packets,
+                ))
+    dates = [f.date_obs for f in level1_files if f._to_filter]
+    date_obs = average_datetime(dates).replace(microsecond=0)
+    date_beg = min(dates)
+    date_end = max(dates)
+    output_files.append(File(
+            level="1",
+            file_type="AR",
+            observatory="4",
+            polarization="C",
+            file_version=pipeline_config["file_version"],
+            software_version=__version__,
+            date_obs=date_obs,
+            date_beg=date_beg,
+            date_end=date_end,
+            state="planned",
+    ))
+    output_files.append(File(
+            level="1",
+            file_type="SR",
+            observatory="4",
+            polarization="C",
+            file_version=pipeline_config["file_version"],
+            software_version=__version__,
+            date_obs=date_obs,
+            date_beg=date_beg,
+            date_end=date_end,
+            state="planned",
+    ))
+    for file in output_files:
+        file._reference_date = date_obs
+    return output_files
+
+
+def level2_PCA_relationship_generator(parent_files: list[File], child_files: list[File]) -> Generator:
+    """
+    Generate file relationships for a flow run.
+
+    Used because the mapping between parent and child files is more complex than usual, since we make individual
+    outputs only for the non-context files, and we also output calibration files (PCA components and instrument-frame
+    backgrounds).
+
+    Parameters
+    ----------
+    parent_files : list[File]
+        Input files for the flow run
+    child_files : list[File]
+        Output files for the flow run
+
+    Returns
+    -------
+    Generator
+        A generator that yields (parent, child) tuples
+    """
+    files_to_filter = [f for f in parent_files if f._to_filter]
+    filtered_files = [f for f in child_files if f.file_type == "CN"]
+    # One-to-one mapping between input XR4s and output CNNs
+    yield from zip(files_to_filter, filtered_files)
+    # Link each XR4 to the AR4 and SR4 outputs
+    cal_files = [f for f in child_files if f.file_type != "CN"]
+    yield from product(parent_files, cal_files)
+
+
+@flow
+def level2_PCA_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+    """
+    Schedule flow runs.
+
+    Parameters
+    ----------
+    pipeline_config_path : str
+        Path to pipeline configuration settings
+    session : Session
+        Database session
+    reference_time : datetime
+        Not used
+    """
+    generic_scheduler_flow_logic(
+        level2_PCA_query_ready_files,
+        level2_PCA_construct_file_info,
+        level2_PCA_construct_flow_info,
+        pipeline_config_path,
+        reference_time=reference_time,
+        session=session,
+        relationship_generator=level2_PCA_relationship_generator,
+    )
+
+
+def level2_PCA_call_data_processor(call_data: dict, pipeline_config, session) -> dict:
+    """
+    Pre-process call data for a flow run, right before running.
+
+    Parameters
+    ----------
+    call_data : dict
+        Call data
+    pipeline_config : dict
+        Pipeline configuration settings
+    session : Session, optional
+        Not used
+
+    Returns
+    -------
+    dict
+        Processed call data
+    """
+    # Prepend the data root to each input file
+    for key in ["input_files", "context_files", "nfi_mask"]:
+        if call_data[key] is not None:
+            call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
+    return call_data
+
+
+@flow
+def level2_PCA_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
+    """
+    Run an individual flow run.
+
+    Parameters
+    ----------
+    flow_id : int
+        Flow ID number
+    pipeline_config_path : str, optional
+        Path to pipeline configuration settings
+    session : Session, optional
+        Database session
+    """
+    generic_process_flow_logic(flow_id, level2_pca_core_flow, pipeline_config_path, session=session,
+                               call_data_processor=level2_PCA_call_data_processor, write_in_parallel=True,
+                               require_expected_files=False)

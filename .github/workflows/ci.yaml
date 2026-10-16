@@ -24,17 +24,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v7.0.1
     - name: Set up Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        uv sync --no-sources --all-extras --no-editable
+        uv sync --no-sources --all-extras --no-editable --locked
         source .venv/bin/activate
     - name: Lint with ruff
       run: |

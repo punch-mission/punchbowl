@@ -22,9 +22,10 @@ Each file should be named like ``<PULL REQUEST>.<TYPE>[.<COUNTER>].rst``, where 
 * ``feature``: New user facing features and any new behavior.
 * ``bugfix``: Fixes a reported bug.
 * ``doc``: Documentation addition or improvement, like rewording an entire session or adding missing docs.
-* ``deprecation``: Feature deprecation
+* ``deprecation``: Feature deprecation.
 * ``removal``: Feature removal.
 * ``trivial``: A change which has no user facing effect or is tiny change.
+* ``data``: A change that impacts the quality of data.
 
 So for example: ``123.feature.rst``, ``456.bugfix.rst``.
 

@@ -27,7 +27,7 @@ from punchbowl.util import average_datetime, interpolate_data
 warnings.filterwarnings("ignore")
 
 
-def polarize_solar_to_celestial(input_data: PUNCHCube, dtype: None | type = None) -> PUNCHCube:
+def polarize_solar_to_celestial(input_data: PUNCHCube, dtype: np.dtype | None = None) -> PUNCHCube:
     """
     Convert polarization from mzpsolar to Celestial frame.
 
@@ -77,7 +77,7 @@ def polarize_solar_to_celestial(input_data: PUNCHCube, dtype: None | type = None
     return output
 
 
-def polarize_celestial_to_solar(input_data: PUNCHCube, dtype: None | type = None) -> PUNCHCube:
+def polarize_celestial_to_solar(input_data: PUNCHCube, dtype: np.dtype | None = None) -> PUNCHCube:
     """
     Convert polarization from Celestial frame to mzpsolar.
 
@@ -196,7 +196,7 @@ def determine_wcs(filenames: list, map_scale: float) -> WCS:
     # included on either side of crpix
     starfield_wcs.wcs.crpix = [shape[1] / 2 + .5, shape[0] / 2 + .5]
     starfield_wcs.wcs.crval = crval
-    starfield_wcs.wcs.cdelt = map_scale, map_scale
+    starfield_wcs.wcs.cdelt = -map_scale, map_scale
     starfield_wcs.wcs.ctype = "RA---CAR", "DEC--CAR"
     starfield_wcs.wcs.cunit = "deg", "deg"
     starfield_wcs.array_shape = shape
@@ -424,7 +424,7 @@ def subtract_starfield_background_task(data_object: PUNCHCube,
         data_object.celestial_wcs,
     )
 
-    original_mask = (data_object.data == 0) * ~np.isfinite(data_object.uncertainty)
+    original_mask = (data_object.data == 0) * ~np.isfinite(data_object.uncertainty.array)
 
     subtracted = starfield_model.subtract_from_image(
         PUNCHCube(data=np.stack((data_object.data, data_object.uncertainty.array)),

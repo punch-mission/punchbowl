@@ -20,7 +20,7 @@ def convert_polarization(
     Variances follow diag(A C A.T), with A_tBi = 2/3,
     A_pBi = -4/3 cos(2(theta_i - alpha)), and
     A_pBprime_i = -4/3 sin(2(theta_i - alpha)),
-    C is diagonal with C_ii = sigma_i**2. 
+    C is diagonal with C_ii = sigma_i**2.
     The geometry is treated as fixed (C_ij=0 for i!=j);
     cross-channel covariance and shared calibration errors are not included.
     """

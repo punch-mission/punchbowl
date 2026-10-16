@@ -27,15 +27,21 @@ Version 0m
   - Changed L3 `OBSLAYR1` from `Polar_B` to `Polar_tB` to match documentation. (https://github.com/punch-mission/punchbowl/pull/1219)
   - Fixed outlier flagging for L2+ products. (https://github.com/punch-mission/punchbowl/pull/1141)
   - Fixed `DSATVAL` calculation error so that saturated pixels get flagged properly (particularly for NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
-  - For science images, use the timestamp of the image to set the polarization state of the image. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. The PFWSTAT header value now reads -1 if the PFW packet is stale (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
+  - For science images, use the timestamp of the image to set the polarization state of the image, and the `PFWSTAT` header value now reads -1 if the PFW packet is stale. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
   
 - PCA-processed NFI included in mosaics
 
-  - Clear NFI images now undergo PCA filtering (including post-processing steps). This approach removes the variable stray light that NFI experiences and makes usable K-corona images. These images are written as L2 CNN files. This processing method produces images that are useful for morphological studies, but photometry should not be relied on. (https://github.com/punch-mission/punchbowl/pull/1210)
-  - We now produce L3 CNN files, containing full-resolution PCA-filtered NFI images with a helio-frame background subtracted. (https://github.com/punch-mission/punchbowl/pull/1226)
-  - PCA filtered NFI images are now included in L3 CTMs. Note that the visual appearance of the NFI data is greatly improved by the median filtering applied to it in the CAM stage. Within each CTM, there is a circular region in the center in which all and only NFI data appears. Outside that radius, all and only WFI data appears. (https://github.com/punch-mission/punchbowl/pull/1227)
-  - PCA filtered NFI images are now included in L3 CAMs. Within each CAM, there is a circular region in the center in which all and only NFI data appears. Outside that radius, all and only WFI data appears. Note that input NFI images under median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median. (https://github.com/punch-mission/punchbowl/pull/1228)
-  
+  - Clear NFI images now undergo PCA filtering (including post-processing steps). These images are written as L2 CNN files.(https://github.com/punch-mission/punchbowl/pull/1210)
+    - This approach removes the variable stray light that NFI experiences and makes usable K-corona images.
+    - This processing method produces images that are useful for morphological studies, but photometry should not be relied on. 
+  - L3 CNN files now contain full-resolution PCA-filtered NFI images with a helio-frame background subtracted. (https://github.com/punch-mission/punchbowl/pull/1226)
+  - PCA filtered NFI images are now included in L3 CTMs. (https://github.com/punch-mission/punchbowl/pull/1227)
+    - Note that the visual appearance of the NFI data is greatly improved by the median filtering applied to it in the CAM stage. 
+    - Within each CTM, there is a circular region in the center in which all and only NFI data appears. Outside that radius, all and only WFI data appears. 
+  - PCA filtered NFI images are now included in L3 CAMs. (https://github.com/punch-mission/punchbowl/pull/1228)
+    - Note that input NFI images under median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median.
+    - Within each CAM, there is a circular region in the center in which all and only NFI data appears. Outside that radius, all and only WFI data appears. 
+     
 - Starfield processing improvements
 
   - Corrected a bug with starfield model subtraction where the RA-axis cdelt was being accidentally sign flipped. (https://github.com/punch-mission/punchbowl/pull/1134)

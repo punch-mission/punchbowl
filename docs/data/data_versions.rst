@@ -29,7 +29,7 @@ Version 0m
   - Fixed `DSATVAL` calculation error so that saturated pixels get flagged properly (particularly for NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
   - For science images, use the timestamp of the image to set the polarization state of the image. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. The PFWSTAT header value now reads -1 if the PFW packet is stale (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
   
-- PCA-processed NFI inclusion into mosaics
+- PCA-processed NFI included in mosaics
 
   - Clear NFI images now undergo PCA filtering (including post-processing steps). This approach removes the variable stray light that NFI experiences and makes usable K-corona images. These images are written as L2 CNN files. This processing method produces images that are useful for morphological studies, but photometry should not be relied on. (https://github.com/punch-mission/punchbowl/pull/1210)
   - We now produce L3 CNN files, containing full-resolution PCA-filtered NFI images with a helio-frame background subtracted. (https://github.com/punch-mission/punchbowl/pull/1226)

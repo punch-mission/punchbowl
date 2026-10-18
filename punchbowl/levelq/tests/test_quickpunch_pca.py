@@ -7,9 +7,9 @@ import prefect.logging
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata, get_base_file_name, write_ndcube_to_fits
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.levelq.quickpunch_pca import quickpunch_pca_filter
 
 test_image_size = 128
@@ -41,7 +41,7 @@ def generate_components():
     new_meta["PCANCOMP"] = len(components) - 1
     new_meta["PCADWNSP"] = 1
     new_meta["FILEVRSN"] = 'test'
-    pca_cube = PUNCHCube(data=components, meta=new_meta, wcs=generate_wcs())
+    pca_cube = NDCube(data=components, meta=new_meta, wcs=generate_wcs())
     return pca_cube
 
 def generate_inst_frame_bg():
@@ -51,7 +51,7 @@ def generate_inst_frame_bg():
     new_meta["DATE-OBS"] = '2026-01-01T00:00:00'
     new_meta["DATE-END"] = new_meta["DATE-OBS"].value
     new_meta["FILEVRSN"] = 'test'
-    bg_cube = PUNCHCube(data=bg, meta=new_meta, wcs=generate_wcs())
+    bg_cube = NDCube(data=bg, meta=new_meta, wcs=generate_wcs())
     return bg_cube
 
 def generate_sky_frame_bg():
@@ -61,7 +61,7 @@ def generate_sky_frame_bg():
     new_meta["DATE-OBS"] = '2026-01-01T00:00:00'
     new_meta["DATE-END"] = new_meta["DATE-OBS"].value
     new_meta["FILEVRSN"] = 'test'
-    bg_cube = PUNCHCube(data=bg, meta=new_meta, wcs=generate_wcs())
+    bg_cube = NDCube(data=bg, meta=new_meta, wcs=generate_wcs())
     return bg_cube
 
 def generate_images(pca_components, n_images=10):
@@ -90,7 +90,7 @@ def generate_images(pca_components, n_images=10):
         new_meta['HGLT_OBS'] = -0.00129722053856085
         new_meta['HGLN_OBS'] = 299.10479748585095
         new_meta['DSUN_OBS'] = 147103575649.20935
-        images.append(PUNCHCube(data=image, meta=new_meta, wcs=generate_wcs(), uncertainty=uncertainty))
+        images.append(NDCube(data=image, meta=new_meta, wcs=generate_wcs(), uncertainty=uncertainty))
     return images
 
 

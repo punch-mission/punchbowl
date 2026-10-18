@@ -3,15 +3,16 @@ import numpy as np
 import reproject
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 from scipy.ndimage import distance_transform_edt
 
-from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.data.cube import get_celestial_wcs, replace_cube
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_helio_wcs_from_celestial
 from punchbowl.prefect import get_logger, punch_flow, punch_task
 
 
 @punch_task(tags=["reproject"])
-def reproject_cube(input_cube: PUNCHCube, output_wcs: WCS, output_shape: tuple[int, int], # noqa: C901
+def reproject_cube(input_cube: NDCube, output_wcs: WCS, output_shape: tuple[int, int], # noqa: C901
                    rolloff_strength: float | list[float] = 1,
                    rolloff_width: float | list[float] = .25,
                    do_uncertainty: bool = True,
@@ -28,7 +29,7 @@ def reproject_cube(input_cube: PUNCHCube, output_wcs: WCS, output_shape: tuple[i
 
     Parameters
     ----------
-    input_cube: PUNCHCube
+    input_cube: NDCube
         input cube to be reprojected
     output_wcs
         astropy WCS object describing the coordinate system to transform to
@@ -67,8 +68,8 @@ def reproject_cube(input_cube: PUNCHCube, output_wcs: WCS, output_shape: tuple[i
 
     input_data = input_cube.data
     time = input_cube.meta.astropy_time
-    celestial_source = (input_cube.celestial_wcs if (isinstance(input_cube, PUNCHCube)
-                                                     and input_cube.celestial_wcs is not None)
+    input_celestial_wcs = get_celestial_wcs(input_cube)
+    celestial_source = (input_celestial_wcs if input_celestial_wcs is not None
                         else calculate_celestial_wcs_from_helio(input_cube.wcs, time, output_shape[-2:]))
     celestial_target = calculate_celestial_wcs_from_helio(output_wcs, time, output_shape[-2:])
     input_uncertainty = input_cube.uncertainty.array if do_uncertainty else None
@@ -170,10 +171,10 @@ def reproject_cube(input_cube: PUNCHCube, output_wcs: WCS, output_shape: tuple[i
 
 
 @punch_flow
-def reproject_many_flow(data: list[PUNCHCube | None], trefoil_wcs: WCS, trefoil_shape: np.ndarray,
+def reproject_many_flow(data: list[NDCube | None], trefoil_wcs: WCS, trefoil_shape: np.ndarray,
                         rolloff_strength: float | list[float] = 1,
                         rolloff_width: float | list[float] = .25,
-                        ) -> list[PUNCHCube | None]:
+                        ) -> list[NDCube | None]:
     """Reproject many flow."""
     # The WCS class from astropy is not thread-safe, see e.g.
     # https://github.com/astropy/astropy/issues/16244
@@ -183,13 +184,13 @@ def reproject_many_flow(data: list[PUNCHCube | None], trefoil_wcs: WCS, trefoil_
                                         rolloff_width=rolloff_width) if d is not None else None
                   for d in data]
 
-    return [PUNCHCube(data=out_layers[i].result()[0],
+    return [NDCube(data=out_layers[i].result()[0],
                    uncertainty=StdDevUncertainty(out_layers[i].result()[1]),
                    wcs=trefoil_wcs,
                    meta=d.meta) if d is not None else None for i, d in enumerate(data)]
 
 
-def find_central_pixel(data_list: list[PUNCHCube | None], trefoil_wcs: WCS) -> list[tuple[float, float]]:
+def find_central_pixel(data_list: list[NDCube | None], trefoil_wcs: WCS) -> list[tuple[float, float]]:
     """
     Find the location of the central pixel of each cube in the mosaic frame.
 
@@ -218,7 +219,7 @@ def find_central_pixel(data_list: list[PUNCHCube | None], trefoil_wcs: WCS) -> l
     return centers
 
 
-def coalign_L1_mzp(mzp_cubes: list[PUNCHCube], scale_factor: float=1) -> list[PUNCHCube]: # noqa: N802
+def coalign_L1_mzp(mzp_cubes: list[NDCube], scale_factor: float=1) -> list[NDCube]: # noqa: N802
     """
     Coalign a set of MZP L1 images into the same exact frame, to account for slight pointing drift.
 
@@ -227,7 +228,7 @@ def coalign_L1_mzp(mzp_cubes: list[PUNCHCube], scale_factor: float=1) -> list[PU
 
     Parameters
     ----------
-    mzp_cubes : list[PUNCHCube]
+    mzp_cubes : list[NDCube]
         An L1 MZP triplet (three cubes from the same observatory in the same half of the roll position).
     scale_factor : float
         An amount by which to up-scale the common frame, to reduce the blurring effect of this extra round of
@@ -235,11 +236,11 @@ def coalign_L1_mzp(mzp_cubes: list[PUNCHCube], scale_factor: float=1) -> list[PU
 
     Returns
     -------
-    coaligned_cubes : list[PUNCHCube]
+    coaligned_cubes : list[NDCube]
         The three images in a common frame
 
     """
-    target_l1_frame = mzp_cubes[1].celestial_wcs.deepcopy()
+    target_l1_frame = get_celestial_wcs(mzp_cubes[1]).deepcopy()
     target_l1_frame.cpdis1 = None
     target_l1_frame.cpdis2 = None
     target_l1_frame.wcs.cdelt /= scale_factor
@@ -253,11 +254,11 @@ def coalign_L1_mzp(mzp_cubes: list[PUNCHCube], scale_factor: float=1) -> list[PU
         out_array = np.empty((2, *target_shape), dtype=mzp_cubes[j].data.dtype)
         reproject.reproject_adaptive(
             (np.stack((mzp_cubes[j].data, mzp_cubes[j].uncertainty.array), axis=0),
-             mzp_cubes[j].celestial_wcs),
+             get_celestial_wcs(mzp_cubes[j])),
             target_l1_frame, target_shape,
             output_array=out_array, roundtrip_coords=False, return_footprint=False)
 
-        res = mzp_cubes[j].replace(data=out_array[0], uncertainty=StdDevUncertainty(out_array[1]),
-                                   celestial_wcs=target_l1_frame, wcs=target_helio_frame)
+        res = replace_cube(mzp_cubes[j], data=out_array[0], uncertainty=StdDevUncertainty(out_array[1]),
+                           celestial_wcs=target_l1_frame, wcs=target_helio_frame)
         coaligned_cubes.append(res)
     return coaligned_cubes

@@ -6,9 +6,9 @@ import numpy as np
 import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata, write_ndcube_to_fits
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level3.velocity import plot_flow_map, track_velocity
 
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
@@ -17,10 +17,10 @@ THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 @pytest.fixture
 def synthetic_data(tmpdir):
     """
-    Create synthetic compressed FITS data from PUNCHCube instances for testing.
+    Create synthetic compressed FITS data from NDCube instances for testing.
 
     This fixture generates a list of file paths for FITS files containing random
-    PUNCHCube data. These files are written to a temporary directory and removed
+    NDCube data. These files are written to a temporary directory and removed
     after the test session. Each file includes:
     - A 128x128 array of random data.
     - WCS metadata specifying helioprojective coordinates.
@@ -61,7 +61,7 @@ def synthetic_data(tmpdir):
         meta["OBS-MODE"] = "Polar_tBpB"
 
         uncertainty = StdDevUncertainty(np.zeros_like(data))
-        cube = PUNCHCube(data=data, wcs=wcs, meta=meta, uncertainty=uncertainty)
+        cube = NDCube(data=data, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
         file_path = os.path.join(str(tmpdir), f"file_{i}.fits")
         write_ndcube_to_fits(cube, str(file_path))
@@ -76,7 +76,7 @@ def test_shape_matching(synthetic_data):
     ycens = np.arange(7, 14.5, 0.5)
     result = track_velocity(files, reference_time = reference_time, ycens=ycens)
 
-    assert isinstance(result, PUNCHCube)
+    assert isinstance(result, NDCube)
     assert result.data.shape[0] == len(ycens)
 
 
@@ -94,7 +94,7 @@ def test_with_bad_data(tmpdir):
     # Generate bad data (all NaNs)
     data = np.full((128, 128), np.nan)
 
-    # Define WCS for the PUNCHCube
+    # Define WCS for the NDCube
     wcs = WCS(naxis=2)
     wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
     wcs.wcs.cunit = "deg", "deg"
@@ -102,7 +102,7 @@ def test_with_bad_data(tmpdir):
     wcs.wcs.crpix = 64, 64
     wcs.wcs.crval = 0, 24.75
 
-    # Define metadata for the PUNCHCube
+    # Define metadata for the NDCube
     meta = NormalizedMetadata.load_template('PTM', '3')
     meta['DATE-OBS'] = "2024-01-01T00:00:00"
     meta['DATE-BEG'] = "2024-01-01T00:00:00"
@@ -110,11 +110,11 @@ def test_with_bad_data(tmpdir):
     meta['DATE-AVG'] = "2024-01-01T00:00:00"
     meta["OBS-MODE"] = "Polarized"
 
-    # Create PUNCHCube
+    # Create NDCube
     uncertainty = StdDevUncertainty(np.zeros_like(data))
-    cube = PUNCHCube(data=data, wcs=wcs, meta=meta, uncertainty=uncertainty)
+    cube = NDCube(data=data, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
-    # Write PUNCHCube to a compressed FITS file using your custom function
+    # Write NDCube to a compressed FITS file using your custom function
     file_path = os.path.join(str(tmpdir), "bad_file.fits")
     write_ndcube_to_fits(cube, file_path)
 
@@ -128,7 +128,7 @@ def test_sample_radial_outflows(tmpdir):
     for i in range(5):
         radial_outflow_data = np.linspace(0, 1, 128)[:, None] * np.linspace(1, 0, 128)
 
-        # Define WCS for the PUNCHCube
+        # Define WCS for the NDCube
         wcs = WCS(naxis=2)
         wcs.wcs.ctype = "HPLN-AZP", "HPLT-AZP"
         wcs.wcs.cunit = "deg", "deg"
@@ -136,7 +136,7 @@ def test_sample_radial_outflows(tmpdir):
         wcs.wcs.crpix = 64, 64
         wcs.wcs.crval = 0, 24.75
 
-        # Define metadata for the PUNCHCube
+        # Define metadata for the NDCube
         meta = NormalizedMetadata.load_template('PTM', '3')
         meta['DATE-OBS'] = "2024-01-01T00:00:00"
         meta['DATE-BEG'] = "2024-01-01T00:00:00"
@@ -144,16 +144,16 @@ def test_sample_radial_outflows(tmpdir):
         meta['DATE-AVG'] = "2024-01-01T00:00:00"
         meta["OBS-MODE"] = "Polar_tBpB"
 
-        # Create PUNCHCube
+        # Create NDCube
         uncertainty = StdDevUncertainty(np.zeros_like(radial_outflow_data))
-        cube = PUNCHCube(data=radial_outflow_data, wcs=wcs, meta=meta, uncertainty=uncertainty)
+        cube = NDCube(data=radial_outflow_data, wcs=wcs, meta=meta, uncertainty=uncertainty)
 
-        # Write PUNCHCube to a compressed FITS file
+        # Write NDCube to a compressed FITS file
         file_path = os.path.join(str(tmpdir), f"radial_outflow_file_{i}.fits")
         write_ndcube_to_fits(cube, file_path)
         files.append(str(file_path))
 
     result = track_velocity(files, reference_time = datetime.fromisoformat(meta["DATE-OBS"].value))
 
-    assert isinstance(result, PUNCHCube)
+    assert isinstance(result, NDCube)
     assert result.data.mean() > 0  # Verify that there is a positive outflow signal

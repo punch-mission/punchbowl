@@ -2,9 +2,9 @@ import os
 
 import numexpr as ne
 import numpy as np
+from ndcube import NDCube
 
 from punchbowl.data import load_ndcube_from_fits
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_task
 from punchbowl.util import DataLoader
 
@@ -129,14 +129,14 @@ def photometric_calibration(image: np.ndarray, coefficient_image: np.ndarray) ->
 
 
 @punch_task
-def perform_quartic_fit_task(data_object: PUNCHCube,
-                             quartic_coefficients_path: str | DataLoader | None = None) -> PUNCHCube:
+def perform_quartic_fit_task(data_object: NDCube,
+                             quartic_coefficients_path: str | DataLoader | None = None) -> NDCube:
     """
     Prefect task to perform the quartic fit calibration on the data.
 
     Parameters
     ----------
-    data_object : PUNCHCube
+    data_object : NDCube
         a data object that needs calibration
     quartic_coefficients_path: Optional[str]
         path to a  cube of coefficients as produced by `create_coefficients_image` or `create_ones_coefficients_image`,
@@ -144,7 +144,7 @@ def perform_quartic_fit_task(data_object: PUNCHCube,
 
     Returns
     -------
-    PUNCHCube
+    NDCube
         modified version of the input with the quartic fit correction applied
 
     See Also

@@ -1,13 +1,14 @@
 import os
 
+from ndcube import NDCube
+
 from punchbowl.auto.control.cache_layer import manager
 from punchbowl.auto.control.cache_layer.loader_base_class import LoaderABC
 from punchbowl.data import load_ndcube_from_fits
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.util import DataLoader
 
 
-class QuarticLoader(LoaderABC[PUNCHCube]):
+class QuarticLoader(LoaderABC[NDCube]):
     def __init__(self, path: str):
         self.path = path
 
@@ -17,7 +18,7 @@ class QuarticLoader(LoaderABC[PUNCHCube]):
     def src_repr(self) -> str:
         return self.path
 
-    def load_from_disk(self) -> PUNCHCube:
+    def load_from_disk(self) -> NDCube:
         return load_ndcube_from_fits(self.path)
 
     def __repr__(self):

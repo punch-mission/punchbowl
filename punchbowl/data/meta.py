@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import os
 import typing as t
-from typing import TYPE_CHECKING, Any
-from datetime import UTC, datetime
 from collections import OrderedDict
 from collections.abc import Mapping
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 
 import astropy
 import astropy.units as u
@@ -27,7 +27,7 @@ from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, extract_crota
 from punchbowl.exceptions import MissingMetadataError
 
 if TYPE_CHECKING:
-    from punchbowl.data.punchcube import PUNCHCube
+    from ndcube import NDCube
 
 ValueType = int | str | float
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -893,7 +893,7 @@ class NormalizedMetadata(Mapping):
         return self["TYPECODE"].value + self["OBSCODE"].value
 
 
-def set_spacecraft_location_to_earth(input_data: PUNCHCube) -> PUNCHCube:
+def set_spacecraft_location_to_earth(input_data: NDCube) -> NDCube:
     """Update the spacecraft location metadata."""
     time_obs = input_data.meta.astropy_time
 

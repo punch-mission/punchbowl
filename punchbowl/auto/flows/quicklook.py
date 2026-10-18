@@ -1,7 +1,8 @@
-import os
 import json
+import os
 from datetime import UTC, datetime, timedelta
 
+from ndcube import NDCube
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
@@ -12,7 +13,6 @@ from punchbowl.auto.control.db import File, Flow, Quicklook
 from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration, load_quicklook_scaling
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_quicklook
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.visualize import animate_punch
 from punchbowl.prefect import get_logger
 
@@ -199,7 +199,7 @@ def quicklook_scheduler_flow(pipeline_config_path=None,
     session.commit()
 
 
-def generate_quicklook_tbpb(cube: PUNCHCube,
+def generate_quicklook_tbpb(cube: NDCube,
                             file_list: list,
                             make_image: bool,
                             make_movie: bool,
@@ -229,7 +229,7 @@ def generate_quicklook_tbpb(cube: PUNCHCube,
         animate_punch(file_list, layer=1, output_path=path_movie_pb, fps=framerate, n_jobs=12, vmin=vmin_pb, vmax=vmax_pb, title_prefix=title_prefix_pb, ffmpeg_path=ffmpeg_command)
 
 
-def generate_quicklook_mzp(cube: PUNCHCube,
+def generate_quicklook_mzp(cube: NDCube,
                            file_list: list,
                            make_image: bool,
                            make_movie: bool,
@@ -253,7 +253,7 @@ def generate_quicklook_mzp(cube: PUNCHCube,
             animate_punch(file_list, layer=layer, output_path=path_movie, fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax, title_prefix=title_prefix, ffmpeg_path=ffmpeg_command)
 
 
-def generate_quicklook_unpolarized(cube: PUNCHCube,
+def generate_quicklook_unpolarized(cube: NDCube,
                                    file_list: list,
                                    make_image: bool,
                                    make_movie: bool,

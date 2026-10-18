@@ -1,10 +1,10 @@
-import os
 import logging
-import warnings
 import multiprocessing
-from pathlib import Path
+import os
+import warnings
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 
 import astrometry
 import astropy.units as u
@@ -15,12 +15,13 @@ import sep
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 from astropy.wcs import WCS, DistortionLookupTable, FITSFixedWarning, NoConvergence, utils
+from ndcube import NDCube
 from regularizepsf import ArrayPSFTransform
 from scipy.spatial import KDTree
 from skimage.transform import resize
 
 from punchbowl.data import NormalizedMetadata
-from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.data.cube import get_celestial_wcs, replace_cube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from punchbowl.level1.alignment_parallel import get_errors, refine_pointing_single_step
 from punchbowl.prefect import get_logger, punch_task
@@ -663,14 +664,14 @@ def build_distortion_model(
 
 
 @punch_task
-def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None,
-               max_workers: int = 4, n_rounds: int = 50) -> PUNCHCube:
+def align_task(data_object: NDCube, distortion_path: str | WCS | None,
+               max_workers: int = 4, n_rounds: int = 50) -> NDCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.
 
     Parameters
     ----------
-    data_object : PUNCHCube
+    data_object : NDCube
         data object to align
     distortion_path: str | None
         path to a distortion model
@@ -681,11 +682,11 @@ def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None,
 
     Returns
     -------
-    PUNCHCube
+    NDCube
         a modified version of the input with the WCS more accurately determined
 
     """
-    celestial_input = data_object.celestial_wcs
+    celestial_input = get_celestial_wcs(data_object)
     refining_data = data_object.data.copy()
     refining_data[np.isinf(refining_data)] = 0
     refining_data[np.isnan(refining_data)] = 0
@@ -712,6 +713,6 @@ def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None,
                                                        data_object.meta.astropy_time,
                                                        data_object.data.shape)
 
-    output = data_object.replace(wcs=recovered_wcs, celestial_wcs=celestial_output)
+    output = replace_cube(data_object, wcs=recovered_wcs, celestial_wcs=celestial_output)
     output.meta.history.add_now("LEVEL1-Align", f"alignment done with {n_rounds} iterations")
     return output

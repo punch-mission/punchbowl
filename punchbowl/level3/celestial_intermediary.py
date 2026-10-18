@@ -3,11 +3,10 @@ import numpy as np
 import reproject
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, utils
+from ndcube import NDCube
 
-from punchbowl.data.punchcube import PUNCHCube
 
-
-def to_celestial_frame_cutout(data_cube: PUNCHCube, cdelt: float = 0.02) -> PUNCHCube:
+def to_celestial_frame_cutout(data_cube: NDCube, cdelt: float = 0.02) -> NDCube:
     """
     Reproject an image to a bounding-box cutout of an all-sky map.
 
@@ -26,18 +25,18 @@ def to_celestial_frame_cutout(data_cube: PUNCHCube, cdelt: float = 0.02) -> PUNC
     images in celestial coordinates, but still keep the stackability that the output images would have if every image
     were reprojected into the same all-sky map.
 
-    The uncertainty layer of the PUNCHCube is expected to be present and is handled.
+    The uncertainty layer of the NDCube is expected to be present and is handled.
 
     Parameters
     ----------
-    data_cube : PUNCHCube
+    data_cube : NDCube
         The data cube to be reprojected
     cdelt : float
         The CDELT value to use for the output projection
 
     Returns
     -------
-    reprojected_cube : PUNCHCube
+    reprojected_cube : NDCube
         The cutout of the all-sky map containing the reprojected input data
 
     """
@@ -76,12 +75,12 @@ def to_celestial_frame_cutout(data_cube: PUNCHCube, cdelt: float = 0.02) -> PUNC
     reprojected = reproject.reproject_adaptive((data, wcs.celestial), wcs_out, out_shape,
                                                return_footprint=False, roundtrip_coords=False,
                                                boundary_mode="strict", conserve_flux=False, center_jacobian=True)
-    return PUNCHCube(data=reprojected[0], uncertainty=StdDevUncertainty(reprojected[1]), wcs=wcs_out)
+    return NDCube(data=reprojected[0], uncertainty=StdDevUncertainty(reprojected[1]), wcs=wcs_out)
 
 
-def shift_image_onto(source: PUNCHCube,
-                     target: PUNCHCube,
-                     fill_value: float = np.nan) -> PUNCHCube:
+def shift_image_onto(source: NDCube,
+                     target: NDCube,
+                     fill_value: float = np.nan) -> NDCube:
     """
     Aligns one image to the frame of a second, if both are different cutouts of the same all-sky coordinate frame.
 
@@ -92,20 +91,20 @@ def shift_image_onto(source: PUNCHCube,
 
     Input files must have two image dimensions, and can have arbitrarily-many extra leading dimensions.
 
-    The uncertainty layer of the PUNCHCube is expected to be present and is handled.
+    The uncertainty layer of the NDCube is expected to be present and is handled.
 
     Parameters
     ----------
-    source : PUNCHCube
+    source : NDCube
         The image to the aligned
-    target : PUNCHCube
+    target : NDCube
         The image onto which ``input`` is to be aligned
     fill_value : float
         The value to be used for empty pixels (pixels of the output frame that aren't spanned by the input image)
 
     Returns
     -------
-    aligned_image : PUNCHCube
+    aligned_image : NDCube
         The data of the ``input`` in the WCS frame of ``target``.
 
     """
@@ -155,4 +154,4 @@ def shift_image_onto(source: PUNCHCube,
         if source_data.ndim > 2:
             padding = np.concatenate(([(0, 0)] * (source_data.ndim - 2), padding), axis=0)
         source_data = np.pad(source_data, padding, constant_values=fill_value)
-    return PUNCHCube(data=source_data[0], wcs=target.wcs, uncertainty=StdDevUncertainty(source_data[1]))
+    return NDCube(data=source_data[0], wcs=target.wcs, uncertainty=StdDevUncertainty(source_data[1]))

@@ -9,7 +9,9 @@ from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS, DistortionLookupTable
 from astropy.wcs.utils import add_stokes_axis_to_wcs
 from glymur import Jp2kr, jp2box
+from ndcube import NDCube
 
+from punchbowl.data.cube import add_celestial_wcs, get_celestial_wcs, replace_cube
 from punchbowl.data.meta import NormalizedMetadata
 from punchbowl.data.punch_io import (
     CALIBRATION_ANNOTATION,
@@ -22,7 +24,6 @@ from punchbowl.data.punch_io import (
     write_ndcube_to_fits,
     write_ndcube_to_quicklook,
 )
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_celestial_wcs_from_helio, calculate_pc_matrix
 
 TESTDATA_DIR = os.path.dirname(__file__)
@@ -69,7 +70,8 @@ def sample_ndcube():
             meta['DSUN_OBS'] = 152011862324.1987
 
         celestial_wcs = calculate_celestial_wcs_from_helio(wcs, date_obs, data.shape)
-        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta, celestial_wcs=celestial_wcs)
+        cube = NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+        return add_celestial_wcs(cube, celestial_wcs)
     return _sample_ndcube
 
 
@@ -195,7 +197,7 @@ def test_generate_data_statistics_from_zeros():
     m['DATASUM'] = ''
     m.delete_section("World Coordinate System")
 
-    sample_data = PUNCHCube(data=np.zeros((2048, 2048),dtype=np.int16), wcs=w, meta=m)
+    sample_data = NDCube(data=np.zeros((2048, 2048),dtype=np.int16), wcs=w, meta=m)
 
     new_meta = _update_statistics(sample_data)
     sample_data.meta = new_meta
@@ -272,13 +274,13 @@ def test_load_punchdata_with_history(tmpdir):
                      "CUNIT2": "deg",
                      "CTYPE1": "HPLN-ARC",
                      "CTYPE2": "HPLT-ARC"})
-    obj = PUNCHCube(data=data, wcs=wcs, meta=meta)
+    obj = NDCube(data=data, wcs=wcs, meta=meta)
 
     assert "OBSCODE" in obj.meta.fits_keys
     file_path = os.path.join(tmpdir, get_base_file_name(obj) + ".fits")
     write_ndcube_to_fits(obj, file_path, overwrite=True)
     reloaded = load_ndcube_from_fits(file_path)
-    assert isinstance(reloaded, PUNCHCube)
+    assert isinstance(reloaded, NDCube)
     assert len(reloaded.meta.history) == 2
     assert reloaded.data.shape == (10, 10)
     assert np.all(reloaded.data == 1)
@@ -339,7 +341,7 @@ def test_write_punchdata_with_distortion(tmpdir):
     cpdis1, cpdis2 = make_empty_distortion_model(100, data)
     wcs.cpdis1 = cpdis1
     wcs.cpdis2 = cpdis2
-    obj = PUNCHCube(data=data, wcs=wcs, meta=meta, uncertainty=StdDevUncertainty(uncertainty))
+    obj = NDCube(data=data, wcs=wcs, meta=meta, uncertainty=StdDevUncertainty(uncertainty))
     file_path = os.path.join(tmpdir, get_base_file_name(obj) + ".fits")
     write_ndcube_to_fits(obj, file_path, overwrite=True)
 
@@ -358,6 +360,19 @@ def test_uncertainty_inf_roundtrip(sample_ndcube, tmpdir):
     write_ndcube_to_fits(cube, test_path)
     loaded_cube = load_ndcube_from_fits(test_path)
     assert np.all(np.isinf(loaded_cube.uncertainty.array))
+
+
+def test_celestial_wcs_extra_coords_and_replace(sample_ndcube):
+    cube = sample_ndcube((10, 10))
+    celestial_wcs = get_celestial_wcs(cube)
+
+    assert type(cube) is NDCube
+    assert celestial_wcs is not None
+    assert cube.extra_coords.mapping == (0, 1)
+
+    replaced_cube = replace_cube(cube, data=cube.data.copy())
+
+    assert get_celestial_wcs(replaced_cube) is celestial_wcs
 
 
 def test_check_outliers(sample_ndcube):

@@ -9,11 +9,11 @@ import numpy as np
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 from sunpy.sun import constants
 
 from punchbowl.data import load_ndcube_from_fits
 from punchbowl.data.meta import NormalizedMetadata
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_flow
 
 
@@ -48,7 +48,7 @@ def calc_ylims(ycen_band_rs: np.ndarray, r_band_width: float, arcsec_per_px: flo
     return [ylo_band_idx, yhi_band_idx]
 
 
-def preprocess_image(data: PUNCHCube,
+def preprocess_image(data: NDCube,
                      max_radius_px: int,
                      num_azimuth_bins: int,
                      az_bin: int,
@@ -58,8 +58,8 @@ def preprocess_image(data: PUNCHCube,
 
     Parameters
     ----------
-    data: PUNCHCube
-        Input data PUNCHCube
+    data: NDCube
+        Input data NDCube
 
     max_radius_px : int
         Maximum radius to include for polar remapping
@@ -387,7 +387,7 @@ def process_corr(files: list, arcsec_per_px:float, expected_kps_windspeed: float
     return avg_speeds, sigmas
 
 
-def plot_flow_map(filename: str | None, data: PUNCHCube, cmap: str = "magma") -> None:
+def plot_flow_map(filename: str | None, data: NDCube, cmap: str = "magma") -> None:
     """
     Plot polar maps of the radial flows.
 
@@ -396,8 +396,8 @@ def plot_flow_map(filename: str | None, data: PUNCHCube, cmap: str = "magma") ->
     filename: str
         Output plot filename. If None, the figure is not saved out.
 
-    data: PUNCHCube
-        Flow tracking data PUNCHCube
+    data: NDCube
+        Flow tracking data NDCube
 
     cmap : str, optional
         Colormap for the plot (default is 'magma')
@@ -463,7 +463,7 @@ def track_velocity(files: list[str],
                    az_bin: int = 4,
                    velocity_azimuth_bins: int = 36,
                    ycens: np.ndarray | None = None,
-                   rbands: list[int] | None = None) -> PUNCHCube:
+                   rbands: list[int] | None = None) -> NDCube:
     """
     Generate velocity map using flow tracking.
 
@@ -513,7 +513,7 @@ def track_velocity(files: list[str],
 
     Returns
     -------
-    ndcube.PUNCHCube
+    ndcube.NDCube
         The generated velocity map
 
     """
@@ -573,7 +573,7 @@ def track_velocity(files: list[str],
     wcs.wcs.cname = "solar radii", "azimuth"
     wcs.array_shape = avg_speeds.shape
 
-    return PUNCHCube(data = avg_speeds,
+    return NDCube(data = avg_speeds,
                   uncertainty=StdDevUncertainty(sigmas),
                   meta = output_meta,
                   wcs = wcs)

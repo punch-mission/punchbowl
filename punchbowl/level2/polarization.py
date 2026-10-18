@@ -1,33 +1,33 @@
 
 import astropy.units as u
 import solpolpy
-from ndcube import NDCollection
+from ndcube import NDCollection, NDCube
 
-from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.data.cube import replace_cube
 from punchbowl.prefect import get_logger, punch_task
 
 
-def resolve_polarization(data_list: list[PUNCHCube], outsys: str = "mzpsolar") -> list[PUNCHCube]:
+def resolve_polarization(data_list: list[NDCube], outsys: str = "mzpsolar") -> list[NDCube]:
     """
     Take a set of input data in the camera MZP frame and convert to the solar MZP frame.
 
     Parameters
     ----------
-    data_list : List[PUNCHCube]
-        List of PUNCHCube objects on which to resolve polarization
+    data_list : List[NDCube]
+        List of NDCube objects on which to resolve polarization
     outsys: str
         The polarization system to resolve into
 
     Returns
     -------
-    List[PUNCHCube]
+    List[NDCube]
         modified version of the input with polarization resolved
 
     """
     # Unpack data into a NDCollection object
     data_dictionary = list(zip(["M", "Z", "P"], data_list, strict=False))
     input_collection = NDCollection(data_dictionary)
-    data_collection = NDCollection([(k, PUNCHCube(data=input_collection[k].data,
+    data_collection = NDCollection([(k, NDCube(data=input_collection[k].data,
                                  wcs=input_collection[k].wcs,
                                  meta={"POLAR": input_collection[k].meta["POLAR"].value * u.degree,
                                        "POLAROFF": 90, #TODO: Update this before reprocessing all L0
@@ -41,25 +41,25 @@ def resolve_polarization(data_list: list[PUNCHCube], outsys: str = "mzpsolar") -
         resolved_cube = resolved_data_collection[key]
         source_cube = input_collection[key]
         source_cube.meta["POLARREF"] = resolved_cube.meta["POLARREF"]
-        cube = source_cube.replace(data=resolved_cube.data, mask=resolved_cube.mask)
+        cube = replace_cube(source_cube, data=resolved_cube.data, mask=resolved_cube.mask)
         out.append(cube)
 
     return out
 
 
 @punch_task
-def resolve_polarization_task(data_list: list[PUNCHCube | None]) -> list[PUNCHCube | None]:
+def resolve_polarization_task(data_list: list[NDCube | None]) -> list[NDCube | None]:
     """
     Prefect task for polarization resolving.
 
     Parameters
     ----------
-    data_list : List[PUNCHCube]
-        List of PUNCHCube objects on which to resolve polarization
+    data_list : List[NDCube]
+        List of NDCube objects on which to resolve polarization
 
     Returns
     -------
-    List[PUNCHCube]
+    List[NDCube]
         modified version of the input with polarization resolved
 
     """

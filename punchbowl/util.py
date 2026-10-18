@@ -14,13 +14,13 @@ import numpy as np
 import threadpoolctl
 from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
+from ndcube import NDCube
 from numpy.typing import ArrayLike
 from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve2d
 
 from punchbowl.constants import N_ROLLS_PER_DAY
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning
 from punchbowl.prefect import punch_task
 
@@ -52,7 +52,7 @@ def load_mask_file(path: str) -> np.ndarray:
 
 
 @punch_task
-def output_image_task(data: PUNCHCube,
+def output_image_task(data: NDCube,
                       output_filename: str,
                       skip_wcs_conversion: bool = False) -> None:
     """
@@ -60,7 +60,7 @@ def output_image_task(data: PUNCHCube,
 
     Parameters
     ----------
-    data : PUNCHCube
+    data : NDCube
         data that is to be written
     output_filename : str
         where to write the file out
@@ -80,7 +80,7 @@ def output_image_task(data: PUNCHCube,
 
 @punch_task(tags=["image_loader"])
 def load_image_task(input_filename: str, include_provenance: bool = True, include_uncertainty: bool = True,
-                    dtype: type = float) -> PUNCHCube:
+                    dtype: type = float) -> NDCube:
     """
     Prefect task to load data for processing.
 
@@ -97,7 +97,7 @@ def load_image_task(input_filename: str, include_provenance: bool = True, includ
 
     Returns
     -------
-    PUNCHCube
+    NDCube
         loaded version of the image
 
     """
@@ -400,7 +400,7 @@ def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 
     return out_array
 
 
-def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_time: datetime, # noqa: C901
+def interpolate_data(data_before: NDCube, data_after:NDCube, reference_time: datetime, # noqa: C901
                      time_key: str = "DATE-OBS", allow_extrapolation: bool = False, and_uncertainty: bool = False,
                      infill_nans: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """
@@ -408,9 +408,9 @@ def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_tim
 
     Parameters
     ----------
-    data_before : PUNCHCube
+    data_before : NDCube
         The "before" image to interpolate from
-    data_after : PUNCHCube
+    data_after : NDCube
         The "after" image to interpolate from
     reference_time : datetime
         The time at which to interpolate
@@ -475,8 +475,8 @@ def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_tim
         return data_interpolated, uncert_interpolated
     return data_interpolated
 
-def find_first_existing_file(inputs: list[PUNCHCube]) -> PUNCHCube | None:
-    """Find the first cube that's not None in a list of PUNCHCubes."""
+def find_first_existing_file(inputs: list[NDCube]) -> NDCube | None:
+    """Find the first cube that's not None in a list of NDCubes."""
     for cube in inputs:
         if cube is not None:
             return cube
@@ -484,26 +484,26 @@ def find_first_existing_file(inputs: list[PUNCHCube]) -> PUNCHCube | None:
     raise RuntimeError(msg)
 
 
-def get_dateobs(file: str | PUNCHCube) -> datetime:
-    """Convert file path or PUNCHCube to date_obs."""
-    if isinstance(file, PUNCHCube):
+def get_dateobs(file: str | NDCube) -> datetime:
+    """Convert file path or NDCube to date_obs."""
+    if isinstance(file, NDCube):
         return file.meta.datetime
     date = file.split("_")[-2]
     return datetime.strptime(date, "%Y%m%d%H%M%S") # noqa: DTZ007
 
 
-def get_polstate(file: str | PUNCHCube) -> str:
-    """Convert file path or PUNCHCube to date_obs."""
-    if isinstance(file, PUNCHCube):
+def get_polstate(file: str | NDCube) -> str:
+    """Convert file path or NDCube to date_obs."""
+    if isinstance(file, NDCube):
         return file.meta["TYPECODE"].value[1]
     typecode = file.split("_")[-3]
     return typecode[1]
 
 
-def bundle_matched_mzp(m_cubes: list[PUNCHCube | str],
-                       z_cubes: list[PUNCHCube | str] | None = None,
-                       p_cubes: list[PUNCHCube | str] | None = None,
-                       threshold: float = 75.0) -> list[tuple[PUNCHCube | str, PUNCHCube | str, PUNCHCube | str]]:
+def bundle_matched_mzp(m_cubes: list[NDCube | str],
+                       z_cubes: list[NDCube | str] | None = None,
+                       p_cubes: list[NDCube | str] | None = None,
+                       threshold: float = 75.0) -> list[tuple[NDCube | str, NDCube | str, NDCube | str]]:
     """Search and bundle MZP triplets closest in time."""
     if z_cubes is None:
         cubes = m_cubes
@@ -623,8 +623,8 @@ def inpaint_nans(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
     return image
 
 
-def compute_tb(data: PUNCHCube | np.ndarray) -> np.ndarray:
-    """Compute total brightness from input PUNCHCube or 3D data array of shape (MZP, ...)."""
+def compute_tb(data: NDCube | np.ndarray) -> np.ndarray:
+    """Compute total brightness from input NDCube or 3D data array of shape (MZP, ...)."""
     if isinstance(data, np.ndarray):
         return 2/3 * np.sum(data, axis=0)
 
@@ -885,13 +885,13 @@ def fname_to_utime(fname: str) -> int:
     raise ValueError
 
 
-def cube_to_utime(cube: PUNCHCube) -> int:
+def cube_to_utime(cube: NDCube) -> int:
     """
-    Get a Unix timestamp corresponding to the DATE-OBS value of a PUNCHCube.
+    Get a Unix timestamp corresponding to the DATE-OBS value of a NDCube.
 
     Parameters
     ----------
-    cube : PUNCHCube
+    cube : NDCube
         A PUNCH data cube.
 
     Returns
@@ -925,14 +925,14 @@ def phase_in_window(fname: str) -> int:
     return int(((utime - fiducial_utime))/60) % 8
 
 
-def phase_in_window_from_cube(cube: PUNCHCube) -> int:
+def phase_in_window_from_cube(cube: NDCube) -> int:
     """
-    Get the roll-position phase of a given PUNCHCube.
+    Get the roll-position phase of a given NDCube.
 
     Parameters
     ----------
-    cube : PUNCHCube
-        A PUNCHCube.
+    cube : NDCube
+        A NDCube.
 
     Returns
     -------

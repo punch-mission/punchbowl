@@ -1,10 +1,10 @@
 import os
 
 import numpy as np
+from ndcube import NDCube
 from numpy.lib.stride_tricks import as_strided
 
 from punchbowl.data import load_ndcube_from_fits
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_task
 
 
@@ -92,11 +92,11 @@ def median_correct(
     return output_data_array
 
 
-def remove_deficient_pixels(data: PUNCHCube,
+def remove_deficient_pixels(data: NDCube,
                             deficient_pixels: np.ndarray,
                             required_good_count: int = 3,
                             max_window_size: int = 10,
-                            method: str = "median") -> PUNCHCube:
+                            method: str = "median") -> NDCube:
     """Remove deficient pixels."""
     # check dimensions match
     if data.data.shape != deficient_pixels.shape:
@@ -137,12 +137,12 @@ def remove_deficient_pixels(data: PUNCHCube,
 
 @punch_task
 def remove_deficient_pixels_task(
-    data: PUNCHCube,
+    data: NDCube,
     deficient_pixel_map_path: str | None,
     required_good_count: int = 3,
     max_window_size: int = 10,
     method: str = "median",
-) -> PUNCHCube:
+) -> NDCube:
     """
     Subtracts a deficient pixel map from an input data frame.
 
@@ -151,7 +151,7 @@ def remove_deficient_pixels_task(
 
     Parameters
     ----------
-    data : PUNCHCube
+    data : NDCube
         A PUNCHobject data frame to be background subtracted
 
     deficient_pixel_map_path : Optional[str]
@@ -170,7 +170,7 @@ def remove_deficient_pixels_task(
 
     Returns
     -------
-    PUNCHCube
+    NDCube
         A background subtracted data frame
 
     """
@@ -193,14 +193,14 @@ def remove_deficient_pixels_task(
     return output_object
 
 
-def create_all_valid_deficient_pixel_map(data: PUNCHCube) -> np.ndarray:
+def create_all_valid_deficient_pixel_map(data: NDCube) -> np.ndarray:
     """
     Create valid deficient pixel map.
 
     Parameters
     ----------
-    data: PUNCHCube
-        PUNCHCube being modified
+    data: NDCube
+        NDCube being modified
 
     Returns
     -------

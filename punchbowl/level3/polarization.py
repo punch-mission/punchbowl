@@ -2,23 +2,22 @@ from datetime import UTC, datetime
 
 import astropy.units as u
 import numpy as np
-from ndcube import NDCollection
+from ndcube import NDCollection, NDCube
 from solpolpy import resolve
 
 from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import get_logger, punch_task
 
 
 @punch_task
 def convert_polarization(
-        input_data: PUNCHCube) -> PUNCHCube:
+        input_data: NDCube) -> NDCube:
     """Convert polarization from MZP to tBpB."""
     logger = get_logger()
     logger.info("convert2tbpb started")
 
     collection_contents = [(label,
-                            PUNCHCube(data=input_data[i].data,
+                            NDCube(data=input_data[i].data,
                                    wcs=input_data.wcs.dropaxis(2),
                                    meta={"POLAR": angle}))
                            for (label, i, angle) in zip(["M", "Z", "P"],
@@ -39,7 +38,7 @@ def convert_polarization(
     output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
     output_meta["DATE-BEG"] = input_data.meta["DATE-BEG"].value
     output_meta["DATE-END"] = input_data.meta["DATE-END"].value
-    output = PUNCHCube(data=new_data, wcs=new_wcs, meta=output_meta)
+    output = NDCube(data=new_data, wcs=new_wcs, meta=output_meta)
     output = set_spacecraft_location_to_earth(output)
 
     logger.info("convert2tbpb finished")

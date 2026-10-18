@@ -14,14 +14,15 @@ import scipy.signal
 from astropy.coordinates import get_body
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
+from ndcube import NDCube
 from scipy.interpolate import RegularGridInterpolator
 from skimage.restoration import inpaint_biharmonic
 from sklearn.decomposition import PCA
 
 from punchbowl.auto.control.util import batched
 from punchbowl.data import NormalizedMetadata, get_base_file_name, load_ndcube_from_fits
+from punchbowl.data.cube import get_celestial_wcs
 from punchbowl.data.meta import check_moon_in_fov
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import get_logger, punch_task
 from punchbowl.util import (
     ShmPickleableNDArray,
@@ -38,7 +39,7 @@ from punchbowl.util import (
 def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str | None, ref_date: str,
                n_components: int = 100, n_strides: int = 8, downsample_factor: int = 2, n_loaders: int = 4,
                n_workers: int = 20,
-               ) -> list[PUNCHCube]:
+               ) -> list[NDCube]:
     """
     Run PCA-based NFI filtering.
 
@@ -114,7 +115,7 @@ def pca_filter(input_files: list[str], context_files: list[str], nfi_mask: str |
 
     Returns
     -------
-    output_data: list[PUNCHCube]
+    output_data: list[NDCube]
         The resulting data cubes
 
     """
@@ -223,7 +224,7 @@ def _generate_output_cubes(corrected_frames: np.ndarray, masks: np.ndarray, inst
     new_meta["PCANCOMP"] = n_components
     new_meta["PCADWNSP"] = downsample_factor
     new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
-    pca_cube = PUNCHCube(data=pca_components, meta=new_meta, wcs=target_frame)
+    pca_cube = NDCube(data=pca_components, meta=new_meta, wcs=target_frame)
 
     output_cubes.append(pca_cube)
 
@@ -234,7 +235,7 @@ def _generate_output_cubes(corrected_frames: np.ndarray, masks: np.ndarray, inst
     new_meta["DATE-BEG"] = min(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     new_meta["DATE-END"] = max(dates).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     new_meta["FILEVRSN"] = metas[0]["FILEVRSN"].value
-    bg_cube = PUNCHCube(data=inst_frame_background, meta=new_meta, wcs=target_frame)
+    bg_cube = NDCube(data=inst_frame_background, meta=new_meta, wcs=target_frame)
     output_cubes.append(bg_cube)
 
     for i, path in enumerate(loaded_paths):
@@ -263,7 +264,7 @@ def _generate_output_cubes(corrected_frames: np.ndarray, masks: np.ndarray, inst
             new_meta.provenance = [os.path.basename(path)]
 
             uncertainty = np.where(masks[i] < 0.5, np.inf, 1e-13)
-            cube = PUNCHCube(data=corrected_frames[i], meta=new_meta, wcs=target_frame,
+            cube = NDCube(data=corrected_frames[i], meta=new_meta, wcs=target_frame,
                              uncertainty=StdDevUncertainty(uncertainty))
             output_cubes.append(cube)
     return output_cubes
@@ -382,7 +383,7 @@ def _load_one_file(path: str, downsample_factor: int,
         saturation_mask = saturation_mask.reshape((data.shape[0] // downsample_factor, downsample_factor,
                                                    data.shape[1] // downsample_factor, downsample_factor),
                                                   ).any(axis=(1, 3))
-    return cube.meta, cube.wcs, cube.celestial_wcs, path, data, saturation_mask
+    return cube.meta, cube.wcs, get_celestial_wcs(cube), path, data, saturation_mask
 
 
 def load_files(files: list[str], n_workers: int, downsample_factor: int,

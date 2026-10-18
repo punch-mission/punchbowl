@@ -7,11 +7,11 @@ import numpy as np
 import pytest
 from astropy.io import fits
 from astropy.wcs import WCS
+from ndcube import NDCube
 from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 
 from punchbowl.data import NormalizedMetadata, punch_io, write_ndcube_to_fits
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.data.wcs import calculate_pc_matrix
 from punchbowl.level1.stray_light import estimate_stray_light, remove_stray_light_task
@@ -30,7 +30,7 @@ def test_no_straylight_file(sample_ndcube) -> None:
 
     with disable_run_logger():
         corrected_punchdata = remove_stray_light_task.fn(sample_data, straylight_before_filename, straylight_after_filename)
-        assert isinstance(corrected_punchdata, PUNCHCube)
+        assert isinstance(corrected_punchdata, NDCube)
         assert corrected_punchdata.meta.history[0].comment == 'Stray light correction skipped'
 
 
@@ -76,7 +76,7 @@ def dummy_fits_paths(tmp_path: Path):
 
             meta = NormalizedMetadata.load_template(product_code=f"P{prefix.upper()}1", level="1")
             meta["DATE-OBS"] = f"2008-01-03 0{i}:57:00"
-            cube = PUNCHCube(data=arr, uncertainty=None, wcs=wcs, meta=meta)
+            cube = NDCube(data=arr, uncertainty=None, wcs=wcs, meta=meta)
             write_ndcube_to_fits(cube, str(path))
 
             out_lists[prefix].append(str(path))

@@ -1,4 +1,5 @@
 import numpy as np
+from ndcube import NDCube
 from scipy.ndimage import zoom
 
 from punchbowl.constants import (
@@ -7,7 +8,6 @@ from punchbowl.constants import (
     GLINT_SPHERE2_CENTER,
     GLINT_SPHERE_RADIUS,
 )
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.nfi_modules.fwdmats import generate_nfi_forward_matrices
 from punchbowl.level1.nfi_modules.reconstruct import reconstruct_nfi_straylight
 from punchbowl.level1.nfi_modules.util import bindown
@@ -35,15 +35,15 @@ def get_bin_down_crval(crval, cdelt, bin_factor: int):
     return (-crval / cdelt) / bin_factor
 
 
-def get_fwd_mat_inputs(datacube: PUNCHCube, bin_factor: int):
+def get_fwd_mat_inputs(datacube: NDCube, bin_factor: int):
     """
     Calculate and return all of the inputs needed for generating the forward matrices for NFI.
 
     Specifically this returns all the parameters needed as input for the `generate_nfi_fwdmats`
     function.
 
-    This calculates the appropriately binned down reference pixel coordinates ("crval" in PUNCHCube wcs), and saves the
-    rotation angle ("crota" in PUNCHCube meta data) in radians.
+    This calculates the appropriately binned down reference pixel coordinates ("crval" in NDCube wcs), and saves the
+    rotation angle ("crota" in NDCube meta data) in radians.
 
     Parameters
     ----------
@@ -136,7 +136,7 @@ def generate_glint_mask(
     return mask
 
 
-def get_solver_inputs(datacube: PUNCHCube, glint_mask: np.ndarray, bindown_shape: tuple = (512, 512)):
+def get_solver_inputs(datacube: NDCube, glint_mask: np.ndarray, bindown_shape: tuple = (512, 512)):
     """
     Calculate the inputs needed to create the light solutions for NFI, and appropriately bin down to desired
     size.
@@ -179,7 +179,7 @@ def get_solver_inputs(datacube: PUNCHCube, glint_mask: np.ndarray, bindown_shape
 
 
 def remove_nfi_stray_light(
-    datacube: PUNCHCube,
+    datacube: NDCube,
     bin_factor: int = 4,
     fwd_mat_smooth_radius: int = 0,
     fwd_mat_nstray_kernels: int | None = None,
@@ -195,11 +195,11 @@ def remove_nfi_stray_light(
     thread_count: int = 5,
 ):
     """
-    Remove the dynamic NFI stray light from a given PUNCHCube image.
+    Remove the dynamic NFI stray light from a given NDCube image.
 
     Parameters
     ----------
-    datacube: PUNCHCube
+    datacube: NDCube
         Input NFI images.
     bin_factor: int
         Binning down factor
@@ -259,8 +259,8 @@ def remove_nfi_stray_light(
 
     Returns
     -------
-    datacube: PUNCHCube
-        The final stray light subtracted NFI image as a PUNCHCube.
+    datacube: NDCube
+        The final stray light subtracted NFI image as a NDCube.
     """
     # Generate forward matrices (kernels)
     x_offsets, y_offsets, crota_radians = get_fwd_mat_inputs(datacube=datacube, bin_factor=bin_factor)

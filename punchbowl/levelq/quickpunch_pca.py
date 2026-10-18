@@ -6,10 +6,10 @@ from concurrent.futures import ProcessPoolExecutor
 import numba
 import numpy as np
 from astropy.nddata import StdDevUncertainty
+from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits
 from punchbowl.data.meta import check_moon_in_fov
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2 import nfi_pca
 from punchbowl.prefect import get_logger, punch_task
 from punchbowl.util import (
@@ -34,7 +34,7 @@ def quickpunch_pca_filter(input_files: list[str],
                           zfilter_margin: int,
                           zfilter_index: float,
                           n_workers: int,
-                          n_loaders: int) -> list[PUNCHCube]:
+                          n_loaders: int) -> list[NDCube]:
     """
     Run the QuickPUNCH NFI PCA flow.
 
@@ -88,7 +88,7 @@ def quickpunch_pca_filter(input_files: list[str],
 
     Returns
     -------
-    list[PUNCHCube]
+    list[NDCube]
         The output image cubes
 
     """
@@ -235,7 +235,7 @@ def quickpunch_pca_filter(input_files: list[str],
 
                 uncertainty = np.full(output_array[i].shape, 1e-13)
                 uncertainty[masks[i] < 0.5] = np.inf
-                cube = PUNCHCube(data=output_array[i], meta=new_meta, wcs=target_frame,
+                cube = NDCube(data=output_array[i], meta=new_meta, wcs=target_frame,
                                  uncertainty=StdDevUncertainty(uncertainty))
                 output_cubes.append(cube)
 
@@ -244,7 +244,7 @@ def quickpunch_pca_filter(input_files: list[str],
 
 
 def subtract_fcorona_models(data_cube: np.ndarray, metas: list[NormalizedMetadata],
-                            first_helio_frame_background: PUNCHCube, second_helio_frame_background: PUNCHCube) -> None:
+                            first_helio_frame_background: NDCube, second_helio_frame_background: NDCube) -> None:
     """
     Subtract f-corona models in-place.
 
@@ -254,9 +254,9 @@ def subtract_fcorona_models(data_cube: np.ndarray, metas: list[NormalizedMetadat
         The stack of images to be subtracted
     metas : list[NormalizedMetadata]
         The image metadata
-    first_helio_frame_background : PUNCHCube
+    first_helio_frame_background : NDCube
         The first background to interpolate or extrapolate from
-    second_helio_frame_background : PUNCHCube
+    second_helio_frame_background : NDCube
         The second background to interpolate or extrapolate from
 
     """

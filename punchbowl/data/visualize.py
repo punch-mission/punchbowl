@@ -10,11 +10,11 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, LinearSegmentedColormap, Normalize, PowerNorm
 from matplotlib.figure import Figure
+from ndcube import NDCube
 from skimage.color import lab2rgb
 from tqdm.auto import tqdm
 
 from punchbowl.data import punch_io
-from punchbowl.data.punchcube import PUNCHCube
 
 
 def _cmap_punch() -> LinearSegmentedColormap:
@@ -124,7 +124,7 @@ def generate_mzp_to_rgb_map(data_cube: np.ndarray,
     return rgb_sat, color_image
 
 
-def _render_frame(args: tuple[int, Path | PUNCHCube, str, dict]) -> Path:
+def _render_frame(args: tuple[int, Path | NDCube, str, dict]) -> Path:
     """Frame rendering helper function."""
     i, data, tmpdir, kwargs = args
     frame_path = Path(tmpdir) / f"frame_{i:07d}.png"
@@ -133,7 +133,7 @@ def _render_frame(args: tuple[int, Path | PUNCHCube, str, dict]) -> Path:
 
 
 def animate_punch(
-    data_list: list[Path | PUNCHCube],
+    data_list: list[Path | NDCube],
     output_path: str | Path,
     fps: int = 10,
     n_jobs: int | None = None,
@@ -146,7 +146,7 @@ def animate_punch(
 
     Parameters
     ----------
-    data_list : list of Path or PUNCHCube
+    data_list : list of Path or NDCube
         PUNCH data to animate
     output_path : str or Path
         Output path to write generated animation (.mp4)
@@ -195,7 +195,7 @@ def animate_punch(
 
 
 def plot_punch(  # noqa: C901
-    data: Path | PUNCHCube,
+    data: Path | NDCube,
     layer: int = 0,
     cmap: str | Colormap | None = cmap_punch,
     norm: Normalize | None = PowerNorm,
@@ -212,18 +212,18 @@ def plot_punch(  # noqa: C901
     label_satellites: bool = False,
     colorbar: bool = True,
     colorbar_label: str = "Mean Solar Brightness (MSB)",
-    persistence_array: np.ndarray | PUNCHCube | None = None,
+    persistence_array: np.ndarray | NDCube | None = None,
     trim_edge: float | tuple[float, float] | list[float, float] | None = None,
     save_path: str | Path | None = None,
     dpi: int = 300,
     ) -> tuple[Figure, Axes]:
     """
-    Plot a PUNCH PUNCHCube data object.
+    Plot a PUNCH NDCube data object.
 
     Parameters
     ----------
-    data : Path | PUNCHCube
-        PUNCH data to plot, either a filepath or a PUNCHCube
+    data : Path | NDCube
+        PUNCH data to plot, either a filepath or a NDCube
     layer : int
         Data layer to plot when using three-dimensional data cubes
     cmap : str or Colormap, optional
@@ -256,7 +256,7 @@ def plot_punch(  # noqa: C901
         Toggle for plotting colorbar
     colorbar_label : str, optional
         Label to use for the colorbar
-    persistence_array : np.ndarray or PUNCHCube or None
+    persistence_array : np.ndarray or NDCube or None
         When not None, data is plotted where valid atop this existing array.
     trim_edge : float, tuple[float, float], list[float, float], None
         Option to trim the edges of low-noise mosaic products to the specified fractional radial distance.
@@ -272,12 +272,12 @@ def plot_punch(  # noqa: C901
     tuple of (figure, axes)
 
     """
-    if isinstance(data, PUNCHCube):
+    if isinstance(data, NDCube):
         cube = data
     elif isinstance(data, Path | str):
         cube = punch_io.load_ndcube_from_fits(data)
     else:
-        msg = "Provide a valid file path or PUNCHCube for plotting."
+        msg = "Provide a valid file path or NDCube for plotting."
         raise TypeError(msg)
 
     if persistence_array is not None:
@@ -285,7 +285,7 @@ def plot_punch(  # noqa: C901
 
     if isinstance(persistence_array, np.ndarray):
         cube.data[mask] = persistence_array[mask]
-    elif isinstance(persistence_array, PUNCHCube):
+    elif isinstance(persistence_array, NDCube):
         cube.data[mask] = persistence_array.data[mask]
 
     norm = norm(gamma, vmin=vmin, vmax=vmax)

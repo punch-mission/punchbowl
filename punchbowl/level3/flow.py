@@ -4,12 +4,13 @@ from datetime import UTC, datetime
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
+from ndcube import NDCube
 
 from punchbowl.auto.control.cache_layer.loader_base_class import DataLoader
 from punchbowl.data import load_ndcube_from_fits, load_trefoil_wcs
+from punchbowl.data.cube import replace_cube
 from punchbowl.data.meta import MetaField, NormalizedMetadata, check_moon_in_fov, set_spacecraft_location_to_earth
 from punchbowl.data.punch_io import encode_outliers
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level2.finalize import finalize_output
 from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
 from punchbowl.level2.resample import reproject_cube
@@ -23,11 +24,11 @@ from punchbowl.util import load_image_task, make_circular_mask, output_image_tas
 
 
 @punch_flow
-def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
+def level3_NFI_flow(data_list: list[str | NDCube],  # noqa: N802
                     before_f_corona_model_path: str | DataLoader,
                     after_f_corona_model_path: str | DataLoader,
                     inner_mask_radius: float,
-                    outer_mask_radius: float) -> list[PUNCHCube]:
+                    outer_mask_radius: float) -> list[NDCube]:
     """
     Run Level 3 NFI F-corona subtraction and reprojection flow.
 
@@ -36,7 +37,7 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
 
     Parameters
     ----------
-    data_list : list[str | PUNCHCube]
+    data_list : list[str | NDCube]
         The images to process
     before_f_corona_model_path : str | DataLoader
         The first F corona model
@@ -49,7 +50,7 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
 
     Returns
     -------
-    list[PUNCHCube]
+    list[NDCube]
         The output data cubes
 
     """
@@ -82,7 +83,7 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
         mosaic_data, mosaic_uncert = reproject_cube(cube, mosaic_wcs, mosaic_shape, rolloff_strength=0, rolloff_width=0)
         np.nan_to_num(mosaic_data, copy=False)
         np.nan_to_num(mosaic_uncert, copy=False, nan=np.inf)
-        mosaic_cube = PUNCHCube(data=mosaic_data, uncertainty=StdDevUncertainty(mosaic_uncert), wcs=mosaic_wcs,
+        mosaic_cube = NDCube(data=mosaic_data, uncertainty=StdDevUncertainty(mosaic_uncert), wcs=mosaic_wcs,
                                 meta=cube.meta)
         mosaic_cube.data *= mask
         mosaic_cube.uncertainty.array[~mask] = np.inf
@@ -108,7 +109,7 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
 
         new_meta.provenance = [cube.meta["FILENAME"].value]
 
-        cube = cube.replace(meta=new_meta) # noqa: PLW2901
+        cube = replace_cube(cube, meta=new_meta) # noqa: PLW2901
         output_cubes.append(cube)
 
         new_meta = NormalizedMetadata.load_template("XR4", "3")
@@ -127,7 +128,7 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
 
         new_meta.provenance = [mosaic_cube.meta["FILENAME"].value]
 
-        mosaic_cube = mosaic_cube.replace(meta=new_meta)
+        mosaic_cube = replace_cube(mosaic_cube, meta=new_meta)
         output_cubes.append(mosaic_cube)
 
     logger.info("ending level 3 NFI flow")
@@ -136,10 +137,10 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
 
 
 @punch_flow
-def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
+def level3_PIM_CIM_flow(data_list: list[str] | list[NDCube],  # noqa: N802
                         before_f_corona_model_paths: list[str | DataLoader],
                         after_f_corona_model_paths: list[str | DataLoader],
-                        output_filename: str | None = None) -> list[PUNCHCube]:
+                        output_filename: str | None = None) -> list[NDCube]:
     """Level 3 PIM/CIM flow."""
     logger = get_logger()
 
@@ -155,7 +156,7 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
         data[..., cropy[0]:cropy[1], cropx[0]:cropx[1]] = cube.data
         uncertainty = np.full(data.shape, np.inf)
         uncertainty[..., cropy[0]:cropy[1], cropx[0]:cropx[1]] = cube.uncertainty.array
-        new_cube = cube.replace(data=data, uncertainty=uncertainty)
+        new_cube = replace_cube(cube, data=data, uncertainty=uncertainty)
         data_list[i] = new_cube
     polarized = data_list[0].meta["TYPECODE"].value[1] != "R"
     new_type = "PIM" if polarized else "CIM"
@@ -182,7 +183,7 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                 # The existing meta doesn't have a POLAR key. Hack: just grab a section and cram in the new value.
                 section = next(iter(m._contents.values())) # noqa: SLF001
                 section["POLAR"] = MetaField("POLAR", "", angle, int, True, True, 0)
-                merge_layers.append(PUNCHCube(
+                merge_layers.append(NDCube(
                     d.data[i],
                     meta=m,
                     wcs=d.wcs,
@@ -214,21 +215,21 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
 
 
 @punch_flow
-def level3_core_flow(data_list: list[str | PUNCHCube],
-                     nfi_list: list[str | PUNCHCube | None],
+def level3_core_flow(data_list: list[str | NDCube],
+                     nfi_list: list[str | NDCube | None],
                      before_starfield_path: str | None,
                      after_starfield_path: str | None,
                      nfi_wfi_divide_radius: float | None,
                      nfi_scale_factor: float = 1,
-                     output_filename: str | None = None) -> list[PUNCHCube]:
+                     output_filename: str | None = None) -> list[NDCube]:
     """
     Level 3 CTM/PTM flow.
 
     Parameters
     ----------
-    data_list : list[str | PUNCHCube]
+    data_list : list[str | NDCube]
         The input data files---*IMs to process into *TMs
-    nfi_list : list[str | PUNCHCube | None]
+    nfi_list : list[str | NDCube | None]
         NFI files, if any, to insert in the mosaics.
     before_starfield_path : str | None
         The path to a starfield model before the observations
@@ -244,7 +245,7 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
 
     Returns
     -------
-    out_data_list : list[PUNCHCube]
+    out_data_list : list[NDCube]
         The *TM cubes produced by this flow
 
     """
@@ -300,7 +301,7 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
                     "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
                     "CTRXNFI4", "CTRYNFI4"]:
             out_meta[key] = wfi_cube.meta[key].value
-        output_data = wfi_cube.replace(meta=out_meta)
+        output_data = replace_cube(wfi_cube, meta=out_meta)
         output_data = set_spacecraft_location_to_earth(output_data)
         out_data_list.append(output_data)
 
@@ -313,12 +314,12 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
 
 
 @punch_flow
-def generate_level3_low_noise_flow(data_list: list[str | PUNCHCube],
-                                   nfi_list: list[str | PUNCHCube] | None,
+def generate_level3_low_noise_flow(data_list: list[str | NDCube],
+                                   nfi_list: list[str | NDCube] | None,
                                    output_filename: str | None = None,
                                    nfi_wfi_divide_radius: float | None = None,
                                    nfi_scale_factor: float = 1,
-                                   reference_time: str | datetime | None = None) -> list[PUNCHCube]:
+                                   reference_time: str | datetime | None = None) -> list[NDCube]:
     """Generate low noise products."""
     logger = get_logger()
 
@@ -343,7 +344,7 @@ def generate_level3_velocity_flow(files: list[str],
                                   n_ofs: int = 151,
                                   ycens: np.ndarray | None = None,
                                   rbands: list[int] | None = None,
-                                  output_filename: str | None = None) -> list[PUNCHCube]:
+                                  output_filename: str | None = None) -> list[NDCube]:
     """
     Generate level 3 flow tracking velocity product.
 
@@ -366,7 +367,7 @@ def generate_level3_velocity_flow(files: list[str],
 
     Returns
     -------
-    list[PUNCHCube]
+    list[NDCube]
         List of generated velocity maps
 
     """

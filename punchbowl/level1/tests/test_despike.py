@@ -6,9 +6,9 @@ import pytest
 from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from astropy.wcs.utils import add_stokes_axis_to_wcs
+from ndcube import NDCube
 
 from punchbowl.data.meta import NormalizedMetadata
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.despike import despike_polseq, despike_polseq_task
 
 
@@ -37,7 +37,7 @@ def sample_ndcube_for_despike():
         meta["OFFSET"] = 100
         meta["EXPTIME"] = 49
         meta["DSATVAL"] = 100
-        return PUNCHCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
+        return NDCube(data=data, uncertainty=uncertainty, wcs=wcs, meta=meta)
     return _sample_ndcube
 
 @pytest.mark.parametrize("num_neighbors", [2, 3, 4, 5, 6])
@@ -78,7 +78,7 @@ def test_despike_polseq_task(sample_ndcube_for_despike):
     sample_neighbors = [sample_ndcube_for_despike(n, code="PP3", level="0") for n in neighbors]
 
     despiked_data = despike_polseq_task.fn(sample_data, sample_neighbors)
-    assert(isinstance(despiked_data, PUNCHCube))
+    assert(isinstance(despiked_data, NDCube))
     assert(despiked_data.meta.history.most_recent().comment=="neighbor_count=6")
     assert(np.all(despiked_data.data <= 10))
 
@@ -88,7 +88,7 @@ def test_despike_polseq_task(sample_ndcube_for_despike):
     sample_data = sample_ndcube_for_despike(reference, code="PP3", level="0")
 
     undespiked_data = despike_polseq_task.fn(sample_data, [sample_neighbors[0]])
-    assert(isinstance(undespiked_data, PUNCHCube))
+    assert(isinstance(undespiked_data, NDCube))
     assert(undespiked_data.meta.history.most_recent().comment=="Incompatible neighbor count so no correction applied")
     assert(sample_data.data[30,20]==10)
     assert(undespiked_data.data[30,20]==10)

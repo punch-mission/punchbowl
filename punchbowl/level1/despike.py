@@ -1,10 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
+from ndcube import NDCube
 from scipy.ndimage import binary_dilation, gaussian_filter
 
 from punchbowl.data import load_ndcube_from_fits
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.deficient_pixel import mean_correct
 from punchbowl.level1.sqrt import decode_sqrt_data
 from punchbowl.prefect import get_logger, punch_task
@@ -12,11 +12,11 @@ from punchbowl.util import limit_threads
 
 
 def despike_polseq(
-        reference: PUNCHCube,
-        neighbors: list[PUNCHCube],
+        reference: NDCube,
+        neighbors: list[NDCube],
         filter_width: float=25.0,
         hpf_zscore_thresh: float=10.0,
-)->tuple[PUNCHCube, np.ndarray]:
+)->tuple[NDCube, np.ndarray]:
     """
     Remove cosmic ray spikes from a single polarization sequence of images.
 
@@ -28,10 +28,10 @@ def despike_polseq(
 
     Parameters
     ----------
-    reference : PUNCHCube
-        a PUNCHCube to correct for cosmic rays
-    neighbors : List[PUNCHCube]
-        a list of PUNCHCube objects representing a polarization image sequence, should not include the reference image
+    reference : NDCube
+        a NDCube to correct for cosmic rays
+    neighbors : List[NDCube]
+        a list of NDCube objects representing a polarization image sequence, should not include the reference image
     filter_width: float
         width of the gaussian filter used in created the high-pass-filtered image
     hpf_zscore_thresh: float
@@ -39,8 +39,8 @@ def despike_polseq(
 
     Returns
     -------
-    (PUNCHCube, np.ndarray)
-        a PUNCHCube with spikes replaced by the average of their neighbors,
+    (NDCube, np.ndarray)
+        a NDCube with spikes replaced by the average of their neighbors,
          and a list of spike locations for all neighbors
 
     """
@@ -105,19 +105,19 @@ def despike_polseq(
 
 
 @punch_task
-def despike_polseq_task(data_object: PUNCHCube,
-                        neighbors: list[PUNCHCube] | list[str],
+def despike_polseq_task(data_object: NDCube,
+                        neighbors: list[NDCube] | list[str],
                         filter_width: float=25.0,
                         hpf_zscore_thresh: float=10.0,
-                        max_workers: int | None = None)-> PUNCHCube:
+                        max_workers: int | None = None)-> NDCube:
     """
     Despike a polarization sequence of images using a simple statistical test.
 
     Parameters
     ----------
-    data_object : PUNCHCube
+    data_object : NDCube
         Image to be despiked.
-    neighbors : list[PUNCHCube]  | list[str]
+    neighbors : list[NDCube]  | list[str]
         Sequence of neighbor images from the same spacecraft and roll sequence to use in despiking.
     filter_width : float, optional
         width of the gaussian filter used to construct the high-pass-filtered image, in pixels.
@@ -128,7 +128,7 @@ def despike_polseq_task(data_object: PUNCHCube,
 
     Returns
     -------
-    PUNCHCube
+    NDCube
         Despiked cube.
 
     """

@@ -17,9 +17,9 @@ from astropy.wcs import WCS
 from dateutil.parser import parse as parse_datetime
 from lmfit import Parameters, minimize
 from lmfit.minimizer import MinimizerResult
+from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata, load_ndcube_from_fits, load_trefoil_wcs
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import (
     CantInterpolateWarning,
     IncorrectPolarizationStateError,
@@ -539,7 +539,7 @@ def _load_and_reproject(paths: str | tuple[str], target_wcs: WCS, data_destinati
 
     with warnings.catch_warnings(), np.errstate(all="ignore"):
         warnings.filterwarnings(action="ignore", message=".*failed to converge to the requested.*")
-        reproject_cube.fn(PUNCHCube(repro_input, meta=cubes[0].meta, wcs=wcs_cropped),
+        reproject_cube.fn(NDCube(repro_input, meta=cubes[0].meta, wcs=wcs_cropped),
                           target_wcs, repro_destination.shape,
                           rolloff_strength=0, rolloff_width=0,
                           output_array=repro_destination,
@@ -578,7 +578,7 @@ def _subtract_coronal_model(data_slice: np.ndarray, wcses: list[WCS], metas: lis
         cubes = []
         for i in range(data_slice.shape[0]):
             metas[i]["POLARREF"] = "Solar"
-            cubes.append(PUNCHCube(data=model[i], wcs=wcses[i][bottom_crop:], meta=metas[i]))
+            cubes.append(NDCube(data=model[i], wcs=wcses[i][bottom_crop:], meta=metas[i]))
         cubes = resolve_polarization(cubes, "mzpinstru")
         for i in range(len(cubes)):
             model[i] = cubes[i].data
@@ -733,7 +733,7 @@ def estimate_stray_light(filepaths: list[str],
                          image_mask_path: str | None = None,
                          make_plots_along_the_way: bool = False,
                          polarized: bool = False,
-                         num_workers: int | None = None) -> list[PUNCHCube]:
+                         num_workers: int | None = None) -> list[NDCube]:
     """Estimate the fixed stray light pattern using a percentile."""
     logger = get_logger()
     numba.set_num_threads(num_workers)
@@ -853,7 +853,7 @@ def estimate_stray_light(filepaths: list[str],
         wcs = valid_wcs[0]
         wcs.cpdis1 = None
         wcs.cpdis2 = None
-        out_cube = PUNCHCube(data=np.array(models_per_pol[i]), meta=meta, wcs=wcs,
+        out_cube = NDCube(data=np.array(models_per_pol[i]), meta=meta, wcs=wcs,
                           uncertainty=StdDevUncertainty(uncertainty[i]))
         out_cubes.append(out_cube)
 
@@ -861,9 +861,9 @@ def estimate_stray_light(filepaths: list[str],
 
 
 @punch_task
-def remove_stray_light_task(data_object: PUNCHCube, #noqa: C901
-                            stray_light_before_path: pathlib.Path | str | PUNCHCube | DataLoader,
-                            stray_light_after_path: pathlib.Path | str | PUNCHCube | DataLoader) -> PUNCHCube:
+def remove_stray_light_task(data_object: NDCube, #noqa: C901
+                            stray_light_before_path: pathlib.Path | str | NDCube | DataLoader,
+                            stray_light_after_path: pathlib.Path | str | NDCube | DataLoader) -> NDCube:
     """
     Prefect task to remove stray light from an image.
 
@@ -886,7 +886,7 @@ def remove_stray_light_task(data_object: PUNCHCube, #noqa: C901
 
     Parameters
     ----------
-    data_object : PUNCHCube
+    data_object : NDCube
         data to operate on
 
     stray_light_before_path: pathlib
@@ -897,7 +897,7 @@ def remove_stray_light_task(data_object: PUNCHCube, #noqa: C901
 
     Returns
     -------
-    PUNCHCube
+    NDCube
         modified version of the input with the stray light removed
 
     """
@@ -905,7 +905,7 @@ def remove_stray_light_task(data_object: PUNCHCube, #noqa: C901
         data_object.meta.history.add_now("LEVEL1-remove_stray_light", "Stray light correction skipped")
         return data_object
 
-    if isinstance(stray_light_before_path, PUNCHCube):
+    if isinstance(stray_light_before_path, NDCube):
         stray_light_before_model = stray_light_before_path
     elif isinstance(stray_light_before_path, DataLoader):
         stray_light_before_model = stray_light_before_path.load()
@@ -916,7 +916,7 @@ def remove_stray_light_task(data_object: PUNCHCube, #noqa: C901
             raise InvalidDataError(msg)
         stray_light_before_model = load_ndcube_from_fits(stray_light_before_path)
 
-    if isinstance(stray_light_after_path, PUNCHCube):
+    if isinstance(stray_light_after_path, NDCube):
         stray_light_after_model = stray_light_after_path
     elif isinstance(stray_light_after_path, DataLoader):
         stray_light_after_model = stray_light_after_path.load()
@@ -957,9 +957,9 @@ def remove_stray_light_task(data_object: PUNCHCube, #noqa: C901
                            + stray_light_before_model.data[after_bin] * fpos)
     after_at_orbit_pos = (stray_light_after_model.data[before_bin] * (1 - fpos)
                           + stray_light_after_model.data[after_bin] * fpos)
-    stray_light_before_model = PUNCHCube(
+    stray_light_before_model = NDCube(
             data=before_at_orbit_pos, meta=stray_light_before_model.meta, wcs=stray_light_before_model.wcs)
-    stray_light_after_model = PUNCHCube(
+    stray_light_after_model = NDCube(
             data=after_at_orbit_pos, meta=stray_light_after_model.meta, wcs=stray_light_after_model.wcs)
 
     # Next we do the temporal interpolation.

@@ -5,12 +5,13 @@ from collections.abc import Generator
 
 import astropy.units as u
 import numpy as np
+from ndcube import NDCube
 from regularizepsf import ArrayPSFBuilder, ArrayPSFTransform, simple_functional_psf
 from regularizepsf.util import calculate_covering
 
 from punchbowl.data import NormalizedMetadata
+from punchbowl.data.cube import replace_cube
 from punchbowl.data.meta import check_moon_in_fov
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.units import calculate_image_pixel_area, dn_to_msb
 from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
@@ -54,14 +55,14 @@ def generate_psf_model_core_flow(input_filepaths: list[str],
 
 @punch_flow
 def level1_early_core_flow(  # noqa: C901
-    input_data: list[str] | list[PUNCHCube],
+    input_data: list[str] | list[NDCube],
     gain_bottom: float = 4.9,
     gain_top: float = 4.9,
     dark_level: float = 55.81,
     read_noise_level: float = 17,
     bitrate_signal: int = 16,
     quartic_coefficient_path: str | pathlib.Path | DataLoader | None = None,
-    despike_neighbors: list[str] | list[PUNCHCube] | None = None,
+    despike_neighbors: list[str] | list[NDCube] | None = None,
     exposure_time: float = 49 * 1000,
     readout_line_time: float = 163/2148,
     reset_line_time: float = 163/2148,
@@ -79,7 +80,7 @@ def level1_early_core_flow(  # noqa: C901
     n_alignment_iterations: int = 50,
     output_filename: list[str] | None = None,
     mask_path: str | None = None,
-) -> list[PUNCHCube]:
+) -> list[NDCube]:
     """Core flow for level 1, doing preliminary stray light subtraction."""
     logger = get_logger()
 
@@ -220,7 +221,7 @@ def level1_early_core_flow(  # noqa: C901
         if filename:
             new_meta.provenance = [filename]
 
-        data = data.replace(meta=new_meta)
+        data = replace_cube(data, meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
@@ -233,11 +234,11 @@ def level1_early_core_flow(  # noqa: C901
 
 @punch_flow
 def level1_middle_core_flow(
-    input_data: list[str] | list[PUNCHCube],
+    input_data: list[str] | list[NDCube],
     dynamic_stray_light_before_path: str | DataLoader | None = None,
     dynamic_stray_light_after_path: str | DataLoader | None = None,
     output_filename: list[str] | None = None,
-) -> list[PUNCHCube]:
+) -> list[NDCube]:
     """Core flow for level 1, applying WFI dynamic stray light subtraction."""
     logger = get_logger()
 
@@ -273,7 +274,7 @@ def level1_middle_core_flow(
 
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
-        data = data.replace(meta=new_meta)
+        data = replace_cube(data, meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
@@ -285,13 +286,13 @@ def level1_middle_core_flow(
 
 @punch_flow
 def level1_late_core_flow(
-    input_data: list[str] | list[PUNCHCube],
+    input_data: list[str] | list[NDCube],
     stray_light_before_path: str | DataLoader | None = None,
     stray_light_after_path: str | DataLoader | None = None,
     mask_path: str | None = None,
     output_as_Q_file: bool = False, # noqa: N803
     output_filename: list[str] | None = None,
-) -> list[PUNCHCube]:
+) -> list[NDCube]:
     """Core flow for level 1, applying final stray light subtraction."""
     logger = get_logger()
 
@@ -333,7 +334,7 @@ def level1_late_core_flow(
 
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 
-        data = data.replace(meta=new_meta)
+        data = replace_cube(data, meta=new_meta)
 
         if output_filename is not None and i < len(output_filename) and output_filename[i] is not None:
             output_image_task(data, output_filename[i])
@@ -343,13 +344,13 @@ def level1_late_core_flow(
     return output_data
 
 @punch_flow
-def level1_nfi_core_flow(input_data: list[str | PUNCHCube],*args:tuple,**kwargs:dict) -> list[PUNCHCube]:
+def level1_nfi_core_flow(input_data: list[str | NDCube],*args:tuple,**kwargs:dict) -> list[NDCube]:
     """
     Remove dynamic stray light from NFI images.
 
     Parameters
     ----------
-    input_data : list[str | PUNCHCube]
+    input_data : list[str | NDCube]
         Input NFI images
     *args : tuple
         Arguments to pass to remove_nfi_stray_light
@@ -358,7 +359,7 @@ def level1_nfi_core_flow(input_data: list[str | PUNCHCube],*args:tuple,**kwargs:
 
     Returns
     -------
-    output_data : list[PUNCHCube]
+    output_data : list[NDCube]
         The processed images.
 
     """
@@ -385,7 +386,7 @@ def level1_nfi_core_flow(input_data: list[str | PUNCHCube],*args:tuple,**kwargs:
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
         new_meta["FILEVRSN"] = this_data.meta["FILEVRSN"].value
 
-        this_data = this_data.replace(meta=new_meta) # noqa: PLW2901
+        this_data = replace_cube(this_data, meta=new_meta) # noqa: PLW2901
 
         output_data.append(this_data)
 

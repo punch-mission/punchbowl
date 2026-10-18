@@ -8,9 +8,9 @@ import numpy as np
 import requests
 from astropy.io import fits
 from astropy.wcs import WCS
+from ndcube import NDCube
 
 from punchbowl.data import NormalizedMetadata, get_base_file_name, write_ndcube_to_fits
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.level1.quartic_fit import create_constant_quartic_coefficients
 
 
@@ -34,7 +34,7 @@ def create_f_corona_test_data(path="../punchbowl/level3/tests/data/"):
     wcs = WCS(naxis=2)
     for i in range(10):
         data = np.ones((3, 10, 10)) * i
-        obj = PUNCHCube(data=data, wcs=wcs, meta=meta)
+        obj = NDCube(data=data, wcs=wcs, meta=meta)
         file_path = os.path.join(path, f"test_{i}.fits")
         write_ndcube_to_fits(obj, file_path, overwrite=True)
 
@@ -44,7 +44,7 @@ def create_quartic_coefficients_test_data(path="../punchbowl/level1/tests/data/"
     meta['DATE-OBS'] = str(datetime.now(UTC))
     wcs = WCS(naxis=3)
     data = create_constant_quartic_coefficients((10, 10))
-    obj = PUNCHCube(data=data, wcs=wcs, meta=meta)
+    obj = NDCube(data=data, wcs=wcs, meta=meta)
     file_path = os.path.join(path, "test_quartic_coeffs.fits")
     write_ndcube_to_fits(obj, file_path, overwrite=True, skip_wcs_conversion=True, write_hash=False)
 
@@ -54,7 +54,7 @@ def create_vignetting_test_data(path="../punchbowl/level1/tests/data/"):
     meta['DATE-OBS'] = str(datetime(2024,2, 22, 16,34, 25))
     wcs = WCS(naxis=2)
     data = np.random.random((10, 10))
-    obj = PUNCHCube(data=data, wcs=wcs, meta=meta)
+    obj = NDCube(data=data, wcs=wcs, meta=meta)
     file_path = os.path.join(path, get_base_file_name(obj) + '.fits')
     write_ndcube_to_fits(obj, file_path, overwrite=True)
 
@@ -63,7 +63,7 @@ def create_stray_light_test_data(path="../punchbowl/level1/tests/data/"):
     meta['DATE-OBS'] = str(datetime(2024,2, 22, 16,34, 25))
     wcs = WCS(naxis=2)
     data = np.random.random((10, 10))
-    obj = PUNCHCube(data=data, wcs=wcs, meta=meta)
+    obj = NDCube(data=data, wcs=wcs, meta=meta)
     file_path = os.path.join(path, get_base_file_name(obj) + '.fits')
     write_ndcube_to_fits(obj, file_path, overwrite=True)
 

@@ -1,6 +1,6 @@
 import numpy as np
+from ndcube import NDCube
 
-from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import punch_task
 from punchbowl.util import limit_threads, validate_image_is_square
 
@@ -110,11 +110,11 @@ def correct_streaks(
 
 
 @punch_task
-def destreak_task(data_object: PUNCHCube,
+def destreak_task(data_object: NDCube,
                   exposure_time: float = 1.0,
                   readout_line_time: float = 0.1,
                   reset_line_time: float = 0.1,
-                  max_workers: int | None = None) -> PUNCHCube:
+                  max_workers: int | None = None) -> NDCube:
     """Prefect task to destreak an image."""
     new_data = correct_streaks(
         data_object.data, exposure_time, readout_line_time, reset_line_time, max_workers=max_workers)

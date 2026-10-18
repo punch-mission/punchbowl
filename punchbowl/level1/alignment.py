@@ -1,10 +1,10 @@
-import logging
-import multiprocessing
 import os
+import logging
 import warnings
+import multiprocessing
+from pathlib import Path
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 
 import astrometry
 import astropy.units as u

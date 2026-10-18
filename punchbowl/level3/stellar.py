@@ -1,6 +1,6 @@
 import warnings
-from datetime import UTC, datetime
 from math import floor
+from datetime import UTC, datetime
 
 import astropy.units as u
 import numpy as np

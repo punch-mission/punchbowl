@@ -1,13 +1,13 @@
-import abc
 import os
 import re
-import threading
+import abc
 import warnings
-from contextlib import contextmanager
+import threading
+from typing import Any, Self, Generic, TypeVar
 from datetime import UTC, datetime
 from functools import cached_property
+from contextlib import contextmanager
 from multiprocessing.shared_memory import SharedMemory
-from typing import Any, Generic, Self, TypeVar
 
 import numba
 import numpy as np

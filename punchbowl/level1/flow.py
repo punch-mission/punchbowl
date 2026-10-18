@@ -1,7 +1,7 @@
 import os
 import pathlib
-from collections.abc import Generator
 from datetime import UTC, datetime
+from collections.abc import Generator
 
 import astropy.units as u
 import numpy as np

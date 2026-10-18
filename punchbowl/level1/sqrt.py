@@ -1,7 +1,7 @@
 import os.path
 import warnings
-from datetime import datetime
 from math import ceil
+from datetime import datetime
 
 import numpy as np
 from ndcube import NDCube

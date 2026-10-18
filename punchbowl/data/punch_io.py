@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-import hashlib
 import io
-import multiprocessing as mp
 import os
-import os.path
 import string
-import subprocess
-import traceback
+import hashlib
+import os.path
 import warnings
-from collections.abc import Sequence
-from concurrent.futures import ProcessPoolExecutor
+import traceback
+import subprocess
+import multiprocessing as mp
 from copy import deepcopy
+from typing import Any
+from pathlib import Path
 from datetime import UTC, datetime
 from itertools import repeat
-from pathlib import Path
-from typing import Any
+from collections.abc import Sequence
+from concurrent.futures import ProcessPoolExecutor
 
 import astropy.units as u
 import lxml.etree as et

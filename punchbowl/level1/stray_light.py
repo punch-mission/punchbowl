@@ -1,12 +1,12 @@
-import multiprocessing
-import pathlib
 import time
+import pathlib
 import warnings
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+import multiprocessing
+from logging import Logger
 from datetime import UTC, datetime, timedelta
 from functools import cached_property
-from itertools import pairwise, repeat
-from logging import Logger
+from itertools import repeat, pairwise
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 import numba
 import numpy as np

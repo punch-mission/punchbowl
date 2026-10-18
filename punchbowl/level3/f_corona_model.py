@@ -1,7 +1,7 @@
-import multiprocessing
 import os
-from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
 from datetime import UTC, datetime
+from concurrent.futures import ProcessPoolExecutor
 
 import astropy
 import numba

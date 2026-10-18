@@ -1,7 +1,7 @@
 """Creates test data with the appropriate metadata for punchbowl"""
 import os
-from datetime import UTC, datetime
 from io import BytesIO
+from datetime import UTC, datetime
 
 import astropy.nddata
 import numpy as np

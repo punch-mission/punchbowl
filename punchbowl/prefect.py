@@ -1,7 +1,7 @@
 import logging
-from collections.abc import Callable
-from functools import cache
 from typing import Any
+from functools import cache
+from collections.abc import Callable
 
 from httpx import ConnectError
 from ndcube import NDCube

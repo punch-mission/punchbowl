@@ -1,7 +1,7 @@
 import subprocess
-from multiprocessing import Pool
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from multiprocessing import Pool
 
 import astropy.units as u
 import matplotlib.colors as mcolors

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import os
 import typing as t
+from typing import TYPE_CHECKING, Any
+from datetime import UTC, datetime
 from collections import OrderedDict
 from collections.abc import Mapping
-from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
 
 import astropy
 import astropy.units as u

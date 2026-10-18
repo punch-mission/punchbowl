@@ -1,10 +1,10 @@
-import multiprocessing as mp
 import os
 import warnings
-from concurrent.futures import ProcessPoolExecutor
+import multiprocessing as mp
+from typing import Any
 from datetime import UTC, datetime
 from itertools import repeat
-from typing import Any
+from concurrent.futures import ProcessPoolExecutor
 
 import astropy
 import numba

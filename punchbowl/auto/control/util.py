@@ -1,9 +1,9 @@
 import os
 import re
 import socket
+from math import inf
 from datetime import UTC, datetime
 from itertools import islice
-from math import inf
 
 import yaml
 from astropy.io import fits

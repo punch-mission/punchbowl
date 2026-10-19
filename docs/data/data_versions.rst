@@ -25,7 +25,7 @@ Version 0m
 
 - Metadata fixes
 
-  - Changed L3 `OBSLAYR1` from `Polar_B` to `Polar_tB` to match documentation. (https://github.com/punch-mission/punchbowl/pull/1219)
+  - Changed L3 `OBSLAYR1` from `Polar_B` to `Polar_tB` and `OBS-MODE` from `Polar_BpB` to `Polar_tBpB` to match documentation. (https://github.com/punch-mission/punchbowl/pull/1219)
   - Fixed outlier flagging for L2+ products. (https://github.com/punch-mission/punchbowl/pull/1141)
   - Fixed `DSATVAL` calculation error so that saturated pixels get flagged properly (particularly for NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
   - For science images, use the timestamp of the image to set the polarization state of the image, and the `PFWSTAT` header value now reads -1 if the PFW packet is stale. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)

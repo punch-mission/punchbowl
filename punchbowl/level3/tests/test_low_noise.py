@@ -7,7 +7,6 @@ from astropy.wcs import WCS
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.level3 import low_noise
 from punchbowl.level3.low_noise import create_low_noise_task, merge_polarized_low_noise
 
 

@@ -32,7 +32,7 @@ Version 0m
 
 - PCA-processed NFI included in mosaics
 
-  - Clear NFI images now undergo PCA filtering (including post-processing steps). These images are written as L2 CNN files.(https://github.com/punch-mission/punchbowl/pull/1210)
+  - Clear NFI images now undergo PCA filtering (including post-processing steps). These images are written as L2 CNN files. (https://github.com/punch-mission/punchbowl/pull/1210)
 
     - This approach removes the variable stray light that NFI experiences and makes usable K-corona images.
     - This processing method produces images that are useful for morphological studies, but photometry should not be relied on.
@@ -59,7 +59,7 @@ Version 0m
 - Mosiac assembly improvements
 
   - Fixed holes in L2 images after changing reprojection to run at 32 bits. (https://github.com/punch-mission/punchbowl/pull/1053)
-  - In L2 mosaic assembly, polarized inputs are now co-aligned before the polarization is converted to MZP_solar, to account for small pointing drift through the imaging sequence.(https://github.com/punch-mission/punchbowl/pull/1060)
+  - In L2 mosaic assembly, polarized inputs are now co-aligned before the polarization is converted to MZP_solar, to account for small pointing drift through the imaging sequence. (https://github.com/punch-mission/punchbowl/pull/1060)
 
 - Helioviewer and JHelioviewer improvements
 

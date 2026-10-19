@@ -28,7 +28,7 @@ def merge_polarized_low_noise(cubes: list[PUNCHCube], reference_cube_index: int)
     if any(cube.uncertainty is None for cube in cubes):
         raise ValueError("PAM generation requires propagated polarization uncertainties")
     data_stack = np.stack([cube.data for cube in cubes], axis=0)
-    uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes], dtype=float)
+    uncertainty_stack = np.stack([cube.uncertainty.array for cube in cubes], axis=0, dtype=float)
 
     # Keep valid zero signals; exclude invalid or masked samples from the weights.
     uncertainty_stack_was_bad = (uncertainty_stack <= 0) | ~np.isfinite(uncertainty_stack) | ~np.isfinite(data_stack) | (uncertainty_stack == 0)

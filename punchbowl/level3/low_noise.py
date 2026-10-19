@@ -31,8 +31,7 @@ def merge_polarized_low_noise(cubes: list[PUNCHCube], reference_cube_index: int)
     uncertainty_stack = np.array([cube.uncertainty.array for cube in cubes], dtype=float)
 
     # Keep valid zero signals; exclude invalid or masked samples from the weights.
-    uncertainty_was_invalid = ~np.isfinite(uncertainty_stack) | (uncertainty_stack == 0)
-    uncertainty_stack_was_bad = (uncertainty_stack <= 0) | uncertainty_was_invalid | ~np.isfinite(data_stack)
+    uncertainty_stack_was_bad = (uncertainty_stack <= 0) | ~np.isfinite(uncertainty_stack) | ~np.isfinite(data_stack) | (uncertainty_stack == 0)
     for i, cube in enumerate(cubes):
         if cube.mask is not None:
             uncertainty_stack_was_bad[i] |= np.broadcast_to(cube.mask, cube.shape)

@@ -28,8 +28,8 @@ Version 0m
   - Changed L3 `OBSLAYR1` from `Polar_B` to `Polar_tB` and `OBS-MODE` from `Polar_BpB` to `Polar_tBpB` to match documentation. (https://github.com/punch-mission/punchbowl/pull/1219)
   - Fixed outlier flagging for L2+ products. (https://github.com/punch-mission/punchbowl/pull/1141)
   - Fixed bug to now save F-corona model filenames to CIM and PIM headers. (https://github.com/punch-mission/punchbowl/pull/1256)
-  - Fixed `DSATVAL` calculation error so that saturated pixels get flagged properly (particularly for NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
-  - For science images, use the timestamp of the image to set the polarization state of the image, and the `PFWSTAT` header value now reads -1 if the PFW packet is stale. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
+  - Fixed `DSATVAL` calculation error so that saturated pixels get flagged properly (mostly impacts NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
+  - L0 images now use the timestamp of the image to set the polarization state, and the `PFWSTAT` header value now reads -1 if the PFW packet is stale. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
   - Level 1 files have header keywords related to distortion for both the helio and celestial WCSs again. They were present in both WCSs in v0k but the celestial WCS distortion keywords disappeared in v0l. (https://github.com/punch-mission/punchbowl/pull/1230)
 
 - PCA-processed NFI included in mosaics
@@ -43,12 +43,12 @@ Version 0m
 
   - PCA filtered NFI images are now included in L3 CTMs. (https://github.com/punch-mission/punchbowl/pull/1227)
 
-    - Note that the visual appearance of the NFI data is greatly improved by the median filtering applied to it in the CAM stage.
+    -  Note that the visual appearance of the NFI data is greatly improved in the CAM files compared to CTM due to the by the median filtering applied to the CAM images. 
     - Within each CTM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
 
   - PCA filtered NFI images are now included in L3 CAMs. (https://github.com/punch-mission/punchbowl/pull/1228)
 
-    - Note that input NFI images under median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median.
+    - Note that input NFI images undergo median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median.
     - Within each CAM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
 
 - Starfield processing improvements
@@ -56,24 +56,24 @@ Version 0m
   - Corrected a bug with starfield model subtraction where the RA-axis cdelt was being accidentally sign flipped. (https://github.com/punch-mission/punchbowl/pull/1134)
   - Improved starfield model generation and subtraction. A median background subtraction that is no longer needed was removed. This should improve capturing the Milky Way into the starfield models. This also allows for a single starfield model subtraction. (https://github.com/punch-mission/punchbowl/pull/1145)
   - Improved starfield blur by reprojecting directly to the image frame instead of intermediate union WCS. (https://github.com/punch-mission/punchbowl/pull/1180)
-  - Starfield models (Level 3 PSM and CSM products) now have their celestial right ascension (RA) WCS coordinate flipped negative in sign to reflect proper behavior in coordinate transformations during model subtraction from data. (https://github.com/punch-mission/punchbowl/pull/1245)
+  - Starfield models (L3 PSM and CSM products) now have their celestial right ascension (RA) WCS coordinate flipped negative in sign to reflect proper behavior in coordinate transformations during model subtraction from data. (https://github.com/punch-mission/punchbowl/pull/1245)
 
 - Mosiac assembly improvements
 
-  - Fixed holes in L2 images after changing reprojection to run at 32 bits. (https://github.com/punch-mission/punchbowl/pull/1053)
-  - In L2 mosaic assembly, polarized inputs are now co-aligned before the polarization is converted to MZP_solar, to account for small pointing drift through the imaging sequence. (https://github.com/punch-mission/punchbowl/pull/1060)
+  - Fixed holes in L2 images caused by a bug in the uncertainty calculation. (https://github.com/punch-mission/punchbowl/pull/1053)
+  - In L2 mosaic assembly, polarized inputs are now co-aligned before the polarization is converted to MZP_solar to account for small pointing drift through the imaging sequence. (https://github.com/punch-mission/punchbowl/pull/1060)
 
 - Helioviewer and JHelioviewer improvements
 
-  - Added the helioviewer tag to the JPEG2000 quicklook files. This will allow the image scaling of PUNCH data in Helioviewer to be correct. (https://github.com/punch-mission/punchbowl/pull/1109)
-  - We were previously clipping all negative values to 0. This led to negative values becoming transparent in JHelioviewer. We fixed that clipping bug by clipping to 1 instead. (https://github.com/punch-mission/punchbowl/pull/1159)
+  - Added the helioviewer tag to the JPEG2000 quicklook files. This will allow for proper image scaling of PUNCH data in Helioviewer. (https://github.com/punch-mission/punchbowl/pull/1109)
+  - Negative values in the PUNCH quicklook image bitmaps are now clipped to 1 instead of 0. Previously, this led to negative values becoming transparent in JHelioviewer. 
 
 
-- Changed F-corona percentile from 3 to 2%. This will change the brightness of F-corona models. (https://github.com/punch-mission/punchbowl/pull/1271)
-- Re-engineered QuickPUNCH files to meet SWPC requirements. Started real-time production and currently shipping. (PRs 1088-1097, 1101-1106, 1114, https://github.com/punch-mission/punchbowl/pull/1019)
+- Changed F-corona percentile from 3% to 2%. This improves the F-corona model quality by reducing over-subtraction. Note that F-corona models will appear dimmer. (https://github.com/punch-mission/punchbowl/pull/1271)
+- Re-engineered QuickPUNCH files to meet SWPC requirements. Started real-time production and currently shipping. (https://github.com/punch-mission/punchbowl/pull/1019)
 - Fixed file writing to use operational config image scaling parameters to quicklook files. (https://github.com/punch-mission/punchbowl/pull/1128)
 - Added robots=off to wget command as part of recent umbra.nascom.nasa.gov permission updates. (https://github.com/punch-mission/punchbowl/pull/1156)
-- Updated solar wind flow tracking modules to work with PUNCH data for initial activation. (https://github.com/punch-mission/punchbowl/pull/1079)
+- Flow tracking data products are now available as VAM files. (https://github.com/punch-mission/punchbowl/pull/1079)
 
 
 Version 0l

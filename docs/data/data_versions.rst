@@ -43,12 +43,12 @@ Version 0m
   - PCA filtered NFI images are now included in L3 CTMs. (https://github.com/punch-mission/punchbowl/pull/1227)
 
     - Note that the visual appearance of the NFI data is greatly improved by the median filtering applied to it in the CAM stage.
-    - Within each CTM, there is a circular region in the center in which all and only NFI data appears. Outside that radius, all and only WFI data appears.
+    - Within each CTM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
 
   - PCA filtered NFI images are now included in L3 CAMs. (https://github.com/punch-mission/punchbowl/pull/1228)
 
     - Note that input NFI images under median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median.
-    - Within each CAM, there is a circular region in the center in which all and only NFI data appears. Outside that radius, all and only WFI data appears.
+    - Within each CAM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
 
 - Starfield processing improvements
 

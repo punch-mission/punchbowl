@@ -30,6 +30,7 @@ Version 0m
   - Fixed bug to now save F-corona model filenames to CIM and PIM headers. (https://github.com/punch-mission/punchbowl/pull/1256)
   - Fixed `DSATVAL` calculation error so that saturated pixels get flagged properly (particularly for NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
   - For science images, use the timestamp of the image to set the polarization state of the image, and the `PFWSTAT` header value now reads -1 if the PFW packet is stale. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
+  - Level 1 files have header keywords related to distortion for both the helio and celestial WCSs again. They were present in both WCSs in v0k but the celestial WCS distortion keywords disappeared in v0l. (https://github.com/punch-mission/punchbowl/pull/1230)
 
 - PCA-processed NFI included in mosaics
 

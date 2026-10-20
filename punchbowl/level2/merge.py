@@ -31,9 +31,9 @@ def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | No
     uncertainty_stack_was_bad = (uncertainty_stack <= 0) | ~np.isfinite(uncertainty_stack) | ~np.isfinite(data_stack)
     for i, cube in enumerate(cubes):
         if cube.mask is not None:
-            uncertainty_stack_was_bad[i] |= np.broadcast_to(cube.mask, cube.shape)
+            uncertainty_stack_was_bad[i] |= cube.mask
     uncertainty_stack[uncertainty_stack_was_bad] = np.inf
-    uncertainty_stack[((data_stack == 0) + np.isnan(data_stack)) & uncertainty_was_invalid] = np.nan
+    uncertainty_stack[((data_stack == 0) | np.isnan(data_stack)) & uncertainty_was_invalid] = np.nan
 
     weight_stack = 1/np.square(uncertainty_stack)
 

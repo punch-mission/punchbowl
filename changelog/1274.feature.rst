@@ -1,1 +1,1 @@
-Propagate MZP variances through the Level 3 polarization conversion
+Propagate MZP variances through the Level 3 polarization conversion. Use shared mask-aware merging for clear and polarized products, retaining the RMS output uncertainty convention.

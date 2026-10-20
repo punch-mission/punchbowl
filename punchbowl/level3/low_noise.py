@@ -1,7 +1,6 @@
 from datetime import UTC, datetime
 
 import numpy as np
-from astropy.nddata import StdDevUncertainty
 from dateutil.parser import ParserError
 from dateutil.parser import parse as parse_datetime
 from dateutil.parser import parse as parse_datetime_str
@@ -14,42 +13,6 @@ from punchbowl.prefect import punch_task
 from punchbowl.util import average_datetime, make_circular_mask, nan_percentile
 
 KEYWORD_OMIT = ("COMMENT", "HISTORY", "", "NAXIS3", "OBSTYPE", "OBS-MODE", "OBSLAYR1", "OBSLAYR2", "OBSLAYR3")
-
-def merge_polarized_low_noise(cubes: list[PUNCHCube], reference_cube_index: int) -> PUNCHCube:
-    """
-    Merge Level 3 PTM inputs for PAM with independent propagated errors.
-
-    With w = 1/sigma**2, the mean is sum(w*I)/sum(w) and its standard
-    deviation is sqrt(1/sum(w)). Shared calibration/background covariance
-    is not included.
-    """
-    if any(cube.meta.product_code != "PTM" or cube.meta["LEVEL"].value != "3" for cube in cubes):
-        raise ValueError("The polarized low-noise merger requires Level 3 PTM inputs")
-    if any(cube.uncertainty is None for cube in cubes):
-        raise ValueError("PAM generation requires propagated polarization uncertainties")
-    data_stack = np.stack([cube.data for cube in cubes], axis=0)
-    uncertainty_stack = np.stack([cube.uncertainty.array for cube in cubes], axis=0, dtype=float)
-
-    # Keep valid zero signals; exclude invalid or masked samples from the weights.
-    uncertainty_stack_was_bad = (uncertainty_stack <= 0) | ~np.isfinite(uncertainty_stack) | ~np.isfinite(data_stack)
-    for i, cube in enumerate(cubes):
-        if cube.mask is not None:
-            uncertainty_stack_was_bad[i] |= np.broadcast_to(cube.mask, cube.shape)
-    uncertainty_stack[uncertainty_stack_was_bad] = np.inf
-
-    weight_stack = 1/np.square(uncertainty_stack)
-    total_weight = np.nansum(weight_stack, axis=0)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        new_data = np.nansum(data_stack * weight_stack, axis=0) / total_weight
-        final_uncertainty = np.sqrt(1 / total_weight)
-
-    # Restores uncertainty of zero or nan to infinite
-    final_uncertainty[final_uncertainty == 0] = np.inf
-    final_uncertainty[~np.isfinite(final_uncertainty)] = np.inf
-    new_data[np.isnan(new_data)] = 0
-    return PUNCHCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty),
-                     mask=total_weight == 0, wcs=cubes[reference_cube_index].wcs)
-
 
 @punch_task
 def create_low_noise_task(
@@ -68,11 +31,7 @@ def create_low_noise_task(
 
     # TODO - Note to future self: be clever and use the outlier flag to excise bad data spatially.
     reference_cube_index = len(cubes)//2 - 1
-    # Only the Level 3 polarized PTM -> PAM path uses propagated mean errors.
-    if cubes and all(cube.meta.product_code == "PTM" and cube.meta["LEVEL"].value == "3" for cube in cubes):
-        new_cube = merge_polarized_low_noise(cubes, reference_cube_index)
-    else:
-        new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index)
+    new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index)
 
     # TODO - will need to restore polarization resolution for starfield skipping
 

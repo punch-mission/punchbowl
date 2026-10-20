@@ -1,11 +1,12 @@
 import numpy as np
 import pytest
+from astropy.nddata import StdDevUncertainty
 from astropy.wcs import WCS
 from prefect.logging import disable_run_logger
 
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.level2.merge import merge_many_clear_task, merge_many_polarized_task
+from punchbowl.level2.merge import _merge_ndcubes, merge_many_clear_task, merge_many_polarized_task
 
 
 @pytest.fixture
@@ -78,3 +79,20 @@ def test_merge_many_clear_task(sample_data_list):
     assert output_punchdata.meta.datebeg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]=="2024-10-31T00:00:04.000"
     assert output_punchdata.meta.dateend.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]=="2024-10-31T00:20:54.000"
     assert output_punchdata.meta.datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]=="2024-10-31T00:10:29.000"
+
+
+def test_merge_invalid_samples():
+    """Masked and invalid samples affect neither the mean nor its RMS error layer."""
+    good = PUNCHCube(data=np.ones((2, 4)), wcs=WCS(naxis=2),
+                     uncertainty=StdDevUncertainty(np.full((2, 4), 2.)))
+    bad = PUNCHCube(data=np.array([[np.nan, np.inf, 50, 50], [50, 50, 50, 50]]),
+                    wcs=WCS(naxis=2),
+                    uncertainty=StdDevUncertainty(np.array([[1, 1, 0, -1], [np.nan, np.inf, 1, 1]])),
+                    mask=np.array([[False, False, False, False], [False, False, True, True]]))
+    result = _merge_ndcubes([good, bad])
+    np.testing.assert_allclose(result.data, 1)
+    np.testing.assert_allclose(result.uncertainty.array, 2)
+    unsupported = _merge_ndcubes([bad])
+    np.testing.assert_array_equal(unsupported.data, 0)
+    assert np.all(np.isinf(unsupported.uncertainty.array))
+    assert np.all(unsupported.mask)

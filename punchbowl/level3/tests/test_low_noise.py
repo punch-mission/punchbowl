@@ -7,7 +7,7 @@ from astropy.wcs import WCS
 
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.level3.low_noise import create_low_noise_task, merge_polarized_low_noise
+from punchbowl.level3 import low_noise
 
 
 @pytest.fixture
@@ -59,7 +59,7 @@ def sample_ndcube_clear() -> PUNCHCube:
 
 
 def test_low_noise_polarized(sample_ndcube_polarized) -> PUNCHCube:
-    cube_low_noise = create_low_noise_task([sample_ndcube_polarized((3,10,10)),
+    cube_low_noise = low_noise.create_low_noise_task([sample_ndcube_polarized((3,10,10)),
                                             sample_ndcube_polarized((3,10,10)),
                                             sample_ndcube_polarized((3,10,10)),
                                             sample_ndcube_polarized((3,10,10))])
@@ -69,7 +69,7 @@ def test_low_noise_polarized(sample_ndcube_polarized) -> PUNCHCube:
 
 
 def test_low_noise_clear(sample_ndcube_clear) -> PUNCHCube:
-    cube_low_noise = create_low_noise_task([sample_ndcube_clear((10,10)),
+    cube_low_noise = low_noise.create_low_noise_task([sample_ndcube_clear((10,10)),
                                             sample_ndcube_clear((10,10)),
                                             sample_ndcube_clear((10,10)),
                                             sample_ndcube_clear((10,10))])
@@ -79,17 +79,17 @@ def test_low_noise_clear(sample_ndcube_clear) -> PUNCHCube:
 
 
 @pytest.mark.parametrize("signals, errors, mean, sigma", [
-    ([1, -1], [2, 2], 0, np.sqrt(2)),
-    ([1, 3], [2, 4], 1.4, np.sqrt(3.2)),
-    ([0, 1], [1, 2], 0.2, np.sqrt(0.8)),
+    ([1, -1], [2, 2], 0, 2),
+    ([1, 3], [2, 4], 1.4, np.sqrt(10)),
+    ([0, 1], [1, 2], 0.2, np.sqrt(2.5)),
 ])
 def test_pam_weighted_uncertainty(sample_ndcube_polarized, signals, errors, mean, sigma):
-    """PAM keeps signed and zero signals and propagates the error of their mean."""
+    """PAM keeps signed and zero signals and uses the shared RMS error convention."""
     cubes = [sample_ndcube_polarized((3, 2, 2)) for _ in signals]
     for cube, signal, error in zip(cubes, signals, errors):
         cube.data[:] = signal
         cube.uncertainty.array[:] = error
-    result = create_low_noise_task.fn(cubes)
+    result = low_noise.create_low_noise_task.fn(cubes)
     np.testing.assert_allclose(result.data, mean)
     np.testing.assert_allclose(result.uncertainty.array, sigma)
     assert result.meta.product_code == "PAM"
@@ -103,42 +103,29 @@ def test_pam_invalid_samples(sample_ndcube_polarized):
     mask = np.zeros(good.shape, dtype=bool)
     mask[:, 1, 2:] = True
     bad = good.replace(data=data, uncertainty=StdDevUncertainty(sigma), mask=mask)
-    result = merge_polarized_low_noise([good, bad], 0)
+    result = low_noise.create_low_noise_task.fn([good, bad])
     np.testing.assert_allclose(result.data, 1)
     np.testing.assert_allclose(result.uncertainty.array, 1)
-    unsupported = merge_polarized_low_noise([bad], 0)
+    unsupported = low_noise.create_low_noise_task.fn([bad])
     np.testing.assert_array_equal(unsupported.data, 0)
     assert np.all(np.isinf(unsupported.uncertainty.array))
     assert np.all(unsupported.mask)
-    bad.uncertainty = None
-    with pytest.raises(ValueError, match="requires propagated"):
-        merge_polarized_low_noise([bad], 0)
 
 
-@pytest.mark.parametrize("level", ["3", "Q"])
-def test_clear_low_noise_keeps_original_merger(sample_ndcube_clear, monkeypatch, level):
-    """CAM and the clear QuickPUNCH path must still use the original merger."""
-    cubes = [sample_ndcube_clear((2, 2)) for _ in range(2)]
-    for cube in cubes:
+@pytest.mark.parametrize("code, level, shape", [
+    ("CTM", "3", (2, 2)), ("CTM", "Q", (2, 2)),
+    ("PTM", "3", (3, 2, 2)), ("PTM", "Q", (3, 2, 2)),
+])
+def test_low_noise_shared_merger(sample_ndcube_clear, code, level, shape):
+    """Clear, polarized and QuickPUNCH products all use the same RMS merger."""
+    cubes = [sample_ndcube_clear(shape, code=code) for _ in range(2)]
+    for cube, signal, sigma in zip(cubes, [1, 3], [1, 3]):
         cube.meta["LEVEL"] = level
+        cube.data[:] = signal
+        cube.uncertainty.array[:] = sigma
     expected = low_noise._merge_ndcubes(cubes)
-    def unexpected_polarized_merge(cubes, reference_cube_index):
-        pytest.fail("A clear/QuickPUNCH product used the PAM-only merger")
-    monkeypatch.setattr(low_noise, "merge_polarized_low_noise", unexpected_polarized_merge)
-    result = create_low_noise_task.fn(cubes)
-    np.testing.assert_array_equal(result.data, expected.data)
-    np.testing.assert_array_equal(result.uncertainty.array, expected.uncertainty.array)
-
-
-def test_quick_polarized_keeps_original_merger(sample_ndcube_polarized, monkeypatch):
-    """Even a polarized cube at Level Q must not enter the Level 3 PAM correction."""
-    cubes = [sample_ndcube_polarized((3, 2, 2)) for _ in range(2)]
-    for cube in cubes:
-        cube.meta["LEVEL"] = "Q"
-    expected = low_noise._merge_ndcubes(cubes)
-    def unexpected_polarized_merge(cubes, reference_cube_index):
-        pytest.fail("A Level Q product used the PAM-only merger")
-    monkeypatch.setattr(low_noise, "merge_polarized_low_noise", unexpected_polarized_merge)
-    result = create_low_noise_task.fn(cubes)
+    result = low_noise.create_low_noise_task.fn(cubes)
+    np.testing.assert_allclose(result.data, 1.2)
+    np.testing.assert_allclose(result.uncertainty.array, np.sqrt(5))
     np.testing.assert_array_equal(result.data, expected.data)
     np.testing.assert_array_equal(result.uncertainty.array, expected.uncertainty.array)

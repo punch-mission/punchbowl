@@ -15,7 +15,7 @@ from punchbowl.prefect import get_logger, punch_task
 def convert_polarization(
         input_data: PUNCHCube) -> PUNCHCube:
     """
-    Convert MZP to tB, pB and pB-prime, propagating errors only for Level 3 PIM inputs.
+    Convert MZP to tB, pB and pB-prime, propagating supplied input errors.
 
     Variances follow diag(A C A.T), with A_tBi = 2/3,
     A_pBi = -4/3 cos(2(theta_i - alpha)), and
@@ -26,13 +26,12 @@ def convert_polarization(
     """
     logger = get_logger()
     logger.info("convert2tbpb started")
-    is_pim = input_data.meta.product_code == "PIM" and input_data.meta["LEVEL"].value == "3"
 
     collection_contents = [(label,
                             PUNCHCube(data=input_data[i].data,
                                    wcs=input_data.wcs.dropaxis(2),
                                    meta={"POLAR": angle},
-                                   mask=input_data[i].mask if is_pim else None))
+                                   mask=input_data[i].mask))
                            for (label, i, angle) in zip(["M", "Z", "P"],
                                                         [0, 1, 2],
                                                         [-60 * u.deg, 0 * u.deg, 60 * u.deg], strict=False)]
@@ -44,10 +43,10 @@ def convert_polarization(
                                 resolved_data_collection["pB"].data,
                                 resolved_data_collection["pBp"].data], axis=0)
     new_uncertainty = None
-    new_mask = resolved_data_collection["pB"].mask if is_pim else None
+    new_mask = resolved_data_collection["pB"].mask
     if new_mask is not None:
         new_mask = np.broadcast_to(new_mask, new_data.shape).copy()
-    if is_pim and input_data.uncertainty is not None:
+    if input_data.uncertainty is not None:
         sigma = input_data.uncertainty.array
         valid = np.all(np.isfinite(input_data.data) & np.isfinite(sigma) & (sigma > 0), axis=0)
         if input_data.mask is not None:

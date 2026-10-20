@@ -8,8 +8,7 @@ Concept
 
 The polarization correction is primarily carried out by the `solpolpy <https://github.com/punch-mission/solpolpy>`_ framework, with a module within the punchbowl calling this code. See this code for full documentation.
 
-Only for Level 3 PIM inputs, when MZP standard deviations are supplied,
-the conversion propagates their variances
+When MZP standard deviations are supplied, the conversion propagates their variances
 using the same per-pixel angle map as the signal. For independent MZP errors,
 
 .. math::
@@ -22,8 +21,6 @@ Here the polarizer angles are -60, 0 and +60 degrees, and alpha is supplied by
 solpolpy. This assumes fixed geometry and independent input errors; cross-channel
 covariance and shared background or calibration errors are not included. A resolved
 triplet is unsupported if any contributing MZP value or error is invalid or masked.
-
-Other input product types retain the original conversion behavior without propagated errors.
 
 Applying correction
 -------------------

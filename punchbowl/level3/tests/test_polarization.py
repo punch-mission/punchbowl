@@ -6,10 +6,11 @@ from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.level3.polarization import convert_polarization
 
 
+@pytest.mark.parametrize("code", ["PIM", "PTM"])
 @pytest.mark.parametrize("errors", [(1, 1, 1), (1, 2, 3)])
-def test_convert_polarization_uncertainty(sample_ndcube, errors):
+def test_convert_polarization_uncertainty(sample_ndcube, errors, code):
     """Propagated variances must match the transform applied to basis images."""
-    cube = sample_ndcube((3, 4, 4), code="PIM", level="3")
+    cube = sample_ndcube((3, 4, 4), code=code, level="3")
     sigma = np.broadcast_to(np.array(errors)[:, None, None] * 1e-14, cube.shape)
     cube = cube.replace(data=np.arange(48, dtype=float).reshape(cube.shape) / 48,
                         uncertainty=StdDevUncertainty(sigma))
@@ -32,9 +33,10 @@ def test_convert_polarization_uncertainty(sample_ndcube, errors):
         np.testing.assert_allclose(result.uncertainty.array[1:]**2, 8 / 3 * 1e-28, rtol=1e-12)
 
 
-def test_convert_polarization_invalid_uncertainty(sample_ndcube):
+@pytest.mark.parametrize("code", ["PIM", "PTM"])
+def test_convert_polarization_invalid_uncertainty(sample_ndcube, code):
     """A resolved triplet requires three valid input errors and unmasked samples."""
-    cube = sample_ndcube((3, 4, 4), code="PIM", level="3")
+    cube = sample_ndcube((3, 4, 4), code=code, level="3")
     sigma = np.ones(cube.shape)
     sigma[0, 0] = [0, -1, np.nan, np.inf]
     mask = np.zeros(cube.shape, dtype=bool)
@@ -49,9 +51,10 @@ def test_convert_polarization_invalid_uncertainty(sample_ndcube):
     np.testing.assert_array_equal(cube.uncertainty.array, sigma)
 
 
-def test_convert_polarization_without_uncertainty(sample_ndcube):
+@pytest.mark.parametrize("code", ["PIM", "PTM"])
+def test_convert_polarization_without_uncertainty(sample_ndcube, code):
     """Preserve the signal and mask when input errors are unavailable."""
-    cube = sample_ndcube((3, 4, 4), code="PIM", level="3")
+    cube = sample_ndcube((3, 4, 4), code=code, level="3")
     cube.uncertainty = None
     mask = np.zeros(cube.shape, dtype=bool)
     mask[0, 0, 0] = True
@@ -60,11 +63,3 @@ def test_convert_polarization_without_uncertainty(sample_ndcube):
     assert result.mask.shape == result.shape
     assert np.all(result.mask[:, 0, 0])
     assert np.all(np.isfinite(result.data))
-
-
-def test_other_polarization_inputs_keep_original_errors(sample_ndcube):
-    """Non-PIM conversion must retain its original missing-uncertainty behavior."""
-    cube = sample_ndcube((3, 4, 4), code="PTM", level="3")
-    result = convert_polarization.fn(cube)
-    assert result.uncertainty is None
-    assert result.mask is None

@@ -34,6 +34,6 @@ fig = plt.figure(figsize=(10, 8))
 ax = fig.add_subplot(111, projection=punch_cube.wcs.slice(2,2))
 ax.imshow(rgb_sat, origin='lower')
 ax.set_axis_off()
-ax.text(0.005,0.005,f"{punch_cube.meta.datetime.strftime('%Y/%m/%d %H:%M:%S' + 'UT')}",
+_ = ax.text(0.005,0.005,f"{punch_cube.meta.datetime.strftime('%Y/%m/%d %H:%M:%S' + 'UT')}",
         horizontalalignment='left', transform=ax.transAxes,
         fontsize=12, color='white')

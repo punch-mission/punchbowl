@@ -155,7 +155,7 @@ def generate_tbpb_to_rgb_map(cube_bpb: PUNCHCube,
     meta = dict(cube_bpb.meta.to_fits_header(wcs=cube_bpb.wcs))
 
     collection_mzp = resolve(NDCollection(
-        [("B", NDCube(cube_bpb.data[0], wcs=cube_bpb[0].wcs, meta=meta)),
+        [("tB", NDCube(cube_bpb.data[0], wcs=cube_bpb[0].wcs, meta=meta)),
          ("pB", NDCube(cube_bpb.data[1], wcs=cube_bpb[1].wcs, meta=meta))],
          aligned_axes="all"), "mzpsolar")
 

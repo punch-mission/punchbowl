@@ -53,7 +53,6 @@ Version 0m
     
 - Starfield processing improvements
 
-  - Corrected a bug with starfield model subtraction where the RA-axis cdelt was being accidentally sign flipped. (https://github.com/punch-mission/punchbowl/pull/1134)
   - Improved starfield model generation and subtraction. A median background subtraction that is no longer needed was removed. This should improve capturing the Milky Way into the starfield models. This also allows for a single starfield model subtraction. (https://github.com/punch-mission/punchbowl/pull/1145)
   - Improved starfield blur by reprojecting directly to the image frame instead of intermediate union WCS. (https://github.com/punch-mission/punchbowl/pull/1180)
   - Starfield models (L3 PSM and CSM products) now have their celestial right ascension (RA) WCS coordinate flipped negative in sign to reflect proper behavior in coordinate transformations during model subtraction from data. (https://github.com/punch-mission/punchbowl/pull/1245)
@@ -72,7 +71,6 @@ Version 0m
 - Changed F-corona percentile from 3% to 2%. This improves the F-corona model quality by reducing over-subtraction. Note that F-corona models will appear dimmer. (https://github.com/punch-mission/punchbowl/pull/1271)
 - Re-engineered QuickPUNCH files to meet SWPC requirements. Started real-time production and currently shipping. (https://github.com/punch-mission/punchbowl/pull/1019)
 - Fixed file writing to use operational config image scaling parameters to quicklook files. (https://github.com/punch-mission/punchbowl/pull/1128)
-- Added robots=off to wget command as part of recent umbra.nascom.nasa.gov permission updates. (https://github.com/punch-mission/punchbowl/pull/1156)
 
 
 Version 0l

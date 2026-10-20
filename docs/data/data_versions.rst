@@ -34,7 +34,7 @@ Version 0m
 
 - PCA-processed NFI included in mosaics
 
-  - NFI data now included in published data!
+  - Now publishing NFI data!
 
   - Clear NFI images now undergo PCA filtering (including post-processing steps). These images are written as L2 CNN files. (https://github.com/punch-mission/punchbowl/pull/1210)
 

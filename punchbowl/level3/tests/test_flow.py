@@ -1,10 +1,10 @@
 import os
 import pathlib
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pytest
-from prefect.testing.utilities import prefect_test_harness
 
+from punchbowl.auto.control.cache_layer.f_corona import manager, wrap_if_appropriate
 from punchbowl.conftest import prefect_test_fixture
 from punchbowl.data.punch_io import write_ndcube_to_fits
 from punchbowl.data.punchcube import PUNCHCube
@@ -58,9 +58,15 @@ def test_PIM_flow_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixtur
     assert isinstance(output[0], PUNCHCube)
     assert output[0].meta['TYPECODE'].value == 'PI'
     assert output[0].meta['OBSCODE'].value == 'M'
+    assert 'before_f_corona' in output[0].meta['CALFCOR1'].value
+    assert 'after_f_corona' in output[0].meta['CALFCOR2'].value
+    # Only the base filename should be there
+    assert '/' not in output[0].meta['CALFCOR1'].value
+    assert '/' not in output[0].meta['CALFCOR2'].value
 
 
-def test_CIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixture):
+@pytest.mark.parametrize('use_dataloaders', [True, False])
+def test_CIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixture, use_dataloaders, monkeypatch):
     data_list = [sample_ndcube(shape=(10, 10), code=f"XR{obs + 1}", level="2") for obs in range(4)]
     for c in data_list:
         c.meta['CROPX2'] = 10
@@ -94,6 +100,15 @@ def test_CIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_
         write_ndcube_to_fits(cube, path)
         paths.append(path)
 
+    if use_dataloaders:
+        with monkeypatch.context() as m:
+            m.setattr(manager, 'caching_is_enabled', lambda: True)
+            before_models = [wrap_if_appropriate(m) for m in before_models]
+            after_models = [wrap_if_appropriate(m) for m in after_models]
+        # Don't actually write anything to shared memory
+        for m in before_models + after_models:
+            m.try_caching = lambda *args, **kwargs: None
+
     output = level3_PIM_CIM_flow(data_list,
                                  before_models,
                                  after_models,
@@ -101,6 +116,11 @@ def test_CIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_
     assert isinstance(output[0], PUNCHCube)
     assert output[0].meta['TYPECODE'].value == 'CI'
     assert output[0].meta['OBSCODE'].value == 'M'
+    assert 'before_f_corona' in output[0].meta['CALFCOR1'].value
+    assert 'after_f_corona' in output[0].meta['CALFCOR2'].value
+    # Only the base filename should be there
+    assert '/' not in output[0].meta['CALFCOR1'].value
+    assert '/' not in output[0].meta['CALFCOR2'].value
 
 
 def test_level3_flow_PTM_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixture):

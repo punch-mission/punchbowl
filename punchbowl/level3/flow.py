@@ -190,10 +190,10 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                               else path.load()  for path in after_f_corona_model_paths]
 
     # Extract filenames from DataLoader or string inputs to save to FITS headers
-    before_f_corona_model_short_paths = [model_string.src_repr if isinstance(model_string, DataLoader)
+    before_f_corona_model_short_paths = [model_string.src_repr() if isinstance(model_string, DataLoader)
                                          else os.path.basename(model_string)
                                          for model_string in before_f_corona_model_paths]
-    after_f_corona_model_short_paths = [model_string.src_repr if isinstance(model_string, DataLoader)
+    after_f_corona_model_short_paths = [model_string.src_repr() if isinstance(model_string, DataLoader)
                                         else os.path.basename(model_string)
                                         for model_string in after_f_corona_model_paths]
 

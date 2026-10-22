@@ -1,0 +1,1 @@
+F corona model generation was using stray light modeling's setting for file strides. This is now fixed.

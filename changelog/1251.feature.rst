@@ -1,1 +1,0 @@
-Change jpegls decoding package from pylibjpeg to imagecodecs.

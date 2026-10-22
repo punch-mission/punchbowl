@@ -1,0 +1,1 @@
+Change F-corona percentile from 3 to 2%. This will change the brightness of F-corona models.

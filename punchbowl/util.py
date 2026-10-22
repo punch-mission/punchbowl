@@ -18,6 +18,7 @@ from numpy.typing import ArrayLike
 from scipy.ndimage import gaussian_filter
 from scipy.signal import convolve2d
 
+from punchbowl.constants import N_ROLLS_PER_DAY
 from punchbowl.data import load_ndcube_from_fits, write_ndcube_to_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import InvalidDataError, MissingTimezoneWarning
@@ -379,7 +380,7 @@ def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 
     out_array[0] = images[0] * masks[0]
     np.nan_to_num(out_array[0], copy=False)
     for i in numba.prange(out_array.shape[1]):
-        for j, (image, mask) in enumerate(zip(images[1:, i], masks[1:, i], strict=True)):
+        for j, (image, mask) in enumerate(zip(images[1:, i], masks[1:, i])): # noqa: B905
             j += 1 # noqa: PLW2901
             for k in range(len(image)):
                 mval = mask[k] * z_filter_index
@@ -399,10 +400,38 @@ def stack_images(images: np.ndarray, masks: np.ndarray, z_filter_index: float = 
     return out_array
 
 
-def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_time: datetime, time_key: str = "DATE-OBS",
-                     allow_extrapolation: bool = False, and_uncertainty: bool = False,
+def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_time: datetime, # noqa: C901
+                     time_key: str = "DATE-OBS", allow_extrapolation: bool = False, and_uncertainty: bool = False,
                      infill_nans: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
-    """Interpolates between two data objects."""
+    """
+    Interpolates between two data objects.
+
+    Parameters
+    ----------
+    data_before : PUNCHCube
+        The "before" image to interpolate from
+    data_after : PUNCHCube
+        The "after" image to interpolate from
+    reference_time : datetime
+        The time at which to interpolate
+    time_key : str
+        Which header key to use from `data_before` and `data_after` when interpolating
+    allow_extrapolation : bool
+        Whether to allow extrapolation, or to fail if `reference_time` does not fall between the times of the two cubes
+    and_uncertainty : bool
+        Whether to also interpolate the uncertainty arrays of the input cubes
+    infill_nans : bool
+        If True, for any pixels that are NaN in one of the two images, the output value will be the pixel value in the
+        other cube. If False, NaNs propagate through.
+
+    Returns
+    -------
+    data_interpolated : np.ndarray
+        The interpolated image
+    uncert_interpolated : np.ndarray
+        The interpolated uncertainty. Returned only if `and_uncertainty` is True.
+
+    """
     before_date = parse_datetime(data_before.meta[time_key].value + " UTC").timestamp()
     after_date = parse_datetime(data_after.meta[time_key].value + " UTC").timestamp()
     if reference_time.tzinfo is None:
@@ -419,10 +448,12 @@ def interpolate_data(data_before: PUNCHCube, data_after:PUNCHCube, reference_tim
 
     if before_date == observation_date:
         data_interpolated = data_before.data
-        uncert_interpolated = data_before.uncertainty.array
+        if and_uncertainty:
+            uncert_interpolated = data_before.uncertainty.array
     elif after_date == observation_date:
         data_interpolated = data_after.data
-        uncert_interpolated = data_after.uncertainty.array
+        if and_uncertainty:
+            uncert_interpolated = data_after.uncertainty.array
     else:
         data_interpolated = ((data_after.data - data_before.data)
                               * (observation_date - before_date) / (after_date - before_date)
@@ -791,14 +822,63 @@ def limit_threads(n_threads: int | None) -> None:
         yield
 
 
+def make_circular_mask(shape: tuple[int, int], radius: float) -> np.ndarray:
+    """
+    Make a circular mask centered in the array. Pixels within the radius are set to 1.
+
+    Parameters
+    ----------
+    shape: tuple[int, int]
+        The array shape
+    radius: float
+        The radius
+
+    Returns
+    -------
+    mask: np.ndarray
+
+    """
+    yy, xx = np.mgrid[:shape[0], :shape[1]]
+    xx = xx - shape[1] / 2 + 0.5
+    yy = yy - shape[0] / 2 + 0.5
+    r = np.sqrt(xx ** 2 + yy ** 2)
+    return r < radius
+
+
 def fname_date_to_utime(timestamp: str) -> int:
-    """Get a timestamp from a filename."""
+    """
+    Get a Unix timestamp from the date portion of a filename.
+
+    Parameters
+    ----------
+    timestamp : str
+        The timestamp portion (YYYYMMDDHHMMSS) of a filename.
+
+    Returns
+    -------
+    timestamp : int
+        The corresponding Unix timestamp.
+
+    """
     dt = datetime.strptime(timestamp, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
     return int(dt.timestamp())
 
 
 def fname_to_utime(fname: str) -> int:
-    """Get a timestamp."""
+    """
+    Get a Unix timestamp corresponding to the datetime portion of a filename.
+
+    Parameters
+    ----------
+    fname : str
+        A PUNCH filename
+
+    Returns
+    -------
+    timestamp : int
+        The corresponding Unix timestamp.
+
+    """
     tstr = re.findall(r"_(\d{14})_", fname)[0]
     if len(tstr):
         return fname_date_to_utime(tstr)
@@ -806,26 +886,81 @@ def fname_to_utime(fname: str) -> int:
 
 
 def cube_to_utime(cube: PUNCHCube) -> int:
-    """Get a timestamp."""
+    """
+    Get a Unix timestamp corresponding to the DATE-OBS value of a PUNCHCube.
+
+    Parameters
+    ----------
+    cube : PUNCHCube
+        A PUNCH data cube.
+
+    Returns
+    -------
+    timestamp : int
+        The corresponding Unix timestamp.
+
+    """
     t = cube.meta.datetime.replace(tzinfo=UTC)
     return t.timestamp()
 
 fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
 
 def phase_in_window(fname: str) -> int:
-    """Get roll position phase."""
+    """
+    Get the roll-position phase of a given PUNCH file.
+
+    Parameters
+    ----------
+    fname : str
+        A PUNCH L1 filename.
+
+    Returns
+    -------
+    phase : int
+        The image's phase in a roll position, where 0 represents the "spacecraft is rolling" part of the sequence, and
+        1-7 are the imaging portions of the sequence.
+
+    """
     utime = fname_to_utime(fname)
     return int(((utime - fiducial_utime))/60) % 8
 
 
 def phase_in_window_from_cube(cube: PUNCHCube) -> int:
-    """Get roll position phase."""
+    """
+    Get the roll-position phase of a given PUNCHCube.
+
+    Parameters
+    ----------
+    cube : PUNCHCube
+        A PUNCHCube.
+
+    Returns
+    -------
+    phase : int
+        The image's phase in a roll position, where 0 represents the "spacecraft is rolling" part of the sequence, and
+        1-7 are the imaging portions of the sequence.
+
+    """
     utime = cube_to_utime(cube)
     return int(((utime - fiducial_utime))/60) % 8
 
 
 def make_phases(file_list: list[str]) -> list[list[str]]:
-    """Group files by phase within roll position."""
+    """
+    Group files by phase within roll position.
+
+    Parameters
+    ----------
+    file_list : list[str]
+        A list of PUNCH L1 filenames.
+
+    Returns
+    -------
+    grouped_files : list[list[str]]
+        8 lists, each containing all the files belonging to one of the 8 phases in a roll position. The 0th list will
+        normally be empty, as no images are taken during phase 0.
+
+    """
     phases = [[],[],[],[],[],[],[],[]]
     for fname in file_list:
         phase = phase_in_window(fname)
@@ -834,7 +969,29 @@ def make_phases(file_list: list[str]) -> list[list[str]]:
 
 
 def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) -> list[tuple[str, str]]:
-    """Match pairs of files across two phases."""
+    """
+    Match pairs of files across two phases.
+
+    If you have a list of PUNCH file names and need matched polarization pairs (e.g. the first and second M image
+    from each roll position), this is the function to do it. This function returns tuples of two files, where both
+    files are from the same roll position, and each file has one of the two specified phase values.
+
+    Parameters
+    ----------
+    phases : list[list[str]]
+        The output of `make_phases`, containing 8 lists of files, one for each phase in a roll position.
+    phase1 : int
+        The first phase use.
+    phase2 : int
+        The second phase use.
+
+    Returns
+    -------
+    pairs : list[tuple[str, str]]
+        A list of matched files. Each tuple will contain a filename from phase1 and a filename from phase2, and each of
+        the two files in a given tuple will come from the same roll position.
+
+    """
     pairs = []
     j = 0
     for i in range(len(phases[phase1])):
@@ -850,3 +1007,25 @@ def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) ->
         if dt_min > 0 and dt_min < 8:
             pairs.append((phases[phase1][i], phases[phase2][j]))
     return pairs
+
+
+def phase_in_day(fname: str) -> int:
+    """
+    Get roll position number in the day.
+
+    Note that the "day" starts 4 minutes before midnight, because we're in the middle of a roll position at midnight.
+
+    Parameters
+    ----------
+    fname : str
+        A PUNCH L1 filename.
+
+    Returns
+    -------
+    position_number : int
+        The roll position number in the day, where 0 is the first roll position of the day. (This number will increase
+        every time the spacecraft rolls, once every 8 minutes in standard operations.)
+
+    """
+    utime = fname_to_utime(fname)
+    return (int(((utime - fiducial_utime))/60) // 8) % N_ROLLS_PER_DAY

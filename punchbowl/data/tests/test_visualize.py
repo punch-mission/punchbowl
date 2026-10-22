@@ -11,8 +11,10 @@ from punchbowl.data.visualize import (
     animate_punch,
     cmap_punch,
     cmap_punch_r,
-    generate_mzp_to_rgb_map,
     load_quicklook_scaling,
+    cmap_punch,
+    cmap_punch_r,
+    generate_tbpb_to_rgb_map,
     plot_punch,
     radial_distance,
     radial_filter,
@@ -171,3 +173,10 @@ def test_plot_punch_axes_off_colorbar(sample_ndcube):
     fig, ax = plot_punch(cube, axes_off=True, colorbar=True, vmin=1e-14, vmax=1e-12)
     assert len(ax.child_axes) == 1
     plt.close(fig)
+
+def test_tbpb_to_rgb(sample_ndcube):
+    cube = sample_ndcube((2, 16, 16), code="PTM", level="3")
+    rgb, color = generate_tbpb_to_rgb_map(cube)
+    assert rgb.shape == (16, 16, 3)
+    assert color.shape == (3, 16, 16)
+    assert 0 <= rgb.min() and rgb.max() <= 1

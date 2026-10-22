@@ -1,1 +1,0 @@
-Avoid fall through for backprocessing if the children files list is empty.

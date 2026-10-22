@@ -1,0 +1,50 @@
+name: Bulk Create Data Rlease GitHub Issues
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Parse YAML and Create Issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Ensure yq is installed to parse YAML safely
+          if ! command -v yq &> /dev/null; then
+            sudo wget -qO /usr/local/bin/yq https://github.com
+            sudo chmod +x /usr/local/bin/yq
+          fi
+
+          # Read total item count
+          count=$(yq '.issues | length' .github/bulk-data-release-issues.yaml)
+
+          # Loop through each issue entry
+          for ((i=0; i<$count; i++)); do
+            title=$(yq ".issues[$i].title" .github/bulk-data-release-issues.yaml)
+            body=$(yq ".issues[$i].body" .github/bulk-data-release-issues.yaml)
+            
+            # Format optional metadata fields into comma-separated strings
+            labels=$(yq ".issues[$i].labels | join(\",\")" .github/bulk-data-release-issues.yaml)
+            assignees=$(yq ".issues[$i].assignees | join(\",\")" .github/bulk-data-release-issues.yaml)
+
+            echo "Creating issue: $title"
+
+            # Construct gh CLI argument string dynamically
+            cmd="gh issue create --title \"$title\" --body \"$body\""
+            
+            if [ "$labels" != "null" ] && [ -n "$labels" ]; then
+              cmd="$cmd --label \"$labels\""
+            fi
+            
+            if [ "$assignees" != "null" ] && [ -n "$assignees" ]; then
+              cmd="$cmd --assignee \"$assignees\""
+            fi
+
+            # Execute issue creation command
+            eval $cmd
+          done

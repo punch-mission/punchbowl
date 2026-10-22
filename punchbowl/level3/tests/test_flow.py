@@ -1,4 +1,5 @@
 import os
+import sys
 import pathlib
 from datetime import datetime, timedelta
 
@@ -65,7 +66,11 @@ def test_PIM_flow_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixtur
     assert '/' not in output[0].meta['CALFCOR2'].value
 
 
-@pytest.mark.parametrize('use_dataloaders', [True, False])
+@pytest.mark.parametrize('use_dataloaders',
+                         [pytest.param(True,
+                                       marks=pytest.mark.skipif(sys.version_info < (3, 13),
+                                       reason="ShmPickleableArray requires Python 3.13 or higher")),
+                          False])
 def test_CIM_flow_clear_runs_with_filenames(sample_ndcube, tmpdir, prefect_test_fixture, use_dataloaders, monkeypatch):
     data_list = [sample_ndcube(shape=(10, 10), code=f"XR{obs + 1}", level="2") for obs in range(4)]
     for c in data_list:

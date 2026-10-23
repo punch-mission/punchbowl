@@ -1,0 +1,527 @@
+import subprocess
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from multiprocessing import Pool
+
+import astropy.units as u
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import numpy as np
+import yaml
+from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Colormap, Norm, Normalize, PowerNorm
+from matplotlib.figure import Figure
+from ndcube import NDCollection, NDCube
+from prefect.variables import Variable
+from solpolpy import resolve
+from tqdm.auto import tqdm
+
+from punchbowl.data import punch_io
+from punchbowl.data.color import cmap_punch, cmap_punch_pb
+from punchbowl.data.punchcube import PUNCHCube
+
+CONFIG_SCALING_PATH = Path(__file__).parent / "data" / "scaling_parameters.yaml"
+DEFAULT_SCALING = (5e-13, 5e-11)
+
+def radial_distance(h: int, w: int, center: tuple[int, int] | None = None, radius: float | None = None) -> np.ndarray:
+    """Create radial distance array."""
+    if center is None:
+        center = (int(w/2), int(h/2))
+
+    if radius is None:
+        radius = min([center[0], center[1], w-center[0], h-center[1]])
+
+    y, x = np.ogrid[:h, :w]
+    dist_arr = np.sqrt((x - center[0])**2 + (y - center[1])**2)
+
+    return dist_arr / dist_arr.max()
+
+
+def radial_filter(data: np.ndarray) -> np.ndarray:
+    """Filter data with radial distance function."""
+    return data * radial_distance(*data.shape) ** 2.5
+
+
+def _build_norm(norm: Norm, vmin: float, vmax: float, gamma: float) -> Normalize:
+    """Instantiate norm class; gamma applies only to PowerNorm."""
+    if issubclass(norm, PowerNorm):
+        return norm(gamma=gamma, vmin=vmin, vmax=vmax)
+    return norm(vmin=vmin, vmax=vmax)
+
+
+def generate_mzp_to_rgb_map(data_cube: np.ndarray,
+                            gamma:float=0.7,
+                            frac:float=0.125,
+                            s_boost:float=2.25) -> np.ndarray:
+    """
+    Create an RGB composite from a MZP cube.
+
+    Parameters
+    ----------
+    data_cube : NDData-like or numpy array
+        Expected shape: (3, ny, nx)
+        Channels correspond to M, Z, P images.
+    gamma : float
+        Power-law exponent to apply to each channel.
+    frac : float
+        Fractional scaling applied after median normalization.
+    s_boost : float
+        HSV saturation boost factor (>1 increases color saturation).
+
+    Returns
+    -------
+    rgb_sat : ndarray (ny, nx, 3)
+        Float RGB array in [0,1] with enhanced saturation.
+    color_image : ndarray (3, ny, nx)
+        8-bit RGB image before HSV saturation.
+
+    """
+    m = data_cube[0].astype(np.float32)
+    z = data_cube[1].astype(np.float32)
+    p = data_cube[2].astype(np.float32)
+
+    m = m ** gamma
+    z = z ** gamma
+    p = p ** gamma
+
+    # Median-normalize and scale to 0 to 255 range
+    scaled_m = (np.clip(frac * m / np.nanmedian(m), 0, 1) * 255).astype("float32")
+    scaled_z = (np.clip(frac * z / np.nanmedian(z), 0, 1) * 255).astype("float32")
+    scaled_p = (np.clip(frac * p / np.nanmedian(p), 0, 1) * 255).astype("float32")
+
+    ny, nx = m.shape
+    color_image = np.zeros((3, ny, nx), dtype=np.uint16)
+    color_image[0] = scaled_m
+    color_image[1] = scaled_z
+    color_image[2] = scaled_p
+
+    # Convert to RGB (ny, nx, 3)
+    rgb = np.moveaxis(color_image, 0, -1) / 255.0
+
+    # RGB to HSV
+    hsv = mcolors.rgb_to_hsv(rgb)
+
+    # Boost saturation
+    hsv[..., 1] = np.clip(hsv[..., 1] * s_boost, 0, 1)
+
+    # HSV to RGB
+    rgb_sat = mcolors.hsv_to_rgb(hsv)
+
+    return rgb_sat, color_image
+
+
+def generate_tbpb_to_rgb_map(cube_bpb: PUNCHCube,
+                             gamma:float=0.7,
+                             frac:float=0.125,
+                             s_boost:float=2.25) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Create an RGB composite from an tBpB cube.
+
+    Parameters
+    ----------
+    cube_bpb : PUNCHCube
+        Data cube containing total and polarized brightness layers
+    gamma : float
+        Power-law exponent to apply to each channel.
+    frac : float
+        Fractional scaling applied after median normalization.
+    s_boost : float
+        HSV saturation boost factor (>1 increases color saturation).
+
+    Returns
+    -------
+    rgb_sat : ndarray (ny, nx, 3)
+        Float RGB array in [0,1] with enhanced saturation.
+    color_image : ndarray (3, ny, nx)
+        8-bit RGB image before HSV saturation.
+
+    """
+    meta = dict(cube_bpb.meta.to_fits_header(wcs=cube_bpb.wcs))
+
+    collection_mzp = resolve(NDCollection(
+        [("tB", NDCube(cube_bpb.data[0], wcs=cube_bpb[0].wcs, meta=meta)),
+         ("pB", NDCube(cube_bpb.data[1], wcs=cube_bpb[1].wcs, meta=meta))],
+         aligned_axes="all"), "mzpsolar")
+
+    return generate_mzp_to_rgb_map(
+        np.stack([collection_mzp[k].data for k in ("M", "Z", "P")]),
+        gamma=gamma, frac=frac, s_boost=s_boost)
+
+
+def _render_frame(args: tuple[int, Path | PUNCHCube, str, dict]) -> Path:
+    """Frame rendering helper function."""
+    i, data, tmpdir, kwargs = args
+    frame_path = Path(tmpdir) / f"frame_{i:07d}.png"
+    plot_punch(data, save_path=frame_path, **kwargs)
+    return frame_path
+
+
+def animate_punch(
+    data_list: list[Path | PUNCHCube],
+    output_path: str | Path,
+    fps: int = 10,
+    n_jobs: int | None = None,
+    persistence: bool = False,
+    ffmpeg_path: str = "ffmpeg",
+    **plot_kwargs: dict,
+) -> None:
+    """
+    Create an animation from a sequence of PUNCH data.
+
+    Parameters
+    ----------
+    data_list : list of Path or PUNCHCube
+        PUNCH data to animate
+    output_path : str or Path
+        Output path to write generated animation (.mp4)
+    fps : int, optional
+        Frames per second
+    n_jobs : int or None, optional
+        Number of parallel processes (None uses all available cores)
+    persistence : bool, optional
+        Toggle for persistence of vision animation, which updates each frame in valid data areas,
+        keeping a running value elsewhere. False by default.
+    ffmpeg_path : str
+        Option to provide a different path to ffmpeg
+    **plot_kwargs
+        Additional formatting arguments passed to plot_punch
+
+    """
+    with TemporaryDirectory() as tmpdir:
+        if persistence:
+            for i, data in tqdm(enumerate(data_list), total=len(data_list)):
+                cube = data if isinstance(data, PUNCHCube) else punch_io.load_ndcube_from_fits(data)
+                if i == 0:
+                    persistence_array = cube.data.copy()
+                frame_path = Path(tmpdir) / f"frame_{i:07d}.png"
+                plot_punch(cube, save_path=frame_path, **plot_kwargs, persistence_array=persistence_array)
+                mask = np.isfinite(cube.uncertainty.array)
+                persistence_array[mask] = cube.data[mask]
+                plt.close("all")
+        else:
+            args_list = [(i, data, tmpdir, plot_kwargs) for i, data in enumerate(data_list)]
+            with Pool(n_jobs) as pool:
+                list(tqdm(pool.imap_unordered(_render_frame, args_list), total=len(args_list)))
+
+        frame_paths = list(Path(tmpdir).glob("frame_*.png"))
+        if not frame_paths:
+            raise RuntimeError("No frames were created")
+
+        ffmpeg_command = [
+            ffmpeg_path, "-y", "-framerate", str(fps),
+            "-i", f"{tmpdir}/frame_%07d.png",
+            "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            str(output_path),
+            ]
+
+        subprocess.run(ffmpeg_command, check=True, stdout = subprocess.DEVNULL)  # noqa: S603
+
+
+def load_quicklook_scaling(level: str | None = None,
+                           product: str | None = None,
+                           obscode: str | None = None,
+                           config: str | dict | None = None) -> tuple[float, float]:
+    """
+    Load quicklook data scaling values.
+
+    Parameters
+    ----------
+    level : str | None, optional
+        Data product level, by default None
+    product : str | None, optional
+        Data product code, by default None
+    obscode : str | None, optional
+        Data obs code, by default None
+    config : str | dict | None, optional
+        Path to scaling config file, or the config dictionary itself, by default None
+
+    Returns
+    -------
+    tuple[float, float]
+        Scaling (min, max) values to use in data visualization
+
+    Raises
+    ------
+    TypeError
+        Error resulting from invalid input config dictionary
+    KeyError
+        Error resulting from data product with no corresponding scaling config entry
+
+    """
+    if isinstance(config, str):
+        with open(config) as f:
+            config_parameters = yaml.safe_load(f)
+    elif isinstance(config, dict):
+        config_parameters = config
+    elif config is None:
+        config = Variable.get("punchpipe_config", str(CONFIG_SCALING_PATH))
+        with open(config) as f:
+            config_parameters = yaml.safe_load(f)
+    else:
+        raise TypeError("config must be a path string or dictionary object")
+
+    scaling = config_parameters.get("quicklook_scaling")
+    if scaling is None or not level:
+        return DEFAULT_SCALING
+
+    level_data = scaling.get(level, {})
+    product_data = level_data.get(product, level_data.get("default"))
+    if product_data is None:
+        raise KeyError("Data product is undefined in scaling configuration.")
+
+    return product_data[1] if obscode == "4" else product_data[0]
+
+
+def _draw_satellite_legend(ax: Axes,
+                           cube: PUNCHCube,
+                           radius: float = 0.022,
+                           center: tuple[float, float] = (0.94, 0.94),
+                           fontsize: int = 8) -> None:
+    """Add a legend illustrating relative WFI spacecraft angles."""
+    ny, nx = cube.data.shape[-2:]
+    pix = ax.get_transform("pixel")
+    cx, cy, r = center[0] * nx, center[1] * ny, radius * nx
+    for n in (1, 2, 3):
+        kx, ky = f"CTRXWFI{n}", f"CTRYWFI{n}"
+        if kx not in cube.meta or ky not in cube.meta:
+            continue
+        x, y = cube.meta[kx].value, cube.meta[ky].value
+        if x == -1 or y == -1:
+            continue
+        a = np.arctan2(y - ny / 2, x - nx / 2)
+        ax.text(cx + r * np.cos(a), cy + r * np.sin(a), str(n), color="white", fontsize=fontsize,
+                fontfamily="monospace", ha="center", va="center", transform=pix)
+
+
+def _draw_inset_colorbar(fig:Figure, ax:Axes, im:ScalarMappable,
+                         vmin:float, vmax:float, colorbar_label:str) -> None:
+    """Draws a minimal inset colorbar."""
+    cax = ax.inset_axes([0.817, 0.012, 0.15, 0.015], axes_class=Axes)
+    cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticklocation="top")
+    if isinstance(im.norm, PowerNorm):
+        cb.set_ticks([vmin, vmax])
+        cb.set_ticklabels([f"{vmin:.3g}", f"{vmax:.3g}"])
+        step = 10.0 ** (np.ceil(np.log10(vmax)) - 1)
+        n = int(vmax // step)
+        cb.ax.xaxis.set_ticks(step * np.arange(1, n + 1), minor=True)
+        cb.ax.xaxis.get_offset_text().set_visible(False)
+    cb.ax.xaxis.set_ticks_position("top")
+    cb.ax.tick_params(axis="x", which="both", colors="white", labelsize=8,
+                    length=3, width=0.5, pad=2, labeltop=True, labelbottom=False)
+    cb.ax.tick_params(axis="x", which="minor", length=1.5)
+    for lab in cb.ax.get_xticklabels():
+        lab.set_fontfamily("monospace")
+    if colorbar_label:
+        ax.text(0.99, 0.065, colorbar_label, transform=ax.transAxes, color="white",
+                verticalalignment="bottom", horizontalalignment="right",
+                fontsize=8, fontfamily="monospace")
+
+
+def plot_punch(  # noqa: C901
+    data: Path | PUNCHCube,
+    layer: int = 0,
+    cmap: str | Colormap | None = None,
+    norm: Normalize | None = PowerNorm,
+    vmin: float | None = None,
+    vmax: float | None = None,
+    gamma: float = 1/2.2,
+    figsize: tuple[float, float] = (10,8),
+    axes_labels: tuple[str, str] = ("Helioprojective longitude", "Helioprojective latitude"),
+    axes_off: bool = True,
+    annotate: bool = True,
+    grid_spacing: int = 15,
+    grid_alpha: float = 0.25,
+    title_prefix: str | None = None,
+    label_satellites: bool = False,
+    draw_satellite_legend: bool = False,
+    colorbar: bool = True,
+    colorbar_label: str | None = None,
+    persistence_array: np.ndarray | PUNCHCube | None = None,
+    trim_edge: float | tuple[float, float] | list[float, float] | None = None,
+    save_path: str | Path | None = None,
+    dpi: int = 300,
+    ) -> tuple[Figure, Axes]:
+    """
+    Plot a PUNCH PUNCHCube data object.
+
+    Parameters
+    ----------
+    data : Path | PUNCHCube
+        PUNCH data to plot, either a filepath or a PUNCHCube
+    layer : int
+        Data layer to plot when using three-dimensional data cubes
+    cmap : str or Colormap, optional
+        Colormap to use for plot
+    norm : Normalize, optional
+        Normalization function for image
+    vmin : float, optional
+        Normalization vmin value
+    vmax : float, optional
+        Normalization vmax value
+    gamma : float, optional
+        Normalization gamma scaling value
+    figsize : tuple, optional
+        Figure size
+    axes_labels : tuple[str, str], optional
+        Axes labels (x, y)
+    axes_off : bool, optional
+        Remove axes and labels
+    annotate : bool, optional
+        Toggles display of corner annotation when axes_off is True
+    grid_spacing : int, optional
+        Coordinate grid spacing in degrees, removes grid for None
+    grid_alpha : float, optional
+        Coordinate grid transparency (1: opaque, 0: transparent)
+    title_prefix : str, optional
+        Prefix to prepend to plot title
+    label_satellites : bool, optional
+        Adds text labels for each satellite in a mosaic if True.
+    draw_satellite_legend : bool, optional
+        Adds a legend illustrating relative WFI spacecraft angles.
+    colorbar : bool, optional
+        Toggle for plotting colorbar
+    colorbar_label : str, optional
+        Label to use for the colorbar
+    persistence_array : np.ndarray or PUNCHCube or None
+        When not None, data is plotted where valid atop this existing array.
+    trim_edge : float, tuple[float, float], list[float, float], None
+        Option to trim the edges of low-noise mosaic products to the specified fractional radial distance.
+        One input value trims the outer boundary only, while two trim both the inner and outer boundaries.
+        A reasonable set of values are (0.081, 0.705) for the inner and outer boundaries.
+    save_path : str or Path, optional
+        When provided, saves the figure to file directly without plotting on screen
+    dpi : int, optional
+        DPI for output plots saved to file
+
+    Returns
+    -------
+    tuple of (figure, axes)
+
+    """
+    if isinstance(data, PUNCHCube):
+        cube = data
+    elif isinstance(data, Path | str):
+        cube = punch_io.load_ndcube_from_fits(data)
+    else:
+        msg = "Provide a valid file path or PUNCHCube for plotting."
+        raise TypeError(msg)
+
+    if persistence_array is not None:
+        mask = ~np.isfinite(cube.uncertainty.array)
+
+    if isinstance(persistence_array, np.ndarray):
+        cube.data[mask] = persistence_array[mask]
+    elif isinstance(persistence_array, PUNCHCube):
+        cube.data[mask] = persistence_array.data[mask]
+
+    if vmin is None or vmax is None:
+        if layer == 0 and cube.meta["OBS-MODE"].value in ["Polar_tBpB", "Polar_BpB"]:
+            scaling_product = cube.meta["TYPECODE"].value.replace("P", "C", 1)
+        else:
+            scaling_product = cube.meta["TYPECODE"].value
+
+        try:
+            vmin_default, vmax_default = load_quicklook_scaling(level=cube.meta["LEVEL"].value,
+                                                                product=scaling_product,
+                                                                obscode=cube.meta["OBSCODE"].value,
+                                                                config=str(CONFIG_SCALING_PATH))
+        except KeyError as err:
+            raise KeyError("Default scaling values not found, please provide vmin and vmax scaling values.") from err
+
+        vmin = vmin_default if vmin is None else vmin
+        vmax = vmax_default if vmax is None else vmax
+
+    vmin, vmax = float(vmin), float(vmax)
+
+    if cmap is None:
+        cmap = cmap_punch_pb if len(cube.data.shape) == 3 and layer == 1 else cmap_punch
+
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
+                                                        else cube.wcs[layer]})
+
+    if isinstance(trim_edge, (tuple, list)):
+        r_min, r_max = sorted(trim_edge)
+        r = radial_distance(cube.data.shape[-2], cube.data.shape[-1])
+        radial_mask = (r >= r_min) & (r <= r_max)
+    elif isinstance(trim_edge, float):
+        radial_mask = radial_distance(cube.data.shape[-2], cube.data.shape[-1]) < trim_edge
+    else:
+        radial_mask = np.ones(cube.data.shape[-2:], dtype=bool)
+
+    im = ax.imshow(np.where(radial_mask, cube.data if cube.data.ndim == 2 else cube.data[layer, ...], np.nan),
+                   cmap=cmap, norm=_build_norm(norm, vmin, vmax, gamma))
+
+    lon, lat = ax.coords
+    lat.set_ticks(np.arange(-90, 90, grid_spacing) * u.degree)
+    lon.set_ticks(np.arange(-180, 180, grid_spacing) * u.degree)
+    lat.set_major_formatter("dd")
+    lon.set_major_formatter("dd")
+
+    ax.set_facecolor("black")
+    ax.coords.grid(color="white", alpha=grid_alpha, ls="dotted")
+    ax.set_xlabel(axes_labels[0])
+    ax.set_ylabel(axes_labels[1])
+    timestamp = cube.meta.datetime.strftime("%Y/%m/%d %H:%M:%S UT")
+
+    if title_prefix is None:
+        title_prefix = f"PUNCH L{cube.meta['LEVEL']} {cube.meta['TYPECODE']}{cube.meta['OBSCODE']}"
+    ax.set_title(f"{title_prefix} {timestamp}")
+
+    if axes_off:
+        ax.set_axis_off()
+        ax.set_title("")
+        fig.set_facecolor("black")
+
+    if axes_off and annotate:
+        ax.text(0.01,0.01,
+        cube.meta.datetime.strftime("%Y-%m-%d %H:%M:%S UT"),
+        transform=ax.transAxes,
+        color="white",
+        verticalalignment="bottom",
+        horizontalalignment="left",
+        fontsize=8,
+        fontfamily="monospace")
+
+        ax.text(0.01, 0.05,
+        title_prefix,
+        transform=ax.transAxes,
+        color="white",
+        verticalalignment="bottom",
+        horizontalalignment="left",
+        fontsize=8,
+        fontfamily="monospace")
+
+    if label_satellites:
+        position_keywords = ["CTRXWFI1", "CTRYWFI1",
+                             "CTRXWFI2", "CTRYWFI2",
+                             "CTRXWFI3", "CTRYWFI3",
+                             "CTRXNFI4", "CTRYNFI4"]
+        for i in range(0, 8, 2):
+            satellite = position_keywords[i][-4:]
+            if position_keywords[i] in cube.meta and position_keywords[i+1] in cube.meta:
+                x, y = cube.meta[position_keywords[i]].value, cube.meta[position_keywords[i+1]].value
+                if x != -1 and y != -1:
+                    ax.text(x, y, satellite, color="white",
+                            verticalalignment="center", horizontalalignment="center",
+                            fontsize=8, fontfamily="monospace")
+
+    if draw_satellite_legend:
+        _draw_satellite_legend(ax, cube)
+
+    if colorbar_label is None:
+        colorbar_label = "MSB" if int(cube.meta["LEVEL"].value) >= 2 else "DN"
+
+    if colorbar and not axes_off:
+        fig.colorbar(im, ax=ax, label=colorbar_label)
+
+    if colorbar and axes_off:
+        _draw_inset_colorbar(fig, ax, im, vmin, vmax, colorbar_label)
+
+    if save_path is not None:
+        fig.savefig(save_path, dpi=dpi, bbox_inches="tight")
+        plt.close(fig)
+        return None
+
+    return fig, ax

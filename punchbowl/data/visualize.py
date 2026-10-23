@@ -11,7 +11,6 @@ from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, Normalize, PowerNorm
 from matplotlib.figure import Figure
 from ndcube import NDCollection, NDCube
-from skimage.color import lab2rgb
 from solpolpy import resolve
 from tqdm.auto import tqdm
 

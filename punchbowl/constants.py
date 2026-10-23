@@ -1,5 +1,10 @@
 """Constant values used in PUNCHBOWL project."""
+from enum import IntEnum
 
+#: Data version: Current data version
+CURRENT_DATA_VERSION = "v0l"
+
+#: punch resolution
 ORIGINAL_PUNCH_RESOLUTION = 2048
 
 # --- NFI processing related -------------------------------------------------------------------------------------------
@@ -22,3 +27,24 @@ GLINT_MASK_BOTTOM_CUT_OFF = 250
 # center of the donut of stray light
 KERNEL_CENTER_X = 1014.50355056 - 1
 KERNEL_CENTER_Y = 1037.37339562 - 1
+
+# --- Phases of images -------------------------------------------------------------------------------------------------
+class ImagePhase(IntEnum):
+    """
+    Represents phases of image collection.
+
+    1 through 3 are the first set of polarized.
+    4 is the clear.
+    4 through 7 are the second set of polarized.
+    """
+
+    POLARIZED_PP_PHASE_1 = 1
+    POLARIZED_PZ_PHASE_1 = 2
+    POLARIZED_PM_PHASE_1 = 3
+    CLEAR = 4
+    POLARIZED_PP_PHASE_2 = 5
+    POLARIZED_PZ_PHASE_2 = 6
+    POLARIZED_PM_PHASE_2 = 7
+
+# --- Observing sequence details ---------------------------------------------------------------------------------------
+N_ROLLS_PER_DAY = 24 * 60 // 8

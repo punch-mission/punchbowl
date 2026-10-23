@@ -1,1 +1,0 @@
-Fix DSATVAL calculation to set NFI DSATVAL to 1254, but keep WFI DSATVAL at 1023.

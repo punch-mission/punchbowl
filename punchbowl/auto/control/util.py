@@ -119,7 +119,11 @@ def write_file(data: PUNCHCube, corresponding_file_db_entry, pipeline_config) ->
                          output_filename,
                          write_hash=pipeline_config.get("write_sha_files", True))
 
-    if pipeline_config.get('write_quicklooks', True) and corresponding_file_db_entry.file_type[0] not in ('S', 'T'):
+    if old_version_pattern := pipeline_config.get('old_fileversion_to_filter_in_meta', None):
+        replace_file_version_in_metadata(output_filename, old_version_pattern, pipeline_config['file_version'])
+
+    if (pipeline_config.get('write_quicklooks', True)
+            and corresponding_file_db_entry.file_type[0] not in ('S', 'T', 'A')):
         _write_quicklook(pipeline_config, corresponding_file_db_entry, data)
     return output_filename
 
@@ -181,27 +185,55 @@ def batched(iterable, n):
 
 def group_files_by_time(files: list[File],
                         max_duration_seconds: float = inf,
-                        max_per_group: int = inf) -> list[list[File]]:
+                        max_per_group: int = inf,
+                        max_seconds_between_images: float = inf) -> list[list[File]]:
+    """
+    Group up a sequence of files by various criteria.
+
+    The list of files will be walked through, and every time one of the criteria is tripped, a group boundary will be
+    set.
+
+    Parameters
+    ----------
+    files : list[File]
+        A sequence of File objects, assumed to be sorted in either ascending or descending temporal order.
+    max_duration_seconds : float
+        The maximum duration of a group.
+    max_per_group : int
+        The maximum number of files per group.
+    max_seconds_between_images : float
+        The maximum-allowed gap between images.
+
+    Returns
+    -------
+    grouped_files : list[list[File]]
+        The resulting groups of files.
+    """
+    if len(files) == 0:
+        return []
     # We need to group up files by date_obs, but we need to handle small variations in date_obs. The files are coming
     # from the database already sorted, so let's just walk through the list of files and cut a group boundary every time
     # date_obs increases by more than a threshold.
     grouped_files = []
     # We'll keep track of where the current group started, and then keep stepping to find the end of this group.
     group_start = 0
-    tstamp_start = files[0].date_obs.replace(tzinfo=UTC).timestamp()
+    timestamp_start = files[0].date_obs.replace(tzinfo=UTC).timestamp()
+    timestamp_previous = timestamp_start
     file_under_consideration = 0
     while True:
         file_under_consideration += 1
         if file_under_consideration == len(files):
             break
         this_tstamp = files[file_under_consideration].date_obs.replace(tzinfo=UTC).timestamp()
-        if (abs(this_tstamp - tstamp_start) > max_duration_seconds
+        if (abs(this_tstamp - timestamp_start) > max_duration_seconds
+                or abs(this_tstamp - timestamp_previous) > max_seconds_between_images
                 or file_under_consideration - group_start >= max_per_group):
             # date_obs has jumped by more than our tolerance, so let's cut the group and then start tracking the next
             # one
             grouped_files.append(files[group_start:file_under_consideration])
             group_start = file_under_consideration
-            tstamp_start = this_tstamp
+            timestamp_start = this_tstamp
+        timestamp_previous = this_tstamp
     grouped_files.append(files[group_start:])
     return grouped_files
 

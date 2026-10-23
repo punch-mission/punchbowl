@@ -1,4 +1,3 @@
-import re
 import pathlib
 import warnings
 from datetime import UTC, datetime
@@ -8,74 +7,22 @@ import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
 
+from punchbowl.constants import ImagePhase
 from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punch_io import load_many_cubes, load_ndcube_from_fits
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.exceptions import IncorrectPolarizationStateError, IncorrectTelescopeError, InvalidDataError
 from punchbowl.prefect import get_logger, punch_flow, punch_task
-from punchbowl.util import DataLoader, average_datetime, nan_gaussian, nan_percentile, nan_percentile_2d
-
-fiducial_utime = datetime(2025, 1, 1,  tzinfo=UTC).timestamp() - 4 * 60
-
-
-def fname_date_to_utime(timestamp: str) -> int:
-    """Get a timestamp."""
-    dt = datetime.strptime(timestamp, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
-    return int(dt.timestamp())
-
-
-def fname_to_utime(fname: str) -> int:
-    """Get a timestamp."""
-    tstr = re.findall(r"_(\d{14})_", fname)[0]
-    if len(tstr):
-        return fname_date_to_utime(tstr)
-    raise ValueError
-
-
-def cube_to_utime(cube: PUNCHCube) -> int:
-    """Get a timestamp."""
-    t = cube.meta.datetime.replace(tzinfo=UTC)
-    return t.timestamp()
-
-
-def phase_in_window(fname: str) -> int:
-    """Get roll position phase."""
-    utime = fname_to_utime(fname)
-    return int(((utime - fiducial_utime))/60) % 8
-
-
-def phase_in_window_from_cube(cube: PUNCHCube) -> int:
-    """Get roll position phase."""
-    utime = cube_to_utime(cube)
-    return int(((utime - fiducial_utime))/60) % 8
-
-
-def make_phases(file_list: list[str]) -> list[list[str]]:
-    """Group files by phase within roll position."""
-    phases = [[],[],[],[],[],[],[],[]]
-    for fname in file_list:
-        phase = phase_in_window(fname)
-        phases[phase].append(fname)
-    return phases
-
-
-def collect_pairs_by_phase(phases: list[list[str]], phase1: int, phase2: int) -> list[tuple[str, str]]:
-    """Match pairs of files across two phases."""
-    pairs = []
-    j = 0
-    for i in range(len(phases[phase1])):
-        ti = fname_to_utime(phases[phase1][i])
-        tj = fname_to_utime(phases[phase2][j])
-        while tj > ti and j > 0:
-            j = j - 1
-            tj = fname_to_utime(phases[phase2][j])
-        while tj <= ti and j < len(phases[phase2]) - 1:
-            j = j + 1
-            tj = fname_to_utime(phases[phase2][j])
-        dt_min = (tj - ti) / 60
-        if dt_min > 0 and dt_min < 8:
-            pairs.append((phases[phase1][i], phases[phase2][j]))
-    return pairs
+from punchbowl.util import (
+    DataLoader,
+    average_datetime,
+    collect_pairs_by_phase,
+    make_phases,
+    nan_gaussian,
+    nan_percentile,
+    nan_percentile_2d,
+    phase_in_window_from_cube,
+)
 
 
 @punch_flow
@@ -89,11 +36,11 @@ def construct_dynamic_stray_light_model(filepaths: list[str], reference_time: da
 
     phases = make_phases(filepaths)
     if pol_state == "P":
-        i1, i2 = 1, 5
+        i1, i2 = ImagePhase.POLARIZED_PP_PHASE_1, ImagePhase.POLARIZED_PP_PHASE_2
     elif pol_state == "Z":
-        i1, i2 = 2, 6
+        i1, i2 = ImagePhase.POLARIZED_PZ_PHASE_1, ImagePhase.POLARIZED_PZ_PHASE_2
     elif pol_state == "M":
-        i1, i2 = 3, 7
+        i1, i2 = ImagePhase.POLARIZED_PM_PHASE_1, ImagePhase.POLARIZED_PM_PHASE_2
     else:
         raise ValueError("Unrecognized polarization state")
 

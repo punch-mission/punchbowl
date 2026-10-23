@@ -1,0 +1,1 @@
+Starfield models (Level 3 PSM and CSM products) now have their celestial right ascension (RA) WCS coordinate flipped negative in sign to reflect proper behavior in coordinate transformations during model subtraction from data.

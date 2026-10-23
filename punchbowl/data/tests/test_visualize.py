@@ -4,7 +4,14 @@ from matplotlib.colors import LinearSegmentedColormap
 
 from punchbowl.data.color import cmap_punch, cmap_punch_pb, cmap_punch_pb_r, cmap_punch_r
 from punchbowl.data.tests.test_punch_io import sample_ndcube
-from punchbowl.data.visualize import plot_punch, radial_distance, radial_filter
+from punchbowl.data.visualize import (
+    cmap_punch,
+    cmap_punch_r,
+    generate_tbpb_to_rgb_map,
+    plot_punch,
+    radial_distance,
+    radial_filter,
+)
 
 
 def test_radial_distance():
@@ -64,3 +71,11 @@ def test_plot_punch_options(sample_ndcube):
     assert ax is not None
 
     plt.close(fig)
+
+
+def test_tbpb_to_rgb(sample_ndcube):
+    cube = sample_ndcube((2, 16, 16), code="PTM", level="3")
+    rgb, color = generate_tbpb_to_rgb_map(cube)
+    assert rgb.shape == (16, 16, 3)
+    assert color.shape == (3, 16, 16)
+    assert 0 <= rgb.min() and rgb.max() <= 1

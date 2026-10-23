@@ -11,34 +11,51 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 import parfive
-from sunpy import log
+from sunpy import config, log
 from sunpy.util.config import _is_writable_dir
 from sunpy.util.parfive_helpers import Downloader
 
-_BASE_URLS = (
-    "https://data.boulder.swri.edu/lowder/PUNCH/sample/"
-)
+_BASE_URL = "https://umbra.nascom.nasa.gov/punch/"
+_FALLBACK_URL = "https://github.com/punch-mission/punch-sample-data/raw/main/"
+
+_VERSION = "v0l"
 
 _SAMPLE_DATA = {
-    "PUNCH_DK4": "PUNCH_L0_DK4_20250414154536_v1.fits",
-    "PUNCH_PAM": "PUNCH_L3_PAM_20250901032800_v0l.fits",
-    "PUNCH_CAM": "PUNCH_L3_CAM_20251022223629_v0h.fits",
-    "PUNCH_PAN": "PUNCH_L3_PAN_20240620000000.fits",
-    "PUNCH_PNN": "PUNCH_L3_PNN_20240620000000.fits",
-    "PUNCH_PTM": "PUNCH_L3_PTM_20240620000000.fits",
-    "PUNCH_PIM": "PUNCH_L3_PIM_20251101093829_v0h.fits",
-    "QUICKPUNCH_WQM": "PUNCH_LQ_WQM_20230704012000.fits",
-    "QUICKPUNCH_NQN": "PUNCH_LQ_NQN_20230704022400.fits",
+    "PUNCH_DK4": f"PUNCH_L0_DK4_20260422232519_{_VERSION}.fits",
+    "PUNCH_PAM": f"PUNCH_L3_PAM_20260524001600_{_VERSION}.fits",
+    "PUNCH_CAM": f"PUNCH_L3_CAM_20260524001600_{_VERSION}.fits",
+    "PUNCH_PTM": f"PUNCH_L3_PTM_20260524000230_{_VERSION}.fits",
+    "PUNCH_CTM": f"PUNCH_L3_CTM_20260524000029_{_VERSION}.fits",
+    "QUICKPUNCH_QAM": f"PUNCH_LQ_QAM_20261001001600_{_VERSION}.fits",
+    "QUICKPUNCH_QNN": f"PUNCH_LQ_QNN_20261001000021_{_VERSION}.fits",
+    "PUNCH_CAM_SEQUENCE": [
+        f"PUNCH_L3_CAM_20260524001600_{_VERSION}.fits",
+        f"PUNCH_L3_CAM_20260524004800_{_VERSION}.fits",
+        f"PUNCH_L3_CAM_20260524012000_{_VERSION}.fits",
+        f"PUNCH_L3_CAM_20260524015200_{_VERSION}.fits",
+        f"PUNCH_L3_CAM_20260524022400_{_VERSION}.fits",
+    ],
 }
 
-_SAMPLE_FILES = {v: k for k, v in _SAMPLE_DATA.items()}
+_SAMPLE_FILES = {}
+for _name, _paths in _SAMPLE_DATA.items():
+    for _path in ([_paths] if isinstance(_paths, str) else _paths):
+        _SAMPLE_FILES.setdefault(Path(_path).name, _name)
+
+
+def _sdac_path(filename: str) -> str:
+    """Derive the SDAC full path from the filename."""
+    _, level, code, timestamp, _ = filename.split("_")
+    level = level.removeprefix("L")
+    return f"{level}/{code}/{timestamp[:4]}/{timestamp[4:6]}/{timestamp[6:8]}/{filename}"
 
 
 def get_and_create_sample_dir() -> Path:
     """Get the config of download directory and create one if not present."""
-    sample_dir = Path("PUNCH_SAMPLE").expanduser().resolve()
+    sample_dir = Path(config.get("downloads", "download_dir")).expanduser().resolve() / "punch"
+    sample_dir.mkdir(parents=True, exist_ok=True)
     if not _is_writable_dir(sample_dir):
-        raise RuntimeError(f'Could not write to SunPy sample data directory="{sample_dir}"')
+        raise RuntimeError(f'Could not write to PUNCH sample data directory="{sample_dir}"')
 
     return sample_dir
 
@@ -95,7 +112,7 @@ def _retry_sample_data(results: parfive.Results, new_url_base:str) -> parfive.Re
         log.debug(
             f"Failed to download {_SAMPLE_FILES[file_name]} from {err.url}: {err.exception}")
         # Update the url to a mirror and requeue the file.
-        new_url = urljoin(new_url_base, file_name)
+        new_url = urljoin(new_url_base, file_name) # Fallback URL files are at the base of that path
         log.debug(f"Attempting redownload of {_SAMPLE_FILES[file_name]} using {new_url}")
         dl.enqueue_file(new_url, filename=err.filepath_partial)
 
@@ -115,7 +132,7 @@ def _handle_final_errors(results:parfive.Results) -> None:
         log.debug(f"Failed to download {_SAMPLE_FILES[file_name]} from {err.url}: {err.exception}",
                   )
         log.error(
-            f"Failed to download {_SAMPLE_FILES[file_name]} from all mirrors,"
+            f"Failed to download {_SAMPLE_FILES[file_name]} from all mirrors, "
             "the file will not be available.",
         )
 
@@ -158,14 +175,17 @@ def _get_sample_files(filename_list: list, no_download:bool=False, force_downloa
     if no_download:
         fullpaths = [fp if fp.exists() else None for fp in fullpaths]
     else:
-        to_download = zip(filename_list, fullpaths, strict=False)
+        to_download = list(zip(filename_list, fullpaths, strict=False))
         if not force_download:
             to_download = [(fn, fp) for fn, fp in to_download if not fp.exists()]
 
         if to_download:
-            results = _download_sample_data(_BASE_URLS, to_download, overwrite=force_download)
+            to_download = [(_sdac_path(fn), fp) for fn, fp in to_download]
+            results = _download_sample_data(_BASE_URL, to_download, overwrite=force_download)
 
-            # Try the other mirrors for any download errors
+            if results.errors:
+                results = _retry_sample_data(results, _FALLBACK_URL)
+
             if results.errors:
                 _handle_final_errors(results)
                 raise RuntimeError
@@ -187,16 +207,21 @@ def __dir__():  # noqa: ANN202
     return __all__
 
 
-# See PEP 562 (https://peps.python.org/pep-0562/) for module-level __getattr__()
+def _resolve(value, **kwargs):  # noqa: ANN001, ANN003, ANN202
+    if isinstance(value, str):
+        return _get_sample_files([value], **kwargs)[0]
+    return _get_sample_files(value, **kwargs)
+
+
 def __getattr__(name):  # noqa: ANN001, ANN202
     if name in _SAMPLE_DATA:
-        return _get_sample_files([_SAMPLE_DATA[name]])[0]
+        return _resolve(_SAMPLE_DATA[name])
     if name == "file_dict":
-        return dict(sorted(zip(_SAMPLE_DATA.keys(),
-                               _get_sample_files(_SAMPLE_DATA.values(), no_download=True), strict=False)))
+        return dict(sorted((k, _resolve(v, no_download=True)) for k, v in _SAMPLE_DATA.items()))
     if name == "file_list":
-        return [v for v in __getattr__("file_dict").values() if v]
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+        return [p for v in __getattr__("file_dict").values() for p in (v if isinstance(v, list) else [v])]
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
 
 
 def download_all(force_download:bool=False) -> list[Path]:
@@ -215,4 +240,4 @@ def download_all(force_download:bool=False) -> list[Path]:
         List of filepaths for sample data
 
     """
-    return _get_sample_files(_SAMPLE_DATA.values(), force_download=force_download)
+    return _get_sample_files(list(_SAMPLE_FILES), force_download=force_download)

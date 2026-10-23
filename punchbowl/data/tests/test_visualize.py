@@ -5,11 +5,10 @@ import numpy as np
 import pytest
 from matplotlib.colors import LinearSegmentedColormap
 
+from punchbowl.data.color import cmap_punch, cmap_punch_pb, cmap_punch_pb_r, cmap_punch_r
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.data.visualize import (
     DEFAULT_SCALING,
-    cmap_punch,
-    cmap_punch_r,
     generate_mzp_to_rgb_map,
     generate_tbpb_to_rgb_map,
     load_quicklook_scaling,
@@ -38,10 +37,24 @@ def test_radial_filter():
 
 def test_cmap_punch():
     assert isinstance(cmap_punch, LinearSegmentedColormap)
+    assert isinstance(cmap_punch_pb, LinearSegmentedColormap)
+
+    assert np.allclose(cmap_punch(0.0), (0, 0, 0, 1))
+    assert np.allclose(cmap_punch(1.0), (1, 1, 1, 1))
+
+    assert np.allclose(cmap_punch_pb(0.0), (0, 0, 0, 1))
+    assert np.allclose(cmap_punch_pb(1.0), (1, 1, 1, 1))
 
 
 def test_cmap_punch_r():
     assert isinstance(cmap_punch_r, LinearSegmentedColormap)
+    assert isinstance(cmap_punch_pb_r, LinearSegmentedColormap)
+
+    assert np.allclose(cmap_punch_r(1.0), (0, 0, 0, 1))
+    assert np.allclose(cmap_punch_r(0.0), (1, 1, 1, 1))
+
+    assert np.allclose(cmap_punch_pb_r(1.0), (0, 0, 0, 1))
+    assert np.allclose(cmap_punch_pb_r(0.0), (1, 1, 1, 1))
 
 
 def test_plot_punch(sample_ndcube):

@@ -1,0 +1,1 @@
+Registers PUNCH colormaps for tB, pB, p, and tau.

@@ -10,47 +10,19 @@ import numpy as np
 import yaml
 from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
-from matplotlib.colors import Colormap, LinearSegmentedColormap, Norm, Normalize, PowerNorm
+from matplotlib.colors import Colormap, Norm, Normalize, PowerNorm
 from matplotlib.figure import Figure
 from ndcube import NDCollection, NDCube
 from prefect.variables import Variable
-from skimage.color import lab2rgb
 from solpolpy import resolve
 from tqdm.auto import tqdm
 
 from punchbowl.data import punch_io
+from punchbowl.data.color import cmap_punch, cmap_punch_pb
 from punchbowl.data.punchcube import PUNCHCube
 
 CONFIG_SCALING_PATH = Path(__file__).parent / "data" / "scaling_parameters.yaml"
 DEFAULT_SCALING = (5e-13, 5e-11)
-
-def _cmap_punch() -> LinearSegmentedColormap:
-    """Generate PUNCH colormap."""
-    # Define key colors in LAB space
-    black_lab = np.array([0, 0, 0])
-    orange_lab = np.array([50, 15, 50])
-    white_lab = np.array([100, 0, 0])
-
-    # Define the number of colors
-    n = 256
-    lab_colors = np.zeros((n, 3))
-
-    # Transition from black to orange
-    for i in range(n // 2):
-        t = i / (n // 2 - 1)
-        lab_colors[i] = black_lab * (1 - t) + orange_lab * t
-
-    # Transition from orange to white
-    for i in range(n // 2, n):
-        t = (i - n // 2) / (n // 2 - 1)
-        lab_colors[i] = orange_lab * (1 - t) + white_lab * t
-
-    rgb_colors = lab2rgb(lab_colors.reshape(1, -1, 3)).reshape(n, 3)
-    return LinearSegmentedColormap.from_list("PUNCH", rgb_colors, N=n)
-
-cmap_punch = _cmap_punch()
-cmap_punch_r = _cmap_punch().reversed()
-
 
 def radial_distance(h: int, w: int, center: tuple[int, int] | None = None, radius: float | None = None) -> np.ndarray:
     """Create radial distance array."""
@@ -350,7 +322,7 @@ def _draw_inset_colorbar(fig:Figure, ax:Axes, im:ScalarMappable,
 def plot_punch(  # noqa: C901
     data: Path | PUNCHCube,
     layer: int = 0,
-    cmap: str | Colormap | None = cmap_punch,
+    cmap: str | Colormap | None = None,
     norm: Normalize | None = PowerNorm,
     vmin: float | None = None,
     vmax: float | None = None,
@@ -462,6 +434,9 @@ def plot_punch(  # noqa: C901
         vmax = vmax_default if vmax is None else vmax
 
     vmin, vmax = float(vmin), float(vmax)
+
+    if cmap is None:
+        cmap = cmap_punch_pb if len(cube.data.shape) == 3 and layer == 1 else cmap_punch
 
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
                                                         else cube.wcs[layer]})

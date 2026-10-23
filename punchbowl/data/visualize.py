@@ -9,9 +9,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 from matplotlib.axes import Axes
-from matplotlib.colors import Colormap, Normalize, PowerNorm
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Colormap, Norm, Normalize, PowerNorm
 from matplotlib.figure import Figure
 from ndcube import NDCollection, NDCube
+from prefect.variables import Variable
 from solpolpy import resolve
 from tqdm.auto import tqdm
 

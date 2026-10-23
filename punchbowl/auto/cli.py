@@ -1,6 +1,5 @@
 import os
 import time
-import socket
 import inspect
 import argparse
 import traceback
@@ -14,12 +13,10 @@ from prefect import Flow, get_client, serve
 from prefect.client.schemas.objects import ConcurrencyLimitConfig, ConcurrencyLimitStrategy
 from prefect.variables import Variable
 
-from punchbowl.auto.control.util import load_pipeline_configuration
+from punchbowl.auto.control.util import get_hostname, load_pipeline_configuration, shorten_host
 
 THIS_DIR = os.path.dirname(__file__)
 
-def shorten_host(hostname):
-    return hostname.split(".")[0]
 
 def main():
     """Run the PUNCH automated pipeline"""
@@ -57,7 +54,7 @@ def find_flow(target_flow, subpackage="flows") -> Flow:
     raise RuntimeError(f"No flow found for {target_flow}")
 
 def construct_flows_to_serve(configuration_path, include_data=True, include_control=True):
-    current_host = shorten_host(socket.gethostname())
+    current_host = get_hostname()
     config = load_pipeline_configuration(configuration_path)
 
     # create each kind of flow. add both the scheduler and process flow variant of it.
@@ -183,7 +180,8 @@ def run(configuration_path, launch_prefect=False, launch_dask_cluster=False):
                                                 "app:server"],
                                                stdout=f, stderr=f)
             time.sleep(1)
-            Variable.set("punchpipe_config", configuration_path, overwrite=True)
+            current_host = get_hostname()
+            Variable.set(f"punchpipe_config-{current_host}", configuration_path, overwrite=True)
 
             # These processes send a _lot_ of output, so we let it go to the screen instead of making the log file
             # enormous

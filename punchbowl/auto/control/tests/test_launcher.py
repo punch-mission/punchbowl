@@ -1,6 +1,5 @@
 import os
 import math
-import socket
 from datetime import UTC, datetime
 
 import pytest
@@ -9,7 +8,6 @@ from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 from pytest_mock_resources import create_mysql_fixture
 
-from punchbowl.auto.cli import shorten_host
 from punchbowl.auto.control.db import Base, File, Flow
 from punchbowl.auto.control.launcher import (
     count_flows,
@@ -17,7 +15,7 @@ from punchbowl.auto.control.launcher import (
     escalate_long_waiting_flows,
     gather_planned_flows,
 )
-from punchbowl.auto.control.util import load_pipeline_configuration
+from punchbowl.auto.control.util import get_hostname, load_pipeline_configuration
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -81,12 +79,12 @@ def flow_batch_sizes():
 
 @pytest.fixture
 def flow_hosts():
-    current_host = shorten_host(socket.gethostname())
+    current_host = get_hostname()
     return {"level0": current_host, "level1": current_host}
 
 @pytest.fixture()
 def mixed_hosts():
-    current_host = shorten_host(socket.gethostname())
+    current_host = get_hostname()
     return {"level0": current_host, "level1": "otherhost"}
 
 def test_gather_queued_flows(db, flow_weights, flow_batch_sizes, flow_hosts):

@@ -235,3 +235,11 @@ def replace_file_version_in_metadata(path, old_pattern, new_version):
                 source_files = [replace_version(old_pattern, new_version, f) for f in source_files]
                 hdu_provenance = _make_provenance_hdu(source_files)
                 hdul[i] = hdu_provenance
+
+
+def shorten_host(hostname):
+    return hostname.split(".")[0]
+
+
+def get_hostname():
+    return shorten_host(socket.gethostname())

@@ -36,6 +36,7 @@ def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | No
     uncertainty_stack[((data_stack == 0) | np.isnan(data_stack)) & uncertainty_was_invalid] = np.nan
 
     weight_stack = 1/np.square(uncertainty_stack)
+    weight_stack[uncertainty_stack_was_bad] = 0
 
     new_data = np.nansum(data_stack * weight_stack, axis=0) / np.nansum(weight_stack, axis=0)
 

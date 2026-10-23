@@ -139,6 +139,11 @@ def level1_early_query_ready_files_chimera(session, pipeline_config: dict, refer
     return level1_early_query_ready_files(session, pipeline_config, reference_time, max_n,
                                           flow_name='level1_early_chimera')
 
+@task(cache_policy=NO_CACHE)
+def level1_early_query_ready_files_jackalope(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+    return level1_early_query_ready_files(session, pipeline_config, reference_time, max_n,
+                                          flow_name='level1_early_jackalope')
+
 def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=1, time_tolerance_minutes=15):
     neighbors = (session.query(File)
                  .filter(File.level == "0")
@@ -520,6 +525,10 @@ def level1_early_construct_flow_info_chimera(*args, **kwargs):
     return level1_early_construct_flow_info(*args, **kwargs, flow_type="level1_early_chimera")
 
 
+def level1_early_construct_flow_info_jackalope(*args, **kwargs):
+    return level1_early_construct_flow_info(*args, **kwargs, flow_type="level1_early_jackalope")
+
+
 
 def level1_early_construct_file_info(level0_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
     files = []
@@ -572,6 +581,17 @@ def level1_early_chimera_scheduler_flow(pipeline_config_path=None, session=None,
         session=session,
     )
 
+@flow
+def level1_early_jackalope_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+    generic_scheduler_flow_logic(
+        level1_early_query_ready_files_jackalope,
+        level1_early_construct_file_info,
+        level1_early_construct_flow_info_jackalope,
+        pipeline_config_path,
+        reference_time=reference_time,
+        session=session,
+    )
+
 def level1_early_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
     for key in ["input_data", "quartic_coefficient_path", "vignetting_function_path",
                 "second_vignetting_function_path", "mask_path", "distortion_path"]:
@@ -613,6 +633,11 @@ def level1_early_phoenix_process_flow(flow_id: int | list[int], pipeline_config_
 
 @flow
 def level1_early_chimera_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
+    generic_process_flow_logic(flow_id, level1_early_core_flow, pipeline_config_path, session=session,
+                               call_data_processor=level1_early_call_data_processor)
+
+@flow
+def level1_early_jackalope_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
     generic_process_flow_logic(flow_id, level1_early_core_flow, pipeline_config_path, session=session,
                                call_data_processor=level1_early_call_data_processor)
 

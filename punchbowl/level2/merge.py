@@ -32,7 +32,7 @@ def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | No
     for i, cube in enumerate(cubes):
         if cube.mask is not None:
             uncertainty_stack_was_bad[i] |= cube.mask
-    uncertainty_stack[uncertainty_stack_was_bad] = np.inf
+    uncertainty_stack[uncertainty_stack_was_bad] = 1e12
     uncertainty_stack[((data_stack == 0) | np.isnan(data_stack)) & uncertainty_was_invalid] = np.nan
 
     weight_stack = 1/np.square(uncertainty_stack)

@@ -1,4 +1,3 @@
-import socket
 import asyncio
 from math import ceil
 from random import shuffle
@@ -12,9 +11,8 @@ from prefect.variables import Variable
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.orm import Session
 
-from punchbowl.auto.cli import shorten_host
 from punchbowl.auto.control.db import File, Flow
-from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
+from punchbowl.auto.control.util import batched, get_database_session, get_hostname, load_pipeline_configuration
 from punchbowl.prefect import get_logger
 
 
@@ -23,7 +21,7 @@ def gather_planned_flows(session, weight_to_launch, max_flows_to_launch, flow_we
     # We'll have to grab a bunch of possible flows to launch from the DB, and then on our end apply the weights and the
     # maximum-weight limit. But we can use the smallest weight to set an upper bound on how many launchable flows to
     # retrieve.
-    current_host = shorten_host(socket.gethostname())
+    current_host = get_hostname()
     enabled_flows = [flow for flow, enabled in flow_enabled.items() if enabled and flow_hosts[flow] == current_host]
     if enabled_flows:
         max_to_select = weight_to_launch / min([flow_weights[k] for k in enabled_flows])
@@ -86,7 +84,7 @@ def count_flows(session, weights, flow_hosts):
         .group_by(Flow.state, Flow.flow_type),
     ).all()
 
-    current_host = shorten_host(socket.gethostname())
+    current_host = get_hostname()
     # We won't get results for states that aren't actually in the database, so we have to inspect the returned rows
     for state, flow_type, count in rows:
         if current_host == flow_hosts[flow_type]:
@@ -262,7 +260,7 @@ def load_flow_data(pipeline_config):
         flow_enabled[flow_type] = pipeline_config["flows"][flow_type].get("enabled", True) is True
         flow_weights[flow_type] = pipeline_config["flows"][flow_type].get("launch_weight", 1)
         flow_batch_size[flow_type] = pipeline_config["flows"][flow_type].get("batch_size", 1)
-        flow_hosts[flow_type] = pipeline_config["flows"][flow_type].get("run-on", shorten_host(socket.gethostname()))
+        flow_hosts[flow_type] = pipeline_config["flows"][flow_type].get("run-on", get_hostname())
     return flow_weights, flow_enabled, flow_batch_size, flow_hosts
 
 
@@ -279,7 +277,7 @@ async def launcher(pipeline_config_path=None):
     Nothing
 
     """
-    current_host = shorten_host(socket.gethostname())
+    current_host = get_hostname()
     logger = get_logger()
 
     if pipeline_config_path is None:

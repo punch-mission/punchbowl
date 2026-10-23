@@ -8,13 +8,11 @@ from matplotlib.colors import LinearSegmentedColormap
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.data.visualize import (
     DEFAULT_SCALING,
-    animate_punch,
     cmap_punch,
     cmap_punch_r,
-    load_quicklook_scaling,
-    cmap_punch,
-    cmap_punch_r,
+    generate_mzp_to_rgb_map,
     generate_tbpb_to_rgb_map,
+    load_quicklook_scaling,
     plot_punch,
     radial_distance,
     radial_filter,

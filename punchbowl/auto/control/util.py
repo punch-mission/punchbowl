@@ -61,7 +61,9 @@ def update_file_state(session, file_id, new_state):
 
 def load_pipeline_configuration(path: str = None) -> dict:
     if path is None:
-        path = Variable.get("punchpipe_config", "punchpipe_config.yaml")
+        path = Variable.get(f"punchpipe_config-{get_hostname()}", None)
+        if path is None:
+            path = Variable.get("punchpipe_config", "punchpipe_config.yaml")
     if not isinstance(path, str):
         path = run_coro_as_sync(path)
     with open(path) as f:

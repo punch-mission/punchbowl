@@ -9,8 +9,6 @@ from punchbowl.data.color import cmap_punch, cmap_punch_pb, cmap_punch_pb_r, cma
 from punchbowl.data.tests.test_punch_io import sample_ndcube
 from punchbowl.data.visualize import (
     DEFAULT_SCALING,
-    cmap_punch,
-    cmap_punch_r,
     generate_mzp_to_rgb_map,
     generate_tbpb_to_rgb_map,
     load_quicklook_scaling,

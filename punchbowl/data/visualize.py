@@ -12,8 +12,8 @@ from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Colormap, LinearSegmentedColormap, Norm, Normalize, PowerNorm
 from matplotlib.figure import Figure
-from prefect.variables import Variable
 from ndcube import NDCollection, NDCube
+from prefect.variables import Variable
 from skimage.color import lab2rgb
 from solpolpy import resolve
 from tqdm.auto import tqdm

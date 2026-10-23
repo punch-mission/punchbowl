@@ -28,11 +28,15 @@ def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | No
 
     # Ignores negative / zero / infinite uncertainty, or places where the input data is exactly zero
     uncertainty_was_invalid = ~np.isfinite(uncertainty_stack) + (uncertainty_stack == 0)
-    uncertainty_stack_was_bad = (uncertainty_stack <= 0) + ~np.isfinite(uncertainty_stack)
+    uncertainty_stack_was_bad = (uncertainty_stack <= 0) | ~np.isfinite(uncertainty_stack) | ~np.isfinite(data_stack)
+    for i, cube in enumerate(cubes):
+        if cube.mask is not None:
+            uncertainty_stack_was_bad[i] |= cube.mask
     uncertainty_stack[uncertainty_stack_was_bad] = 1e12
-    uncertainty_stack[((data_stack == 0) + np.isnan(data_stack)) & uncertainty_was_invalid] = np.nan
+    uncertainty_stack[((data_stack == 0) | np.isnan(data_stack)) & uncertainty_was_invalid] = np.nan
 
     weight_stack = 1/np.square(uncertainty_stack)
+    weight_stack[uncertainty_stack_was_bad] = 0
 
     new_data = np.nansum(data_stack * weight_stack, axis=0) / np.nansum(weight_stack, axis=0)
 
@@ -46,7 +50,7 @@ def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | No
     new_data[np.isnan(new_data)] = 0
 
     return PUNCHCube(data=new_data, uncertainty=StdDevUncertainty(final_uncertainty),
-                     wcs=cubes[reference_cube_index].wcs)
+                     mask=np.all(uncertainty_stack_was_bad, axis=0), wcs=cubes[reference_cube_index].wcs)
 
 
 @punch_task

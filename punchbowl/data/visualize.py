@@ -7,10 +7,13 @@ import astropy.units as u
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+import yaml
 from matplotlib.axes import Axes
-from matplotlib.colors import Colormap, LinearSegmentedColormap, Normalize, PowerNorm
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Colormap, LinearSegmentedColormap, Norm, Normalize, PowerNorm
 from matplotlib.figure import Figure
 from ndcube import NDCollection, NDCube
+from prefect.variables import Variable
 from skimage.color import lab2rgb
 from solpolpy import resolve
 from tqdm.auto import tqdm
@@ -18,6 +21,8 @@ from tqdm.auto import tqdm
 from punchbowl.data import punch_io
 from punchbowl.data.punchcube import PUNCHCube
 
+CONFIG_SCALING_PATH = Path(__file__).parent / "data" / "scaling_parameters.yaml"
+DEFAULT_SCALING = (5e-13, 5e-11)
 
 def _cmap_punch() -> LinearSegmentedColormap:
     """Generate PUNCH colormap."""
@@ -64,6 +69,14 @@ def radial_distance(h: int, w: int, center: tuple[int, int] | None = None, radiu
 def radial_filter(data: np.ndarray) -> np.ndarray:
     """Filter data with radial distance function."""
     return data * radial_distance(*data.shape) ** 2.5
+
+
+def _build_norm(norm: Norm, vmin: float, vmax: float, gamma: float) -> Normalize:
+    """Instantiate norm class; gamma applies only to PowerNorm."""
+    if issubclass(norm, PowerNorm):
+        return norm(gamma=gamma, vmin=vmin, vmax=vmax)
+    return norm(vmin=vmin, vmax=vmax)
+
 
 def generate_mzp_to_rgb_map(data_cube: np.ndarray,
                             gamma:float=0.7,
@@ -206,7 +219,7 @@ def animate_punch(
     with TemporaryDirectory() as tmpdir:
         if persistence:
             for i, data in tqdm(enumerate(data_list), total=len(data_list)):
-                cube = punch_io.load_ndcube_from_fits(data)
+                cube = data if isinstance(data, PUNCHCube) else punch_io.load_ndcube_from_fits(data)
                 if i == 0:
                     persistence_array = cube.data.copy()
                 frame_path = Path(tmpdir) / f"frame_{i:07d}.png"
@@ -234,24 +247,125 @@ def animate_punch(
         subprocess.run(ffmpeg_command, check=True, stdout = subprocess.DEVNULL)  # noqa: S603
 
 
+def load_quicklook_scaling(level: str | None = None,
+                           product: str | None = None,
+                           obscode: str | None = None,
+                           config: str | dict | None = None) -> tuple[float, float]:
+    """
+    Load quicklook data scaling values.
+
+    Parameters
+    ----------
+    level : str | None, optional
+        Data product level, by default None
+    product : str | None, optional
+        Data product code, by default None
+    obscode : str | None, optional
+        Data obs code, by default None
+    config : str | dict | None, optional
+        Path to scaling config file, or the config dictionary itself, by default None
+
+    Returns
+    -------
+    tuple[float, float]
+        Scaling (min, max) values to use in data visualization
+
+    Raises
+    ------
+    TypeError
+        Error resulting from invalid input config dictionary
+    KeyError
+        Error resulting from data product with no corresponding scaling config entry
+
+    """
+    if isinstance(config, str):
+        with open(config) as f:
+            config_parameters = yaml.safe_load(f)
+    elif isinstance(config, dict):
+        config_parameters = config
+    elif config is None:
+        config = Variable.get("punchpipe_config", str(CONFIG_SCALING_PATH))
+        with open(config) as f:
+            config_parameters = yaml.safe_load(f)
+    else:
+        raise TypeError("config must be a path string or dictionary object")
+
+    scaling = config_parameters.get("quicklook_scaling")
+    if scaling is None or not level:
+        return DEFAULT_SCALING
+
+    level_data = scaling.get(level, {})
+    product_data = level_data.get(product, level_data.get("default"))
+    if product_data is None:
+        raise KeyError("Data product is undefined in scaling configuration.")
+
+    return product_data[1] if obscode == "4" else product_data[0]
+
+
+def _draw_satellite_legend(ax: Axes,
+                           cube: PUNCHCube,
+                           radius: float = 0.022,
+                           center: tuple[float, float] = (0.94, 0.94),
+                           fontsize: int = 8) -> None:
+    """Add a legend illustrating relative WFI spacecraft angles."""
+    ny, nx = cube.data.shape[-2:]
+    pix = ax.get_transform("pixel")
+    cx, cy, r = center[0] * nx, center[1] * ny, radius * nx
+    for n in (1, 2, 3):
+        kx, ky = f"CTRXWFI{n}", f"CTRYWFI{n}"
+        if kx not in cube.meta or ky not in cube.meta:
+            continue
+        x, y = cube.meta[kx].value, cube.meta[ky].value
+        if x == -1 or y == -1:
+            continue
+        a = np.arctan2(y - ny / 2, x - nx / 2)
+        ax.text(cx + r * np.cos(a), cy + r * np.sin(a), str(n), color="white", fontsize=fontsize,
+                fontfamily="monospace", ha="center", va="center", transform=pix)
+
+
+def _draw_inset_colorbar(fig:Figure, ax:Axes, im:ScalarMappable,
+                         vmin:float, vmax:float, colorbar_label:str) -> None:
+    """Draws a minimal inset colorbar."""
+    cax = ax.inset_axes([0.817, 0.012, 0.15, 0.015], axes_class=Axes)
+    cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticklocation="top")
+    if isinstance(im.norm, PowerNorm):
+        cb.set_ticks([vmin, vmax])
+        cb.set_ticklabels([f"{vmin:.3g}", f"{vmax:.3g}"])
+        step = 10.0 ** (np.ceil(np.log10(vmax)) - 1)
+        n = int(vmax // step)
+        cb.ax.xaxis.set_ticks(step * np.arange(1, n + 1), minor=True)
+        cb.ax.xaxis.get_offset_text().set_visible(False)
+    cb.ax.xaxis.set_ticks_position("top")
+    cb.ax.tick_params(axis="x", which="both", colors="white", labelsize=8,
+                    length=3, width=0.5, pad=2, labeltop=True, labelbottom=False)
+    cb.ax.tick_params(axis="x", which="minor", length=1.5)
+    for lab in cb.ax.get_xticklabels():
+        lab.set_fontfamily("monospace")
+    if colorbar_label:
+        ax.text(0.99, 0.065, colorbar_label, transform=ax.transAxes, color="white",
+                verticalalignment="bottom", horizontalalignment="right",
+                fontsize=8, fontfamily="monospace")
+
+
 def plot_punch(  # noqa: C901
     data: Path | PUNCHCube,
     layer: int = 0,
     cmap: str | Colormap | None = cmap_punch,
     norm: Normalize | None = PowerNorm,
-    vmin: float = 1e-14,
-    vmax: float = 1e-12,
+    vmin: float | None = None,
+    vmax: float | None = None,
     gamma: float = 1/2.2,
     figsize: tuple[float, float] = (10,8),
     axes_labels: tuple[str, str] = ("Helioprojective longitude", "Helioprojective latitude"),
-    axes_off: bool = False,
+    axes_off: bool = True,
     annotate: bool = True,
     grid_spacing: int = 15,
     grid_alpha: float = 0.25,
     title_prefix: str | None = None,
     label_satellites: bool = False,
+    draw_satellite_legend: bool = False,
     colorbar: bool = True,
-    colorbar_label: str = "Mean Solar Brightness (MSB)",
+    colorbar_label: str | None = None,
     persistence_array: np.ndarray | PUNCHCube | None = None,
     trim_edge: float | tuple[float, float] | list[float, float] | None = None,
     save_path: str | Path | None = None,
@@ -292,6 +406,8 @@ def plot_punch(  # noqa: C901
         Prefix to prepend to plot title
     label_satellites : bool, optional
         Adds text labels for each satellite in a mosaic if True.
+    draw_satellite_legend : bool, optional
+        Adds a legend illustrating relative WFI spacecraft angles.
     colorbar : bool, optional
         Toggle for plotting colorbar
     colorbar_label : str, optional
@@ -328,7 +444,24 @@ def plot_punch(  # noqa: C901
     elif isinstance(persistence_array, PUNCHCube):
         cube.data[mask] = persistence_array.data[mask]
 
-    norm = norm(gamma, vmin=vmin, vmax=vmax)
+    if vmin is None or vmax is None:
+        if layer == 0 and cube.meta["OBS-MODE"].value in ["Polar_tBpB", "Polar_BpB"]:
+            scaling_product = cube.meta["TYPECODE"].value.replace("P", "C", 1)
+        else:
+            scaling_product = cube.meta["TYPECODE"].value
+
+        try:
+            vmin_default, vmax_default = load_quicklook_scaling(level=cube.meta["LEVEL"].value,
+                                                                product=scaling_product,
+                                                                obscode=cube.meta["OBSCODE"].value,
+                                                                config=str(CONFIG_SCALING_PATH))
+        except KeyError as err:
+            raise KeyError("Default scaling values not found, please provide vmin and vmax scaling values.") from err
+
+        vmin = vmin_default if vmin is None else vmin
+        vmax = vmax_default if vmax is None else vmax
+
+    vmin, vmax = float(vmin), float(vmax)
 
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
                                                         else cube.wcs[layer]})
@@ -340,10 +473,10 @@ def plot_punch(  # noqa: C901
     elif isinstance(trim_edge, float):
         radial_mask = radial_distance(cube.data.shape[-2], cube.data.shape[-1]) < trim_edge
     else:
-        radial_mask = 1
+        radial_mask = np.ones(cube.data.shape[-2:], dtype=bool)
 
-    im = ax.imshow(cube.data * radial_mask if cube.data.ndim == 2 else
-                   cube.data[layer,...] * radial_mask, cmap=cmap, norm=norm)
+    im = ax.imshow(np.where(radial_mask, cube.data if cube.data.ndim == 2 else cube.data[layer, ...], np.nan),
+                   cmap=cmap, norm=_build_norm(norm, vmin, vmax, gamma))
 
     lon, lat = ax.coords
     lat.set_ticks(np.arange(-90, 90, grid_spacing) * u.degree)
@@ -358,7 +491,7 @@ def plot_punch(  # noqa: C901
     timestamp = cube.meta.datetime.strftime("%Y/%m/%d %H:%M:%S UT")
 
     if title_prefix is None:
-        title_prefix = f"PUNCH {cube.meta['TYPECODE']}{cube.meta['OBSCODE']}"
+        title_prefix = f"PUNCH L{cube.meta['LEVEL']} {cube.meta['TYPECODE']}{cube.meta['OBSCODE']}"
     ax.set_title(f"{title_prefix} {timestamp}")
 
     if axes_off:
@@ -399,8 +532,17 @@ def plot_punch(  # noqa: C901
                             verticalalignment="center", horizontalalignment="center",
                             fontsize=8, fontfamily="monospace")
 
+    if draw_satellite_legend:
+        _draw_satellite_legend(ax, cube)
+
+    if colorbar_label is None:
+        colorbar_label = "MSB" if int(cube.meta["LEVEL"].value) >= 2 else "DN"
+
     if colorbar and not axes_off:
         fig.colorbar(im, ax=ax, label=colorbar_label)
+
+    if colorbar and axes_off:
+        _draw_inset_colorbar(fig, ax, im, vmin, vmax, colorbar_label)
 
     if save_path is not None:
         fig.savefig(save_path, dpi=dpi, bbox_inches="tight")

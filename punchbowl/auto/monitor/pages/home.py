@@ -68,10 +68,12 @@ def layout():
                 ),
                 dcc.Dropdown(
                     id="host-selector",
-                    options=["phoenix.spaceops.swri.org",
+                    options=["all",
+                             "phoenix.spaceops.swri.org",
                              "chimera.spaceops.swri.org",
-                             "punch190.spaceops.swri.org"],
-                    value=socket.gethostname(),
+                             "punch190.spaceops.swri.org",
+                             "punch200.spaceops.swri.org"],
+                    value="all",
                     clearable=False,
                     style={"width": "50%"},
                     persistence=True, persistence_type="memory"
@@ -348,18 +350,18 @@ def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window, h
     query = (select(Health)
              .where(Health.datetime > start_date)
              .where(Health.datetime < end_date)
-             .where(Health.host == host))
+             )
+    if host != 'all':
+        query = query.where(Health.host == host)
     with get_database_session() as session:
         df = pd.read_sql_query(query, session.connection())
 
-    # This can't be smoothed
-    df = df.drop('host', axis=1)
-
     if smooth_window is not None and smooth_window > 1:
         smooth_window = int(round(smooth_window))
-        df = df.rolling(f"{smooth_window}min", on="datetime", center=True, min_periods=0).mean()
+        df = df.groupby('host', as_index=False).rolling(
+            f"{smooth_window}min", on="datetime", center=True, min_periods=0).mean()
 
-    fig = px.line(df, x="datetime", y=machine_stat, title="Machine stats",
+    fig = px.line(df, x="datetime", y=machine_stat, title="Machine stats", color="host",
                   template=LIGHT_THEME if light_mode else DARK_THEME)
     fig.update_xaxes(title_text="Time")
     fig.update_yaxes(title_text=axis_labels[machine_stat])

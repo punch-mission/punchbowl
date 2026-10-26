@@ -416,8 +416,10 @@ def plot_punch(  # noqa: C901
     elif isinstance(persistence_array, PUNCHCube):
         cube.data[mask] = persistence_array.data[mask]
 
+    is_tbpb = cube.meta["OBS-MODE"].value in ["Polar_tBpB", "Polar_BpB"]
+
     if vmin is None or vmax is None:
-        if layer == 0 and cube.meta["OBS-MODE"].value in ["Polar_tBpB", "Polar_BpB"]:
+        if is_tbpb and layer == 0:
             scaling_product = cube.meta["TYPECODE"].value.replace("P", "C", 1)
         else:
             scaling_product = cube.meta["TYPECODE"].value
@@ -436,7 +438,7 @@ def plot_punch(  # noqa: C901
     vmin, vmax = float(vmin), float(vmax)
 
     if cmap is None:
-        cmap = cmap_punch_pb if len(cube.data.shape) == 3 and layer == 1 else cmap_punch
+        cmap = cmap_punch_pb if is_tbpb and layer == 1 else cmap_punch
 
     fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": cube.wcs if cube.data.ndim == 2
                                                         else cube.wcs[layer]})

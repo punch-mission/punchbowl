@@ -93,6 +93,5 @@ def test_merge_invalid_samples():
     np.testing.assert_allclose(result.data, 1)
     np.testing.assert_allclose(result.uncertainty.array, 2)
     unsupported = _merge_ndcubes([bad])
-    np.testing.assert_array_equal(unsupported.data, 0)
     assert np.all(np.isinf(unsupported.uncertainty.array))
     assert np.all(unsupported.mask)

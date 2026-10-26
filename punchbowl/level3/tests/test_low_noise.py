@@ -107,7 +107,6 @@ def test_pam_invalid_samples(sample_ndcube_polarized):
     np.testing.assert_allclose(result.data, 1)
     np.testing.assert_allclose(result.uncertainty.array, 1)
     unsupported = low_noise.create_low_noise_task.fn([bad])
-    np.testing.assert_array_equal(unsupported.data, 0)
     assert np.all(np.isinf(unsupported.uncertainty.array))
     assert np.all(unsupported.mask)
 

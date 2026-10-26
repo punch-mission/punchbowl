@@ -195,8 +195,8 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 12,keyword,GEIY_VOB,,[m/s] S/C Geocentric Earth Equatorial Y Velocity,float,TRUE,TRUE,
 12,keyword,GEIZ_VOB,,[m/s] S/C Geocentric Earth Equatorial Z Velocity,float,TRUE,TRUE,
 12,keyword,MOONDIST,,[deg] Angular Moon distance from image center,float,TRUE,TRUE,
-12,keyword,MOON_X,,X center pixel of Moon in image,float,TRUE,TRUE,
-12,keyword,MOON_Y,,Y center pixel of Moon in image,float,TRUE,TRUE,
+12,keyword,MOON_X,,(approximate) X center pixel of Moon in image (-1=Moon not present),float,TRUE,TRUE,
+12,keyword,MOON_Y,,(approximate) Y center pixel of Moon in image (-1=Moon not present),float,TRUE,TRUE,
 12,keyword,XACTTIME,,XACT packet timestamp,str,TRUE,TRUE,
 13,section,COMMENT,Velocity,,str,TRUE,TRUE,Velocity
 13,keyword,DELTAT,,Time offset in frames between images,int,TRUE,TRUE,

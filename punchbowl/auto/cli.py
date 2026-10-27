@@ -137,6 +137,7 @@ def run(configuration_path, launch_prefect=False, launch_dask_cluster=False):
     now = datetime.now()
 
     configuration_path = str(Path(configuration_path).resolve())
+    config = load_pipeline_configuration(configuration_path)
     output_path = f"punchpipe_{now.strftime('%Y%m%d_%H%M%S')}.txt"
 
     print()
@@ -186,8 +187,9 @@ def run(configuration_path, launch_prefect=False, launch_dask_cluster=False):
             # These processes send a _lot_ of output, so we let it go to the screen instead of making the log file
             # enormous
             def data_process_launcher() -> subprocess.Popen:
-                return subprocess.Popen([*mem_limit_prefix, *numa_prefix_workers, "punchpipe", "serve-data",
-                                         configuration_path])
+                umask_args = ['umask', config['umask']] if "umask" in config else []
+                return subprocess.Popen([*mem_limit_prefix, *numa_prefix_workers, *umask_args, "punchpipe",
+                                         "serve-data", configuration_path])
 
             def control_process_launcher() -> subprocess.Popen:
                 return subprocess.Popen([*numa_prefix_control, "punchpipe", "serve-control", configuration_path])

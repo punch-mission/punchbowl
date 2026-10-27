@@ -132,6 +132,12 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
                                   .filter(File.date_obs > center - search_width)
                                   .filter(File.date_obs < center + search_width)
                                   .all())
+        # Make sure we reject incomplete L0 triplets like we did earlier with L1s, so that this is a fair commparison
+        if polarized:
+            expected_inputs = group_l2_inputs(expected_inputs)[0]
+        else:
+            expected_inputs = group_files_by_time(expected_inputs, max_duration_seconds=10)[0]
+
         if len(expected_inputs) == len(group):
             # We have the L1s for all the L0s, and we don't expect new L0s, so let's make an incomplete mosaic
             grouped_ready_files.append(group)

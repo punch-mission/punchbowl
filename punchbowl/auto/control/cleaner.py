@@ -43,7 +43,7 @@ async def cleaner(pipeline_config_path: str, session=None):
 
 
 @task(cache_policy=NO_CACHE)
-async def delete_old_flow_runs(logger, config, batch_size=100):
+async def delete_old_flow_runs(logger, config, batch_size=50):
     """Delete completed flow runs older than specified days."""
     days_to_keep = config['control']['cleaner'].get("days_to_keep_flows", None)
     if not days_to_keep:
@@ -68,36 +68,30 @@ async def delete_old_flow_runs(logger, config, batch_size=100):
         flow_runs = await client.read_flow_runs(
             flow_run_filter=flow_run_filter,
             sort=FlowRunSort.START_TIME_ASC,
-            limit=batch_size
+            limit=50 # Prefect sets a hard cap of 50 on the bulk-delete api
         )
 
         deleted_total = 0
 
         while flow_runs:
-            batch_deleted = 0
-            failed_deletes = []
+            flow_run_ids = [str(f.id) for f in flow_runs]
 
-            # Delete each flow run through the API
-            for flow_run in flow_runs:
-                try:
-                    await client.delete_flow_run(flow_run.id)
-                    deleted_total += 1
-                    batch_deleted += 1
-                except ObjectNotFound:
-                    # Already deleted (e.g., by concurrent cleanup) - treat as success
-                    deleted_total += 1
-                    batch_deleted += 1
-                except Exception as e:
-                    logger.warning(f"Failed to delete flow run {flow_run.id}: {e}")
-                    failed_deletes.append(flow_run.id)
+            # `client` doesn't have a method for this, but we can use client to generate an API request
+            response = await client.request(
+                method="POST",
+                path="/flow_runs/bulk_delete",
+                json={
+                    "flow_runs": {
+                        "id": {"any_": flow_run_ids}
+                    },
+                }
+            )
+            deleted_ids = response.json()['deleted']
+            deleted_total += len(deleted_ids)
 
-                # Rate limiting - adjust based on your API capacity
-                if batch_deleted % 10 == 0:
-                    await asyncio.sleep(0.5)
-
-            logger.info(f"Deleted {batch_deleted}/{len(flow_runs)} flow runs (total: {deleted_total})")
-            if failed_deletes:
-                logger.warning(f"Failed to delete {len(failed_deletes)} flow runs")
+            logger.info(f"Deleted {len(deleted_ids)}/{len(flow_runs)} flow runs (total: {deleted_total})")
+            if len(deleted_ids) < len(flow_run_ids):
+                logger.warning(f"Failed to delete {len(flow_run_ids) - len(deleted_ids)} flow runs")
 
             if deleted_total >= max_n:
                 break
@@ -105,11 +99,11 @@ async def delete_old_flow_runs(logger, config, batch_size=100):
             # Get next batch
             flow_runs = await client.read_flow_runs(
                 flow_run_filter=flow_run_filter,
-                limit=batch_size
+                limit=50 # Prefect sets a hard cap of 50 on the bulk-delete api
             )
 
             # Delay between batches to avoid overwhelming the API
-            await asyncio.sleep(1.0)
+            await asyncio.sleep(2.0)
 
         logger.info(f"Retention complete. Total deleted: {deleted_total}")
 

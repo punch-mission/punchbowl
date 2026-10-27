@@ -377,7 +377,7 @@ def _load_one_file(path: str, downsample_factor: int,
         return None
 
     data = cube.data
-    saturation_mask = np.isinf(cube.uncertainty.array)
+    saturation_mask = np.isinf(cube.uncertainty.array) * (cube.data > 0)
     if downsample_factor > 1:
         saturation_mask = saturation_mask.reshape((data.shape[0] // downsample_factor, downsample_factor,
                                                    data.shape[1] // downsample_factor, downsample_factor),

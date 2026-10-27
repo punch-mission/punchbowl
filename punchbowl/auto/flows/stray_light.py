@@ -183,6 +183,7 @@ def construct_stray_light_flow_info(level1_files: list[File],
             "image_mask_path": mask.filename().replace(".fits", ".bin"),
             "window_size": pipeline_config["flows"][flow_type][f"{pol_type}_neighborhood_size"],
             "polarized": is_polarized,
+            "num_workers": pipeline_config["flows"][flow_type].get("n_workers", 20),
         },
     )
     return Flow(
@@ -347,7 +348,6 @@ def construct_stray_light_call_data_processor(call_data: dict, pipeline_config, 
     for key in ["filepaths", "image_mask_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     del call_data["spacecraft"]
-    call_data["num_workers"] = 50
     return call_data
 
 

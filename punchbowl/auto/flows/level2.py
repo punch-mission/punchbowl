@@ -88,7 +88,7 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
             grouped_ready_files.append(group)
             continue
 
-        if cutoff_time and min(g.date_created for g in group).replace(tzinfo=UTC) > cutoff_time:
+        if cutoff_time and min(g.date_created for g in group).astimezone(UTC) > cutoff_time:
             # We're still potentially waiting for downlinks
             continue
 

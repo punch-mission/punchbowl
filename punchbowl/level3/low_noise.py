@@ -31,7 +31,7 @@ def create_low_noise_task(
 
     # TODO - Note to future self: be clever and use the outlier flag to excise bad data spatially.
     reference_cube_index = len(cubes)//2 - 1
-    new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index)
+    new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index, include_masks=True)
 
     # TODO - will need to restore polarization resolution for starfield skipping
 

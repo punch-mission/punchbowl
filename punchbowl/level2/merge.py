@@ -10,7 +10,8 @@ from punchbowl.prefect import punch_task
 from punchbowl.util import average_datetime
 
 
-def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | None = None) -> PUNCHCube:
+def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | None = None, include_masks: bool = False,
+                   ) -> PUNCHCube:
     """Create a merged data product from a set of input data, weighting by uncertainty."""
     if cubes is None:
         return None
@@ -29,9 +30,10 @@ def _merge_ndcubes(cubes: list[PUNCHCube | None], reference_cube_index: int | No
     # Ignores negative / zero / infinite uncertainty, or places where the input data is exactly zero
     uncertainty_was_invalid = ~np.isfinite(uncertainty_stack) + (uncertainty_stack == 0)
     uncertainty_stack_was_bad = (uncertainty_stack <= 0) | ~np.isfinite(uncertainty_stack) | ~np.isfinite(data_stack)
-    for i, cube in enumerate(cubes):
-        if cube.mask is not None:
-            uncertainty_stack_was_bad[i] |= cube.mask
+    if include_masks:
+        for i, cube in enumerate(cubes):
+            if cube.mask is not None:
+                uncertainty_stack_was_bad[i] |= cube.mask
     uncertainty_stack[uncertainty_stack_was_bad] = 1e12
     uncertainty_stack[((data_stack == 0) & uncertainty_was_invalid) | ~np.isfinite(data_stack)] = np.nan
 

@@ -20,3 +20,11 @@ def test_solar_celestial():
     assert data_cel.data.shape == data_cube.data.shape
     assert not np.shares_memory(data_cube.data, data_cel.data)
     assert not np.shares_memory(data_solar.data, data_cel.data)
+
+    metakeys_cel = set(data_cel.meta.keys())
+    metakeys_solar = set(data_solar.meta.keys())
+
+    assert metakeys_cel == metakeys_solar
+
+    for metakey in metakeys_solar & metakeys_cel:
+        assert data_cel.meta[metakey].value == data_solar.meta[metakey].value

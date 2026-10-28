@@ -1,3 +1,4 @@
+import copy
 import warnings
 from math import floor
 from datetime import UTC, datetime
@@ -34,6 +35,8 @@ def polarize_solar_to_celestial(input_data: PUNCHCube, dtype: np.dtype | None = 
     All images need their polarization converted to Celestial frame
     to generate the background starfield model.
     """
+    output = copy.deepcopy(input_data)
+
     # Create a data collection for M, Z, P components
     mzp_angles = [-60, 0, 60]*u.degree
 
@@ -62,16 +65,9 @@ def polarize_solar_to_celestial(input_data: PUNCHCube, dtype: np.dtype | None = 
     celestial_data_collection = resolve(data_collection, "npol", out_angles=new_angles)
 
     valid_keys = [key for key in celestial_data_collection if key != "alpha"]
-    new_data = np.array([celestial_data_collection[key].data for key in valid_keys], dtype=dtype)
-    new_wcs = input_data.wcs.copy()
 
-    output_meta = NormalizedMetadata.load_template("PTM", "3")
-    output_meta["DATE-BEG"] = input_data.meta["DATE-BEG"].value
-    output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
-    output_meta["DATE-AVG"] = input_data.meta["DATE-AVG"].value
-    output_meta["DATE-END"] = input_data.meta["DATE-END"].value
+    output.data[...] = np.array([celestial_data_collection[key].data for key in valid_keys], dtype=dtype)
 
-    output = PUNCHCube(data=new_data, wcs=new_wcs, meta=output_meta)
     output.meta.history.add_now("LEVEL3-convert2celestial", "Convert mzpsolar to Celestial")
 
     return output
@@ -84,6 +80,8 @@ def polarize_celestial_to_solar(input_data: PUNCHCube, dtype: np.dtype | None = 
     All images need their polarization converted back to Solar frame
     after removing the stellar polarization.
     """
+    output = copy.deepcopy(input_data)
+
     # Compute new angles for celestial frame
     ncols, nrows = input_data.data[0].shape
     wcs1 = (calculate_helio_wcs_from_celestial(input_data.wcs, input_data.meta.astropy_time, input_data.data.shape)
@@ -110,16 +108,9 @@ def polarize_celestial_to_solar(input_data: PUNCHCube, dtype: np.dtype | None = 
     solar_data_collection = resolve(data_collection, "mzpsolar", in_angles=new_angles)
 
     valid_keys = [key for key in solar_data_collection if key != "alpha"]
-    new_data = np.array([solar_data_collection[key].data for key in valid_keys], dtype=dtype)
-    new_wcs = input_data.wcs.copy()
 
-    output_meta = NormalizedMetadata.load_template("PTM", "3")
-    output_meta["DATE-BEG"] = input_data.meta["DATE-BEG"].value
-    output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
-    output_meta["DATE-AVG"] = input_data.meta["DATE-AVG"].value
-    output_meta["DATE-END"] = input_data.meta["DATE-END"].value
+    output.data[...] = np.array([solar_data_collection[key].data for key in valid_keys], dtype=dtype)
 
-    output = PUNCHCube(data=new_data, wcs=new_wcs, meta=output_meta, uncertainty=input_data.uncertainty)
     output.meta.history.add_now("LEVEL3-convert2mzpsolar", "Convert Celestial to mzpsolar")
 
     return output

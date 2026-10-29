@@ -469,12 +469,11 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
                        .filter(File.file_type == "XR")
                        .filter(~File.bad_packets)
                        .order_by(File.date_obs.desc())
-                       .limit(batch_size * n_batches_to_schedule).all())
+                       .all())
 
     # Divide these files into groups of a maximum size and duration
     grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=60 * 60 * 24 * window_size_days,
                                         max_per_group=batch_size)
-    grouped_files = grouped_files[:n_batches_to_schedule]
 
     outputs = []
     for group in grouped_files:
@@ -511,6 +510,8 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
         logger.info(f"{len(group)} files (including {len(context_files)} context files) for group centered "
                     f"on {central_time}---scheduling")
         outputs.append(group)
+        if len(outputs) >= n_batches_to_schedule:
+            break
 
     logger.info(f"{len(outputs)} groups heading out")
     return outputs

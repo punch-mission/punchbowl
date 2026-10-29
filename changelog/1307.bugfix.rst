@@ -1,0 +1,1 @@
+The L2 scheduler used to wait forever if one of the three polarization states for a WFI was missing at L0. Now it will only wait if all three polarization states exist and just haven't yet made it through L1.

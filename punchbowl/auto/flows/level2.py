@@ -15,7 +15,7 @@ from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import group_files_by_time
 from punchbowl.auto.flows.level1 import get_mask_file, get_mask_files
-from punchbowl.auto.flows.util import file_name_to_full_path
+from punchbowl.auto.flows.util import file_name_to_full_path, get_max_flows_to_schedule
 from punchbowl.level2.flow import level2_core_flow, level2_pca_core_flow
 from punchbowl.prefect import get_logger
 from punchbowl.util import average_datetime, phase_in_window
@@ -452,7 +452,7 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
 
     batch_size = pipeline_config['flows']['level2_PCA']['batch_size']
     window_size_days = pipeline_config['flows']['level2_PCA']['window_size_days']
-    n_batches_to_schedule = pipeline_config['flows']['level2_PCA']['n_batches_to_schedule']
+    n_batches_to_schedule = get_max_flows_to_schedule(pipeline_config, 'level2_PCA')
 
     child = aliased(File)
     child_exists_subquery = (session.query(FileRelationship)

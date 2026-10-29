@@ -21,6 +21,23 @@ DARK_THEME = 'bootstrap_dark'
 
 def layout():
     return html.Div([
+        html.Details([
+           html.Summary("Help"),
+            html.Div([
+                "This page gives a summary of what the servers are up to now.",
+                html.Br(),
+                'The "Running weight" section shows what flows are actively running on each server, showing each flow '
+                'according to how much of the total runnable weight that flow type is occupying.',
+                html.Br(),
+                'The "Queue fullness" section shows how full each flow type\'s queue is on each server. Every time a '
+                'scheduler flow runs, its goal is to fill up that flow type\'s queue, so that there are a target '
+                'number of scheduled flows. Launcher then launches flows from these queues according to their '
+                'priorities. "Fullness" is shown as a percentage because we queue lots of flows for the smaller flow '
+                'types, but only one or two flows for the calibration product flow types (e.g. starfields). Empty '
+                'queues indicate there\'s nothing ready to run for that flow type (i.e. we\'re waiting for inputs to '
+                'be generated.)'
+            ])
+        ]),
         html.Div(id="work-status-holder",
                  style={
                      'display': 'flex',
@@ -55,7 +72,22 @@ def layout():
     Input("interval", "n_intervals"),
     State("color-mode-switch", "value"),
 )
-def update_queue_status(_, light_mode):
+def update_queue_status(_: int, light_mode: bool) -> list:
+    """
+    Generate a 'queue status' plot for each server.
+
+    Parameters
+    ----------
+    _ : int
+        Triggers automatic refreshes
+    light_mode : bool
+        Whether we're in light mode
+
+    Returns
+    -------
+    graphs : list
+        A list of graph elements
+    """
     config = load_pipeline_configuration()
     flow_to_host = {}
     for flow in config['flows']:
@@ -83,7 +115,7 @@ def update_queue_status(_, light_mode):
     figs = []
     for host in sorted(set(hosts)):
         fig = px.bar(counts[counts['host'] == host], x='flow_type', y='full_percentage',
-                     title=host,
+                     title=f"Queue fullness for {host}",
                      hover_data={"flow_type": True, "count": True, "full_percentage": True, "max_counts": True},
                      template=LIGHT_THEME if light_mode else DARK_THEME)
         fig.update_yaxes(ticksuffix="%", title="Scheduling queue fullness")
@@ -97,7 +129,22 @@ def update_queue_status(_, light_mode):
     Input("interval", "n_intervals"),
     State("color-mode-switch", "value"),
 )
-def update_work_status(_, light_mode):
+def update_work_status(_: int, light_mode: bool) -> list:
+    """
+    Generate a plot of what's running on each server.
+
+    Parameters
+    ----------
+    _ : int
+        Triggers automatic refreshes
+    light_mode : bool
+        Whether we're in light mode
+
+    Returns
+    -------
+    graph : list
+        A list containing a single graph
+    """
     config = load_pipeline_configuration(raw=True)
     flow_to_weight = {}
     flow_to_host = {}

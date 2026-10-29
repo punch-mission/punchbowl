@@ -132,7 +132,7 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
                                   .filter(File.date_obs > center - search_width)
                                   .filter(File.date_obs < center + search_width)
                                   .all())
-        # Make sure we reject incomplete L0 triplets like we did earlier with L1s, so that this is a fair commparison
+        # Make sure we reject incomplete L0 triplets like we did earlier with L1s, so that this is a fair comparison
         if polarized:
             expected_inputs = group_l2_inputs(expected_inputs)[0]
         else:

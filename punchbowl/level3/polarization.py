@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 
 import astropy.units as u
 import numpy as np
@@ -6,7 +5,7 @@ from astropy.nddata import StdDevUncertainty
 from ndcube import NDCollection
 from solpolpy import resolve
 
-from punchbowl.data.meta import NormalizedMetadata, set_spacecraft_location_to_earth
+from punchbowl.data.meta import set_spacecraft_location_to_earth
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.prefect import get_logger, punch_task
 
@@ -65,16 +64,16 @@ def convert_polarization(
         new_mask = ~np.broadcast_to(valid, new_data.shape) | ~np.isfinite(new_data)
         variance[new_mask] = np.inf
         new_uncertainty = StdDevUncertainty(np.sqrt(variance))
-    new_wcs = input_data.wcs.copy()
 
-    output_meta = NormalizedMetadata.load_template("PTM", "3")
-    output_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    output_meta["DATE-AVG"] = input_data.meta["DATE-AVG"].value
-    output_meta["DATE-OBS"] = input_data.meta["DATE-OBS"].value
-    output_meta["DATE-BEG"] = input_data.meta["DATE-BEG"].value
-    output_meta["DATE-END"] = input_data.meta["DATE-END"].value
-    output = PUNCHCube(data=new_data, uncertainty=new_uncertainty,
-                       mask=new_mask, wcs=new_wcs, meta=output_meta)
+    output = input_data.replace(data=new_data,
+                                uncertainty=new_uncertainty,
+                                mask=new_mask)
+
+    output.meta["OBS-MODE"] = "Polar_tBpB"
+    output.meta["OBSLAYR1"] = "Polar_tB"
+    output.meta["OBSLAYR2"] = "Polar_pB"
+    output.meta["OBSLAYR3"] = "Polar_pBp"
+
     output = set_spacecraft_location_to_earth(output)
 
     logger.info("convert2tbpb finished")

@@ -341,9 +341,10 @@ def level3_core_flow(data_list: list[str | PUNCHCube],
         out_meta.history = wfi_cube.meta.history
         out_meta["CALSTAR1"] = before_starfield_path
         out_meta["CALSTAR2"] = after_starfield_path
+        # metadata to copy from corresponding CIM/PIM
         for key in ["FILEVRSN", "HAS_WFI1", "HAS_WFI2", "HAS_WFI3", "DATE-AVG", "DATE-OBS",
                     "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
-                    "CTRXNFI4", "CTRYNFI4"]:
+                    "CTRXNFI4", "CTRYNFI4","CALFCOR1","CALFCOR2"]:
             out_meta[key] = wfi_cube.meta[key].value
         output_data = wfi_cube.replace(meta=out_meta)
         output_data = set_spacecraft_location_to_earth(output_data)

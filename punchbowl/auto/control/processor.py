@@ -24,8 +24,10 @@ from punchbowl.prefect import get_logger
 
 def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pipeline_config_path: str, session=None,
                                call_data_processor=None, write_in_parallel=False, require_expected_files=True):
-    if session is None:
-        session = get_database_session()
+    # We need autoflush to be disabled, so we can update flow records as we go without holding locks on those rows until
+    # the whole batch finishes. Otherwise launcher will deadlock when it runs escalate_long_waiting_flows and tries to
+    # read the whole table.
+    session = get_database_session(session_kwargs={'autoflush': False})
     if isinstance(flow_id, int):
         flow_ids = [flow_id]
     else:
@@ -91,6 +93,10 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
         for flow_db_entry, file_db_entry_list in zip(flow_db_entries, file_db_entry_lists):
             # load the call data and launch the core flow
             flow_call_data = json.loads(flow_db_entry.call_data)
+            # We set a start_time earlier so these flows all have a value populated when then enter the 'running' state,
+            # but we should set a more accurate value now.
+            flow_db_entry.start_time = datetime.now()
+
             if call_data_processor is not None:
                 flow_call_data = call_data_processor(flow_call_data, pipeline_config, session)
             output_file_ids = set()
@@ -171,6 +177,7 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
                         if db_entry.file_id in missing_file_ids:
                             db_entry.state = "skipped"
 
+            flow_db_entry.end_time = datetime.now()
         session.commit()
 
         for flow_db_entry, file_db_entry_list in zip(flow_db_entries, file_db_entry_lists):
@@ -178,7 +185,6 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
             session.refresh(flow_db_entry)
             if flow_db_entry.state == "running":
                 flow_db_entry.state = "completed"
-            flow_db_entry.end_time = datetime.now()
             # Note: the file_db_entry gets updated above in the writing step because it could be created or blank
         session.commit()
     except:

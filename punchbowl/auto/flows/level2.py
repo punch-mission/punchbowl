@@ -88,7 +88,7 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
             grouped_ready_files.append(group)
             continue
 
-        if cutoff_time and min(g.date_created for g in group).replace(tzinfo=UTC) > cutoff_time:
+        if cutoff_time and min(g.date_created for g in group).astimezone(UTC) > cutoff_time:
             # We're still potentially waiting for downlinks
             continue
 
@@ -131,7 +131,14 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
                                   .filter(File.file_type.in_(search_types))
                                   .filter(File.date_obs > center - search_width)
                                   .filter(File.date_obs < center + search_width)
+                                  .order_by(File.date_obs.asc())
                                   .all())
+        # Make sure we reject incomplete L0 triplets like we did earlier with L1s, so that this is a fair comparison
+        if polarized:
+            expected_inputs = group_l2_inputs(expected_inputs)[0]
+        else:
+            expected_inputs = group_files_by_time(expected_inputs, max_duration_seconds=10)[0]
+
         if len(expected_inputs) == len(group):
             # We have the L1s for all the L0s, and we don't expect new L0s, so let's make an incomplete mosaic
             grouped_ready_files.append(group)
@@ -463,12 +470,11 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
                        .filter(File.file_type == "XR")
                        .filter(~File.bad_packets)
                        .order_by(File.date_obs.desc())
-                       .limit(batch_size * n_batches_to_schedule).all())
+                       .all())
 
     # Divide these files into groups of a maximum size and duration
     grouped_files = group_files_by_time(all_ready_files, max_duration_seconds=60 * 60 * 24 * window_size_days,
                                         max_per_group=batch_size)
-    grouped_files = grouped_files[:n_batches_to_schedule]
 
     outputs = []
     for group in grouped_files:
@@ -505,6 +511,8 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
         logger.info(f"{len(group)} files (including {len(context_files)} context files) for group centered "
                     f"on {central_time}---scheduling")
         outputs.append(group)
+        if len(outputs) >= n_batches_to_schedule:
+            break
 
     logger.info(f"{len(outputs)} groups heading out")
     return outputs

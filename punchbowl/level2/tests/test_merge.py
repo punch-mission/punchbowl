@@ -89,9 +89,9 @@ def test_merge_invalid_samples():
                     wcs=WCS(naxis=2),
                     uncertainty=StdDevUncertainty(np.array([[1, 1, 0, -1], [np.nan, np.inf, 1, 1]])),
                     mask=np.array([[False, False, False, False], [False, False, True, True]]))
-    result = _merge_ndcubes([good, bad])
+    result = _merge_ndcubes([good, bad], include_masks=True)
     np.testing.assert_allclose(result.data, 1)
     np.testing.assert_allclose(result.uncertainty.array, 2)
-    unsupported = _merge_ndcubes([bad])
+    unsupported = _merge_ndcubes([bad], include_masks=True)
     assert np.all(np.isinf(unsupported.uncertainty.array))
     assert np.all(unsupported.mask)

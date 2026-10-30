@@ -31,7 +31,7 @@ def create_low_noise_task(
 
     # TODO - Note to future self: be clever and use the outlier flag to excise bad data spatially.
     reference_cube_index = len(cubes)//2 - 1
-    new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index)
+    new_cube = _merge_ndcubes(cubes, reference_cube_index=reference_cube_index, include_masks=True)
 
     # TODO - will need to restore polarization resolution for starfield skipping
 
@@ -58,11 +58,12 @@ def create_low_noise_task(
             new_cube.uncertainty.array[nfi_wfi_mask * masked_pixels] = np.inf
 
             new_meta["HAS_NFI4"] = 1
-        # We've been given a radius for a NFI-only region, but we don't have NFI data. Make sure that region gets
-        # cleared and marked properly.
-        new_cube.data[:] = np.where(nfi_wfi_mask, 0, new_cube.data)
-        new_cube.uncertainty.array[:] = np.where(
-            nfi_wfi_mask, np.inf, new_cube.uncertainty.array)
+        else:
+            # We've been given a radius for a NFI-only region, but we don't have NFI data. Make sure that region gets
+            # cleared and marked properly.
+            new_cube.data[:] = np.where(nfi_wfi_mask, 0, new_cube.data)
+            new_cube.uncertainty.array[:] = np.where(
+                nfi_wfi_mask, np.inf, new_cube.uncertainty.array)
 
     for k in cubes[0].meta.fits_keys:
         if k not in KEYWORD_OMIT and k in new_meta:

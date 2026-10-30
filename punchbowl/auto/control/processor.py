@@ -1,6 +1,7 @@
 import os
 import json
 import socket
+import traceback
 import multiprocessing
 from datetime import UTC, datetime
 from concurrent.futures import ProcessPoolExecutor
@@ -30,6 +31,7 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
     else:
         flow_ids = flow_id
 
+    everything_successful = True
     try:
         logger = get_logger()
         logger.info(f"Running under PID {os.getpid()}")
@@ -43,6 +45,8 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
 
         file_db_entry_lists = []
 
+        # We may have a batch of multiple flows to run. We start by doing all the prefatory database work for all the
+        # flows in one go, so it can be one DB transaction
         for flow_db_entry in flow_db_entries:
             if flow_db_entry.state != "launched":
                 raise RuntimeError(f"Flow id {flow_db_entry.flow_id} has state '{flow_db_entry.state}'; not running")
@@ -83,6 +87,7 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
             file_db_entry_lists.append(file_db_entry_list)
         session.commit()
 
+        # Now we actually run each flow in our batch, one at a time
         for flow_db_entry, file_db_entry_list in zip(flow_db_entries, file_db_entry_lists):
             # load the call data and launch the core flow
             flow_call_data = json.loads(flow_db_entry.call_data)
@@ -95,7 +100,18 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
 
             tag_set = {entry.file_type + entry.observatory for entry in file_db_entry_list}
             with tags(*sorted(tag_set)):
-                results = core_flow_to_launch(**flow_call_data)
+                try:
+                    results = core_flow_to_launch(**flow_call_data)
+                except:
+                    # Fail this flow gracefully and let the batch continue
+                    flow_db_entry.state = "failed"
+                    flow_db_entry.end_time = datetime.now()
+                    for file in file_db_entry_list:
+                        file.state = "failed"
+                    trace = traceback.format_exc()
+                    logger.warning(f"Flow {flow_db_entry.flow_id} failed with error:\n{trace}")
+                    everything_successful = False
+                    continue
 
             files_to_write = []
             for result in results:
@@ -174,3 +190,6 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
             {"state": "failed"})
         session.commit()
         raise
+
+    if not everything_successful:
+        raise RuntimeError("Part of this batch failed.")

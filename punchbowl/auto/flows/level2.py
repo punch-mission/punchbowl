@@ -491,9 +491,7 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
                                 .filter(File.observatory == "4")
                                 .filter(File.file_type == "XR")
                                 .filter(~File.bad_packets)
-                                # This was our maximum group size earlier. By looking for dt under that size, we've
-                                # effectively doubled our window size for finding context files.
-                                .filter(dt < 60 * 60 * 24 * window_size_days)
+                                .filter(dt < 60 * 60 * 24 * window_size_days / 2)
                                 .order_by(dt.asc())
                                 .limit(n_needed).all())
         # level2_PCA_construct_file_info will use these flags to separate the context flags

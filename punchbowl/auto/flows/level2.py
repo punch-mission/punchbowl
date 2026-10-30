@@ -131,6 +131,7 @@ def _level2_query_ready_files(session, polarized: bool, pipeline_config: dict, m
                                   .filter(File.file_type.in_(search_types))
                                   .filter(File.date_obs > center - search_width)
                                   .filter(File.date_obs < center + search_width)
+                                  .order_by(File.date_obs.asc())
                                   .all())
         # Make sure we reject incomplete L0 triplets like we did earlier with L1s, so that this is a fair comparison
         if polarized:

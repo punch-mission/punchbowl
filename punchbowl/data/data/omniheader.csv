@@ -120,7 +120,7 @@ SECTION,TYPE,KEYWORD,VALUE,COMMENT,DATATYPE,NULLABLE,MUTABLE,DEFAULT
 9,keyword,CALFCOR1,,first F corona model filename,str,TRUE,TRUE,
 9,keyword,CALFCOR2,,second F corona model filename,str,TRUE,TRUE,
 9,keyword,CALSTAR1,,first starfield model filename,str,TRUE,TRUE,
-9,keyword,CALSTAR2,,first starfield model filename,str,TRUE,TRUE,
+9,keyword,CALSTAR2,,second starfield model filename,str,TRUE,TRUE,
 9,keyword,PCACOMPS,,PCA components filename,str,TRUE,TRUE,
 9,keyword,PCADWNSP,,PCA downsample factor,int,TRUE,TRUE,
 9,keyword,PCANCOMP,,PCA number of components,int,TRUE,TRUE,

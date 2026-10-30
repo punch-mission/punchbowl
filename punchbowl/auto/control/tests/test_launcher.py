@@ -1,5 +1,6 @@
 import os
 import math
+import socket
 from datetime import UTC, datetime
 
 import pytest
@@ -8,14 +9,16 @@ from prefect.logging import disable_run_logger
 from prefect.testing.utilities import prefect_test_harness
 from pytest_mock_resources import create_mysql_fixture
 
-from punchbowl.auto.control.db import Base, File, Flow
+from punchbowl.auto.control.db import Base, File, Flow, Health
 from punchbowl.auto.control.launcher import (
+    anything_should_be_launched,
     count_flows,
     determine_launchable_flow_count,
     escalate_long_waiting_flows,
     gather_planned_flows,
 )
 from punchbowl.auto.control.util import get_hostname, load_pipeline_configuration
+from punchbowl.prefect import get_logger
 
 TEST_DIR = os.path.dirname(__file__)
 
@@ -63,6 +66,26 @@ def session_fn(session):
     session.add(level0_planned_flow)
     session.add(level1_planned_flow)
     session.add(level1_planned_flow2)
+
+    health_record = Health(datetime=datetime(2026, 1, 1, 0, 0),
+                           cpu_usage=50,
+                           memory_usage=50,
+                           memory_percentage=50,
+                           disk_usage=50,
+                           disk_percentage=50,
+                           num_pids=50,
+                           host=socket.gethostname())
+
+    health_record2 = Health(datetime=datetime(2026, 1, 1, 0, 0),
+                            cpu_usage=100,
+                            memory_usage=100,
+                            memory_percentage=100,
+                            disk_usage=100,
+                            disk_percentage=100,
+                            num_pids=100,
+                            host='a different host---ignore me')
+    session.add(health_record)
+    session.add(health_record2)
 
 
 db = create_mysql_fixture(Base, session_fn, session=True)
@@ -205,3 +228,41 @@ def test_filter_for_launchable_flows_with_empty_db(db_empty, flow_weights, flow_
             weight_planned, weight_running, max_weight_running, math.inf, 20, 100, running_count)
         assert ready_to_launch_weight == 0
         assert max_flows_to_launch == 20
+
+
+def test_anything_should_be_launched(db):
+    logger = get_logger()
+    with freeze_time(datetime(2026, 1, 1, 0, 10)):
+        # CPU too high
+        config = {'control': {'launcher': {'server_health_window_minutes': 20,
+                                           'skip_if_cpu_usage_above': 20}}}
+        assert not anything_should_be_launched(config, db, logger)
+
+        # CPU is OK
+        config = {'control': {'launcher': {'server_health_window_minutes': 20,
+                                           'skip_if_cpu_usage_above': 90}}}
+        assert anything_should_be_launched(config, db, logger)
+
+        # Disk too high
+        config = {'control': {'launcher': {'server_health_window_minutes': 20,
+                                           'skip_if_disk_percentage_above': 20}}}
+        assert not anything_should_be_launched(config, db, logger)
+
+        # Disk is OK
+        config = {'control': {'launcher': {'server_health_window_minutes': 20,
+                                           'skip_if_disk_percentage_above': 90}}}
+        assert anything_should_be_launched(config, db, logger)
+
+        # Memory too high
+        config = {'control': {'launcher': {'server_health_window_minutes': 20,
+                                           'skip_if_memory_percentage_above': 20}}}
+        assert not anything_should_be_launched(config, db, logger)
+
+        # Memory is OK
+        config = {'control': {'launcher': {'server_health_window_minutes': 20,
+                                           'skip_if_memory_percentage_above': 90}}}
+        assert anything_should_be_launched(config, db, logger)
+
+        # No records available
+        config = {'control': {'launcher': {'server_health_window_minutes': 5}}}
+        assert not anything_should_be_launched(config, db, logger)

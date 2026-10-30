@@ -1,7 +1,10 @@
+import socket
 import asyncio
 from math import ceil
 from random import shuffle
+from logging import Logger
 from datetime import datetime, timedelta
+from statistics import median
 from collections import defaultdict
 
 from prefect import flow, task
@@ -11,7 +14,7 @@ from prefect.variables import Variable
 from sqlalchemy import and_, func, select, update
 from sqlalchemy.orm import Session
 
-from punchbowl.auto.control.db import File, Flow
+from punchbowl.auto.control.db import File, Flow, Health
 from punchbowl.auto.control.util import batched, get_database_session, get_hostname, load_pipeline_configuration
 from punchbowl.prefect import get_logger
 
@@ -264,6 +267,61 @@ def load_flow_data(pipeline_config):
     return flow_weights, flow_enabled, flow_batch_size, flow_hosts
 
 
+def anything_should_be_launched(pipeline_config: dict, session: Session, logger: Logger) -> bool:
+    """
+    Check whether it's reasonable to launch more flows, given the current server status.
+
+    Checks median cpu usage, memory usage, and disk usage over the last few minutes. If any exceeds the configured
+    level, False is returned, indicating the server doesn't appear ready to accept more flows.
+
+    Parameters
+    ----------
+    pipeline_config : dict
+        The pipeline configuration
+    session : Session
+        The database session
+    logger : Logger
+        The active logger
+
+    Returns
+    -------
+    anything_should_be_launched : bool
+        True if it's reasonable to launch more flows
+    """
+    window_size = pipeline_config['control']['launcher'].get('server_health_window_minutes', 3)
+    print(datetime.now() - timedelta(minutes=window_size))
+    records = (session.query(Health)
+               .where(Health.host == socket.gethostname())
+               .where(Health.datetime > datetime.now() - timedelta(minutes=window_size))
+               .all())
+    print(records)
+    if not records:
+        # Something's wrong if we don't have any recent records
+        logger.warning(f"No server health records found---not launching.")
+        return False
+
+    if cpu_cap := pipeline_config['control']['launcher'].get('skip_if_cpu_usage_above', 0):
+        cpu_use = median([record.cpu_usage for record in records])
+        if cpu_use > cpu_cap:
+            logger.warning(f"Median CPU usage of {cpu_use} exceeds cap of {cpu_cap}---not launching.")
+            return False
+
+    if disk_cap := pipeline_config['control']['launcher'].get('skip_if_disk_percentage_above', 0):
+        disk_use = median([record.disk_percentage for record in records])
+        if disk_use > disk_cap:
+            logger.warning(f"Disk percentage of {disk_use} exceeds cap of {disk_cap}---not launching.")
+            return False
+
+    if memory_cap := pipeline_config['control']['launcher'].get('skip_if_memory_percentage_above', 0):
+        memory_use = median([record.memory_percentage for record in records])
+        if memory_use > memory_cap:
+            logger.warning(f"Memory percentage of {memory_use} exceeds cap of {memory_cap}---not launching.")
+            return False
+
+    return True
+
+
+
 @flow
 async def launcher(pipeline_config_path=None):
     """
@@ -283,12 +341,16 @@ async def launcher(pipeline_config_path=None):
     if pipeline_config_path is None:
         pipeline_config_path = await Variable.get("punchpipe_config", "punchpipe_config.yaml")
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
+
     flow_weights, flow_enabled, flow_batch_sizes, flow_hosts = load_flow_data(pipeline_config)
     enabled_flows = [flow for flow, enabled in flow_enabled.items() if enabled and flow_hosts[flow] == current_host]
     logger.info(f"Enabled flows on {current_host}: {', '.join(enabled_flows)}")
 
     logger.info("Establishing database connection")
     session = get_database_session()
+
+    if not anything_should_be_launched(pipeline_config, session, logger):
+        return
 
     escalate_long_waiting_flows(session, pipeline_config)
 

@@ -1,0 +1,2 @@
+Added a "server status" page to the internal dashboard, showing at a glance what's running and what's pending on each
+server.

@@ -10,7 +10,7 @@ from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
-from punchbowl.auto.flows.util import file_name_to_full_path
+from punchbowl.auto.flows.util import file_name_to_full_path, get_max_flows_to_schedule
 from punchbowl.level3.stellar import generate_starfield_background
 from punchbowl.prefect import get_logger
 
@@ -143,7 +143,8 @@ def construct_starfield_background_scheduler_flow(pipeline_config_path=None, ses
         logger.info("Flow 'construct_starfield_background' is not enabled---halting scheduler")
         return 0
 
-    max_flows = 2 * pipeline_config["flows"]["construct_starfield_background"].get("concurrency_limit", 1000)
+    max_flows = get_max_flows_to_schedule(pipeline_config, "construct_starfield_background")
+
     existing_flows = (session.query(Flow)
                       .where(Flow.flow_type == "construct_starfield_background")
                       .where(Flow.state.in_(["planned", "launched", "running"])).count())

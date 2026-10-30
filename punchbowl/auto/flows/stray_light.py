@@ -14,7 +14,7 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.level1 import get_mask_file
 from punchbowl.auto.flows.level2 import group_l2_inputs
-from punchbowl.auto.flows.util import file_name_to_full_path
+from punchbowl.auto.flows.util import file_name_to_full_path, get_max_flows_to_schedule
 from punchbowl.level1.stray_light import estimate_stray_light
 from punchbowl.prefect import get_logger
 
@@ -227,7 +227,8 @@ def construct_stray_light_scheduler_flow(pipeline_config_path=None, session=None
         logger.info("Flow 'construct_stray_light' is not enabled---halting scheduler")
         return
 
-    max_flows = pipeline_config["flows"]["construct_stray_light"].get("concurrency_limit", 1000)
+    max_flows = get_max_flows_to_schedule(pipeline_config, "construct_stray_light")
+
     existing_flows = (session.query(Flow)
                       .where(Flow.flow_type == "construct_stray_light")
                       .where(Flow.state.in_(["planned", "launched", "running"])).count())

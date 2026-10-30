@@ -33,8 +33,8 @@ def session_fn(session):
                         file_version='none',
                         software_version='none',
                         polarization='M',
-                        date_created=datetime(2023, 1, 1, 0, 0, 0),
-                        date_obs=datetime(2022, 12, 25, 0, 0, 0))
+                        date_created=datetime(2023, 1, 1, 0, 2, 0),
+                        date_obs=datetime(2022, 12, 25, 0, 2, 0))
 
     level0_fileZ = File(level='0',
                         file_type='PZ',
@@ -43,7 +43,7 @@ def session_fn(session):
                         file_version='none',
                         software_version='none',
                         polarization='Z',
-                        date_created=datetime(2023, 1, 1, 0, 0, 0),
+                        date_created=datetime(2023, 1, 1, 0, 1, 0),
                         date_obs=datetime(2022, 12, 25, 0, 1, 0))
 
     level0_fileP = File(level='0',
@@ -54,7 +54,7 @@ def session_fn(session):
                         software_version='none',
                         polarization='P',
                         date_created=datetime(2023, 1, 1, 0, 0, 0),
-                        date_obs=datetime(2022, 12, 25, 0, 2, 0))
+                        date_obs=datetime(2022, 12, 25, 0, 0, 0))
 
     level1_fileM = File(level='1',
                        file_type='PM',

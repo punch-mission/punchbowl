@@ -542,6 +542,10 @@ def polar_remap(
         # Crop only along the rows
         polar_image_binned = polar_image_binned[crop[0]:crop[1], :]
 
+    # Copy out of the strided view, so that the full-size remapped image is freed instead of being kept alive by the
+    # returned array, e.g. by the list of frames of preprocess_cube
+    polar_image_binned = np.ascontiguousarray(polar_image_binned)
+
     if not polar_header:
         return polar_image_binned
 

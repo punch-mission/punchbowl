@@ -45,9 +45,9 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
 
     base_L0_query = (session.query(File)
                      .filter(File.state.in_(["created", "progressed"]))
-                     .filter(File.observatory == '4'
+                     .filter(File.observatory == ('4'
                              if reference_file.observatory == 'N'
-                             else reference_file.observatory)
+                             else reference_file.observatory))
                      .filter(File.level == "0")
                      .filter(File.outlier == 0)
                      )
@@ -103,14 +103,16 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
             first_half_L0s = group_l2_inputs(first_half_L0s)
             second_half_L0s = group_l2_inputs(second_half_L0s)
 
-        if (len(first_half_L0s) < max_files_per_half * count_multiplier
-                or len(second_half_L0s) < max_files_per_half * count_multiplier):
+        if (len(first_half_L0s) < min_files_per_half * count_multiplier
+                or len(second_half_L0s) < min_files_per_half * count_multiplier):
             reference_file.state = "impossible"
             # Record who deemed this to be impossible
             reference_file.file_version = pipeline_config["file_version"]
             reference_file.software_version = __version__
             reference_file.date_created = datetime.now()
-            logger.info(f"{reference_file.filename()} marked impossible")
+            logger.info(f"{reference_file.filename()} marked impossible. First half {len(first_half_L0s)} / "
+                        f"{min_files_per_half * count_multiplier}, second half {len(second_half_L0s)} / "
+                        f"{min_files_per_half * count_multiplier}")
 
     return []
 

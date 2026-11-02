@@ -1,0 +1,1 @@
+Rather than pointing towards a SwRI data server directory, we can point the PUNCH sample data objects directly to their fixed SDAC locations. This will also allow us to more easily update the sample data for each new data release.

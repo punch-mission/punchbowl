@@ -469,7 +469,7 @@ def solve_pointing( # noqa: C901
 
     catalog_stars = filter_for_visible_stars(load_gaia_catalog(), dimmest_magnitude=7)
     catalog_stars = prep_star_coords(catalog_stars, image_wcs)
-    catalog_stars, pix_coords = find_catalog_in_image(catalog_stars, guess_wcs, (2048, 2048))
+    catalog_stars, pix_coords = find_catalog_in_image(catalog_stars, guess_wcs, image_data.shape)
 
     ok_stars = mask(np.stack((pix_coords[:, 0], pix_coords[:, 1])).T)
     catalog_stars = catalog_stars[ok_stars]

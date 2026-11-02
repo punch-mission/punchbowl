@@ -33,8 +33,8 @@ def session_fn(session):
                         file_version='none',
                         software_version='none',
                         polarization='M',
-                        date_created=datetime(2023, 1, 1, 0, 0, 0),
-                        date_obs=datetime(2022, 12, 25, 0, 0, 0))
+                        date_created=datetime(2023, 1, 1, 0, 2, 0),
+                        date_obs=datetime(2022, 12, 25, 0, 2, 0))
 
     level0_fileZ = File(level='0',
                         file_type='PZ',
@@ -43,7 +43,7 @@ def session_fn(session):
                         file_version='none',
                         software_version='none',
                         polarization='Z',
-                        date_created=datetime(2023, 1, 1, 0, 0, 0),
+                        date_created=datetime(2023, 1, 1, 0, 1, 0),
                         date_obs=datetime(2022, 12, 25, 0, 1, 0))
 
     level0_fileP = File(level='0',
@@ -54,7 +54,7 @@ def session_fn(session):
                         software_version='none',
                         polarization='P',
                         date_created=datetime(2023, 1, 1, 0, 0, 0),
-                        date_obs=datetime(2022, 12, 25, 0, 2, 0))
+                        date_obs=datetime(2022, 12, 25, 0, 0, 0))
 
     level1_fileM = File(level='1',
                        file_type='PM',
@@ -377,7 +377,7 @@ def test_group_l2_inputs_single_observatory():
 
 def test_level2_query_ready_files_ignore_missing(db):
     with disable_run_logger():
-        with freeze_time(datetime(2023, 1, 2, 0, 0, 0, tzinfo=UTC)) as frozen_datatime:  # noqa: F841
+        with freeze_time(datetime(2023, 1, 2, 0, 0, 0).astimezone()) as frozen_datatime:  # noqa: F841
             pipeline_config = {'flows': {'level2': {'ignore_missing_after_days': 1.05}}}
             ready_file_ids = level2_query_ready_files.fn(db, pipeline_config)
             assert len(ready_file_ids) == 0
@@ -388,7 +388,7 @@ def test_level2_query_ready_files_ignore_missing(db):
 
 def test_level2_query_ready_files_ignore_missing_clear(db):
     with disable_run_logger():
-        with freeze_time(datetime(2023, 1, 2, 0, 0, 0, tzinfo=UTC)) as frozen_datatime:  # noqa: F841
+        with freeze_time(datetime(2023, 1, 2, 0, 0, 0).astimezone()) as frozen_datatime:  # noqa: F841
             pipeline_config = {'flows': {'level2_clear': {'ignore_missing_after_days': 1.05}}}
             ready_file_ids = level2_query_ready_clear_files.fn(db, pipeline_config)
             assert len(ready_file_ids) == 0
@@ -399,7 +399,7 @@ def test_level2_query_ready_files_ignore_missing_clear(db):
 
 def test_level2_clear_query_ready_files_unprocessed_L0(db):
     try:
-        with disable_run_logger(), freeze_time(datetime(2023, 1, 1, 0, 5, 0)):  # noqa: F841
+        with disable_run_logger(), freeze_time(datetime(2023, 1, 1, 0, 5, 0).astimezone()):  # noqa: F841
             pipeline_config = {'flows': {'level2_clear': {'ignore_missing_after_days': 0}}}
             ready_file_ids = level2_query_ready_clear_files.fn(db, pipeline_config)
             assert len(ready_file_ids) == 1

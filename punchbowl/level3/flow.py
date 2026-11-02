@@ -89,7 +89,7 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
 
         new_meta = NormalizedMetadata.load_template("CNN", "3")
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        for key in cube.meta:
+        for key in cube.meta.keys(): # noqa: SIM118
             if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS", "OUTLIER",
                          "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                     or key[-4:] in ["_OBS", "_VOB"]
@@ -113,7 +113,7 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
 
         new_meta = NormalizedMetadata.load_template("XR4", "3")
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        for key in mosaic_cube.meta:
+        for key in mosaic_cube.meta.keys(): # noqa: SIM118
             if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS", "OUTLIER",
                          "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                     or key[-4:] in ["_OBS", "_VOB"]
@@ -140,7 +140,30 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                         before_f_corona_model_paths: list[str | DataLoader],
                         after_f_corona_model_paths: list[str | DataLoader],
                         output_filename: str | None = None) -> list[PUNCHCube]:
-    """Level 3 PIM/CIM flow."""
+    """
+    Level 3 flow to generate PIM and CIM files.
+
+    Parameters
+    ----------
+    data_list : list[str | PUNCHCube]
+        Input list string of data files or a list PUNCHCubes of Level 2 XR or XP PUNCH data.
+    before_f_corona_model_paths : list[str | DataLoader]
+        Input list of F-corona (PF{1-3} or CF{1-3}) filepaths or model data with timestamps prior to the input PUNCH
+        data. Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH
+        data timestamp.
+    after_f_corona_model_paths : list[str | DataLoader]
+        Input list of F-corona (PF{1-3} or CF{1-3}) filepaths or model data with timestamps after to the input PUNCH
+        data. Will be used with after_f_corona_model_paths to interpolate for an F-corona model at the time of the PUNCH
+        data timestamp.
+    output_filename : str | None
+        Filename for the output PTM or CTM PUNCHCube file/s. Optional.
+
+    Returns
+    -------
+    outcubes : list[PUNCHCube]
+        F-corona subtracted PIM or CIM PUNCHCubes.
+
+    """
     logger = get_logger()
 
     logger.info("beginning level 3 PIM/CIM flow")
@@ -165,6 +188,16 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                               else path.load() for path in before_f_corona_model_paths]
     after_f_corona_models = [load_ndcube_from_fits(path) if isinstance(path, str)
                               else path.load()  for path in after_f_corona_model_paths]
+
+    # Extract filenames from DataLoader or string inputs to save to FITS headers
+    before_f_corona_model_short_paths = [os.path.basename(
+                                            model_string.src_repr() if isinstance(model_string, DataLoader)
+                                            else model_string)
+                                         for model_string in before_f_corona_model_paths]
+    after_f_corona_model_short_paths = [os.path.basename(
+                                            model_string.src_repr() if isinstance(model_string, DataLoader)
+                                            else model_string)
+                                        for model_string in after_f_corona_model_paths]
 
     data_list = [subtract_f_corona_background_task(d,
                                                    before_f_corona_models,
@@ -204,7 +237,8 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
         if cube.meta[f"CTRX{obs}{obs_no}"].value > 0:
             output_data[0].meta[f"CTRX{obs}{obs_no}"] = cube.meta[f"CTRX{obs}{obs_no}"].value
             output_data[0].meta[f"CTRY{obs}{obs_no}"] = cube.meta[f"CTRY{obs}{obs_no}"].value
-
+        output_data[0].meta["CALFCOR1"] = ", ".join(before_f_corona_model_short_paths)
+        output_data[0].meta["CALFCOR2"] = ", ".join(after_f_corona_model_short_paths)
     logger.info("ending level 3 PIM/CIM flow")
 
     if output_filename is not None:
@@ -215,42 +249,53 @@ def level3_PIM_CIM_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
 
 @punch_flow
 def level3_core_flow(data_list: list[str | PUNCHCube],
-                     nfi_list: list[str | PUNCHCube | None],
+                     nfi_list: list[str | PUNCHCube] | None,
                      before_starfield_path: str | None,
                      after_starfield_path: str | None,
-                     nfi_wfi_divide_radius: float | None,
+                     nfi_wfi_divide_radius: float | None = None,
                      nfi_scale_factor: float = 1,
                      output_filename: str | None = None) -> list[PUNCHCube]:
     """
-    Level 3 CTM/PTM flow.
+    Level 3 flow to generate Level 3 PTM and CTM files.
 
     Parameters
     ----------
     data_list : list[str | PUNCHCube]
-        The input data files---*IMs to process into *TMs
-    nfi_list : list[str | PUNCHCube | None]
-        NFI files, if any, to insert in the mosaics.
-    before_starfield_path : str | None
-        The path to a starfield model before the observations
-    after_starfield_path : str | None
-        The path to a starfield model after the observations
+        Input list string of data files or a list PUNCHCubes of Level 3 PIM or CIM PUNCH data.
+    nfi_list : list[str | PUNCHCube | None] | None
+        Input list string of data files, a list of PUNCHCube NFI files to insert in the mosaics, or None if no NFI
+        files will be inserted into the mosaics.
+    before_starfield_path : list[str | DataLoader]
+        Input starfield model (CSM or PSM) file path with timestamps prior to the input PUNCH data.
+        Will be used with after_starfield_path to interpolate for a starfield model at the time of the PUNCH data
+        timestamp. At least one of before_starfield_path or after_starfield_path must be provided.
+    after_starfield_path: list[str | DataLoader]
+        Input starfield model (CSM or PSM) file path with timestamps after the input PUNCH data.
+        Will be used with before_starfield_path to interpolate for a starfield model at the time of the PUNCH data
+        timestamp. At least one of before_starfield_path or after_starfield_path must be provided.
     nfi_wfi_divide_radius : float
         A radius in pixels that divides the NFI region of the final mosiac from the WFI region. If not provided, there
-        will be no NFI region.
+        will be no NFI region. Optional.
     nfi_scale_factor : float
-        An ad-hoc scale factor to apply to the NFI pixel values.
+        An ad-hoc scale factor to apply to the NFI pixel values. Optional.
     output_filename : str | None
-        A location at which to save the output file
+        Filename for the starfield-subtracted PAM or CAM file/s. Optional.
 
     Returns
     -------
-    out_data_list : list[PUNCHCube]
-        The *TM cubes produced by this flow
+    output : list[PUNCHCube]
+        Starfield-subtracted starfield subtracted Level 3 PTM or CTM PUNCHCubes.
+        The input data files---*IMs to process into *TMs
 
     """
     logger = get_logger()
 
     logger.info("beginning level 3 flow")
+
+    # If no NFI files input, create a list of Nones
+    if nfi_list is None:
+        nfi_list = [None] * len(data_list)
+
     data_list = [load_image_task(d) if isinstance(d, str) else d for d in data_list]
     nfi_list = [load_image_task(d) if isinstance(d, str) else d for d in nfi_list]
     is_polarized = data_list[0].meta["TYPECODE"].value == "PI"

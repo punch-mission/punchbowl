@@ -241,7 +241,7 @@ def _generate_output_cubes(corrected_frames: np.ndarray, masks: np.ndarray, inst
         if path in input_files:
             new_meta = NormalizedMetadata.load_template("CNN", "2")
             new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-            for key in metas[i]:
+            for key in metas[i].keys(): # noqa: SIM118
                 if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
                              "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                      or key[-4:] in ["_OBS", "_VOB"])
@@ -377,7 +377,7 @@ def _load_one_file(path: str, downsample_factor: int,
         return None
 
     data = cube.data
-    saturation_mask = np.isinf(cube.uncertainty.array)
+    saturation_mask = np.isinf(cube.uncertainty.array) * (cube.data > 0)
     if downsample_factor > 1:
         saturation_mask = saturation_mask.reshape((data.shape[0] // downsample_factor, downsample_factor,
                                                    data.shape[1] // downsample_factor, downsample_factor),

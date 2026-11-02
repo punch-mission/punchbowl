@@ -129,12 +129,8 @@ def get_errors(wcs: WCS, catalog_stars: SkyCoord | tuple[np.ndarray, np.ndarray]
         xs, ys = catalog_stars
     refined_coords = np.stack([xs, ys], axis=-1)
 
-    errors = np.empty(refined_coords.shape[0])
-    closest_stars = np.empty(refined_coords.shape)
-    for coord_i, coord in enumerate(refined_coords):
-        dd, ii = observed_stars.query(coord, k=1)
-        errors[coord_i] = dd
-        closest_stars[coord_i] = observed_stars.data[ii]
+    errors, ii = observed_stars.query(refined_coords, k=1)
+    closest_stars = observed_stars.data[ii]
 
     return errors, closest_stars
 

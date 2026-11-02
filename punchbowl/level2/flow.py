@@ -178,7 +178,7 @@ def level2_core_flow(data_list: list[str] | list[PUNCHCube], # noqa: C901
                     # reproject_many_flow returns cubes that have the new data and WCS, and the old, unadjusted meta.
                     # We match that here.
                     cube = cubes[j].replace(data=repro_result.data[j], uncertainty=repro_result.uncertainty[j],
-                                            wcs=trefoil_wcs)
+                                            mask=~np.isfinite(repro_result.uncertainty[j].array), wcs=trefoil_wcs)
                     reprojected_cubes.append(cube)
             data_list = reprojected_cubes
         else:

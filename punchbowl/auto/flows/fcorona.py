@@ -30,7 +30,7 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
     t_end = reference_time + timedelta(hours=max_hours_per_half)
     min_files_per_half = pipeline_config["flows"]["construct_f_corona_background"][f"{pol_type}_min_files_per_half"]
     max_files_per_half = pipeline_config["flows"]["construct_f_corona_background"][f"{pol_type}_max_files_per_half"]
-    file_stride = pipeline_config["flows"]["construct_stray_light"].get(f"{pol_type}_file_stride", 1)
+    file_stride = pipeline_config["flows"]["construct_f_corona_background"].get(f"{pol_type}_file_stride", 1)
 
     count_multiplier = file_stride
 

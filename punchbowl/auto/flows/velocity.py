@@ -37,7 +37,7 @@ def level3_VAM_query_ready_files(session, pipeline_config: dict, reference_time:
     """
     flow_type = "level3_VAM"
     logger = get_logger()
-    min_file_count = pipeline_config["flows"]["L3_VAM"]["min_file_count"]
+    min_file_count = pipeline_config["flows"]["level3_VAM"]["min_file_count"]
 
     child = aliased(File)
     child_exists_subquery = (session.query(FileRelationship)

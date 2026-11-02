@@ -53,11 +53,15 @@ Version 0m
     - Within each CAM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
     - Note that input NFI images undergo median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median.
     
+  - Note: NFI has a wider period of eclipse season artifacts that impact the quality of the images and they occur more frequently than eclipse seasons that affect WFIs. 
+    - The winter eclipse seaons occurs around November-January and the summer one occurs around June-July.
+
 - Starfield processing improvements
 
   - Improved starfield model generation and subtraction. A median background subtraction that is no longer needed was removed. This should improve capturing the Milky Way into the starfield models. This also allows for a single starfield model subtraction. (https://github.com/punch-mission/punchbowl/pull/1145)
   - Improved starfield blur by reprojecting directly to the image frame instead of intermediate union WCS. (https://github.com/punch-mission/punchbowl/pull/1180)
   - Starfield models (L3 PSM and CSM products) now have their celestial right ascension (RA) WCS coordinate flipped negative in sign to reflect proper behavior in coordinate transformations during model subtraction from data. (https://github.com/punch-mission/punchbowl/pull/1245)
+  - Known issue: There are artifacts in heliographic north region of the starfield model during WFI eclipse seasons (which occurs around November - January). We have a ticket to investigate and address this (https://github.com/punch-mission/punchbowl/issues/1311)
 
 - Mosiac assembly improvements
 

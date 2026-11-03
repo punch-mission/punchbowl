@@ -96,7 +96,7 @@ def write_file(data: PUNCHCube, corresponding_file_db_entry, pipeline_config) ->
         replace_file_version_in_metadata(output_filename, old_version_pattern, pipeline_config['file_version'])
 
     if (pipeline_config.get('write_quicklooks', True)
-            and corresponding_file_db_entry.file_type[0] not in ('S', 'T', 'A')):
+            and corresponding_file_db_entry.file_type[0] not in ('S', 'T', 'A', 'V')):
         _write_quicklook(pipeline_config, corresponding_file_db_entry, data)
     return output_filename
 

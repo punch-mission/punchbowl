@@ -289,12 +289,10 @@ def anything_should_be_launched(pipeline_config: dict, session: Session, logger:
         True if it's reasonable to launch more flows
     """
     window_size = pipeline_config['control']['launcher'].get('server_health_window_minutes', 3)
-    print(datetime.now() - timedelta(minutes=window_size))
     records = (session.query(Health)
                .where(Health.host == socket.gethostname())
                .where(Health.datetime > datetime.now() - timedelta(minutes=window_size))
                .all())
-    print(records)
     if not records:
         # Something's wrong if we don't have any recent records
         logger.warning(f"No server health records found---not launching.")

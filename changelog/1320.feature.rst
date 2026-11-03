@@ -1,0 +1,2 @@
+The pipeline can now more flexibly handle time periods where F corna models cannot be made (e.g. at the beginning of
+the mission, at the edge of the date range for which the required inputs are available).

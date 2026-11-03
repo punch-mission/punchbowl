@@ -46,14 +46,14 @@ Version 0m
   - PCA filtered NFI images are now included in L3 CTMs. (https://github.com/punch-mission/punchbowl/pull/1227)
 
     - Within each CTM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
-    -  Note that the visual appearance of the NFI data is greatly improved in the CAM files compared to CTM due to the by the median filtering applied to the CAM images. 
-    
+    -  Note that the visual appearance of the NFI data is greatly improved in the CAM files compared to CTM due to the by the median filtering applied to the CAM images.
+
   - PCA filtered NFI images are now included in L3 CAMs. (https://github.com/punch-mission/punchbowl/pull/1228)
 
     - Within each CAM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
     - Note that input NFI images undergo median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median.
-    
-  - Note: NFI has a wider period of eclipse season artifacts that impact the quality of the images and they occur more frequently than eclipse seasons that affect WFIs. 
+
+  - Note: NFI has a wider period of eclipse season artifacts that impact the quality of the images and they occur more frequently than eclipse seasons that affect WFIs.
     - The winter eclipse seaons occurs around November-January and the summer one occurs around June-July.
 
 - Starfield processing improvements
@@ -71,7 +71,7 @@ Version 0m
 - Helioviewer and JHelioviewer improvements
 
   - Added the helioviewer tag to the JPEG2000 quicklook files. This will allow for proper image scaling of PUNCH data in Helioviewer. (https://github.com/punch-mission/punchbowl/pull/1109)
-  - Negative values in the PUNCH quicklook image bitmaps are now clipped to 1 instead of 0. Previously, this led to negative values becoming transparent in JHelioviewer. 
+  - Negative values in the PUNCH quicklook image bitmaps are now clipped to 1 instead of 0. Previously, this led to negative values becoming transparent in JHelioviewer.
 
 - Flow tracking data products are now available as VAM files. (https://github.com/punch-mission/punchbowl/pull/1079)
 - Changed F-corona percentile from 3% to 2%. This improves the F-corona model quality by reducing over-subtraction. Note that F-corona models will appear dimmer. (https://github.com/punch-mission/punchbowl/pull/1271)

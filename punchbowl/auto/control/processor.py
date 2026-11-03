@@ -114,9 +114,12 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
                     flow_db_entry.end_time = datetime.now()
                     for file in file_db_entry_list:
                         file.state = "failed"
+                    everything_successful = False
+                    if len(flow_db_entries) == 1:
+                        # We're not in a batch, so we can just fail directly and simplify the flow's log output
+                        raise
                     trace = traceback.format_exc()
                     logger.warning(f"Flow {flow_db_entry.flow_id} failed with error:\n{trace}")
-                    everything_successful = False
                     continue
 
             files_to_write = []

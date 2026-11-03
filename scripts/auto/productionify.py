@@ -28,8 +28,8 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern, ne
         else:
             new_path = old_path
 
-        old_sha_path = old_path + '.sha'
-        new_sha_path = new_path + '.sha'
+        old_sha_path = old_path + '.sha256'
+        new_sha_path = new_path + '.sha256'
 
         if new_version is not None:
             if os.path.exists(old_path):
@@ -43,15 +43,16 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern, ne
                 if config['write_sha_files']:
                     write_file_hash(new_path)
 
-        old_ql_path = old_path.replace('.fits', '.jp2')
-        new_ql_path = new_path.replace('.fits', '.jp2')
-        if os.path.exists(old_ql_path) and new_version is not None:
-            os.rename(old_ql_path, new_ql_path)
-        elif (os.path.exists(new_path) and not os.path.exists(new_ql_path) and file.file_type[0] not in ('S', 'T')
-                and config['write_quicklooks']):
-            cube = load_ndcube_from_fits(new_path)
-            with np.errstate(all='ignore'):
-                _write_quicklook(config, file, cube)
+        if file.level != '0':
+            old_ql_path = old_path.replace('.fits', '.jp2')
+            new_ql_path = new_path.replace('.fits', '.jp2')
+            if os.path.exists(old_ql_path) and new_version is not None:
+                os.rename(old_ql_path, new_ql_path)
+            elif (os.path.exists(new_path) and not os.path.exists(new_ql_path) and file.file_type[0] not in ('S', 'T')
+                    and config['write_quicklooks']):
+                cube = load_ndcube_from_fits(new_path)
+                with np.errstate(all='ignore'):
+                    _write_quicklook(config, file, cube)
         return True
     except Exception as e:
         msg = f"Error in {file.filename()}, {repr(e)}"

@@ -13,7 +13,7 @@ from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, group_files_by_time, load_pipeline_configuration
 from punchbowl.auto.flows.level2 import group_l2_inputs
-from punchbowl.auto.flows.util import file_name_to_full_path, get_max_flows_to_schedule
+from punchbowl.auto.flows.util import apply_stride, file_name_to_full_path, get_max_flows_to_schedule
 from punchbowl.level3.f_corona_model import construct_f_corona_model
 from punchbowl.prefect import get_logger
 
@@ -68,10 +68,14 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
                           .limit(max_files_per_half * count_multiplier).all())
 
     if file_stride > 1:
-        random.seed(1)
-        # Apply a stride that doesn't phase weirdly with where we are in a roll position
-        first_half_inputs = [random.choice(pair) for pair in batched(first_half_inputs, file_stride)]
-        second_half_inputs = [random.choice(pair) for pair in batched(second_half_inputs, file_stride)]
+        if pol_type == 'nfi':
+            first_half_inputs = apply_stride(first_half_inputs, file_stride, 8)
+            second_half_inputs = apply_stride(second_half_inputs, file_stride, 8)
+        else:
+            random.seed(1)
+            # Apply a stride that doesn't phase weirdly with where we are in a roll position
+            first_half_inputs = [random.choice(pair) for pair in batched(first_half_inputs, file_stride)]
+            second_half_inputs = [random.choice(pair) for pair in batched(second_half_inputs, file_stride)]
 
     enough_L2s = len(first_half_inputs) > min_files_per_half and len(second_half_inputs) > min_files_per_half
     if enough_L2s:
@@ -98,7 +102,12 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
                            .filter(File.date_obs >= reference_time)
                            .filter(File.date_obs <= t_end)
                            .order_by(File.date_obs.asc()).all())
-        if polarized:
+
+        if pol_type == 'nfi':
+            first_half_L0s = apply_stride(first_half_L0s, file_stride, 8)
+            second_half_L0s = apply_stride(second_half_L0s, file_stride, 8)
+            count_multiplier = 1
+        elif polarized:
             # Group into polarization triplets and exclude incomplete triplets
             first_half_L0s = group_l2_inputs(first_half_L0s)
             second_half_L0s = group_l2_inputs(second_half_L0s)

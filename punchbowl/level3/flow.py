@@ -386,7 +386,7 @@ def generate_level3_velocity_flow(files: list[str],
                                   delta_t: int = 12,
                                   sparsity: int = 2,
                                   n_ofs: int = 151,
-                                  ycens: np.ndarray | None = None,
+                                  ycens: list | np.ndarray | None = None,
                                   rbands: list[int] | None = None,
                                   output_filename: str | None = None) -> list[PUNCHCube]:
     """
@@ -402,7 +402,7 @@ def generate_level3_velocity_flow(files: list[str],
         Frame skip interval for averaging, by default 2
     n_ofs : int, optional
         Number of spatial offsets for cross-correlation, by default 151
-    ycens : np.ndarray | None, optional
+    ycens : list | np.ndarray | None, optional
         Radial band centers in solar radii, by default None
     rbands : list[int] | None, optional
         Indices of radial bands to visualize, by default None
@@ -416,6 +416,9 @@ def generate_level3_velocity_flow(files: list[str],
 
     """
     logger = get_logger()
+
+    if isinstance(ycens, list):
+        ycens = np.array(ycens)
 
     logger.info("Generating velocity data product")
     velocity_data = track_velocity(files=files,

@@ -144,7 +144,7 @@ def level3_VAM_construct_flow_info(level3_ptm_files: list[File],
     call_data = json.dumps(
         {
             "files": [ptm_file.filename() for ptm_file in level3_ptm_files],
-            "reference_time": reference_time,
+            "reference_time": level3_ptm_files[0]._reference_time.strftime("%Y-%m-%dT%H:%M:%S"),
             "delta_t": pipeline_config["flows"][flow_type].get("delta_t", 12),
             "sparsity": pipeline_config["flows"][flow_type].get("sparsity", 2),
             "n_ofs": pipeline_config["flows"][flow_type].get("n_ofs", 151),
@@ -187,7 +187,7 @@ def level3_VAM_construct_file_info(level3_files: list[File], pipeline_config: di
         observatory="M",
         file_version=pipeline_config["file_version"],
         software_version=__version__,
-        date_obs=reference_time,
+        date_obs=level3_files[0]._reference_time,
         date_beg=min([f.date_obs for f in level3_files]),
         date_end=max([f.date_obs for f in level3_files]),
         state="planned",

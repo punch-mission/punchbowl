@@ -63,6 +63,7 @@ super_user = [
     "networkx >= 3.4, <= 3.7",
     "numba >=0.62, <=0.68.0",
     "numexpr >= 2.10.0, <= 2.14.2",
+    "opencv-python >= 5.0.0, <= 5.0.0.93",
     "pre-commit >= 4.6.0, <= 4.7.0",
     "prefect[dask] >= 3.7.4, <= 3.8.8",
     "imagecodecs[all] >= 2026.8.16, <= 2026.10.10",

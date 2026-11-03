@@ -17,7 +17,7 @@ from punchbowl.level3.f_corona_model import subtract_f_corona_background_task
 from punchbowl.level3.low_noise import create_low_noise_task
 from punchbowl.level3.polarization import convert_polarization
 from punchbowl.level3.stellar import subtract_starfield_background_task
-from punchbowl.level3.velocity import plot_flow_map, track_velocity
+from punchbowl.level3.velocity import infer_product_code, plot_flow_map, track_velocity
 from punchbowl.prefect import get_logger, punch_flow
 from punchbowl.util import load_image_task, make_circular_mask, output_image_task
 
@@ -383,30 +383,88 @@ def generate_level3_low_noise_flow(data_list: list[str | PUNCHCube],
 
 @punch_flow
 def generate_level3_velocity_flow(files: list[str],
-                                  delta_t: int = 12,
-                                  sparsity: int = 2,
-                                  n_ofs: int = 151,
-                                  ycens: np.ndarray | None = None,
-                                  rbands: list[int] | None = None,
+                                  product_code: str | None = None,
+                                  flow_window_hours: float | None = None,
+                                  delta_t_minutes: float | None = None,
+                                  sparsity: int | None = None,
+                                  n_ofs: int | None = None,
+                                  delta_px: int | None = None,
+                                  expected_wind_kps: int | None = None,
+                                  offset_speed_kps: int | None = None,
+                                  annuli_centers_rs: list[float] | np.ndarray | None = None,
+                                  annuli_width_rs: float | None = None,
+                                  azimuth_bins_remap: int | None = None,
+                                  az_bin: int | None = None,
+                                  vel_bin_width: int | None = None,
+                                  speed_max: int | None = None,
+                                  time_avg_hours: float | None = None,
+                                  use_median: bool | None = None,
+                                  rotate90: bool | None = None,
+                                  remove_temporal_median: bool | None = None,
+                                  deflicker: bool | None = None,
+                                  hdu: int | None = None,
+                                  reference_time: str | datetime | None = None,
                                   output_filename: str | None = None) -> list[PUNCHCube]:
     """
     Generate level 3 flow tracking velocity product.
+
+    All optional flow-tracking parameters follow the signature of
+    :func:`punchbowl.level3.velocity.track_velocity`. Any parameter left as
+    ``None`` here is not forwarded, so the authoritative defaults defined by
+    ``track_velocity`` itself are used.
 
     Parameters
     ----------
     files : list[str]
         Input files used for velocity tracking
-    delta_t : int, optional
-        Time offset in frames between images, by default 12
+    product_code : str, optional
+        Expected PUNCH data product code of the input files ("CAM", "PAM", "CTM" or "PTM"), typically
+        set by the pipeline configuration. The product code is always inferred from the input files;
+        if this is given and does not match, a ValueError is raised.
+    flow_window_hours : float, optional
+        Minimum duration of the flow map integration window in hours
+    delta_t_minutes : float, optional
+        Time lag in minutes between the two frames of each correlated pair
     sparsity : int, optional
-        Frame skip interval for averaging, by default 2
+        Frame skip interval for averaging
     n_ofs : int, optional
-        Number of spatial offsets for cross-correlation, by default 151
-    ycens : np.ndarray | None, optional
-        Radial band centers in solar radii, by default None
-    rbands : list[int] | None, optional
-        Indices of radial bands to visualize, by default None
-    output_filename : str | None, optional
+        Number of spatial offsets for cross-correlation
+    delta_px : int, optional
+        Pixel offset increment per sample
+    expected_wind_kps : int, optional
+        Expected wind speed in km/s
+    offset_speed_kps : int, optional
+        Offset speed before which speeds are ignored when searching for the peak speed
+    annuli_centers_rs : list[float], optional
+        Centers of the annuli, in solar radii
+    annuli_width_rs : float, optional
+        Width of the annuli in solar radii
+    azimuth_bins_remap : int, optional
+        Number of azimuthal bins in the polar-remapped images before binning
+    az_bin : int, optional
+        Binning factor over azimuth of the polar-remapped images
+    vel_bin_width : int, optional
+        Bin size over azimuth of the output flow maps
+    speed_max : int, optional
+        Maximum velocity to consider in the moments and peak calculation
+    time_avg_hours : float, optional
+        Duration in hours of the running time-average kernel used in pre-processing
+    use_median : bool, optional
+        Whether to use the median instead of the mean for the temporal averages
+    rotate90 : bool, optional
+        Whether to rotate the output flow map by 90 degrees to get solar north
+        as origin of position angle
+    remove_temporal_median : bool, optional
+        Whether to remove the temporal median from the images
+    deflicker : bool, optional
+        Whether to apply an azimuthal filter to attenuate flickering
+    hdu : int, optional
+        Position of the header data unit in the FITS files holding the data
+    reference_time : str or datetime, optional
+        Authoritative reference time of the velocity map (DATE-OBS), on which the flow
+        map integration window is centered. If None, ``track_velocity`` uses the middle
+        of the integration window of the leading files.
+    output_filename : str, optional
         Output file name, by default None
 
     Returns
@@ -418,16 +476,47 @@ def generate_level3_velocity_flow(files: list[str],
     logger = get_logger()
 
     logger.info("Generating velocity data product")
-    velocity_data = track_velocity(files=files,
-                                   delta_t=delta_t,
-                                   sparsity=sparsity,
-                                   n_ofs=n_ofs,
-                                   ycens=ycens,
-                                   rbands=rbands)
+    velocity_options = {
+        "flow_window_hours": flow_window_hours,
+        "delta_t_minutes": delta_t_minutes,
+        "sparsity": sparsity,
+        "n_ofs": n_ofs,
+        "delta_px": delta_px,
+        "expected_wind_kps": expected_wind_kps,
+        "offset_speed_kps": offset_speed_kps,
+        "annuli_centers_rs": annuli_centers_rs,
+        "annuli_width_rs": annuli_width_rs,
+        "azimuth_bins_remap": azimuth_bins_remap,
+        "az_bin": az_bin,
+        "vel_bin_width": vel_bin_width,
+        "speed_max": speed_max,
+        "time_avg_hours": time_avg_hours,
+        "use_median": use_median,
+        "rotate90": rotate90,
+        "remove_temporal_median": remove_temporal_median,
+        "deflicker": deflicker,
+        "hdu": hdu,
+    }
+    velocity_kwargs = {key: value for key, value in velocity_options.items() if value is not None}
+
+    # The input files must all be of the same product type, matching what the pipeline expected
+    inferred_product_code = infer_product_code(files, hdu=velocity_kwargs.get("hdu", 1))
+    if product_code is not None and product_code != inferred_product_code:
+        msg = f"Expected {product_code} input files for flow tracking, but the files are {inferred_product_code}"
+        raise ValueError(msg)
+
+    if isinstance(reference_time, str):
+        reference_time = datetime.fromisoformat(reference_time)
+
+    velocity_data = track_velocity(files=files, product_code=inferred_product_code,
+                                   reference_time=reference_time, **velocity_kwargs)
 
     if output_filename is not None:
-        output_image_task(velocity_data, output_filename)
+        # The VAM carries a custom azimuth/radius WCS that cannot be converted to
+        # a celestial WCS, so skip the conversion when writing it out.
+        output_image_task(velocity_data, output_filename, skip_wcs_conversion=True)
         plot_filename = f"{os.path.splitext(output_filename)[0]}.png"
-        plot_flow_map(plot_filename, velocity_data)
+        plot_rebin = 10 if velocity_data.data.shape[1] % 10 == 0 else 1
+        plot_flow_map(velocity_data, rebin=plot_rebin, filename=plot_filename)
 
     return [velocity_data]

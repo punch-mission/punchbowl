@@ -61,7 +61,9 @@ def update_file_state(session, file_id, new_state):
 
 def load_pipeline_configuration(path: str = None) -> dict:
     if path is None:
-        path = Variable.get("punchpipe_config", "punchpipe_config.yaml")
+        path = Variable.get(f"punchpipe_config-{get_hostname()}", None)
+        if path is None:
+            path = Variable.get("punchpipe_config", "punchpipe_config.yaml")
     if not isinstance(path, str):
         path = run_coro_as_sync(path)
     with open(path) as f:
@@ -235,3 +237,11 @@ def replace_file_version_in_metadata(path, old_pattern, new_version):
                 source_files = [replace_version(old_pattern, new_version, f) for f in source_files]
                 hdu_provenance = _make_provenance_hdu(source_files)
                 hdul[i] = hdu_provenance
+
+
+def shorten_host(hostname):
+    return hostname.split(".")[0]
+
+
+def get_hostname():
+    return shorten_host(socket.gethostname())

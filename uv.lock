@@ -4303,7 +4303,6 @@ dev = [
     { name = "pytest-runner" },
     { name = "pyyaml" },
     { name = "ruff" },
-    { name = "simpunch" },
     { name = "sphinx" },
     { name = "sphinx-autoapi" },
     { name = "sphinx-automodapi" },
@@ -4358,7 +4357,6 @@ pipe = [
     { name = "pydantic" },
     { name = "pymysql" },
     { name = "pyyaml" },
-    { name = "simpunch" },
     { name = "sqlalchemy" },
     { name = "xlrd" },
 ]
@@ -4468,7 +4466,6 @@ dev = [
     { name = "pytest-runner" },
     { name = "pyyaml", specifier = ">=6.0,<=6.0.3" },
     { name = "ruff", specifier = "==0.16.10" },
-    { name = "simpunch", specifier = "==0.0.3" },
     { name = "sphinx" },
     { name = "sphinx-autoapi" },
     { name = "sphinx-automodapi" },
@@ -4523,7 +4520,6 @@ pipe = [
     { name = "pydantic", specifier = ">=2.11.7,<=2.14.1" },
     { name = "pymysql", specifier = ">=1.2.0,<=1.2.3" },
     { name = "pyyaml", specifier = ">=6.0,<=6.0.3" },
-    { name = "simpunch", specifier = "==0.0.3" },
     { name = "sqlalchemy", specifier = ">=2.0.40,<2.1" },
     { name = "xlrd", specifier = ">=2.0.0,<=2.0.2" },
 ]
@@ -5779,24 +5775,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/58/15/8b3609fd3830ef7b2
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl", hash = "sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686", size = 9755, upload-time = "2023-10-24T04:13:38.866Z" },
 ]
-
-[[package]]
-name = "simpunch"
-version = "0.0.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "astropy" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "photutils" },
-    { name = "prefect", extra = ["dask", "sqlalchemy"] },
-    { name = "punchbowl" },
-    { name = "regularizepsf" },
-    { name = "scipy" },
-    { name = "toml" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e0/22/9a7ceda800c9f9fd53428b8d10b2228700acf1da1ef7e2868434432df404/simpunch-0.0.3.tar.gz", hash = "sha256:11d0a271a5ce45d6dc3295d154bd74d7a20c0c39258842de241581007a2edbe0", size = 3090821, upload-time = "2024-12-19T16:11:55.069Z" }
 
 [[package]]
 name = "six"

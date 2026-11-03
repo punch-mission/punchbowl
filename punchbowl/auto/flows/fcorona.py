@@ -208,6 +208,10 @@ def construct_f_corona_background_scheduler_flow(pipeline_config_path=None, sess
         t = t0 + i * increment
         for model_type in ["CF", "PF"]:
             for observatory in ["1", "2", "3", "N"]:
+                if model_type == "PF" and observatory == "N":
+                    # We don't do polarized NFI right now, so we can speed up scheduler runs by skipping it.
+                    # TODO: When we get polarized NFI working, remove this
+                    continue
                 key = (model_type, observatory, t)
                 model = existing_models.get(key)
                 if model is None:

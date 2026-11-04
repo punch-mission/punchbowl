@@ -74,7 +74,7 @@ Version 0m
 - Flow tracking data products are now available as VAM files. (https://github.com/punch-mission/punchbowl/pull/1079)
 - Changed F-corona percentile from 3% to 2%. This improves the F-corona model quality by reducing over-subtraction. Note that F-corona models will appear dimmer. (https://github.com/punch-mission/punchbowl/pull/1271)
 - Re-engineered QuickPUNCH files to meet SWPC requirements. Started real-time production and currently shipping. (https://github.com/punch-mission/punchbowl/pull/1019)
-- Fixed file writing to use operational config image scaling parameters to quicklook files. (https://github.com/punch-mission/punchbowl/pull/1128)
+- Implemented fixed image scaling for quicklook files. (https://github.com/punch-mission/punchbowl/pull/1128)
 
 
 Version 0l

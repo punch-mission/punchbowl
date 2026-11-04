@@ -19,7 +19,6 @@ A history of data version releases is given below.
 
 Version 0m
 ----------
-.. TODO: Add official release date when confirmed
 - Released November 4, 2026
 
 
@@ -53,8 +52,7 @@ Version 0m
     - Within each CAM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
     - Note that input NFI images undergo median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median.
 
-  - Note: NFI has a wider period of eclipse season artifacts that impact the quality of the images and they occur more frequently than eclipse seasons that affect WFIs.
-    - The winter eclipse seaons occurs around November-January and the summer one occurs around June-July.
+  - Note: NFI experiences a summer and winter eclipse season occurring around June-July and November-January, respectively. These eclipse seasons cause NFI to view through the Earth's atmosphere resulting in artifacts that impact the image quality. While WFI also suffers from image artifacts during the winter eclipse season, the impacts to NFI occur during both the winter and summer eclipse seasons and over a longer time period due to NFI's lower inclination angle.
 
 - Starfield processing improvements
 

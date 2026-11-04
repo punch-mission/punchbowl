@@ -20,7 +20,7 @@ A history of data version releases is given below.
 Version 0m
 ----------
 .. TODO: Add official release date when confirmed
-- Released October __, 2026
+- Released November 4, 2026
 
 
 - Metadata fixes

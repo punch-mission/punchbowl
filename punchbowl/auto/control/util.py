@@ -59,7 +59,24 @@ def update_file_state(session, file_id, new_state):
     session.commit()
 
 
-def load_pipeline_configuration(path: str = None) -> dict:
+def load_pipeline_configuration(path: str = None, raw: bool = False) -> dict:
+    """
+    Load the pipeline configuration from file.
+
+    Parameters
+    ----------
+    path : str | None
+        The path to the YAML file. If None, the path is pulled from Prefect
+    raw : bool
+        By default, keys of the format "{key name}-{this server's host name}" are converted to "{key name}",
+        to allow for server-specific values. If raw is set to True, this conversion is skipped.
+
+    Returns
+    -------
+    pipeline_config : dict
+        The loaded configuration.
+
+    """
     if path is None:
         path = Variable.get(f"punchpipe_config-{get_hostname()}", None)
         if path is None:
@@ -68,7 +85,8 @@ def load_pipeline_configuration(path: str = None) -> dict:
         path = run_coro_as_sync(path)
     with open(path) as f:
         config = yaml.load(f, Loader=FullLoader)
-    hostify_config(config)
+    if not raw:
+        hostify_config(config)
     # TODO: add validation
     return config
 

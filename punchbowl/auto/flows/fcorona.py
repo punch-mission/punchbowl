@@ -12,7 +12,7 @@ from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
-from punchbowl.auto.flows.util import file_name_to_full_path
+from punchbowl.auto.flows.util import file_name_to_full_path, get_max_flows_to_schedule
 from punchbowl.level3.f_corona_model import construct_f_corona_model
 from punchbowl.prefect import get_logger
 
@@ -134,7 +134,8 @@ def construct_f_corona_background_scheduler_flow(pipeline_config_path=None, sess
         logger.info("Flow 'construct_f_corona_background' is not enabled---halting scheduler")
         return 0
 
-    max_flows = pipeline_config["flows"]["construct_f_corona_background"].get("concurrency_limit", 1000)
+    max_flows = get_max_flows_to_schedule(pipeline_config, "construct_f_corona_background")
+
     existing_flows = (session.query(Flow)
                       .where(Flow.flow_type == "construct_f_corona_background")
                       .where(Flow.state.in_(["planned", "launched", "running"])).count())

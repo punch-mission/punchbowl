@@ -61,6 +61,10 @@ Version 0m
   - Starfield models (L3 PSM and CSM products) now have their celestial right ascension (RA) WCS coordinate flipped negative in sign to reflect proper behavior in coordinate transformations during model subtraction from data. (https://github.com/punch-mission/punchbowl/pull/1245)
   - Known issue: Data during eclipse season can contain significant residual stray light in the heliographic north region of images. This data contaminates derived starfield models, boosting the inferred starfield signal in high celestial declination coordinates. When subtracted from PUNCH data, these contaminated models can leave regions with over-subtraction, mainly towards high heliographic north coordinates. This will be addressed in a future release (https://github.com/punch-mission/punchbowl/issues/1311)
 
+- Polarization data updates 
+  - Updated the flatfield corrections for polarized filters, which improves the Level 3 PTM and PAM polarized data quality.
+  - Implemented variance-based uncertainty propagation to handle zeros and non-finite values across polarizers in Level 2 and 3 polarized image data. (https://github.com/punch-mission/punchbowl/pull/1274)
+
 - Mosiac assembly improvements
 
   - Fixed holes in L2 images caused by a bug in the uncertainty calculation. (https://github.com/punch-mission/punchbowl/pull/1053)
@@ -74,7 +78,6 @@ Version 0m
 .. - Flow tracking data products are now available as VAM files. (https://github.com/punch-mission/punchbowl/pull/1079)
 - Changed F-corona percentile from 3% to 2%. This improves the F-corona model quality by reducing over-subtraction. Note that F-corona models will appear dimmer. (https://github.com/punch-mission/punchbowl/pull/1271)
 - Re-engineered QuickPUNCH files to meet SWPC requirements. Started real-time production and currently shipping. (https://github.com/punch-mission/punchbowl/pull/1019)
-- Propagated MZP variances through the Level 3 polarization conversion. Used shared mask-aware merging for clear and polarized products, retaining the RMS output uncertainty convention. (https://github.com/punch-mission/punchbowl/pull/1274)
 - Implemented fixed image scaling for quicklook files. (https://github.com/punch-mission/punchbowl/pull/1128)
 
 

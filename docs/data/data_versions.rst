@@ -66,7 +66,7 @@ Version 0m
   - Updated the flatfield corrections for polarized filters, which improves the Level 3 PTM and PAM polarized data quality.
   - Implemented variance-based uncertainty propagation to handle zeros and non-finite values across polarizers in Level 2 and 3 polarized image data. (https://github.com/punch-mission/punchbowl/pull/1274)
 
-- Mosiac assembly improvements
+- Mosaic assembly improvements
 
   - Fixed holes in L2 images caused by a bug in the uncertainty calculation. (https://github.com/punch-mission/punchbowl/pull/1053)
   - In L2 mosaic assembly, polarized inputs are now co-aligned before the polarization is converted to MZP_solar to account for small pointing drift through the imaging sequence. (https://github.com/punch-mission/punchbowl/pull/1060)

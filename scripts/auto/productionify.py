@@ -50,7 +50,7 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern, ne
                 os.rename(old_ql_path, new_ql_path)
             elif (os.path.exists(new_path) and not os.path.exists(new_ql_path) and file.file_type[0] not in ('S', 'T')
                     and config['write_quicklooks']):
-                cube = load_ndcube_from_fits(new_path)
+                cube = load_ndcube_from_fits(new_path, include_uncertainty=False)
                 with np.errstate(all='ignore'):
                     _write_quicklook(config, file, cube)
         return True

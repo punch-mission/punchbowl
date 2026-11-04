@@ -10,16 +10,15 @@ from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
-from punchbowl.auto.flows.util import file_name_to_full_path
+from punchbowl.auto.flows.util import file_name_to_full_path, get_max_flows_to_schedule
 from punchbowl.level3.stellar import generate_starfield_background
 from punchbowl.prefect import get_logger
 
 
-@task(cache_policy=NO_CACHE)
 def starfield_background_query_ready_files(session, pipeline_config: dict,
                                            reference_time: datetime, reference_file: File):
     logger = get_logger()
-
+    logger.info(f"Querying for {reference_file.file_type} {reference_time.isoformat()}")
     data_type = {"PS": "pol", "CS": "clear"}[reference_file.file_type]
 
     before_min_files = pipeline_config["flows"]["construct_starfield_background"][f"{data_type}_before_min_files"]
@@ -56,9 +55,7 @@ def starfield_background_query_ready_files(session, pipeline_config: dict,
                           .filter(File.file_type == target_file_type)
                           .filter(File.level == "3")
                           .order_by(File.date_obs.asc()).all())
-    logger.info("Count of before and after halves pre-cadence step: "
-                f"{len(first_half_inputs)}, {len(second_half_inputs)}")
-
+    n_first_half, n_second_half = len(first_half_inputs), len(second_half_inputs)
     if image_cadence > 1:
         random.seed(1)
         # Apply a stride that doesn't phase weirdly with where we are in a roll position
@@ -67,16 +64,19 @@ def starfield_background_query_ready_files(session, pipeline_config: dict,
 
     first_half_inputs = first_half_inputs[0:before_max_files]
     second_half_inputs = second_half_inputs[0:after_max_files]
-    logger.info("Count of before and after halves post-cadence step: "
-                f"{len(first_half_inputs)}, {len(second_half_inputs)}")
+    logger.info(f"Cadence took the first half from {n_first_half} to {len(first_half_inputs)} files, and the second "
+                f"half from {n_second_half} to {len(second_half_inputs)} files.")
 
     enough_inputs = len(first_half_inputs) > before_min_files and len(second_half_inputs) > after_min_files
     if enough_inputs:
         all_ready_files = first_half_inputs + second_half_inputs
 
         logger.info(f"{len(all_ready_files)} Level 3 {target_file_type}{reference_file.observatory} files will be used "
-                     "for starfield estimation.")
+                    f"for starfield estimation for {reference_time.isoformat()}")
         return [f.file_id for f in all_ready_files]
+    else:
+        logger.info(f"Not scheduling. First half has {len(first_half_inputs)} / {before_min_files}. "
+                    f"Second half has {len(second_half_inputs)} / {after_min_files}.")
     return []
 
 
@@ -143,7 +143,8 @@ def construct_starfield_background_scheduler_flow(pipeline_config_path=None, ses
         logger.info("Flow 'construct_starfield_background' is not enabled---halting scheduler")
         return 0
 
-    max_flows = 2 * pipeline_config["flows"]["construct_starfield_background"].get("concurrency_limit", 1000)
+    max_flows = get_max_flows_to_schedule(pipeline_config, "construct_starfield_background")
+
     existing_flows = (session.query(Flow)
                       .where(Flow.flow_type == "construct_starfield_background")
                       .where(Flow.state.in_(["planned", "launched", "running"])).count())

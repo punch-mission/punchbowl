@@ -89,7 +89,7 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
 
         new_meta = NormalizedMetadata.load_template("CNN", "3")
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        for key in cube.meta:
+        for key in cube.meta.keys(): # noqa: SIM118
             if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS", "OUTLIER",
                          "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                     or key[-4:] in ["_OBS", "_VOB"]
@@ -113,7 +113,7 @@ def level3_NFI_flow(data_list: list[str | PUNCHCube],  # noqa: N802
 
         new_meta = NormalizedMetadata.load_template("XR4", "3")
         new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-        for key in mosaic_cube.meta:
+        for key in mosaic_cube.meta.keys(): # noqa: SIM118
             if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS", "OUTLIER",
                          "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                     or key[-4:] in ["_OBS", "_VOB"]

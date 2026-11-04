@@ -58,3 +58,33 @@ def pick_closest_file(files: list[File], target_file: File, max_difference: time
     if max_difference is not None and abs(closest.date_obs - target_file.date_obs) > max_difference:
         return None
     return closest
+
+
+def get_max_flows_to_schedule(pipeline_config: dict, flow_type: str) -> int:
+    """
+    Work out the maximum number of flows to schedule for a flow type.
+
+    Will use the first of these to exist:
+        - The flow's "scheduling_limit" value
+        - The flow's "concurrency_limit" value
+        - The global "scheduler/max_start" value
+
+    Parameters
+    ----------
+    pipeline_config : dict
+        The pipeline configuration
+    flow_type : str
+        The flow type to handle
+
+    Returns
+    -------
+    n_flows : int
+        The maximum number of flows to have scheduled for this flow type.
+
+    """
+    if 'scheduling_limit' in pipeline_config["flows"][flow_type]:
+        return pipeline_config["flows"][flow_type]['scheduling_limit']
+    elif 'concurrency_limit' in pipeline_config["flows"][flow_type]:
+        return pipeline_config["flows"][flow_type]['concurrency_limit']
+    else:
+        return pipeline_config['scheduler']['max_start']

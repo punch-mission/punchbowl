@@ -74,7 +74,7 @@ Version 0m
 - Helioviewer and JHelioviewer improvements
 
   - Added the helioviewer tag to the JPEG2000 quicklook files. This will allow for proper image scaling of PUNCH data in Helioviewer. (https://github.com/punch-mission/punchbowl/pull/1109)
-  - Negative values in the PUNCH quicklook image bitmaps are now clipped to 1 instead of 0. Previously, this led to negative values becoming transparent in JHelioviewer.
+  - Negative values in the PUNCH quicklook image bitmaps are now clipped to 1 instead of 0. Previously, this led to negative values becoming transparent in JHelioviewer. (https://github.com/punch-mission/punchbowl/pull/1159)
 
 .. - Flow tracking data products are now available as VAM files. (https://github.com/punch-mission/punchbowl/pull/1079)
 - Changed F-corona percentile from 3% to 2%. This improves the F-corona model quality by reducing over-subtraction. Note that F-corona models will appear dimmer. (https://github.com/punch-mission/punchbowl/pull/1271)

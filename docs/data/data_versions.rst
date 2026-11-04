@@ -59,7 +59,7 @@ Version 0m
   - Improved starfield model generation and subtraction. A median background subtraction that is no longer needed was removed. This should improve capturing the Milky Way into the starfield models. This also allows for a single starfield model subtraction. (https://github.com/punch-mission/punchbowl/pull/1145)
   - Improved starfield blur by reprojecting directly to the image frame instead of intermediate union WCS. (https://github.com/punch-mission/punchbowl/pull/1180)
   - Starfield models (L3 PSM and CSM products) now have their celestial right ascension (RA) WCS coordinate flipped negative in sign to reflect proper behavior in coordinate transformations during model subtraction from data. (https://github.com/punch-mission/punchbowl/pull/1245)
-  - Known issue: There are artifacts in heliographic north region of the starfield model during WFI eclipse seasons (which occurs around November - January). We have a ticket to investigate and address this (https://github.com/punch-mission/punchbowl/issues/1311)
+  - Known issue: Data during eclipse season can contain significant residual stray light in the heliographic north region of images. This data contaminates derived starfield models, boosting the inferred starfield signal in high celestial declination coordinates. When subtracted from PUNCH data, these contaminated models can leave regions with over-subtraction, mainly towards high heliographic north coordinates. This will be addressed in a future release (https://github.com/punch-mission/punchbowl/issues/1311)
 
 - Mosiac assembly improvements
 

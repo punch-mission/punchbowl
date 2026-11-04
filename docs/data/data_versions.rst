@@ -61,7 +61,7 @@ Version 0m
   - Starfield models (L3 PSM and CSM products) now have their celestial right ascension (RA) WCS coordinate flipped negative in sign to reflect proper behavior in coordinate transformations during model subtraction from data. (https://github.com/punch-mission/punchbowl/pull/1245)
   - Known issue: Data during eclipse season can contain significant residual stray light in the heliographic north region of images. This data contaminates derived starfield models, boosting the inferred starfield signal in high celestial declination coordinates. When subtracted from PUNCH data, these contaminated models can leave regions with over-subtraction, mainly towards high heliographic north coordinates. This will be addressed in a future release (https://github.com/punch-mission/punchbowl/issues/1311)
 
-- Polarization data updates 
+- Polarization data updates
   - Updated the flatfield corrections for polarized filters, which improves the Level 3 PTM and PAM polarized data quality.
   - Implemented variance-based uncertainty propagation to handle zeros and non-finite values across polarizers in Level 2 and 3 polarized image data. (https://github.com/punch-mission/punchbowl/pull/1274)
 

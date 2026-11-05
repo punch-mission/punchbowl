@@ -22,11 +22,16 @@ from punchbowl.data.punch_io import load_ndcube_from_fits, write_file_hash
 def productionify_file(file: File, config: dict, data_root: str, old_pattern, new_version):
     try:
         old_path = os.path.join(file.directory(data_root), file.filename())
+        old_ql_path = os.path.join(
+            file.directory(config.get('ql_root', data_root)), file.filename().replace('.fits', '.jp2'))
         if new_version is not None:
             file.file_version = new_version
             new_path = os.path.join(file.directory(data_root), file.filename())
+            new_ql_path = os.path.join(
+                file.directory(config.get('ql_root', data_root)), file.filename().replace('.fits', '.jp2'))
         else:
             new_path = old_path
+            new_ql_path = old_ql_path
 
         old_sha_path = old_path + '.sha256'
         new_sha_path = new_path + '.sha256'
@@ -44,8 +49,6 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern, ne
                     write_file_hash(new_path)
 
         if file.level != '0':
-            old_ql_path = old_path.replace('.fits', '.jp2')
-            new_ql_path = new_path.replace('.fits', '.jp2')
             if os.path.exists(old_ql_path) and new_version is not None:
                 os.rename(old_ql_path, new_ql_path)
             elif (os.path.exists(new_path) and not os.path.exists(new_ql_path) and file.file_type[0] not in ('S', 'T')

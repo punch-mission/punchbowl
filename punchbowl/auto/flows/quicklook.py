@@ -9,11 +9,11 @@ from prefect.runtime import flow_run
 from sqlalchemy.orm import Session
 
 from punchbowl.auto.control.db import File, Flow, Quicklook
-from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration, load_quicklook_scaling
+from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.data.punch_io import load_ndcube_from_fits
 from punchbowl.data.punchcube import PUNCHCube
-from punchbowl.data.visualize import animate_punch, plot_punch
+from punchbowl.data.visualize import animate_punch, load_quicklook_scaling, plot_punch
 from punchbowl.prefect import get_logger
 
 

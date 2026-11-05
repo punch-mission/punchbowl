@@ -269,14 +269,14 @@ def generate_quicklook_unpolarized(cube: PUNCHCube,
     title_prefix = f"PUNCH {cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value} tB v{cube.meta["FILEVRSN"].value}"
 
     if make_image:
-        path_image = os.path.join(output_quicklook_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
+        path_image = os.path.join(output_quicklook_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_tB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
 
         os.makedirs(os.path.dirname(path_image), exist_ok=True)
         plot_punch(cube, save_path=path_image, vmin=vmin, vmax=vmax, title_prefix=title_prefix)
         plot_punch(cube, save_path="_thumbnail".join(os.path.splitext(path_image)), vmin=vmin, vmax=vmax, layer=0, title_prefix=title_prefix, dpi=100)
 
     if make_movie:
-        path_movie = os.path.join(output_quicklook_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
+        path_movie = os.path.join(output_quicklook_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_tB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
         animate_punch(file_list, output_path=path_movie, fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax, title_prefix=title_prefix, ffmpeg_path=ffmpeg_command)
 
 

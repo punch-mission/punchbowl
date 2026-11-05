@@ -45,9 +45,8 @@ def test_QAM_metadata_not_empty(sample_ndcube, tmpdir):
     with prefect_test_harness(), disable_run_logger():
         output = levelq_QAM_core_flow.fn(paths)
     assert isinstance(output[0], PUNCHCube)
-    # # assert output[0].meta["TYPECODE"].value == "CQ"
 
-    # spacecraft_location_keys = ["GEOD_LAT","GEOD_LON","GEOD_ALT","HGLT_OBS","HGLN_OBS","CRLT_OBS","CRLN_OBS","DSUN_OBS","HEEX_OBS",
-    # "HEEY_OBS","HEEZ_OBS","HCIX_OBS","HCIY_OBS","HCIZ_OBS","HEQX_OBS","HEQY_OBS","HEQZ_OBS","MOONDIST","MOON_X","MOON_Y"]
-    # for keyword in spacecraft_location_keys:
-    #     assert output[0].meta[keyword].value is not None or not "", f"{keyword}: {output[0].meta[keyword].value}"
+    spacecraft_location_keys = ["GEOD_LAT","GEOD_LON","GEOD_ALT","HGLT_OBS","HGLN_OBS","CRLT_OBS","CRLN_OBS","DSUN_OBS","HEEX_OBS",
+    "HEEY_OBS","HEEZ_OBS","HCIX_OBS","HCIY_OBS","HCIZ_OBS","HEQX_OBS","HEQY_OBS","HEQZ_OBS","MOONDIST","MOON_X","MOON_Y"]
+    for keyword in spacecraft_location_keys:
+        assert output[0].meta[keyword].value is not None or not "", f"{keyword}: {output[0].meta[keyword].value}"

@@ -1141,8 +1141,10 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
                 if len(masks):
                     raise RuntimeError(f"Could not find mask for {get_base_file_name(cube)}")
                 bad_packets = False
-            else:
+            elif selected_mask.shape == cube.data.shape: #overscan images have a different shape; we don't have a mask for them
                 bad_packets = np.any(cube.data[~selected_mask])
+            else:
+                bad_packets = False
 
             is_outlier = is_outlier or bad_packets
 

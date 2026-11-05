@@ -1,0 +1,1 @@
+The functions plot_punch and animate_punch have improved in determining the product type, to better automatically set colormaps and scaling parameters.

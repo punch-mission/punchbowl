@@ -1,1 +1,0 @@
-Disable NFI statis stray light processing in the construct_stray_light_scheduler_flow

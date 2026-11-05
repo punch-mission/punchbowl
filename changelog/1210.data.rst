@@ -1,0 +1,3 @@
+Clear NFI images now undergo PCA filtering (including post-processing steps). This approach removes the variable
+stray light that NFI experiences and makes usable K-corona images. These images are written as L2 CNN files. This
+processing method produces images that are useful for morphological studies, but photometry should not be relied on.

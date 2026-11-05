@@ -18,8 +18,8 @@ from punchbowl.auto.control.db import File
 from punchbowl.data import get_base_file_name, write_ndcube_to_fits, write_ndcube_to_quicklook
 from punchbowl.data.punch_io import _make_provenance_hdu
 from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.data.visualize import load_quicklook_scaling
 
-DEFAULT_SCALING = (5e-13, 5e-11)
 
 def get_database_session(get_engine=False,
                          engine_kwargs={},
@@ -59,14 +59,34 @@ def update_file_state(session, file_id, new_state):
     session.commit()
 
 
-def load_pipeline_configuration(path: str = None) -> dict:
+def load_pipeline_configuration(path: str = None, raw: bool = False) -> dict:
+    """
+    Load the pipeline configuration from file.
+
+    Parameters
+    ----------
+    path : str | None
+        The path to the YAML file. If None, the path is pulled from Prefect
+    raw : bool
+        By default, keys of the format "{key name}-{this server's host name}" are converted to "{key name}",
+        to allow for server-specific values. If raw is set to True, this conversion is skipped.
+
+    Returns
+    -------
+    pipeline_config : dict
+        The loaded configuration.
+
+    """
     if path is None:
-        path = Variable.get("punchpipe_config", "punchpipe_config.yaml")
+        path = Variable.get(f"punchpipe_config-{get_hostname()}", None)
+        if path is None:
+            path = Variable.get("punchpipe_config", "punchpipe_config.yaml")
     if not isinstance(path, str):
         path = run_coro_as_sync(path)
     with open(path) as f:
         config = yaml.load(f, Loader=FullLoader)
-    hostify_config(config)
+    if not raw:
+        hostify_config(config)
     # TODO: add validation
     return config
 
@@ -80,33 +100,6 @@ def hostify_config(config):
             new_key = key.replace(tag, '')
             config[new_key] = config[key]
             del config[key]
-
-
-def load_quicklook_scaling(level: str = None, product: str = None, obscode: str = None, config: str | dict = None) -> (float, float):
-    if isinstance(config, str):
-        with open(config) as f:
-            config_parameters = yaml.load(f, Loader=FullLoader)
-    elif isinstance(config, dict):
-        config_parameters = config
-    elif config is None:
-        config = Variable.get("punchpipe_config", "punchpipe_config.yaml")
-        with open(config) as f:
-            config_parameters = yaml.load(f, Loader=FullLoader)
-    else:
-        raise TypeError("config must be a path string or dictionary object")
-    if "quicklook_scaling" in config_parameters:
-        if level:
-            level_data = config_parameters.get("quicklook_scaling", {}).get(level, {})
-            if product and isinstance(level_data, dict):
-                product_data = level_data.get(product, level_data.get("default"))
-                if obscode == "4":
-                    return product_data[1]
-                return product_data[0]
-            if obscode == "4":
-                return level_data.get("default")[1]
-            return level_data.get("default")[0]
-        return DEFAULT_SCALING
-    return DEFAULT_SCALING
 
 
 def write_file(data: PUNCHCube, corresponding_file_db_entry, pipeline_config) -> None:
@@ -123,7 +116,7 @@ def write_file(data: PUNCHCube, corresponding_file_db_entry, pipeline_config) ->
         replace_file_version_in_metadata(output_filename, old_version_pattern, pipeline_config['file_version'])
 
     if (pipeline_config.get('write_quicklooks', True)
-            and corresponding_file_db_entry.file_type[0] not in ('S', 'T')):
+            and corresponding_file_db_entry.file_type[0] not in ('S', 'T', 'A')):
         _write_quicklook(pipeline_config, corresponding_file_db_entry, data)
     return output_filename
 
@@ -185,27 +178,55 @@ def batched(iterable, n):
 
 def group_files_by_time(files: list[File],
                         max_duration_seconds: float = inf,
-                        max_per_group: int = inf) -> list[list[File]]:
+                        max_per_group: int = inf,
+                        max_seconds_between_images: float = inf) -> list[list[File]]:
+    """
+    Group up a sequence of files by various criteria.
+
+    The list of files will be walked through, and every time one of the criteria is tripped, a group boundary will be
+    set.
+
+    Parameters
+    ----------
+    files : list[File]
+        A sequence of File objects, assumed to be sorted in either ascending or descending temporal order.
+    max_duration_seconds : float
+        The maximum duration of a group.
+    max_per_group : int
+        The maximum number of files per group.
+    max_seconds_between_images : float
+        The maximum-allowed gap between images.
+
+    Returns
+    -------
+    grouped_files : list[list[File]]
+        The resulting groups of files.
+    """
+    if len(files) == 0:
+        return []
     # We need to group up files by date_obs, but we need to handle small variations in date_obs. The files are coming
     # from the database already sorted, so let's just walk through the list of files and cut a group boundary every time
     # date_obs increases by more than a threshold.
     grouped_files = []
     # We'll keep track of where the current group started, and then keep stepping to find the end of this group.
     group_start = 0
-    tstamp_start = files[0].date_obs.replace(tzinfo=UTC).timestamp()
+    timestamp_start = files[0].date_obs.replace(tzinfo=UTC).timestamp()
+    timestamp_previous = timestamp_start
     file_under_consideration = 0
     while True:
         file_under_consideration += 1
         if file_under_consideration == len(files):
             break
         this_tstamp = files[file_under_consideration].date_obs.replace(tzinfo=UTC).timestamp()
-        if (abs(this_tstamp - tstamp_start) > max_duration_seconds
+        if (abs(this_tstamp - timestamp_start) > max_duration_seconds
+                or abs(this_tstamp - timestamp_previous) > max_seconds_between_images
                 or file_under_consideration - group_start >= max_per_group):
             # date_obs has jumped by more than our tolerance, so let's cut the group and then start tracking the next
             # one
             grouped_files.append(files[group_start:file_under_consideration])
             group_start = file_under_consideration
-            tstamp_start = this_tstamp
+            timestamp_start = this_tstamp
+        timestamp_previous = this_tstamp
     grouped_files.append(files[group_start:])
     return grouped_files
 
@@ -234,3 +255,11 @@ def replace_file_version_in_metadata(path, old_pattern, new_version):
                 source_files = [replace_version(old_pattern, new_version, f) for f in source_files]
                 hdu_provenance = _make_provenance_hdu(source_files)
                 hdul[i] = hdu_provenance
+
+
+def shorten_host(hostname):
+    return hostname.split(".")[0]
+
+
+def get_hostname():
+    return shorten_host(socket.gethostname())

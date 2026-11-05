@@ -1,3 +1,73 @@
+0.0.25 (2026-10-16)
+===================
+
+Data version 0m candidate version.
+
+New Features
+------------
+
+- Add code for nfi dynamic stray light processing. (`#1012 <https://github.com/punch-mission/punchbowl/pull/1012>`__)
+- Sets up QuickPUNCH to run on new product types from clears. (`#1019 <https://github.com/punch-mission/punchbowl/pull/1019>`__)
+- Starfield model generation now logs progress messages in Prefect. (`#1028 <https://github.com/punch-mission/punchbowl/pull/1028>`__)
+- Better error reporting in import_export.py (`#1062 <https://github.com/punch-mission/punchbowl/pull/1062>`__)
+- productionify.py supports running to generate jp2s and/or .sha files without changing the version string (`#1062 <https://github.com/punch-mission/punchbowl/pull/1062>`__)
+- Updates solar wind flow tracking modules to work with PUNCH data for initial activation. (`#1079 <https://github.com/punch-mission/punchbowl/pull/1079>`__)
+- Implements daily quicklook movies and images. (`#1132 <https://github.com/punch-mission/punchbowl/pull/1132>`__)
+- Improves starfield model generation and subtraction. A median background subtraction that is no longer needed was removed. This should improve capturing the Milky Way into the starfield models. This also allows for a single starfield model subtraction. (`#1145 <https://github.com/punch-mission/punchbowl/pull/1145>`__)
+- For science images, use the timestamp of the image to set to polarization state of the image. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. The PFWSTAT header value now reads -1 if the PFW packet is stale. (`#1172 <https://github.com/punch-mission/punchbowl/pull/1172>`__)
+- FITS files output is buffered to speed hash file generation. (`#1188 <https://github.com/punch-mission/punchbowl/pull/1188>`__)
+- Added utilities to calculate a sliding-window percentile or run z-filtering in parallel. (`#1197 <https://github.com/punch-mission/punchbowl/pull/1197>`__)
+- Flows can write output files in parallel, define more complex file relationships, and allow expected output files to
+  not be produced. (`#1199 <https://github.com/punch-mission/punchbowl/pull/1199>`__)
+- Added re-vamped NFI PCA filtering, to be used in the science pipeline (`#1210 <https://github.com/punch-mission/punchbowl/pull/1210>`__)
+- Add scheduling layer for L2 PCA flow (`#1224 <https://github.com/punch-mission/punchbowl/pull/1224>`__)
+- Add a L3 NFI flow to subtract the F corona and produce mosaic-frame intermediaries (`#1226 <https://github.com/punch-mission/punchbowl/pull/1226>`__)
+- Include NFI images in CTM scheduling and production (`#1227 <https://github.com/punch-mission/punchbowl/pull/1227>`__)
+- Include NFI images in CAM scheduling and production (`#1228 <https://github.com/punch-mission/punchbowl/pull/1228>`__)
+- Add NFI QuickPUNCH flow (`#1232 <https://github.com/punch-mission/punchbowl/pull/1232>`__)
+- Allow level 2 to skip including image based on configurable accepted phases. (`#1235 <https://github.com/punch-mission/punchbowl/pull/1235>`__)
+- Change jpegls decoding package from pylibjpeg to imagecodecs. (`#1251 <https://github.com/punch-mission/punchbowl/pull/1251>`__)
+- Pin versions of packages in the pyproject.toml. (`#1262 <https://github.com/punch-mission/punchbowl/pull/1262>`__)
+- Change F-corona percentile from 3 to 2%. (`#1271 <https://github.com/punch-mission/punchbowl/pull/1271>`__)
+
+
+Bug Fixes
+---------
+
+- Fix holes in L2 images after changing reprojection to run at 32 bits. (`#1053 <https://github.com/punch-mission/punchbowl/pull/1053>`__)
+- Fixed outlier flagging for L2+ products. (`#1087 <https://github.com/punch-mission/punchbowl/pull/1087>`__)
+- Added the helioviewer tag to the JPEG2000 quicklook files. This will allow the image scaling of PUNCH data in Helioviewer to be correct. (`#1109 <https://github.com/punch-mission/punchbowl/pull/1109>`__)
+- Fixes file writing to use operational config image scaling parameters. (`#1128 <https://github.com/punch-mission/punchbowl/pull/1128>`__)
+- Corrects a bug with starfield model subtraction where the RA-axis cdelt was being accidentally sign flipped twice. (`#1134 <https://github.com/punch-mission/punchbowl/pull/1134>`__)
+- Fix logic to avoid attempting regeneration of CAM/PAMs when some input files are severely delayed. (`#1142 <https://github.com/punch-mission/punchbowl/pull/1142>`__)
+- Disable NFI statis stray light processing in the construct_stray_light_scheduler_flow (`#1148 <https://github.com/punch-mission/punchbowl/pull/1148>`__)
+- Fix DSATVAL calculation to set NFI DSATVAL to 1254, but keep WFI DSATVAL at 1023. (`#1153 <https://github.com/punch-mission/punchbowl/pull/1153>`__)
+- Add robots=off to wget command as part of recent umbra.nascom.nasa.gov permissions updates. (`#1155 <https://github.com/punch-mission/punchbowl/pull/1155>`__)
+- We were previously clipping all negative values to 0. This led to negative values becoming transparent in JHelioviewer. This fixes that clipping bug by clipping to 1 instead. (`#1159 <https://github.com/punch-mission/punchbowl/pull/1159>`__)
+- Improve starfield blur by reprojecting directly to the image frame instead of intermediate union WCS. (`#1180 <https://github.com/punch-mission/punchbowl/pull/1180>`__)
+- Avoid crash in L0 flow if there aren't any replay needs (`#1186 <https://github.com/punch-mission/punchbowl/pull/1186>`__)
+- Work around [astropy bug #20441](https://github.com/astropy/astropy/issues/20441), ensure that all WCS keywords including distortion keywords are written for both the helio and celestial WCS in level1 files. (`#1230 <https://github.com/punch-mission/punchbowl/pull/1230>`__)
+- Avoid fall through for backprocessing if the children files list is empty. (`#1239 <https://github.com/punch-mission/punchbowl/pull/1239>`__)
+- Flips RA coordinate cdelt in starfield model generation. (`#1245 <https://github.com/punch-mission/punchbowl/pull/1245>`__)
+- Renamed L3_VAM to level3_VAM so it'll be found properly at deployment. (`#1272 <https://github.com/punch-mission/punchbowl/pull/1272>`__)
+
+
+Documentation
+-------------
+
+- Introduces data kind of towncrier changelog to track changes that impact data quality. (`#1196 <https://github.com/punch-mission/punchbowl/pull/1196>`__)
+- Change B to tB and clarify that pB' is referred to as pBp in the online documentation. (`#1214 <https://github.com/punch-mission/punchbowl/pull/1214>`__)
+- Clarify the punch_flow comments by correcting task to flow. (`#1263 <https://github.com/punch-mission/punchbowl/pull/1263>`__)
+
+
+Internal Changes
+----------------
+
+- Bump astral-sh/setup-uv from 10.0.1 to 10.2.0 in /.github/workflows. (`#1234 <https://github.com/punch-mission/punchbowl/pull/1234>`__)
+- Add github action to check that uv.lock is updated when pyproject.toml is changed. (`#1237 <https://github.com/punch-mission/punchbowl/pull/1237>`__)
+- Updated pre-commit (`#1249 <https://github.com/punch-mission/punchbowl/pull/1249>`__)
+- Add test for PCA code, and fix what it found (`#1267 <https://github.com/punch-mission/punchbowl/pull/1267>`__)
+
 0.0.24 (2026-07-28)
 ===================
 

@@ -1,0 +1,3 @@
+PCA filtered NFI images are now included in L3 CTMs. Note that the visual appearance of the NFI data is greatly
+improved by the median filtering applied to it in the CAM stage. Within each CTM, there is a circular region in the
+center in which all and only NFI data appears. Outside that radius, all and only WFI data appears.

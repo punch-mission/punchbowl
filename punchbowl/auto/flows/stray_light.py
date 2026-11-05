@@ -14,7 +14,7 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.level1 import get_mask_file
 from punchbowl.auto.flows.level2 import group_l2_inputs
-from punchbowl.auto.flows.util import file_name_to_full_path
+from punchbowl.auto.flows.util import file_name_to_full_path, get_max_flows_to_schedule
 from punchbowl.level1.stray_light import estimate_stray_light
 from punchbowl.prefect import get_logger
 
@@ -183,6 +183,7 @@ def construct_stray_light_flow_info(level1_files: list[File],
             "image_mask_path": mask.filename().replace(".fits", ".bin"),
             "window_size": pipeline_config["flows"][flow_type][f"{pol_type}_neighborhood_size"],
             "polarized": is_polarized,
+            "num_workers": pipeline_config["flows"][flow_type].get("n_workers", 20),
         },
     )
     return Flow(
@@ -226,7 +227,8 @@ def construct_stray_light_scheduler_flow(pipeline_config_path=None, session=None
         logger.info("Flow 'construct_stray_light' is not enabled---halting scheduler")
         return
 
-    max_flows = pipeline_config["flows"]["construct_stray_light"].get("concurrency_limit", 1000)
+    max_flows = get_max_flows_to_schedule(pipeline_config, "construct_stray_light")
+
     existing_flows = (session.query(Flow)
                       .where(Flow.flow_type == "construct_stray_light")
                       .where(Flow.state.in_(["planned", "launched", "running"])).count())
@@ -347,7 +349,6 @@ def construct_stray_light_call_data_processor(call_data: dict, pipeline_config, 
     for key in ["filepaths", "image_mask_path"]:
         call_data[key] = file_name_to_full_path(call_data[key], pipeline_config["root"])
     del call_data["spacecraft"]
-    call_data["num_workers"] = 50
     return call_data
 
 

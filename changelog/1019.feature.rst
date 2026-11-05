@@ -1,1 +1,0 @@
-Sets up QuickPUNCH to run on new product types from clears.

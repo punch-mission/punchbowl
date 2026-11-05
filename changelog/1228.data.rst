@@ -1,0 +1,4 @@
+PCA filtered NFI images are now included in L3 CAMs. Within each CAM, there is a circular region in the
+center in which all and only NFI data appears. Outside that radius, all and only WFI data appears. Note that input
+NFI images under median filtering, rather than weighted averaging, and are pulled from a larger region of time to
+ensure enough input values to the median.

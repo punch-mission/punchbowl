@@ -15,3 +15,8 @@ FAQ
     The pB', also called pBp, bears the same relationship to pB that Stokes U bears to Stokes Q: it measures polarization diagonal to the local solar-radial direction.
     This layer is there as a measure of background-removal effectiveness: it should be identically zero,
     in the ideal world, and deviation from that indicates work still to do in the polarization code or the background subtraction.
+
+- **How can I work with PUNCH data in IDL?**
+    We have assembled a set of tools for loading and displaying PUNCH data with IDL and GDL.
+    These are located in the `PUNCH_IDL_Tools <https://github.com/punch-mission/PUNCH_IDL_Tools>`_ GitHub repository.
+    We welcome any additions or updates to these tools from the science community.

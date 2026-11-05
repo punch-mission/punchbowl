@@ -80,7 +80,7 @@ Version 0m
 - Changed F-corona percentile from 3% to 2%. This improves the F-corona model quality by reducing over-subtraction. Note that F-corona models will appear dimmer. (https://github.com/punch-mission/punchbowl/pull/1271)
 - Re-engineered QuickPUNCH files to meet SWPC requirements. Started real-time production and currently shipping. (https://github.com/punch-mission/punchbowl/pull/1019)
 - Implemented fixed image scaling for quicklook files. (https://github.com/punch-mission/punchbowl/pull/1128)
-
+- Updates the quicklook image generation to use the default plot_punch function, and generates associated (..._thumbnail.jpg) thumbnail files. (https://github.com/punch-mission/punchbowl/pull/1326)
 
 Version 0l
 ----------

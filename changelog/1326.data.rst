@@ -1,1 +1,1 @@
-Updates the quicklook image generation to use the default plot_punch function, and generates associated (..._thumb.jpg) thumbnail files.
+Updates the quicklook image generation to use the default plot_punch function, and generates associated (..._thumbnail.jpg) thumbnail files.

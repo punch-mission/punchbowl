@@ -25,7 +25,7 @@ Version 0m
 - Metadata fixes
 
   - Changed L3 `OBSLAYR1` from `Polar_B` to `Polar_tB` and `OBS-MODE` from `Polar_BpB` to `Polar_tBpB` to match documentation. (https://github.com/punch-mission/punchbowl/pull/1219)
-  - Fixed outlier flagging for L2+ products. (https://github.com/punch-mission/punchbowl/pull/1141)
+  - Fixed outlier flagging for L2+ products to correctly indicate which WFI is an outlier. Previously if a single WFI was an outlier, all WFIs would be flagged as outliers in L2+ products. (https://github.com/punch-mission/punchbowl/pull/1141)
   - Fixed bug to now save F-corona model filenames to CIM and PIM headers. (https://github.com/punch-mission/punchbowl/pull/1256)
   - Fixed `DSATVAL` calculation error so that saturated pixels get flagged properly (mostly impacts NFI). (https://github.com/punch-mission/punchbowl/pull/1153)
   - L0 images now use the timestamp of the image to set the polarization state, and the `PFWSTAT` header value now reads -1 if the PFW packet is stale. Previously the PFW packet was used even if it was stale, producing erroneously-labelled images. (https://github.com/punch-mission/punchbowl/pull/1172, https://github.com/punch-mission/punchbowl/pull/1173)
@@ -35,7 +35,7 @@ Version 0m
 
   - Now publishing NFI data!
 
-  - Clear NFI images now undergo PCA filtering (including post-processing steps). These images are written as L2 CNN files. (https://github.com/punch-mission/punchbowl/pull/1210)
+  - Clear NFI images now undergo principal component analysis (PCA) filtering (including post-processing steps). These images are written as L2 CNN files. (https://github.com/punch-mission/punchbowl/pull/1210)
 
     - This approach removes the variable stray light that NFI experiences and makes usable K-corona images.
     - This processing method produces images that are useful for morphological studies, but photometry should not be relied on.
@@ -44,26 +44,26 @@ Version 0m
 
   - PCA filtered NFI images are now included in L3 CTMs. (https://github.com/punch-mission/punchbowl/pull/1227)
 
-    - Within each CTM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
-    -  Note that the visual appearance of the NFI data is greatly improved in the CAM files compared to CTM due to the by the median filtering applied to the CAM images.
+    - Within each CTM, there is a circular region in the center in which only NFI data appears and outside that radius (currently ~22 solar radii), only WFI data appears.
+    -  Note that the visual appearance of the NFI data is greatly improved in the CAM files compared to CTM due to the median filtering applied to the CAM images.
 
   - PCA filtered NFI images are now included in L3 CAMs. (https://github.com/punch-mission/punchbowl/pull/1228)
 
-    - Within each CAM, there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
+    - Similar to the CTMs, within each CAM there is a circular region in the center in which only NFI data appears and outside that radius, only WFI data appears.
     - Note that input NFI images undergo median filtering, rather than weighted averaging, and are pulled from a larger region of time to ensure enough input values to the median.
 
-  - Note: NFI experiences a summer and winter eclipse season occurring around June-July and November-January, respectively. These eclipse seasons cause NFI to view through the Earth's atmosphere resulting in artifacts that impact the image quality. While WFI also suffers from image artifacts during the winter eclipse season, the impacts to NFI occur during both the winter and summer eclipse seasons and over a longer time period due to NFI's lower inclination angle.
+  - Note: NFI experiences a summer and winter eclipse season occurring in late July and late October - late January, respectively. These eclipse seasons cause NFI to view through the Earth's atmosphere resulting in artifacts that impact the image quality. While WFI also suffers from image artifacts during the winter eclipse season, the impacts to NFI occur during both the winter and summer eclipse seasons and over a longer time period due to NFI's lower inclination angle.
 
 - Starfield processing improvements
 
-  - Improved starfield model generation and subtraction. A median background subtraction that is no longer needed was removed. This should improve capturing the Milky Way into the starfield models. This also allows for a single starfield model subtraction. (https://github.com/punch-mission/punchbowl/pull/1145)
-  - Improved starfield blur by reprojecting directly to the image frame instead of intermediate union WCS. (https://github.com/punch-mission/punchbowl/pull/1180)
+  - Improved starfield model generation and subtraction. In the construction of starfield models, a median filter is no longer applied to input data. This should improve capturing the Milky Way into the starfield models. (https://github.com/punch-mission/punchbowl/pull/1145)
+  - Reduced starfield model blurring by reprojecting directly to the image frame, reducing the number of reprojection calls that can blur the starfield model. (https://github.com/punch-mission/punchbowl/pull/1180)
   - Starfield models (L3 PSM and CSM products) now have their celestial right ascension (RA) WCS coordinate flipped negative in sign to reflect proper behavior in coordinate transformations during model subtraction from data. (https://github.com/punch-mission/punchbowl/pull/1245)
   - Known issue: Data during eclipse season can contain significant residual stray light in the heliographic north region of images. This data contaminates derived starfield models, boosting the inferred starfield signal in high celestial declination coordinates. When subtracted from PUNCH data, these contaminated models can leave regions with over-subtraction, mainly towards high heliographic north coordinates. This will be addressed in a future release (https://github.com/punch-mission/punchbowl/issues/1311)
 
 - Polarization data improvements
 
-  - Updated the flatfield corrections for polarized filters, which improves the Level 3 PTM and PAM polarized data quality.
+  - Polarized data now use polarizer-specific flatfields which improves accuracy and uniformity across each polarizer field of view and between the WFI instruments (notably this reduces visible seams in the PTM and PAM images). 
   - Implemented variance-based uncertainty propagation to handle zeros and non-finite values across polarizers in Level 2 and 3 polarized image data. (https://github.com/punch-mission/punchbowl/pull/1274)
 
 - Mosaic assembly improvements
@@ -77,10 +77,10 @@ Version 0m
   - Negative values in the PUNCH quicklook image bitmaps are now clipped to 1 instead of 0. Previously, this led to negative values becoming transparent in JHelioviewer. (https://github.com/punch-mission/punchbowl/pull/1159)
 
 .. - Flow tracking data products are now available as VAM files. (https://github.com/punch-mission/punchbowl/pull/1079)
-- Changed F-corona percentile from 3% to 2%. This improves the F-corona model quality by reducing over-subtraction. Note that F-corona models will appear dimmer. (https://github.com/punch-mission/punchbowl/pull/1271)
-- Re-engineered QuickPUNCH files to meet SWPC requirements. Started real-time production and currently shipping. (https://github.com/punch-mission/punchbowl/pull/1019)
+- Percentile used to calculate F-corona model changed from 3% to 2%. This improves the F-corona model quality by reducing over-subtraction. Note that F-corona models will appear dimmer. (https://github.com/punch-mission/punchbowl/pull/1271)
+- Re-engineered QuickPUNCH files to meet SWPC requirements and began real-time production. These images are currently shipping to NOAA and are publicly available through the SDAC. (https://github.com/punch-mission/punchbowl/pull/1019)
 - Implemented fixed image scaling for quicklook files. (https://github.com/punch-mission/punchbowl/pull/1128)
-- Updates the quicklook image generation to use the default plot_punch function, and generates associated (..._thumbnail.jpg) thumbnail files. (https://github.com/punch-mission/punchbowl/pull/1326)
+- Updated the quicklook image generation to use the default plot_punch function, and began generating associated thumbnail files. (https://github.com/punch-mission/punchbowl/pull/1326)
 
 Version 0l
 ----------

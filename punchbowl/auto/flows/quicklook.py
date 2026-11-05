@@ -218,9 +218,9 @@ def generate_quicklook_tbpb(cube: PUNCHCube,
         path_image_pb = os.path.join(output_quicklook_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_pB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.jpg")
         os.makedirs(os.path.dirname(path_image_tb), exist_ok=True)
         plot_punch(cube, save_path=path_image_tb, vmin=vmin_tb, vmax=vmax_tb, layer=0, title_prefix=title_prefix_tb)
-        plot_punch(cube, save_path=path_image_pb, vmin=vmin_tb, vmax=vmax_pb, layer=1, title_prefix=title_prefix_pb)
+        plot_punch(cube, save_path=path_image_pb, vmin=vmin_pb, vmax=vmax_pb, layer=1, title_prefix=title_prefix_pb)
         plot_punch(cube, save_path="_thumbnail".join(os.path.splitext(path_image_tb)), vmin=vmin_tb, vmax=vmax_tb, layer=0, title_prefix=title_prefix_tb, dpi=100)
-        plot_punch(cube, save_path="_thumbnail".join(os.path.splitext(path_image_pb)), vmin=vmin_tb, vmax=vmax_pb, layer=1, title_prefix=title_prefix_pb, dpi=100)
+        plot_punch(cube, save_path="_thumbnail".join(os.path.splitext(path_image_pb)), vmin=vmin_pb, vmax=vmax_pb, layer=1, title_prefix=title_prefix_pb, dpi=100)
 
     if make_movie:
         path_movie_tb = os.path.join(output_quicklook_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_tB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")

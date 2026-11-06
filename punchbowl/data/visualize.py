@@ -513,8 +513,8 @@ def plot_punch(  # noqa: C901
         _draw_satellite_legend(ax, cube)
 
     if colorbar_label is None:
-        level = cube.meta["LEVEL"].value
-        colorbar_label = "MSB" if level == "Q" or int(level) >= 1 else "DN"
+        level = str(cube.meta["LEVEL"].value)
+        colorbar_label = "MSB" if level in ["1", "2", "3", "Q"] else "DN" if level == "0" else ""
 
     if colorbar and not axes_off:
         fig.colorbar(im, ax=ax, label=colorbar_label)

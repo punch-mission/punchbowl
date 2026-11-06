@@ -35,8 +35,8 @@ SCIENCE_LEVEL1_QUICK_INPUT_TYPE_CODES = ["XR"]
 SCIENCE_LEVEL1_QUICK_OUTPUT_TYPE_CODES = ["QR"]
 
 @task(cache_policy=NO_CACHE)
-def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99,
-                                   flow_name: str = "level1_early"):
+def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+    flow_name = "level1_early"
     logger = get_logger()
     file_types = [t for t in SCIENCE_LEVEL0_TYPE_CODES
                   if t[1] in pipeline_config['flows'][flow_name].get('polarizations', 'MZPR')]
@@ -129,20 +129,6 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
         logger.info("Missing PSF for " + summarize_files_missing_cal_files(missing_psf))
     return actually_ready
 
-@task(cache_policy=NO_CACHE)
-def level1_early_query_ready_files_phoenix(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    return level1_early_query_ready_files(session, pipeline_config, reference_time, max_n,
-                                          flow_name='level1_early_phoenix')
-
-@task(cache_policy=NO_CACHE)
-def level1_early_query_ready_files_chimera(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    return level1_early_query_ready_files(session, pipeline_config, reference_time, max_n,
-                                          flow_name='level1_early_chimera')
-
-@task(cache_policy=NO_CACHE)
-def level1_early_query_ready_files_jackalope(session, pipeline_config: dict, reference_time=None, max_n=9e99):
-    return level1_early_query_ready_files(session, pipeline_config, reference_time, max_n,
-                                          flow_name='level1_early_jackalope')
 
 def get_polarization_sequence(f: File, session=None, crota_tolerance_degree=1, time_tolerance_minutes=15):
     neighbors = (session.query(File)
@@ -517,18 +503,6 @@ def level1_early_construct_flow_info(level0_files: list[File], level1_files: lis
         call_data=call_data,
     )
 
-def level1_early_construct_flow_info_phoenix(*args, **kwargs):
-    return level1_early_construct_flow_info(*args, **kwargs, flow_type="level1_early_phoenix")
-
-
-def level1_early_construct_flow_info_chimera(*args, **kwargs):
-    return level1_early_construct_flow_info(*args, **kwargs, flow_type="level1_early_chimera")
-
-
-def level1_early_construct_flow_info_jackalope(*args, **kwargs):
-    return level1_early_construct_flow_info(*args, **kwargs, flow_type="level1_early_jackalope")
-
-
 
 def level1_early_construct_file_info(level0_files: list[File], pipeline_config: dict, reference_time=None) -> list[File]:
     files = []
@@ -559,38 +533,6 @@ def level1_early_scheduler_flow(pipeline_config_path=None, session=None, referen
         session=session,
     )
 
-@flow
-def level1_early_phoenix_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
-    generic_scheduler_flow_logic(
-        level1_early_query_ready_files_phoenix,
-        level1_early_construct_file_info,
-        level1_early_construct_flow_info_phoenix,
-        pipeline_config_path,
-        reference_time=reference_time,
-        session=session,
-    )
-
-@flow
-def level1_early_chimera_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
-    generic_scheduler_flow_logic(
-        level1_early_query_ready_files_chimera,
-        level1_early_construct_file_info,
-        level1_early_construct_flow_info_chimera,
-        pipeline_config_path,
-        reference_time=reference_time,
-        session=session,
-    )
-
-@flow
-def level1_early_jackalope_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
-    generic_scheduler_flow_logic(
-        level1_early_query_ready_files_jackalope,
-        level1_early_construct_file_info,
-        level1_early_construct_flow_info_jackalope,
-        pipeline_config_path,
-        reference_time=reference_time,
-        session=session,
-    )
 
 def level1_early_call_data_processor(call_data: dict, pipeline_config, session=None) -> dict:
     for key in ["input_data", "quartic_coefficient_path", "vignetting_function_path",
@@ -626,20 +568,6 @@ def level1_early_process_flow(flow_id: int | list[int], pipeline_config_path=Non
     generic_process_flow_logic(flow_id, level1_early_core_flow, pipeline_config_path, session=session,
                                call_data_processor=level1_early_call_data_processor)
 
-@flow
-def level1_early_phoenix_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, level1_early_core_flow, pipeline_config_path, session=session,
-                               call_data_processor=level1_early_call_data_processor)
-
-@flow
-def level1_early_chimera_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, level1_early_core_flow, pipeline_config_path, session=session,
-                               call_data_processor=level1_early_call_data_processor)
-
-@flow
-def level1_early_jackalope_process_flow(flow_id: int | list[int], pipeline_config_path=None, session=None):
-    generic_process_flow_logic(flow_id, level1_early_core_flow, pipeline_config_path, session=session,
-                               call_data_processor=level1_early_call_data_processor)
 
 @task(cache_policy=NO_CACHE)
 def level1_middle_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):

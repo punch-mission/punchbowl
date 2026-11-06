@@ -20,33 +20,42 @@ from punchbowl.prefect import get_logger
 
 
 @task(cache_policy=NO_CACHE)
-def gather_planned_flows(session, weight_to_launch, max_flows_to_launch, flow_weights, flow_enabled, flow_batch_sizes, flow_hosts):
+def gather_planned_flows(session: Session, weight_to_launch: float, max_flows_to_launch: int,
+                         flow_weights: dict[str, float], flow_batch_sizes: dict[str, int], enabled_flows: list,
+                         flow_names_after_launch: dict[str, str]) -> tuple[list, dict, float, int, dict]:
     # We'll have to grab a bunch of possible flows to launch from the DB, and then on our end apply the weights and the
     # maximum-weight limit. But we can use the smallest weight to set an upper bound on how many launchable flows to
     # retrieve.
-    current_host = get_hostname()
-    enabled_flows = [flow for flow, enabled in flow_enabled.items() if enabled and flow_hosts[flow] == current_host]
     if enabled_flows:
         max_to_select = weight_to_launch / min([flow_weights[k] for k in enabled_flows])
     else:
         max_to_select = 0
-    flows = (session.query(Flow)
-                   .where(Flow.state == "planned")
-                   .where(Flow.flow_type.in_(enabled_flows))
-                   .order_by(Flow.is_backprocessing.asc(), Flow.priority.desc(), Flow.creation_time.asc())
-                   .limit(max_to_select).all())
-    selected_flows = []
-    selected_weight = 0
-    selected_number = 0
-    count_per_type = defaultdict(lambda: 0)
-    while selected_weight < weight_to_launch and selected_number < max_flows_to_launch and len(flows):
-        flow = flows.pop(0)
-        if not flow_enabled[flow.flow_type]:
-            continue
-        selected_flows.append(flow)
-        selected_weight += flow_weights[flow.flow_type]
-        selected_number += 1 / flow_batch_sizes[flow.flow_type]
-        count_per_type[flow.flow_type] += 1
+
+    flows_to_select = list(set(enabled_flows + [flow_names_after_launch[f] for f in enabled_flows
+                                                if f in flow_names_after_launch]))
+
+    session.commit()
+    with session.begin():
+        flows = (session.query(Flow)
+                       .where(Flow.state == "planned")
+                       .where(Flow.flow_type.in_(flows_to_select))
+                       .order_by(Flow.is_backprocessing.asc(), Flow.priority.desc(), Flow.creation_time.asc())
+                       .limit(max_to_select)
+                       .with_for_update() # Locks these rows, so other hosts' launchers can't select them
+                       .all())
+        selected_flows = []
+        selected_weight = 0
+        selected_number = 0
+        count_per_type = defaultdict(lambda: 0)
+        while selected_weight < weight_to_launch and selected_number < max_flows_to_launch and len(flows):
+            flow = flows.pop(0)
+            selected_flows.append(flow)
+            selected_weight += flow_weights[flow.flow_type]
+            selected_number += 1 / flow_batch_sizes[flow.flow_type]
+            if flow.flow_type in flow_names_after_launch:
+                flow.flow_type = flow_names_after_launch[flow.flow_type]
+            count_per_type[flow.flow_type] += 1
+    # Transaction commits---flows are renamed as needed, lock is released
 
     select_flow_ids = [flow.flow_id for flow in selected_flows]
     output_files = session.query(File).where(File.processing_flow.in_(select_flow_ids)).all()
@@ -65,7 +74,7 @@ def gather_planned_flows(session, weight_to_launch, max_flows_to_launch, flow_we
             continue
         these_flows, other_flows = [], []
         for flow in selected_flows:
-            if flow.flow_type == flow_type:
+            if flow.flow_type == flow_names_after_launch.get(flow_type, flow_type):
                 these_flows.append(flow)
             else:
                 other_flows.append(flow)
@@ -77,7 +86,7 @@ def gather_planned_flows(session, weight_to_launch, max_flows_to_launch, flow_we
 
 
 @task(cache_policy=NO_CACHE)
-def count_flows(session, weights, flow_hosts):
+def count_flows(session, weights, enabled_flows, flow_names_after_launch):
     n_planned, n_running = 0, 0
     weight_planned, weight_running = 0, 0
     rows = session.execute(
@@ -87,22 +96,22 @@ def count_flows(session, weights, flow_hosts):
         .group_by(Flow.state, Flow.flow_type),
     ).all()
 
-    current_host = get_hostname()
+    enabled_flows_as_launched = [flow_names_after_launch.get(flow, flow) for flow in flow_names_after_launch]
+
     # We won't get results for states that aren't actually in the database, so we have to inspect the returned rows
     for state, flow_type, count in rows:
-        if current_host == flow_hosts[flow_type]:
-            if state == "planned":
-                n_planned += count
-                weight_planned += count * weights[flow_type]
-            else:
-                n_running += count
-                weight_running += count * weights[flow_type]
+        if state == 'planned' and (flow_type in enabled_flows or flow_type in enabled_flows_as_launched):
+            n_planned += count
+            weight_planned += count * weights[flow_type]
+        elif flow_type in enabled_flows_as_launched:
+            n_running += count
+            weight_running += count * weights[flow_type]
     return n_running, n_planned, weight_planned, weight_running
 
 
 @task(cache_policy=NO_CACHE)
-def escalate_long_waiting_flows(session, pipeline_config):
-    for flow_type in pipeline_config["flows"]:
+def escalate_long_waiting_flows(session: Session, pipeline_config: dict, enabled_flows: list[str]) -> None:
+    for flow_type in enabled_flows:
         for max_seconds_waiting, escalated_priority in zip(
             pipeline_config["flows"][flow_type]["priority"]["seconds"],
             pipeline_config["flows"][flow_type]["priority"]["escalation"],
@@ -141,7 +150,8 @@ def determine_launchable_flow_count(weight_planned, weight_running, max_weight_r
 
 
 @task(cache_policy=NO_CACHE)
-async def launch_ready_flows(session: Session, flow_info: list[list[Flow]], tags_by_flow: dict[int, str], pipeline_config: dict) -> None:
+async def launch_ready_flows(session: Session, flow_info: list[list[Flow]], tags_by_flow: dict[int, str],
+                             pipeline_config: dict) -> None:
     """
     Given a list of ready-to-launch flow_ids, this task creates flow runs in Prefect for them.
     These flow runs are automatically marked as scheduled in Prefect and will be picked up by a work queue and
@@ -216,7 +226,13 @@ async def launch_ready_flows(session: Session, flow_info: list[list[Flow]], tags
                 unique_tags = list(unique_tags)
                 if len(flow_ids) > 1:
                     unique_tags.append("batch")
-                this_deployment_id = deployment_ids[batch[0].flow_type + "_process_flow"]
+                flow_type = batch[0].flow_type
+                if flow_type.endswith(get_hostname()):
+                    suffix = f"-{get_hostname()}"
+                    deployment = flow_type.replace(suffix, "_process_flow" + suffix)
+                else:
+                    deployment = batch[0].flow_type + "_process_flow"
+                this_deployment_id = deployment_ids[deployment]
                 parameters = {"flow_id": flow_ids[0] if len(flow_ids) == 1 else flow_ids}
                 awaitables.append(client.create_flow_run_from_deployment(
                     this_deployment_id, parameters=parameters, tags=unique_tags),
@@ -341,7 +357,12 @@ async def launcher(pipeline_config_path=None):
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
 
     flow_weights, flow_enabled, flow_batch_sizes, flow_hosts = load_flow_data(pipeline_config)
-    enabled_flows = [flow for flow, enabled in flow_enabled.items() if enabled and flow_hosts[flow] == current_host]
+    enabled_flows = [flow for flow, enabled in flow_enabled.items()
+                     if enabled and current_host in flow_hosts[flow].split(',')]
+    flow_names_after_launch = {flow: flow + f"-{current_host}" for flow in enabled_flows
+                               if ',' in  flow_hosts[flow]}
+    for flow_name, flow_name_after_launch in flow_names_after_launch.items():
+        flow_weights[flow_name_after_launch] = flow_weights[flow_name]
     logger.info(f"Enabled flows on {current_host}: {', '.join(enabled_flows)}")
 
     logger.info("Establishing database connection")
@@ -350,10 +371,11 @@ async def launcher(pipeline_config_path=None):
     if not anything_should_be_launched(pipeline_config, session, logger):
         return
 
-    escalate_long_waiting_flows(session, pipeline_config)
+    escalate_long_waiting_flows(session, pipeline_config, enabled_flows)
 
     # Perform the launcher flow responsibilities
-    num_running_flows, num_planned_flows, weight_planned, weight_running = count_flows(session, flow_weights, flow_hosts)
+    num_running_flows, num_planned_flows, weight_planned, weight_running = count_flows(
+        session, flow_weights, enabled_flows, flow_names_after_launch)
     logger.info(f"There are {num_running_flows} flows running right now on {current_host} "
                 f"(weight {weight_running:.2f}) and {num_planned_flows} planned flows (weight {weight_planned:.2f}).")
     max_weight_running = pipeline_config["control"]["launcher"]["max_weight_running"]
@@ -366,7 +388,8 @@ async def launcher(pipeline_config_path=None):
         max_flows_running, num_running_flows)
 
     flows_to_launch, tags_by_flow, selected_weight, number_of_flows, counts_per_type = gather_planned_flows(
-        session, weight_to_launch, max_flows_to_launch, flow_weights, flow_enabled, flow_batch_sizes, flow_hosts)
+        session, weight_to_launch, max_flows_to_launch, flow_weights, flow_batch_sizes, enabled_flows,
+        flow_names_after_launch)
     ids = [[flow.flow_id for flow in batch] for batch in flows_to_launch]
     logger.info(f"{number_of_flows} flows (weight {selected_weight:.2f}) with IDs of {ids} will be launched.")
     counts = [f"{counts_per_type[type]} {type}" for type in sorted(counts_per_type.keys())]

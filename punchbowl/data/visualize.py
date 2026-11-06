@@ -514,7 +514,7 @@ def plot_punch(  # noqa: C901
 
     if colorbar_label is None:
         level = cube.meta["LEVEL"].value
-        colorbar_label = "MSB" if level == "Q" or int(level) >= 2 else "DN"
+        colorbar_label = "MSB" if level == "Q" or int(level) >= 1 else "DN"
 
     if colorbar and not axes_off:
         fig.colorbar(im, ax=ax, label=colorbar_label)

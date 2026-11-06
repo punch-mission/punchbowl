@@ -54,6 +54,7 @@ def gather_planned_flows(session: Session, weight_to_launch: float, max_flows_to
             selected_number += 1 / flow_batch_sizes[flow.flow_type]
             if flow.flow_type in flow_names_after_launch:
                 flow.flow_type = flow_names_after_launch[flow.flow_type]
+            flow.state = 'launching'
             count_per_type[flow.flow_type] += 1
     # Transaction commits---flows are renamed as needed, lock is released
 

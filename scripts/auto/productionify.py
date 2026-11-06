@@ -19,7 +19,8 @@ from punchbowl.auto.control.util import (
 from punchbowl.data.punch_io import load_ndcube_from_fits, write_file_hash
 
 
-def productionify_file(file: File, config: dict, data_root: str, old_pattern, new_version):
+def productionify_file(file: File, config: dict, data_root: str, old_pattern: str, new_version: str | None,
+                       force_jp2s: bool):
     try:
         old_path = os.path.join(file.directory(data_root), file.filename())
         old_ql_path = os.path.join(
@@ -48,11 +49,11 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern, ne
                 if config['write_sha_files']:
                     write_file_hash(new_path)
 
-        if file.level != '0':
+        do_jp2s = force_jp2s if force_jp2s is not None else config['write_quicklooks']
+        if file.level != '0' and file.file_type[0] not in ('S', 'T', 'A', 'V'):
             if os.path.exists(old_ql_path) and new_version is not None:
                 os.rename(old_ql_path, new_ql_path)
-            elif (os.path.exists(new_path) and not os.path.exists(new_ql_path) and file.file_type[0] not in ('S', 'T')
-                    and config['write_quicklooks']):
+            elif os.path.exists(new_path) and not os.path.exists(new_ql_path) and do_jp2s:
                 cube = load_ndcube_from_fits(new_path, include_uncertainty=False)
                 with np.errstate(all='ignore'):
                     _write_quicklook(config, file, cube)
@@ -76,12 +77,22 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--max-n-files', type=int)
     parser.add_argument('-f', '--force', action='store_true', help="Skip warning message")
     parser.add_argument ('-w', '--workers', type=int, help="Number of worker processes", default=12)
+    parser.add_argument('--force-jp2s', default=None,
+                        help="Override config file 'write_quicklooks' value. Set to 'on' or 'off'.")
     parser.add_argument('data_root')
     parser.add_argument('pipeline_config')
     parser.add_argument('old_version_pattern', default=None, nargs='?')
     parser.add_argument('new_version', default=None, nargs='?')
 
     args = parser.parse_args()
+
+    if args.force_jp2s is not None:
+        if args.force_jp2s.lower() in ('on', 'true'):
+            args.force_jp2s = True
+        elif args.force_jp2s.lower() in ('off', 'false'):
+            args.force_jp2s = False
+        else:
+            raise ValueError("Did not recognize force_jp2s value")
 
     old_version_pattern = args.old_version_pattern
     if old_version_pattern is not None and old_version_pattern.startswith('v'):
@@ -146,7 +157,7 @@ if __name__ == "__main__":
         try:
             for i, (file, success_or_msg) in enumerate(zip(files, p.map(productionify_file, files, repeat(config),
                                                            repeat(args.data_root), repeat(old_version_pattern),
-                                                           repeat(new_version), chunksize=2))):
+                                                           repeat(new_version), repeat(args.force_jp2s), chunksize=2))):
                 pbar.update()
                 if success_or_msg is not True:
                     errors.append(success_or_msg)

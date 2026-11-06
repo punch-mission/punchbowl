@@ -13,7 +13,6 @@ from copy import deepcopy
 from typing import Any
 from pathlib import Path
 from datetime import UTC, datetime
-from tempfile import TemporaryDirectory
 from itertools import repeat
 from collections.abc import Sequence
 from concurrent.futures import ProcessPoolExecutor
@@ -247,18 +246,18 @@ def write_ndcube_to_quicklook(cube: PUNCHCube, # noqa: C901
 
     arr_image = np.array(pil_image)
 
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with TemporaryDirectory() as tmpdir:
-        tmp_filename = os.path.join(tmpdir, "tmp.jp2")
-        jp2 = Jp2k(tmp_filename, arr_image)
-        meta_boxes = jp2.box
-        target_index = len(meta_boxes) - 1
-        if include_meta:
-            header = cube.meta.to_fits_header(wcs=cube.wcs)
-            header.remove("COMMENT", ignore_missing=True, remove_all=True)
-            fits_box = _generate_jp2_xmlbox(header)
-            meta_boxes.insert(target_index, fits_box)
-        jp2.wrap(filename, boxes=meta_boxes)
+    tmp_filename = f"{filename}tmp.jp2"
+    os.makedirs(os.path.dirname(tmp_filename), exist_ok=True)
+    jp2 = Jp2k(tmp_filename, arr_image)
+    meta_boxes = jp2.box
+    target_index = len(meta_boxes) - 1
+    if include_meta:
+        header = cube.meta.to_fits_header(wcs=cube.wcs)
+        header.remove("COMMENT", ignore_missing=True, remove_all=True)
+        fits_box = _generate_jp2_xmlbox(header)
+        meta_boxes.insert(target_index, fits_box)
+    jp2.wrap(filename, boxes=meta_boxes)
+    os.remove(tmp_filename)
 
     if write_hash:
         write_file_hash(filename)

@@ -249,6 +249,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M
+        omits: [Calibration Data]
 
     PAN:
         kinds: [Polarized]
@@ -273,6 +274,7 @@ Products:
             INSTRUME: "{craftname}"
             TELESCOP: "{obsname}"
             OBSCODE: M
+        omits: [Calibration Data]
 
     CAN:
         kinds: [Unpolarized]

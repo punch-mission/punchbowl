@@ -222,7 +222,7 @@ def levelq_CTM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
                     "DATE-BEG", "DATE-END", "CTRXWFI1", "CTRYWFI1", "CTRXWFI2", "CTRYWFI2", "CTRXWFI3", "CTRYWFI3",
                     "CTRXNFI4", "CTRYNFI4"]:
             o.meta[key] = d.meta[key].value
-        set_spacecraft_location_to_earth(o)
+        o = set_spacecraft_location_to_earth(o)
 
     logger.info("ending level Q CTM flow")
 
@@ -261,7 +261,7 @@ def levelq_QAM_core_flow(data_list: list[str] | list[PUNCHCube],  # noqa: N802
         o.meta.history = d.meta.history
         for key in ["FILEVRSN", "DATE-AVG", "DATE-OBS", "DATE-BEG", "DATE-END"]:
             o.meta[key] = d.meta[key].value
-        set_spacecraft_location_to_earth(o)
+        o = set_spacecraft_location_to_earth(o)
 
     logger.info("ending level Q QAM flow")
 

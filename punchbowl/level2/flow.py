@@ -294,7 +294,7 @@ def level2_core_flow(data_list: list[str] | list[PUNCHCube], # noqa: C901
         meta["FULYSIZE"] = data.shape[-2]
         output_x_cube = PUNCHCube(data[..., cropy[0]:cropy[-1], cropx[0]:cropx[-1]], meta=meta, wcs=wcs,
                                uncertainty=StdDevUncertainty(uncert[..., cropy[0]:cropy[-1], cropx[0]:cropx[-1]]))
-        set_spacecraft_location_to_earth(output_x_cube)
+        output_x_cube = set_spacecraft_location_to_earth(output_x_cube)
         output_cubes.append(output_x_cube)
 
     logger.info("ending level 2 core flow")

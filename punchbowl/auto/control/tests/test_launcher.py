@@ -42,24 +42,24 @@ def session_fn(session):
 
     level0_planned_flow = Flow(flow_id=1,
                                flow_level=0,
-                              flow_type='level0',
-                              state='planned',
-                              creation_time=datetime(2023, 2, 2, 0, 0, 0),
-                              priority=5)
+                               flow_type='level0',
+                               state='planned',
+                               creation_time=datetime(2023, 2, 2, 0, 0, 0),
+                               priority=5)
 
     level1_planned_flow = Flow(flow_id=2,
                                flow_level=1,
-                              flow_type='level1',
-                              state='planned',
-                              creation_time=datetime(2023, 2, 2, 0, 0, 0),
-                              priority=2)
+                               flow_type='level1_early',
+                               state='planned',
+                               creation_time=datetime(2023, 2, 2, 0, 0, 0),
+                               priority=2)
 
     level1_planned_flow2 = Flow(flow_id=3,
                                flow_level=1,
-                              flow_type='level1',
-                              state='planned',
-                              creation_time=datetime(2023, 2, 2, 0, 0, 0),
-                              priority=100)
+                               flow_type='level1_early',
+                               state='planned',
+                               creation_time=datetime(2023, 2, 2, 0, 0, 0),
+                               priority=100)
 
     session.add(level0_file)
     session.add(level1_file)
@@ -93,90 +93,107 @@ db_empty = create_mysql_fixture(Base, session=True)
 
 @pytest.fixture
 def flow_weights():
-    return {"level0": 1, "level1": 2}
-
+    return {"level0": 1, "level1_early": 2}
 
 @pytest.fixture
 def flow_batch_sizes():
-    return {"level0": 1, "level1": 1}
+    return {"level0": 1, "level1_early": 1}
 
 @pytest.fixture
 def flow_hosts():
     current_host = get_hostname()
-    return {"level0": current_host, "level1": current_host}
+    return {"level0": current_host, "level1_early": current_host}
 
 @pytest.fixture()
 def mixed_hosts():
     current_host = get_hostname()
-    return {"level0": current_host, "level1": "otherhost"}
+    return {"level0": current_host, "level1_early": "otherhost"}
 
-def test_gather_queued_flows(db, flow_weights, flow_batch_sizes, flow_hosts):
+@pytest.fixture()
+def enabled_flows():
+    return ["level0", "level1_early"]
+
+@pytest.fixture()
+def only_some_enabled_flows():
+    return ["level0"]
+
+@pytest.fixture()
+def flow_names_after_launch():
+    return {}
+
+def test_gather_queued_flows(db, flow_weights, flow_batch_sizes, flow_hosts, enabled_flows, flow_names_after_launch):
     planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
-        db, 6, 3, flow_weights, {"level0": True, "level1": True}, flow_batch_sizes, flow_hosts)
+        db, 6, 3, flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch)
     assert len(planned_ids) == 3
     assert count_per_type["level0"] == 1
-    assert count_per_type["level1"] == 2
+    assert count_per_type["level1_early"] == 2
     assert selected_weight == 5
     assert number_of_flows == 3
     planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
-        db, 3, 3, flow_weights,{"level0": True, "level1": True}, flow_batch_sizes, flow_hosts)
+        db, 3, 3, flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch)
     assert len(planned_ids) == 2
     assert count_per_type["level0"] == 1
-    assert count_per_type["level1"] == 1
+    assert count_per_type["level1_early"] == 1
     assert selected_weight == 3
     assert number_of_flows == 2
 
-def test_gather_queued_flows_with_mixed_hosts(db, flow_weights, flow_batch_sizes, mixed_hosts):
+def test_gather_queued_flows_with_mixed_hosts(db, flow_weights, flow_batch_sizes, only_some_enabled_flows,
+                                              flow_names_after_launch):
     planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
-        db, 6, 3, flow_weights, {"level0": True, "level1": True}, flow_batch_sizes, mixed_hosts)
+        db, 6, 3, flow_weights, flow_batch_sizes, only_some_enabled_flows,
+        flow_names_after_launch)
     assert len(planned_ids) == 1
     assert count_per_type["level0"] == 1
-    assert count_per_type["level1"] == 0
+    assert count_per_type["level1_early"] == 0
     assert selected_weight == 1
     assert number_of_flows == 1
     planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
-        db, 3, 3, flow_weights,{"level0": True, "level1": True}, flow_batch_sizes, mixed_hosts)
+        db, 3, 3, flow_weights, flow_batch_sizes, only_some_enabled_flows,
+        flow_names_after_launch)
     assert len(planned_ids) == 1
     assert count_per_type["level0"] == 1
-    assert count_per_type["level1"] == 0
+    assert count_per_type["level1_early"] == 0
     assert selected_weight == 1
     assert number_of_flows == 1
 
 
-def test_count_running_flows(db, flow_weights, flow_hosts):
-    running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
+def test_count_running_flows(db, flow_weights, enabled_flows, flow_names_after_launch):
+    running_count, planned_count, weight_planned, weight_running = count_flows.fn(
+        db, flow_weights, enabled_flows, flow_names_after_launch)
     assert running_count == 0
     assert planned_count == 3
     assert weight_running == 0
     assert weight_planned == 5
 
-def test_count_running_flows_with_mixed_hosts(db, flow_weights, mixed_hosts):
-    running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, mixed_hosts)
+def test_count_running_flows_with_mixed_hosts(db, flow_weights, only_some_enabled_flows, flow_names_after_launch):
+    running_count, planned_count, weight_planned, weight_running = count_flows.fn(
+        db, flow_weights, only_some_enabled_flows, flow_names_after_launch)
     assert running_count == 0
     assert planned_count == 1
     assert weight_running == 0
     assert weight_planned == 1
 
-def test_escalate_long_waiting_flows(db):
+def test_escalate_long_waiting_flows(db, enabled_flows):
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
 
     with freeze_time(datetime(2023, 2, 2, 0, 0, 0)) as frozen_datetime:
-        escalate_long_waiting_flows.fn(db, pipeline_config)
+        escalate_long_waiting_flows.fn(db, pipeline_config, enabled_flows)
         assert db.query(Flow).where(Flow.flow_id == 1).one().priority == 5
 
         frozen_datetime.move_to(datetime(2023, 2, 2, 0, 0, 31))
-        escalate_long_waiting_flows.fn(db, pipeline_config)
+        escalate_long_waiting_flows.fn(db, pipeline_config, enabled_flows)
         assert db.query(Flow).where(Flow.flow_id == 1).one().priority == 10
 
         frozen_datetime.move_to(datetime(2024, 2, 2, 0, 0, 0))
-        escalate_long_waiting_flows.fn(db, pipeline_config)
+        escalate_long_waiting_flows.fn(db, pipeline_config, enabled_flows)
         assert db.query(Flow).where(Flow.flow_id == 1).one().priority == 30
 
 
-def test_filter_for_launchable_flows(db, flow_weights, flow_hosts):
+def test_filter_for_launchable_flows(db, flow_weights, enabled_flows, flow_names_after_launch):
     with prefect_test_harness(), disable_run_logger():
-        running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
+        running_count, planned_count, weight_planned, weight_running = count_flows.fn(
+            db, flow_weights, enabled_flows, flow_names_after_launch)
         max_weight_running = 30
         ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
             weight_planned, weight_running, max_weight_running, math.inf, 10, 100, running_count)
@@ -184,25 +201,28 @@ def test_filter_for_launchable_flows(db, flow_weights, flow_hosts):
         assert max_flows_to_launch == 10
 
 
-def test_filter_for_launchable_flows_with_max_of_1(db, flow_weights, flow_batch_sizes, flow_hosts):
+def test_filter_for_launchable_flows_with_max_of_1(db, flow_weights, flow_batch_sizes, enabled_flows,
+                                                   flow_names_after_launch):
     with prefect_test_harness(), disable_run_logger():
-        running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
+        running_count, planned_count, weight_planned, weight_running = count_flows.fn(
+            db, flow_weights, enabled_flows, flow_names_after_launch)
         max_weight_running = 1
         ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
             weight_planned, weight_running, max_weight_running, math.inf, 10, 100, running_count)
         assert ready_to_launch_weight == 1
         assert max_flows_to_launch == 10
         flows, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
-            db, ready_to_launch_weight, max_flows_to_launch, flow_weights, {"level0": True, "level1": True},
-            flow_batch_sizes, flow_hosts)
+            db, ready_to_launch_weight, max_flows_to_launch, flow_weights,
+            flow_batch_sizes, enabled_flows, flow_names_after_launch)
         assert len(flows) == 1
         assert flows[0][0].flow_id == 3
         assert number_of_flows == 1
 
 
-def test_filter_for_launchable_flows_with_max_of_0(db, flow_weights, flow_hosts):
+def test_filter_for_launchable_flows_with_max_of_0(db, flow_weights, enabled_flows, flow_names_after_launch):
     with prefect_test_harness(), disable_run_logger():
-        running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
+        running_count, planned_count, weight_planned, weight_running = count_flows.fn(
+            db, flow_weights, enabled_flows, flow_names_after_launch)
         max_weight_running = 0
         ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
             weight_planned, weight_running, max_weight_running, math.inf, 0, 100, running_count)
@@ -210,9 +230,10 @@ def test_filter_for_launchable_flows_with_max_of_0(db, flow_weights, flow_hosts)
         assert max_flows_to_launch == 0
 
 
-def test_filter_for_launchable_flows_cap_by_number(db, flow_weights, flow_hosts):
+def test_filter_for_launchable_flows_cap_by_number(db, flow_weights, enabled_flows, flow_names_after_launch):
     with prefect_test_harness(), disable_run_logger():
-        running_count, planned_count, weight_planned, weight_running = count_flows.fn(db, flow_weights, flow_hosts)
+        running_count, planned_count, weight_planned, weight_running = count_flows.fn(
+            db, flow_weights, enabled_flows, flow_names_after_launch)
         max_weight_running = 100
         ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
             weight_planned, weight_running, max_weight_running, math.inf, 100, 1, running_count)
@@ -220,9 +241,10 @@ def test_filter_for_launchable_flows_cap_by_number(db, flow_weights, flow_hosts)
         assert max_flows_to_launch == 1
 
 
-def test_filter_for_launchable_flows_with_empty_db(db_empty, flow_weights, flow_hosts):
+def test_filter_for_launchable_flows_with_empty_db(db_empty, flow_weights, enabled_flows, flow_names_after_launch):
     with prefect_test_harness(), disable_run_logger():
-        running_count, planned_count, weight_planned, weight_running = count_flows.fn(db_empty, flow_weights, flow_hosts)
+        running_count, planned_count, weight_planned, weight_running = count_flows.fn(
+            db_empty, flow_weights, enabled_flows, flow_names_after_launch)
         max_weight_running = 30
         ready_to_launch_weight, max_flows_to_launch = determine_launchable_flow_count(
             weight_planned, weight_running, max_weight_running, math.inf, 20, 100, running_count)

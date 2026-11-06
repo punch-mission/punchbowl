@@ -229,6 +229,10 @@ def generate_quicklook_tbpb(cube: PUNCHCube,
         os.makedirs(os.path.dirname(path_movie_pb), exist_ok=True)
         animate_punch(file_list, layer=0, output_path=path_movie_tb, fps=framerate, n_jobs=12, vmin=vmin_tb, vmax=vmax_tb, title_prefix=title_prefix_tb, ffmpeg_path=ffmpeg_command)
         animate_punch(file_list, layer=1, output_path=path_movie_pb, fps=framerate, n_jobs=12, vmin=vmin_pb, vmax=vmax_pb, title_prefix=title_prefix_pb, ffmpeg_path=ffmpeg_command)
+        animate_punch(file_list, layer=0, output_path="_thumbnail".join(os.path.splitext(path_movie_tb)),
+                      fps=framerate, n_jobs=12, vmin=vmin_tb, vmax=vmax_tb, title_prefix=title_prefix_tb, ffmpeg_path=ffmpeg_command, dpi=100)
+        animate_punch(file_list, layer=1, output_path="_thumbnail".join(os.path.splitext(path_movie_pb)),
+                      fps=framerate, n_jobs=12, vmin=vmin_pb, vmax=vmax_pb, title_prefix=title_prefix_pb, ffmpeg_path=ffmpeg_command, dpi=100)
 
 
 def generate_quicklook_mzp(cube: PUNCHCube,
@@ -254,6 +258,8 @@ def generate_quicklook_mzp(cube: PUNCHCube,
             path_movie = os.path.join(output_quicklook_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_{polarizer}_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
             os.makedirs(os.path.dirname(path_movie), exist_ok=True)
             animate_punch(file_list, layer=layer, output_path=path_movie, fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax, title_prefix=title_prefix, ffmpeg_path=ffmpeg_command)
+            animate_punch(file_list, layer=layer, output_path="_thumbnail".join(os.path.splitext(path_movie)),
+                          fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax, title_prefix=title_prefix, ffmpeg_path=ffmpeg_command, dpi=100)
 
 
 def generate_quicklook_unpolarized(cube: PUNCHCube,
@@ -278,6 +284,8 @@ def generate_quicklook_unpolarized(cube: PUNCHCube,
     if make_movie:
         path_movie = os.path.join(output_quicklook_dir, f"PUNCH_{cube.meta["TYPECODE"].value}{cube.meta["OBSCODE"].value}_tB_{cube.meta.datetime.strftime("%Y%m%d")}_v{cube.meta["FILEVRSN"].value}.mp4")
         animate_punch(file_list, output_path=path_movie, fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax, title_prefix=title_prefix, ffmpeg_path=ffmpeg_command)
+        animate_punch(file_list, output_path="_thumbnail".join(os.path.splitext(path_movie)),
+                      fps=framerate, n_jobs=12, vmin=vmin, vmax=vmax, title_prefix=title_prefix, ffmpeg_path=ffmpeg_command, dpi=100)
 
 
 @flow()

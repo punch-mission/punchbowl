@@ -271,6 +271,7 @@ async def launch_ready_flows(session: Session, flow_info: list[list[Flow]], tags
 
 
 def load_flow_data(pipeline_config):
+    current_host = get_hostname()
     flow_weights = dict()
     flow_enabled = dict()
     flow_batch_size = dict()
@@ -280,7 +281,14 @@ def load_flow_data(pipeline_config):
         flow_weights[flow_type] = pipeline_config["flows"][flow_type].get("launch_weight", 1)
         flow_batch_size[flow_type] = pipeline_config["flows"][flow_type].get("batch_size", 1)
         flow_hosts[flow_type] = pipeline_config["flows"][flow_type].get("run-on", get_hostname())
-    return flow_weights, flow_enabled, flow_batch_size, flow_hosts
+
+    enabled_flows = [flow for flow, enabled in flow_enabled.items()
+                     if enabled and current_host in flow_hosts[flow].split(',')]
+    flow_names_after_launch = {flow: flow + f"-{current_host}" for flow in enabled_flows
+                               if ',' in  flow_hosts[flow]}
+    for flow_name, flow_name_after_launch in flow_names_after_launch.items():
+        flow_weights[flow_name_after_launch] = flow_weights[flow_name]
+    return flow_weights, flow_batch_size, enabled_flows, flow_names_after_launch
 
 
 def anything_should_be_launched(pipeline_config: dict, session: Session, logger: Logger) -> bool:
@@ -356,13 +364,8 @@ async def launcher(pipeline_config_path=None):
         pipeline_config_path = await Variable.get("punchpipe_config", "punchpipe_config.yaml")
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
 
-    flow_weights, flow_enabled, flow_batch_sizes, flow_hosts = load_flow_data(pipeline_config)
-    enabled_flows = [flow for flow, enabled in flow_enabled.items()
-                     if enabled and current_host in flow_hosts[flow].split(',')]
-    flow_names_after_launch = {flow: flow + f"-{current_host}" for flow in enabled_flows
-                               if ',' in  flow_hosts[flow]}
-    for flow_name, flow_name_after_launch in flow_names_after_launch.items():
-        flow_weights[flow_name_after_launch] = flow_weights[flow_name]
+    flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch = load_flow_data(pipeline_config)
+
     logger.info(f"Enabled flows on {current_host}: {', '.join(enabled_flows)}")
 
     logger.info("Establishing database connection")

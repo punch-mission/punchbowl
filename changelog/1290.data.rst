@@ -1,6 +1,6 @@
 Addressed empty metadata entries for mosaics. Previously the entries of these headers (except for the Moon coordinates) were empty, therefore the following actions were taken:
 
 * Fixed bug to save F-corona model filenames to CTM/PTM headers.
-* Removed "Calibration Data" section from CAM/PAM/QAM headers. (The information is stored in the CTM and PTMs used to produce the CAMs and PAMs respectively.)
-* Fixed headers in the "Spacecraft Location & Environment" section to use the center of the Earth as location.
+* Removed "Calibration Data" section from CAM/PAM/QAM headers. (The information is stored in the CTM and PTMs used to produce the files.)
+* Fixed headers in the "Spacecraft Location & Environment" section to use the center of the Earth as the location.
 * Added details to comments of headers of Moon related headers ("MOONDIST","MOON_X","MOON_Y") for clarification.

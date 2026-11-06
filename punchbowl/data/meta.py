@@ -333,7 +333,7 @@ class NormalizedMetadata(Mapping):
 
             # add the special WCS section
             if section == self._wcs_section_name and wcs is not None:
-                if write_celestial_wcs:
+                if write_celestial_wcs and wcs.wcs.ctype[0].startswith("HP") and wcs.wcs.ctype[1].startswith("HP"):
                     if celestial_wcs is None:
                         celestial_wcs = calculate_celestial_wcs_from_helio(wcs, self.astropy_time, self.shape)
                     wcses = {"": wcs, "A": celestial_wcs}

@@ -1,6 +1,7 @@
 import os
 import json
 import socket
+import traceback
 import multiprocessing
 from datetime import UTC, datetime
 from concurrent.futures import ProcessPoolExecutor
@@ -30,6 +31,7 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
     else:
         flow_ids = flow_id
 
+    everything_successful = True
     try:
         logger = get_logger()
         logger.info(f"Running under PID {os.getpid()}")
@@ -43,6 +45,8 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
 
         file_db_entry_lists = []
 
+        # We may have a batch of multiple flows to run. We start by doing all the prefatory database work for all the
+        # flows in one go, so it can be one DB transaction
         for flow_db_entry in flow_db_entries:
             if flow_db_entry.state != "launched":
                 raise RuntimeError(f"Flow id {flow_db_entry.flow_id} has state '{flow_db_entry.state}'; not running")
@@ -83,86 +87,109 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
             file_db_entry_lists.append(file_db_entry_list)
         session.commit()
 
-        for flow_db_entry, file_db_entry_list in zip(flow_db_entries, file_db_entry_lists):
-            # load the call data and launch the core flow
-            flow_call_data = json.loads(flow_db_entry.call_data)
-            if call_data_processor is not None:
-                flow_call_data = call_data_processor(flow_call_data, pipeline_config, session)
-            output_file_ids = set()
-            expected_files = {f"{entry.filename()} ({entry.file_id})" for entry in file_db_entry_list}
-            expected_file_ids = {entry.file_id for entry in file_db_entry_list}
-            logger.info(f"Expecting to output these files: {', '.join(expected_files)}")
+        # We need autoflush to be disabled, so we can update flow records as we go without holding locks on those rows until
+        # the whole batch finishes. Otherwise launcher will deadlock when it runs escalate_long_waiting_flows and tries to
+        # read the whole table.
+        with session.no_autoflush:
+            # Now we actually run each flow in our batch, one at a time
+            for flow_db_entry, file_db_entry_list in zip(flow_db_entries, file_db_entry_lists):
+                # load the call data and launch the core flow
+                flow_call_data = json.loads(flow_db_entry.call_data)
+                # We set a start_time earlier so these flows all have a value populated when then enter the 'running' state,
+                # but we should set a more accurate value now.
+                flow_db_entry.start_time = datetime.now()
 
-            tag_set = {entry.file_type + entry.observatory for entry in file_db_entry_list}
-            with tags(*sorted(tag_set)):
-                results = core_flow_to_launch(**flow_call_data)
+                if call_data_processor is not None:
+                    flow_call_data = call_data_processor(flow_call_data, pipeline_config, session)
+                output_file_ids = set()
+                expected_files = {f"{entry.filename()} ({entry.file_id})" for entry in file_db_entry_list}
+                expected_file_ids = {entry.file_id for entry in file_db_entry_list}
+                logger.info(f"Expecting to output these files: {', '.join(expected_files)}")
 
-            files_to_write = []
-            for result in results:
-                result.meta["FILEVRSN"] = pipeline_config["file_version"]
-                file_db_entry = match_data_with_file_db_entry(result, file_db_entry_list)
-                logger.info(f"Preparing to write {file_db_entry.file_id}.")
-                output_file_ids.add(file_db_entry.file_id)
-                file_db_entry.date_obs = parse_datetime_str(result.meta["DATE-OBS"].value)
-                file_db_entry.state = "created"
-                date_created = parse_datetime_str(result.meta["DATE"].value)
-                # Converts to local time
-                date_created = date_created.replace(tzinfo=UTC).astimezone()
-                file_db_entry.date_created = date_created
-                if result.meta['OUTLIER'].value == 0:
-                    # Stamp the DB value into this file, which hasn't had OUTLIER set yet
-                    result.meta["OUTLIER"] = file_db_entry.outlier
-                else:
-                    # The flow specifically set a value, so copy it back into the DB
-                    file_db_entry.outlier = result.meta["OUTLIER"].value
-                result.meta["BADPKTS"] = int(file_db_entry.bad_packets)
-                result.meta['BOWLVRSN'] = __version__
-                if 'SPPYVRSN' in result.meta:
-                    # No reason to load this if we don't need it
-                    import solpolpy
-                    result.meta['SPPYVRSN'] = solpolpy.__version__
-                if 'RPSFVRSN' in result.meta:
-                    # No reason to load this if we don't need it
-                    import regularizepsf
-                    result.meta['RPSFVRSN'] = regularizepsf.__version__
-                if 'RMSFVRSN' in result.meta:
-                    # No reason to load this if we don't need it
-                    import remove_starfield
-                    result.meta['RMSFVRSN'] = remove_starfield.__version__
-                result.meta['HOSTNAME'] = socket.gethostname()
-                if write_in_parallel:
-                    files_to_write.append((result, file_db_entry, pipeline_config))
-                else:
-                    filename = write_file(result, file_db_entry, pipeline_config)
-                    logger.info(f"Wrote {file_db_entry.file_id} to {filename}")
+                tag_set = {entry.file_type + entry.observatory for entry in file_db_entry_list}
+                with tags(*sorted(tag_set)):
+                    try:
+                        results = core_flow_to_launch(**flow_call_data)
+                    except:
+                        # Fail this flow gracefully and let the batch continue
+                        flow_db_entry.state = "failed"
+                        flow_db_entry.end_time = datetime.now()
+                        for file in file_db_entry_list:
+                            file.state = "failed"
+                        everything_successful = False
+                        if len(flow_db_entries) == 1:
+                            # We're not in a batch, so we can just fail directly and simplify the flow's log output
+                            raise
+                        trace = traceback.format_exc()
+                        logger.warning(f"Flow {flow_db_entry.flow_id} failed with error:\n{trace}")
+                        continue
 
-            if write_in_parallel and files_to_write:
-                context = multiprocessing.get_context("forkserver")
-                n_workers = pipeline_config.get('parallel_writers', 4)
-                with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
-                    results, db_entries, configs = zip(*files_to_write)
-                    for i, (filename, file_db_entry) in enumerate(
-                            zip(process_pool.map(write_file, results, db_entries, configs),
-                                db_entries)):
-                        logger.info(f"Wrote {file_db_entry.file_id} to {filename} (number {i + 1} / {len(results)})")
+                files_to_write = []
+                for result in results:
+                    result.meta["FILEVRSN"] = pipeline_config["file_version"]
+                    file_db_entry = match_data_with_file_db_entry(result, file_db_entry_list)
+                    logger.info(f"Preparing to write {file_db_entry.file_id}.")
+                    output_file_ids.add(file_db_entry.file_id)
+                    file_db_entry.date_obs = parse_datetime_str(result.meta["DATE-OBS"].value)
+                    file_db_entry.state = "created"
+                    date_created = parse_datetime_str(result.meta["DATE"].value)
+                    # Converts to local time
+                    date_created = date_created.replace(tzinfo=UTC).astimezone()
+                    file_db_entry.date_created = date_created
+                    if result.meta['OUTLIER'].value == 0:
+                        # Stamp the DB value into this file, which hasn't had OUTLIER set yet
+                        result.meta["OUTLIER"] = file_db_entry.outlier
+                    else:
+                        # The flow specifically set a value, so copy it back into the DB
+                        file_db_entry.outlier = result.meta["OUTLIER"].value
+                    result.meta["BADPKTS"] = int(file_db_entry.bad_packets)
+                    result.meta['BOWLVRSN'] = __version__
+                    if 'SPPYVRSN' in result.meta:
+                        # No reason to load this if we don't need it
+                        import solpolpy
+                        result.meta['SPPYVRSN'] = solpolpy.__version__
+                    if 'RPSFVRSN' in result.meta:
+                        # No reason to load this if we don't need it
+                        import regularizepsf
+                        result.meta['RPSFVRSN'] = regularizepsf.__version__
+                    if 'RMSFVRSN' in result.meta:
+                        # No reason to load this if we don't need it
+                        import remove_starfield
+                        result.meta['RMSFVRSN'] = remove_starfield.__version__
+                    result.meta['HOSTNAME'] = socket.gethostname()
+                    if write_in_parallel:
+                        files_to_write.append((result, file_db_entry, pipeline_config))
+                    else:
+                        filename = write_file(result, file_db_entry, pipeline_config)
+                        logger.info(f"Wrote {file_db_entry.file_id} to {filename}")
 
-            missing_file_ids = expected_file_ids.difference(output_file_ids)
-            if missing_file_ids:
-                if require_expected_files:
-                    raise RuntimeError(f"We did not get an output cube for file ids {missing_file_ids}")
-                else:
-                    for db_entry in file_db_entry_list:
-                        if db_entry.file_id in missing_file_ids:
-                            db_entry.state = "skipped"
+                if write_in_parallel and files_to_write:
+                    context = multiprocessing.get_context("forkserver")
+                    n_workers = pipeline_config.get('parallel_writers', 4)
+                    with ProcessPoolExecutor(n_workers, mp_context=context) as process_pool:
+                        results, db_entries, configs = zip(*files_to_write)
+                        for i, (filename, file_db_entry) in enumerate(
+                                zip(process_pool.map(write_file, results, db_entries, configs),
+                                    db_entries)):
+                            logger.info(f"Wrote {file_db_entry.file_id} to {filename} (number {i + 1} / {len(results)})")
 
-        session.commit()
+                missing_file_ids = expected_file_ids.difference(output_file_ids)
+                if missing_file_ids:
+                    if require_expected_files:
+                        raise RuntimeError(f"We did not get an output cube for file ids {missing_file_ids}")
+                    else:
+                        for db_entry in file_db_entry_list:
+                            if db_entry.file_id in missing_file_ids:
+                                db_entry.state = "skipped"
+
+                flow_db_entry.end_time = datetime.now()
+            session.commit()
 
         for flow_db_entry, file_db_entry_list in zip(flow_db_entries, file_db_entry_lists):
             # Don't overwrite if our flow state has been changed from under us (e.g. it's been changed to 'revivable')
             session.refresh(flow_db_entry)
             if flow_db_entry.state == "running":
                 flow_db_entry.state = "completed"
-            flow_db_entry.end_time = datetime.now()
             # Note: the file_db_entry gets updated above in the writing step because it could be created or blank
         session.commit()
     except:
@@ -174,3 +201,6 @@ def generic_process_flow_logic(flow_id: int | list[int], core_flow_to_launch, pi
             {"state": "failed"})
         session.commit()
         raise
+
+    if not everything_successful:
+        raise RuntimeError("Part of this batch failed.")

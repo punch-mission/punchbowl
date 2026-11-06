@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import astropy.units as u
 import cv2 as cv
@@ -550,6 +550,7 @@ def track_velocity(files: list[str],
     date_end = datetime.fromisoformat(output_meta["DATE-END"].value)
     output_meta["DATE-AVG"] = (date_beg + (date_end - date_beg) / 2).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
     output_meta["DATE-OBS"] = reference_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    output_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
     output_meta["DELTAT"] = delta_t
     output_meta["SPARSITY"] = sparsity

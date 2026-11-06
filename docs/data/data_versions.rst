@@ -63,7 +63,7 @@ Version 0m
 
 - Polarization data improvements
 
-  - Polarized data now use polarizer-specific flatfields which improves accuracy and uniformity across each polarizer field of view and between the WFI instruments (notably this reduces visible seams in the PTM and PAM images). 
+  - Polarized data now use polarizer-specific flatfields which improves accuracy and uniformity across each polarizer field of view and between the WFI instruments (notably this reduces visible seams in the PTM and PAM images).
   - Implemented variance-based uncertainty propagation to handle zeros and non-finite values across polarizers in Level 2 and 3 polarized image data. (https://github.com/punch-mission/punchbowl/pull/1274)
 
 - Mosaic assembly improvements

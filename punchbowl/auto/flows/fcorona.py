@@ -14,6 +14,7 @@ from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
 from punchbowl.auto.control.util import batched, get_database_session, group_files_by_time, load_pipeline_configuration
 from punchbowl.auto.flows.level2 import group_l2_inputs
 from punchbowl.auto.flows.util import apply_stride, file_name_to_full_path, get_max_flows_to_schedule
+from punchbowl.constants import CLEAR_CADENCE_MINUTES
 from punchbowl.level3.f_corona_model import construct_f_corona_model
 from punchbowl.prefect import get_logger
 
@@ -69,8 +70,8 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
 
     if file_stride > 1:
         if pol_type == 'nfi':
-            first_half_inputs = apply_stride(first_half_inputs, file_stride, 8)
-            second_half_inputs = apply_stride(second_half_inputs, file_stride, 8)
+            first_half_inputs = apply_stride(first_half_inputs, file_stride, CLEAR_CADENCE_MINUTES)
+            second_half_inputs = apply_stride(second_half_inputs, file_stride, CLEAR_CADENCE_MINUTES)
         else:
             random.seed(1)
             # Apply a stride that doesn't phase weirdly with where we are in a roll position

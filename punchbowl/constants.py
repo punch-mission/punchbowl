@@ -48,3 +48,4 @@ class ImagePhase(IntEnum):
 
 # --- Observing sequence details ---------------------------------------------------------------------------------------
 N_ROLLS_PER_DAY = 24 * 60 // 8
+CLEAR_CADENCE_MINUTES = 8

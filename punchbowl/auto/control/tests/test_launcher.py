@@ -16,6 +16,7 @@ from punchbowl.auto.control.launcher import (
     determine_launchable_flow_count,
     escalate_long_waiting_flows,
     gather_planned_flows,
+    load_flow_data,
 )
 from punchbowl.auto.control.util import get_hostname, load_pipeline_configuration
 from punchbowl.prefect import get_logger
@@ -99,16 +100,6 @@ def flow_weights():
 def flow_batch_sizes():
     return {"level0": 1, "level1_early": 1}
 
-@pytest.fixture
-def flow_hosts():
-    current_host = get_hostname()
-    return {"level0": current_host, "level1_early": current_host}
-
-@pytest.fixture()
-def mixed_hosts():
-    current_host = get_hostname()
-    return {"level0": current_host, "level1_early": "otherhost"}
-
 @pytest.fixture()
 def enabled_flows():
     return ["level0", "level1_early"]
@@ -121,7 +112,32 @@ def only_some_enabled_flows():
 def flow_names_after_launch():
     return {}
 
-def test_gather_queued_flows(db, flow_weights, flow_batch_sizes, flow_hosts, enabled_flows, flow_names_after_launch):
+def test_load_flow_data():
+    pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
+    pipeline_config = load_pipeline_configuration(pipeline_config_path)
+    flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch = load_flow_data(pipeline_config)
+    assert flow_weights['level0'] == 1
+    assert flow_weights['level1_early'] == 2
+    assert sorted(enabled_flows) == ['level0', 'level1_early', 'level1_late', 'level2']
+    assert len(flow_names_after_launch) == 0
+
+def test_load_flow_data_other_host():
+    pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
+    pipeline_config = load_pipeline_configuration(pipeline_config_path)
+    pipeline_config['flows']['level0']['run-on'] = 'not_this_host'
+    flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch = load_flow_data(pipeline_config)
+    assert sorted(enabled_flows) == ['level1_early', 'level1_late', 'level2']
+    assert len(flow_names_after_launch) == 0
+
+def test_load_flow_data_multi_host():
+    pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
+    pipeline_config = load_pipeline_configuration(pipeline_config_path)
+    pipeline_config['flows']['level0']['run-on'] = 'not_this_host,' + get_hostname()
+    flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch = load_flow_data(pipeline_config)
+    assert sorted(enabled_flows) == ['level0', 'level1_early', 'level1_late', 'level2']
+    assert flow_names_after_launch['level0'] == 'level0-' + get_hostname()
+
+def test_gather_queued_flows(db, flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch):
     planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
         db, 6, 3, flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch)
     assert len(planned_ids) == 3

@@ -91,7 +91,10 @@ def update_queue_status(_: int, light_mode: bool) -> list:
     config = load_pipeline_configuration()
     flow_to_host = {}
     for flow in config['flows']:
-        flow_to_host[flow] = config['flows'][flow]['run-on']
+        hosts = config['flows'][flow]['run-on'].split(',')
+        flow_to_host[flow] = hosts
+        for host in hosts:
+            flow_to_host[f"{flow}-{host}"] = [host]
 
     query = select(Flow).where(Flow.state == 'planned')
 
@@ -99,12 +102,22 @@ def update_queue_status(_: int, light_mode: bool) -> list:
         df = pd.read_sql_query(query, session.connection())
 
     counts = df.groupby('flow_type').size().reset_index(name='count')
-    hosts = [flow_to_host[flow] for flow in counts['flow_type']]
-    counts['host'] = hosts
+    hosts = set(host for hosts in flow_to_host.values() for host in hosts)
+    for host in hosts:
+        is_on_this_host = []
+        for flow in counts['flow_type']:
+            is_on_this_host.append(host in flow_to_host[flow])
+        counts[f'is_on_{host}'] = is_on_this_host
 
     full_percentage = []
     max_counts = []
     for flow_type, count in zip(counts['flow_type'], counts['count']):
+        if flow_type not in config['flows'] and '-' in flow_type:
+            maybe_name = '-'.join(flow_type.split('-')[:-1])
+            maybe_host = flow_type.split('-')[-1]
+            if (maybe_name in config['flows']
+                    and maybe_host in config['flows'][maybe_name].get('run-on', '').split(',')):
+                flow_type = maybe_name
         max_scheduled = get_max_flows_to_schedule(config, flow_type)
         max_counts.append(max_scheduled)
         full_percentage.append(count / max_scheduled * 100)
@@ -114,7 +127,7 @@ def update_queue_status(_: int, light_mode: bool) -> list:
 
     figs = []
     for host in sorted(set(hosts)):
-        fig = px.bar(counts[counts['host'] == host], x='flow_type', y='full_percentage',
+        fig = px.bar(counts[counts[f'is_on_{host}']], x='flow_type', y='full_percentage',
                      title=f"Queue fullness for {host}",
                      hover_data={"flow_type": True, "count": True, "full_percentage": True, "max_counts": True},
                      template=LIGHT_THEME if light_mode else DARK_THEME)
@@ -149,8 +162,15 @@ def update_work_status(_: int, light_mode: bool) -> list:
     flow_to_weight = {}
     flow_to_host = {}
     for flow in config['flows']:
-        flow_to_host[flow] = config['flows'][flow]['run-on']
-        flow_to_weight[flow] = config['flows'][flow]['launch_weight']
+        if ',' in config['flows'][flow]['run-on']:
+            hosts = config['flows'][flow]['run-on'].split(',')
+            for host in hosts:
+                flow_name = f"{flow}-{host}"
+                flow_to_host[flow_name] = host
+                flow_to_weight[flow_name] = config['flows'][flow]['launch_weight']
+        else:
+            flow_to_host[flow] = config['flows'][flow]['run-on']
+            flow_to_weight[flow] = config['flows'][flow]['launch_weight']
 
     max_weights = {}
     section = config['control']['launcher']
@@ -159,7 +179,6 @@ def update_work_status(_: int, light_mode: bool) -> list:
             max_weights[host] = section[f'max_weight_running-{host}']
         else:
             max_weights[host] = section[f'max_weight_running']
-
 
     query = select(Flow).where(Flow.state.in_(['launched', 'running']))
 
@@ -173,16 +192,20 @@ def update_work_status(_: int, light_mode: bool) -> list:
     weights = [flow_to_weight[flow] for flow in counts['flow_type']]
     counts['weight'] = [weight * count
                         for weight, count in zip(weights, counts['count'])]
-    counts['fractional_weight'] = [weight * count / max_weights[host] * 100
-                                   for weight, count, host in zip(weights, counts['count'], counts['host'])]
-
-    fig = px.bar(counts, x='host', y='fractional_weight', color='flow_type',
+    any_zero_maxima = any(m == 0 for m in max_weights.values())
+    if not any_zero_maxima:
+        counts['fractional_weight'] = [weight * count / max_weights[host] * 100
+                                       for weight, count, host in zip(weights, counts['count'], counts['host'])]
+    fig = px.bar(counts, x='host', y='weight' if any_zero_maxima else 'fractional_weight', color='flow_type',
                  title='Running weight',
                  hover_data={"flow_type": True, "count": True, "weight": True},
                  template=LIGHT_THEME if light_mode else DARK_THEME,
                  category_orders={"host": sorted(set(counts['host'])),
                                   "flow_type": sorted(set(counts['flow_type']))})
-    fig.update_yaxes(ticksuffix="%", title="Percent of max weight running")
+    if any_zero_maxima:
+        fig.update_yaxes(title="Total weight running")
+    else:
+        fig.update_yaxes(ticksuffix="%", title="Percent of max weight running")
     fig.update_xaxes(title="Server")
     figs = [dcc.Graph(figure=fig)]
     return figs

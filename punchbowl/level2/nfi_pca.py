@@ -372,7 +372,10 @@ def _load_one_file(path: str, downsample_factor: int,
     """
     if not os.path.exists(path):
         return "missing"
-    cube = load_ndcube_from_fits(path, include_uncertainty=True, include_provenance=False, dtype=np.float32)
+    try:
+        cube = load_ndcube_from_fits(path, include_uncertainty=True, include_provenance=False, dtype=np.float32)
+    except: # noqa: E722
+        return None
     if cube.meta["BADPKTS"].value or cube.meta["DATAP25"].value > too_bright_threshold:
         return None
 

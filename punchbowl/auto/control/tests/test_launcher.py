@@ -42,21 +42,21 @@ def session_fn(session):
                        date_obs=datetime.now(UTC))
 
     level0_planned_flow = Flow(flow_id=1,
-                               flow_level=0,
+                               flow_level="0",
                                flow_type='level0',
                                state='planned',
                                creation_time=datetime(2023, 2, 2, 0, 0, 0),
                                priority=5)
 
     level1_planned_flow = Flow(flow_id=2,
-                               flow_level=1,
+                               flow_level="1",
                                flow_type='level1_early',
                                state='planned',
                                creation_time=datetime(2023, 2, 2, 0, 0, 0),
                                priority=2)
 
     level1_planned_flow2 = Flow(flow_id=3,
-                               flow_level=1,
+                               flow_level="1",
                                flow_type='level1_early',
                                state='planned',
                                creation_time=datetime(2023, 2, 2, 0, 0, 0),
@@ -89,7 +89,7 @@ def session_fn(session):
     session.add(health_record2)
 
 
-db = create_mysql_fixture(Base, session_fn, session=True)
+db = create_mysql_fixture(Base, session_fn, session=True, scope='function')
 db_empty = create_mysql_fixture(Base, session=True)
 
 @pytest.fixture
@@ -111,6 +111,10 @@ def only_some_enabled_flows():
 @pytest.fixture()
 def flow_names_after_launch():
     return {}
+
+@pytest.fixture()
+def flow_names_after_launch_multihost():
+    return {'level0': 'level0-' + get_hostname()}
 
 def test_load_flow_data():
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
@@ -145,6 +149,8 @@ def test_gather_queued_flows(db, flow_weights, flow_batch_sizes, enabled_flows, 
     assert count_per_type["level1_early"] == 2
     assert selected_weight == 5
     assert number_of_flows == 3
+
+def test_gather_queued_flows_lower_limit(db, flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch):
     planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
         db, 3, 3, flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch)
     assert len(planned_ids) == 2
@@ -156,16 +162,7 @@ def test_gather_queued_flows(db, flow_weights, flow_batch_sizes, enabled_flows, 
 def test_gather_queued_flows_with_mixed_hosts(db, flow_weights, flow_batch_sizes, only_some_enabled_flows,
                                               flow_names_after_launch):
     planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
-        db, 6, 3, flow_weights, flow_batch_sizes, only_some_enabled_flows,
-        flow_names_after_launch)
-    assert len(planned_ids) == 1
-    assert count_per_type["level0"] == 1
-    assert count_per_type["level1_early"] == 0
-    assert selected_weight == 1
-    assert number_of_flows == 1
-    planned_ids, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
-        db, 3, 3, flow_weights, flow_batch_sizes, only_some_enabled_flows,
-        flow_names_after_launch)
+        db, 6, 3, flow_weights, flow_batch_sizes, only_some_enabled_flows, flow_names_after_launch)
     assert len(planned_ids) == 1
     assert count_per_type["level0"] == 1
     assert count_per_type["level1_early"] == 0
@@ -266,6 +263,17 @@ def test_filter_for_launchable_flows_with_empty_db(db_empty, flow_weights, enabl
             weight_planned, weight_running, max_weight_running, math.inf, 20, 100, running_count)
         assert ready_to_launch_weight == 0
         assert max_flows_to_launch == 20
+
+
+def test_gather_flows_multihost(db, flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch_multihost):
+    with prefect_test_harness(), disable_run_logger():
+        flows, tags_by_flow, selected_weight, number_of_flows, count_per_type = gather_planned_flows.fn(
+            db, 100, 100, flow_weights, flow_batch_sizes, enabled_flows, flow_names_after_launch_multihost)
+        assert len(flows) == 3
+        print(flows)
+        l0_flow = [flow_batch[0] for flow_batch in flows if flow_batch and flow_batch[0].flow_level == "0"][0]
+        assert l0_flow.flow_type == 'level0-' + get_hostname()
+        assert l0_flow.state == 'launching'
 
 
 def test_anything_should_be_launched(db):

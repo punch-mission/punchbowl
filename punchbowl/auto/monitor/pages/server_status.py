@@ -91,7 +91,10 @@ def update_queue_status(_: int, light_mode: bool) -> list:
     config = load_pipeline_configuration()
     flow_to_host = {}
     for flow in config['flows']:
-        flow_to_host[flow] = config['flows'][flow]['run-on'].split(',')
+        hosts = config['flows'][flow]['run-on'].split(',')
+        flow_to_host[flow] = hosts
+        for host in hosts:
+            flow_to_host[f"{flow}-{host}"] = [host]
 
     query = select(Flow).where(Flow.state == 'planned')
 
@@ -109,6 +112,12 @@ def update_queue_status(_: int, light_mode: bool) -> list:
     full_percentage = []
     max_counts = []
     for flow_type, count in zip(counts['flow_type'], counts['count']):
+        if flow_type not in config['flows'] and '-' in flow_type:
+            maybe_name = '-'.join(flow_type.split('-')[:-1])
+            maybe_host = flow_type.split('-')[-1]
+            if (maybe_name in config['flows']
+                    and maybe_host in config['flows'][maybe_name].get('run-on', '').split(',')):
+                flow_type = maybe_name
         max_scheduled = get_max_flows_to_schedule(config, flow_type)
         max_counts.append(max_scheduled)
         full_percentage.append(count / max_scheduled * 100)

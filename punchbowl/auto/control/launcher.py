@@ -23,6 +23,40 @@ from punchbowl.prefect import get_logger
 def gather_planned_flows(session: Session, weight_to_launch: float, max_flows_to_launch: int,
                          flow_weights: dict[str, float], flow_batch_sizes: dict[str, int], enabled_flows: list,
                          flow_names_after_launch: dict[str, str]) -> tuple[list, dict, float, int, dict]:
+    """
+    Decide which flows a launcher run will run.
+
+    Parameters
+    ----------
+    session : Session
+        Database session
+    weight_to_launch : float
+        Maximum amount of weight to select
+    max_flows_to_launch : int
+        Maximum number of flows to launch
+    flow_weights : dict[str, float]
+        Mapping giving the weight for an instance of each flow type
+    flow_batch_sizes : dict[str, int]
+        Mapping giving the configured batch size for each flow type
+    enabled_flows : list
+        List of enabled flow types
+    flow_names_after_launch : dict[str, str]
+        Mapping converting pre-launch flow names to post-launch flow names (for flows which run on multiple servers, and
+         so get the server name appended to the flow name when assigned to a server for launching).
+
+    Returns
+    -------
+    selected_flows : list
+        The (batched) flow runs to launch
+    tags_by_flow : dict
+        Tags to add to each flow run
+    selected_weight : float
+        The sum of the weights of each selected flow
+    number_of_flows : int
+        The total number of selected flows (which isn't the length of `selected_flows` if runs are batched)
+    count_per_type : dict
+        The number of runs by flow type
+    """
     # We'll have to grab a bunch of possible flows to launch from the DB, and then on our end apply the weights and the
     # maximum-weight limit. But we can use the smallest weight to set an upper bound on how many launchable flows to
     # retrieve.
@@ -87,7 +121,32 @@ def gather_planned_flows(session: Session, weight_to_launch: float, max_flows_to
 
 
 @task(cache_policy=NO_CACHE)
-def count_flows(session, weights, enabled_flows, flow_names_after_launch):
+def count_flows(session: Session, weights: dict, enabled_flows: list, flow_names_after_launch: dict
+                ) -> tuple[int, int, float, float]:
+    """
+    Count the running flows on a server.
+
+    Parameters
+    ----------
+    session : Session
+        The database session
+    weights : dict
+        Mapping from flow type to per-run weight
+    enabled_flows : list
+        List of enabled flow types
+    flow_names_after_launch
+
+    Returns
+    -------
+    n_running : int
+        The number of flows currently running on this server
+    n_planned : int
+        The number flows in the "planned" state for flow types this server runs
+    weight_planned : float
+        The total weight of flows in the "planned" state for flow types this server runs
+    weight_running : float
+        The total weight of flows currently running on this server
+    """
     n_planned, n_running = 0, 0
     weight_planned, weight_running = 0, 0
     rows = session.execute(
@@ -112,6 +171,18 @@ def count_flows(session, weights, enabled_flows, flow_names_after_launch):
 
 @task(cache_policy=NO_CACHE)
 def escalate_long_waiting_flows(session: Session, pipeline_config: dict, enabled_flows: list[str]) -> None:
+    """
+    Escalate the priority of flows that have been waiting (in a "planned" state) longer than a configured threshold.
+
+    Parameters
+    ----------
+    session : Session
+        The database session
+    pipeline_config : dict
+        The pipeline configuration
+    enabled_flows : list[str]
+        List of enabled flow types
+    """
     for flow_type in enabled_flows:
         for max_seconds_waiting, escalated_priority in zip(
             pipeline_config["flows"][flow_type]["priority"]["seconds"],

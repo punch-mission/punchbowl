@@ -36,6 +36,26 @@ SCIENCE_LEVEL1_QUICK_OUTPUT_TYPE_CODES = ["QR"]
 
 @task(cache_policy=NO_CACHE)
 def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99):
+    """
+    Query for run-able L0 files (with all required calibration files).
+
+    Parameters
+    ----------
+    session : Session
+        Database session
+    pipeline_config : dict
+        Pipeline configuration dictionary
+    reference_time : datetime
+        Not used
+    max_n : float, optional
+        Maximum number of flow runs to return
+
+    Returns
+    -------
+    list[list[File]]
+        The selected input file for each flow run to be scheduled.
+
+    """
     flow_name = "level1_early"
     logger = get_logger()
     file_types = [t for t in SCIENCE_LEVEL0_TYPE_CODES

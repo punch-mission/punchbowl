@@ -35,7 +35,7 @@ SCIENCE_LEVEL1_QUICK_INPUT_TYPE_CODES = ["XR"]
 SCIENCE_LEVEL1_QUICK_OUTPUT_TYPE_CODES = ["QR"]
 
 @task(cache_policy=NO_CACHE)
-def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99,
+def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=1e6,
                                    flow_name: str = "level1_early"):
     logger = get_logger()
     file_types = [t for t in SCIENCE_LEVEL0_TYPE_CODES
@@ -47,34 +47,26 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
     start_minute = pipeline_config['flows'][flow_name].get('start_minute', None)
     stop_minute = pipeline_config['flows'][flow_name].get('stop_minute', None)
 
-    ready = (session.query(File).filter(File.file_type.in_(file_types))
+    ready_files_query = (session.query(File).filter(File.file_type.in_(file_types))
                                 .filter(File.state == "created")
                                 .filter(File.level == "0"))
 
     if sorted(obs) != ['1', '2', '3', '4']:
-        ready = ready.filter(File.observatory.in_(obs))
+        ready_files_query = ready_files_query.filter(File.observatory.in_(obs))
 
     if start_minute is not None:
-        ready = ready.filter(func.minute(File.date_obs) >= int(start_minute))
+        ready_files_query = ready_files_query.filter(func.minute(File.date_obs) >= int(start_minute))
     if stop_minute is not None:
-        ready = ready.filter(func.minute(File.date_obs) <= int(stop_minute))
+        ready_files_query = ready_files_query.filter(func.minute(File.date_obs) <= int(stop_minute))
 
     target_date = pipeline_config.get("target_date")
     target_date = parse_datetime_str(target_date) if target_date else None
     dt = func.abs(func.timestampdiff(text("second"), File.date_obs, target_date)) if target_date else None
     if target_date:
-        ready = ready.order_by(dt.asc())
+        ready_files_query = ready_files_query.order_by(dt.asc())
     else:
-        ready = ready.order_by(File.date_obs.desc())
-    ready = ready.all()
+        ready_files_query = ready_files_query.order_by(File.date_obs.desc())
 
-    quartic_models = get_quartic_model_paths(ready, pipeline_config, session)
-    vignetting_functions = get_vignetting_function_paths(ready, pipeline_config, session)
-    distortion_paths = get_distortion_paths(ready, pipeline_config, session)
-    psf_paths = get_psf_model_paths(ready, pipeline_config, session)
-    mask_files = get_mask_files(ready, pipeline_config, session)
-    L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
-    more_L0_impossible_cutoff = datetime.now() - timedelta(days=L0_impossible_after_days)
     actually_ready = []
     missing_quartic = []
     missing_vignetting = []
@@ -82,38 +74,62 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
     missing_sequence = []
     missing_distortion = []
     missing_psf = []
-    for f, quartic_model, vignetting_function, mask_file, distortion_file, psf_file in zip(
-            ready, quartic_models, vignetting_functions, mask_files, distortion_paths, psf_paths):
-        despike_neighbors = get_polarization_sequence(f, session=session)
-
-        if quartic_model is None:
-            missing_quartic.append(f)
-            continue
-        if vignetting_function[0] is None:
-            missing_vignetting.append(f)
-            continue
-        if mask_file is None:
-            missing_mask.append(f)
-            continue
-        if len(despike_neighbors) <= 2 and f.date_obs > more_L0_impossible_cutoff:
-            missing_sequence.append(f)
-            continue
-        if distortion_file is None:
-            missing_distortion.append(f)
-            continue
-        if psf_file is None:
-            missing_psf.append(f)
-            continue
-        f.distortion_path = distortion_file
-        f.psf_path = psf_file
-        # Smuggle the identified models out of this function
-        f.quartic_model = quartic_model
-        f.vignetting_functions = vignetting_function
-        f.mask_file = mask_file
-        f.despike_neighbors = despike_neighbors
-        actually_ready.append([f])
-        if len(actually_ready) >= max_n:
+    # We avoid pulling *all* the unprocessed L0s by capping the number returned by the query. Since we might not end up
+    # scheduling all of them, we loop and paginate: we query for the first N files, process those, and then if we need
+    # to schedule more we query for the next N files, and so on.
+    page = 0
+    # For one set of timings, it appears there's a flat cost of ~7 seconds to run this query, just for the DB to find
+    # and sort the records. Retrieving *all* the records takes another ~40 s, but retrieving max_n vs 10*max_n is a
+    # small difference compared to that flat cost. So let's try to over-shoot and get everything we could possibly
+    # need in the first query, and only repeat the loop and make a second query as a backup plan.
+    page_size = max_n * 10
+    while len(actually_ready) < max_n:
+        ready = ready_files_query.limit(page_size).offset(page * page_size).all()
+        if not len(ready):
+            # We've gotten through everything!
             break
+
+        quartic_models = get_quartic_model_paths(ready, pipeline_config, session)
+        vignetting_functions = get_vignetting_function_paths(ready, pipeline_config, session)
+        distortion_paths = get_distortion_paths(ready, pipeline_config, session)
+        psf_paths = get_psf_model_paths(ready, pipeline_config, session)
+        mask_files = get_mask_files(ready, pipeline_config, session)
+        L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
+        more_L0_impossible_cutoff = datetime.now() - timedelta(days=L0_impossible_after_days)
+
+        for f, quartic_model, vignetting_function, mask_file, distortion_file, psf_file in zip(
+                ready, quartic_models, vignetting_functions, mask_files, distortion_paths, psf_paths):
+            despike_neighbors = get_polarization_sequence(f, session=session)
+
+            if quartic_model is None:
+                missing_quartic.append(f)
+                continue
+            if vignetting_function[0] is None:
+                missing_vignetting.append(f)
+                continue
+            if mask_file is None:
+                missing_mask.append(f)
+                continue
+            if len(despike_neighbors) <= 2 and f.date_obs > more_L0_impossible_cutoff:
+                missing_sequence.append(f)
+                continue
+            if distortion_file is None:
+                missing_distortion.append(f)
+                continue
+            if psf_file is None:
+                missing_psf.append(f)
+                continue
+            f.distortion_path = distortion_file
+            f.psf_path = psf_file
+            # Smuggle the identified models out of this function
+            f.quartic_model = quartic_model
+            f.vignetting_functions = vignetting_function
+            f.mask_file = mask_file
+            f.despike_neighbors = despike_neighbors
+            actually_ready.append([f])
+            if len(actually_ready) >= max_n:
+                break
+        page += 1
     if missing_quartic:
         logger.info("Missing quartic files for " + summarize_files_missing_cal_files(missing_quartic))
     if missing_vignetting:

@@ -1,0 +1,1 @@
+Ignore complex data for daily operator visualization purposes.

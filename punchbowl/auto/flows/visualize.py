@@ -16,6 +16,14 @@ from punchbowl.data.punch_io import load_ndcube_from_fits, write_ndcube_to_quick
 from punchbowl.data.visualize import load_quicklook_scaling
 from punchbowl.prefect import get_logger
 
+PRODUCT_CODES_IGNORE = ["TM1", "TM2", "TM3", "TM4",
+                        "TZ1", "TZ2", "TZ3", "TZ4",
+                        "TP1", "TP2", "TP3", "TP4",
+                        "SM1", "SM2", "SM3", "SM4",
+                        "SZ1", "SZ2", "SZ3", "SZ4",
+                        "SP1", "SP2", "SP3", "SP4",
+                        "SR1", "SR2", "SR3", "SR4"]
+
 
 @task(cache_policy=NO_CACHE)
 def visualize_query_ready_files(session, pipeline_config: dict, reference_time: datetime, lookback_hours: float = 24):
@@ -26,6 +34,8 @@ def visualize_query_ready_files(session, pipeline_config: dict, reference_time: 
     levels = ["0", "1", "2", "3", "Q"]
     for level in levels:
         product_codes = construct_all_product_codes(level=level)
+        # Ignore static and dynamic stray light models, which are multi-dimensional in nature
+        product_codes = [code for code in product_codes if code not in PRODUCT_CODES_IGNORE]
         for product_code in product_codes:
             product_ready_files = (session.query(File)
                                     .filter(File.state.in_(["created", "progressed", "quickpunched"]))

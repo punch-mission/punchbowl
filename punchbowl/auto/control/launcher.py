@@ -97,7 +97,7 @@ def count_flows(session, weights, enabled_flows, flow_names_after_launch):
         .group_by(Flow.state, Flow.flow_type),
     ).all()
 
-    enabled_flows_as_launched = [flow_names_after_launch.get(flow, flow) for flow in flow_names_after_launch]
+    enabled_flows_as_launched = [flow_names_after_launch.get(flow, flow) for flow in enabled_flows]
 
     # We won't get results for states that aren't actually in the database, so we have to inspect the returned rows
     for state, flow_type, count in rows:

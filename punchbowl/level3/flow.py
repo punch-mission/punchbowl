@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 import numpy as np
 from astropy.nddata import StdDevUncertainty
+from dateutil.parser import parse as parse_datetime_str
 
 from punchbowl.auto.control.cache_layer.loader_base_class import DataLoader
 from punchbowl.data import load_ndcube_from_fits, load_trefoil_wcs
@@ -384,10 +385,11 @@ def generate_level3_low_noise_flow(data_list: list[str | PUNCHCube],
 
 @punch_flow
 def generate_level3_velocity_flow(files: list[str],
+                                  reference_time: str | datetime,
                                   delta_t: int = 12,
                                   sparsity: int = 2,
                                   n_ofs: int = 151,
-                                  ycens: np.ndarray | None = None,
+                                  ycens: list | np.ndarray | None = None,
                                   rbands: list[int] | None = None,
                                   output_filename: str | None = None) -> list[PUNCHCube]:
     """
@@ -397,13 +399,15 @@ def generate_level3_velocity_flow(files: list[str],
     ----------
     files : list[str]
         Input files used for velocity tracking
+    reference_time : str | datetime
+        The nominal observation time to use for the output cube
     delta_t : int, optional
         Time offset in frames between images, by default 12
     sparsity : int, optional
         Frame skip interval for averaging, by default 2
     n_ofs : int, optional
         Number of spatial offsets for cross-correlation, by default 151
-    ycens : np.ndarray | None, optional
+    ycens : list | np.ndarray | None, optional
         Radial band centers in solar radii, by default None
     rbands : list[int] | None, optional
         Indices of radial bands to visualize, by default None
@@ -418,8 +422,15 @@ def generate_level3_velocity_flow(files: list[str],
     """
     logger = get_logger()
 
+    if isinstance(reference_time, str):
+        reference_time = parse_datetime_str(reference_time)
+
+    if isinstance(ycens, list):
+        ycens = np.array(ycens)
+
     logger.info("Generating velocity data product")
     velocity_data = track_velocity(files=files,
+                                   reference_time=reference_time,
                                    delta_t=delta_t,
                                    sparsity=sparsity,
                                    n_ofs=n_ofs,

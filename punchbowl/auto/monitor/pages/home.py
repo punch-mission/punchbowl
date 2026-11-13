@@ -353,6 +353,7 @@ def update_machine_stats(n, machine_stat, start_date, end_date, smooth_window, h
              )
     if host != 'all':
         query = query.where(Health.host == host)
+    query = query.order_by(Health.datetime.asc())
     with get_database_session() as session:
         df = pd.read_sql_query(query, session.connection())
 

@@ -321,6 +321,10 @@ def write_ndcube_to_fits(cube: PUNCHCube,
         )
         raise ValueError(msg)
 
+    if not overwrite and os.path.exists(filename):
+        raise OSError(
+            f'File {filename} already exists. If you mean to replace it then use the argument "overwrite=True".')
+
     cube.meta["FILENAME"] = os.path.basename(filename)
 
     meta = cube.meta if skip_stats else _update_statistics(cube)
@@ -344,11 +348,10 @@ def write_ndcube_to_fits(cube: PUNCHCube,
                                             quantize_method=2)
         hdul.insert(2, hdu_uncertainty)
     hdul.append(hdu_provenance)
-
     # We write the FITS file to an in-memory buffer, which then gets written to disk. Test show that over NFS this
     # halves the write-out time.
     buffer = io.BytesIO()
-    hdul.writeto(buffer, overwrite=overwrite, checksum=True)
+    hdul.writeto(buffer, checksum=True)
     hdul.close()
     if write_hash:
         # Generate a hash using the data in the buffer

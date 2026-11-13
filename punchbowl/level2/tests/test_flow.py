@@ -95,17 +95,11 @@ def test_spacecraft_location_metadata_not_empty(sample_ndcube,tmpdir):
 
     # Check if spacecraft location & environment headers are empty (error message should show value of keyword if fails)
     spacecraft_location_keys = ["GEOD_LAT","GEOD_LON","GEOD_ALT","HGLT_OBS","HGLN_OBS","CRLT_OBS","CRLN_OBS","DSUN_OBS","HEEX_OBS",
-    "HEEY_OBS","HEEZ_OBS","HCIX_OBS","HCIY_OBS","HCIZ_OBS","HEQX_OBS","HEQY_OBS","HEQZ_OBS"]
+    "HEEY_OBS","HEEZ_OBS","HCIX_OBS","HCIY_OBS","HCIZ_OBS","HEQX_OBS","HEQY_OBS","HEQZ_OBS","GSEX_OBS", "GSEY_OBS", "GSEZ_OBS",
+    "GSEX_VOB", "GSEY_VOB", "GSEZ_VOB", "GEIX_OBS", "GEIY_OBS", "GEIZ_OBS", "GEIX_VOB", "GEIY_VOB", "GEIZ_VOB"]
     for keyword in spacecraft_location_keys:
         assert output[0].meta[keyword].value is not None and not "", f"{keyword}: {output[0].meta[keyword].value}"
     # Check Moon-related headers
     moon_headers = ["MOONDIST","MOON_X","MOON_Y"]
     for keyword in moon_headers:
-        assert output[0].meta[keyword].value is not None and not "", f"{keyword}: {output[0].meta[keyword].value}"
-
-    # TODO: Following is causing test failures
-    # --Headers not included in "set_spacecraft_location_to_earth()" function as of 11/11/2026--
-    spacecraft_location_keys2 = ["GEOX_OBS", "GEOY_OBS", "GEOZ_OBS", "GEOX_VOB", "GEOY_VOB", "GEOZ_VOB", "GSEX_OBS", "GSEY_OBS", "GSEZ_OBS",
-    "GSEX_VOB", "GSEY_VOB", "GSEZ_VOB", "GEIX_OBS", "GEIY_OBS", "GEIZ_OBS", "GEIX_VOB", "GEIY_VOB", "GEIZ_VOB"]
-    for keyword in spacecraft_location_keys2:
         assert output[0].meta[keyword].value is not None and not "", f"{keyword}: {output[0].meta[keyword].value}"

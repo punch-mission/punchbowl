@@ -901,8 +901,26 @@ def set_spacecraft_location_to_earth(input_data: PUNCHCube) -> PUNCHCube:
     input_data.meta["GEOD_LON"] = 0.
     input_data.meta["GEOD_ALT"] = 0.
 
-    coord = get_earth(time_obs)
+    coord = get_earth(time_obs,include_velocity=True)
     coord.observer = "earth"
+
+    # S/C Geocentric Solar Ecliptic
+    input_data.meta["GSEX_OBS"] = coord.geocentricsolarecliptic.cartesian.x.to(u.m).value
+    input_data.meta["GSEY_OBS"] = coord.geocentricsolarecliptic.cartesian.y.to(u.m).value
+    input_data.meta["GSEZ_OBS"] = coord.geocentricsolarecliptic.cartesian.z.to(u.m).value
+
+    input_data.meta["GSEX_VOB"] = coord.geocentricsolarecliptic.velocity.d_x.to(u.m/u.s).value
+    input_data.meta["GSEY_VOB"] = coord.geocentricsolarecliptic.velocity.d_y.to(u.m/u.s).value
+    input_data.meta["GSEZ_VOB"] = coord.geocentricsolarecliptic.velocity.d_z.to(u.m/u.s).value
+
+    # S/C Geocentric Earth Equatorial
+    input_data.meta["GEIX_OBS"] = coord.geocentricearthequatorial.cartesian.x.to(u.m).value
+    input_data.meta["GEIY_OBS"] = coord.geocentricearthequatorial.cartesian.y.to(u.m).value
+    input_data.meta["GEIZ_OBS"] = coord.geocentricearthequatorial.cartesian.z.to(u.m).value
+
+    input_data.meta["GEIX_VOB"] = coord.geocentricearthequatorial.velocity.d_x.to(u.m/u.s).value
+    input_data.meta["GEIY_VOB"] = coord.geocentricearthequatorial.velocity.d_y.to(u.m/u.s).value
+    input_data.meta["GEIZ_VOB"] = coord.geocentricearthequatorial.velocity.d_z.to(u.m/u.s).value
 
     # S/C Heliographic Stonyhurst
     input_data.meta["HGLN_OBS"] = coord.heliographic_stonyhurst.lon.value

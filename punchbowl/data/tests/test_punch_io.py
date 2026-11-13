@@ -85,6 +85,12 @@ def test_write_data(sample_ndcube, tmpdir):
     write_ndcube_to_fits(cube, test_path)
     assert os.path.isfile(test_path)
 
+    with pytest.raises(OSError, match="already exists"):
+        # This should fail
+        write_ndcube_to_fits(cube, test_path, overwrite=False)
+    # This should succeed
+    write_ndcube_to_fits(cube, test_path, overwrite=True)
+
     with fits.open(test_path) as hdul:
         assert hdul[1].header['EXTNAME'] == "PRIMARY DATA ARRAY"
         assert hdul[2].header['EXTNAME'] == "UNCERTAINTY ARRAY"

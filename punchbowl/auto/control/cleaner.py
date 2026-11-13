@@ -145,7 +145,7 @@ def reset_revivable_flows(logger, session, pipeline_config):
         ql_path = Path(child.directory(pipeline_config["ql_root"])) / child.filename()
         if output_path.exists():
             os.remove(output_path)
-        sha_path = str(output_path) + ".sha"
+        sha_path = str(output_path) + ".sha256"
         if os.path.exists(sha_path):
             os.remove(sha_path)
         jp2_path = ql_path.with_suffix(".jp2")

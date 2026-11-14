@@ -94,7 +94,7 @@ def test_spacecraft_location_metadata_not_empty(sample_ndcube,tmpdir):
         output = level2_core_flow(paths, voters, trefoil_wcs=trefoil_wcs[::8, ::8], trefoil_shape=(512, 512))
 
     # Check if spacecraft location & environment headers are empty (error message should show value of keyword if fails)
-    spacecraft_location_keys = ["GEOD_LAT","GEOD_LON","GEOD_ALT","HGLT_OBS","HGLN_OBS","CRLT_OBS","CRLN_OBS","DSUN_OBS","HEEX_OBS",
+    spacecraft_location_keys = ["GEOD_LAT","GEOD_LON","GEOD_ALT","GEOX_OBS","GEOY_OBS","GEOZ_OBS","HGLT_OBS","HGLN_OBS","CRLT_OBS","CRLN_OBS","DSUN_OBS","HEEX_OBS",
     "HEEY_OBS","HEEZ_OBS","HCIX_OBS","HCIY_OBS","HCIZ_OBS","HEQX_OBS","HEQY_OBS","HEQZ_OBS","GSEX_OBS", "GSEY_OBS", "GSEZ_OBS",
     "GSEX_VOB", "GSEY_VOB", "GSEZ_VOB", "GEIX_OBS", "GEIY_OBS", "GEIZ_OBS", "GEIX_VOB", "GEIY_VOB", "GEIZ_VOB"]
     for keyword in spacecraft_location_keys:

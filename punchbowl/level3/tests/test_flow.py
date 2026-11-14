@@ -176,3 +176,41 @@ def test_level3_flow_CTM_runs_with_filenames(sample_ndcube, tmpdir, prefect_test
     assert isinstance(output[0], PUNCHCube)
     assert output[0].meta['TYPECODE'].value == 'CT'
     assert output[0].meta['OBSCODE'].value == 'M'
+
+
+def test_level3_metadata_not_empty(sample_ndcube,tmpdir,prefect_test_fixture):
+    data_list = sample_ndcube(shape=(10, 10), code="CIM", level="3")
+
+    before_starfield_model = sample_ndcube(shape=(10, 10), code="CSM", level="3")
+    before_starfield_model_path = os.path.join(tmpdir, f"before_starfield.fits")
+    before_starfield_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1)
+                                                  - timedelta(hours=5))
+    write_ndcube_to_fits(before_starfield_model, before_starfield_model_path, write_hash=False, skip_stats=True)
+
+    after_starfield_model = sample_ndcube(shape=(10, 10), code="CSM", level="3")
+    after_starfield_model_path = os.path.join(tmpdir, f"after_starfield.fits")
+    after_starfield_model.meta['DATE-OBS'] = str(datetime(2024, 2, 22, 16, 0, 1)
+                                                 + timedelta(hours=5))
+    write_ndcube_to_fits(after_starfield_model, after_starfield_model_path, write_hash=False, skip_stats=True)
+
+    output = level3_core_flow([data_list],
+                                 None,
+                                 before_starfield_model_path,
+                                 after_starfield_model_path,
+                                 output_filename = None)
+
+    assert output[0].meta['CALFCOR1'] is not None and not "", "CALFCOR1 is empty"
+    assert output[0].meta['CALFCOR2'] is not None and not "", "CALFCOR2 is empty"
+
+    # Check if spacecraft location & environment headers are empty (error message should show value of keyword if fails)
+    spacecraft_location_keys = ["GEOD_LAT","GEOD_LON","GEOD_ALT","GEOX_OBS","GEOY_OBS","GEOZ_OBS","HGLT_OBS","HGLN_OBS","CRLT_OBS","CRLN_OBS","DSUN_OBS","HEEX_OBS",
+    "HEEY_OBS","HEEZ_OBS","HCIX_OBS","HCIY_OBS","HCIZ_OBS","HEQX_OBS","HEQY_OBS","HEQZ_OBS","GSEX_OBS", "GSEY_OBS", "GSEZ_OBS",
+    "GSEX_VOB", "GSEY_VOB", "GSEZ_VOB", "GEIX_OBS", "GEIY_OBS", "GEIZ_OBS", "GEIX_VOB", "GEIY_VOB", "GEIZ_VOB"]
+    for keyword in spacecraft_location_keys:
+        assert output[0].meta[keyword].value is not None and not "", f"{keyword}: {output[0].meta[keyword].value}"
+
+    # TODO: The following is causing test failures
+    # Check Moon-related headers # TODO: I'm unsure if this is just because of use of sample_ndcube
+    moon_headers = ["MOONDIST","MOON_X","MOON_Y"]
+    for keyword in moon_headers:
+        assert output[0].meta[keyword].value is not None and not "", f"{keyword}: {output[0].meta[keyword].value}"

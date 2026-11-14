@@ -901,6 +901,10 @@ def set_spacecraft_location_to_earth(input_data: PUNCHCube) -> PUNCHCube:
     input_data.meta["GEOD_LON"] = 0.
     input_data.meta["GEOD_ALT"] = 0.
 
+    input_data.meta["GEOX_OBS"] = 0.
+    input_data.meta["GEOY_OBS"] = 0.
+    input_data.meta["GEOZ_OBS"] = 0.
+
     coord = get_earth(time_obs,include_velocity=True)
     coord.observer = "earth"
 

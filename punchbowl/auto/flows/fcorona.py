@@ -11,8 +11,10 @@ from punchbowl import __version__
 from punchbowl.auto.control.db import File, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
-from punchbowl.auto.control.util import batched, get_database_session, load_pipeline_configuration
-from punchbowl.auto.flows.util import file_name_to_full_path, get_max_flows_to_schedule
+from punchbowl.auto.control.util import batched, get_database_session, group_files_by_time, load_pipeline_configuration
+from punchbowl.auto.flows.level2 import group_l2_inputs
+from punchbowl.auto.flows.util import apply_stride, file_name_to_full_path, get_max_flows_to_schedule
+from punchbowl.constants import CLEAR_CADENCE_MINUTES
 from punchbowl.level3.f_corona_model import construct_f_corona_model
 from punchbowl.prefect import get_logger
 
@@ -42,6 +44,19 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
                   .filter(File.outlier == 0)
                   )
 
+    base_L0_query = (session.query(File)
+                     .filter(File.state.in_(["created", "progressed"]))
+                     .filter(File.observatory == ('4'
+                             if reference_file.observatory == 'N'
+                             else reference_file.observatory))
+                     .filter(File.level == "0")
+                     .filter(File.outlier == 0)
+                     )
+    if polarized:
+        base_L0_query = base_L0_query.filter(File.file_type.in_(["PP", "PM", "PZ"]))
+    else:
+        base_L0_query = base_L0_query.filter(File.file_type == "CR")
+
     first_half_inputs = (base_query
                          .filter(File.date_obs >= t_start)
                          .filter(File.date_obs <= reference_time)
@@ -54,23 +69,61 @@ def f_corona_background_query_ready_files(session, pipeline_config: dict, refere
                           .limit(max_files_per_half * count_multiplier).all())
 
     if file_stride > 1:
-        random.seed(1)
-        # Apply a stride that doesn't phase weirdly with where we are in a roll position
-        first_half_inputs = [random.choice(pair) for pair in batched(first_half_inputs, file_stride)]
-        second_half_inputs = [random.choice(pair) for pair in batched(second_half_inputs, file_stride)]
+        if pol_type == 'nfi':
+            first_half_inputs = apply_stride(first_half_inputs, file_stride, CLEAR_CADENCE_MINUTES)
+            second_half_inputs = apply_stride(second_half_inputs, file_stride, CLEAR_CADENCE_MINUTES)
+        else:
+            random.seed(1)
+            # Apply a stride that doesn't phase weirdly with where we are in a roll position
+            first_half_inputs = [random.choice(pair) for pair in batched(first_half_inputs, file_stride)]
+            second_half_inputs = [random.choice(pair) for pair in batched(second_half_inputs, file_stride)]
 
     enough_L2s = len(first_half_inputs) > min_files_per_half and len(second_half_inputs) > min_files_per_half
     if enough_L2s:
         all_ready_files = first_half_inputs + second_half_inputs
         logger.info(f"{len(all_ready_files)} Level 2 files will be used for F corona estimation.")
         return [f for f in all_ready_files]
-    else:
-        status = []
-        status.append("not enough inputs")
-        status.append(f"first half: {len(first_half_inputs)} files")
-        status.append(f"second half: {len(second_half_inputs)} files")
-        status.append(f"looked for inputs between {t_start.isoformat(' ')} and {t_end.isoformat(' ')}")
-        logger.info(f'{reference_file.filename()}: ' + '; '.join(status))
+
+    status = []
+    status.append("not enough inputs")
+    status.append(f"first half: {len(first_half_inputs)} / {min_files_per_half} files")
+    status.append(f"second half: {len(second_half_inputs)} / {min_files_per_half} files")
+    status.append(f"looked for inputs between {t_start.isoformat(' ')} and {t_end.isoformat(' ')}")
+    logger.info(f'{reference_file.filename()}: ' + '; '.join(status))
+
+    L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
+    more_L0_impossible = datetime.now() - t_end > timedelta(days=L0_impossible_after_days)
+
+    if more_L0_impossible:
+        first_half_L0s = (base_L0_query
+                          .filter(File.date_obs >= t_start)
+                          .filter(File.date_obs <= reference_time)
+                          .order_by(File.date_obs.asc()).all())
+        second_half_L0s = (base_L0_query
+                           .filter(File.date_obs >= reference_time)
+                           .filter(File.date_obs <= t_end)
+                           .order_by(File.date_obs.asc()).all())
+
+        if pol_type == 'nfi':
+            first_half_L0s = apply_stride(first_half_L0s, file_stride, 8)
+            second_half_L0s = apply_stride(second_half_L0s, file_stride, 8)
+            count_multiplier = 1
+        elif polarized:
+            # Group into polarization triplets and exclude incomplete triplets
+            first_half_L0s = group_l2_inputs(first_half_L0s)
+            second_half_L0s = group_l2_inputs(second_half_L0s)
+
+        if (len(first_half_L0s) < min_files_per_half * count_multiplier
+                or len(second_half_L0s) < min_files_per_half * count_multiplier):
+            reference_file.state = "impossible"
+            # Record who deemed this to be impossible
+            reference_file.file_version = pipeline_config["file_version"]
+            reference_file.software_version = __version__
+            reference_file.date_created = datetime.now()
+            logger.info(f"{reference_file.filename()} marked impossible. First half {len(first_half_L0s)} / "
+                        f"{min_files_per_half * count_multiplier}, second half {len(second_half_L0s)} / "
+                        f"{min_files_per_half * count_multiplier}")
+
     return []
 
 
@@ -165,6 +218,10 @@ def construct_f_corona_background_scheduler_flow(pipeline_config_path=None, sess
         t = t0 + i * increment
         for model_type in ["CF", "PF"]:
             for observatory in ["1", "2", "3", "N"]:
+                if model_type == "PF" and observatory == "N":
+                    # We don't do polarized NFI right now, so we can speed up scheduler runs by skipping it.
+                    # TODO: When we get polarized NFI working, remove this
+                    continue
                 key = (model_type, observatory, t)
                 model = existing_models.get(key)
                 if model is None:

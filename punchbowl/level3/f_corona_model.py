@@ -221,7 +221,7 @@ def subtract_f_corona_background(data_object: PUNCHCube,
 def subtract_f_corona_background_task(observation: PUNCHCube,  #noqa: C901
                                       before_f_background_models: list[PUNCHCube | str],
                                       after_f_background_models: list[PUNCHCube | str],
-                                      allow_extrapolation: bool = False) -> PUNCHCube:
+                                      allow_extrapolation: bool = True) -> PUNCHCube:
     """
     Subtracts a background f corona model from an observation.
 

@@ -1,7 +1,9 @@
 import os
+import random
 from datetime import datetime, timedelta
 
 from punchbowl.auto.control.db import File
+from punchbowl.auto.control.util import group_files_by_time
 
 
 def file_name_to_full_path(file_name: str | None | list[str | None], root_dir: str) -> str | None | list[str | None]:
@@ -88,3 +90,45 @@ def get_max_flows_to_schedule(pipeline_config: dict, flow_type: str) -> int:
         return pipeline_config["flows"][flow_type]['concurrency_limit']
     else:
         return pipeline_config['scheduler']['max_start']
+
+
+def apply_stride(files: list[File], stride: int, actual_image_cadence_minutes: float) -> list[File]:
+    """
+    Apply a stride in a dynamic way.
+
+    When we're making a background product and we need a large time window, but using every image in that window is
+    overkill, we want to apply a stride and pick every Nth image in that time window. But if, for example,
+    part of that time window includes eclipse season, and so good files are less dense in some parts of the window,
+    we don't need to stride as much there. If only every Nth image exists and is good, we don't need to apply another
+    "take every Nth" filter---we can just take every existing file for that period.
+
+    This function takes the files in a given time range, groups them into [N * nominal image cadence - epsilon]
+    groups, and picks one image from every group. This way, portions of the larger window that have full image
+    coverage are down-sampled, but portions that have a lower image density are handled appropriately, and our final
+    image selection is more evenly spaced through the time window.
+
+    Parameters
+    ----------
+    files : list[File]
+        The files to down-select
+    stride : int
+        The down-selection factor for periods where images are at nominal cadence. This is the "we want one out of every
+        N images" number.
+    actual_image_cadence_minutes : float
+        The nominal time between images
+
+    Returns
+    -------
+    list[File]
+        The selected files.
+    """
+    files = sorted(files, key=lambda f: f.date_obs)
+    # We need to pull in the end of the group, or else we'll have the image that should start the next group
+    epsilon = 20
+    groups = group_files_by_time(files, max_duration_seconds=actual_image_cadence_minutes * 60 * stride - epsilon)
+    selected_files = []
+    random.seed(1)
+    for group in groups:
+        # Apply a stride that doesn't phase weirdly with where we are in a roll position
+        selected_files.append(random.choice(group))
+    return selected_files

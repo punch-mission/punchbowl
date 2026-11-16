@@ -65,7 +65,11 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
             specific_name = flow_name + "_scheduler_flow"
             specific_tags = config["flows"][flow_name].get("tags", [])
             specific_description = config["flows"][flow_name].get("description", "")
-            desired_host = shorten_host(config["flows"][flow_name].get("run-on", current_host))
+            desired_host = config["flows"][flow_name].get("run-on", current_host)
+            if ',' in desired_host:
+                # Pick the first host as the one to run the scheduler
+                desired_host = desired_host.split(',')[0]
+            desired_host = shorten_host(desired_host)
             flow_function = find_flow(specific_name)
             flow_deployment = flow_function.to_deployment(
                 name=specific_name,
@@ -78,7 +82,7 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
                 ),
                 parameters={"pipeline_config_path": configuration_path},
             )
-            if  desired_host == current_host:
+            if desired_host == current_host:
                 flows_to_serve.append(flow_deployment)
 
             # then we deploy the corresponding process flow
@@ -89,6 +93,14 @@ def construct_flows_to_serve(configuration_path, include_data=True, include_cont
                     limit=concurrency_value,
                     collision_strategy=ConcurrencyLimitStrategy.ENQUEUE,
                 ) if concurrency_value else None
+            desired_host = config["flows"][flow_name].get("run-on", current_host)
+            if ',' in desired_host:
+                desired_hosts = desired_host.split(',')
+                desired_hosts = [shorten_host(host) for host in desired_hosts]
+                if current_host in desired_hosts:
+                    desired_host = current_host
+                    specific_name += f"-{current_host}"
+
             flow_deployment = flow_function.to_deployment(
                 name=specific_name,
                 description="Process: " + specific_description,

@@ -1,23 +1,22 @@
-import os
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 import numpy as np
 from dateutil.parser import parse as parse_datetime_str
 from prefect import flow, task
+from prefect.cache_policies import NO_CACHE
 from sqlalchemy.orm import aliased
 
 from punchbowl import __version__
 from punchbowl.auto.control.db import File, FileRelationship, Flow
 from punchbowl.auto.control.processor import generic_process_flow_logic
 from punchbowl.auto.control.scheduler import generic_scheduler_flow_logic
-from punchbowl.auto.control.util import get_database_session, load_pipeline_configuration
 from punchbowl.auto.flows.util import file_name_to_full_path
 from punchbowl.level3.flow import generate_level3_velocity_flow
 from punchbowl.prefect import get_logger
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def level3_VAM_query_ready_files(session, pipeline_config: dict, reference_time: datetime=None, max_n: float=100) -> list:
     """Queries files ready for velocity tracking.
 
@@ -37,7 +36,7 @@ def level3_VAM_query_ready_files(session, pipeline_config: dict, reference_time:
     """
     flow_type = "level3_VAM"
     logger = get_logger()
-    min_file_count = pipeline_config["flows"]["L3_VAM"]["min_file_count"]
+    min_file_count = pipeline_config["flows"]["level3_VAM"]["min_file_count"]
 
     child = aliased(File)
     child_exists_subquery = (session.query(FileRelationship)
@@ -111,7 +110,8 @@ def level3_VAM_query_ready_files(session, pipeline_config: dict, reference_time:
     logger.info(f"{len(grouped_ready_files)} groups heading out")
     return grouped_ready_files
 
-@task
+
+@task(cache_policy=NO_CACHE)
 def level3_VAM_construct_flow_info(level3_ptm_files: list[File],
                                    level3_velocity_file: File,
                                    pipeline_config: dict,
@@ -144,11 +144,11 @@ def level3_VAM_construct_flow_info(level3_ptm_files: list[File],
     call_data = json.dumps(
         {
             "files": [ptm_file.filename() for ptm_file in level3_ptm_files],
-            "reference_time": reference_time,
+            "reference_time": level3_ptm_files[0]._reference_time.strftime("%Y-%m-%dT%H:%M:%S"),
             "delta_t": pipeline_config["flows"][flow_type].get("delta_t", 12),
             "sparsity": pipeline_config["flows"][flow_type].get("sparsity", 2),
             "n_ofs": pipeline_config["flows"][flow_type].get("n_ofs", 151),
-            "ycens": np.array(pipeline_config["flows"][flow_type].get("ycens", np.arange(30, 90, 10))),
+            "ycens": pipeline_config["flows"][flow_type].get("ycens", list(range(30, 90, 10))),
             "rbands": pipeline_config["flows"][flow_type].get("rbands", None),
         },
     )
@@ -161,7 +161,8 @@ def level3_VAM_construct_flow_info(level3_ptm_files: list[File],
         call_data=call_data,
     )
 
-@task
+
+@task(cache_policy=NO_CACHE)
 def level3_VAM_construct_file_info(level3_files: list[File], pipeline_config: dict,
                                             reference_time: datetime) -> list[File]:
     """Constructs specified file information
@@ -186,7 +187,7 @@ def level3_VAM_construct_file_info(level3_files: list[File], pipeline_config: di
         observatory="M",
         file_version=pipeline_config["file_version"],
         software_version=__version__,
-        date_obs=reference_time,
+        date_obs=level3_files[0]._reference_time,
         date_beg=min([f.date_obs for f in level3_files]),
         date_end=max([f.date_obs for f in level3_files]),
         state="planned",

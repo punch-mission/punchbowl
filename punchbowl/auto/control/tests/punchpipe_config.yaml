@@ -84,6 +84,7 @@ flows:
       seconds: [ 30, 120, 600 ]
       escalation: [ 10, 20, 30 ]
     schedule:
+    launch_weight: 1
     options:
       num_quads: 100
 
@@ -95,6 +96,7 @@ flows:
       escalation: [ 11, 21, 31 ]
     schedule: "* * * * *"
     tags: ["L1"]
+    launch_weight: 2
     options:
 
   level1_late:

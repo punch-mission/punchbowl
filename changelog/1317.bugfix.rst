@@ -1,0 +1,2 @@
+When using flow batching while running the pipeline, if one flow fails, other flows in the batch can still
+finish and output files.

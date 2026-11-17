@@ -116,10 +116,6 @@ def test_that_pca_filter_runs(tmpdir):
     write_ndcube_to_fits(
         second_sky_frame_bg, second_sky_bg_path, skip_stats=True, write_hash=False)
 
-    inst_frame_bg_path = os.path.join(tmpdir, get_base_file_name(inst_frame_bg) + '.fits')
-    (write_ndcube_to_fits
-     (inst_frame_bg, inst_frame_bg_path, skip_stats=True, write_hash=False))
-
     component_path = os.path.join(tmpdir, get_base_file_name(components) + '.fits')
     write_ndcube_to_fits(
         components, component_path, skip_stats=True, write_hash=False)

@@ -1,0 +1,97 @@
+import numpy as np
+import pytest
+from astropy.nddata import StdDevUncertainty
+from astropy.wcs import WCS
+from prefect.logging import disable_run_logger
+
+from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.data.tests.test_punch_io import sample_ndcube
+from punchbowl.level2.merge import _merge_ndcubes, merge_many_clear_task, merge_many_polarized_task
+
+
+@pytest.fixture
+def sample_data_list(sample_ndcube):
+    """
+    Generate a list of sample PUNCH data objects for testing
+    """
+    sample_pd1 = sample_ndcube((4096, 4096), code="PM1", level="1")
+    sample_pd1.data[100:300, 300:400] = 1
+    sample_pd1.data[500:700, 800:900] = 1
+    sample_pd1.uncertainty.array[100:300, 300:400] = 1
+    sample_pd1.uncertainty.array[500:700, 800:900] = 1
+    sample_pd1.meta['DATE-BEG'] = "2024-10-31T00:00:04.000"
+    sample_pd1.meta['DATE-END'] = "2024-10-31T00:00:54.000"
+    sample_pd1.meta['DATE-OBS'] = "2024-10-31T00:00:29.000"
+    sample_pd1.meta['DATE-AVG'] = "2024-10-31T00:00:29.000"
+
+    sample_pd2 = sample_ndcube((4096, 4096), code="PM1", level="1")
+    sample_pd2.data[100:300, 300:400] = 500
+    sample_pd2.data[500:700, 800:900] = 500
+    sample_pd2.uncertainty.array[100:300, 300:400] = np.inf
+    sample_pd2.uncertainty.array[500:700, 800:900] = 0
+    sample_pd2.meta['DATE-BEG'] = "2024-10-31T00:20:04.000"
+    sample_pd2.meta['DATE-END'] = "2024-10-31T00:20:54.000"
+    sample_pd2.meta['DATE-OBS'] = "2024-10-31T00:20:29.000"
+    sample_pd1.meta['DATE-AVG'] = "2024-10-31T00:00:29.000"
+
+    return [sample_pd1, sample_pd2]
+
+
+def test_merge_many_task(sample_data_list):
+    """
+    Test the image_merge prefect flow using a test harness
+    """
+    trefoil_wcs = WCS("level2/data/trefoil_hdr.fits")
+    trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    trefoil_shape  = (4096, 4096)
+    trefoil_wcs.array_shape = trefoil_shape
+
+    with disable_run_logger():
+        output_punchdata = merge_many_polarized_task.fn(sample_data_list, trefoil_wcs)
+    assert isinstance(output_punchdata, PUNCHCube)
+    assert output_punchdata.data.shape == (3, 4096, 4096)
+    assert np.allclose(output_punchdata.data[0, 100:300, 300:400], 1)
+    assert np.allclose(output_punchdata.data[0, 500:700, 800:900], 1)
+    assert np.allclose(output_punchdata.uncertainty.array[0, 100:300, 300:400], 1)
+    assert np.allclose(output_punchdata.uncertainty.array[0, 500:700, 800:900], 1)
+    assert output_punchdata.meta.datebeg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]=="2024-10-31T00:00:04.000"
+    assert output_punchdata.meta.dateend.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]=="2024-10-31T00:20:54.000"
+    assert output_punchdata.meta.datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]=="2024-10-31T00:10:29.000"
+
+
+def test_merge_many_clear_task(sample_data_list):
+    """
+    Test the image_merge prefect flow using a test harness
+    """
+    trefoil_wcs = WCS("level2/data/trefoil_hdr.fits")
+    trefoil_wcs.wcs.ctype = "HPLN-ARC", "HPLT-ARC"
+    trefoil_shape  = (4096, 4096)
+    trefoil_wcs.array_shape = trefoil_shape
+
+    with disable_run_logger():
+        output_punchdata = merge_many_clear_task.fn(sample_data_list, trefoil_wcs)
+    assert isinstance(output_punchdata, PUNCHCube)
+    assert output_punchdata.data.shape == (4096, 4096)
+    assert np.allclose(output_punchdata.data[100:300, 300:400], 1)
+    assert np.allclose(output_punchdata.data[500:700, 800:900], 1)
+    assert np.allclose(output_punchdata.uncertainty.array[100:300, 300:400], 1)
+    assert np.allclose(output_punchdata.uncertainty.array[500:700, 800:900], 1)
+    assert output_punchdata.meta.datebeg.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]=="2024-10-31T00:00:04.000"
+    assert output_punchdata.meta.dateend.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]=="2024-10-31T00:20:54.000"
+    assert output_punchdata.meta.datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]=="2024-10-31T00:10:29.000"
+
+
+def test_merge_invalid_samples():
+    """Masked and invalid samples affect neither the mean nor its RMS error layer."""
+    good = PUNCHCube(data=np.ones((2, 4)), wcs=WCS(naxis=2),
+                     uncertainty=StdDevUncertainty(np.full((2, 4), 2.)))
+    bad = PUNCHCube(data=np.array([[np.nan, np.inf, 50, 50], [50, 50, 50, 50]]),
+                    wcs=WCS(naxis=2),
+                    uncertainty=StdDevUncertainty(np.array([[1, 1, 0, -1], [np.nan, np.inf, 1, 1]])),
+                    mask=np.array([[False, False, False, False], [False, False, True, True]]))
+    result = _merge_ndcubes([good, bad], include_masks=True)
+    np.testing.assert_allclose(result.data, 1)
+    np.testing.assert_allclose(result.uncertainty.array, 2)
+    unsupported = _merge_ndcubes([bad], include_masks=True)
+    assert np.all(np.isinf(unsupported.uncertainty.array))
+    assert np.all(unsupported.mask)

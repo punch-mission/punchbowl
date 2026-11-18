@@ -19,6 +19,7 @@ from punchbowl.data import get_base_file_name, write_ndcube_to_fits, write_ndcub
 from punchbowl.data.punch_io import _make_provenance_hdu
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.visualize import load_quicklook_scaling
+from punchbowl.prefect import get_logger
 
 
 def get_database_session(get_engine=False,
@@ -240,7 +241,7 @@ def replace_version(pattern, replacement, string):
 
 
 def replace_file_version_in_metadata(path, old_pattern, new_version):
-    with fits.open(path, mode='update', disable_image_compression=True) as hdul:
+    with fits.open(path, mode='update', disable_image_compression=True, lazy_load_hdus=False) as hdul:
         for i, hdu in enumerate(hdul):
             if 'EXTNAME' not in hdu.header:
                 continue

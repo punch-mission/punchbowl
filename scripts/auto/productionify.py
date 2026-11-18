@@ -1,10 +1,13 @@
 import os
 import sys
+import shutil
 import argparse
+from time import sleep
 from itertools import repeat
 from concurrent.futures.process import ProcessPoolExecutor
 
 import numpy as np
+import psutil
 from dateutil.parser import parse as parse_datetime_str
 from sqlalchemy import or_
 from tqdm.auto import tqdm
@@ -20,16 +23,19 @@ from punchbowl.data.punch_io import load_ndcube_from_fits, write_file_hash
 
 
 def productionify_file(file: File, config: dict, data_root: str, old_pattern: str, new_version: str | None,
-                       force_jp2s: bool):
+                       force_jp2s: bool, output_root: str, full_disk_thresh: float):
+    ql_output_root = config.get('ql_root', data_root).replace(data_root, output_root)
+    # Need to set this since the write_quicklook function uses it
+    config['ql_root'] = ql_output_root
     try:
         old_path = os.path.join(file.directory(data_root), file.filename())
         old_ql_path = os.path.join(
             file.directory(config.get('ql_root', data_root)), file.filename().replace('.fits', '.jp2'))
         if new_version is not None:
             file.file_version = new_version
-            new_path = os.path.join(file.directory(data_root), file.filename())
+            new_path = os.path.join(file.directory(output_root), file.filename())
             new_ql_path = os.path.join(
-                file.directory(config.get('ql_root', data_root)), file.filename().replace('.fits', '.jp2'))
+                file.directory(ql_output_root), file.filename().replace('.fits', '.jp2'))
         else:
             new_path = old_path
             new_ql_path = old_ql_path
@@ -37,21 +43,32 @@ def productionify_file(file: File, config: dict, data_root: str, old_pattern: st
         old_sha_path = old_path + '.sha256'
         new_sha_path = new_path + '.sha256'
 
+        is_first_pause = True
+        while psutil.disk_usage(output_root).percent > full_disk_thresh:
+            if is_first_pause:
+                print("Waiting for disk space to free up")
+                is_first_pause = False
+            sleep(20)
+
         if new_version is not None:
             if os.path.exists(old_path):
-                replace_file_version_in_metadata(old_path, old_pattern, new_version)
-                os.rename(old_path, new_path)
-
-            if os.path.exists(old_sha_path):
-                os.rename(old_sha_path, new_sha_path)
-            elif os.path.exists(new_path):
-                # We should overwrite existing sha files because we might have changed the metadata
+                os.makedirs(os.path.dirname(new_path), exist_ok=True)
+                tmp_path = new_path.replace('.fits', '.tmp.fits')
+                shutil.copy2(old_path, tmp_path)
+                replace_file_version_in_metadata(tmp_path, old_pattern, new_version)
+                os.rename(tmp_path, new_path)
                 if config['write_sha_files']:
                     write_file_hash(new_path)
+                if os.path.exists(old_sha_path):
+                    os.unlink(old_sha_path)
+                os.unlink(old_path)
+            elif config['write_sha_files'] and os.path.exists(new_path) and not os.path.exists(new_sha_path):
+                write_file_hash(new_path)
 
         do_jp2s = force_jp2s if force_jp2s is not None else config['write_quicklooks']
         if file.level != '0' and file.file_type[0] not in ('S', 'T', 'A', 'V'):
             if os.path.exists(old_ql_path) and new_version is not None:
+                os.makedirs(os.path.dirname(new_ql_path), exist_ok=True)
                 os.rename(old_ql_path, new_ql_path)
             elif os.path.exists(new_path) and not os.path.exists(new_ql_path) and do_jp2s:
                 cube = load_ndcube_from_fits(new_path, include_uncertainty=False)
@@ -79,12 +96,20 @@ if __name__ == "__main__":
     parser.add_argument ('-w', '--workers', type=int, help="Number of worker processes", default=12)
     parser.add_argument('--force-jp2s', default=None,
                         help="Override config file 'write_quicklooks' value. Set to 'on' or 'off'.")
+    parser.add_argument('--output-root', help="Alternate data root for outputs")
+    parser.add_argument('--full-disk-thresh', type=float, default=90,
+                        help="If output path disk utilization passes this percentage, will pause until space frees up.")
     parser.add_argument('data_root')
     parser.add_argument('pipeline_config')
     parser.add_argument('old_version_pattern', default=None, nargs='?')
     parser.add_argument('new_version', default=None, nargs='?')
 
     args = parser.parse_args()
+
+    if not args.output_root:
+        args.output_root = args.data_root
+    # Must exist for the disk space usage check inside the workers
+    os.makedirs(args.output_root, exist_ok=True)
 
     if args.force_jp2s is not None:
         if args.force_jp2s.lower() in ('on', 'true'):
@@ -155,9 +180,10 @@ if __name__ == "__main__":
     errors = []
     with ProcessPoolExecutor(args.workers) as p, tqdm(total=len(files)) as pbar:
         try:
-            for i, (file, success_or_msg) in enumerate(zip(files, p.map(productionify_file, files, repeat(config),
-                                                           repeat(args.data_root), repeat(old_version_pattern),
-                                                           repeat(new_version), repeat(args.force_jp2s), chunksize=2))):
+            for i, (file, success_or_msg) in enumerate(zip(files, p.map(
+                    productionify_file, files, repeat(config), repeat(args.data_root), repeat(old_version_pattern),
+                    repeat(new_version), repeat(args.force_jp2s), repeat(args.output_root),
+                    repeat(args.full_disk_thresh), chunksize=2))):
                 pbar.update()
                 if success_or_msg is not True:
                     errors.append(success_or_msg)

@@ -1,0 +1,1 @@
+The file dependency tree plotter (the "pipeline simulator") has been added, as both a module and a dashboard page.

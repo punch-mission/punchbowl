@@ -497,12 +497,14 @@ def test_level1_early_construct_flow_info(db, prefect_test_fixture):
 def test_get_dynamic_psf_target_paths(db, prefect_test_fixture):
     pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
+    # dates come back from the database as naive UTC, so the level 0 files must match
+    now = datetime.now(UTC).replace(tzinfo=None)
     l0_files = [File(level="0", file_type="PM", observatory=obs, state="created", file_version="none",
                      software_version="none", date_obs=date_obs)
-                for obs, date_obs in [("1", datetime.now(UTC)),
-                                      ("2", datetime.now(UTC)),
-                                      ("4", datetime.now(UTC)),
-                                      ("1", datetime.now(UTC) - timedelta(days=2))]]
+                for obs, date_obs in [("1", now),
+                                      ("2", now),
+                                      ("4", now),
+                                      ("1", now - timedelta(days=2))]]
     paths = get_dynamic_psf_target_paths(l0_files, pipeline_config, session=db)
     # the single DFM target is used for every WFI, NFI is skipped, and nothing is available before the target
     assert paths[0].startswith("PUNCH_L1_DFM_")

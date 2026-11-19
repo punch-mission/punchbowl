@@ -16,6 +16,7 @@ from punchbowl.level1.alignment import align_task
 from punchbowl.level1.deficient_pixel import remove_deficient_pixels_task
 from punchbowl.level1.despike import despike_polseq_task
 from punchbowl.level1.destreak import destreak_task
+from punchbowl.level1.dynamic_psf import correct_dynamic_psf_task
 from punchbowl.level1.dynamic_stray_light import remove_dynamic_stray_light_task
 from punchbowl.level1.initial_uncertainty import update_initial_uncertainty_task
 from punchbowl.level1.nfi_dynamic_stray_light import remove_nfi_stray_light
@@ -74,6 +75,7 @@ def level1_early_core_flow(  # noqa: C901
     do_align: bool = True,
     distortion_path: str | None = None,
     psf_model_path: str | DataLoader | None = None,
+    dynamic_psf_target_path: str | DataLoader | None = None,
     max_workers: int | None = None,
     n_alignment_workers: int | None = None,
     n_alignment_iterations: int = 50,
@@ -164,6 +166,7 @@ def level1_early_core_flow(  # noqa: C901
             mask = None
 
         data = correct_psf_task(data, psf_model_path, max_workers=max_workers)
+        data = correct_dynamic_psf_task(data, dynamic_psf_target_path)
         if do_align:
             if data.meta["BADPKTS"].value:
                 data.meta.history.add_now("LEVEL1-align", "Image has bad packets; no alignment applied")
@@ -207,6 +210,10 @@ def level1_early_core_flow(  # noqa: C901
         if isinstance(psf_model_path, DataLoader):
             psf_model_path = psf_model_path.src_repr()
         new_meta["CALPSF"] = os.path.basename(psf_model_path) if psf_model_path else ""
+
+        if isinstance(dynamic_psf_target_path, DataLoader):
+            dynamic_psf_target_path = dynamic_psf_target_path.src_repr()
+        new_meta["CALDPSF"] = os.path.basename(dynamic_psf_target_path) if dynamic_psf_target_path else ""
 
         new_meta["FILEVRSN"] = data.meta["FILEVRSN"].value
 

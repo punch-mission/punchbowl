@@ -1,0 +1,4 @@
+Adds a per-image dynamic PSF correction to the Level 1 early flow, applied after the static PSF correction and before
+alignment. The correction transforms each image to a target PSF stored in a new ``DF`` calibration product
+(``PUNCH_L1_DFM_*``, shared by all spacecraft), which the automation now requires and loads, and records in the new
+``CALDPSF`` header keyword.

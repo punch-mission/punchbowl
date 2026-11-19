@@ -35,7 +35,7 @@ Kinds:
             NAXIS2: 4096
             OBS-MODE: Unpolarized
             POLAR: -999
-        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, CALCF, CALVI, CALVI2, CALPSF, CALPM,
+        omits: [NAXIS3, FILTER, OBSLAYR1, OBSLAYR2, OBSLAYR3, CALCF, CALVI, CALVI2, CALPSF, CALDPSF, CALPM,
                 CALDSL0, CALDSL1, CALSL1]
 
     Calibration:

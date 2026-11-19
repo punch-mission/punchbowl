@@ -317,7 +317,7 @@ class File:
     def update_config(cls):
         """Update class variables in response to the config file being set."""
 
-    def __init__(self, time: datetime):
+    def __init__(self, time: datetime | None = None):
         """
         Instantiate a file instance.
 
@@ -327,6 +327,8 @@ class File:
             The date_obs of the file
 
         """
+        if time is None:
+            time = datetime.now()
         self.timestamp = time
         self.kind = type(self).__name__
         self.exists = None
@@ -697,7 +699,7 @@ class L1_File(File):
             The observatory identifier
 
         """
-        super().__init__(timestamp)
+        super().__init__(time)
         self.obs = obs
         self.pol = pol
         self.new_args = (pol, obs)

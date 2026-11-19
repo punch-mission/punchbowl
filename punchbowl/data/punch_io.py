@@ -127,7 +127,7 @@ def write_ndcube_to_quicklook(cube: PUNCHCube, # noqa: C901
                               annotation: str | None = None,
                               color: bool = False,
                               gamma: float = 1/2.2,
-                              trim_edge: float | tuple[float, float] | list[float, float] | None = (0.081, 0.705),
+                              trim_edge: float | tuple[float, float] | list[float, float] | None = None,
                               write_hash: bool = False,
                               ) -> None:
     """

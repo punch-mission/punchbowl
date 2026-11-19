@@ -1,0 +1,1 @@
+Images are now corrected using a dynamic PSF. This is extremely helpful in correcting the pointing problems encountered early during the mission for WFI-2 but should clean up all PSFs.

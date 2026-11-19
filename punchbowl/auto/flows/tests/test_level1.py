@@ -10,6 +10,8 @@ from punchbowl import __version__
 from punchbowl.auto.control.db import Base, File, Flow
 from punchbowl.auto.control.util import load_pipeline_configuration
 from punchbowl.auto.flows.level1 import (
+    get_dynamic_psf_target_paths,
+    level1_early_call_data_processor,
     level1_early_construct_file_info,
     level1_early_construct_flow_info,
     level1_early_query_ready_files,
@@ -123,6 +125,15 @@ def session_fn(session):
                        state='created',
                        polarization='M',
                        file_version='0b',
+                       software_version='none',
+                       date_obs=datetime.now(UTC)-timedelta(days=1))
+
+    dynamic_psf_target = File(level="1",
+                       file_type="DF",
+                       observatory='M',
+                       state='created',
+                       polarization='C',
+                       file_version='1',
                        software_version='none',
                        date_obs=datetime.now(UTC)-timedelta(days=1))
 
@@ -308,6 +319,7 @@ def session_fn(session):
     session.add(psf_model0)
     session.add(psf_model1)
     session.add(psf_model2)
+    session.add(dynamic_psf_target)
     session.add(quartic_fit_coeffs0)
     session.add(quartic_fit_coeffs1)
     session.add(quartic_fit_coeffs2)
@@ -457,6 +469,7 @@ def test_level1_early_construct_flow_info(db, prefect_test_fixture):
     level0_file[0].vignetting_functions = level0_file[0], None
     level0_file[0].mask_file = level0_file[0]
     level0_file[0].psf_path = level0_file[0].filename()
+    level0_file[0].dynamic_psf_target_path = "PUNCH_L1_DFM_20250101000000_v1.fits"
     level0_file[0].distortion_path = level0_file[0]
 
     despike_neighbors = [File(level="0",
@@ -477,6 +490,42 @@ def test_level1_early_construct_flow_info(db, prefect_test_fixture):
     assert flow_info.state == "planned"
     assert flow_info.flow_level == "1"
     assert flow_info.priority == 6
+    call_data = json.loads(flow_info.call_data)
+    assert call_data["dynamic_psf_target_path"] == "PUNCH_L1_DFM_20250101000000_v1.fits"
+
+
+def test_get_dynamic_psf_target_paths(db, prefect_test_fixture):
+    pipeline_config_path = os.path.join(TEST_DIR, "punchpipe_config.yaml")
+    pipeline_config = load_pipeline_configuration(pipeline_config_path)
+    l0_files = [File(level="0", file_type="PM", observatory=obs, state="created", file_version="none",
+                     software_version="none", date_obs=date_obs)
+                for obs, date_obs in [("1", datetime.now(UTC)),
+                                      ("2", datetime.now(UTC)),
+                                      ("4", datetime.now(UTC)),
+                                      ("1", datetime.now(UTC) - timedelta(days=2))]]
+    paths = get_dynamic_psf_target_paths(l0_files, pipeline_config, session=db)
+    # the single DFM target is used for every WFI, NFI is skipped, and nothing is available before the target
+    assert paths[0].startswith("PUNCH_L1_DFM_")
+    assert paths[1] == paths[0]
+    assert paths[2] == ""
+    assert paths[3] is None
+
+
+@pytest.mark.parametrize("dynamic_psf_target_path", [None, ""])
+def test_level1_early_call_data_processor_handles_no_dynamic_psf_target(dynamic_psf_target_path):
+    pipeline_config = {"root": "/root"}
+    call_data = {"input_data": ["PUNCH_L0_PM4_20250101000000_v1.fits"],
+                 "quartic_coefficient_path": "PUNCH_L1_FM4_20250101000000_v1.fits",
+                 "vignetting_function_path": "PUNCH_L1_GM4_20250101000000_v1.fits",
+                 "second_vignetting_function_path": None,
+                 "mask_path": "PUNCH_L1_MS4_20250101000000_v1.bin",
+                 "distortion_path": "PUNCH_L1_DS4_20250101000000_v1.fits",
+                 "psf_model_path": "",
+                 "despike_neighbors": []}
+    if dynamic_psf_target_path is not None:
+        call_data["dynamic_psf_target_path"] = dynamic_psf_target_path
+    call_data = level1_early_call_data_processor(call_data, pipeline_config)
+    assert call_data["dynamic_psf_target_path"] is None
 
 
 def test_level1_middle_construct_flow_info(db, prefect_test_fixture):

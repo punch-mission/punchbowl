@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import cv2
 import numpy as np
 import regularizepsf
@@ -5,6 +8,8 @@ from regularizepsf.image_processing import _find_patches
 from scipy.ndimage import binary_dilation, binary_erosion, label, shift
 
 from punchbowl.data.punchcube import PUNCHCube
+from punchbowl.prefect import get_logger, punch_task
+from punchbowl.util import DataLoader
 
 
 def correct_psf_per_image(
@@ -118,3 +123,41 @@ def correct_psf_per_image(
     # mutate the cube and return it
     cube.data[...] = result
     return cube
+
+
+@punch_task
+def correct_dynamic_psf_task(
+    data_object: PUNCHCube,
+    target_psf_path: str | DataLoader | None = None,
+) -> PUNCHCube:
+    """
+    Prefect Task to correct the dynamic PSF of an image.
+
+    Parameters
+    ----------
+    data_object : PUNCHCube
+        data to operate on
+    target_psf_path : str | DataLoader | None
+        path to the target PSF (an ArrayPSF) the image is transformed to; if None, no correction is applied
+
+    Returns
+    -------
+    PUNCHCube
+        modified version of the input with the dynamic PSF corrected
+
+    """
+    if target_psf_path is not None:
+        if isinstance(target_psf_path, DataLoader):
+            target_psf = target_psf_path.load()
+            target_psf_path = target_psf_path.src_repr()
+        else:
+            target_psf = regularizepsf.ArrayPSF.load(Path(target_psf_path))
+        data_object = correct_psf_per_image(data_object, target_psf)
+        data_object.meta.history.add_now("LEVEL1-correct_dynamic_psf",
+                                         f"Dynamic PSF corrected to {os.path.basename(target_psf_path)} target")
+    else:
+        data_object.meta.history.add_now("LEVEL1-correct_dynamic_psf",
+                                         "Empty target path so no dynamic PSF correction applied")
+        logger = get_logger()
+        logger.info("No target PSF path so dynamic PSF correction is skipped")
+    return data_object

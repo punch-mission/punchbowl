@@ -344,6 +344,17 @@ Products:
             OBSCODE: "{craftid}"
         omits: [FILTER, OBS-MODE, POLAR]
 
+    DF?:
+        kinds: [Calibration]
+        overrides:
+            TITLE: PUNCH Level-1 Dynamic Point Spread Function Target
+            OBSTYPE: "Dynamic point spread function target model"
+            TYPECODE: DF
+            INSTRUME: "{craftname}"
+            TELESCOP: "{obsname}"
+            OBSCODE: "{craftid}"
+        omits: [FILTER, OBS-MODE, POLAR]
+
     DS?:
         kinds: [Calibration]
         overrides:

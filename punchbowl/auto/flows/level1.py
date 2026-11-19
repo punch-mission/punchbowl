@@ -33,6 +33,9 @@ SCIENCE_LEVEL1_LATE_INPUT_TYPE_CODES_NFI = ["XM", "XZ", "XP", "XR"]
 SCIENCE_LEVEL1_LATE_OUTPUT_TYPE_CODES = ["PM", "PZ", "PP", "CR"]
 SCIENCE_LEVEL1_QUICK_INPUT_TYPE_CODES = ["XR"]
 SCIENCE_LEVEL1_QUICK_OUTPUT_TYPE_CODES = ["QR"]
+DYNAMIC_PSF_TARGET_TYPE = "DF"
+# A single dynamic PSF target is shared by all spacecraft, so it's stored with the all-spacecraft observatory code
+DYNAMIC_PSF_TARGET_OBSERVATORY = "M"
 
 @task(cache_policy=NO_CACHE)
 def level1_early_query_ready_files(session, pipeline_config: dict, reference_time=None, max_n=9e99,
@@ -72,6 +75,7 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
     vignetting_functions = get_vignetting_function_paths(ready, pipeline_config, session)
     distortion_paths = get_distortion_paths(ready, pipeline_config, session)
     psf_paths = get_psf_model_paths(ready, pipeline_config, session)
+    dynamic_psf_target_paths = get_dynamic_psf_target_paths(ready, pipeline_config, session)
     mask_files = get_mask_files(ready, pipeline_config, session)
     L0_impossible_after_days = pipeline_config["new_L0_impossible_after_days"]
     more_L0_impossible_cutoff = datetime.now() - timedelta(days=L0_impossible_after_days)
@@ -82,8 +86,10 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
     missing_sequence = []
     missing_distortion = []
     missing_psf = []
-    for f, quartic_model, vignetting_function, mask_file, distortion_file, psf_file in zip(
-            ready, quartic_models, vignetting_functions, mask_files, distortion_paths, psf_paths):
+    missing_dynamic_psf_target = []
+    for f, quartic_model, vignetting_function, mask_file, distortion_file, psf_file, dynamic_psf_target_file in zip(
+            ready, quartic_models, vignetting_functions, mask_files, distortion_paths, psf_paths,
+            dynamic_psf_target_paths):
         despike_neighbors = get_polarization_sequence(f, session=session)
 
         if quartic_model is None:
@@ -104,8 +110,12 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
         if psf_file is None:
             missing_psf.append(f)
             continue
+        if dynamic_psf_target_file is None:
+            missing_dynamic_psf_target.append(f)
+            continue
         f.distortion_path = distortion_file
         f.psf_path = psf_file
+        f.dynamic_psf_target_path = dynamic_psf_target_file
         # Smuggle the identified models out of this function
         f.quartic_model = quartic_model
         f.vignetting_functions = vignetting_function
@@ -127,6 +137,9 @@ def level1_early_query_ready_files(session, pipeline_config: dict, reference_tim
         logger.info("Missing distortion for " + summarize_files_missing_cal_files(missing_distortion))
     if missing_psf:
         logger.info("Missing PSF for " + summarize_files_missing_cal_files(missing_psf))
+    if missing_dynamic_psf_target:
+        logger.info("Missing dynamic PSF target for "
+                    + summarize_files_missing_cal_files(missing_dynamic_psf_target))
     return actually_ready
 
 @task(cache_policy=NO_CACHE)
@@ -309,6 +322,47 @@ def get_psf_model_path(level0_file, pipeline_config: dict, session=None, referen
                   .order_by(File.file_version.desc(), File.date_obs.desc()).first())
     return best_model.filename()
 
+
+def get_dynamic_psf_target_paths(level0_files, pipeline_config: dict, session=None):
+    # Get all targets, in reverse-chronological order
+    models = (session.query(File)
+              .filter(File.level == "1")
+              .filter(File.file_type == DYNAMIC_PSF_TARGET_TYPE)
+              .filter(File.observatory == DYNAMIC_PSF_TARGET_OBSERVATORY)
+              .where(File.file_version.not_like("v%")) #filters out "v0a".
+              .order_by(File.file_version.desc(), File.date_obs.desc()).all())
+    results = []
+    for l0_file in level0_files:
+        # TODO - Turn this back on once the PSF correction is fine tuned for NFI
+        if l0_file.observatory == "4":
+            results.append("")
+            continue
+        # We want to pick the latest target that's before the observation, so we go backwards in time, past any
+        # later-in-time targets, until we hit the first target that's before the observation.
+        for model in models:
+            if model.date_obs > l0_file.date_obs:
+                continue
+            results.append(model.filename())
+            break
+        else:
+            results.append(None)
+    return results
+
+
+def get_dynamic_psf_target_path(level0_file, pipeline_config: dict, session=None, reference_time=None) -> str | None:
+    # TODO - Turn this back on once the PSF correction is fine tuned for NFI
+    if level0_file.observatory == "4":
+        return ""
+    best_model = (session.query(File)
+                  .filter(File.level == "1")
+                  .filter(File.file_type == DYNAMIC_PSF_TARGET_TYPE)
+                  .filter(File.observatory == DYNAMIC_PSF_TARGET_OBSERVATORY)
+                  .where(File.date_obs <= level0_file.date_obs)
+                  .where(File.file_version.not_like("v%")) #filters out "v0a".
+                  .order_by(File.file_version.desc(), File.date_obs.desc()).first())
+    return best_model.filename() if best_model is not None else None
+
+
 STRAY_LIGHT_CORRESPONDING_TYPES = {"M": "SM",
                                    "Z": "SZ",
                                    "P": "SP",
@@ -490,6 +544,7 @@ def level1_early_construct_flow_info(level0_files: list[File], level1_files: lis
     ccd_parameters = get_ccd_parameters(level0_files[0], pipeline_config, session=session)
     mask_function = level0_files[0].mask_file
     best_psf_model = level0_files[0].psf_path
+    best_dynamic_psf_target = level0_files[0].dynamic_psf_target_path
     best_distortion = level0_files[0].distortion_path
 
     call_data = json.dumps(
@@ -503,6 +558,7 @@ def level1_early_construct_flow_info(level0_files: list[File], level1_files: lis
             "despike_neighbors": [n.filename() for n in despike_neighbors],
             "mask_path": mask_function.filename().replace(".fits", ".bin"),
             "psf_model_path": best_psf_model,
+            "dynamic_psf_target_path": best_dynamic_psf_target,
             "distortion_path": best_distortion.filename(),
             "n_alignment_workers": pipeline_config["flows"][flow_type].get("n_alignment_workers", 3),
             "n_alignment_iterations": pipeline_config["flows"][flow_type].get("n_alignment_iterations", 50),
@@ -603,6 +659,15 @@ def level1_early_call_data_processor(call_data: dict, pipeline_config, session=N
     else:
         call_data["psf_model_path"] = file_name_to_full_path(call_data["psf_model_path"], pipeline_config["root"])
         call_data["psf_model_path"] = cache_layer.psf.wrap_if_appropriate(call_data["psf_model_path"])
+
+    # Flows scheduled before the dynamic PSF was added won't have this key, so we treat them like the NFI skip
+    if not call_data.get("dynamic_psf_target_path"):
+        call_data["dynamic_psf_target_path"] = None
+    else:
+        call_data["dynamic_psf_target_path"] = file_name_to_full_path(call_data["dynamic_psf_target_path"],
+                                                                      pipeline_config["root"])
+        call_data["dynamic_psf_target_path"] = cache_layer.dynamic_psf_target.wrap_if_appropriate(
+            call_data["dynamic_psf_target_path"])
 
     call_data["quartic_coefficient_path"] = cache_layer.quartic_coefficients.wrap_if_appropriate(
         call_data["quartic_coefficient_path"])

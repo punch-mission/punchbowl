@@ -127,7 +127,7 @@ def write_ndcube_to_quicklook(cube: PUNCHCube, # noqa: C901
                               annotation: str | None = None,
                               color: bool = False,
                               gamma: float = 1/2.2,
-                              trim_edge: float | tuple[float, float] | list[float, float] | None = None,
+                              trim_edge: float | tuple[float, float] | list[float, float] | None = 0.705,
                               write_hash: bool = False,
                               ) -> None:
     """
@@ -158,7 +158,7 @@ def write_ndcube_to_quicklook(cube: PUNCHCube, # noqa: C901
     trim_edge : float, tuple[float, float], list[float, float], None
         Option to trim the edges of quicklook products to the specified fractional radial distance.
         One input value trims the outer boundary only, while two trim both the inner and outer boundaries.
-        A reasonable set of values are (0.081, 0.705) for the inner and outer boundaries.
+        0.705 is a reasonable value for the outer boundary.
     write_hash : bool
         writes a .sha hash for each file, this is intended for QuickPUNCH products where the SHA is used
 

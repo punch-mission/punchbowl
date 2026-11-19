@@ -288,9 +288,9 @@ def create_packet_definitions(tlm, parse_expanding_fields=True):
     return defs
 
 @task(cache_policy=NO_CACHE)
-def detect_new_tlm_files(pipeline_config: dict, session=None) -> list[str]:
-    session = Session(engine)
-
+def detect_new_tlm_files(pipeline_config: dict, session: Session) -> list[str]:
+# if this function needs to be independently runnable, remove the session parameter above and put the "session.query"
+# line below into a "with SessionFactory() as session:" block (after defining SessionFactory as a sessionmaker object.)
     tlm_directory = pipeline_config["tlm_directory"]
     found_tlm_files = list(glob(os.path.join(tlm_directory, "**/*.tlm"), recursive=True))
 

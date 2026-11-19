@@ -87,8 +87,7 @@ def get_replay_requests(packet_group, reasons_for_replay):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-
-    # this start and end date setup will need to be modified to instead pull whatever new data is being processed with each L0 run 
+ 
     parser.add_argument(
         '-s', '--start',
         type=parse,
@@ -105,6 +104,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # TODO: inputs should be changed to grab any new data that appears with each L0 deploy, rather than using user arguments 
     start_date = args.start
     end_date = args.end
 
@@ -152,16 +152,23 @@ if __name__ == "__main__":
         r"Image decoding failed charls_jpegls_decoder*"
     ]
 
+    scids = {
+        int("0x10",16): "WFI01",
+        int("0x2F",16): "NFI00",
+        int("0x2C",16): "WFI02",
+        int("0xF9",16): "WFI03"
+    }
+
     # Generate replay request files
     today = datetime.today().strftime("%Y_%m_%d")
 
     for scid, packet_group in packets.items():
 
-        filename = f"{scid}_{today}_ReplayRequest.txt"
+        filename = f"{scids[scid]}_{today}_ReplayRequest.txt"
 
         replay_requests = get_replay_requests(packet_group, reasons_for_replay)
 
         with open(filename, "w") as file:
             file.write("\n".join(replay_requests))
 
-    # drop these files in the designated location for MOC pickup 
+    #TODO: drop these files in the designated location on Griffin for MOC pickup 

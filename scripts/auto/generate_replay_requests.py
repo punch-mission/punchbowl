@@ -173,6 +173,8 @@ def generate_replay_requests(start_date, end_date):
 
 if __name__ == "__main__":
 
+    # TODO: Incorporate this into L0 flow rather than using it as a standalone script 
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument(

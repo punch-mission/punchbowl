@@ -1,0 +1,1 @@
+Adjusted quicklook product jp2 edge trimming to account for NFI inclusion.

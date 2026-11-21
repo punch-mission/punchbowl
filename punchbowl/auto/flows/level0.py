@@ -31,7 +31,7 @@ from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from prefect_sqlalchemy import SqlAlchemyConnector
 from sqlalchemy import and_, func, or_, text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 from sunpy.coordinates import (
     GeocentricEarthEquatorial,
     GeocentricSolarEcliptic,
@@ -79,6 +79,10 @@ PFW_POSITION_MAPPING = ["PP", "DK", "PZ", "PM", "CR"]
 if detect_if_running_in_prefect():
     credentials = SqlAlchemyConnector.load("mariadb-creds", _sync=True)
     engine = credentials.get_engine()
+else:
+    ... # TODO
+
+SessionFactory = sessionmaker(bind=engine)
 
 def initializer():
     """
@@ -1211,7 +1215,7 @@ def form_single_image(spacecraft, t, defs, apid_name2num, pipeline_config, space
     return replay_needs, not skip_image, skip_reason
 
 @flow
-def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, masks, session, logger,
+def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, masks, logger,
                        processing_flow_id):
     spacecraft_secrets = SpacecraftMapping.load("spacecraft-ids").mapping.get_secret_value()
 
@@ -1219,22 +1223,24 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
     retry_days = float(pipeline_config["flows"]["level0"]["options"].get("retry_days", 3.0))
     retry_window_start = now - timedelta(days=retry_days)
 
-    distinct_spacecraft = (session.query(SCI_XFI.spacecraft_id)
-                           .filter(or_(~SCI_XFI.is_used, SCI_XFI.is_used.is_(None)))
-                           .distinct()
-                           .all())
-    distinct_spacecraft = [sc[0] for sc in distinct_spacecraft]
-
     skip_count, success_count = 0, 0
     replay_needs = []
-
-    distinct_times = (session.query(SCI_XFI.timestamp, SCI_XFI.num_attempts, SCI_XFI.last_attempt, SCI_XFI.spacecraft_id)
-                      .filter(or_(~SCI_XFI.is_used, SCI_XFI.is_used.is_(None)))
-                      .filter(SCI_XFI.spacecraft_id.in_(distinct_spacecraft))
-                      .filter(SCI_XFI.timestamp > retry_window_start)
-                      .distinct()
-                      .all())
     image_inputs = []
+
+    with SessionFactory() as session:
+        distinct_spacecraft = (session.query(SCI_XFI.spacecraft_id)
+                            .filter(or_(~SCI_XFI.is_used, SCI_XFI.is_used.is_(None)))
+                            .distinct()
+                            .all())
+        distinct_spacecraft = [sc[0] for sc in distinct_spacecraft]
+
+        distinct_times = (session.query(SCI_XFI.timestamp, SCI_XFI.num_attempts, SCI_XFI.last_attempt, SCI_XFI.spacecraft_id)
+                        .filter(or_(~SCI_XFI.is_used, SCI_XFI.is_used.is_(None)))
+                        .filter(SCI_XFI.spacecraft_id.in_(distinct_spacecraft))
+                        .filter(SCI_XFI.timestamp > retry_window_start)
+                        .distinct()
+                        .all())
+
     fill_time = datetime.now()
     for t in distinct_times:
         # Sort by (num_attempts != 0) first, so new stuff gets tried (False sorts before True), and then sort by
@@ -1296,8 +1302,10 @@ def level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, mas
     history = PacketHistory(datetime=datetime.now(UTC),
                             num_images_succeeded=success_count,
                             num_images_failed=skip_count)
-    session.add(history)
-    session.commit()
+    # SessionFactory.begin() automatically commits on success and rolls back if an exception occurs.
+    with SessionFactory.begin() as session:
+        session.add(history)
+
     logger.info(f"SUCCESS={success_count}")
     logger.info(f"FAILURE={skip_count}")
 
@@ -1383,7 +1391,7 @@ def level0_core_flow(pipeline_config: dict, skip_if_no_new_tlm: bool = True, lim
         with multiprocessing.get_context("spawn").Pool(num_workers, initializer=initializer) as pool:
             pool.starmap(ingest_tlm_file, tlm_ingest_inputs)
 
-        level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, masks, session, logger,
+        level0_form_images(pipeline_config, defs, apid_name2num, outlier_limits, masks, logger,
                            processing_flow_id)
     session.close()
 

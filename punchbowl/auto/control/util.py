@@ -147,7 +147,7 @@ def match_data_with_file_db_entry(data: PUNCHCube, file_db_entry_list):
     elif len(matching_entries) > 1:
         logger = get_logger()
         logger.warning(f"For cube {get_base_file_name(data)}, have matching DB entries "
-                       f"{', '.join([f.file_id for f in matching_entries])} with names "
+                       f"{', '.join([str(f.file_id) for f in matching_entries])} with names "
                        f"{', '.join([f.filename() for f in matching_entries])}.")
         raise RuntimeError("There were many database entries matching this result. There should only be one.")
     else:

@@ -210,7 +210,7 @@ def quickpunch_pca_filter(input_files: list[str],
             if path in input_files:
                 new_meta = NormalizedMetadata.load_template("QNN", "Q")
                 new_meta["DATE"] = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-                for key in metas[i]:
+                for key in metas[i].keys(): # noqa: SIM118
                     if ((key in ["DATE-OBS", "DATE-BEG", "DATE-AVG", "DATE-END", "FILEVRSN", "OUTLIER", "BADPKTS",
                                  "XACTTIME", "GEOD_LON", "GEOD_LAT", "GEOD_ALT", "LOS_ALT"]
                             or key[-4:] in ["_OBS", "_VOB"])

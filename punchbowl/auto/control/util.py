@@ -2,6 +2,7 @@ import os
 import re
 import socket
 from math import inf
+from pathlib import Path
 from datetime import UTC, datetime
 from itertools import islice
 
@@ -81,14 +82,49 @@ def load_pipeline_configuration(path: str = None, raw: bool = False) -> dict:
         path = Variable.get(f"punchpipe_config-{get_hostname()}", None)
         if path is None:
             path = Variable.get("punchpipe_config", "punchpipe_config.yaml")
-    if not isinstance(path, str):
+    if not isinstance(path, (str, Path)):
         path = run_coro_as_sync(path)
     with open(path) as f:
         config = yaml.load(f, Loader=FullLoader)
+
+    for path in config.pop("includes", []):
+        with open(path) as f:
+            sub_config = yaml.load(f, Loader=FullLoader)
+        config = _merge_dict(config, sub_config)
+
     if not raw:
         hostify_config(config)
     # TODO: add validation
     return config
+
+
+def _merge_dict(main_dict: dict, other_dict: dict) -> dict:
+    """
+    Merge a dictionary recursively.
+
+    Key-value pairs are copied from `other_dict` into `main_dict`. If a key exists in both, and if it corresponds to a
+    dictionary in both, this function is called on that pair of dictionaries to merge them, and the merged dictionary
+    goes into `main_dict`.
+
+    Parameters
+    ----------
+    main_dict : dict
+        The dict to merge values into
+    other_dict : dict
+        The dict to merge values from
+
+    Returns
+    -------
+    dict
+        The merged dictionary
+    """
+    for k, v in other_dict.items():
+        if isinstance(v, dict) and k in main_dict and isinstance(main_dict[k], dict):
+            main_dict[k] = _merge_dict(main_dict[k], v)
+        else:
+            main_dict[k] = v
+    return main_dict
+
 
 
 def hostify_config(config):

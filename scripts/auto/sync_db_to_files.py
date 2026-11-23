@@ -70,12 +70,19 @@ if __name__ == "__main__":
         level = base_path.split("_")[1][1]
         observed_levels.add(level)
 
+    observed_file_types = set()
+    for path in files:
+        base_path = os.path.basename(path)
+        file_type = base_path.split("_")[2][:2]
+        observed_file_types.add(file_type)
+
     existing_files = (
             session.query(File)
             .options(load_only(
             File.date_obs, File.file_type, File.observatory, File.file_version, File.level,
                  raiseload=True))
             .where(File.level.in_(observed_levels))
+            .where(File.file_type.in_(observed_file_types))
             .all())
 
     existing_files = {f.filename() for f in existing_files}

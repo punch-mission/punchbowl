@@ -1441,7 +1441,7 @@ def level0_construct_flow_info(pipeline_config: dict, session, skip_if_no_new_tl
 
 
 @flow
-def level0_scheduler_flow(pipeline_config_path=None, session=None, reference_time=None):
+def level0_scheduler_flow(pipeline_config_path=None, session=None):
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
     skip_if_no_new_tlm = pipeline_config['flows']['level0']['options'].get('skip_if_no_new_tlm', True)
     logger = get_logger()

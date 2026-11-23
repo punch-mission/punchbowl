@@ -1414,13 +1414,14 @@ def get_mask_paths(session, reference_time):
     return mask_files
 
 @task(cache_policy=NO_CACHE)
-def level0_construct_flow_info(pipeline_config: dict, session, skip_if_no_new_tlm: bool = True):
+def level0_construct_flow_info(pipeline_config: dict, skip_if_no_new_tlm: bool = True):
     flow_type = "level0"
     state = "planned"
     creation_time = datetime.now()
     priority = pipeline_config["flows"][flow_type]["priority"]["initial"]
-    limits = get_outlier_limits_paths(session, creation_time)
-    mask_files = get_mask_paths(session, creation_time)
+    with SessionFactory() as session:
+        limits = get_outlier_limits_paths(session, creation_time)
+        mask_files = get_mask_paths(session, creation_time)
 
     call_data = json.dumps(
         {
@@ -1461,7 +1462,7 @@ def level0_scheduler_flow(pipeline_config_path=None, session=None):
         logger.info("Not scheduling---there's already a pending/running flow in the DB")
         return
 
-    new_flow = level0_construct_flow_info(pipeline_config, session, skip_if_no_new_tlm=skip_if_no_new_tlm)
+    new_flow = level0_construct_flow_info(pipeline_config, skip_if_no_new_tlm=skip_if_no_new_tlm)
 
     session.add(new_flow)
     session.commit()

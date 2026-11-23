@@ -1443,12 +1443,27 @@ def level0_construct_flow_info(pipeline_config: dict, skip_if_no_new_tlm: bool =
 
 @flow
 def level0_scheduler_flow(pipeline_config_path=None, session=None):
+
+    if session is not None:
+    #this function's caller needs to close session.
+    #_level0_scheduler_flow does the commit, though.
+        return _level0_scheduler_flow(
+            session,
+            pipeline_config_path,
+        )
+
+    with SessionFactory() as owned_session:
+    # owned_session is closed automatically by the context manager
+        return _level0_scheduler_flow(
+            owned_session,
+            pipeline_config_path,
+        )
+
+def _level0_scheduler_flow(session: Session, pipeline_config_path=None):
+    # note the reversed order of the parameters relative to the above, because here session can't be None.
     pipeline_config = load_pipeline_configuration(pipeline_config_path)
     skip_if_no_new_tlm = pipeline_config['flows']['level0']['options'].get('skip_if_no_new_tlm', True)
     logger = get_logger()
-
-    if session is None:
-        session = Session(engine)
 
     # We have a concurrency limit set for the L0 flow. If we schedule another one while there's one pending or
     # running, that one could be launched, but then it could be cancelled by Prefect and so its state never gets

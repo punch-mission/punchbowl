@@ -451,7 +451,7 @@ def level2_PCA_query_ready_files(session, pipeline_config: dict, reference_time=
         logger.info("A pending flow already exists. Skipping scheduling.")
         return []
 
-    batch_size = pipeline_config['flows']['level2_PCA']['batch_size']
+    batch_size = pipeline_config['flows']['level2_PCA']['pca_batch_size']
     window_size_days = pipeline_config['flows']['level2_PCA']['window_size_days']
     n_batches_to_schedule = get_max_flows_to_schedule(pipeline_config, 'level2_PCA')
 

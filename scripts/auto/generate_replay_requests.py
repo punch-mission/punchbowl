@@ -16,7 +16,6 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
 
     Parameters
     ----------
-        start_date (datetime): Beginning of the database query time range.
         start_date : datetime 
             Beginning of the database query time range.
         end_date : datetime

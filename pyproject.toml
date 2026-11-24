@@ -71,7 +71,7 @@ super_user = [
     "scikit-image >= 0.25.2, <= 0.26.0",
     "scikit-learn >= 1.6.1, <= 1.9.1",
     "sep == 1.4.1",
-    "setuptools == 78.1.1",
+    "setuptools == 84.0.0",
     "threadpoolctl >= 3.6.0, <= 3.6.0",
     "toml >= 0.10.0, <= 0.10.2",
     "tqdm >= 4.67.0, <= 4.70.1",

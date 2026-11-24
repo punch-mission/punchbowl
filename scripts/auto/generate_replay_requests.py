@@ -59,6 +59,10 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
     rows = result.fetchall()
     session.close()
 
+    if not rows: 
+        print('No packets found for the specified date range')
+        return
+
     # Create packet dictionary grouped by spacecraft ID
     packets = defaultdict(list)
 

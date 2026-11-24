@@ -8,7 +8,7 @@ from collections import defaultdict
 from punchbowl.auto.control.util import get_database_session
 
 
-def generate_replay_requests(start_date, end_date):
+def generate_replay_requests(start_date: datetime, end_date: datetime):
     """
     Query the punchpipe database for L0 packet failures and generate
     spacecraft-specific replay request text files.

@@ -182,14 +182,14 @@ if __name__ == "__main__":
         '-s', '--start',
         type=parse,
         required=True,
-        help='Input start date in "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" format.'
+        help='Input start date in YYYY-MM-DD or YYYY-MM-DD HH:MM:SS format.'
     )
 
     parser.add_argument(
         '-e', '--end',
         type=parse,
         default=datetime.today(),
-        help='Input end date in "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS" format. Defaults to today.'
+        help='Input end date in YYYY-MM-DD or YYYY-MM-DD HH:MM:SS format. Defaults to today.'
     )
 
     args = parser.parse_args()

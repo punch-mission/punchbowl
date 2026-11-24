@@ -65,9 +65,9 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
 
     for row in rows:
 
-        scid = row.spacecraft_id
+        spacecraft_id = row.spacecraft_id
 
-        packets[scid].append({
+        packets[spacecraft_id].append({
             "flash_block": row.flash_block,
             "spacecraft_id": row.spacecraft_id,
             "ccsds_sequence_count": row.ccsds_sequence_count,
@@ -79,7 +79,7 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
     timestamp_now = datetime.today().strftime("%j_%H_%M")
 
     # Generate replay request files for each spacecraft
-    for scid, packet_group in packets.items():
+    for spacecraft_id, packet_group in packets.items():
 
         replay_requests = []
 
@@ -159,7 +159,7 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
             )
 
         # Create spacecraft-specific output file
-        filename = f"{SPACECRAFT_ID_HEX.get(scid)}_{timestamp_now}_ReplayRequest.txt"
+        filename = f"{SPACECRAFT_ID_HEX.get(spacecraft_id)}_{timestamp_now}_ReplayRequest.txt"
 
         with open(filename, "w") as file:
             file.write("\n".join(replay_requests))

@@ -55,5 +55,5 @@ SPACECRAFT_ID_HEX = {
     int("0x10", 16): "WFI01",
     int("0x2F", 16): "NFI00",
     int("0x2C", 16): "WFI02",
-    int("0xF9", 16): "WFI03"
+    int("0xF9", 16): "WFI03",
 }

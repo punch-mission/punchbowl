@@ -1,12 +1,13 @@
 import re
 import argparse
+from datetime import datetime
+from collections import defaultdict
 
 from sqlalchemy import text
-from datetime import datetime
 from dateutil.parser import parse
-from collections import defaultdict
-from punchbowl.constants import SPACECRAFT_ID_HEX
+
 from punchbowl.auto.control.util import get_database_session
+from punchbowl.constants import SPACECRAFT_ID_HEX
 
 
 def generate_replay_requests(start_date: datetime, end_date: datetime):
@@ -16,7 +17,7 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
 
     Parameters
     ----------
-        start_date : datetime 
+        start_date : datetime
             Beginning of the database query time range.
         end_date : datetime
             End of the database query time range.
@@ -59,7 +60,7 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
     rows = result.fetchall()
     session.close()
 
-    if not rows: 
+    if not rows:
         print('No packets found for the specified date range')
         return
 
@@ -174,7 +175,7 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
 
 if __name__ == "__main__":
 
-    # TODO: Incorporate this into L0 flow rather than using it as a standalone script 
+    # TODO: Incorporate this into L0 flow rather than using it as a standalone script
 
     parser = argparse.ArgumentParser()
 

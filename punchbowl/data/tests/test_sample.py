@@ -31,7 +31,7 @@ def test_download_allfail(tmp_path, monkeypatch):
 
 
 def test_sdac_path():
-    assert sample._sdac_path(FILENAME) == f"3/CAM/2026/05/24/{FILENAME}"
+    assert sample._sdac_path(FILENAME) == f"3/CAM/2025/09/15/{FILENAME}"
 
 
 def test_filenames_parse():

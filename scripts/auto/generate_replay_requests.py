@@ -39,25 +39,12 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
     session, engine = get_database_session(get_engine=True)
 
     # Craft query
-    query = text("""
-        SELECT flash_block, spacecraft_id, ccsds_sequence_count,
-               timestamp, last_skip_reason
-        FROM sci_xfi
-        WHERE timestamp >= :start_date
-            AND timestamp <= :end_date
-        ORDER BY spacecraft_id, timestamp;
-    """)
-
-    # Execute query
-    result = session.execute(
-        query,
-        {
-            "start_date": start_date,
-            "end_date": end_date
-        }
-    )
-
-    rows = result.fetchall()
+    from punchbowl.auto.control.db import SCI_XFI
+    rows = (session.query(SCI_XFI)
+                   .where(SCI_XFI.timestamp >= start_date)
+                   .where(SCI_XFI.timestamp <= end_date)
+                   .order_by(SCI_XFI.spacecraft_id, SCI_XFI.timestamp)
+                   .all())
     session.close()
 
     if not rows:

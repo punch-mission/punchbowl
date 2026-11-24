@@ -3,8 +3,8 @@ import argparse
 from datetime import datetime
 from collections import defaultdict
 
-from sqlalchemy import text
 from dateutil.parser import parse
+from sqlalchemy import text
 
 from punchbowl.auto.control.util import get_database_session
 from punchbowl.constants import SPACECRAFT_ID_HEX

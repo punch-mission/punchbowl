@@ -13,7 +13,8 @@ def generate_replay_requests(start_date, end_date):
     Query the punchpipe database for L0 packet failures and generate
     spacecraft-specific replay request text files.
 
-    Args:
+    Parameters
+    ----------
         start_date (datetime): Beginning of the database query time range.
         end_date (datetime): End of the database query time range.
 

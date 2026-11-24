@@ -18,7 +18,8 @@ def generate_replay_requests(start_date, end_date):
         start_date (datetime): Beginning of the database query time range.
         end_date (datetime): End of the database query time range.
 
-    Returns:
+    Returns
+    -------
         None: Writes timestamped replay request text files to the
             current working directory.
 

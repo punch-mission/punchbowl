@@ -150,12 +150,14 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
             )
 
         # Create spacecraft-specific output file
-        filename = f"{SPACECRAFT_ID_HEX.get(spacecraft_id)}_{timestamp_now}_ReplayRequest.txt"
+        if SPACECRAFT_ID_HEX.get(spacecraft_id) is not None and len(replay_requests) > 0: 
 
-        with open(filename, "w") as file:
-            file.write("\n".join(replay_requests))
+            filename = f"{SPACECRAFT_ID_HEX.get(spacecraft_id)}_{timestamp_now}_ReplayRequest.txt"
 
-        print(f"Generated {filename} with {len(replay_requests)} replay requests.")
+            with open(filename, "w") as file:
+                file.write("\n".join(replay_requests))
+
+            print(f"Generated {filename} with {len(replay_requests)} replay requests.")
 
     # TODO: Drop these files in the designated location on Griffin for MOC pickup
 

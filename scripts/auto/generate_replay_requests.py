@@ -5,6 +5,7 @@ from sqlalchemy import text
 from datetime import datetime
 from dateutil.parser import parse
 from collections import defaultdict
+from punchbowl.constants import SPACECRAFT_ID_HEX
 from punchbowl.auto.control.util import get_database_session
 
 
@@ -33,14 +34,6 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
         r"Waiting for replay",
         r"^Image decoding failed charls_jpegls_decoder.*"
     ]
-
-    # Spacecraft hex id to spacecraft name mapping
-    scids_hex = {
-        int("0x10", 16): "WFI01",
-        int("0x2F", 16): "NFI00",
-        int("0x2C", 16): "WFI02",
-        int("0xF9", 16): "WFI03"
-    }
 
     # Create database session
     session, engine = get_database_session(get_engine=True)
@@ -166,7 +159,7 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
             )
 
         # Create spacecraft-specific output file
-        filename = f"{scids_hex[scid]}_{timestamp_now}_ReplayRequest.txt"
+        filename = f"{SPACECRAFT_ID_HEX.get(scid)}_{timestamp_now}_ReplayRequest.txt"
 
         with open(filename, "w") as file:
             file.write("\n".join(replay_requests))

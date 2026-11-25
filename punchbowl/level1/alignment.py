@@ -23,6 +23,7 @@ from punchbowl.data import NormalizedMetadata
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.wcs import calculate_helio_wcs_from_celestial
 from punchbowl.level1.alignment_parallel import get_errors, refine_pointing_single_step
+from punchbowl.level1.pointing_refinement import refine_pointing_matched
 from punchbowl.prefect import get_logger, punch_task
 
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -376,7 +377,8 @@ def solve_pointing( # noqa: C901
         observatory: str = "wfi",
         n_stars: int = 15,
         n_rounds: int = 50,
-        n_workers: int = 1) -> WCS:
+        n_workers: int = 1,
+        method: str = "matched") -> WCS:
     """
     Carefully determine the pointing of an image using the starfield.
 
@@ -393,11 +395,15 @@ def solve_pointing( # noqa: C901
     observatory : str
         "wfi" or "nfi"
     n_stars: int
-        the number of stars to use for each asterism when solving
+        the number of stars to use for each asterism when solving (``method="asterism"`` only)
     n_rounds : int
-        the number of iterations to run for pointing refinement
+        the number of iterations to run for pointing refinement (``method="asterism"`` only)
     n_workers : int
-        the number of parallel workers to use for pointing refinement
+        the number of parallel workers to use for pointing refinement (``method="asterism"`` only)
+    method : str
+        "matched" (default) fits all matched stars at once with robust least squares, see
+        `punchbowl.level1.pointing_refinement.refine_pointing_matched`; "asterism" fits ``n_rounds`` random
+        asterisms of ``n_stars`` stars and takes the median of each parameter
 
     Returns
     -------
@@ -406,6 +412,9 @@ def solve_pointing( # noqa: C901
 
     """
     logger = get_logger()
+    if method not in ("matched", "asterism"):
+        msg = f"Unknown pointing refinement method = {method}"
+        raise ValueError(msg)
 
     wcs_arcsec_per_pixel = image_wcs.wcs.cdelt[1] * 3600
     if observatory == "wfi":
@@ -473,6 +482,15 @@ def solve_pointing( # noqa: C901
 
     ok_stars = mask(np.stack((pix_coords[:, 0], pix_coords[:, 1])).T)
     catalog_stars = catalog_stars[ok_stars]
+
+    if method == "matched":
+        solved_wcs, info = refine_pointing_matched(guess_wcs, catalog_stars.ra.deg, catalog_stars.dec.deg, observed)
+        logger.info(f"Pointing refined with {info.n_matched} matched stars, "
+                    f"residual RMS {info.rms_px:.3f} px, median |residual| {info.median_abs_px:.3f} px")
+        if distortion is not None:
+            solved_wcs.cpdis1 = distortion.cpdis1
+            solved_wcs.cpdis2 = distortion.cpdis2
+        return solved_wcs
 
     indices = np.arange(len(catalog_stars))
     rng = np.random.default_rng(seed=1)
@@ -664,7 +682,7 @@ def build_distortion_model(
 
 @punch_task
 def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None,
-               max_workers: int = 4, n_rounds: int = 50) -> PUNCHCube:
+               max_workers: int = 4, n_rounds: int = 50, method: str = "matched") -> PUNCHCube:
     """
     Determine the pointing of the image and updates the metadata appropriately.
 
@@ -677,7 +695,9 @@ def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None,
     max_workers : int
         number of parallel workers to use
     n_rounds : int
-        number of iterations for alignment
+        number of iterations for alignment (``method="asterism"`` only)
+    method : str
+        pointing refinement method, "matched" or "asterism"; see `solve_pointing`
 
     Returns
     -------
@@ -706,12 +726,15 @@ def align_task(data_object: PUNCHCube, distortion_path: str | WCS | None,
     observatory = "nfi" if data_object.meta["OBSCODE"].value == "4" else "wfi"
     celestial_output = solve_pointing(refining_data, celestial_input, distortion,
                                       saturation_limit=60_000, observatory=observatory, n_workers=max_workers,
-                                      n_rounds=n_rounds)
+                                      n_rounds=n_rounds, method=method)
 
     recovered_wcs = calculate_helio_wcs_from_celestial(celestial_output,
                                                        data_object.meta.astropy_time,
                                                        data_object.data.shape)
 
     output = data_object.replace(wcs=recovered_wcs, celestial_wcs=celestial_output)
-    output.meta.history.add_now("LEVEL1-Align", f"alignment done with {n_rounds} iterations")
+    if method == "matched":
+        output.meta.history.add_now("LEVEL1-Align", "alignment done with matched-star least squares")
+    else:
+        output.meta.history.add_now("LEVEL1-Align", f"alignment done with {n_rounds} iterations")
     return output

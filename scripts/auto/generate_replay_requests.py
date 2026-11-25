@@ -117,11 +117,8 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
 
                     replay_flashblock_end = previous_flashblock
 
-                    flash_blocks_needed = max(
-                        1,
-                        int(replay_flashblock_end)
-                        - int(replay_flashblock_start)
-                    )
+                    flash_blocks_needed = int(replay_flashblock_end) + 1 - int(replay_flashblock_start)
+
 
                     replay_requests.append(
                         f"start mops_fsw_start_fast_replay"
@@ -138,11 +135,7 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
 
             replay_flashblock_end = packet_group[-1]["flash_block"]
 
-            flash_blocks_needed = max(
-                1,
-                int(replay_flashblock_end)
-                - int(replay_flashblock_start)
-            )
+            flash_blocks_needed = int(replay_flashblock_end) + 1 - int(replay_flashblock_start)
 
             replay_requests.append(
                 f"start mops_fsw_start_fast_replay"
@@ -150,7 +143,7 @@ def generate_replay_requests(start_date: datetime, end_date: datetime):
             )
 
         # Create spacecraft-specific output file
-        if SPACECRAFT_ID_HEX.get(spacecraft_id) is not None and len(replay_requests) > 0: 
+        if SPACECRAFT_ID_HEX.get(spacecraft_id) is not None and len(replay_requests) > 0:
 
             filename = f"{SPACECRAFT_ID_HEX.get(spacecraft_id)}_{timestamp_now}_ReplayRequest.txt"
 

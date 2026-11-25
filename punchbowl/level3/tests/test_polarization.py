@@ -27,7 +27,7 @@ def test_convert_polarization_uncertainty(sample_ndcube, errors, code):
         expected_data += column * cube.data[i]
     np.testing.assert_allclose(result.uncertainty.array**2, variance, rtol=1e-12)
     np.testing.assert_allclose(result.data, expected_data, rtol=1e-12, atol=1e-15)
-    assert result.meta.product_code == "PTM"
+    assert result.meta.product_code == code
     if errors == (1, 1, 1):
         np.testing.assert_allclose(result.uncertainty.array[0]**2, 4 / 3 * 1e-28, rtol=1e-12)
         np.testing.assert_allclose(result.uncertainty.array[1:]**2, 8 / 3 * 1e-28, rtol=1e-12)

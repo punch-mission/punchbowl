@@ -142,8 +142,9 @@ def level3_PTM_construct_flow_info(level2_files: list[File], level3_file: File,
     call_data = json.dumps(
         {
             "data_list": [level2_file.filename() for level2_file in level2_files],
+            "nfi_list": None,
             "before_starfield_path": before_starfield_path,
-            "after_starfield_path": after_starfield_path,
+            "after_starfield_path": after_starfield_path
         },
     )
     return Flow(

@@ -19,6 +19,7 @@ from punchbowl.data import get_base_file_name, write_ndcube_to_fits, write_ndcub
 from punchbowl.data.punch_io import _make_provenance_hdu
 from punchbowl.data.punchcube import PUNCHCube
 from punchbowl.data.visualize import load_quicklook_scaling
+from punchbowl.prefect import get_logger
 
 
 def get_database_session(get_engine=False,
@@ -144,6 +145,10 @@ def match_data_with_file_db_entry(data: PUNCHCube, file_db_entry_list):
             raise RuntimeError(f"There did not exist a file_db_entry for this output cube: "
                                f"result={get_base_file_name(data)}. Candidate: {file.filename()}")
     elif len(matching_entries) > 1:
+        logger = get_logger()
+        logger.warning(f"For cube {get_base_file_name(data)}, have matching DB entries "
+                       f"{', '.join([str(f.file_id) for f in matching_entries])} with names "
+                       f"{', '.join([f.filename() for f in matching_entries])}.")
         raise RuntimeError("There were many database entries matching this result. There should only be one.")
     else:
         return matching_entries[0]
@@ -236,7 +241,7 @@ def replace_version(pattern, replacement, string):
 
 
 def replace_file_version_in_metadata(path, old_pattern, new_version):
-    with fits.open(path, mode='update', disable_image_compression=True) as hdul:
+    with fits.open(path, mode='update', disable_image_compression=True, lazy_load_hdus=False) as hdul:
         for i, hdu in enumerate(hdul):
             if 'EXTNAME' not in hdu.header:
                 continue

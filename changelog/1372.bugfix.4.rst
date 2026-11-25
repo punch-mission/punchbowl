@@ -1,0 +1,1 @@
+The L2 PCA flow's `batch_size` configuration value is re-named to pca_batch_size` so it doesn't conflict with the scheduling `batch_size` configuration value

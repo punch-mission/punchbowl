@@ -177,7 +177,7 @@ def populated_tmpdir_config(tmpdir, db):
         os.makedirs(os.path.dirname(target), exist_ok=True)
         with open(target, 'w'):
             pass
-        with open(target + '.sha', 'w'):
+        with open(target + '.sha256', 'w'):
             pass
         with open(target.replace('.fits.', '.jp2'), 'w'):
             pass
@@ -221,7 +221,7 @@ async def test_reset_L1(db, tmpdir, populated_tmpdir_config):
     for path in other_file_paths:
         assert os.path.exists(path)
     assert not os.path.exists(reset_file_path)
-    assert not os.path.exists(reset_file_path + '.sha')
+    assert not os.path.exists(reset_file_path + '.sha256')
     assert not os.path.exists(reset_file_path.replace('.fits.', '.jp2'))
     assert not os.path.exists(os.path.dirname(reset_file_path))
 
@@ -272,7 +272,7 @@ async def test_reset_LQ(db, tmpdir, populated_tmpdir_config):
     for path in other_file_paths:
         assert os.path.exists(path)
     assert not os.path.exists(reset_file_path)
-    assert not os.path.exists(reset_file_path + '.sha')
+    assert not os.path.exists(reset_file_path + '.sha256')
     assert not os.path.exists(reset_file_path.replace('.fits.', '.jp2'))
     assert not os.path.exists(os.path.dirname(reset_file_path))
 
@@ -317,7 +317,7 @@ async def test_reset_L2(db, tmpdir, populated_tmpdir_config):
     for path in other_file_paths:
         assert os.path.exists(path)
     assert not os.path.exists(reset_file_path)
-    assert not os.path.exists(reset_file_path + '.sha')
+    assert not os.path.exists(reset_file_path + '.sha256')
     assert not os.path.exists(reset_file_path.replace('.fits.', '.jp2'))
     assert not os.path.exists(os.path.dirname(reset_file_path))
 

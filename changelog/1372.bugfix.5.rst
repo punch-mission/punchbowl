@@ -1,0 +1,1 @@
+Avoid crashing when launching the pipeline with a umask value configured.

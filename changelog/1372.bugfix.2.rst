@@ -1,0 +1,1 @@
+Ensure metadata passes through during polarization conversion

@@ -29,24 +29,24 @@ class TreeData:
     """Class to hold the varied outputs from `build_tree`."""
 
     all_files: list[File]
-    connections1_x: list[tuple[datetime, datetime, None]]
-    connections2_x: list[tuple[datetime, datetime, None]]
-    connections3_x: list[tuple[datetime, datetime, None]]
-    connections1_y: list[tuple[str, str, str]]
-    connections2_y: list[tuple[str, str, str]]
-    connections3_y: list[tuple[str, str, str]]
+    connections_L1_xcoords: list[tuple[datetime, datetime]]
+    connections_L2_xcoords: list[tuple[datetime, datetime]]
+    connections_L3_xcoords: list[tuple[datetime, datetime]]
+    connections_L1_ycoords: list[tuple[str, str]]
+    connections_L2_ycoords: list[tuple[str, str]]
+    connections_L3_ycoords: list[tuple[str, str]]
     mcc_x: list[tuple]
     mcc_y: list[tuple]
     main_chain: list[File]
 
 
-def build_tree(top: File | list[File]) -> TreeData:
+def build_tree(top_node: File | list[File]) -> TreeData:
     """
     Build a dependency tree.
 
     Parameters
     ----------
-    top : File | list[File]
+    top_node : File | list[File]
         The tope node(s) of the tree. Multiple top-nodes generate a combined dependency tree with multiple "main chains"
         slicing through it.
 
@@ -56,12 +56,12 @@ def build_tree(top: File | list[File]) -> TreeData:
         The generated data
 
     """
-    if not isinstance(top, (list, tuple)):
-        top = [top]
+    if not isinstance(top_node, (list, tuple)):
+        top_node = [top_node]
     # This recursively builds the tree
-    nodes_to_visit = deque([*top])
-    all_files = [*top]
-    all_files_set = {*top}
+    nodes_to_visit = deque([*top_node])
+    all_files = [*top_node]
+    all_files_set = {*top_node}
     # We record connections between files by file level. Since there are very different amounts of files and connections at
     # different levels, we plot them slightly differently
     connections3_x, connections3_y = [], []
@@ -86,8 +86,8 @@ def build_tree(top: File | list[File]) -> TreeData:
             c_y.append((node.kind, parent.kind))
 
     # Now we do it again, ignoring calibration files, to get just the "main chain"
-    nodes_to_visit = [*top]
-    main_chain = [*top]
+    nodes_to_visit = [*top_node]
+    main_chain = [*top_node]
     mcc_x, mcc_y = [], []
     while nodes_to_visit:
         node = nodes_to_visit.pop(0)
@@ -99,12 +99,12 @@ def build_tree(top: File | list[File]) -> TreeData:
             mcc_y.append((node.kind, parent.kind))
 
     return TreeData(all_files=all_files,
-                    connections1_x=connections1_x, connections2_x=connections2_x, connections3_x=connections3_x,
-                    connections1_y=connections1_y, connections2_y=connections2_y, connections3_y=connections3_y,
+                    connections_L1_xcoords=connections1_x, connections_L2_xcoords=connections2_x, connections_L3_xcoords=connections3_x,
+                    connections_L1_ycoords=connections1_y, connections_L2_ycoords=connections2_y, connections_L3_ycoords=connections3_y,
                     mcc_x=mcc_x, mcc_y=mcc_y, main_chain=main_chain)
 
 
-def plot_tree(tree_data: TreeData, figsize: tuple | None = None, dark: bool = False) -> None:
+def plot_tree(tree_data: TreeData, figsize: tuple | None = None, dark: bool = False, **kwargs: dict) -> None:
     """
     Plot the output of `build_tree`.
 
@@ -116,6 +116,8 @@ def plot_tree(tree_data: TreeData, figsize: tuple | None = None, dark: bool = Fa
         The figure size to use
     dark : bool
         If true, adapt to plotting in dark mode. (This does not itself apply a dark mode, it just adjusts some colors.)
+    kwargs : dict
+        Extra arguments to pass to the `plt.scatter` calls
 
     """
     # Group up the files by type
@@ -123,10 +125,13 @@ def plot_tree(tree_data: TreeData, figsize: tuple | None = None, dark: bool = Fa
     for file in tree_data.all_files:
         files_by_category[file.kind].append(file)
 
-    y = 50
-    dy = 0
+    # We're assigning y positions to each file type. The way the file tree is assembled means we have our file types
+    # in a top-down order (starting with the highest-level product), so we pick an arbitrary starting y value and
+    # decrease it for each file type we find.
+    y = 0
+    dy = -1
     category_to_y = {}
-    category_is_cal = {}
+    category_is_calibration = {}
     timestamps_by_category = {}
     for category, files in files_by_category.items():
         if len(files) > 2000:
@@ -137,21 +142,9 @@ def plot_tree(tree_data: TreeData, figsize: tuple | None = None, dark: bool = Fa
         timestamps_by_category[category] = {f.timestamp for f in files}
 
         # Assign a y position to this file code
-        if file.level == "1" or file.kind[1] == "F":
-            # Use less spacing for very similar product codes
-            if dy == 1:
-                y -= .2
-            if file.kind == "SR1":
-                y -= 0.2
-            dy = 0.3
-            y -= dy
-        else:
-            if dy == 0.3:
-                y += 0.5
-            dy = 1.0
-            y -= dy
         category_to_y[files[0].kind] = y
-        category_is_cal[files[0].kind] = files[0].is_cal
+        y -= dy
+        category_is_calibration[files[0].kind] = files[0].is_cal
 
     have_existence_data = tree_data.all_files[0].exists is not None
 
@@ -161,7 +154,7 @@ def plot_tree(tree_data: TreeData, figsize: tuple | None = None, dark: bool = Fa
 
     # Plot the files themselves
     for category, files in files_by_category.items():
-        is_cal = category_is_cal[category]
+        is_cal = category_is_calibration[category]
         xs = [f.timestamp for f in files]
         ys = np.full(len(xs), category_to_y[category])
         if have_existence_data:
@@ -171,21 +164,21 @@ def plot_tree(tree_data: TreeData, figsize: tuple | None = None, dark: bool = Fa
             colors = "C2" if is_cal else "C0"
             sizes = 15
 
-        plt.scatter(xs, ys, s=sizes, c=colors, marker="|" if not is_cal and have_existence_data else "o")
+        plt.scatter(xs, ys, s=sizes, c=colors, marker="|" if not is_cal and have_existence_data else "o", **kwargs)
 
     plt.xticks(rotation=45, ha="right")
     plt.yticks(list(category_to_y.values()), list(category_to_y.keys()))
 
     # Plot the connecting lines
-    for cx, cy, alpha, lw in ([tree_data.connections3_x, tree_data.connections3_y, 0.4 if dark else 0.5, 2],
-                              [tree_data.connections2_x, tree_data.connections2_y, 0.4 if dark else 0.3, 2],
-                              [tree_data.connections1_x, tree_data.connections1_y, 0.5 if dark else 0.3, 1],
+    for cx, cy, alpha, lw in ([tree_data.connections_L3_xcoords, tree_data.connections_L3_ycoords, 0.4 if dark else 0.5, 2],
+                              [tree_data.connections_L2_xcoords, tree_data.connections_L2_ycoords, 0.4 if dark else 0.3, 2],
+                              [tree_data.connections_L1_xcoords, tree_data.connections_L1_ycoords, 0.5 if dark else 0.3, 1],
                               ):
         xs_by_top_kind = defaultdict(list)
         ys_by_top_kind = defaultdict(list)
         for (x1, x2), (y1, y2) in zip(cx, cy, strict=False):
             if x1 in timestamps_by_category[y1] and x2 in timestamps_by_category[y2]:
-                key = (y1, x1) if category_is_cal[y1] else (y2, x2) if category_is_cal[y2] else None
+                key = (y1, x1) if category_is_calibration[y1] else (y2, x2) if category_is_calibration[y2] else None
                 xs_by_top_kind[key].extend([x1, x2, None])
                 ys_by_top_kind[key].extend([category_to_y[y1], category_to_y[y2], None])
         for xs, ys in zip(xs_by_top_kind.values(), ys_by_top_kind.values(), strict=False):
@@ -208,7 +201,7 @@ def plot_tree(tree_data: TreeData, figsize: tuple | None = None, dark: bool = Fa
 
     # Plot the main chain files
     plt.scatter([f.timestamp for f in tree_data.main_chain], mc_cat_vals, s=100, c=mc_colors, zorder=20,
-                edgecolors="w" if dark else "k")
+                edgecolors="w" if dark else "k", **kwargs)
     # And the main chain connections
     plt.plot(mcc_x, mcc_y_cat, color="0.8" if dark else "0.2", zorder=19)
 

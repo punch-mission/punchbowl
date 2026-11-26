@@ -77,6 +77,7 @@ def level1_early_core_flow(  # noqa: C901
     max_workers: int | None = None,
     n_alignment_workers: int | None = None,
     n_alignment_iterations: int = 50,
+    alignment_source_root: str | None = None,
     output_filename: list[str] | None = None,
     mask_path: str | None = None,
 ) -> list[PUNCHCube]:
@@ -89,6 +90,19 @@ def level1_early_core_flow(  # noqa: C901
     for i, this_data in enumerate(input_data):
         l0_data = load_image_task(this_data) if isinstance(this_data, str) else this_data
         data = l0_data
+
+        if alignment_source_root is not None:
+            if not isinstance(this_data, str):
+                raise ValueError("alignment_source_root requires the flow to have file path inputs, not NDCube inputs")
+            j = this_data.index("/0/")
+            typecode = l0_data.meta["TYPECODE"].value
+            alignment_source = "1" + this_data[j+2:].replace("L0", "L1").replace(typecode, "X" + typecode[1])
+            alignment_source = os.path.join(alignment_source_root, alignment_source)
+            if not os.path.exists(alignment_source):
+                logger.warning(f"Alignment source file {alignment_source} not found")
+                alignment_source = None
+        else:
+            alignment_source = None
 
         if data.meta["ISSQRT"].value:
             data = decode_sqrt_data(data)
@@ -168,6 +182,10 @@ def level1_early_core_flow(  # noqa: C901
             if data.meta["BADPKTS"].value:
                 data.meta.history.add_now("LEVEL1-align", "Image has bad packets; no alignment applied")
                 logger.info("Bad packets---alignment skipped")
+            elif alignment_source is not None:
+                data.meta.history.add_now("LEVEL1-align", "Image alignment copied from " + alignment_source)
+                source = load_image_task(alignment_source)
+                data = data.replace(wcs=source.wcs, celestial_wcs=source.celestial_wcs)
             else:
                 data = align_task(data, distortion_path, max_workers=n_alignment_workers or max_workers,
                                   n_rounds=n_alignment_iterations)
